@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UseWPF>true</UseWPF>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Emgu.CV" Version="4.8.1.5350"/>
+        <PackageReference Include="Emgu.CV.Bitmap" Version="4.8.1.5350"/>
+        <PackageReference Include="Emgu.CV.runtime.windows" Version="4.8.1.5350"/>
+        <PackageReference Include="Emgu.CV.UI" Version="4.8.1.5350"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
+    </ItemGroup>
+    <ItemGroup>
+      <Compile Include="..\source\Constants.cs">
+        <Link>source\Constants.cs</Link>
+      </Compile>
+      <Compile Include="..\source\Story.cs">
+        <Link>source\Story.cs</Link>
+      </Compile>
+      <Compile Include="..\source\Subtitle.cs">
+        <Link>source\Subtitle.cs</Link>
+      </Compile>
+      <Compile Include="..\source\VideoProcess.cs">
+        <Link>source\VideoProcess.cs</Link>
+      </Compile>
+    </ItemGroup>
+</Project>

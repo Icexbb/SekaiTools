@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34031.279
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SekaiToolsCLI", "SekaiToolsCLI\SekaiToolsCLI.csproj", "{6E864509-2B97-486F-917A-435FF3D148FD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SekaiToolsGUI", "SekaiToolsGUI\SekaiToolsGUI.csproj", "{2199FA0A-F6A2-477D-9293-0DADD9246181}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6E864509-2B97-486F-917A-435FF3D148FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E864509-2B97-486F-917A-435FF3D148FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E864509-2B97-486F-917A-435FF3D148FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E864509-2B97-486F-917A-435FF3D148FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2199FA0A-F6A2-477D-9293-0DADD9246181}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2199FA0A-F6A2-477D-9293-0DADD9246181}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2199FA0A-F6A2-477D-9293-0DADD9246181}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2199FA0A-F6A2-477D-9293-0DADD9246181}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {65444E4E-2123-441E-B830-0B979AD5DF61}
+	EndGlobalSection
+EndGlobal

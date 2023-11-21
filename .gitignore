@@ -1,0 +1,11 @@
+.vs
+.idea
+fonts
+dialog
+patterns
+runtime
+
+*.log
+*.pyc
+bin
+obj
