@@ -5,26 +5,12 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Platforms>AnyCPU;x64;x86</Platforms>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Emgu.CV" Version="4.8.1.5350"/>
-        <PackageReference Include="Emgu.CV.Bitmap" Version="4.8.1.5350"/>
-        <PackageReference Include="Emgu.CV.runtime.windows" Version="4.8.1.5350"/>
-        <PackageReference Include="Emgu.CV.UI" Version="4.8.1.5350"/>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
+        <PackageReference Include="CommandLineParser" Version="2.9.1"/>
     </ItemGroup>
     <ItemGroup>
-      <Compile Include="..\source\Constants.cs">
-        <Link>source\Constants.cs</Link>
-      </Compile>
-      <Compile Include="..\source\Story.cs">
-        <Link>source\Story.cs</Link>
-      </Compile>
-      <Compile Include="..\source\Subtitle.cs">
-        <Link>source\Subtitle.cs</Link>
-      </Compile>
-      <Compile Include="..\source\VideoProcess.cs">
-        <Link>source\VideoProcess.cs</Link>
-      </Compile>
+      <ProjectReference Include="..\Core\Core.csproj" />
     </ItemGroup>
 </Project>

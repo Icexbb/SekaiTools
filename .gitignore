@@ -4,8 +4,11 @@ fonts
 dialog
 patterns
 runtime
+banner
 
 *.log
 *.pyc
 bin
 obj
+
+scripts/out

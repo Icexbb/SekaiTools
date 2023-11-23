@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-
-namespace SekaiTools.source;
+namespace Core;
 
 public static class Constants
 {

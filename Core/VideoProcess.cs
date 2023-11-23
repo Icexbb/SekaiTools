@@ -1,13 +1,10 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Text;
-using System.IO;
 using Emgu.CV;
-using Emgu.CV.Features2D;
 using Emgu.CV.Structure;
-using Emgu.CV.Util;
 
-namespace SekaiTools.source;
+namespace Core;
 
 public class VideoProcess
 {
@@ -97,25 +94,48 @@ public class VideoProcess
         GetTemplate();
     }
 
-    private static void CallPythonScriptToGenerate(string transferData)
+    // private static void CallPythonScriptToGenerate(string transferData)
+    // {
+    //     var pythonScriptPath = Path.Join(Directory.GetCurrentDirectory(), "scripts", "GenTextPic.py");
+    //     var pythonExePath = Path.Join(Directory.GetCurrentDirectory(), "runtime", "python-3.12.0", "python.exe");
+    //     pythonScriptPath = $"\"{pythonScriptPath}\"";
+    //     var p = new Process();
+    //     p.StartInfo.FileName = pythonExePath; //需要执行的文件路径
+    //     p.StartInfo.UseShellExecute = false; //必需
+    //     p.StartInfo.RedirectStandardOutput = true; //输出参数设定
+    //     p.StartInfo.RedirectStandardInput = true; //传入参数设定
+    //     p.StartInfo.RedirectStandardError = true; //错误信息设定
+    //     p.StartInfo.CreateNoWindow = true;
+    //     p.StartInfo.Arguments = $"{pythonScriptPath} {Convert.ToBase64String(Encoding.UTF8.GetBytes(transferData))}";
+    //     p.Start();
+    //     // var output = p.StandardOutput.ReadToEnd();
+    //     // var decodedString = Encoding.UTF8.GetString(Convert.FromBase64String(output));
+    //     p.WaitForExit(); //关键，等待外部程序退出后才能往下执行}
+    //     p.Close();
+    //     // return decodedString;
+    // }
+    private static string CallPythonScriptToGenerate(string transferData)
     {
-        var pythonScriptPath = Path.Join(Directory.GetCurrentDirectory(), "scripts", "GenTextPic.py");
-        var pythonExePath = Path.Join(Directory.GetCurrentDirectory(), "runtime", "python-3.12.0", "python.exe");
-        pythonScriptPath = $"\"{pythonScriptPath}\"";
+        var exeFile = Path.Join(Directory.GetCurrentDirectory(), "scripts", "GenTextPic.exe");
+        var arguments = new[] { Convert.ToBase64String(Encoding.UTF8.GetBytes(transferData)) };
+        return CallExternalProcess(exeFile, arguments);
+    }
+
+    private static string CallExternalProcess(string executableFile, string[] arguments)
+    {
         var p = new Process();
-        p.StartInfo.FileName = pythonExePath; //需要执行的文件路径
+        p.StartInfo.FileName = executableFile; //需要执行的文件路径
         p.StartInfo.UseShellExecute = false; //必需
         p.StartInfo.RedirectStandardOutput = true; //输出参数设定
         p.StartInfo.RedirectStandardInput = true; //传入参数设定
         p.StartInfo.RedirectStandardError = true; //错误信息设定
         p.StartInfo.CreateNoWindow = true;
-        p.StartInfo.Arguments = $"{pythonScriptPath} {Convert.ToBase64String(Encoding.UTF8.GetBytes(transferData))}";
+        p.StartInfo.Arguments = string.Join(" ", arguments);
         p.Start();
-        // var output = p.StandardOutput.ReadToEnd();
-        // var decodedString = Encoding.UTF8.GetString(Convert.FromBase64String(output));
+        var output = p.StandardOutput.ReadToEnd();
         p.WaitForExit(); //关键，等待外部程序退出后才能往下执行}
         p.Close();
-        // return decodedString;
+        return output;
     }
 
     private void GenerateEbString(string str)
@@ -295,88 +315,6 @@ public class VideoProcess
         mask = new Mat(mat.Size, mat.Depth, 1);
         CvInvoke.Compare(mat, negativeInf, mask, Emgu.CV.CvEnum.CmpType.Equal);
         mat.SetTo(new MCvScalar(0), mask);
-    }
-
-    private void SiftMatch(Mat src, Mat template)
-    {
-        var srcImg1 = src;
-        var srcImg2 = template;
-
-        // CvInvoke.Imshow("src1", srcImg1);
-        // CvInvoke.Imshow("src2", srcImg2);
-
-        SIFT sift = new SIFT();
-        //计算特征点
-        var keyPoints1 = sift.Detect(srcImg1);
-        var keyPoints2 = sift.Detect(srcImg2);
-        //绘制特征点
-        // var sift_feature1 = new Mat();
-        // var sift_feature2 = new Mat();
-        var vkeyPoint1 = new VectorOfKeyPoint(keyPoints1);
-        var vkeyPoint2 = new VectorOfKeyPoint(keyPoints2);
-        // Features2DToolbox.DrawKeypoints(srcImg1, vkeyPoint1, sift_feature1, new Bgr(0, 255, 0));
-        // Features2DToolbox.DrawKeypoints(srcImg2, vkeyPoint2, sift_feature2, new Bgr(0, 255, 0));
-        //显示绘制结果
-        // CvInvoke.Imshow("sift_feature1", sift_feature1);
-        // CvInvoke.Imshow("sift_feature2", sift_feature2);
-        //计算特征描述符
-        var descriptors1 = new Mat();
-        var descriptors2 = new Mat();
-        sift.Compute(srcImg1, vkeyPoint1, descriptors1);
-        sift.Compute(srcImg2, vkeyPoint2, descriptors2);
-        //使用BF匹配器进行暴力匹配
-        var bFMatcher = new BFMatcher(DistanceType.L2);
-        var matches = new VectorOfVectorOfDMatch();
-        //添加特征描述符
-        bFMatcher.Add(descriptors1);
-        //k最邻近匹配
-        bFMatcher.KnnMatch(descriptors2, matches, 2);
-        //寻找匹配结果中距离的最值
-        double min_dist = 100, max_dist = 0;
-        for (int i = 0; i < descriptors1.Rows; i++)
-        {
-            try
-            {
-                if (matches[i][0].Distance > max_dist)
-                {
-                    max_dist = matches[i][0].Distance;
-                }
-
-                if (matches[i][0].Distance < min_dist)
-                {
-                    min_dist = matches[i][0].Distance;
-                }
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("Error");
-            }
-        }
-
-        //对BF匹配结果进行筛选
-        VectorOfVectorOfDMatch good_matches = new VectorOfVectorOfDMatch();
-        for (int i = 0; i < matches.Size; i++)
-        {
-            // Console.WriteLine(matches[i].Length);
-            if (matches[i].Length < 2) continue;
-            //符合条件的匹配点进行存储
-            if (matches[i][0].Distance < 1.5 * min_dist)
-            {
-                good_matches.Push(matches[i]);
-            }
-        }
-
-        //绘制匹配点
-        Mat result = new Mat();
-        Features2DToolbox.DrawMatches(
-            srcImg1, vkeyPoint1, srcImg2, vkeyPoint2,
-            good_matches, result,
-            new MCvScalar(0, 255, 0), new MCvScalar(0, 0, 255), null,
-            Features2DToolbox.KeypointDrawType.NotDrawSinglePoints);
-        //显示匹配结果
-        CvInvoke.Imshow("match-result", result);
-
-        CvInvoke.WaitKey(1);
     }
 
     private Rectangle MatchNameTag(Mat img, string name)

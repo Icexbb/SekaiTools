@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace SekaiTools.source;
+namespace Core;
 
 public class AssDrawPoint(int x, int y)
 {
