@@ -1,14 +1,13 @@
 .vs
+.vscode
 .idea
 fonts
-dialog
-patterns
-runtime
-banner
+test
 
 *.log
 *.pyc
 bin
 obj
 
-scripts/out
+patterns/*
+!patterns/menu-107px.png

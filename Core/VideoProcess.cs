@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Drawing;
 using System.Security.Cryptography;
 using System.Text;
@@ -77,12 +76,17 @@ public class VideoProcess
     private readonly double _videoResolutionRatio;
     private readonly double _videoFrameRate;
     private readonly int _videoFrameCount;
+
     private TemplateGrayAlpha? _menuSign;
-    private readonly Dictionary<string, TemplateGrayAlpha> _nameTagMats;
-    private Size _nameTagMaxSize;
+
+    // private readonly Dictionary<string, TemplateGrayAlpha> _nameTagMats;
+    // private Size _nameTagMaxSize;
     private Point _nameTagPosition;
+
     private readonly List<string> _names;
-    private readonly List<TemplateGrayAlpha[]> _dialogIdentifierMats;
+
+    // private readonly List<TemplateGrayAlpha[]> _dialogIdentifierMats;
+    private readonly TemplateManager _templateManager;
 
     public class ProcessProgressInfo
     {
@@ -103,7 +107,7 @@ public class VideoProcess
             InfoTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - processTime;
         }
 
-        public double Progress => ((double)ProgressedFrameCount / (TotalFrameCount * ProgressTimes)) * 100;
+        public double Progress => (double)ProgressedFrameCount / (TotalFrameCount * ProgressTimes) * 100;
         public double Fps => ProgressedFrameCount / (InfoTimeMilliseconds / 1000.0);
 
         public override string ToString() =>
@@ -127,9 +131,10 @@ public class VideoProcess
     }
 
     public VideoProcess(string videoFilePath, string jsonFilePath, string translateFilePath,
-        Progress<ProcessProgressInfo>? progress = null)
+        IProgress<ProcessProgressInfo>? progress = null)
     {
         _progressCarrier = progress;
+
         if (!Path.Exists(videoFilePath))
             throw new FileNotFoundException("Video file not found.", videoFilePath);
         if (!Path.Exists(jsonFilePath))
@@ -155,117 +160,13 @@ public class VideoProcess
         videoFrame.Dispose();
         videoCap.Dispose();
 
-        _nameTagMats = new Dictionary<string, TemplateGrayAlpha>();
-        _dialogIdentifierMats = new List<TemplateGrayAlpha[]>();
-        _nameTagMaxSize = new Size(0, 0);
         _nameTagPosition = new Point(0, 0);
         _names = _storyData.Dialogs().Select(dialog => dialog.CharacterOriginal).ToList();
-        GetTemplate();
-    }
+        var dbTextsChar1 = _storyData.Dialogs().Select(dialog => dialog.BodyOriginal[..1]).ToArray();
+        var dbTextsChar2 = _storyData.Dialogs().Select(dialog => dialog.BodyOriginal[..2]).ToArray();
 
-    private static string CallPythonScriptToGenerate(string transferData, bool useScript)
-    {
-        var pythonScriptPath = Path.Join(Directory.GetCurrentDirectory(), "scripts", "GenTextPic.py");
-        var pythonExePath = Path.Join(
-            Directory.GetCurrentDirectory(), "runtime", "python-3.12.0", "python.exe");
-        pythonScriptPath = $"\"{pythonScriptPath}\"";
-        var arguments = new[] { pythonScriptPath, Convert.ToBase64String(Encoding.UTF8.GetBytes(transferData)) };
-        return CallExternalProcess(pythonExePath, arguments);
-    }
-
-    private static string CallPythonScriptToGenerate(string transferData)
-    {
-        var exeFile = Path.Join(Directory.GetCurrentDirectory(), "scripts", "GenTextPic.exe");
-        var arguments = new[] { Convert.ToBase64String(Encoding.UTF8.GetBytes(transferData)) };
-        return CallExternalProcess(exeFile, arguments);
-    }
-
-    private static string CallExternalProcess(string executableFile, string[] arguments)
-    {
-        var p = new Process();
-        p.StartInfo.FileName = executableFile; //需要执行的文件路径
-        p.StartInfo.UseShellExecute = false; //必需
-        p.StartInfo.RedirectStandardOutput = true; //输出参数设定
-        p.StartInfo.RedirectStandardInput = true; //传入参数设定
-        p.StartInfo.RedirectStandardError = true; //错误信息设定
-        p.StartInfo.CreateNoWindow = true;
-        p.StartInfo.Arguments = string.Join(" ", arguments);
-        p.Start();
-        var output = p.StandardOutput.ReadToEnd();
-        p.WaitForExit(); //关键，等待外部程序退出后才能往下执行}
-        p.Close();
-        return output;
-    }
-
-    private void GenerateEbString(string str)
-    {
-        var font = Path.Join(Directory.GetCurrentDirectory(), "fonts", "FOT-RodinNTLGPro-EB.otf");
-        var imgWidth = _videoResolution.Width;
-        var imgHeight = _videoResolution.Height;
-        var transferData = Newtonsoft.Json.JsonConvert.SerializeObject(new { str, imgWidth, imgHeight, font });
-        CallPythonScriptToGenerate(transferData);
-    }
-
-    private void GenerateDbString(string str)
-    {
-        var font = Path.Join(Directory.GetCurrentDirectory(), "fonts", "FOT-RodinNTLGPro-DB.otf");
-        var imgWidth = _videoResolution.Width;
-        var imgHeight = _videoResolution.Height;
-        var transferData = Newtonsoft.Json.JsonConvert.SerializeObject(new { str, imgWidth, imgHeight, font });
-        CallPythonScriptToGenerate(transferData);
-    }
-
-    private TemplateGrayAlpha GenerateNameTag(string name)
-    {
-        var imgWidth = _videoResolution.Width;
-        var imgHeight = _videoResolution.Height;
-        var nameB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(name))
-            .Replace('\\', '_').Replace('/', '_');
-        var predictedFilename = $"{nameB64}.png";
-        var predictedDirPath = Path.Join(
-            Directory.GetCurrentDirectory(), "patterns", $"{imgWidth}x{imgHeight}", "EB");
-        if (!Directory.Exists(predictedDirPath)) Directory.CreateDirectory(predictedDirPath);
-        var predictedFilepath = Path.Join(predictedDirPath, predictedFilename);
-
-        if (!Path.Exists(predictedFilepath)) GenerateEbString(name);
-
-        var nameTag = CvInvoke.Imread(predictedFilepath, Emgu.CV.CvEnum.ImreadModes.Unchanged);
-        var result = ExtractGrayAlpha(nameTag);
-        nameTag.Dispose();
-        if (result.Size.Width > _nameTagMaxSize.Width) _nameTagMaxSize.Width = result.Size.Width;
-        if (result.Size.Height > _nameTagMaxSize.Height) _nameTagMaxSize.Height = result.Size.Height;
-        return result;
-    }
-
-    private List<TemplateGrayAlpha> GenerateDialogBegin(char char1, char char2)
-    {
-        var imgWidth = _videoResolution.Width;
-        var imgHeight = _videoResolution.Height;
-        var result = new List<TemplateGrayAlpha>();
-        foreach (var str in new[] { $"{char1}", $"{char1}{char2}" })
-        {
-            var contentB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(str))
-                .Replace('\\', '_').Replace('/', '_');
-            var predictedFilename = $"{contentB64}.png";
-            var predictedDirPath = Path.Join(
-                Directory.GetCurrentDirectory(), "patterns", $"{imgWidth}x{imgHeight}", "DB"
-            );
-            if (!Directory.Exists(predictedDirPath)) Directory.CreateDirectory(predictedDirPath);
-            var predictedFilepath = Path.Join(predictedDirPath, predictedFilename);
-            if (!Path.Exists(predictedFilepath)) GenerateDbString(str);
-            var srcImg = CvInvoke.Imread(predictedFilepath, Emgu.CV.CvEnum.ImreadModes.Unchanged);
-            var extracted = ExtractGrayAlpha(srcImg);
-
-            srcImg.Dispose();
-            result.Add(extracted);
-        }
-
-        var diff = result[1].Size.Width - result[0].Size.Width;
-        CvInvoke.CopyMakeBorder(result[0].Gray, result[0].Gray, 0, 0, 0, diff,
-            Emgu.CV.CvEnum.BorderType.Constant, new MCvScalar(0));
-        CvInvoke.CopyMakeBorder(result[0].Alpha, result[0].Alpha, 0, 0, 0, diff,
-            Emgu.CV.CvEnum.BorderType.Constant, new MCvScalar(255));
-        return result;
+        _templateManager = new TemplateManager(
+            _videoResolution, dbTextsChar1.Concat(dbTextsChar2).ToArray(), _names.ToArray());
     }
 
     private static TemplateGrayAlpha ExtractGrayAlpha(IInputArray src, bool resize = true)
@@ -282,29 +183,6 @@ public class VideoProcess
         CvInvoke.Resize(alphaChannel, alphaChannel,
             new Size(alphaChannel.Size.Width / scaleRatio, alphaChannel.Size.Height / scaleRatio));
         return new TemplateGrayAlpha { Gray = grayImage, Alpha = alphaChannel };
-    }
-
-    private void GetTemplate()
-    {
-        Console.WriteLine($"Generating template for {_videoFilePath}");
-
-        var nameList = new List<string>();
-        var dialogList = new List<string>();
-        foreach (var dialog in _storyData.Dialogs())
-        {
-            if (!nameList.Contains(dialog.CharacterOriginal)) nameList.Add(dialog.CharacterOriginal);
-            dialogList.Add(dialog.BodyOriginal[..2]);
-        }
-
-        foreach (var name in nameList)
-        {
-            _nameTagMats.Add(name, GenerateNameTag(name));
-        }
-
-        foreach (var dia in dialogList)
-        {
-            _dialogIdentifierMats.Add(GenerateDialogBegin(dia[0], dia[1]).ToArray());
-        }
     }
 
     private TemplateGrayAlpha GetMenuSign()
@@ -327,24 +205,22 @@ public class VideoProcess
 
     private TemplateGrayAlpha GetNameTag(string name)
     {
-        if (!_nameTagMats.ContainsKey(name))
-        {
-            _nameTagMats.Add(name, GenerateNameTag(name));
-        }
-
-        _nameTagMats.TryGetValue(name, out var result);
-        return result;
+        var mat = _templateManager.GetEbTemplate(name);
+        return ExtractGrayAlpha(mat);
     }
 
     private List<TemplateGrayAlpha> GetDialogInd(int index)
     {
-        if (_dialogIdentifierMats.Count > index) return _dialogIdentifierMats[index].ToList();
+        // if (_dialogIdentifierMats.Count > index) return _dialogIdentifierMats[index].ToList();
         if (_storyData.Dialogs().Length <= index) throw new IndexOutOfRangeException();
         var dialog = _storyData.Dialogs()[index];
-        _dialogIdentifierMats[index] =
-            GenerateDialogBegin(dialog.BodyOriginal[0], dialog.BodyOriginal[1]).ToArray();
+        var dialogBody1 = dialog.BodyOriginal[..1];
+        var dialogBody2 = dialog.BodyOriginal[..2];
+        var mat1 = _templateManager.GetDbTemplate(dialogBody1);
+        var mat2 = _templateManager.GetDbTemplate(dialogBody2);
+        var result = new List<TemplateGrayAlpha> { ExtractGrayAlpha(mat1), ExtractGrayAlpha(mat2) };
 
-        return _dialogIdentifierMats[index].ToList();
+        return result;
     }
 
     private Size GetDialogAreaSize()
@@ -410,7 +286,6 @@ public class VideoProcess
             Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed, mask: nameTagTemplate.Alpha);
         MatRemoveErrorInf(ref matchResult);
         CvInvoke.MinMaxLoc(matchResult, ref minVal, ref ccoeffNormedResult, ref minLoc, ref maxLoc);
-
         switch (ccoeffNormedResult)
         {
             case > 0.75:
@@ -444,12 +319,12 @@ public class VideoProcess
         var charTemplates = GetDialogInd(index);
         var template1 = charTemplates[0];
         var template2 = charTemplates[1];
-
+        var dbTemplateSize = _templateManager.DbTemplateMaxSize();
         Rectangle dialogStartPosition = new(
             nameTagRect.X,
-            nameTagRect.Y + _nameTagMaxSize.Height,
+            nameTagRect.Y + dbTemplateSize.Height,
             (int)(1.6 * template2.Size.Width),
-            (int)(1.6 * _nameTagMaxSize.Height)
+            (int)(1.6 * dbTemplateSize.Height)
         );
         Mat imgCropped = new(img, dialogStartPosition);
         Mat matchResult = new();
@@ -698,8 +573,9 @@ public class VideoProcess
             : _videoResolution.Width * 0.024);
 
         var outlineSize = (int)Math.Ceiling(fontsize / 15.0);
-        var marginV = _nameTagPosition.Y + (int)(_nameTagMaxSize.Height * 2.4);
-        var marginH = _nameTagPosition.X + (int)(_nameTagMaxSize.Height * 0.6);
+        var nameTagMaxSize = _templateManager.EbTemplateMaxSize();
+        var marginV = _nameTagPosition.Y + (int)(nameTagMaxSize.Height * 2.4);
+        var marginH = _nameTagPosition.X + (int)(nameTagMaxSize.Height * 0.6);
 
         var charaFontsize = (int)(fontsize * 0.9);
         var charaOutlineSize = (int)Math.Ceiling(charaFontsize / 15.0);
@@ -757,10 +633,11 @@ public class VideoProcess
 
         foreach (var dialogFrameSet in dialogList)
         {
-            var characterName = dialogFrameSet.Dialog!.CharacterTranslated == "" ||
-                                dialogFrameSet.Dialog.CharacterTranslated == dialogFrameSet.Dialog.CharacterOriginal
-                ? dialogFrameSet.Dialog.CharacterTranslated
-                : "";
+            var characterName =
+                dialogFrameSet.Dialog.CharacterTranslated == ""
+                || dialogFrameSet.Dialog.CharacterTranslated == dialogFrameSet.Dialog.CharacterOriginal
+                    ? dialogFrameSet.Dialog.CharacterTranslated
+                    : "";
 
             var originLine = dialogFrameSet.Dialog.BodyOriginal.Split("\n").Length;
             var styleName = "Line" + originLine;
