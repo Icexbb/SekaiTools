@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Drawing;
+using System.Security.Cryptography;
 using System.Text;
 using Emgu.CV;
 using Emgu.CV.Structure;
@@ -15,12 +16,21 @@ public class VideoProcess
         public Size Size => Gray.Size;
     }
 
-    private class DialogFrameResult(int frameIndex, int dialogIndex, int dialogStatus, Rectangle nameTagRect)
+    private class DialogFrameResult
     {
-        public readonly int FrameIndex = frameIndex;
-        public readonly int DialogIndex = dialogIndex;
-        public readonly int DialogStatus = dialogStatus;
-        public readonly Rectangle NameTagRect = nameTagRect;
+        public readonly int FrameIndex;
+        public readonly int DialogIndex;
+        public readonly int DialogStatus;
+        public readonly Rectangle NameTagRect;
+
+        public DialogFrameResult(int frameIndex, int dialogIndex, int dialogStatus, Rectangle nameTagRect)
+        {
+            FrameIndex = frameIndex;
+            DialogIndex = dialogIndex;
+            DialogStatus = dialogStatus;
+            NameTagRect = nameTagRect;
+        }
+
         public Point Point => NameTagRect.Location;
         public TimeSpan FrameTime(double fps) => TimeSpan.FromMilliseconds(FrameIndex * (1000 / fps));
         public string FrameTimeStr(double fps) => FrameTime(fps).ToString(@"hh\:mm\:ss\.ff");
@@ -32,13 +42,21 @@ public class VideoProcess
 
     private class DialogFrameSet
     {
-        public readonly List<DialogFrameResult> Data = new();
+        public readonly List<DialogFrameResult> Data;
+        public StoryDialogEvent Dialog;
+
+        public DialogFrameSet(StoryDialogEvent dialog)
+        {
+            Dialog = dialog;
+            Data = new List<DialogFrameResult>();
+        }
+
         public bool IsEmpty => Data.Count == 0;
 
         public bool IsJitter => Data.Select(
             v => Distance(Data[0].Point, v.Point) < Math.Sqrt(2)).Count() != Data.Count;
 
-        public StoryDialogEvent? Dialog;
+
         public string StartTime(double fps) => Data[0].FrameTimeStr(fps);
         public string EndTime(double fps) => Data[^1].FrameTimeStr(fps);
     }
@@ -50,6 +68,8 @@ public class VideoProcess
 
     private readonly string _videoFilePath;
     private readonly string _outputFilePath;
+    private readonly long _selfCreateTime;
+    public readonly string Id;
 
     private readonly StoryData _storyData;
 
@@ -64,8 +84,52 @@ public class VideoProcess
     private readonly List<string> _names;
     private readonly List<TemplateGrayAlpha[]> _dialogIdentifierMats;
 
-    public VideoProcess(string videoFilePath, string jsonFilePath, string translateFilePath)
+    public class ProcessProgressInfo
     {
+        public readonly bool OnlyContent;
+        public readonly string Content;
+        public readonly int ProgressedFrameCount;
+        public readonly int TotalFrameCount;
+        public const int ProgressTimes = 1;
+        public readonly long InfoTimeMilliseconds;
+
+        public ProcessProgressInfo(int progressedFrameCount, int totalFrameCount, long processTime,
+            string content = "", bool onlyContent = false)
+        {
+            OnlyContent = onlyContent;
+            Content = content;
+            ProgressedFrameCount = progressedFrameCount;
+            TotalFrameCount = totalFrameCount;
+            InfoTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - processTime;
+        }
+
+        public double Progress => ((double)ProgressedFrameCount / (TotalFrameCount * ProgressTimes)) * 100;
+        public double Fps => ProgressedFrameCount / (InfoTimeMilliseconds / 1000.0);
+
+        public override string ToString() =>
+            OnlyContent ? Content : $"Progress {Progress:0.00}% FPS {Fps:0.00} {Content}";
+    }
+
+    private readonly IProgress<ProcessProgressInfo>? _progressCarrier;
+
+    private void Log(int progressedFrameCount, string content = "", bool onlyContent = false)
+    {
+        var info = new ProcessProgressInfo(
+            progressedFrameCount, _videoFrameCount, _selfCreateTime,
+            content, onlyContent);
+        _progressCarrier?.Report(info);
+        if (_progressCarrier == null) Console.WriteLine(info);
+    }
+
+    private void Log(string content = "")
+    {
+        Log(0, content, true);
+    }
+
+    public VideoProcess(string videoFilePath, string jsonFilePath, string translateFilePath,
+        Progress<ProcessProgressInfo>? progress = null)
+    {
+        _progressCarrier = progress;
         if (!Path.Exists(videoFilePath))
             throw new FileNotFoundException("Video file not found.", videoFilePath);
         if (!Path.Exists(jsonFilePath))
@@ -75,6 +139,12 @@ public class VideoProcess
             Path.GetFileNameWithoutExtension(videoFilePath) + ".ass");
 
         _storyData = StoryData.FromFile(jsonFilePath, translateFilePath);
+        _selfCreateTime = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
+
+        Id = BitConverter.ToString(MD5.HashData(
+                Encoding.UTF8.GetBytes(videoFilePath + jsonFilePath + translateFilePath + _selfCreateTime.ToString())))
+            .Replace("-", string.Empty);
+
         var videoCap = new VideoCapture(videoFilePath);
         var videoFrame = new Mat();
         videoCap.Read(videoFrame);
@@ -87,33 +157,22 @@ public class VideoProcess
 
         _nameTagMats = new Dictionary<string, TemplateGrayAlpha>();
         _dialogIdentifierMats = new List<TemplateGrayAlpha[]>();
-        _names = new List<string>();
         _nameTagMaxSize = new Size(0, 0);
         _nameTagPosition = new Point(0, 0);
-        foreach (var dialog in _storyData.Dialogs()) _names.Add(dialog.CharacterOriginal);
+        _names = _storyData.Dialogs().Select(dialog => dialog.CharacterOriginal).ToList();
         GetTemplate();
     }
 
-    // private static void CallPythonScriptToGenerate(string transferData)
-    // {
-    //     var pythonScriptPath = Path.Join(Directory.GetCurrentDirectory(), "scripts", "GenTextPic.py");
-    //     var pythonExePath = Path.Join(Directory.GetCurrentDirectory(), "runtime", "python-3.12.0", "python.exe");
-    //     pythonScriptPath = $"\"{pythonScriptPath}\"";
-    //     var p = new Process();
-    //     p.StartInfo.FileName = pythonExePath; //需要执行的文件路径
-    //     p.StartInfo.UseShellExecute = false; //必需
-    //     p.StartInfo.RedirectStandardOutput = true; //输出参数设定
-    //     p.StartInfo.RedirectStandardInput = true; //传入参数设定
-    //     p.StartInfo.RedirectStandardError = true; //错误信息设定
-    //     p.StartInfo.CreateNoWindow = true;
-    //     p.StartInfo.Arguments = $"{pythonScriptPath} {Convert.ToBase64String(Encoding.UTF8.GetBytes(transferData))}";
-    //     p.Start();
-    //     // var output = p.StandardOutput.ReadToEnd();
-    //     // var decodedString = Encoding.UTF8.GetString(Convert.FromBase64String(output));
-    //     p.WaitForExit(); //关键，等待外部程序退出后才能往下执行}
-    //     p.Close();
-    //     // return decodedString;
-    // }
+    private static string CallPythonScriptToGenerate(string transferData, bool useScript)
+    {
+        var pythonScriptPath = Path.Join(Directory.GetCurrentDirectory(), "scripts", "GenTextPic.py");
+        var pythonExePath = Path.Join(
+            Directory.GetCurrentDirectory(), "runtime", "python-3.12.0", "python.exe");
+        pythonScriptPath = $"\"{pythonScriptPath}\"";
+        var arguments = new[] { pythonScriptPath, Convert.ToBase64String(Encoding.UTF8.GetBytes(transferData)) };
+        return CallExternalProcess(pythonExePath, arguments);
+    }
+
     private static string CallPythonScriptToGenerate(string transferData)
     {
         var exeFile = Path.Join(Directory.GetCurrentDirectory(), "scripts", "GenTextPic.exe");
@@ -228,6 +287,7 @@ public class VideoProcess
     private void GetTemplate()
     {
         Console.WriteLine($"Generating template for {_videoFilePath}");
+
         var nameList = new List<string>();
         var dialogList = new List<string>();
         foreach (var dialog in _storyData.Dialogs())
@@ -292,11 +352,13 @@ public class VideoProcess
         return _videoResolutionRatio > 16.0 / 9
             ? new Size
             {
-                Height = (int)(0.237 * _videoResolution.Height), Width = (int)(1.389 * _videoResolution.Height)
+                Height = (int)(0.237 * _videoResolution.Height),
+                Width = (int)(1.389 * _videoResolution.Height)
             }
             : new Size
             {
-                Height = (int)(0.133 * _videoResolution.Width), Width = (int)(0.781 * _videoResolution.Width)
+                Height = (int)(0.133 * _videoResolution.Width),
+                Width = (int)(0.781 * _videoResolution.Width)
             };
     }
 
@@ -365,9 +427,8 @@ public class VideoProcess
                     Emgu.CV.CvEnum.TemplateMatchingType.CcorrNormed, mask: nameTagTemplate.Alpha);
                 MatRemoveErrorInf(ref matchResult);
                 CvInvoke.MinMaxLoc(matchResult, ref minVal, ref ccorrNormedResult, ref minLoc, ref maxLoc);
-                // Console.WriteLine($"ccorr {ccorrNormedResult:0.00} ccoeff {ccoeffNormedResult:0.00}");
-                if (!(ccorrNormedResult > 0.8)) return new Rectangle(0, 0, 0, 0);
 
+                if (!(ccorrNormedResult > 0.8)) return new Rectangle(0, 0, 0, 0);
                 var resPoint = new Point(maxLoc.X + cropArea.X, maxLoc.Y + cropArea.Y);
                 _nameTagPosition = resPoint;
                 return new Rectangle(resPoint, nameTagTemplate.Size);
@@ -417,20 +478,15 @@ public class VideoProcess
         var videoFrame = new Mat();
         var menuSign = GetMenuSign();
         var frameIndex = 0;
-        var startThreshold = 0.8;
-        var fps = 0.0;
-        var sw = new Stopwatch();
+        const double startThreshold = 0.8;
 
         while (videoCap.Read(videoFrame))
         {
-            sw.Restart();
             CvInvoke.CvtColor(videoFrame, videoFrame, Emgu.CV.CvEnum.ColorConversion.Bgr2Gray);
             Mat matchResult = new();
             Mat frameCropped = new(videoFrame, new Rectangle(
-                videoFrame.Width - menuSign.Size.Width * 2,
-                0, // videoFrame.Height - menuSign.Size.Height * 2,
-                menuSign.Size.Width * 2,
-                menuSign.Size.Height * 2
+                videoFrame.Width - menuSign.Size.Width * 2, 0,
+                menuSign.Size.Width * 2, menuSign.Size.Height * 2
             ));
             CvInvoke.MatchTemplate(frameCropped, menuSign.Gray, matchResult,
                 Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed, mask: menuSign.Alpha);
@@ -441,13 +497,9 @@ public class VideoProcess
             Point minLoc = new(), maxLoc = new();
             CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
 
-            sw.Stop();
-            if (fps == 0.0) fps = 1000.0 / sw.ElapsedMilliseconds;
-            else fps = fps / 2 + 1000.0 / sw.ElapsedMilliseconds / 2;
+            Log(frameIndex, $"Frame {frameIndex}: Searching Content start Index");
 
-            Console.WriteLine($"FPS {fps:0.00} Frame {frameIndex} maxVal {maxVal}");
-            if (maxVal > startThreshold)
-                return frameIndex;
+            if (maxVal > startThreshold) return frameIndex;
             frameIndex++;
         }
 
@@ -462,16 +514,14 @@ public class VideoProcess
         var dialogStatus = 0;
         var nextFrame = true;
         var frameIndex = startPosition;
-        var frameList = new DialogFrameSet();
+        DialogFrameSet? frameList = null;
         var dialogList = new List<DialogFrameSet>();
         var indexIncreased = true;
-        var fps = 0.0;
-        var sw = new Stopwatch();
         videoCap.Set(Emgu.CV.CvEnum.CapProp.PosFrames, frameIndex);
         while (true)
         {
             if (dialogIndex >= _storyData.Dialogs().Length) break;
-            sw.Restart();
+            frameList ??= new DialogFrameSet(_storyData.Dialogs()[dialogIndex]);
             if (nextFrame)
             {
                 var readResult = videoCap.Read(videoFrame);
@@ -484,15 +534,11 @@ public class VideoProcess
             var nameTagRect = MatchNameTag(videoFrame, _names[dialogIndex]);
             if (nameTagRect.Height == 0)
             {
-                if (frameList.Data.Count != 0)
-                {
-                    dialogList.Add(frameList);
-                    frameList = new DialogFrameSet();
-                }
-
                 if (!indexIncreased)
                 {
                     dialogIndex++;
+                    if (!frameList.IsEmpty) dialogList.Add(frameList);
+                    frameList = null;
                     indexIncreased = true;
                     dialogStatus = 0;
                 }
@@ -509,7 +555,6 @@ public class VideoProcess
                         currentDialogStatus, nameTagRect
                     );
                     frameList.Data.Add(currentDialogFrameResult);
-                    frameList.Dialog ??= _storyData.Dialogs()[dialogIndex];
                     nextFrame = true;
                     indexIncreased = false;
                 }
@@ -517,13 +562,9 @@ public class VideoProcess
                 {
                     if (dialogStatus == 2)
                     {
-                        if (frameList.Data.Count != 0)
-                        {
-                            dialogList.Add(frameList);
-                            frameList = new DialogFrameSet();
-                        }
-
                         dialogIndex++;
+                        if (!frameList.IsEmpty) dialogList.Add(frameList);
+                        frameList = null;
                         indexIncreased = true;
                     }
                     else //dialogStatus == 0
@@ -535,13 +576,9 @@ public class VideoProcess
                 dialogStatus = indexIncreased ? 0 : currentDialogStatus;
             }
 
-            sw.Stop();
-            if (fps == 0.0) fps = 1000.0 / sw.ElapsedMilliseconds;
-            else fps = fps / 2 + 1000.0 / sw.ElapsedMilliseconds / 2;
-
-            Console.WriteLine(
-                $"FPS {fps:0.00} Frame {frameIndex + 1}/{_videoFrameCount} Dialog {dialogIndex}/{_storyData.Dialogs().Length} Status {dialogStatus}");
-
+            Log(frameIndex,
+                $"Frame {frameIndex}: Processing Dialogs {dialogIndex + 1}/{_storyData.Dialogs().Length}"
+            );
             if (dialogList.Count == _storyData.Dialogs().Length) break;
         }
 
@@ -813,14 +850,9 @@ public class VideoProcess
 
     public void Process()
     {
-        var contentStartedAt = 740; // MatchContentStarted();
-        Console.WriteLine($"Content started at Frame {contentStartedAt}");
+        var contentStartedAt = MatchContentStarted();
         var dialogMatchResult = MatchDialogs(contentStartedAt);
         var dialogEvents = MakeDialogEvents(dialogMatchResult);
-        // foreach (var item in dialogEvents)
-        // {
-        //     Console.WriteLine(item.ToString());
-        // }
 
         var scriptInfo = new SubtitleScriptInfo(_videoResolution.Width, _videoResolution.Height,
             Path.GetFileNameWithoutExtension(_videoFilePath));
@@ -830,6 +862,7 @@ public class VideoProcess
         var events = new SubtitleEvents(dialogEvents.ToArray());
         var assData = new Subtitle(scriptInfo, garbage, style, events);
         var outputFile = new StreamWriter(_outputFilePath, false, Encoding.UTF8);
+        Log("Writing to file");
         outputFile.Write(assData.ToString());
         outputFile.Close();
     }

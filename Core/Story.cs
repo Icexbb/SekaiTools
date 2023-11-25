@@ -175,19 +175,25 @@ internal partial class TranslationData
     private static partial Regex DialogPattern();
 }
 
-internal abstract class StoryEvent(string type, string bodyOriginal)
+internal abstract class StoryEvent
 {
-    public string Type = type;
-    public string BodyOriginal = bodyOriginal;
-    public string? BodyTranslated;
+    public readonly string Type;
+    public readonly string BodyOriginal;
+    public string BodyTranslated = "";
+
+    protected StoryEvent(string type, string bodyOriginal)
+    {
+        Type = type;
+        BodyOriginal = bodyOriginal;
+    }
 }
 
 internal class StoryDialogEvent : StoryEvent
 {
-    public int CharacterId = 0;
-    public string CharacterOriginal;
+    public int CharacterId;
+    public readonly string CharacterOriginal;
     public string CharacterTranslated = "";
-    public bool CloseWindow = false;
+    public bool CloseWindow;
 
     public StoryDialogEvent(string bodyOriginal, int characterId, string characterOriginal, bool closeWindow) :
         base("Dialog", bodyOriginal)
@@ -204,16 +210,24 @@ internal class StoryDialogEvent : StoryEvent
     }
 }
 
-internal class StoryBannerEvent(string bodyOriginal) : StoryEvent("Banner", bodyOriginal)
+internal class StoryBannerEvent : StoryEvent
 {
+    public StoryBannerEvent(string bodyOriginal) : base("Banner", bodyOriginal)
+    {
+    }
+
     public void SetTranslation(string body)
     {
         BodyTranslated = body;
     }
 }
 
-internal class StoryMarkerEvent(string bodyOriginal) : StoryEvent("Marker", bodyOriginal)
+internal class StoryMarkerEvent : StoryEvent
 {
+    public StoryMarkerEvent(string bodyOriginal) : base("Marker", bodyOriginal)
+    {
+    }
+
     public void SetTranslation(string body)
     {
         BodyTranslated = body;
@@ -224,7 +238,7 @@ internal class StoryData
 {
     private readonly StoryEvent[] _events;
 
-    public StoryData(GameStoryData gameStoryData, TranslationData translationData)
+    private StoryData(GameStoryData gameStoryData, TranslationData translationData)
     {
         List<StoryEvent> events = new();
         if (!gameStoryData.Empty())
