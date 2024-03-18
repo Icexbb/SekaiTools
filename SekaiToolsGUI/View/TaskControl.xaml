@@ -1,0 +1,22 @@
+<UserControl x:Class="SekaiToolsGUI.View.TaskControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:hc="https://handyorg.github.io/handycontrol"
+             xmlns:vm="clr-namespace:SekaiToolsGUI.ViewModel"
+             xmlns:local="clr-namespace:SekaiToolsGUI.View"
+             mc:Ignorable="d">
+    <UserControl.DataContext>
+        <vm:TaskControlModel />
+    </UserControl.DataContext>
+    <StackPanel Orientation="Vertical">
+        <local:TaskSetting DataContext="{Binding Path=.SettingModel}"
+                           IsEnabled="{Binding Path=Running,
+                           Converter={StaticResource InverseBooleanConverter}}" />
+        <hc:ProgressButton
+            IsChecked="{Binding Path=Running,Mode=OneWay}"
+            Content="{Binding Path=Status}" Progress="{Binding Path=Progress}" Width="400"
+            Click="ProgressButtonStartTask_OnClick" />
+    </StackPanel>
+</UserControl>
