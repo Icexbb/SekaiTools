@@ -26,6 +26,16 @@ internal struct VoiceData
 internal struct SnippetItem
 {
     public int Action;
+    /*
+     * 1 TalkData
+     * 2 LayoutData Type=*
+     * 3
+     * 4 LayoutData Type=0
+     * 5
+     * 6 SpecialEffectData
+     * 7 SoundData
+     * 8 ScenarioSnippetCharacterLayoutModes
+     */
 }
 
 internal struct TalkDataItem
@@ -34,6 +44,7 @@ internal struct TalkDataItem
     public string Body;
     public int WhenFinishCloseWindow;
     public VoiceData[] Voices;
+    public bool Shake;
 
     public readonly int GetCharacterId()
     {
@@ -46,6 +57,19 @@ internal struct TalkDataItem
 internal struct SpecialEffectDataItem
 {
     public int EffectType;
+
+    /* EffectType
+     * 1 渐入
+     * 2 渐出-黑
+     * 3 闪烁
+     * 4 渐出-白
+     * 5 画面震动-背景
+     * 6 对话震动 *
+     * 7 背景
+     * 8 地点横幅
+     * 18 地点角标
+     * 23 选项
+     */
     public string StringVal;
 }
 
@@ -54,14 +78,6 @@ internal class GameStoryData
     internal SnippetItem[] Snippets;
     internal SpecialEffectDataItem[] SpecialEffectData;
     internal readonly TalkDataItem[] TalkData;
-
-    public GameStoryData(TalkDataItem[] talkData, SnippetItem[] snippets, SpecialEffectDataItem[] specialEffectData)
-    {
-        TalkData = talkData;
-        Snippets = snippets;
-        SpecialEffectData = specialEffectData;
-        Clean();
-    }
 
     public GameStoryData(string jsonFilePath)
     {
@@ -101,7 +117,28 @@ internal class GameStoryData
 
     private void Clean()
     {
-        List<SnippetItem> sn = new();
+        List<int> shakeIndex = [];
+        var tdc = 0;
+        var sec = 0;
+        foreach (var item in Snippets)
+        {
+            switch (item.Action)
+            {
+                case 1:
+                    tdc += 1;
+                    break;
+                case 6:
+                {
+                    if (SpecialEffectData[sec].EffectType is 6) shakeIndex.Add(tdc - 1);
+                    sec += 1;
+                    break;
+                }
+            }
+        }
+
+        for (var i = 0; i < shakeIndex.Count; i++) TalkData[i].Shake = true;
+
+        List<SnippetItem> sn = [];
         var seCount = 0;
         foreach (var snippet in Snippets)
             switch (snippet.Action)
@@ -183,33 +220,28 @@ internal partial class TranslationData
     private static partial Regex DialogPattern();
 }
 
-internal abstract class StoryEvent
+internal abstract class StoryEvent(string type, string bodyOriginal)
 {
-    public readonly string Type;
-    public readonly string BodyOriginal;
+    public readonly string Type = type;
+    public readonly string BodyOriginal = bodyOriginal;
     public string BodyTranslated = "";
-
-    protected StoryEvent(string type, string bodyOriginal)
-    {
-        Type = type;
-        BodyOriginal = bodyOriginal;
-    }
 }
 
-internal class StoryDialogEvent : StoryEvent
+internal class StoryDialogEvent(
+    int index,
+    string bodyOriginal,
+    int characterId,
+    string characterOriginal,
+    bool closeWindow,
+    bool shake)
+    : StoryEvent("Dialog", bodyOriginal)
 {
-    public int CharacterId;
-    public readonly string CharacterOriginal;
+    public readonly int Index = index;
+    public readonly int CharacterId = characterId;
+    public readonly string CharacterOriginal = characterOriginal;
     public string CharacterTranslated = "";
-    public bool CloseWindow;
-
-    public StoryDialogEvent(string bodyOriginal, int characterId, string characterOriginal, bool closeWindow) :
-        base("Dialog", bodyOriginal)
-    {
-        CharacterId = characterId;
-        CharacterOriginal = characterOriginal;
-        CloseWindow = closeWindow;
-    }
+    public readonly bool CloseWindow = closeWindow;
+    public readonly bool Shake = shake;
 
     public void SetTranslation(string character, string body)
     {
@@ -218,24 +250,16 @@ internal class StoryDialogEvent : StoryEvent
     }
 }
 
-internal class StoryBannerEvent : StoryEvent
+internal class StoryBannerEvent(string bodyOriginal) : StoryEvent("Banner", bodyOriginal)
 {
-    public StoryBannerEvent(string bodyOriginal) : base("Banner", bodyOriginal)
-    {
-    }
-
     public void SetTranslation(string body)
     {
         BodyTranslated = body;
     }
 }
 
-internal class StoryMarkerEvent : StoryEvent
+internal class StoryMarkerEvent(string bodyOriginal) : StoryEvent("Marker", bodyOriginal)
 {
-    public StoryMarkerEvent(string bodyOriginal) : base("Marker", bodyOriginal)
-    {
-    }
-
     public void SetTranslation(string body)
     {
         BodyTranslated = body;
@@ -248,7 +272,7 @@ internal class StoryData
 
     private StoryData(GameStoryData gameStoryData, TranslationData translationData)
     {
-        List<StoryEvent> events = new();
+        List<StoryEvent> events = [];
         if (!gameStoryData.Empty())
         {
             int dialogCount = 0, effectCount = 0;
@@ -262,10 +286,12 @@ internal class StoryData
                         if (dialogCount < gameStoryData.TalkData.Length)
                         {
                             var storyDialogEvent = new StoryDialogEvent(
-                                talkData.Body,
-                                talkData.GetCharacterId(),
+                                dialogCount,
+                                talkData.Body, talkData.GetCharacterId(),
                                 talkData.WindowDisplayName,
-                                talkData.WhenFinishCloseWindow == 1);
+                                talkData.WhenFinishCloseWindow == 1,
+                                talkData.Shake
+                            );
                             events.Add(storyDialogEvent);
                         }
 
@@ -371,18 +397,9 @@ internal class StoryData
         var result = new List<StoryEvent>();
         foreach (var @event in _events)
         {
-            if (types.HasFlag(StoryEventType.Dialog) && @event.Type == "Dialog")
-            {
-                result.Add(@event);
-            }
-            else if (types.HasFlag(StoryEventType.Banner) && @event.Type == "Banner")
-            {
-                result.Add(@event);
-            }
-            else if (types.HasFlag(StoryEventType.Marker) && @event.Type == "Marker")
-            {
-                result.Add(@event);
-            }
+            if (types.HasFlag(StoryEventType.Dialog) && @event.Type == "Dialog") result.Add(@event);
+            else if (types.HasFlag(StoryEventType.Banner) && @event.Type == "Banner") result.Add(@event);
+            else if (types.HasFlag(StoryEventType.Marker) && @event.Type == "Marker") result.Add(@event);
         }
 
         return result.ToArray();

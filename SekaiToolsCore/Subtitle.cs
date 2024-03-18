@@ -1,14 +1,8 @@
 namespace SekaiToolsCore;
 
-public class AssDrawPoint
+public class AssDrawPoint(int x, int y)
 {
-    public int X, Y;
-
-    public AssDrawPoint(int x, int y)
-    {
-        X = x;
-        Y = y;
-    }
+    public int X = x, Y = y;
 
     public void Move(int x, int y)
     {
@@ -29,14 +23,9 @@ public class AssDrawPoint
     }
 }
 
-public abstract class AssDrawPart
+public abstract class AssDrawPart(string type)
 {
-    protected readonly string Type;
-
-    protected AssDrawPart(string type)
-    {
-        Type = type;
-    }
+    protected readonly string Type = type;
 
     public abstract void Move(int x, int y);
     public abstract void Scale(double ratio);
@@ -44,104 +33,80 @@ public abstract class AssDrawPart
     public abstract override string ToString();
 }
 
-public class AssDrawMove : AssDrawPart
+public class AssDrawMove(AssDrawPoint assDrawPoint) : AssDrawPart("m")
 {
-    private readonly AssDrawPoint _assDrawPoint;
-
-    public AssDrawMove(AssDrawPoint assDrawPoint) : base("m")
-    {
-        _assDrawPoint = assDrawPoint;
-    }
-
     public override void Move(int x, int y)
     {
-        _assDrawPoint.Move(x, y);
+        assDrawPoint.Move(x, y);
     }
 
     public override void Scale(double ratio)
     {
-        _assDrawPoint.Scale(ratio);
+        assDrawPoint.Scale(ratio);
     }
 
     public override void Scale(float ratio)
     {
-        _assDrawPoint.Scale(ratio);
+        assDrawPoint.Scale(ratio);
     }
 
     public override string ToString()
     {
-        return $"{Type} {_assDrawPoint.X} {_assDrawPoint.Y}";
+        return $"{Type} {assDrawPoint.X} {assDrawPoint.Y}";
     }
 }
 
-public class AssDrawLine : AssDrawPart
+public class AssDrawLine(AssDrawPoint assDrawPoint) : AssDrawPart("l")
 {
-    private readonly AssDrawPoint _assDrawPoint;
-
-    public AssDrawLine(AssDrawPoint assDrawPoint) : base("l")
-    {
-        _assDrawPoint = assDrawPoint;
-    }
-
     public override void Move(int x, int y)
     {
-        _assDrawPoint.Move(x, y);
+        assDrawPoint.Move(x, y);
     }
 
     public override void Scale(double ratio)
     {
-        _assDrawPoint.Scale(ratio);
+        assDrawPoint.Scale(ratio);
     }
 
     public override void Scale(float ratio)
     {
-        _assDrawPoint.Scale(ratio);
+        assDrawPoint.Scale(ratio);
     }
 
     public override string ToString()
     {
-        return $"{Type} {_assDrawPoint.X} {_assDrawPoint.Y}";
+        return $"{Type} {assDrawPoint.X} {assDrawPoint.Y}";
     }
 }
 
-public class AssDrawBezier : AssDrawPart
+public class AssDrawBezier(AssDrawPoint assDrawPointA, AssDrawPoint assDrawPointB, AssDrawPoint assDrawPointC)
+    : AssDrawPart("b")
 {
-    private readonly AssDrawPoint _assDrawPointA;
-    private readonly AssDrawPoint _assDrawPointB;
-    private readonly AssDrawPoint _assDrawPointC;
-
-    public AssDrawBezier(AssDrawPoint assDrawPointA, AssDrawPoint assDrawPointB, AssDrawPoint assDrawPointC) : base("b")
-    {
-        _assDrawPointA = assDrawPointA;
-        _assDrawPointB = assDrawPointB;
-        _assDrawPointC = assDrawPointC;
-    }
-
     public override void Move(int x, int y)
     {
-        _assDrawPointA.Move(x, y);
-        _assDrawPointB.Move(x, y);
-        _assDrawPointC.Move(x, y);
+        assDrawPointA.Move(x, y);
+        assDrawPointB.Move(x, y);
+        assDrawPointC.Move(x, y);
     }
 
     public override void Scale(double ratio)
     {
-        _assDrawPointA.Scale(ratio);
-        _assDrawPointB.Scale(ratio);
-        _assDrawPointC.Scale(ratio);
+        assDrawPointA.Scale(ratio);
+        assDrawPointB.Scale(ratio);
+        assDrawPointC.Scale(ratio);
     }
 
     public override void Scale(float ratio)
     {
-        _assDrawPointA.Scale(ratio);
-        _assDrawPointB.Scale(ratio);
-        _assDrawPointC.Scale(ratio);
+        assDrawPointA.Scale(ratio);
+        assDrawPointB.Scale(ratio);
+        assDrawPointC.Scale(ratio);
     }
 
     public override string ToString()
     {
         return
-            $"{Type} {_assDrawPointA.X} {_assDrawPointA.Y} {_assDrawPointB.X} {_assDrawPointB.Y} {_assDrawPointC.X} {_assDrawPointC.Y}";
+            $"{Type} {assDrawPointA.X} {assDrawPointA.Y} {assDrawPointB.X} {assDrawPointB.Y} {assDrawPointC.X} {assDrawPointC.Y}";
     }
 }
 
@@ -223,42 +188,20 @@ public class AssDraw
     }
 }
 
-internal class SubtitleScriptInfo
+internal class SubtitleScriptInfo(int playRexX, int playRexY, string title = "", string scriptType = "v4.00+")
 {
-    private readonly int _playRexX;
-    private readonly int _playRexY;
-    private readonly string _title;
-    private readonly string _scriptType;
-
-    public SubtitleScriptInfo(int playRexX, int playRexY, string title = "", string scriptType = "v4.00+")
-    {
-        _playRexX = playRexX;
-        _playRexY = playRexY;
-        _title = title;
-        _scriptType = scriptType;
-    }
-
     public override string ToString()
     {
         return
-            $"[Script Info]\nTitle: {_title}\nScriptType: {_scriptType}\nPlayRexX: {_playRexX}\nPlayRexY: {_playRexY}";
+            $"[Script Info]\nTitle: {title}\nScriptType: {scriptType}\nPlayRexX: {playRexX}\nPlayRexY: {playRexY}";
     }
 }
 
-internal class SubtitleGarbage
+internal class SubtitleGarbage(string video = "", string audio = "")
 {
-    private readonly string _video;
-    private readonly string _audio;
-
-    public SubtitleGarbage(string video = "", string audio = "")
-    {
-        _video = video;
-        _audio = audio;
-    }
-
     public override string ToString()
     {
-        return $"[Aegisub Project Garbage]\nAudio File: {_audio}\nVideo File: {_video}";
+        return $"[Aegisub Project Garbage]\nAudio File: {audio}\nVideo File: {video}";
     }
 }
 
@@ -381,7 +324,7 @@ internal class SubtitleEventItem
     public string End { get; set; }
     public string Text { get; }
 
-    public SubtitleEventItem(string type, int layer, string start, string end, string style, string name, int marginL,
+    private SubtitleEventItem(string type, int layer, string start, string end, string style, string name, int marginL,
         int marginR, int marginV, string effect, string text)
     {
         _type = type;
@@ -468,26 +411,14 @@ internal class SubtitleEvents
     }
 }
 
-internal class Subtitle
+internal class Subtitle(
+    SubtitleScriptInfo scriptInfo,
+    SubtitleGarbage garbage,
+    SubtitleStyles styles,
+    SubtitleEvents events)
 {
-    private readonly SubtitleScriptInfo _scriptInfo;
-    private readonly SubtitleGarbage _garbage;
-    private readonly SubtitleStyles _styles;
-    private readonly SubtitleEvents _events;
-
-    public Subtitle(SubtitleScriptInfo scriptInfo,
-        SubtitleGarbage garbage,
-        SubtitleStyles styles,
-        SubtitleEvents events)
-    {
-        _scriptInfo = scriptInfo;
-        _garbage = garbage;
-        _styles = styles;
-        _events = events;
-    }
-
     public override string ToString()
     {
-        return $"{_scriptInfo}\n\n{_garbage}\n\n{_styles}\n\n{_events}\n";
+        return $"{scriptInfo}\n\n{garbage}\n\n{styles}\n\n{events}\n";
     }
 }

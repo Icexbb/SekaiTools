@@ -158,20 +158,6 @@ public class TemplateManager
 
     private void GenerateTemplates()
     {
-        // GenerateDbTemplates();
-        // GenerateEbTemplates();
         Parallel.Invoke([GenerateEbTemplates, GenerateDbTemplates]);
-
-        // var dbSize = DbTemplateMaxSize(real: true);
-        //
-        // foreach (var t in _dbTexts)
-        // {
-        //     var text = _dbTemplate[t];
-        //     var bg = new Mat(dbSize, text.Depth, text.NumberOfChannels);
-        //     bg.SetTo(new MCvScalar(0));
-        //     var roi = new Mat(bg, new Rectangle(0, 0, text.Width, text.Height));
-        //     text.CopyTo(roi);
-        //     _dbTemplate[t] = bg;
-        // }
     }
 }
