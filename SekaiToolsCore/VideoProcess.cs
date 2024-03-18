@@ -1,37 +1,101 @@
 using System.Drawing;
-using System.Security.Cryptography;
 using System.Text;
 using Emgu.CV;
 using Emgu.CV.Structure;
+using Emgu.CV.CvEnum;
 
-namespace Core;
+namespace SekaiToolsCore;
+
+public class TypewriterSetting(int fadeTime, int charTime)
+{
+    public readonly int FadeTime = fadeTime;
+    public readonly int CharTime = charTime;
+}
+
+public class VideoProcessTaskConfig
+{
+    public string VideoFilePath { get; }
+    public string ScriptFilePath { get; }
+    public string TranslateFilePath { get; }
+    public string OutputFilePath { get; }
+
+    public TypewriterSetting TyperSetting = new(50, 80);
+
+    public string Id { get; }
+
+    public VideoProcessTaskConfig(string id, string videoFilePath, string scriptFilePath,
+        string translateFilePath = "", string outputFilePath = "")
+    {
+        Id = id;
+        if (!Path.Exists(videoFilePath))
+            throw new FileNotFoundException("Video file not found.", videoFilePath);
+        if (!Path.Exists(scriptFilePath))
+            throw new FileNotFoundException("Script file not found.", scriptFilePath);
+
+        VideoFilePath = videoFilePath;
+        ScriptFilePath = scriptFilePath;
+
+        if (translateFilePath != "" && !Path.Exists(translateFilePath))
+            throw new FileNotFoundException("Translation file not found.", translateFilePath);
+        TranslateFilePath = translateFilePath;
+        if (outputFilePath != "")
+        {
+            if (Path.GetExtension(outputFilePath) != ".ass")
+                throw new FileNotFoundException("Output Path must be a .ass file ", outputFilePath);
+            OutputFilePath = outputFilePath;
+        }
+        else
+        {
+            OutputFilePath = Path.Join(Path.GetDirectoryName(videoFilePath),
+                Path.GetFileNameWithoutExtension(videoFilePath) + ".ass");
+        }
+    }
+
+    public void SetSubtitleTyperSetting(int fadeTime, int charTime)
+    {
+        TyperSetting = new TypewriterSetting(fadeTime, charTime);
+    }
+
+    public override int GetHashCode()
+    {
+        var contents = $"{VideoFilePath}{ScriptFilePath}{TranslateFilePath}{OutputFilePath}";
+        return contents.GetHashCode();
+    }
+}
+
+public class TemplateGrayAlpha
+{
+    public Mat Gray;
+    public Mat Alpha;
+    public Size Size => Gray.Size;
+
+    public TemplateGrayAlpha(IInputArray src, bool resize = true)
+    {
+        var grayImage = new Mat();
+        var alphaChannel = new Mat();
+        CvInvoke.CvtColor(src, grayImage, Emgu.CV.CvEnum.ColorConversion.Bgra2Gray);
+        CvInvoke.ExtractChannel(src, alphaChannel, 3);
+        if (resize)
+        {
+            const int scaleRatio = 5;
+            CvInvoke.Resize(grayImage, grayImage,
+                new Size(grayImage.Size.Width / scaleRatio, grayImage.Size.Height / scaleRatio));
+            CvInvoke.Resize(alphaChannel, alphaChannel,
+                new Size(alphaChannel.Size.Width / scaleRatio, alphaChannel.Size.Height / scaleRatio));
+        }
+
+        Gray = grayImage;
+        Alpha = alphaChannel;
+    }
+}
 
 public class VideoProcess
 {
-    private struct TemplateGrayAlpha
+    private class FrameMatchResult(int frameIndex)
     {
-        public Mat Gray;
-        public Mat Alpha;
-        public Size Size => Gray.Size;
-    }
+        public readonly int FrameIndex = frameIndex;
 
-    private class DialogFrameResult
-    {
-        public readonly int FrameIndex;
-        public readonly int DialogIndex;
-        public readonly int DialogStatus;
-        public readonly Rectangle NameTagRect;
-
-        public DialogFrameResult(int frameIndex, int dialogIndex, int dialogStatus, Rectangle nameTagRect)
-        {
-            FrameIndex = frameIndex;
-            DialogIndex = dialogIndex;
-            DialogStatus = dialogStatus;
-            NameTagRect = nameTagRect;
-        }
-
-        public Point Point => NameTagRect.Location;
-        public TimeSpan FrameTime(double fps) => TimeSpan.FromMilliseconds(FrameIndex * (1000 / fps));
+        private TimeSpan FrameTime(double fps) => TimeSpan.FromMilliseconds(FrameIndex * (1000 / fps));
         public string FrameTimeStr(double fps) => FrameTime(fps).ToString(@"hh\:mm\:ss\.ff");
 
         public string FrameEndTimeStr(double fps) => FrameTime(fps)
@@ -39,16 +103,17 @@ public class VideoProcess
             .ToString(@"hh\:mm\:ss\.ff");
     }
 
-    private class DialogFrameSet
+    private class DialogFrameResult(int frameIndex, Rectangle nameTagRect) : FrameMatchResult(frameIndex)
     {
-        public readonly List<DialogFrameResult> Data;
-        public StoryDialogEvent Dialog;
+        public readonly Rectangle NameTagRect = nameTagRect;
 
-        public DialogFrameSet(StoryDialogEvent dialog)
-        {
-            Dialog = dialog;
-            Data = new List<DialogFrameResult>();
-        }
+        public Point Point => NameTagRect.Location;
+    }
+
+    private class DialogFrameSet(StoryDialogEvent dialog)
+    {
+        public readonly List<DialogFrameResult> Data = [];
+        public readonly StoryDialogEvent Dialog = dialog;
 
         public bool IsEmpty => Data.Count == 0;
 
@@ -60,13 +125,25 @@ public class VideoProcess
         public string EndTime(double fps) => Data[^1].FrameTimeStr(fps);
     }
 
+
+    private class BannerFrameResult(int frameIndex) : FrameMatchResult(frameIndex);
+
+    private class BannerFrameSet(StoryBannerEvent banner)
+    {
+        public readonly List<BannerFrameResult> Data = [];
+        public readonly StoryBannerEvent Banner = banner;
+
+        public bool IsEmpty => Data.Count == 0;
+
+        public string StartTime(double fps) => Data[0].FrameTimeStr(fps);
+        public string EndTime(double fps) => Data[^1].FrameTimeStr(fps);
+    }
+
     private static double Distance(Point a, Point b)
     {
         return Math.Sqrt((a.X - b.X) ^ 2 + (a.Y - b.Y) ^ 2);
     }
 
-    private readonly string _videoFilePath;
-    private readonly string _outputFilePath;
     private readonly long _selfCreateTime;
     public readonly string Id;
 
@@ -79,35 +156,27 @@ public class VideoProcess
 
     private TemplateGrayAlpha? _menuSign;
 
-    // private readonly Dictionary<string, TemplateGrayAlpha> _nameTagMats;
-    // private Size _nameTagMaxSize;
     private Point _nameTagPosition;
 
     private readonly List<string> _names;
 
-    // private readonly List<TemplateGrayAlpha[]> _dialogIdentifierMats;
     private readonly TemplateManager _templateManager;
 
-    public class ProcessProgressInfo
+    public class ProcessProgressInfo(
+        int progressedFrameCount,
+        int totalFrameCount,
+        long processTime,
+        string content = "",
+        bool onlyContent = false)
     {
-        public readonly bool OnlyContent;
-        public readonly string Content;
-        public readonly int ProgressedFrameCount;
-        public readonly int TotalFrameCount;
-        public const int ProgressTimes = 1;
-        public readonly long InfoTimeMilliseconds;
+        public bool OnlyContent { get; } = onlyContent;
+        public string Content { get; } = content;
+        public int ProgressedFrameCount { get; } = progressedFrameCount;
+        public int TotalFrameCount { get; } = totalFrameCount;
+        public int ProgressLevel { get; } = 1;
+        public long InfoTimeMilliseconds { get; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - processTime;
 
-        public ProcessProgressInfo(int progressedFrameCount, int totalFrameCount, long processTime,
-            string content = "", bool onlyContent = false)
-        {
-            OnlyContent = onlyContent;
-            Content = content;
-            ProgressedFrameCount = progressedFrameCount;
-            TotalFrameCount = totalFrameCount;
-            InfoTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - processTime;
-        }
-
-        public double Progress => (double)ProgressedFrameCount / (TotalFrameCount * ProgressTimes) * 100;
+        public double Progress => (double)ProgressedFrameCount / (TotalFrameCount * ProgressLevel) * 100;
         public double Fps => ProgressedFrameCount / (InfoTimeMilliseconds / 1000.0);
 
         public override string ToString() =>
@@ -121,8 +190,11 @@ public class VideoProcess
         var info = new ProcessProgressInfo(
             progressedFrameCount, _videoFrameCount, _selfCreateTime,
             content, onlyContent);
-        _progressCarrier?.Report(info);
-        if (_progressCarrier == null) Console.WriteLine(info);
+        if (_progressCarrier == null)
+        {
+            Console.WriteLine(info);
+        }
+        else _progressCarrier?.Report(info);
     }
 
     private void Log(string content = "")
@@ -130,27 +202,19 @@ public class VideoProcess
         Log(0, content, true);
     }
 
-    public VideoProcess(string videoFilePath, string jsonFilePath, string translateFilePath,
-        IProgress<ProcessProgressInfo>? progress = null)
+    private readonly VideoProcessTaskConfig _config;
+
+    public VideoProcess(VideoProcessTaskConfig config, IProgress<ProcessProgressInfo>? progress = null)
     {
         _progressCarrier = progress;
+        _config = config;
 
-        if (!Path.Exists(videoFilePath))
-            throw new FileNotFoundException("Video file not found.", videoFilePath);
-        if (!Path.Exists(jsonFilePath))
-            throw new FileNotFoundException("Json file not found.", jsonFilePath);
-        _videoFilePath = videoFilePath;
-        _outputFilePath = Path.Join(Path.GetDirectoryName(videoFilePath),
-            Path.GetFileNameWithoutExtension(videoFilePath) + ".ass");
-
-        _storyData = StoryData.FromFile(jsonFilePath, translateFilePath);
+        _storyData = StoryData.FromFile(_config.ScriptFilePath, _config.TranslateFilePath);
         _selfCreateTime = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
 
-        Id = BitConverter.ToString(MD5.HashData(
-                Encoding.UTF8.GetBytes(videoFilePath + jsonFilePath + translateFilePath + _selfCreateTime.ToString())))
-            .Replace("-", string.Empty);
+        Id = config.Id;
 
-        var videoCap = new VideoCapture(videoFilePath);
+        var videoCap = new VideoCapture(_config.VideoFilePath);
         var videoFrame = new Mat();
         videoCap.Read(videoFrame);
         _videoResolution = videoFrame.Size;
@@ -164,33 +228,18 @@ public class VideoProcess
         _names = _storyData.Dialogs().Select(dialog => dialog.CharacterOriginal).ToList();
         var dbTextsChar1 = _storyData.Dialogs().Select(dialog => dialog.BodyOriginal[..1]).ToArray();
         var dbTextsChar2 = _storyData.Dialogs().Select(dialog => dialog.BodyOriginal[..2]).ToArray();
-
+        var dbTextsChar3 = _storyData.Dialogs().Select(dialog => dialog.BodyOriginal[..3]).ToArray();
         _templateManager = new TemplateManager(
-            _videoResolution, dbTextsChar1.Concat(dbTextsChar2).ToArray(), _names.ToArray());
+            _videoResolution, dbTextsChar1.Concat(dbTextsChar2).Concat(dbTextsChar3).ToArray(), _names.ToArray());
     }
 
-    private static TemplateGrayAlpha ExtractGrayAlpha(IInputArray src, bool resize = true)
-    {
-        var grayImage = new Mat();
-        var alphaChannel = new Mat();
-        CvInvoke.CvtColor(src, grayImage, Emgu.CV.CvEnum.ColorConversion.Bgra2Gray);
-        CvInvoke.ExtractChannel(src, alphaChannel, 3);
-        if (!resize) return new TemplateGrayAlpha { Gray = grayImage, Alpha = alphaChannel };
-
-        var scaleRatio = 5;
-        CvInvoke.Resize(grayImage, grayImage,
-            new Size(grayImage.Size.Width / scaleRatio, grayImage.Size.Height / scaleRatio));
-        CvInvoke.Resize(alphaChannel, alphaChannel,
-            new Size(alphaChannel.Size.Width / scaleRatio, alphaChannel.Size.Height / scaleRatio));
-        return new TemplateGrayAlpha { Gray = grayImage, Alpha = alphaChannel };
-    }
 
     private TemplateGrayAlpha GetMenuSign()
     {
-        if (_menuSign != null) return (TemplateGrayAlpha)_menuSign;
+        if (_menuSign != null) return _menuSign;
         var menuTemplatePath = Path.Join(Directory.GetCurrentDirectory(), "patterns", "menu-107px.png");
         if (!File.Exists(menuTemplatePath)) throw new FileNotFoundException();
-        var menuTemplate = CvInvoke.Imread(menuTemplatePath, Emgu.CV.CvEnum.ImreadModes.Unchanged);
+        var menuTemplate = CvInvoke.Imread(menuTemplatePath, Emgu.CV.CvEnum.ImreadModes.Unchanged)!;
         int menuSize;
         if (_videoResolutionRatio > 16.0 / 9)
             menuSize = (int)(_videoResolution.Height * 0.0741);
@@ -198,7 +247,7 @@ public class VideoProcess
             menuSize = (int)(_videoResolution.Width * 0.0417);
 
         CvInvoke.Resize(menuTemplate, menuTemplate, new Size(menuSize, menuSize));
-        var result = ExtractGrayAlpha(menuTemplate, false);
+        var result = new TemplateGrayAlpha(menuTemplate, false);
         _menuSign = result;
         return result;
     }
@@ -206,7 +255,7 @@ public class VideoProcess
     private TemplateGrayAlpha GetNameTag(string name)
     {
         var mat = _templateManager.GetEbTemplate(name);
-        return ExtractGrayAlpha(mat);
+        return new TemplateGrayAlpha(mat);
     }
 
     private List<TemplateGrayAlpha> GetDialogInd(int index)
@@ -216,9 +265,13 @@ public class VideoProcess
         var dialog = _storyData.Dialogs()[index];
         var dialogBody1 = dialog.BodyOriginal[..1];
         var dialogBody2 = dialog.BodyOriginal[..2];
+        var dialogBody3 = dialog.BodyOriginal[..3];
         var mat1 = _templateManager.GetDbTemplate(dialogBody1);
         var mat2 = _templateManager.GetDbTemplate(dialogBody2);
-        var result = new List<TemplateGrayAlpha> { ExtractGrayAlpha(mat1), ExtractGrayAlpha(mat2) };
+        var mat3 = _templateManager.GetDbTemplate(dialogBody3);
+
+
+        var result = new List<TemplateGrayAlpha> { new(mat1), new(mat2), new(mat3) };
 
         return result;
     }
@@ -243,8 +296,8 @@ public class VideoProcess
         Mat positiveInf = new(mat.Size, mat.Depth, 1);
         Mat negativeInf = new(mat.Size, mat.Depth, 1);
 
-        positiveInf.SetTo(new MCvScalar(float.PositiveInfinity));
-        negativeInf.SetTo(new MCvScalar(float.NegativeInfinity));
+        positiveInf.SetTo(new MCvScalar(1));
+        negativeInf.SetTo(new MCvScalar(0));
 
         var mask = new Mat(mat.Size, mat.Depth, 1);
         CvInvoke.Compare(mat, positiveInf, mask, Emgu.CV.CvEnum.CmpType.Equal);
@@ -255,61 +308,74 @@ public class VideoProcess
         mat.SetTo(new MCvScalar(0), mask);
     }
 
+
     private Rectangle MatchNameTag(Mat img, string name)
     {
         var nameTagTemplate = GetNameTag(name);
-        var dialogAreaSize = GetDialogAreaSize();
-        var nameTagSize = nameTagTemplate.Size;
-
-        var cropArea = new Rectangle
+        var res = Rectangle.Empty;
+        var res1 = LocalMatch(img, nameTagTemplate, 0.80, TemplateMatchingType.CcoeffNormed);
+        if (!res1.IsEmpty)
         {
-            Height = (int)(nameTagSize.Height * 1.6),
-            Width = nameTagSize.Width * 2,
-            X = _videoResolution.Width / 2 - dialogAreaSize.Width / 2 - nameTagSize.Width / 2 +
-                (int)(nameTagSize.Height * 0.4),
-            Y = _videoResolution.Height - dialogAreaSize.Height - nameTagSize.Height / 1
-        };
-        if (cropArea.X < 0) cropArea.X = 0;
-        if (cropArea.Y < 0) cropArea.Y = 0;
-        if (cropArea.X + cropArea.Width > img.Size.Width) cropArea.Width = img.Size.Width - cropArea.X;
-        if (cropArea.Y + cropArea.Height > img.Size.Height) cropArea.Height = img.Size.Height - cropArea.Y;
-
-        var imgCropped = new Mat(img, cropArea);
-        // SiftMatch(imgCropped, nameTagTemplate.Gray);
-
-        double ccoeffNormedResult = 0;
-        double minVal = 0;
-        Point minLoc = new(), maxLoc = new();
-
-        Mat matchResult = new();
-        CvInvoke.MatchTemplate(imgCropped, nameTagTemplate.Gray, matchResult,
-            Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed, mask: nameTagTemplate.Alpha);
-        MatRemoveErrorInf(ref matchResult);
-        CvInvoke.MinMaxLoc(matchResult, ref minVal, ref ccoeffNormedResult, ref minLoc, ref maxLoc);
-        switch (ccoeffNormedResult)
+            res = res1;
+        }
+        else
         {
-            case > 0.75:
-            {
-                var resPoint = new Point(maxLoc.X + cropArea.X, maxLoc.Y + cropArea.Y);
-                _nameTagPosition = resPoint;
-                return new Rectangle(resPoint, nameTagTemplate.Size);
-            }
-            case > 0.45:
-            {
-                double ccorrNormedResult = 0;
+            var res2 = LocalMatch(img, nameTagTemplate, 0.97, TemplateMatchingType.CcorrNormed);
+            if (!res2.IsEmpty) res = res2;
+        }
 
-                CvInvoke.MatchTemplate(imgCropped, nameTagTemplate.Gray, matchResult,
-                    Emgu.CV.CvEnum.TemplateMatchingType.CcorrNormed, mask: nameTagTemplate.Alpha);
-                MatRemoveErrorInf(ref matchResult);
-                CvInvoke.MinMaxLoc(matchResult, ref minVal, ref ccorrNormedResult, ref minLoc, ref maxLoc);
+        if (!res.IsEmpty && _nameTagPosition.IsEmpty) _nameTagPosition = new Point(res.X, res.Y);
+        return res;
 
-                if (!(ccorrNormedResult > 0.8)) return new Rectangle(0, 0, 0, 0);
-                var resPoint = new Point(maxLoc.X + cropArea.X, maxLoc.Y + cropArea.Y);
-                _nameTagPosition = resPoint;
-                return new Rectangle(resPoint, nameTagTemplate.Size);
+
+        Rectangle LocalMatch(Mat src, TemplateGrayAlpha tmp, double threshold, TemplateMatchingType matchingType)
+        {
+            var cropArea = LocalGetCropArea(tmp.Size);
+            var imgCropped = new Mat(src, cropArea);
+
+            double minVal = 0, maxVal = 0;
+            Point minLoc = new(), maxLoc = new();
+            var matchResult = new Mat();
+
+            CvInvoke.MatchTemplate(imgCropped, tmp.Gray, matchResult, matchingType, mask: tmp.Alpha);
+            MatRemoveErrorInf(ref matchResult);
+            CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
+            matchResult.Dispose();
+
+            if (true && _progressCarrier == null)
+            {
+                CvInvoke.Imshow("src", imgCropped);
+                CvInvoke.Imshow("tmp", tmp.Gray);
+                Console.WriteLine(maxVal);
+                CvInvoke.WaitKey(1);
             }
-            default:
-                return new Rectangle(0, 0, 0, 0);
+
+            if (!(threshold < maxVal) || !(maxVal < 1)) return Rectangle.Empty;
+
+            var resPoint = new Point(maxLoc.X + cropArea.X, maxLoc.Y + cropArea.Y);
+            return new Rectangle(resPoint, tmp.Size);
+        }
+
+        Rectangle LocalGetCropArea(Size ntt)
+        {
+            var dialogAreaSize = GetDialogAreaSize();
+            var rect = new Rectangle
+            {
+                Height = (int)(ntt.Height * 1.6),
+                Width = ntt.Width * 2,
+                X = _videoResolution.Width / 2 -
+                    dialogAreaSize.Width / 2 -
+                    ntt.Width / 2 +
+                    (int)(ntt.Height * 0.4),
+                Y = _videoResolution.Height - dialogAreaSize.Height - ntt.Height / 1
+            };
+            if (rect.X < 0) rect.X = 0;
+            if (rect.Y < 0) rect.Y = 0;
+            if (rect.X + rect.Width > img.Size.Width)
+                rect.Width = img.Size.Width - rect.X;
+            if (rect.Y + rect.Height > img.Size.Height)
+                rect.Height = img.Size.Height - rect.Y;
+            return rect;
         }
     }
 
@@ -319,37 +385,75 @@ public class VideoProcess
         var charTemplates = GetDialogInd(index);
         var template1 = charTemplates[0];
         var template2 = charTemplates[1];
-        var dbTemplateSize = _templateManager.DbTemplateMaxSize();
-        Rectangle dialogStartPosition = new(
-            nameTagRect.X,
-            nameTagRect.Y + dbTemplateSize.Height,
-            (int)(1.6 * template2.Size.Width),
-            (int)(1.6 * dbTemplateSize.Height)
-        );
-        Mat imgCropped = new(img, dialogStartPosition);
-        Mat matchResult = new();
+        var template3 = charTemplates[2];
 
-        double minVal = 0, maxVal1 = 0, maxVal2 = 0;
-        Point minLoc = new(), maxLoc = new();
-        const double char2Threshold = 0.6;
-        const double char1Threshold = 0.6;
+        var matchRes = false;
 
-        CvInvoke.MatchTemplate(imgCropped, template2.Gray, matchResult,
-            Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed, mask: template2.Alpha);
-        MatRemoveErrorInf(ref matchResult);
-        CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal2, ref minLoc, ref maxLoc);
-        if (maxVal2 > char2Threshold) return 2;
-        if (lastStatus == 2) return 0;
-        CvInvoke.MatchTemplate(imgCropped, template1.Gray, matchResult,
-            Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed, mask: template1.Alpha);
-        MatRemoveErrorInf(ref matchResult);
-        CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal1, ref minLoc, ref maxLoc);
-        return maxVal1 > char1Threshold ? 1 : 0;
+        switch (lastStatus)
+        {
+            case 0:
+            {
+                matchRes = LocalMatch(img, template1);
+                return matchRes ? 1 : 0;
+            }
+            case 1:
+            {
+                matchRes = LocalMatch(img, template2);
+                if (matchRes) return 2;
+                matchRes = LocalMatch(img, template1);
+                return matchRes ? 1 : -1;
+            }
+            case 2:
+            {
+                matchRes = LocalMatch(img, template3);
+                if (matchRes) return 3;
+
+                matchRes = LocalMatch(img, template2);
+                return matchRes ? 2 : -1;
+            }
+            case 3:
+            {
+                matchRes = LocalMatch(img, template3);
+                return matchRes ? 3 : -1;
+            }
+            default:
+                return 0;
+        }
+
+
+        bool LocalMatch(Mat src, TemplateGrayAlpha tmp, double threshold = 0.8)
+        {
+            double maxVal = 0, minVal = 0;
+            Point minLoc = new(), maxLoc = new();
+            var offset = _templateManager.DbTemplateMaxSize().Height;
+            Rectangle dialogStartPosition = new(
+                x: nameTagRect.X + (int)(0.15 * offset),
+                y: nameTagRect.Y + (int)(1.2 * offset),
+                width: (int)(3.5 * offset),
+                height: (int)(1.2 * offset)
+            );
+            var imgCropped = new Mat(src, dialogStartPosition);
+            var matchResult = new Mat();
+            CvInvoke.MatchTemplate(imgCropped, tmp.Gray, matchResult,
+                Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed, mask: tmp.Alpha);
+            MatRemoveErrorInf(ref matchResult);
+            CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
+            matchResult.Dispose();
+            if (false && _progressCarrier == null)
+            {
+                CvInvoke.Imshow("src", imgCropped);
+                CvInvoke.Imshow("tmp", tmp.Gray);
+                Console.WriteLine(maxVal);
+                CvInvoke.WaitKey(1);
+            }
+
+            return maxVal > threshold && maxVal < 1;
+        }
     }
 
     private int MatchContentStarted()
     {
-        var videoCap = new VideoCapture(_videoFilePath);
+        var videoCap = new VideoCapture(_config.VideoFilePath);
         var videoFrame = new Mat();
         var menuSign = GetMenuSign();
         var frameIndex = 0;
@@ -383,7 +487,7 @@ public class VideoProcess
 
     private List<DialogFrameSet> MatchDialogs(int startPosition = 0)
     {
-        var videoCap = new VideoCapture(_videoFilePath);
+        var videoCap = new VideoCapture(_config.VideoFilePath);
         var videoFrame = new Mat();
         var dialogIndex = 0;
         var dialogStatus = 0;
@@ -407,7 +511,8 @@ public class VideoProcess
             }
 
             var nameTagRect = MatchNameTag(videoFrame, _names[dialogIndex]);
-            if (nameTagRect.Height == 0)
+            Console.WriteLine(nameTagRect);
+            if (nameTagRect.IsEmpty)
             {
                 if (!indexIncreased)
                 {
@@ -422,29 +527,28 @@ public class VideoProcess
             else
             {
                 var currentDialogStatus = MatchDialog(videoFrame, dialogIndex, nameTagRect, dialogStatus);
-
-                if (currentDialogStatus != 0)
+                switch (currentDialogStatus)
                 {
-                    var currentDialogFrameResult = new DialogFrameResult(
-                        frameIndex, dialogIndex,
-                        currentDialogStatus, nameTagRect
-                    );
-                    frameList.Data.Add(currentDialogFrameResult);
-                    nextFrame = true;
-                    indexIncreased = false;
-                }
-                else // currentDialogStatus == 0
-                {
-                    if (dialogStatus == 2)
+                    case 3 or 2 or 1:
+                    {
+                        var currentDialogFrameResult = new DialogFrameResult(frameIndex, nameTagRect);
+                        frameList.Data.Add(currentDialogFrameResult);
+                        nextFrame = true;
+                        indexIncreased = false;
+                        break;
+                    }
+                    case 0:
+                    {
+                        nextFrame = true;
+                        break;
+                    }
+                    case -1:
                     {
                         dialogIndex++;
                         if (!frameList.IsEmpty) dialogList.Add(frameList);
                         frameList = null;
                         indexIncreased = true;
-                    }
-                    else //dialogStatus == 0
-                    {
-                        nextFrame = true;
+                        break;
                     }
                 }
 
@@ -460,12 +564,48 @@ public class VideoProcess
         return dialogList;
     }
 
+    private List<BannerFrameSet> MatchBanners(int startPosition = 0)
+    {
+        var videoCap = new VideoCapture(_config.VideoFilePath);
+        var videoFrame = new Mat();
+        var bannerIndex = 0;
+        var nextFrame = true;
+        var frameIndex = startPosition;
+        BannerFrameSet? frameList = null;
+        var bannerList = new List<BannerFrameSet>();
+        // var indexIncreased = true;
+        videoCap.Set(Emgu.CV.CvEnum.CapProp.PosFrames, frameIndex);
+        while (true)
+        {
+            if (bannerIndex >= _storyData.Banners().Length) break;
+            frameList ??= new BannerFrameSet(_storyData.Banners()[bannerIndex]);
+            if (nextFrame)
+            {
+                var readResult = videoCap.Read(videoFrame);
+                if (!readResult) break;
+                CvInvoke.CvtColor(videoFrame, videoFrame, Emgu.CV.CvEnum.ColorConversion.Bgr2Gray);
+                nextFrame = false;
+                frameIndex++;
+            }
+
+            //TODO : Match Banner
+
+            Log(frameIndex,
+                $"Frame {frameIndex}: Processing Banners {bannerIndex + 1}/{_storyData.Banners().Length}"
+            );
+            if (bannerList.Count == _storyData.Banners().Length) break;
+        }
+
+        return bannerList;
+    } // TODO : Match Banner
+
     private static string[] FormatDialogBodyArr(string body)
     {
-        string[] returnChar = { "\n", "\\n", "\\N" };
-        var bodyCopy = returnChar.Aggregate(body, (current, s) => current.Replace(s, "\n"));
-        var lineCount = bodyCopy.Select(c => c == '\n').Count();
-        if (lineCount == 2) bodyCopy = bodyCopy.Replace("\n", "");
+        var bodyCopy = body.Replace("\\N", "\n").Replace("\\n", "\n");
+        var lineCount = bodyCopy.Count(t => t == '\n');
+        if (lineCount == 2)
+            bodyCopy = bodyCopy
+                .Replace("\n", "");
 
         var bodyArr = new List<string>();
         var t = "";
@@ -477,7 +617,7 @@ public class VideoProcess
                 {
                     t += c;
                     if (t != "...") continue;
-                    bodyArr.Add("…");
+                    bodyArr.Add("...");
                     t = "";
                 }
                 else bodyArr.Add(c.ToString());
@@ -497,14 +637,14 @@ public class VideoProcess
         return bodyArr.ToArray();
     }
 
-    private string MakeDialogTyper(string body, int[] typerInterval)
+    private string MakeDialogTypewriter(string body)
     {
         var bodyArr = FormatDialogBodyArr(body);
 
         var res = "";
         var nextStart = 0;
-        var fadeTime = typerInterval[0];
-        var charTime = typerInterval[1];
+        var fadeTime = _config.TyperSetting.FadeTime;
+        var charTime = _config.TyperSetting.CharTime;
         foreach (var s in bodyArr)
         {
             var r = "";
@@ -526,7 +666,7 @@ public class VideoProcess
         return res;
     }
 
-    private string MakeDialogTyper(string body, int[] typerInterval, int frameCount)
+    private string MakeDialogTypewriter(string body, int frameCount)
     {
         const string alphaTagTransparent = @"{\alphaFF}";
 
@@ -535,8 +675,8 @@ public class VideoProcess
         var nowTime = (int)(frameTimeMs * frameCount * 1000);
         var isTransparentNow = false;
         var characterTimeNow = 0;
-        var fadeTime = typerInterval[0];
-        var charTime = typerInterval[1];
+        var fadeTime = _config.TyperSetting.FadeTime;
+        var charTime = _config.TyperSetting.CharTime;
         var sb = new StringBuilder();
         foreach (var s in bodyArr)
         {
@@ -655,7 +795,7 @@ public class VideoProcess
                     var y = style.MarginV;
                     x += frame.Point.X - constPosition.X;
                     y += frame.Point.Y - constPosition.Y;
-                    var body = MakeDialogTyper(dialogFrameSet.Dialog.BodyOriginal, new[] { 50, 80 }, frame.FrameIndex);
+                    var body = MakeDialogTypewriter(dialogFrameSet.Dialog.BodyOriginal, frame.FrameIndex);
 
                     if (lastPosition.X == x && lastPosition.Y == y && body == dialogEvents[^1].Text)
                     {
@@ -695,7 +835,7 @@ public class VideoProcess
             {
                 var startTime = dialogFrameSet.StartTime(_videoFrameRate);
                 var endTime = dialogFrameSet.EndTime(_videoFrameRate);
-                var body = MakeDialogTyper(dialogFrameSet.Dialog.BodyOriginal, new[] { 50, 80 });
+                var body = MakeDialogTypewriter(dialogFrameSet.Dialog.BodyOriginal);
                 var dialogItem = SubtitleEventItem.Dialog(body, startTime, endTime, styleName);
 
                 var characterItemPosition =
@@ -719,28 +859,27 @@ public class VideoProcess
         return result;
     }
 
-    private static void ShowImg(Mat img, bool wait = false)
-    {
-        CvInvoke.Imshow("test", img);
-        CvInvoke.WaitKey(wait ? 0 : 1);
-    }
-
     public void Process()
     {
+        Log("Start To Process");
         var contentStartedAt = MatchContentStarted();
+        Log($"Video Content Start At Frame {contentStartedAt}");
         var dialogMatchResult = MatchDialogs(contentStartedAt);
         var dialogEvents = MakeDialogEvents(dialogMatchResult);
+        Log("Dialog Match Finished");
 
         var scriptInfo = new SubtitleScriptInfo(_videoResolution.Width, _videoResolution.Height,
-            Path.GetFileNameWithoutExtension(_videoFilePath));
-        var garbage = new SubtitleGarbage(_videoFilePath, _videoFilePath);
+            Path.GetFileNameWithoutExtension(_config.VideoFilePath));
+        var garbage = new SubtitleGarbage(_config.VideoFilePath, _config.VideoFilePath);
 
         var style = new SubtitleStyles(MakeDialogStyles().ToArray());
         var events = new SubtitleEvents(dialogEvents.ToArray());
         var assData = new Subtitle(scriptInfo, garbage, style, events);
-        var outputFile = new StreamWriter(_outputFilePath, false, Encoding.UTF8);
+        var outputFile = new StreamWriter(_config.OutputFilePath, false, Encoding.UTF8);
         Log("Writing to file");
+        Log(_videoFrameCount);
         outputFile.Write(assData.ToString());
         outputFile.Close();
+        Log($"Write to file {_config.OutputFilePath} Done.");
     }
 }

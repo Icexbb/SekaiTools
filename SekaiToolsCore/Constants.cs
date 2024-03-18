@@ -1,4 +1,4 @@
-namespace Core;
+namespace SekaiToolsCore;
 
 public static class Constants
 {

@@ -5,6 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>default</LangVersion>
         <Nullable>enable</Nullable>
+        <RootNamespace>SekaiToolsCore</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

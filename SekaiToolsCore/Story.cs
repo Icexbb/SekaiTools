@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Core;
+namespace SekaiToolsCore;
 
 internal struct VoiceData
 {
@@ -70,18 +70,26 @@ internal class GameStoryData
         var jsonString = File.ReadAllText(jsonFilePath);
         var data = JsonConvert.DeserializeObject<JObject>(jsonString) ?? throw new Exception("Json parse error");
 
-        TalkData = data["TalkData"]!.ToObject<JObject[]>()!.Select(v => new TalkDataItem
-        {
-            WindowDisplayName = v["WindowDisplayName"]!.ToObject<string>()!, Body = v["Body"]!.ToObject<string>()!,
-            WhenFinishCloseWindow = v["WhenFinishCloseWindow"]!.ToObject<int>(),
-            Voices = v["Voices"]!.ToObject<JObject[]>()!.Select(voice => new VoiceData
+        TalkData = data["TalkData"]!
+            .ToObject<JObject[]>()!
+            .Select(v => new TalkDataItem
             {
-                Character2DId = voice["Character2dId"]!.ToObject<int>(), VoiceId = voice["VoiceId"]!.ToObject<string>()!
-            }).ToArray()
-        }).ToArray();
-        Snippets = data["Snippets"]!.ToObject<JObject[]>()!
-            .Select(v => new SnippetItem { Action = v["Action"]!.ToObject<int>() }).ToArray();
-        SpecialEffectData = data["SpecialEffectData"]!.ToObject<JObject[]>()!
+                WindowDisplayName = v["WindowDisplayName"]!.ToObject<string>()!, Body = v["Body"]!.ToObject<string>()!,
+                WhenFinishCloseWindow = v["WhenFinishCloseWindow"]!.ToObject<int>(),
+                Voices = v["Voices"]!.ToObject<JObject[]>()!.Select(voice => new VoiceData
+                {
+                    Character2DId = voice["Character2dId"]!.ToObject<int>(),
+                    VoiceId = voice["VoiceId"]!.ToObject<string>()!
+                }).ToArray()
+            }).ToArray();
+
+        Snippets = data["Snippets"]!
+            .ToObject<JObject[]>()!
+            .Select(v => new SnippetItem { Action = v["Action"]!.ToObject<int>() })
+            .ToArray();
+
+        SpecialEffectData = data["SpecialEffectData"]!
+            .ToObject<JObject[]>()!
             .Select(v => new SpecialEffectDataItem
             {
                 EffectType = v["EffectType"]!.ToObject<int>(),
@@ -96,23 +104,23 @@ internal class GameStoryData
         List<SnippetItem> sn = new();
         var seCount = 0;
         foreach (var snippet in Snippets)
-            if (snippet.Action == 1)
+            switch (snippet.Action)
             {
-                sn.Add(snippet);
-            }
-            else if (snippet.Action == 6)
-            {
-                var seData = SpecialEffectData[seCount];
-                if (seData.EffectType == 8 || seData.EffectType == 18) sn.Add(snippet);
-                seCount += 1;
+                case 1:
+                    sn.Add(snippet);
+                    break;
+                case 6:
+                {
+                    var seData = SpecialEffectData[seCount];
+                    if (seData.EffectType is 8 or 18) sn.Add(snippet);
+                    seCount += 1;
+                    break;
+                }
             }
 
         Snippets = sn.ToArray();
-        List<SpecialEffectDataItem> se = new();
-        foreach (var seData in SpecialEffectData)
-            if (seData.EffectType == 8 || seData.EffectType == 18)
-                se.Add(seData);
-        SpecialEffectData = se.ToArray();
+        SpecialEffectData = SpecialEffectData
+            .Where(seData => seData.EffectType is 8 or 18).ToArray();
     }
 
     public bool Empty()
