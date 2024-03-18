@@ -11,6 +11,6 @@
         <PackageReference Include="CommandLineParser" Version="2.9.1"/>
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\Core\Core.csproj" />
+        <ProjectReference Include="..\SekaiToolsCore\SekaiToolsCore.csproj"/>
     </ItemGroup>
 </Project>
