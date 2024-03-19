@@ -15,9 +15,31 @@ public class TemplateManager
     private double VideoRatio => _videoResolution.Width / (double)_videoResolution.Height;
     private readonly Dictionary<string, Mat> _dbTemplate = new();
     private readonly Dictionary<string, Mat> _ebTemplate = new();
+    private Mat? _menuSign;
     private readonly string[] _dbTexts;
     private readonly string[] _ebTexts;
     private readonly bool _noScale;
+
+    private string ResourcePath(string fileName) =>
+        Path.Join(Path.GetDirectoryName(GetType().Assembly.Location), "Resource", fileName);
+
+    public Mat GetMenuSign()
+    {
+        if (_menuSign != null) return _menuSign;
+        var menuTemplatePath = ResourcePath("menu-107px.png");
+        if (!File.Exists(menuTemplatePath)) throw new FileNotFoundException();
+        var menuTemplate = CvInvoke.Imread(menuTemplatePath, ImreadModes.Unchanged)!;
+        int menuSize;
+        if (_videoResolution.Height / (double)_videoResolution.Width > 16.0 / 9)
+            menuSize = (int)(_videoResolution.Height * 0.0741);
+        else
+            menuSize = (int)(_videoResolution.Width * 0.0417);
+
+        CvInvoke.Resize(menuTemplate, menuTemplate, new Size(menuSize, menuSize));
+        // var result = new TemplateGrayAlpha(menuTemplate, false);
+        _menuSign = menuTemplate;
+        return menuTemplate;
+    }
 
     private Size MaxSize(IEnumerable<Mat> mats, bool real = false)
     {
@@ -75,13 +97,13 @@ public class TemplateManager
 
     private Font GetDbFont()
     {
-        var fontFilePath = Path.Join(Directory.GetCurrentDirectory(), "fonts", "FOT-RodinNTLGPro-DB.otf");
+        var fontFilePath = ResourcePath("FOT-RodinNTLGPro-DB.otf");
         return GetFont(fontFilePath, GetFontSize());
     }
 
     private Font GetEbFont()
     {
-        var fontFilePath = Path.Join(Directory.GetCurrentDirectory(), "fonts", "FOT-RodinNTLGPro-EB.otf");
+        var fontFilePath = ResourcePath("FOT-RodinNTLGPro-EB.otf");
         return GetFont(fontFilePath, GetFontSize());
     }
 
@@ -134,10 +156,10 @@ public class TemplateManager
         return mat;
     }
 
-    public Mat GetEbTemplate(string text)
+    public Mat GetEbTemplate(string text, bool forceOrigin = false)
     {
-        if (text.Contains('・')) text = text[..text.IndexOf('・')];
-
+        if (!forceOrigin && text.Contains('・'))
+            text = text[..text.IndexOf('・')];
         if (_ebTemplate.TryGetValue(text, out var template)) return template;
 
         var font = GetEbFont();

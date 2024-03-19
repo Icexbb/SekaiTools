@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace SekaiToolsCore;
 
 public class AssDrawPoint(int x, int y)
@@ -188,7 +190,7 @@ public class AssDraw
     }
 }
 
-internal class SubtitleScriptInfo(int playRexX, int playRexY, string title = "", string scriptType = "v4.00+")
+public class SubtitleScriptInfo(int playRexX, int playRexY, string title = "", string scriptType = "v4.00+")
 {
     public override string ToString()
     {
@@ -197,7 +199,7 @@ internal class SubtitleScriptInfo(int playRexX, int playRexY, string title = "",
     }
 }
 
-internal class SubtitleGarbage(string video = "", string audio = "")
+public class SubtitleGarbage(string video = "", string audio = "")
 {
     public override string ToString()
     {
@@ -205,7 +207,46 @@ internal class SubtitleGarbage(string video = "", string audio = "")
     }
 }
 
-internal class SubtitleStyleItem
+public class SubtitleColor(int r, int g, int b, int a = 255)
+{
+    public int R { get; set; } = r;
+    public int G { get; set; } = g;
+    public int B { get; set; } = b;
+    public int A { get; set; } = a;
+
+    public override string ToString()
+    {
+        return $"&H{A:X2}{B:X2}{G:X2}{R:X2}&";
+    }
+
+    public static SubtitleColor FromString(string source)
+    {
+        if (!source.StartsWith("&H"))
+            throw new Exception("Source Not Start With Marker");
+        var sourcePart = source[2..].Replace("&", "");
+        var r = 255;
+        var g = 255;
+        var b = 255;
+        var a = 255;
+        if (sourcePart.Length != 8)
+        {
+            b = int.Parse(sourcePart[0..2], NumberStyles.HexNumber);
+            g = int.Parse(sourcePart[2..4], NumberStyles.HexNumber);
+            r = int.Parse(sourcePart[4..6], NumberStyles.HexNumber);
+        }
+        else
+        {
+            a = int.Parse(sourcePart[0..2], NumberStyles.HexNumber);
+            b = int.Parse(sourcePart[2..4], NumberStyles.HexNumber);
+            g = int.Parse(sourcePart[4..6], NumberStyles.HexNumber);
+            r = int.Parse(sourcePart[6..8], NumberStyles.HexNumber);
+        }
+
+        return new SubtitleColor(r, g, b, a);
+    }
+}
+
+public class SubtitleStyleItem
 {
     private readonly int _angle, _borderStyle, _alignment;
     public int MarginL { get; }
@@ -215,24 +256,29 @@ internal class SubtitleStyleItem
     private readonly int _fontsize, _bold, _italic, _underline, _strikeOut, _scaleX, _scaleY;
     public string Name { get; }
 
-    private readonly string _fontName, _primaryColour, _secondaryColour, _outlineColour, _backColour;
-    private readonly float _spacing, _outline, _shadow;
+    private readonly string _fontName;
+    private readonly SubtitleColor _primaryColour, _secondaryColour, _outlineColour, _backColour;
+    private readonly double _spacing, _outline, _shadow;
 
     public SubtitleStyleItem(
-        string name, string fontName, int fontsize,
-        string primaryColour, string secondaryColour, string outlineColour, string backColour,
-        int bold, int italic, int underline, int strikeOut, int scaleX, int scaleY, float spacing,
-        int angle, int borderStyle, float outline, float shadow,
-        int alignment, int marginL, int marginR, int marginV, int encoding
+        string name = "Default",
+        string fontName = "Arial",
+        int fontsize = 48,
+        string primaryColour = "&HFFFFFF&", string secondaryColour = "&H0000FF&",
+        string outlineColour = "&H000000&", string backColour = "&H000000&",
+        int bold = 0, int italic = 0, int underline = 0, int strikeOut = 0,
+        int scaleX = 100, int scaleY = 100, double spacing = 0.0,
+        int angle = 0, int borderStyle = 1, double outline = 2.0, double shadow = 2.0,
+        int alignment = 2, int marginL = 10, int marginR = 2, int marginV = 2, int encoding = 1
     )
     {
         Name = name;
         _fontName = fontName;
         _fontsize = fontsize;
-        _primaryColour = primaryColour;
-        _secondaryColour = secondaryColour;
-        _outlineColour = outlineColour;
-        _backColour = backColour;
+        _primaryColour = SubtitleColor.FromString(primaryColour);
+        _secondaryColour = SubtitleColor.FromString(secondaryColour);
+        _outlineColour = SubtitleColor.FromString(outlineColour);
+        _backColour = SubtitleColor.FromString(backColour);
         _bold = bold;
         _italic = italic;
         _underline = underline;
@@ -259,21 +305,21 @@ internal class SubtitleStyleItem
         Name = sourcePart[0];
         _fontName = sourcePart[1];
         if (int.TryParse(sourcePart[2], out _fontsize)) _fontsize = 50;
-        _primaryColour = sourcePart[3];
-        _secondaryColour = sourcePart[4];
-        _outlineColour = sourcePart[5];
-        _backColour = sourcePart[6];
+        _primaryColour = SubtitleColor.FromString(sourcePart[3]);
+        _secondaryColour = SubtitleColor.FromString(sourcePart[4]);
+        _outlineColour = SubtitleColor.FromString(sourcePart[5]);
+        _backColour = SubtitleColor.FromString(sourcePart[6]);
         if (!int.TryParse(sourcePart[7], out _bold)) _bold = 0;
         if (!int.TryParse(sourcePart[8], out _italic)) _italic = 0;
         if (!int.TryParse(sourcePart[9], out _underline)) _underline = 0;
         if (!int.TryParse(sourcePart[10], out _strikeOut)) _strikeOut = 0;
         if (!int.TryParse(sourcePart[11], out _scaleX)) _scaleX = 100;
         if (!int.TryParse(sourcePart[12], out _scaleY)) _scaleY = 100;
-        if (!float.TryParse(sourcePart[13], out _spacing)) _spacing = 0;
+        if (!double.TryParse(sourcePart[13], out _spacing)) _spacing = 0;
         if (!int.TryParse(sourcePart[14], out _angle)) _angle = 0;
         if (!int.TryParse(sourcePart[15], out _borderStyle)) _borderStyle = 1;
-        if (!float.TryParse(sourcePart[16], out _outline)) _outline = 0;
-        if (!float.TryParse(sourcePart[17], out _shadow)) _shadow = 0;
+        if (!double.TryParse(sourcePart[16], out _outline)) _outline = 0;
+        if (!double.TryParse(sourcePart[17], out _shadow)) _shadow = 0;
         if (!int.TryParse(sourcePart[18], out _alignment)) _alignment = 2;
         if (!int.TryParse(sourcePart[19], out var ml)) ml = 0;
         MarginL = ml;
@@ -294,7 +340,7 @@ internal class SubtitleStyleItem
     }
 }
 
-internal class SubtitleStyles
+public class SubtitleStyles
 {
     private readonly SubtitleStyleItem[] _items;
 
@@ -311,12 +357,17 @@ internal class SubtitleStyles
 
     public override string ToString()
     {
-        var result = _items.Aggregate("[V4+ Styles]\n", (current, item) => $"{current}{item}\n");
+        var result = _items.Aggregate(
+            "[V4+ Styles]\n" +
+            "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, " +
+            "Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, " +
+            "BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n",
+            (current, item) => $"{current}{item}\n");
         return result.Trim();
     }
 }
 
-internal class SubtitleEventItem
+public class SubtitleEventItem
 {
     private readonly int _layer, _marginL, _marginR, _marginV;
     private readonly string _type, _style, _name, _effect;
@@ -383,7 +434,7 @@ internal class SubtitleEventItem
     }
 }
 
-internal class SubtitleEvents
+public class SubtitleEvents
 {
     private readonly SubtitleEventItem[] _items;
 
@@ -411,7 +462,7 @@ internal class SubtitleEvents
     }
 }
 
-internal class Subtitle(
+public class Subtitle(
     SubtitleScriptInfo scriptInfo,
     SubtitleGarbage garbage,
     SubtitleStyles styles,

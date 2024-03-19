@@ -166,54 +166,72 @@ internal class GameStoryData
     }
 }
 
-internal struct DialogTranslate
+internal abstract class Translation(string body)
 {
-    public string Chara;
-    public string Body;
+    public readonly string Body = body;
 }
 
-internal struct EffectTranslate
+internal class DialogTranslate(string chara, string body) : Translation(body)
 {
-    public string Body;
+    public string Chara = chara;
+}
+
+internal class EffectTranslate(string body) : Translation(body)
+{
 }
 
 internal partial class TranslationData
 {
-    public readonly DialogTranslate[] Dialogs;
-    public readonly EffectTranslate[] Effects;
+    // public readonly DialogTranslate[] Dialogs;
+    // public readonly EffectTranslate[] Effects;
+    public readonly List<Translation> Translations = [];
 
-    public TranslationData(DialogTranslate[] dialogs, EffectTranslate[] effects)
+    public TranslationData(string? filePath)
     {
-        Dialogs = dialogs;
-        Effects = effects;
-    }
-
-    public TranslationData(string filePath)
-    {
+        if (filePath is null) return;
         if (!File.Exists(filePath)) throw new Exception("File not found");
-        // const string dialogPattern = @"^([^：]+)：(.*)$";
 
         var fileStrings = File.ReadAllLines(filePath).ToList();
         fileStrings.Select(line => line.Trim()).ToList().RemoveAll(line => line == "");
-        List<DialogTranslate> dialogs = new();
-        List<EffectTranslate> effects = new();
         foreach (var line in fileStrings)
         {
+            if (line.Length == 0) continue;
             var matches = DialogPattern().Match(line);
-
             if (matches.Success)
-                dialogs.Add(new DialogTranslate { Chara = matches.Groups[1].Value, Body = matches.Groups[2].Value });
+                Translations.Add(new DialogTranslate(matches.Groups[1].Value, matches.Groups[2].Value));
             else
-                effects.Add(new EffectTranslate { Body = line });
+                Translations.Add(new EffectTranslate(line));
         }
-
-        Dialogs = dialogs.ToArray();
-        Effects = effects.ToArray();
     }
 
-    public bool Empty()
+    public bool IsEmpty() => Translations.Count == 0;
+
+    private int DialogCount() => Translations.Count(translation => translation is DialogTranslate);
+
+    private int EffectCount() => Translations.Count(translation => translation is EffectTranslate);
+
+    public bool IsApplicable(GameStoryData gameStoryData)
     {
-        return Dialogs.Length + Effects.Length == 0;
+        if (gameStoryData.Empty()) return true;
+        if (IsEmpty()) return true;
+
+        if (DialogCount() != gameStoryData.TalkData.Length) return false;
+        if (EffectCount() != gameStoryData.SpecialEffectData.Length) return false;
+
+        for (var i = 0; i < gameStoryData.Snippets.Length; i++)
+        {
+            switch (gameStoryData.Snippets[i].Action)
+            {
+                case 1:
+                    if (Translations[i] is not DialogTranslate) return false;
+                    break;
+                case 6:
+                    if (Translations[i] is not EffectTranslate) return false;
+                    break;
+            }
+        }
+
+        return true;
     }
 
     [GeneratedRegex("^([^：]+)：(.*)$")]
@@ -225,6 +243,7 @@ internal abstract class StoryEvent(string type, string bodyOriginal)
     public readonly string Type = type;
     public readonly string BodyOriginal = bodyOriginal;
     public string BodyTranslated = "";
+    public string FinalContent => BodyTranslated.Length > 0 ? BodyTranslated : BodyOriginal;
 }
 
 internal class StoryDialogEvent(
@@ -248,6 +267,10 @@ internal class StoryDialogEvent(
         CharacterTranslated = character;
         BodyTranslated = body;
     }
+
+    public string FinalCharacter => CharacterTranslated.Length > 0 && CharacterTranslated != CharacterOriginal
+        ? CharacterTranslated
+        : "";
 }
 
 internal class StoryBannerEvent(string bodyOriginal) : StoryEvent("Banner", bodyOriginal)
@@ -318,34 +341,17 @@ internal class StoryData
         }
 
         _events = events.ToArray();
-        if (translationData.Empty()) return;
-        var i = 0;
-        foreach (var dialog in translationData.Dialogs)
+        if (translationData.IsEmpty()) return;
+        if (!translationData.IsApplicable(gameStoryData)) throw new Exception("Translation data is not applicable");
+        for (var i = 0; i < _events.Length; i++)
         {
-            if (i < Dialogs().Length)
+            if (_events[i] is not StoryDialogEvent) _events[i].BodyTranslated = translationData.Translations[i].Body;
+            else
             {
-                var index = IndexInType(StoryEventType.Dialog, i);
-                var dialogEvent = (StoryDialogEvent)_events[index];
-                if (index >= 0)
-                {
-                    dialogEvent.SetTranslation(dialog.Chara, dialog.Body);
-                    _events[index] = dialogEvent;
-                }
+                var dialog = (StoryDialogEvent)_events[i];
+                dialog.SetTranslation(((DialogTranslate)translationData.Translations[i]).Chara,
+                    ((DialogTranslate)translationData.Translations[i]).Body);
             }
-
-            i += 1;
-        }
-
-        i = 0;
-        foreach (var effect in translationData.Effects)
-        {
-            if (i < Effects().Length)
-            {
-                var index = IndexInType(StoryEventType.Banner | StoryEventType.Marker, i);
-                if (index >= 0) _events[index].BodyTranslated = effect.Body;
-            }
-
-            i += 1;
         }
     }
 
@@ -355,7 +361,7 @@ internal class StoryData
         var jsonData = new GameStoryData(gameStoryDataPath);
         var textData = File.Exists(translationDataPath)
             ? new TranslationData(translationDataPath)
-            : new TranslationData(Array.Empty<DialogTranslate>(), Array.Empty<EffectTranslate>());
+            : new TranslationData(null);
         return new StoryData(jsonData, textData);
     }
 
