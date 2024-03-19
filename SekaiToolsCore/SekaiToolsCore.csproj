@@ -16,16 +16,4 @@
       <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Resource Include="Resource\menu-107px.png">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Resource>
-      <Resource Include="Resource\FOT-RodinNTLGPro-DB.otf">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Resource>
-      <Resource Include="Resource\FOT-RodinNTLGPro-EB.otf">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Resource>
-    </ItemGroup>
-
 </Project>

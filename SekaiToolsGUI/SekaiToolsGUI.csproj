@@ -17,4 +17,9 @@
       <ProjectReference Include="..\SekaiToolsCore\SekaiToolsCore.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="Resource\icon.png" />
+      <Resource Include="Resource\icon.png" />
+    </ItemGroup>
+
 </Project>
