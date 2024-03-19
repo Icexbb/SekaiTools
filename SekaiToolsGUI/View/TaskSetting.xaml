@@ -31,7 +31,8 @@
                     </Binding>
                 </hc:TextBox.Text>
             </hc:TextBox>
-            <Button Name="VideoFileBrowser" IsEnabled="{Binding Path=!Running}"
+            <Button Name="VideoFileBrowser"
+                    IsEnabled="{Binding Path=Running,Converter={StaticResource InverseBooleanConverter}}"
                     Grid.Column="2" Content="浏览" Click="VideoFileBrowser_OnClick" />
         </Grid>
         <Grid Margin="0,0,0,5">
@@ -52,7 +53,8 @@
                     </Binding>
                 </hc:TextBox.Text>
             </hc:TextBox>
-            <Button Name="ScriptFileBrowser" IsEnabled="{Binding Path=!Running}"
+            <Button Name="ScriptFileBrowser"
+                    IsEnabled="{Binding Path=Running,Converter={StaticResource InverseBooleanConverter}}"
                     Grid.Column="2" Content="浏览" Click="ScriptFileBrowser_OnClick" />
         </Grid>
         <Grid Margin="0,0,0,5">
@@ -74,7 +76,8 @@
                 </hc:TextBox.Text>
             </hc:TextBox>
             <Button Name="TranslationFileBrowser" Grid.Column="2" Content="浏览"
-                    Click="TranslationFileBrowser_OnClick" IsEnabled="{Binding Path=!Running}" />
+                    Click="TranslationFileBrowser_OnClick"
+                    IsEnabled="{Binding Path=Running,Converter={StaticResource InverseBooleanConverter}}" />
         </Grid>
         <Grid Margin="0,0,0,5">
             <Grid.ColumnDefinitions>
@@ -83,7 +86,7 @@
             </Grid.ColumnDefinitions>
             <hc:SimpleText Grid.Column="0" Text="效果参数"
                            TextAlignment="Justify" VerticalAlignment="Center" />
-            <StackPanel Grid.Column="1" Margin="5">
+            <StackPanel Grid.Column="1" Margin="5" >
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -95,9 +98,11 @@
                     <hc:SimpleText Grid.Column="0" Text="文字淡入时长" Margin="10,5"
                                    TextAlignment="Justify" VerticalAlignment="Center" />
 
-                    <hc:PreviewSlider Grid.Column="1" Margin="10,0" VerticalAlignment="Center"
-                                      Maximum="{Binding Path=TypewriterChar}" Minimum="0"
-                                      Value="{Binding Path=TypewriterFade}" />
+                    <hc:PreviewSlider
+                        Grid.Column="1" Margin="10,0" VerticalAlignment="Center"
+                        IsEnabled="{Binding Path=Running,Converter={StaticResource InverseBooleanConverter}}"
+                        Maximum="{Binding Path=TypewriterChar}" Minimum="0"
+                        Value="{Binding Path=TypewriterFade}" />
                     <hc:SimpleText Grid.Column="2" Text="{Binding Path=TypewriterFade }"
                                    TextAlignment="Justify" VerticalAlignment="Center" />
 
@@ -110,9 +115,11 @@
                     </Grid.ColumnDefinitions>
                     <hc:SimpleText Grid.Column="0" Text="文字出现间隔" Margin="10,5"
                                    TextAlignment="Justify" VerticalAlignment="Center" />
-                    <hc:PreviewSlider Grid.Column="1" Margin="10,0" VerticalAlignment="Center"
-                                      Maximum="200" Minimum="{Binding Path=TypewriterFade}"
-                                      Value="{Binding Path=TypewriterChar}" />
+                    <hc:PreviewSlider
+                        Grid.Column="1" Margin="10,0" VerticalAlignment="Center"
+                        IsEnabled="{Binding Path=Running,Converter={StaticResource InverseBooleanConverter}}"
+                        Maximum="200" Minimum="{Binding Path=TypewriterFade}"
+                        Value="{Binding Path=TypewriterChar}" />
                     <hc:SimpleText Grid.Column="2" Text="{Binding Path=TypewriterChar}"
                                    TextAlignment="Justify" VerticalAlignment="Center" />
                 </Grid>

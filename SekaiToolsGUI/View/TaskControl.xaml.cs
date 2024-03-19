@@ -10,20 +10,30 @@ public partial class TaskControl : UserControl
 {
     private class LogManager(TaskControlModel model) : IProgress<VideoProcess.ProcessProgressInfo>
     {
+        public void UnexpectedError(Exception e)
+        {
+            model.ExtraMsg = $"Error: {e.Message}";
+            model.Progress = 0;
+            model.Running = false;
+            model.Status = "运行终止";
+        }
+
         public void Report(VideoProcess.ProcessProgressInfo value)
         {
-            if (!model.Running) model.Running = true;
-            if (value.Content != "") Console.WriteLine(value.Content);
-            model.Progress = value.Progress;
-            if (value.ProgressedFrameCount == value.TotalFrameCount && model.Running)
-                model.Running = false;
-            if (value.OnlyContent) return;
-
-            model.Status = model.Running ? $"运行中：{model.Progress:0.##}%" : "完成";
+            if (value.Content == "")
+            {
+                model.Progress = value.Progress;
+                model.Running = !value.Finished;
+                model.Status = model.Running ? $"运行中：{model.Progress:0.00}% FPS: {value.Fps:0.0}" : "运行终止";
+            }
+            else
+            {
+                model.ExtraMsg = value.Content;
+            }
         }
     }
 
-    private LogManager _logManager;
+    private readonly LogManager _logManager;
     private VideoProcess? _videoProcessTask;
     private Task? _task;
 
@@ -39,13 +49,40 @@ public partial class TaskControl : UserControl
         var taskConfig = new VideoProcessTaskConfig(
             model.Id, model.VideoFilePath, model.ScriptFilePath, model.TranslateFilePath, model.OutputFilePath);
         taskConfig.SetSubtitleTyperSetting(model.TypewriterChar, model.TypewriterChar);
-        _videoProcessTask = new VideoProcess(taskConfig, _logManager);
-        _task = new Task(() => { _videoProcessTask.Process(); });
+        _task = new Task(() =>
+        {
+            try
+            {
+                _videoProcessTask = new VideoProcess(taskConfig, _logManager);
+                var file = _videoProcessTask.Process();
+                if (File.Exists(file)) OpenFolderAndSelectFile(file);
+            }
+            catch (Exception e)
+            {
+                _logManager.UnexpectedError(e);
+            }
+        });
         _task.Start();
+        return;
+
+        void OpenFolderAndSelectFile(string fileFullName)
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo("Explorer.exe")
+            {
+                Arguments = "/e,/select," + fileFullName
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
     }
 
     private void ProgressButtonStartTask_OnClick(object sender, RoutedEventArgs e)
     {
+        if ((DataContext as TaskControlModel)!.Running)
+        {
+            HandyControl.Controls.Growl.Error("任务正在运行中");
+            return;
+        }
+
         var model = (DataContext as TaskControlModel)!.SettingModel;
         var vfp = model.VideoFilePath;
         var sfp = model.ScriptFilePath;

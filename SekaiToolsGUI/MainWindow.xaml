@@ -9,8 +9,10 @@
     SystemBackdropType="Mica"
     x:Class="SekaiToolsGUI.MainWindow"
     mc:Ignorable="d"
-    Title="MainWindow" Height="250" Width="600" MinHeight="250" MinWidth="600" MaxHeight="250" MaxWidth="600">
-    <Grid Margin="5">
+    Title="Sekai Tools"
+    Icon="Resource/icon.png"
+    Height="270" MinHeight="270" MaxHeight="270" Width="600" MinWidth="600" MaxWidth="600">
+    <Grid Margin="5,0">
         <vs:TaskControl />
     </Grid>
 </hc:Window>

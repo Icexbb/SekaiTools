@@ -11,6 +11,7 @@ public class TaskControlModel : ViewModelBase
         set
         {
             _running = value;
+            SettingModel.Running = value;
             OnPropertyChanged();
         }
     }
@@ -37,5 +38,17 @@ public class TaskControlModel : ViewModelBase
             OnPropertyChanged();
         }
         get => _status;
+    }
+
+    private string _extraMsg = "";
+
+    public string ExtraMsg
+    {
+        set
+        {
+            _extraMsg = value;
+            OnPropertyChanged();
+        }
+        get => _extraMsg;
     }
 }

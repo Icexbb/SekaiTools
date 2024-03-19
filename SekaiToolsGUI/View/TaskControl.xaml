@@ -6,17 +6,24 @@
              xmlns:hc="https://handyorg.github.io/handycontrol"
              xmlns:vm="clr-namespace:SekaiToolsGUI.ViewModel"
              xmlns:local="clr-namespace:SekaiToolsGUI.View"
+             xmlns:app="clr-namespace:SekaiToolsGUI"
              mc:Ignorable="d">
     <UserControl.DataContext>
         <vm:TaskControlModel />
     </UserControl.DataContext>
     <StackPanel Orientation="Vertical">
-        <local:TaskSetting DataContext="{Binding Path=.SettingModel}"
-                           IsEnabled="{Binding Path=Running,
-                           Converter={StaticResource InverseBooleanConverter}}" />
+        <local:TaskSetting DataContext="{Binding Path=.SettingModel}" />
         <hc:ProgressButton
+            Width="500" Height="50" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
             IsChecked="{Binding Path=Running,Mode=OneWay}"
-            Content="{Binding Path=Status}" Progress="{Binding Path=Progress}" Width="400"
-            Click="ProgressButtonStartTask_OnClick" />
+            Progress="{Binding Path=Progress}"
+            Click="ProgressButtonStartTask_OnClick">
+            <StackPanel>
+                <TextBlock HorizontalAlignment="Center" Text="{Binding Path=Status}" />
+                <TextBlock HorizontalAlignment="Center" Text="{Binding Path=ExtraMsg}"
+                           Visibility="{Binding Path=ExtraMsg,
+                           Converter={StaticResource ContentEmptyVisibilityConverter}}" />
+            </StackPanel>
+        </hc:ProgressButton>
     </StackPanel>
 </UserControl>
