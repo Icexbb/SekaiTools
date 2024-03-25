@@ -407,6 +407,18 @@ public class SubtitleEventItem
             "Comment", layer, start, end, style, name, marginL, marginR, marginV, effect, text);
     }
 
+    public SubtitleEventItem ToDialog()
+    {
+        return new SubtitleEventItem(
+            "Dialogue", _layer, Start, End, _style, _name, _marginL, _marginR, _marginV, _effect, Text);
+    }
+
+    public SubtitleEventItem ToComment()
+    {
+        return new SubtitleEventItem(
+            "Comment", _layer, Start, End, _style, _name, _marginL, _marginR, _marginV, _effect, Text);
+    }
+
     public SubtitleEventItem(string source)
     {
         if (!source.StartsWith("Dialogue:") && !source.StartsWith("Comment:"))

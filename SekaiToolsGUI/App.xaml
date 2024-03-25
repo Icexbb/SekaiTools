@@ -8,9 +8,9 @@
         <ResourceDictionary>
             <local:InverseBooleanConverter x:Key="InverseBooleanConverter" />
             <local:ContentEmptyVisibilityConverter x:Key="ContentEmptyVisibilityConverter" />
-
+            <local:BooleanVisibilityConverter x:Key="BooleanVisibilityConverter" />
             <ResourceDictionary.MergedDictionaries>
-                <hc:ThemeResources />
+                <hc:ThemeResources UsingSystemTheme="True"  />
                 <hc:Theme />
                 <!-- Other merged dictionaries here -->
             </ResourceDictionary.MergedDictionaries>

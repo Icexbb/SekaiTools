@@ -1,0 +1,37 @@
+<UserControl x:Class="SekaiToolsGUI.View.PlaceHolderTextBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:SekaiToolsGUI.View"
+             mc:Ignorable="d"
+             d:DesignHeight="50" d:DesignWidth="300">
+    <TextBox MinHeight="50">
+        <TextBox.Resources>
+            <VisualBrush x:Key="NotFocusedBrush"
+                         TileMode="None" Opacity="0.9" Stretch="None" AlignmentX="Left" AlignmentY="Center">
+                <VisualBrush.Visual>
+                    <TextBlock FontStyle="Oblique" Text="{x:Reference PlaceholderProperty}" />
+                </VisualBrush.Visual>
+            </VisualBrush>
+            <VisualBrush x:Key="FocusedBrush"
+                         TileMode="None" Opacity="0.9" Stretch="None" AlignmentX="Left" AlignmentY="Center">
+            </VisualBrush>
+        </TextBox.Resources>
+        <TextBox.Style>
+            <Style TargetType="TextBox">
+                <Style.Triggers>
+                    <Trigger Property="Text" Value="{x:Null}">
+                        <Setter Property="Background" Value="{StaticResource NotFocusedBrush}" />
+                    </Trigger>
+                    <Trigger Property="Text" Value="">
+                        <Setter Property="Background" Value="{StaticResource NotFocusedBrush}" />
+                    </Trigger>
+                    <Trigger Property="IsFocused">
+
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </TextBox.Style>
+    </TextBox>
+</UserControl>

@@ -136,7 +136,7 @@ internal class GameStoryData
             }
         }
 
-        for (var i = 0; i < shakeIndex.Count; i++) TalkData[i].Shake = true;
+        foreach (var i in shakeIndex) TalkData[i].Shake = true;
 
         List<SnippetItem> sn = [];
         var seCount = 0;
@@ -173,7 +173,7 @@ internal abstract class Translation(string body)
 
 internal class DialogTranslate(string chara, string body) : Translation(body)
 {
-    public string Chara = chara;
+    public readonly string Chara = chara;
 }
 
 internal class EffectTranslate(string body) : Translation(body)
@@ -238,15 +238,21 @@ internal partial class TranslationData
     private static partial Regex DialogPattern();
 }
 
-internal abstract class StoryEvent(string type, string bodyOriginal)
+public abstract class StoryEvent(string type, string bodyOriginal)
 {
     public readonly string Type = type;
     public readonly string BodyOriginal = bodyOriginal;
     public string BodyTranslated = "";
+
+    public void SetTranslation(string body)
+    {
+        BodyTranslated = body;
+    }
+
     public string FinalContent => BodyTranslated.Length > 0 ? BodyTranslated : BodyOriginal;
 }
 
-internal class StoryDialogEvent(
+public class StoryDialogEvent(
     int index,
     string bodyOriginal,
     int characterId,
@@ -273,21 +279,9 @@ internal class StoryDialogEvent(
         : "";
 }
 
-internal class StoryBannerEvent(string bodyOriginal) : StoryEvent("Banner", bodyOriginal)
-{
-    public void SetTranslation(string body)
-    {
-        BodyTranslated = body;
-    }
-}
+internal class StoryBannerEvent(string bodyOriginal) : StoryEvent("Banner", bodyOriginal);
 
-internal class StoryMarkerEvent(string bodyOriginal) : StoryEvent("Marker", bodyOriginal)
-{
-    public void SetTranslation(string body)
-    {
-        BodyTranslated = body;
-    }
-}
+internal class StoryMarkerEvent(string bodyOriginal) : StoryEvent("Marker", bodyOriginal);
 
 internal class StoryData
 {

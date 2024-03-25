@@ -8,7 +8,7 @@ namespace SekaiToolsGUI.View;
 
 public partial class TaskControl : UserControl
 {
-    private class LogManager(TaskControlModel model) : IProgress<VideoProcess.ProcessProgressInfo>
+    private class LogManager(TaskControl control, TaskControlModel model) : IProgress<TaskLog>
     {
         public void UnexpectedError(Exception e)
         {
@@ -18,17 +18,22 @@ public partial class TaskControl : UserControl
             model.Status = "运行终止";
         }
 
-        public void Report(VideoProcess.ProcessProgressInfo value)
+        public void Report(TaskLog value)
         {
-            if (value.Content == "")
+            switch (value)
             {
-                model.Progress = value.Progress;
-                model.Running = !value.Finished;
-                model.Status = model.Running ? $"运行中：{model.Progress:0.00}% FPS: {value.Fps:0.0}" : "运行终止";
-            }
-            else
-            {
-                model.ExtraMsg = value.Content;
+                case TaskLogProgress progress:
+                    model.Progress = progress.Progress;
+                    model.Running = !progress.Finished;
+                    model.Status = model.Running ? $"运行中：{model.Progress:0.00}% FPS: {progress.Fps:0.0}" : "运行终止";
+                    break;
+                case TaskLogContext context:
+                    model.ExtraMsg = context.Content;
+                    control.Log(context.Content);
+                    break;
+                case TaskLogRequest request:
+                    control.GetSeparatorIndex(request);
+                    break;
             }
         }
     }
@@ -40,11 +45,16 @@ public partial class TaskControl : UserControl
     public TaskControl()
     {
         InitializeComponent();
-        _logManager = new LogManager((DataContext as TaskControlModel)!);
+        _logManager = new LogManager(this, (DataContext as TaskControlModel)!);
     }
 
     private void CreateTask()
     {
+        ExpanderLogs.IsExpanded = true;
+        ExpanderLogs.Visibility = Visibility.Visible;
+        LogViewer.Children.Clear();
+        ExpanderSettings.IsExpanded = false;
+
         var model = (DataContext as TaskControlModel)!.SettingModel;
         var taskConfig = new VideoProcessTaskConfig(
             model.Id, model.VideoFilePath, model.ScriptFilePath, model.TranslateFilePath, model.OutputFilePath);
@@ -55,10 +65,12 @@ public partial class TaskControl : UserControl
             {
                 _videoProcessTask = new VideoProcess(taskConfig, _logManager);
                 var file = _videoProcessTask.Process();
-                if (File.Exists(file)) OpenFolderAndSelectFile(file);
+                if (file != "" && File.Exists(file)) OpenFolderAndSelectFile(file);
             }
             catch (Exception e)
             {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
                 _logManager.UnexpectedError(e);
             }
         });
@@ -73,6 +85,39 @@ public partial class TaskControl : UserControl
             };
             System.Diagnostics.Process.Start(psi);
         }
+    }
+
+    private void GetSeparatorIndex(TaskLogRequest request)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            foreach (var (start, end) in request.Collection)
+            {
+                var frame = TaskSeparatorSelectorWindow.Get(start, end, request.Fps);
+                _videoProcessTask!.SetSeparateLine(start, frame);
+            }
+        });
+    }
+
+    private void Log(string msg)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            var textBlock = new TextBlock
+            {
+                Text = DateTime.Now.ToString(@"yyyy/MM/dd | HH:mm:ss | ") + msg,
+                TextWrapping = TextWrapping.WrapWithOverflow
+            };
+            LogViewer.Children.Add(textBlock);
+            LogScrollViewer.ScrollToBottom();
+        });
+    }
+
+    private void StopTask()
+    {
+        _videoProcessTask?.Stop();
+        _videoProcessTask = null;
+        _task = null;
     }
 
     private void ProgressButtonStartTask_OnClick(object sender, RoutedEventArgs e)
@@ -125,5 +170,10 @@ public partial class TaskControl : UserControl
         }
 
         CreateTask();
+    }
+
+    private void StopButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        StopTask();
     }
 }

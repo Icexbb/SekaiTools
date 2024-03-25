@@ -11,8 +11,23 @@
     mc:Ignorable="d"
     Title="Sekai Tools"
     Icon="Resource/icon.png"
-    Height="270" MinHeight="270" MaxHeight="270" Width="600" MinWidth="600" MaxWidth="600">
-    <Grid Margin="5,0">
-        <vs:TaskControl />
-    </Grid>
+    MinHeight="300" Width="600" MinWidth="600">
+    <TabControl>
+        <TabControl.Style>
+            <hc:StaticResource ResourceKey="TabControlInLine" />
+        </TabControl.Style>
+        <TabItem Header="自动轴机">
+            <vs:SubtitleMaker />
+        </TabItem>
+        <TabItem Header="翻译">
+            <vs:TranslationMaker />
+            
+        </TabItem>
+        <TabItem Header="设置">
+            <Grid>
+                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">没做完</TextBlock>
+            </Grid>
+        </TabItem>
+    </TabControl>
+
 </hc:Window>
