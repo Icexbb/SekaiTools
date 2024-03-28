@@ -16,6 +16,7 @@ public partial class TaskControl : UserControl
             model.Progress = 0;
             model.Running = false;
             model.Status = "运行终止";
+            e.StackTrace?.Split('\n').ToList().ForEach(control.Log);
         }
 
         public void Report(TaskLog value)
@@ -33,6 +34,9 @@ public partial class TaskControl : UserControl
                     break;
                 case TaskLogRequest request:
                     control.GetSeparatorIndex(request);
+                    break;
+                case TaskLogException exception:
+                    UnexpectedError(exception.Exception);
                     break;
             }
         }
@@ -57,7 +61,7 @@ public partial class TaskControl : UserControl
 
         var model = (DataContext as TaskControlModel)!.SettingModel;
         var taskConfig = new VideoProcessTaskConfig(
-            model.Id, model.VideoFilePath, model.ScriptFilePath, model.TranslateFilePath, model.OutputFilePath);
+            model.VideoFilePath, model.ScriptFilePath, model.TranslateFilePath, model.OutputFilePath);
         taskConfig.SetSubtitleTyperSetting(model.TypewriterChar, model.TypewriterChar);
         _task = new Task(() =>
         {
@@ -91,10 +95,11 @@ public partial class TaskControl : UserControl
     {
         Dispatcher.Invoke(() =>
         {
-            foreach (var (start, end) in request.Collection)
+            foreach (var requestItem in request.Collection)
             {
-                var frame = TaskSeparatorSelectorWindow.Get(start, end, request.Fps);
-                _videoProcessTask!.SetSeparateLine(start, frame);
+                var res = TaskSeparatorSelectorWindow.Get(
+                    requestItem, (DataContext as TaskControlModel)!.SettingModel.TypewriterChar);
+                _videoProcessTask!.SetSeparateLine(requestItem.StartFrame, res[0], res[1]);
             }
         });
     }

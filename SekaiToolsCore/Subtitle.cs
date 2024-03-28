@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 
 namespace SekaiToolsCore;
 
@@ -207,7 +208,7 @@ public class SubtitleGarbage(string video = "", string audio = "")
     }
 }
 
-public class SubtitleColor(int r, int g, int b, int a = 255)
+public class SubtitleColor(int r, int g, int b, int a = 0)
 {
     public int R { get; set; } = r;
     public int G { get; set; } = g;
@@ -448,30 +449,36 @@ public class SubtitleEventItem
 
 public class SubtitleEvents
 {
-    private readonly SubtitleEventItem[] _items;
+    private readonly List<SubtitleEventItem> _subtitleEventItems;
 
-    public SubtitleEvents(SubtitleEventItem[] items)
+    public SubtitleEvents()
     {
-        _items = items;
+        _subtitleEventItems = new List<SubtitleEventItem>();
+    }
+
+    public SubtitleEvents(IEnumerable<SubtitleEventItem> items)
+    {
+        _subtitleEventItems = items.ToList();
     }
 
     public SubtitleEvents(string source)
     {
-        var sourceParts = source.Split('\n');
-        var itemList = new List<SubtitleEventItem>();
-        foreach (var s in sourceParts)
-            if (s.StartsWith("Dialogue:") || s.StartsWith("Comment: "))
-                itemList.Add(new SubtitleEventItem(s));
-        _items = itemList.ToArray();
+        _subtitleEventItems = (
+            from s in source.Split('\n')
+            where s.StartsWith("Dialogue:") || s.StartsWith("Comment:")
+            select new SubtitleEventItem(s)
+        ).ToList();
     }
 
     public override string ToString()
     {
-        var result =
-            "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n" +
-            _items.Aggregate("", (current, item) => $"{current}{item}\n");
-        return result.Trim();
+        List<string> sb =
+            ["[Events]", "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"];
+        sb.AddRange(_subtitleEventItems.Select(subtitleEventItem => subtitleEventItem.ToString()));
+        return string.Join("\n", sb).Trim();
     }
+
+    public void Add(SubtitleEventItem item) => _subtitleEventItems.Add(item);
 }
 
 public class Subtitle(
@@ -483,5 +490,10 @@ public class Subtitle(
     public override string ToString()
     {
         return $"{scriptInfo}\n\n{garbage}\n\n{styles}\n\n{events}\n";
+    }
+
+    public void Save(string path)
+    {
+        File.OpenWrite(path).Write(Encoding.UTF8.GetBytes(ToString()));
     }
 }

@@ -238,18 +238,15 @@ internal partial class TranslationData
     private static partial Regex DialogPattern();
 }
 
-public abstract class StoryEvent(string type, string bodyOriginal)
+public abstract class StoryEvent(string type, string bodyOriginal) : ICloneable
 {
     public readonly string Type = type;
     public readonly string BodyOriginal = bodyOriginal;
     public string BodyTranslated = "";
 
-    public void SetTranslation(string body)
-    {
-        BodyTranslated = body;
-    }
-
     public string FinalContent => BodyTranslated.Length > 0 ? BodyTranslated : BodyOriginal;
+
+    public abstract object Clone();
 }
 
 public class StoryDialogEvent(
@@ -277,11 +274,34 @@ public class StoryDialogEvent(
     public string FinalCharacter => CharacterTranslated.Length > 0 && CharacterTranslated != CharacterOriginal
         ? CharacterTranslated
         : "";
+
+    public override object Clone()
+    {
+        var cloned = new StoryDialogEvent(Index, BodyOriginal, CharacterId, CharacterOriginal, CloseWindow, Shake)
+        {
+            BodyTranslated = BodyTranslated
+        };
+        return cloned;
+    }
 }
 
-internal class StoryBannerEvent(string bodyOriginal) : StoryEvent("Banner", bodyOriginal);
+internal class StoryBannerEvent(string bodyOriginal) : StoryEvent("Banner", bodyOriginal)
+{
+    public override object Clone()
+    {
+        var cloned = new StoryBannerEvent(BodyOriginal) { BodyTranslated = BodyTranslated };
+        return cloned;
+    }
+}
 
-internal class StoryMarkerEvent(string bodyOriginal) : StoryEvent("Marker", bodyOriginal);
+internal class StoryMarkerEvent(string bodyOriginal) : StoryEvent("Marker", bodyOriginal)
+{
+    public override object Clone()
+    {
+        var cloned = new StoryMarkerEvent(BodyOriginal) { BodyTranslated = BodyTranslated };
+        return cloned;
+    }
+}
 
 internal class StoryData
 {

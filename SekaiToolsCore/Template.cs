@@ -59,11 +59,11 @@ public class TemplateManager
 
     public Size DbTemplateMaxSize(bool real = false) => MaxSize(_dbTemplate.Values, real);
 
-    public TemplateManager(Size videoResolution, string[] dbTexts, string[] ebTexts, bool noScale = false)
+    public TemplateManager(Size videoResolution, IEnumerable<string> dbTexts, IEnumerable<string> ebTexts, bool noScale = false)
     {
         _videoResolution = videoResolution;
-        _dbTexts = dbTexts;
-        _ebTexts = ebTexts;
+        _dbTexts = dbTexts.GroupBy(p => p).Select(p => p.Key).ToArray();
+        _ebTexts = ebTexts.GroupBy(p => p).Select(p => p.Key).ToArray();
         _noScale = noScale;
         GenerateTemplates();
     }
@@ -135,7 +135,7 @@ public class TemplateManager
                     new StringFormat());
             }
 
-            using Pen pen = new(Color.FromArgb(64, 128, 128, 128), font.Size / 4.5f);
+            using Pen pen = new(Color.FromArgb(255, 64, 64, 64), font.Size / 4.5f);
             pen.LineJoin = LineJoin.Round;
             graphics.DrawPath(pen, path);
             // 填充
@@ -156,10 +156,8 @@ public class TemplateManager
         return mat;
     }
 
-    public Mat GetEbTemplate(string text, bool forceOrigin = false)
+    public Mat GetEbTemplate(string text)
     {
-        if (!forceOrigin && text.Contains('・'))
-            text = text[..text.IndexOf('・')];
         if (_ebTemplate.TryGetValue(text, out var template)) return template;
 
         var font = GetEbFont();

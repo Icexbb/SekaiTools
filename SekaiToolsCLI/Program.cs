@@ -107,13 +107,13 @@ public static class SekaiToolsCli
             }
         }
 
-        var config = new VideoProcessTaskConfig(id, videoFilePath, scriptFilePath, translateFilePath, outputFilePath);
+        var config = new VideoProcessTaskConfig(videoFilePath, scriptFilePath, translateFilePath, outputFilePath);
 
         if (!dict.TryGetValue("SubtitleTyperSetting", out var value)) return config;
         if (value is not Newtonsoft.Json.Linq.JArray array) return config;
         var list = array.ToObject<List<int>>() ?? [];
         if (list.Count != 0) config.SetSubtitleTyperSetting(list[0], list.Count == 1 ? list[0] : list[1]);
-        
+
         return config;
     }
 
