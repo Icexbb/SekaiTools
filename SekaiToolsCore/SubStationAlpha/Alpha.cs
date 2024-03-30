@@ -1,12 +1,12 @@
 namespace SekaiToolsCore.SubStationAlpha;
 
-public class SubtitleAlpha(int a)
+public class Alpha(int a)
 {
     public int A { get; } = a;
 
     public override string ToString() => $"&H{A:X2}&";
 
-    public static SubtitleAlpha Transparent => new(0);
+    public static Alpha Transparent => new(0);
 
-    public static SubtitleAlpha Opaque => new(255);
+    public static Alpha Opaque => new(255);
 }

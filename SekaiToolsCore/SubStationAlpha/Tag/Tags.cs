@@ -26,19 +26,19 @@ public partial class Tags(params Tag[] tags)
 public partial class Tags
 {
     public static Alpha Alpha(int a) => new(a);
-    public static Alpha Alpha(SubtitleAlpha a) => new(a);
+    public static Alpha Alpha(SubStationAlpha.Alpha a) => new(a);
 
     public static PrimaryAlpha PrimaryAlpha(int a) => new(a);
-    public static PrimaryAlpha PrimaryAlpha(SubtitleAlpha a) => new(a);
+    public static PrimaryAlpha PrimaryAlpha(SubStationAlpha.Alpha a) => new(a);
 
     public static SecondaryAlpha SecondaryAlpha(int a) => new(a);
-    public static SecondaryAlpha SecondaryAlpha(SubtitleAlpha a) => new(a);
+    public static SecondaryAlpha SecondaryAlpha(SubStationAlpha.Alpha a) => new(a);
 
     public static OutlineAlpha OutlineAlpha(int a) => new(a);
-    public static OutlineAlpha OutlineAlpha(SubtitleAlpha a) => new(a);
+    public static OutlineAlpha OutlineAlpha(SubStationAlpha.Alpha a) => new(a);
 
     public static ShadowAlpha ShadowAlpha(int a) => new(a);
-    public static ShadowAlpha ShadowAlpha(SubtitleAlpha a) => new(a);
+    public static ShadowAlpha ShadowAlpha(SubStationAlpha.Alpha a) => new(a);
 
     public static Anchor Anchor(AnchorPos pos) => new(pos);
     public static Anchor Anchor(int pos) => new(pos);

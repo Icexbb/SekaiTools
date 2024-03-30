@@ -1,6 +1,7 @@
 using System.Windows;
 using SekaiToolsGUI.ViewModel;
 using SekaiToolsCore;
+using SekaiToolsCore.Process;
 
 namespace SekaiToolsGUI.View;
 
@@ -26,7 +27,7 @@ public class TaskSeparatorSelectorWindowContext
         {
             SetProperty(value);
             SetPromptWarning();
-            SeparateTime = new FrameTimeData(value, new(_fps)).StartTime();
+            SeparateTime = new Frame(value, new(_fps)).StartTime();
         }
     }
 
@@ -101,8 +102,8 @@ public class TaskSeparatorSelectorWindowContext
         StartInterval = start + 1;
         EndFrame = end;
         EndInterval = end - 1;
-        StartTime = new FrameTimeData(start, new(fps)).StartTime();
-        EndTime = new FrameTimeData(end, new(fps)).EndTime();
+        StartTime = new Frame(start, new(fps)).StartTime();
+        EndTime = new Frame(end, new(fps)).EndTime();
 
         content = content.Replace("\\N", "");
         int sep;

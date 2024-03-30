@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using SekaiToolsCore;
+using SekaiToolsCore.Process;
 using SekaiToolsGUI.ViewModel;
 
 namespace SekaiToolsGUI.View;
@@ -60,7 +61,7 @@ public partial class TaskControl : UserControl
         ExpanderSettings.IsExpanded = false;
 
         var model = (DataContext as TaskControlModel)!.SettingModel;
-        var taskConfig = new VideoProcessTaskConfig(
+        var taskConfig = new Config(
             model.VideoFilePath, model.ScriptFilePath, model.TranslateFilePath, model.OutputFilePath);
         taskConfig.SetSubtitleTyperSetting(model.TypewriterChar, model.TypewriterChar);
         _task = new Task(() =>

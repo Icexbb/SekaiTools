@@ -24,10 +24,10 @@ public class Color(int r, int g, int b)
         return new Color(r, g, b);
     }
 
-    public static AlphaColor operator +(Color color, SubtitleAlpha alpha) =>
+    public static AlphaColor operator +(Color color, Alpha alpha) =>
         new(alpha.A, color.R, color.G, color.B);
 
-    public static AlphaColor operator +(SubtitleAlpha alpha, Color color) =>
+    public static AlphaColor operator +(Alpha alpha, Color color) =>
         new(alpha.A, color.R, color.G, color.B);
 
 

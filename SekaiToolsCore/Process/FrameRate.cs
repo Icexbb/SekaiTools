@@ -1,6 +1,4 @@
-using System.Diagnostics;
-
-namespace SekaiToolsCore;
+namespace SekaiToolsCore.Process;
 
 public enum FrameType
 {
@@ -39,11 +37,11 @@ public class SmpteTime(int hour, int minute, int second, int frame, string separ
 public class FrameRate
 {
     private const long DefaultDenominator = 1000000000L;
-    private long _denominator = 0;
-    private long _numerator = 0;
-    private long _last = 0;
-    private List<int> _timecodes = [];
-    private bool _drop = false;
+    private readonly long _denominator;
+    private readonly long _numerator;
+    private const long Last = 0;
+    private readonly List<int> _timecodes = [];
+    private readonly bool _drop;
     public double Fps() => _numerator / (double)_denominator;
 
     public FrameRate(double fps)
@@ -149,9 +147,9 @@ public class FrameRate
 
         if (ms < 0) return (int)((ms * _numerator / _denominator - 999) / 1000);
         if (ms > _timecodes.Last())
-            return (int)((ms * _numerator - _last + _denominator - 1) / _denominator / 1000) +
-                   (int)(_timecodes.Count - 1);
-        return (int)_timecodes.Select((t, i) => (t, i)).First(p => p.t >= ms).i;
+            return (int)((ms * _numerator - Last + _denominator - 1) / _denominator / 1000) +
+                   (_timecodes.Count - 1);
+        return _timecodes.Select((t, i) => (t, i)).First(p => p.t >= ms).i;
     }
 
     public int FrameAtSmpte(SmpteTime smpte)
@@ -205,7 +203,7 @@ public class FrameRate
 
                 var framesPastEnd = frame - _timecodes.Count + 1;
                 return new SubtitleTime((int)(
-                    (framesPastEnd * 1000 * DefaultDenominator + _last + _numerator / 2) / _numerator));
+                    (framesPastEnd * 1000 * _denominator + Last + _numerator / 2) / _numerator));
             }
             default:
                 throw new ArgumentOutOfRangeException(nameof(type), type, null);
@@ -220,14 +218,14 @@ public class FrameRate
     public SmpteTime SmpteAtFrame(int frame)
     {
         frame = int.Max(frame, 0);
-        int ifps = (int)double.Ceiling(Fps());
+        var ifps = (int)double.Ceiling(Fps());
         if (_drop && _denominator == 1001 && _numerator % 30000 == 0)
         {
-            int dropFactor = (int)(_numerator / 30000);
-            int oneMinute = 60 * 30 * dropFactor - dropFactor * 2;
-            int tenMinutes = 60 * 10 * 30 * dropFactor - dropFactor * 18;
-            int tenMinuteGroups = frame / tenMinutes;
-            int lastTenMinutes = frame % tenMinutes;
+            var dropFactor = (int)(_numerator / 30000);
+            var oneMinute = 60 * 30 * dropFactor - dropFactor * 2;
+            var tenMinutes = 60 * 10 * 30 * dropFactor - dropFactor * 18;
+            var tenMinuteGroups = frame / tenMinutes;
+            var lastTenMinutes = frame % tenMinutes;
 
             frame += tenMinuteGroups * 18 * dropFactor;
             frame += (lastTenMinutes - 2 * dropFactor) / oneMinute * 2 * dropFactor;
@@ -238,8 +236,8 @@ public class FrameRate
         }
 
         return new SmpteTime(frame / (ifps * 60 * 60),
-            (frame / (ifps * 60)) % 60,
-            (frame / ifps) % 60,
+            frame / (ifps * 60) % 60,
+            frame / ifps % 60,
             frame % ifps
         );
     }
@@ -255,68 +253,66 @@ public class FrameRate
     public bool NeedDropFrames() => _drop;
 }
 
-public class SubtitleTime
+public class SubtitleTime(int ms = 0)
 {
     private const int MaxTime = 10 * 60 * 60 * 1000 - 6;
     private const int MinTime = 0;
-    private int _time = 0;
-    public int Milliseconds => _time;
+    public int Milliseconds { get; } = Utils.Middle(MinTime, ms, MaxTime);
 
-    public SubtitleTime(int ms = 0)
-    {
-        _time = Utils.Middle(MinTime, ms, MaxTime);
-    }
-
-    public SubtitleTime(string text)
+    public SubtitleTime(string text) : this()
     {
         var afterDecimal = -1;
         var current = 0;
         foreach (var c in text)
         {
-            if (c == ':')
+            switch (c)
             {
-                _time = _time * 60 + current;
-                current = 0;
-            }
-            else if (c is '.' or ',')
-            {
-                _time = (_time * 60 + current) * 1000;
-                current = 0;
-                afterDecimal = 100;
-            }
-            else if (c is < '0' or > '9')
-            {
-                continue;
-            }
-            else if (afterDecimal < 0)
-            {
-                current *= 10;
-                current += c - '0';
-            }
-            else
-            {
-                _time += (c - '0') * afterDecimal;
-                afterDecimal /= 10;
+                case ':':
+                    Milliseconds = Milliseconds * 60 + current;
+                    current = 0;
+                    break;
+                case '.' or ',':
+                    Milliseconds = (Milliseconds * 60 + current) * 1000;
+                    current = 0;
+                    afterDecimal = 100;
+                    break;
+                case < '0' or > '9':
+                    continue;
+                default:
+                {
+                    if (afterDecimal < 0)
+                    {
+                        current *= 10;
+                        current += c - '0';
+                    }
+                    else
+                    {
+                        Milliseconds += (c - '0') * afterDecimal;
+                        afterDecimal /= 10;
+                    }
+
+                    break;
+                }
             }
         }
 
-        if (afterDecimal < 0) _time = (_time * 60 + current) * 1000;
+        if (afterDecimal < 0) Milliseconds = (Milliseconds * 60 + current) * 1000;
 
-        _time = Utils.Middle(0, _time, 10 * 60 * 60 * 1000 - 6);
+        Milliseconds = Utils.Middle(0, Milliseconds, 10 * 60 * 60 * 1000 - 6);
     }
 
-    private int ToInt() => _time + 5 - (_time + 5) % 10;
+    private int ToInt() => Milliseconds + 5 - (Milliseconds + 5) % 10;
 
     public static explicit operator int(SubtitleTime time) => time.ToInt();
     public static SubtitleTime operator +(SubtitleTime a) => a;
-    public static SubtitleTime operator -(SubtitleTime a) => new SubtitleTime(-a._time);
+    public static SubtitleTime operator -(SubtitleTime a) => new(-a.Milliseconds);
 
-    public static SubtitleTime operator +(SubtitleTime a, SubtitleTime b) => new SubtitleTime(a._time + b._time);
-    public static SubtitleTime operator -(SubtitleTime a, SubtitleTime b) => new SubtitleTime(a._time - b._time);
-    
+    public static SubtitleTime operator +(SubtitleTime a, SubtitleTime b) => new(a.Milliseconds + b.Milliseconds);
+    public static SubtitleTime operator -(SubtitleTime a, SubtitleTime b) => new(a.Milliseconds - b.Milliseconds);
+
     public string GetAssFormatted(bool msPrecision = false)
     {
-        var assTime = msPrecision ? _time : ToInt();
+        var assTime = msPrecision ? Milliseconds : ToInt();
         var hour = assTime / 3600000;
         var minute = assTime / 60000 % 60;
         var second = assTime / 1000 % 60;

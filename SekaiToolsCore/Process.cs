@@ -2,219 +2,57 @@ using System.Drawing;
 using System.Text;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using Emgu.CV.Structure;
+using SekaiToolsCore.Process;
+using SekaiToolsCore.Story.Event;
+using SekaiToolsCore.SubStationAlpha;
+using SekaiToolsCore.SubStationAlpha.AssDraw;
+using SekaiToolsCore.SubStationAlpha.Tag;
+using SekaiToolsCore.SubStationAlpha.Tag.Modded;
+using SubtitleEvent = SekaiToolsCore.SubStationAlpha.Event;
 
 namespace SekaiToolsCore;
 
-public class VideoProcessTaskConfig
-{
-    public string VideoFilePath { get; }
-    public string ScriptFilePath { get; }
-    public string TranslateFilePath { get; }
-    public string OutputFilePath { get; }
-
-    public struct TypewriterSetting(int fadeTime, int charTime)
-    {
-        public readonly int FadeTime = fadeTime;
-        public readonly int CharTime = charTime;
-    }
-
-    public TypewriterSetting TyperSetting = new(50, 80);
-
-
-    public VideoProcessTaskConfig(string videoFilePath, string scriptFilePath,
-        string translateFilePath = "", string outputFilePath = "")
-    {
-        if (!Path.Exists(videoFilePath))
-            throw new FileNotFoundException("Video file not found.", videoFilePath);
-        if (!Path.Exists(scriptFilePath))
-            throw new FileNotFoundException("Script file not found.", scriptFilePath);
-
-        VideoFilePath = videoFilePath;
-        ScriptFilePath = scriptFilePath;
-
-        if (translateFilePath != "" && !Path.Exists(translateFilePath))
-            throw new FileNotFoundException("Translation file not found.", translateFilePath);
-        TranslateFilePath = translateFilePath;
-        if (outputFilePath != "")
-        {
-            if (Path.GetExtension(outputFilePath) != ".ass")
-                throw new FileNotFoundException("Output Path must be a .ass file ", outputFilePath);
-            OutputFilePath = outputFilePath;
-        }
-        else
-        {
-            OutputFilePath = Path.Join(Path.GetDirectoryName(videoFilePath),
-                "[STGenerated] " + Path.GetFileNameWithoutExtension(videoFilePath) + ".ass");
-        }
-    }
-
-    public void SetSubtitleTyperSetting(int fadeTime, int charTime)
-    {
-        TyperSetting = new TypewriterSetting(fadeTime, charTime);
-    }
-
-    public override int GetHashCode()
-    {
-        var contents = $"{VideoFilePath}{ScriptFilePath}{TranslateFilePath}{OutputFilePath}";
-        return contents.GetHashCode();
-    }
-}
-
-public class TemplateGrayAlpha
-{
-    public readonly Mat Gray;
-    public readonly Mat Alpha;
-    public Size Size => Gray.Size;
-
-    public TemplateGrayAlpha(IInputArray src, bool resize = true)
-    {
-        var grayImage = new Mat();
-        var alphaChannel = new Mat();
-        CvInvoke.CvtColor(src, grayImage, ColorConversion.Bgra2Gray);
-        CvInvoke.ExtractChannel(src, alphaChannel, 3);
-        if (resize)
-        {
-            const int scaleRatio = 5;
-            var size = new Size(grayImage.Size.Width / scaleRatio, grayImage.Size.Height / scaleRatio);
-            CvInvoke.Resize(grayImage, grayImage, size);
-            CvInvoke.Resize(alphaChannel, alphaChannel, size);
-        }
-
-        Gray = grayImage;
-        Alpha = alphaChannel;
-    }
-}
-
-public class FrameTimeData(int index, FrameRate fps)
-{
-    public int Index => index;
-    public string ExactTime() => fps.TimeAtFrame(index).GetAssFormatted();
-
-    public string StartTime() => fps.TimeAtFrame(index, FrameType.Start).GetAssFormatted();
-
-    public string EndTime() => fps.TimeAtFrame(index, FrameType.End).GetAssFormatted();
-}
-
-public class DialogFrameSet(StoryDialogEvent dialogData, FrameRate fps)
-{
-    public class DialogFrameResult(int index, FrameRate fps, Rectangle nameTagRect)
-        : FrameTimeData(index, fps)
-    {
-        public Point Point => nameTagRect.Location;
-    }
-
-    public readonly List<DialogFrameResult> Frames = [];
-    public readonly StoryDialogEvent DialogData = dialogData;
-    private const int FrameIndexOffset = -1;
-
-    public void Add(int index, Rectangle nameTagRect) =>
-        Frames.Add(new DialogFrameResult(index + FrameIndexOffset, fps, nameTagRect));
-
-    public bool IsEmpty => Frames.Count == 0;
-
-    public bool IsJitter => DialogData.Shake;
-
-    public DialogFrameResult Start() => Frames[0];
-
-    public DialogFrameResult End() => Frames[^1];
-
-    public string StartTime() => Start().StartTime();
-
-    public string EndTime() => End().EndTime();
-
-    public int StartIndex() => Start().Index;
-
-    public int EndIndex() => End().Index;
-}
-
-// private class BannerFrameResult(int frameIndex) : FrameMatchResult(frameIndex);
-//
-// private class BannerFrameSet(StoryBannerEvent banner)
-// {
-//     public readonly List<BannerFrameResult> Data = [];
-//     public readonly StoryBannerEvent Banner = banner;
-//
-//     public bool IsEmpty => Data.Count == 0;
-//
-//     public string StartTime(double fps) => Data[0].FrameTimeStr(fps);
-//     public string EndTime(double fps) => Data[^1].FrameTimeStr(fps);
-// }
-public enum TaskLogType
-{
-    Content,
-    Progress,
-    Request,
-    Exception
-}
-
-public abstract class TaskLog
-{
-    public abstract TaskLogType Type { get; }
-}
-
-public class TaskLogProgress(double progressedFrameCount, int totalFrameCount, long startProcessTime) : TaskLog
-{
-    public override TaskLogType Type { get; } = TaskLogType.Progress;
-
-    private double ProgressedFrameCount { get; } = progressedFrameCount;
-    private int TotalFrameCount { get; } = totalFrameCount;
-    private long InfoTimeMilliseconds { get; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startProcessTime;
-
-    public double Progress => ProgressedFrameCount / TotalFrameCount * 100;
-    public double Fps => ProgressedFrameCount / (InfoTimeMilliseconds / 1000.0);
-
-    public bool Finished => Math.Abs(ProgressedFrameCount - TotalFrameCount) < 1;
-}
-
-public class TaskLogContext(string content = "") : TaskLog
-{
-    public override TaskLogType Type { get; } = TaskLogType.Content;
-    public string Content { get; } = content;
-}
-
-public class RequestItem(string content, int startFrame, int endFrame, double fps)
-{
-    public string Content { get; } = content;
-    public int StartFrame { get; } = startFrame;
-    public int EndFrame { get; } = endFrame;
-    public double Fps { get; } = fps;
-}
-
-public class TaskLogRequest(List<RequestItem> collection) : TaskLog
-{
-    public override TaskLogType Type { get; } = TaskLogType.Request;
-
-    public List<RequestItem> Collection { get; } = collection;
-}
-
-public class TaskLogException(Exception exception) : TaskLog
-{
-    public override TaskLogType Type { get; } = TaskLogType.Exception;
-    public Exception Exception { get; } = exception;
-}
-
 public class VideoProcess
 {
-    private readonly long _selfCreateTime;
+    private readonly long _createTime;
 
-    private readonly StoryData _storyData;
+    private readonly Story.Story _storyData;
 
-    private readonly Size _videoResolution;
-    private readonly double _videoResolutionRatio;
-    private readonly FrameRate _videoFrameRate;
-    private readonly int _videoFrameCount;
+    private readonly VideoInfo _videoInfo;
 
-    private Point _nameTagPosition;
-
-    private readonly List<string> _names;
+    private Point _nameTagPosition = Point.Empty;
 
     private readonly TemplateManager _templateManager;
 
-
     private readonly IProgress<TaskLog>? _progressCarrier;
     private double _progressedFrameCount;
-    private const double ProcessStep = 1 / 1.0;
+    private double _processStep;
+
+    private readonly Config _config;
+
+    public VideoProcess(Config config, IProgress<TaskLog>? progress = null)
+    {
+        _progressCarrier = progress;
+        _config = config;
+
+        _storyData = Story.Story.FromFile(_config.ScriptFilePath, _config.TranslateFilePath);
+        _createTime = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
+        _videoInfo = new VideoInfo(_config.VideoFilePath);
+
+
+        var names = _storyData.Dialogs().Select(dialog => dialog.CharacterOriginal).ToList();
+        var dbs = new List<string>();
+        foreach (var dialog in _storyData.Dialogs())
+        {
+            dbs.Add(dialog.BodyOriginal[..1]);
+            dbs.Add(dialog.BodyOriginal[..2]);
+            if (dialog.BodyOriginal.Length >= 3) dbs.Add(dialog.BodyOriginal[..3]);
+        }
+
+        _templateManager = new TemplateManager(_videoInfo.Resolution, dbs, names);
+    }
+
+    #region Log
 
     private void Report(TaskLog info)
     {
@@ -233,6 +71,9 @@ public class VideoProcess
                         Console.WriteLine($"Request: {item.StartFrame} -> {item.EndFrame} : {item.Content}");
                     break;
                 }
+                case TaskLogException exception:
+                    Console.WriteLine($"Exception: {exception.Exception.StackTrace}");
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(info), info, null);
             }
@@ -245,10 +86,10 @@ public class VideoProcess
         Report(new TaskLogContext(content));
     }
 
-    private void Log(double add = ProcessStep)
+    private void Log(double? add = null)
     {
-        _progressedFrameCount += add;
-        Report(new TaskLogProgress(_progressedFrameCount, _videoFrameCount, _selfCreateTime));
+        _progressedFrameCount += add ?? _processStep;
+        Report(new TaskLogProgress(_progressedFrameCount, _videoInfo.FrameCount, _createTime));
     }
 
     private void Log(Exception e)
@@ -258,91 +99,70 @@ public class VideoProcess
 
     private void ReportFinished()
     {
-        _progressedFrameCount = _videoFrameCount;
+        _progressedFrameCount = _videoInfo.FrameCount;
         Log(0);
     }
 
-    private readonly VideoProcessTaskConfig _config;
+    #endregion
 
-    public VideoProcess(VideoProcessTaskConfig config, IProgress<TaskLog>? progress = null)
+    #region Start
+
+    private int MatchContentStarted()
     {
-        _progressCarrier = progress;
-        _config = config;
-
-        _storyData = StoryData.FromFile(_config.ScriptFilePath, _config.TranslateFilePath);
-        _selfCreateTime = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
-
         var videoCap = new VideoCapture(_config.VideoFilePath);
         var videoFrame = new Mat();
-        videoCap.Read(videoFrame);
-        _videoResolution = videoFrame.Size;
-        _videoResolutionRatio = (double)_videoResolution.Width / _videoResolution.Height;
-        _videoFrameRate = new FrameRate(videoCap.Get(CapProp.Fps));
-        _videoFrameCount = (int)videoCap.Get(CapProp.FrameCount);
-        videoFrame.Dispose();
-        videoCap.Dispose();
+        var menuSign = new GaMat(_templateManager.GetMenuSign(), false);
+        const double startThreshold = 0.8;
 
-        _nameTagPosition = new Point(0, 0);
-        _names = _storyData.Dialogs().Select(dialog => dialog.CharacterOriginal).ToList();
-        var dbTextsChar1 = _storyData.Dialogs().Select(dialog => dialog.BodyOriginal[..1]).ToArray();
-        var dbTextsChar2 = _storyData.Dialogs().Select(dialog => dialog.BodyOriginal[..2]).ToArray();
-        var dbTextsChar3 = _storyData.Dialogs().Select(dialog =>
-            dialog.BodyOriginal.Length >= 3 ? dialog.BodyOriginal[..3] : dialog.BodyOriginal[..2]).ToArray();
-        _templateManager = new TemplateManager(
-            _videoResolution, dbTextsChar1.Concat(dbTextsChar2).Concat(dbTextsChar3), _names);
+        while (videoCap.Read(videoFrame))
+        {
+            if (_setStop) return 0;
+            CvInvoke.CvtColor(videoFrame, videoFrame, ColorConversion.Bgr2Gray);
+            Mat matchResult = new();
+            var roi = new Rectangle(
+                videoFrame.Width - menuSign.Size.Width * 2, 0,
+                menuSign.Size.Width * 2, menuSign.Size.Height * 2
+            );
+            roi.Extend(0.2);
+            Mat frameCropped = new(videoFrame, roi);
+            CvInvoke.MatchTemplate(frameCropped, menuSign.Gray, matchResult,
+                TemplateMatchingType.CcoeffNormed, mask: menuSign.Alpha);
+
+            matchResult.MatRemoveErrorInf();
+
+            double minVal = 0, maxVal = 0;
+            Point minLoc = new(), maxLoc = new();
+            CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
+
+            Log(1);
+
+            if (maxVal > startThreshold) return (int)videoCap.Get(CapProp.PosFrames);
+        }
+
+        return 0;
     }
 
+    #endregion
 
-    private TemplateGrayAlpha GetNameTag(string name)
+    #region Dialog
+
+    #region Match
+
+    private GaMat GetNameTag(string name)
     {
-        return new TemplateGrayAlpha(_templateManager.GetEbTemplate(name));
-    }
-
-    private List<TemplateGrayAlpha> GetDialogInd(int index)
-    {
-        // if (_dialogIdentifierMats.Count > index) return _dialogIdentifierMats[index].ToList();
-        if (_storyData.Dialogs().Length <= index) throw new IndexOutOfRangeException();
-        var dialog = _storyData.Dialogs()[index];
-        var dialogBody1 = dialog.BodyOriginal[..1];
-        var dialogBody2 = dialog.BodyOriginal[..2];
-        var dialogBody3 = dialog.BodyOriginal.Length >= 3 ? dialog.BodyOriginal[..3] : dialog.BodyOriginal[..2];
-
-        var mat1 = _templateManager.GetDbTemplate(dialogBody1);
-        var mat2 = _templateManager.GetDbTemplate(dialogBody2);
-        var mat3 = _templateManager.GetDbTemplate(dialogBody3);
-
-        var result = new List<TemplateGrayAlpha> { new(mat1), new(mat2), new(mat3) };
-
-        return result;
-    }
-
-
-    private static void MatRemoveErrorInf(ref Mat mat)
-    {
-        Mat positiveInf = new(mat.Size, mat.Depth, 1);
-        Mat negativeInf = new(mat.Size, mat.Depth, 1);
-
-        positiveInf.SetTo(new MCvScalar(1));
-        negativeInf.SetTo(new MCvScalar(0));
-
-        var mask = new Mat(mat.Size, mat.Depth, 1);
-        CvInvoke.Compare(mat, positiveInf, mask, CmpType.Equal);
-        mat.SetTo(new MCvScalar(0), mask);
-
-        mask = new Mat(mat.Size, mat.Depth, 1);
-        CvInvoke.Compare(mat, negativeInf, mask, CmpType.Equal);
-        mat.SetTo(new MCvScalar(0), mask);
+        return new GaMat(_templateManager.GetEbTemplate(name));
     }
 
     private Rectangle DialogMatchNameTag(Mat img, int dialogIndex)
     {
-        var nameTagTemplate = GetNameTag(ShortName(_names[dialogIndex]));
-        var res = LocalMatch(img, nameTagTemplate, 0.7, TemplateMatchingType.CcoeffNormed);
+        var template = GetNameTag(ShortName(_storyData.Dialogs()[dialogIndex].CharacterOriginal));
+
+        var res = LocalMatch(img, template, 0.7, TemplateMatchingType.CcoeffNormed);
 
         if (!res.IsEmpty && _nameTagPosition.IsEmpty) _nameTagPosition = new Point(res.X, res.Y);
         return res;
 
-        Rectangle LocalMatch(Mat src, TemplateGrayAlpha tmp, double threshold, TemplateMatchingType matchingType)
+        Rectangle LocalMatch(Mat src, GaMat tmp, double threshold, TemplateMatchingType matchingType)
         {
             var cropArea = LocalGetCropArea(tmp.Size);
             var imgCropped = new Mat(src, cropArea);
@@ -352,7 +172,7 @@ public class VideoProcess
             var matchResult = new Mat();
 
             CvInvoke.MatchTemplate(imgCropped, tmp.Gray, matchResult, matchingType, mask: tmp.Alpha);
-            MatRemoveErrorInf(ref matchResult);
+            matchResult.MatRemoveErrorInf();
             CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
             matchResult.Dispose();
 
@@ -375,8 +195,8 @@ public class VideoProcess
             var dialogAreaSize = GetDialogAreaSize();
             var rect = new Rectangle
             {
-                X = (_videoResolution.Width - dialogAreaSize.Width) / 2,
-                Y = (_videoResolution.Height - dialogAreaSize.Height - ntt.Height) / 1,
+                X = (_videoInfo.Resolution.Width - dialogAreaSize.Width) / 2,
+                Y = (_videoInfo.Resolution.Height - dialogAreaSize.Height - ntt.Height) / 1,
                 Height = (int)(ntt.Height * 1.4),
                 Width = (int)(ntt.Width + ntt.Height * 0.8),
             };
@@ -392,16 +212,16 @@ public class VideoProcess
 
         Size GetDialogAreaSize()
         {
-            return _videoResolutionRatio > 16.0 / 9
+            return _videoInfo.FrameRatio > 16.0 / 9
                 ? new Size
                 {
-                    Height = (int)(0.237 * _videoResolution.Height),
-                    Width = (int)(1.389 * _videoResolution.Height)
+                    Height = (int)(0.237 * _videoInfo.Resolution.Height),
+                    Width = (int)(1.389 * _videoInfo.Resolution.Height)
                 }
                 : new Size
                 {
-                    Height = (int)(0.133 * _videoResolution.Width),
-                    Width = (int)(0.781 * _videoResolution.Width)
+                    Height = (int)(0.133 * _videoInfo.Resolution.Width),
+                    Width = (int)(0.781 * _videoInfo.Resolution.Width)
                 };
         }
 
@@ -465,7 +285,7 @@ public class VideoProcess
         }
 
 
-        bool LocalMatch(Mat src, TemplateGrayAlpha tmp, double threshold = 0.8)
+        bool LocalMatch(Mat src, GaMat tmp, double threshold = 0.8)
         {
             double maxVal = 0, minVal = 0;
             Point minLoc = new(), maxLoc = new();
@@ -480,7 +300,7 @@ public class VideoProcess
             var matchResult = new Mat();
             CvInvoke.MatchTemplate(imgCropped, tmp.Gray, matchResult,
                 TemplateMatchingType.CcoeffNormed, mask: tmp.Alpha);
-            MatRemoveErrorInf(ref matchResult);
+            matchResult.MatRemoveErrorInf();
             CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
             matchResult.Dispose();
 
@@ -494,43 +314,21 @@ public class VideoProcess
 
             return maxVal > threshold && maxVal < 1;
         }
-    }
 
-    private int MatchContentStarted()
-    {
-        var videoCap = new VideoCapture(_config.VideoFilePath);
-        var videoFrame = new Mat();
-        var menuSign = new TemplateGrayAlpha(_templateManager.GetMenuSign(), false);
-        var frameIndex = 0;
-        const double startThreshold = 0.8;
-
-        while (videoCap.Read(videoFrame))
+        List<GaMat> GetDialogInd(int dialogIndex)
         {
-            if (_setStop) return 0;
-            CvInvoke.CvtColor(videoFrame, videoFrame, ColorConversion.Bgr2Gray);
-            Mat matchResult = new();
-            var roi = new Rectangle(
-                videoFrame.Width - menuSign.Size.Width * 2, 0,
-                menuSign.Size.Width * 2, menuSign.Size.Height * 2
-            );
-            roi.Extend(0.2);
-            Mat frameCropped = new(videoFrame, roi);
-            CvInvoke.MatchTemplate(frameCropped, menuSign.Gray, matchResult,
-                TemplateMatchingType.CcoeffNormed, mask: menuSign.Alpha);
+            if (_storyData.Dialogs().Length <= dialogIndex) throw new IndexOutOfRangeException();
+            var dialog = _storyData.Dialogs()[dialogIndex];
+            var dialogBody1 = dialog.BodyOriginal[..1];
+            var dialogBody2 = dialog.BodyOriginal[..2];
+            var dialogBody3 = dialog.BodyOriginal.Length >= 3 ? dialog.BodyOriginal[..3] : dialog.BodyOriginal[..2];
 
-            MatRemoveErrorInf(ref matchResult);
+            var mat1 = _templateManager.GetDbTemplate(dialogBody1);
+            var mat2 = _templateManager.GetDbTemplate(dialogBody2);
+            var mat3 = _templateManager.GetDbTemplate(dialogBody3);
 
-            double minVal = 0, maxVal = 0;
-            Point minLoc = new(), maxLoc = new();
-            CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
-
-            Log(1);
-
-            if (maxVal > startThreshold) return frameIndex;
-            frameIndex++;
+            return [new GaMat(mat1), new GaMat(mat2), new GaMat(mat3)];
         }
-
-        return 0;
     }
 
     private List<DialogFrameSet> MatchDialogs(int startPosition = 0)
@@ -554,7 +352,7 @@ public class VideoProcess
                 var readResult = videoCap.Read(videoFrame);
                 if (!readResult) break;
                 CvInvoke.CvtColor(videoFrame, videoFrame, ColorConversion.Bgr2Gray);
-                Log(ProcessStep);
+                Log(_processStep);
                 needNextFrame = false;
             }
 
@@ -565,7 +363,7 @@ public class VideoProcess
                 if (dialogFrameSets.Count > 0)
                     Log($"Frame {frameIndex}: Matched Dialogs {dialogFrameSets.Count}/{_storyData.Dialogs().Length}");
 
-                dialogFrameSets.Add(new DialogFrameSet(_storyData.Dialogs()[dialogFrameSets.Count], _videoFrameRate));
+                dialogFrameSets.Add(new DialogFrameSet(_storyData.Dialogs()[dialogFrameSets.Count], _videoInfo.Fps));
                 dialogRect = Rectangle.Empty;
                 dialogStatus = 0;
                 needNextFrame = false;
@@ -588,7 +386,6 @@ public class VideoProcess
             {
                 var currentDialogStatus = DialogMatchContent(
                     videoFrame, dialogFrameSets[^1].DialogData.Index, nameTagRect, dialogStatus);
-                // Console.WriteLine(currentDialogStatus);
                 needNextFrame = true;
                 switch (currentDialogStatus)
                 {
@@ -609,42 +406,16 @@ public class VideoProcess
             }
         }
 
+        Log(_processStep * (_videoInfo.FrameCount - FramePos(videoCap)));
+        videoFrame.Dispose();
         return dialogFrameSets;
 
         int FramePos(VideoCapture vc) => (int)vc.Get(CapProp.PosFrames);
     }
 
-    // private List<BannerFrameSet> MatchBanners(int startPosition = 0)
-    // {
-    //     var videoCap = new VideoCapture(_config.VideoFilePath);
-    //     var videoFrame = new Mat();
-    //     var bannerIndex = 0;
-    //     var nextFrame = true;
-    //     var frameIndex = startPosition;
-    //     BannerFrameSet? frameList = null;
-    //     var bannerList = new List<BannerFrameSet>();
-    //
-    //     videoCap.Set(Emgu.CV.CvEnum.CapProp.PosFrames, frameIndex);
-    //     while (true)
-    //     {
-    //         if (bannerIndex >= _storyData.Banners().Length) break;
-    //         frameList ??= new BannerFrameSet(_storyData.Banners()[bannerIndex]);
-    //         if (nextFrame)
-    //         {
-    //             var readResult = videoCap.Read(videoFrame);
-    //             if (!readResult) break;
-    //             CvInvoke.CvtColor(videoFrame, videoFrame, Emgu.CV.CvEnum.ColorConversion.Bgr2Gray);
-    //             nextFrame = false;
-    //             frameIndex++;
-    //         }
-    //         Log(frameIndex,
-    //             $"Frame {frameIndex}: Processing Banners {bannerIndex + 1}/{_storyData.Banners().Length}"
-    //         );
-    //         if (bannerList.Count == _storyData.Banners().Length) break;
-    //     }
-    //
-    //     return bannerList;
-    // } // TODO : Match Banner
+    #endregion
+
+    #region Events
 
     private static Queue<char> FormatDialogBodyArr(string body)
     {
@@ -685,14 +456,13 @@ public class VideoProcess
 
     private string MakeDialogTypewriter(string body, int frameCount)
     {
-        // var alphaTagTransparent = @"{\alphaFF}";
         var queue = FormatDialogBodyArr(body);
         var fadeTime = _config.TyperSetting.FadeTime;
         var charTime = _config.TyperSetting.CharTime;
         if (fadeTime <= 0 && charTime <= 0)
             return string.Join("", queue);
 
-        var nowTime = (int)(1000 / _videoFrameRate.Fps() * frameCount);
+        var nowTime = (int)(1000 / _videoInfo.Fps.Fps() * frameCount);
         var charTimeEnd = 0;
         var sb = new StringBuilder();
         sb.Append(queue.Dequeue());
@@ -737,11 +507,11 @@ public class VideoProcess
         _separateLineCollection[key] = new LineSepInfo(separateFramePosition, substringPosition);
     }
 
-    private List<SubtitleStyleItem> MakeDialogStyles()
+    private List<Style> MakeDialogStyles()
     {
-        var fontsize = (int)((_videoResolutionRatio > 16.0 / 9
-            ? _videoResolution.Height * 0.043
-            : _videoResolution.Width * 0.024) * (70 / 61D));
+        var fontsize = (int)((_videoInfo.FrameRatio > 16.0 / 9
+            ? _videoInfo.Resolution.Height * 0.043
+            : _videoInfo.Resolution.Width * 0.024) * (70 / 61D));
 
         var outlineSize = (int)Math.Ceiling(fontsize / 15.0);
         var marginV = _nameTagPosition.Y + (int)(fontsize * 2.3);
@@ -751,41 +521,51 @@ public class VideoProcess
         var charaOutlineSize = (int)Math.Ceiling(charaFontsize / 15.0);
         const string fontName = "思源黑体 CN Bold";
 
-        var blackColor = new SubtitleColor(255, 255, 255).ToString();
-        var outlineColor = new SubtitleColor(73, 71, 102, 50).ToString();
-        var result = new List<SubtitleStyleItem>
+        var blackColor = new AlphaColor(0, 255, 255, 255);
+        var outlineColor = new AlphaColor(50, 73, 71, 102);
+        var result = new List<Style>
         {
-            new("Line1", fontName, fontsize, primaryColour: blackColor, outlineColour: outlineColor,
+            new("Line1", fontName, fontsize,
+                primaryColour: blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7, marginL: marginH, marginR: marginH, marginV: marginV),
-            new("Line2", fontName, fontsize, primaryColour: blackColor, outlineColour: outlineColor,
+
+            new("Line2", fontName, fontsize,
+                primaryColour: blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7, marginL: marginH, marginR: marginH,
                 marginV: marginV + (int)(fontsize * 1.01)),
-            new("Line3", fontName, fontsize, primaryColour: blackColor, outlineColour: outlineColor,
+
+            new("Line3", fontName, fontsize,
+                primaryColour: blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7, marginL: marginH, marginR: marginH,
                 marginV: marginV + (int)(fontsize * 1.01 * 2)),
-            new("Character", fontName, charaFontsize, primaryColour: blackColor, outlineColour: outlineColor,
+
+            new("Character", fontName, charaFontsize,
+                primaryColour: blackColor, outlineColour: outlineColor,
                 outline: charaOutlineSize, shadow: 0, alignment: 7),
-            new("Screen", fontName, charaFontsize, primaryColour: blackColor, outlineColour: outlineColor,
+
+            new("Screen", fontName, charaFontsize,
+                primaryColour: blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7)
         };
 
         return result;
     }
 
-    private List<SubtitleEventItem> MakeDialogEvents(List<DialogFrameSet> dialogList)
+    private List<SubtitleEvent> MakeDialogEvents(List<DialogFrameSet> dialogList)
     {
-        var result = new List<SubtitleEventItem>();
+        var result = new List<SubtitleEvent>();
         var needSepCount = new List<RequestItem>();
         foreach (var set in dialogList)
         {
             var needForceReturn =
                 set.DialogData.BodyOriginal.Split("\n").Length == 3 && (
                     set.DialogData.FinalContent.Contains("\\R") ||
-                    set.DialogData.FinalContent.Replace("\n", "").Length > 37
+                    set.DialogData.FinalContent.Replace("\\N", "").Replace("\n", "")
+                        .Length > 37
                 );
             if (!needForceReturn) continue;
             var item = new RequestItem(set.DialogData.FinalContent, set.StartIndex(), set.EndIndex(),
-                _videoFrameRate.Fps());
+                _videoInfo.Fps.Fps());
             needSepCount.Add(item);
         }
 
@@ -799,20 +579,41 @@ public class VideoProcess
         foreach (var set in dialogList)
         {
             dialogIndex++;
+            var dialogEvents = new List<SubtitleEvent>();
+            var dialogMarker = $"-----  {dialogIndex:000}  -----";
+            dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  Start",
+                set.StartTime(), set.EndTime(), "Screen"));
 
             if (_progressCarrier != null && _separateLineCollection.TryGetValue(set.StartIndex(), out var info))
             {
                 var items = SeparateDialogSet(set, info);
-                result.AddRange(GenerateDialogEvent(items[0]));
-                result.AddRange(GenerateDialogEvent(items[1]));
+                dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  Line 1 ↓",
+                    set.StartTime(), set.EndTime(), "Screen"));
+
+                dialogEvents.AddRange(GenerateDialogEvent(items[0]));
+
+                dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  Line 2 ↓",
+                    set.StartTime(), set.EndTime(), "Screen"));
+
+                dialogEvents.AddRange(GenerateDialogEvent(items[1]));
             }
             else
             {
-                result.AddRange(GenerateDialogEvent(set));
+                dialogEvents.AddRange(GenerateDialogEvent(set));
             }
 
-            result.Add(SubtitleEventItem.Comment($"-----  {dialogIndex:000}  -----",
+            if (dialogEvents.Count > 3)
+            {
+                dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  Debug ↓",
+                    set.StartTime(), set.EndTime(), "Screen"));
+                var t = GenerateNoneJitterDialogEvents(set).Select(item => item.ToComment()).ToList();
+                dialogEvents.AddRange(t);
+            }
+
+            dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  End",
                 set.StartTime(), set.EndTime(), "Screen"));
+
+            result.AddRange(dialogEvents);
         }
 
         return result;
@@ -827,8 +628,8 @@ public class VideoProcess
 
             var sepCount = info.Frame - dialogFrameSet.StartIndex();
 
-            var sepSet1 = new DialogFrameSet((StoryDialogEvent)dialogFrameSet.DialogData.Clone(), _videoFrameRate);
-            var sepSet2 = new DialogFrameSet((StoryDialogEvent)dialogFrameSet.DialogData.Clone(), _videoFrameRate);
+            var sepSet1 = new DialogFrameSet((Dialog)dialogFrameSet.DialogData.Clone(), _videoInfo.Fps);
+            var sepSet2 = new DialogFrameSet((Dialog)dialogFrameSet.DialogData.Clone(), _videoInfo.Fps);
 
             sepSet1.Frames.AddRange(dialogFrameSet.Frames[..sepCount]);
             sepSet2.Frames.AddRange(dialogFrameSet.Frames[sepCount..]);
@@ -839,16 +640,16 @@ public class VideoProcess
             return [sepSet1, sepSet2];
         }
 
-        IEnumerable<SubtitleEventItem> GenerateDialogEvent(DialogFrameSet set)
+        IEnumerable<SubtitleEvent> GenerateDialogEvent(DialogFrameSet set)
         {
-            var subtitleEventItems = new List<SubtitleEventItem>();
+            var subtitleEventItems = new List<SubtitleEvent>();
             subtitleEventItems.AddRange(set.IsJitter
                 ? GenerateJitterDialogEvents(set)
                 : GenerateNoneJitterDialogEvents(set));
             return subtitleEventItems;
         }
 
-        IEnumerable<SubtitleEventItem> GenerateNoneJitterDialogEvents(DialogFrameSet dialogFrameSet)
+        IEnumerable<SubtitleEvent> GenerateNoneJitterDialogEvents(DialogFrameSet dialogFrameSet)
         {
             var content = dialogFrameSet.DialogData.FinalContent;
             var characterName = dialogFrameSet.DialogData.FinalCharacter;
@@ -860,21 +661,20 @@ public class VideoProcess
 
             var body = MakeDialogTypewriter(content);
 
-            var dialogItem = SubtitleEventItem.Dialog(body, startTime, endTime, styleName);
+            var dialogItem = SubtitleEvent.Dialog(body, startTime, endTime, styleName);
 
             var characterItemPosition =
                 dialogFrameSet.Start().Point +
                 new Size(GetNameTag(dialogFrameSet.DialogData.CharacterOriginal).Size.Width + 10, 0);
             var characterItemPositionTag = $@"{{\pos({characterItemPosition.X},{characterItemPosition.Y})}}";
-            var characterItem = SubtitleEventItem.Dialog(characterItemPositionTag + characterName,
-                startTime, endTime, "Character");
+            var characterItem = SubtitleEvent.Dialog(
+                characterItemPositionTag + characterName, startTime, endTime, "Character");
             if (characterName == "") characterItem = characterItem.ToComment();
-            var returnVal = new List<SubtitleEventItem> { characterItem, dialogItem };
 
-            return returnVal;
+            return [characterItem, dialogItem];
         }
 
-        IEnumerable<SubtitleEventItem> GenerateJitterDialogEvents(DialogFrameSet dialogFrameSet)
+        IEnumerable<SubtitleEvent> GenerateJitterDialogEvents(DialogFrameSet dialogFrameSet)
         {
             var content = dialogFrameSet.DialogData.FinalContent;
             var characterName = dialogFrameSet.DialogData.FinalCharacter;
@@ -886,8 +686,8 @@ public class VideoProcess
 
             var constPosition = dialogFrameSet.Start().Point;
             var lastPosition = new Point(0, 0);
-            var dialogEvents = new List<SubtitleEventItem>();
-            var characterEvents = new List<SubtitleEventItem>();
+            var dialogEvents = new List<SubtitleEvent>();
+            var characterEvents = new List<SubtitleEvent>();
             foreach (var frame in dialogFrameSet.Frames)
             {
                 var x = style.MarginL;
@@ -903,7 +703,7 @@ public class VideoProcess
                 }
                 else
                 {
-                    var dialogItem = SubtitleEventItem.Dialog(body, frame.StartTime(), frame.EndTime(), styleName);
+                    var dialogItem = SubtitleEvent.Dialog(body, frame.StartTime(), frame.EndTime(), styleName);
                     dialogEvents.Add(dialogItem);
                 }
 
@@ -917,7 +717,7 @@ public class VideoProcess
                     var position = frame.Point + new Size(offset + 10, 0);
                     var tag = $@"{{\pos({position.X},{position.Y})}}";
 
-                    var characterItem = SubtitleEventItem.Dialog(
+                    var characterItem = SubtitleEvent.Dialog(
                         tag + characterName, frame.StartTime(), frame.EndTime(), "Character");
                     if (characterName == "") characterItem = characterItem.ToComment();
                     characterEvents.Add(characterItem);
@@ -926,12 +726,228 @@ public class VideoProcess
                 lastPosition = new Point(x, y);
             }
 
-            var returnVal = new List<SubtitleEventItem>();
+            var returnVal = new List<SubtitleEvent>();
             returnVal.AddRange(dialogEvents);
             returnVal.AddRange(characterEvents);
             return returnVal;
         }
     }
+
+    #endregion
+
+    #endregion
+
+    #region Banner
+
+    #region Match
+
+    private GaMat GetBannerTemplate(string content)
+    {
+        return new GaMat(_templateManager.GetDbTemplate(content));
+    }
+
+    private static string ShortBannerContent(string content)
+    {
+        var shortContent = "";
+        var len = 0D;
+        foreach (var c in content)
+        {
+            shortContent += c;
+            len += char.IsAscii(c) ? 0.5 : 1;
+            if (len >= 5) break;
+        }
+
+        if (shortContent.Contains('・')) shortContent = shortContent[..shortContent.IndexOf('・')];
+        if (shortContent.Contains('　')) shortContent = shortContent[..shortContent.IndexOf('　')];
+        if (shortContent.Contains(' ')) shortContent = shortContent[..shortContent.IndexOf(' ')];
+        return shortContent;
+    }
+
+    private bool BannerMatch(Mat img, string text)
+    {
+        var sText = ShortBannerContent(text);
+        var template = GetBannerTemplate(sText);
+        var res = LocalMatch(img, template, TemplateMatchingType.CcoeffNormed);
+
+        return res;
+
+        bool LocalMatch(Mat src, GaMat tmp, TemplateMatchingType matchingType)
+        {
+            var cropArea = Utils.FromCenter(
+                img.Size.Center(), new Size((int)(tmp.Size.Height * text.Length * 1.5), (int)(tmp.Size.Height * 1.5)));
+            var imgCropped = new Mat(src, cropArea);
+            double minVal = 0, maxVal = 0;
+            Point minLoc = new(), maxLoc = new();
+            var matchResult = new Mat();
+
+
+            CvInvoke.MatchTemplate(imgCropped, tmp.Gray, matchResult, matchingType, mask: tmp.Alpha);
+            matchResult.MatRemoveErrorInf();
+            CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
+
+            // if (true && _progressCarrier == null)
+            // {
+            //     CvInvoke.Imshow("src", imgCropped);
+            //     CvInvoke.Imshow("tmp", tmp.Gray);
+            //     Console.WriteLine(maxVal is > 0.7 and < 1);
+            //     CvInvoke.WaitKey(1);
+            // }
+
+            matchResult.Dispose();
+            return maxVal is > 0.7 and < 1;
+        }
+    }
+
+    private List<BannerFrameSet> MatchBanners(int startPosition = 0)
+    {
+        var videoCap = new VideoCapture(_config.VideoFilePath);
+        var videoFrame = new Mat();
+        videoCap.Set(CapProp.PosFrames, startPosition);
+
+        var bannerFrameSets =
+            _storyData.Banners().Select(@event => new BannerFrameSet(@event, _videoInfo.Fps)).ToList();
+
+        var eventIndex = 0;
+
+        var needNextFrame = true;
+        var lastRes = false;
+
+        while (true)
+        {
+            if (_setStop) return [];
+
+            if (needNextFrame)
+            {
+                var readResult = videoCap.Read(videoFrame);
+                if (!readResult) break;
+                CvInvoke.CvtColor(videoFrame, videoFrame, ColorConversion.Bgr2Gray);
+                Log(_processStep);
+            }
+
+            var frameIndex = FramePos(videoCap);
+
+
+            var res = BannerMatch(videoFrame, bannerFrameSets[eventIndex].Banner.BodyOriginal);
+            if (res)
+            {
+                bannerFrameSets[eventIndex].Add(frameIndex);
+                needNextFrame = true;
+            } // X 1
+            else
+            {
+                if (lastRes)
+                {
+                    eventIndex += 1;
+                    Log($"Frame {frameIndex}: Matched Banners {eventIndex}/{bannerFrameSets.Count}");
+                    if (eventIndex >= bannerFrameSets.Count) break;
+                    needNextFrame = false;
+                } // 1 0
+                else needNextFrame = true; // 0 0
+            }
+
+            lastRes = res;
+        }
+
+        Log(_processStep * (_videoInfo.FrameCount - FramePos(videoCap)));
+        videoFrame.Dispose();
+        return bannerFrameSets;
+
+        int FramePos(VideoCapture vc) => (int)vc.Get(CapProp.PosFrames);
+    }
+
+    #endregion
+
+    #region Events
+
+    private List<SubtitleEvent> MakeBannerEvents(List<BannerFrameSet> bannerList)
+    {
+        var result = new List<SubtitleEvent>();
+        var count = 0;
+        foreach (var set in bannerList)
+        {
+            count++;
+
+            var events = new List<SubtitleEvent>();
+            var dialogMarker = $"-----  {count:000}  -----";
+            events.Add(SubtitleEvent.Comment($"{dialogMarker}  Start", set.StartTime(), set.EndTime(), "Screen"));
+            events.AddRange(GenerateBannerEvent(set));
+            events.Add(SubtitleEvent.Comment($"{dialogMarker}  End", set.StartTime(), set.EndTime(), "Screen"));
+            result.AddRange(events);
+        }
+
+        return result;
+
+        IEnumerable<SubtitleEvent> GenerateBannerEvent(BannerFrameSet set)
+        {
+            var offset = _templateManager.DbTemplateMaxSize().Height;
+            var center = _videoInfo.Resolution.Center();
+            center.Y += offset * 2;
+            var content = set.Banner.FinalContent;
+            var startTime = set.StartTime();
+            var endTime = set.EndTime();
+
+            var maskFade = set.Banner.Index == 0 ? Tags.Fade(300, 200) : Tags.Fade(100, 200);
+            var maskBlur = maskFade + Tags.Blur(30) + Tags.Anchor(7) + Tags.Paint(1);
+
+            var body = maskFade + Tags.Anchor(5) + Tags.FontSize(offset) +
+                       Tags.Move(center.X - offset / 3, center.Y, center.X, center.Y, 0, 200) + content;
+
+            var contentItem = SubtitleEvent.Dialog(body, startTime, endTime, "BannerText");
+
+            var mRec = Utils.FromCenter(center,
+                new Size((int)(offset * 15.5) / 10 * 10, (int)(offset * 1.2) / 10 * 10));
+            var mask = AssDraw.Rectangle(mRec).ToString();
+            var clipLeft = (
+                    Tags.Clip(0, mRec.Y, mRec.X, mRec.Y + mRec.Height) +
+                    Tags.Transformation(
+                        0, 200, Tags.Clip(0, mRec.Y, mRec.X + mRec.Width, mRec.Y + mRec.Height)))
+                .ToString();
+
+            var clipRight = (
+                    Tags.Clip(mRec.X, mRec.Y, _videoInfo.Resolution.Width, mRec.Y + mRec.Height) +
+                    Tags.Transformation(0, 200,
+                        Tags.Clip(mRec.X + mRec.Width, mRec.Y,
+                            _videoInfo.Resolution.Width, mRec.Y + mRec.Height)))
+                .ToString();
+
+
+            var shift = ModdedTags.LeadingHorizontal(offset * 5) +
+                        Tags.Transformation(0, 200, ModdedTags.LeadingHorizontal(0));
+
+
+            var maskItem1 =
+                SubtitleEvent.Dialog(maskBlur + clipLeft + mask, startTime, endTime, "BannerMask");
+            var maskItem2 =
+                SubtitleEvent.Dialog(maskBlur + clipRight + shift + mask, startTime, endTime, "BannerMask");
+
+            return [maskItem1, maskItem2, contentItem];
+        }
+    }
+
+    private List<Style> MakeBannerStyles()
+    {
+        var result = new List<Style>();
+        var fontsize = (int)((_videoInfo.FrameRatio > 16.0 / 9
+            ? _videoInfo.Resolution.Height * 0.043
+            : _videoInfo.Resolution.Width * 0.024) * (70 / 61D));
+        const string fontName = "思源黑体 CN Bold";
+
+        var whiteColor = new AlphaColor(0, 255, 255, 255);
+        var outlineColor = new AlphaColor(30, 95, 92, 123);
+        result.Add(new Style("BannerMask", fontName, fontsize, primaryColour: outlineColor,
+            outlineColour: outlineColor,
+            outline: 0, shadow: 0, alignment: 7));
+        result.Add(new Style("BannerText", fontName, fontsize, primaryColour: whiteColor,
+            outlineColour: outlineColor,
+            outline: 0, shadow: 0, alignment: 7));
+        return result;
+    }
+
+    #endregion
+
+    #endregion
+
+    #region Contorl
 
     private bool _setStop;
 
@@ -940,54 +956,77 @@ public class VideoProcess
         _setStop = true;
     }
 
+    #endregion
+
+
     public string Process()
     {
-        var subtitleEventItems = new List<SubtitleEventItem>();
+        var subtitleEventItems = new List<SubtitleEvent>();
         try
         {
             Log("Start To Process");
             var contentStartedAt = MatchContentStarted();
             Log($"Video Content Start At Frame {contentStartedAt}");
-            var dialogMatchResult = MatchDialogs(contentStartedAt);
-            var dialogEvents = MakeDialogEvents(dialogMatchResult);
-            Log(_setStop ? "Process Aborted" : "Dialog Match Finished");
-
-            subtitleEventItems.AddRange(dialogEvents);
+            var tasks = new[]
+            {
+                new Task(() => MatchDialog(contentStartedAt)),
+                new Task(() => MatchBanner(contentStartedAt))
+            };
+            _processStep = 1.0 / tasks.Length;
+            foreach (var task in tasks) task.Start();
+            Task.WaitAll(tasks);
         }
         catch (Exception e)
         {
             Log(e);
+            if (_progressCarrier == null) throw;
         }
         finally
         {
-            if (!_setStop)
-            {
-                Write(subtitleEventItems);
-                Log("Process Finished");
-            }
-            else
-            {
-                Log("Process Stopped");
-            }
-
             ReportFinished();
+        }
+
+        if (!_setStop)
+        {
+            Write(subtitleEventItems);
+            Log("Process Finished");
+        }
+        else
+        {
+            Log("Process Stopped");
         }
 
         return _setStop ? "" : _config.OutputFilePath;
 
-        void Write(List<SubtitleEventItem> eventList)
+        void Write(List<SubtitleEvent> eventList)
         {
-            var scriptInfo = new SubtitleScriptInfo(
-                _videoResolution.Width, _videoResolution.Height,
+            var scriptInfo = new ScriptInfo(
+                _videoInfo.Resolution.Width, _videoInfo.Resolution.Height,
                 Path.GetFileNameWithoutExtension(_config.VideoFilePath));
-            var garbage = new SubtitleGarbage(_config.VideoFilePath, _config.VideoFilePath);
-            var style = new SubtitleStyles(MakeDialogStyles().ToArray());
+            var garbage = new Garbage(_config.VideoFilePath, _config.VideoFilePath);
+            var style = new Styles(MakeDialogStyles().Concat(MakeBannerStyles()).ToArray());
 
-            var events = new SubtitleEvents(eventList.ToArray());
+            var events = new Events(eventList.ToArray());
             var assData = new Subtitle(scriptInfo, garbage, style, events);
             var outputFile = new StreamWriter(_config.OutputFilePath, false, Encoding.UTF8);
             outputFile.Write(assData.ToString());
             outputFile.Close();
+        }
+
+        void MatchDialog(int contentStartedAt)
+        {
+            var matchResult = MatchDialogs(contentStartedAt);
+            var events = MakeDialogEvents(matchResult);
+            Log(_setStop ? "Dialog Process Aborted" : "Dialog Match Finished");
+            subtitleEventItems.AddRange(events);
+        }
+
+        void MatchBanner(int contentStartedAt)
+        {
+            var matchResult = MatchBanners(contentStartedAt);
+            var events = MakeBannerEvents(matchResult);
+            Log(_setStop ? "Banner Process Aborted" : "Banner Match Finished");
+            subtitleEventItems.AddRange(events);
         }
     }
 }

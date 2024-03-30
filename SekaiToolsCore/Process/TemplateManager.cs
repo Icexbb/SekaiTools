@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 
-namespace SekaiToolsCore;
+namespace SekaiToolsCore.Process;
 
 [SuppressMessage("Interoperability", "CA1416")]
 public class TemplateManager
@@ -20,8 +20,24 @@ public class TemplateManager
     private readonly string[] _ebTexts;
     private readonly bool _noScale;
 
-    private string ResourcePath(string fileName) =>
-        Path.Join(Path.GetDirectoryName(GetType().Assembly.Location), "Resource", fileName);
+    public static string ResourcePath(string fileName)
+    {
+        string[] baseDirs =
+        {
+            Environment.CurrentDirectory,
+            AppContext.BaseDirectory,
+            AppDomain.CurrentDomain.BaseDirectory,
+            AppDomain.CurrentDomain.RelativeSearchPath ?? string.Empty,
+            AppDomain.CurrentDomain.SetupInformation.ApplicationBase ?? string.Empty
+        };
+        foreach (var baseDir in baseDirs)
+        {
+            var path = Path.Combine(baseDir, "Resource", fileName);
+            if (File.Exists(path)) return path;
+        }
+
+        throw new FileNotFoundException($"{Path.Combine("Resource", fileName)} not found");
+    }
 
     public Mat GetMenuSign()
     {
@@ -59,7 +75,8 @@ public class TemplateManager
 
     public Size DbTemplateMaxSize(bool real = false) => MaxSize(_dbTemplate.Values, real);
 
-    public TemplateManager(Size videoResolution, IEnumerable<string> dbTexts, IEnumerable<string> ebTexts, bool noScale = false)
+    public TemplateManager(Size videoResolution, IEnumerable<string> dbTexts, IEnumerable<string> ebTexts,
+        bool noScale = false)
     {
         _videoResolution = videoResolution;
         _dbTexts = dbTexts.GroupBy(p => p).Select(p => p.Key).ToArray();

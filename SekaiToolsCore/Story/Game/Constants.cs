@@ -1,4 +1,4 @@
-namespace SekaiToolsCore;
+namespace SekaiToolsCore.Story.Game;
 
 public static class Constants
 {
@@ -59,6 +59,4 @@ public static class Constants
         { 268, 24 }, { 269, 25 }, { 270, 26 }, { 271, 116 }, { 272, 118 },
         { 273, 119 }, { 274, 120 }, { 275, 121 }, { 276, 122 }, { 900000, 900000 }
     };
-
-    public const string ForceReturnMark = "\\R";
 }

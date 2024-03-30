@@ -27,20 +27,20 @@ public class ModdedTags
 
     public static FontScale FontScale(int scale = 100) => new(scale);
 
-    public static PrimaryGradientAlpha PrimaryGradientAlpha(SubtitleAlpha leftTop, SubtitleAlpha rightTop,
-        SubtitleAlpha leftBottom, SubtitleAlpha rightBottom) =>
+    public static PrimaryGradientAlpha PrimaryGradientAlpha(SubStationAlpha.Alpha leftTop, SubStationAlpha.Alpha rightTop,
+        SubStationAlpha.Alpha leftBottom, SubStationAlpha.Alpha rightBottom) =>
         new(leftTop, rightTop, leftBottom, rightBottom);
 
-    public static SecondaryGradientAlpha SecondaryGradientAlpha(SubtitleAlpha leftTop, SubtitleAlpha rightTop,
-        SubtitleAlpha leftBottom, SubtitleAlpha rightBottom) =>
+    public static SecondaryGradientAlpha SecondaryGradientAlpha(SubStationAlpha.Alpha leftTop, SubStationAlpha.Alpha rightTop,
+        SubStationAlpha.Alpha leftBottom, SubStationAlpha.Alpha rightBottom) =>
         new(leftTop, rightTop, leftBottom, rightBottom);
 
-    public static OutlineGradientAlpha OutlineGradientAlpha(SubtitleAlpha leftTop, SubtitleAlpha rightTop,
-        SubtitleAlpha leftBottom, SubtitleAlpha rightBottom) =>
+    public static OutlineGradientAlpha OutlineGradientAlpha(SubStationAlpha.Alpha leftTop, SubStationAlpha.Alpha rightTop,
+        SubStationAlpha.Alpha leftBottom, SubStationAlpha.Alpha rightBottom) =>
         new(leftTop, rightTop, leftBottom, rightBottom);
 
-    public static ShadowGradientAlpha ShadowGradientAlpha(SubtitleAlpha leftTop, SubtitleAlpha rightTop,
-        SubtitleAlpha leftBottom, SubtitleAlpha rightBottom) =>
+    public static ShadowGradientAlpha ShadowGradientAlpha(SubStationAlpha.Alpha leftTop, SubStationAlpha.Alpha rightTop,
+        SubStationAlpha.Alpha leftBottom, SubStationAlpha.Alpha rightBottom) =>
         new(leftTop, rightTop, leftBottom, rightBottom);
 
     public static PrimaryGradientsColor PrimaryGradientsColor(SubStationAlpha.Color leftTop, SubStationAlpha.Color rightTop,
