@@ -882,7 +882,8 @@ public class VideoProcess
         {
             var offset = _templateManager.DbTemplateMaxSize().Height;
             var center = _videoInfo.Resolution.Center();
-            center.Y += offset * 2;
+            center.Y += (int)(offset * 2.5);
+            center.Y = center.Y / 20 * 20;
             var content = set.Banner.FinalContent;
             var startTime = set.StartTime();
             var endTime = set.EndTime();
@@ -895,20 +896,22 @@ public class VideoProcess
 
             var contentItem = SubtitleEvent.Dialog(body, startTime, endTime, "BannerText");
 
+            var cRec = Utils.FromCenter(center,
+                new Size((offset * 12) / 20 * 20, (int)(offset * 1.4) / 20 * 20));
             var mRec = Utils.FromCenter(center,
-                new Size((int)(offset * 15.5) / 10 * 10, (int)(offset * 1.2) / 10 * 10));
+                new Size((offset * 12) / 20 * 20, (int)(offset * 2) / 20 * 20));
             var mask = AssDraw.Rectangle(mRec).ToString();
             var clipLeft = (
-                    Tags.Clip(0, mRec.Y, mRec.X, mRec.Y + mRec.Height) +
+                    Tags.Clip(0, cRec.Y, cRec.X, cRec.Y + cRec.Height) +
                     Tags.Transformation(
-                        0, 200, Tags.Clip(0, mRec.Y, mRec.X + mRec.Width, mRec.Y + mRec.Height)))
+                        0, 200, Tags.Clip(0, cRec.Y, cRec.X + cRec.Width, cRec.Y + cRec.Height)))
                 .ToString();
 
             var clipRight = (
-                    Tags.Clip(mRec.X, mRec.Y, _videoInfo.Resolution.Width, mRec.Y + mRec.Height) +
+                    Tags.Clip(cRec.X, cRec.Y, _videoInfo.Resolution.Width, cRec.Y + cRec.Height) +
                     Tags.Transformation(0, 200,
-                        Tags.Clip(mRec.X + mRec.Width, mRec.Y,
-                            _videoInfo.Resolution.Width, mRec.Y + mRec.Height)))
+                        Tags.Clip(cRec.X + cRec.Width, cRec.Y,
+                            _videoInfo.Resolution.Width, cRec.Y + cRec.Height)))
                 .ToString();
 
 
@@ -1019,7 +1022,9 @@ public class VideoProcess
             var matchResult = MatchDialogs(contentStartedAt);
             var events = MakeDialogEvents(matchResult);
             Log(_setStop ? "Dialog Process Aborted" : "Dialog Match Finished");
+            subtitleEventItems.Add(SubtitleEvent.Comment("-----  Dialog  -----", Frame.Zero, Frame.Zero, "Screen"));
             subtitleEventItems.AddRange(events);
+            subtitleEventItems.Add(SubtitleEvent.Comment("-----  Dialog  -----", Frame.Zero, Frame.Zero, "Screen"));
         }
 
         void MatchBanner(int contentStartedAt)
@@ -1027,7 +1032,9 @@ public class VideoProcess
             var matchResult = MatchBanners(contentStartedAt);
             var events = MakeBannerEvents(matchResult);
             Log(_setStop ? "Banner Process Aborted" : "Banner Match Finished");
+            subtitleEventItems.Add(SubtitleEvent.Comment("-----  Banner  -----", Frame.Zero, Frame.Zero, "Screen"));
             subtitleEventItems.AddRange(events);
+            subtitleEventItems.Add(SubtitleEvent.Comment("-----  Banner  -----", Frame.Zero, Frame.Zero, "Screen"));
         }
     }
 }
