@@ -572,6 +572,7 @@ public class VideoProcess
         Report(new TaskLogRequest(needSepCount));
         if (_progressCarrier != null)
         {
+            Log("Waiting for separate line info...");
             while (_separateLineCollection.Count < needSepCount.Count) Thread.Sleep(100);
         }
 
