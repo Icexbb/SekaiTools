@@ -5,7 +5,7 @@ using Emgu.CV.Structure;
 
 namespace SekaiToolsCore;
 
-public static class Utils
+public static partial class Utils
 {
     public static bool IsSorted<T>(this IEnumerable<T> enumerable, bool strictIncreasing = true) where T : IComparable
     {
@@ -104,5 +104,70 @@ public static class Utils
         mask = new Mat(mat.Size, mat.Depth, 1);
         CvInvoke.Compare(mat, negativeInf, mask, CmpType.Equal);
         mat.SetTo(new MCvScalar(0), mask);
+    }
+}
+
+public partial class Utils
+{
+    public static class TimerHelper
+    {
+        public static Timer SetTimeout(Action fn, long interval)
+        {
+            Timer? timer1 = null;
+            var callback = new TimerCallback(_ =>
+            {
+                if (timer1 == null) fn.Invoke();
+                else timer1.Dispose();
+            });
+            timer1 = new Timer(callback, null, interval, -1);
+            return timer1;
+        }
+
+        public static Timer SetInterval(Action fn, long interval, ulong times = 0)
+        {
+            Timer? timer1 = null;
+            var times2 = times;
+
+            var callback = times > 0
+                ? new TimerCallback(_ =>
+                {
+                    if (--times == 0)
+                    {
+                        try
+                        {
+                            timer1!.Dispose();
+                        }
+                        catch (Exception)
+                        {
+                            // ignore
+                        }
+                    }
+                    else if (times2 <= times)
+                    {
+                        try
+                        {
+                            timer1!.Dispose();
+                        }
+                        catch (Exception)
+                        {
+                            // ignore
+                        }
+
+                        return;
+                    }
+
+                    if (times < times2)
+                    {
+                        times2 = times;
+                    }
+
+                    fn.Invoke();
+                })
+                : new TimerCallback(_ => { fn.Invoke(); });
+
+            timer1 = new Timer(callback, null, interval, interval);
+
+            return timer1;
+        }
     }
 }

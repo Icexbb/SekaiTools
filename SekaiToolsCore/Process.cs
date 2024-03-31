@@ -2,6 +2,8 @@ using System.Drawing;
 using System.Text;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
+using Emgu.CV.Structure;
+using Emgu.CV.Util;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Story.Event;
 using SekaiToolsCore.SubStationAlpha;
@@ -50,6 +52,45 @@ public class VideoProcess
         }
 
         _templateManager = new TemplateManager(_videoInfo.Resolution, dbs, names);
+    }
+
+    private MatchResult MatchTemplate(Mat img, GaMat tmp,
+        TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed)
+    {
+        var matchResult = new Mat();
+        CvInvoke.MatchTemplate(img, tmp.Gray, matchResult, matchingType, mask: tmp.Alpha);
+        matchResult.MatRemoveErrorInf();
+        double maxVal = 0, minVal = 0;
+        Point minLoc = new(), maxLoc = new();
+
+        CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
+        matchResult.Dispose();
+
+        if (false && _progressCarrier == null)
+        {
+            var show = img.Clone()!;
+            var temp = tmp.Gray.Clone();
+            var emptyMat = new Mat(show.Rows - temp.Rows, temp.Cols, temp.Depth, temp.NumberOfChannels);
+            emptyMat.SetTo(new MCvScalar(0));
+            CvInvoke.VConcat(new VectorOfMat(emptyMat, temp), temp);
+            CvInvoke.HConcat(new VectorOfMat(show, temp), show);
+            temp.Dispose();
+
+            CvInvoke.PutText(show, $"MaxVal: {maxVal:0.00}", maxLoc with { Y = maxLoc.Y - 5 },
+                FontFace.HersheySimplex, 0.4, new MCvScalar(255));
+            CvInvoke.Rectangle(show, new Rectangle(maxLoc, tmp.Size), new MCvScalar(255), 2);
+
+            ShowImg(show, $"MaxVal: {maxVal:0.00}");
+        }
+
+        return new MatchResult(maxVal, minVal, maxLoc, minLoc);
+    }
+
+    private void ShowImg(Mat img, string title = "Image")
+    {
+        CvInvoke.Imshow("Image", img);
+        CvInvoke.SetWindowTitle("Image", title);
+        CvInvoke.WaitKey(1);
     }
 
     #region Log
@@ -112,31 +153,24 @@ public class VideoProcess
         var videoCap = new VideoCapture(_config.VideoFilePath);
         var videoFrame = new Mat();
         var menuSign = new GaMat(_templateManager.GetMenuSign(), false);
-        const double startThreshold = 0.8;
+        const double startThreshold = 0.9;
 
         while (videoCap.Read(videoFrame))
         {
             if (_setStop) return 0;
             CvInvoke.CvtColor(videoFrame, videoFrame, ColorConversion.Bgr2Gray);
-            Mat matchResult = new();
             var roi = new Rectangle(
                 videoFrame.Width - menuSign.Size.Width * 2, 0,
                 menuSign.Size.Width * 2, menuSign.Size.Height * 2
             );
-            roi.Extend(0.2);
-            Mat frameCropped = new(videoFrame, roi);
-            CvInvoke.MatchTemplate(frameCropped, menuSign.Gray, matchResult,
-                TemplateMatchingType.CcoeffNormed, mask: menuSign.Alpha);
-
-            matchResult.MatRemoveErrorInf();
-
-            double minVal = 0, maxVal = 0;
-            Point minLoc = new(), maxLoc = new();
-            CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
+            roi.Extend(0.1);
+            var frameCropped = new Mat(videoFrame, roi);
+            var result = MatchTemplate(frameCropped, menuSign);
 
             Log(1);
 
-            if (maxVal > startThreshold) return (int)videoCap.Get(CapProp.PosFrames);
+            if (!(result.MaxVal > startThreshold)) continue;
+            return (int)videoCap.Get(CapProp.PosFrames);
         }
 
         return 0;
@@ -166,27 +200,9 @@ public class VideoProcess
         {
             var cropArea = LocalGetCropArea(tmp.Size);
             var imgCropped = new Mat(src, cropArea);
-
-            double minVal = 0, maxVal = 0;
-            Point minLoc = new(), maxLoc = new();
-            var matchResult = new Mat();
-
-            CvInvoke.MatchTemplate(imgCropped, tmp.Gray, matchResult, matchingType, mask: tmp.Alpha);
-            matchResult.MatRemoveErrorInf();
-            CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
-            matchResult.Dispose();
-
-            // if (true && _progressCarrier == null)
-            // {
-            //     CvInvoke.Imshow("src", imgCropped);
-            //     CvInvoke.Imshow("tmp", tmp.Gray);
-            //     Console.WriteLine(maxVal);
-            //     CvInvoke.WaitKey(1);
-            // }
-
-            if (!(threshold < maxVal) || !(maxVal < 1)) return Rectangle.Empty;
-
-            var resPoint = new Point(maxLoc.X + cropArea.X, maxLoc.Y + cropArea.Y);
+            var result = MatchTemplate(imgCropped, tmp);
+            if (!(threshold < result.MaxVal) || !(result.MaxVal < 1)) return Rectangle.Empty;
+            var resPoint = new Point(result.MaxLoc.X + cropArea.X, result.MaxLoc.Y + cropArea.Y);
             return new Rectangle(resPoint, tmp.Size);
         }
 
@@ -287,8 +303,6 @@ public class VideoProcess
 
         bool LocalMatch(Mat src, GaMat tmp, double threshold = 0.8)
         {
-            double maxVal = 0, minVal = 0;
-            Point minLoc = new(), maxLoc = new();
             var offset = _templateManager.DbTemplateMaxSize().Height;
             Rectangle dialogStartPosition = new(
                 x: nameTagRect.X + (int)(0.15 * offset),
@@ -297,22 +311,8 @@ public class VideoProcess
                 height: (int)(1.5 * offset)
             );
             var imgCropped = new Mat(src, dialogStartPosition);
-            var matchResult = new Mat();
-            CvInvoke.MatchTemplate(imgCropped, tmp.Gray, matchResult,
-                TemplateMatchingType.CcoeffNormed, mask: tmp.Alpha);
-            matchResult.MatRemoveErrorInf();
-            CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
-            matchResult.Dispose();
-
-            // if (true && _progressCarrier == null)
-            // {
-            //     CvInvoke.Imshow("src", imgCropped);
-            //     CvInvoke.Imshow("tmp", tmp.Gray);
-            //     Console.WriteLine(maxVal);
-            //     CvInvoke.WaitKey(1);
-            // }
-
-            return maxVal > threshold && maxVal < 1;
+            var result = MatchTemplate(imgCropped, tmp);
+            return result.MaxVal > threshold && result.MaxVal < 1;
         }
 
         List<GaMat> GetDialogInd(int dialogIndex)
@@ -777,25 +777,8 @@ public class VideoProcess
             var cropArea = Utils.FromCenter(
                 img.Size.Center(), new Size((int)(tmp.Size.Height * text.Length * 1.5), (int)(tmp.Size.Height * 1.5)));
             var imgCropped = new Mat(src, cropArea);
-            double minVal = 0, maxVal = 0;
-            Point minLoc = new(), maxLoc = new();
-            var matchResult = new Mat();
-
-
-            CvInvoke.MatchTemplate(imgCropped, tmp.Gray, matchResult, matchingType, mask: tmp.Alpha);
-            matchResult.MatRemoveErrorInf();
-            CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
-
-            // if (true && _progressCarrier == null)
-            // {
-            //     CvInvoke.Imshow("src", imgCropped);
-            //     CvInvoke.Imshow("tmp", tmp.Gray);
-            //     Console.WriteLine(maxVal is > 0.7 and < 1);
-            //     CvInvoke.WaitKey(1);
-            // }
-
-            matchResult.Dispose();
-            return maxVal is > 0.7 and < 1;
+            var result = MatchTemplate(imgCropped, tmp, matchingType);
+            return result.MaxVal is > 0.7 and < 1;
         }
     }
 

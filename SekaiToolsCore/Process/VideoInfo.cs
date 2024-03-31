@@ -18,7 +18,7 @@ public class VideoInfo
             throw new FileNotFoundException("File not found", path);
         Path = path;
 
-        using var video = new VideoCapture(path);
+        using var video = new VideoCapture(Path);
         Resolution = new Size((int)video.Get(CapProp.FrameWidth), (int)video.Get(CapProp.FrameHeight));
         FrameRatio = Resolution.Width / (double)Resolution.Height;
         Fps = new FrameRate((int)video.Get(CapProp.Fps));

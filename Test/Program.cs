@@ -15,8 +15,6 @@ const string tfp = @"C:\Users\icexb\Downloads\【翻译】event125-an 前篇 (1)
 
 var config = new Config(vfp, sfp, tfp);
 var task = new VideoProcess(config);
-
 task.Process();
-// var styles = task.MakeBannerStyles();
-//
-// Console.WriteLine();
+
+
