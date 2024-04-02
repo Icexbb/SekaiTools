@@ -14,14 +14,13 @@ public class VideoInfo
 
     public VideoInfo(string path)
     {
-        if (!File.Exists(path))
-            throw new FileNotFoundException("File not found", path);
+        if (!File.Exists(path)) throw new FileNotFoundException("File not found", path);
         Path = path;
 
         using var video = new VideoCapture(Path);
         Resolution = new Size((int)video.Get(CapProp.FrameWidth), (int)video.Get(CapProp.FrameHeight));
         FrameRatio = Resolution.Width / (double)Resolution.Height;
-        Fps = new FrameRate((int)video.Get(CapProp.Fps));
+        Fps = new FrameRate(video.Get(CapProp.Fps));
         FrameCount = (int)video.Get(CapProp.FrameCount);
     }
 }
