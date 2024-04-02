@@ -670,7 +670,7 @@ public class VideoProcess
             var characterItemPositionTag = $@"{{\pos({characterItemPosition.X},{characterItemPosition.Y})}}";
             var characterItem = SubtitleEvent.Dialog(
                 characterItemPositionTag + characterName, startTime, endTime, "Character");
-            if (characterName == "") characterItem = characterItem.ToComment();
+            // if (characterName == "") characterItem = characterItem.ToComment();
 
             return [characterItem, dialogItem];
         }
@@ -720,7 +720,7 @@ public class VideoProcess
 
                     var characterItem = SubtitleEvent.Dialog(
                         tag + characterName, frame.StartTime(), frame.EndTime(), "Character");
-                    if (characterName == "") characterItem = characterItem.ToComment();
+                    // if (characterName == "") characterItem = characterItem.ToComment();
                     characterEvents.Add(characterItem);
                 }
 

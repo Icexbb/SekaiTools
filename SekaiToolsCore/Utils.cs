@@ -7,6 +7,11 @@ namespace SekaiToolsCore;
 
 public static partial class Utils
 {
+    public static IEnumerable<T> Contact<T>(params IEnumerable<T>[] arrays)
+    {
+        return arrays.SelectMany(x => x);
+    }
+
     public static bool IsSorted<T>(this IEnumerable<T> enumerable, bool strictIncreasing = true) where T : IComparable
     {
         var comparer = Comparer<T>.Default;

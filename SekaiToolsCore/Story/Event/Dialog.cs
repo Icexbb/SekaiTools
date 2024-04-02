@@ -24,7 +24,7 @@ public class Dialog(
 
     public string FinalCharacter => CharacterTranslated.Length > 0 && CharacterTranslated != CharacterOriginal
         ? CharacterTranslated
-        : "";
+        : CharacterOriginal;
 
     public override object Clone()
     {
