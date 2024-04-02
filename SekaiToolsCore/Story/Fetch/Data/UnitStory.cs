@@ -2,7 +2,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SekaiToolsCore.Story.Fetch.Data;
 
-public struct UnitEpisode
+public class UnitEpisode
 {
     public int Id { get; set; }
     public int UnitStoryEpisodeGroupId { get; set; }

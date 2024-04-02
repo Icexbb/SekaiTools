@@ -2,7 +2,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SekaiToolsCore.Story.Fetch.Data;
 
-public struct Character2d
+public class Character2d
 {
     public int Id { get; set; }
     public string CharacterType { get; set; }

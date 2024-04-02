@@ -2,7 +2,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SekaiToolsCore.Story.Fetch.Data;
 
-public struct GameEvent
+public class GameEvent
 {
     public int Id { get; set; }
     public string EventType { get; set; }

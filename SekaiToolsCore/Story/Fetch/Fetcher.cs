@@ -94,6 +94,26 @@ public class Fetcher
         };
     }
 
+    private class PjSekaiResponse
+    {
+        public int Total { get; set; }
+        public int Limit { get; set; }
+        public JObject[] Data { get; set; }
+    }
+
+    private static T? JsonDeserialize<T>(string json) where T : class
+    {
+        try
+        {
+            var result = JsonConvert.DeserializeObject<T>(json);
+            return result;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
     private JObject[]? HttpRequest(string url)
     {
         try
@@ -106,19 +126,13 @@ public class Fetcher
             var obj = JsonConvert.DeserializeObject(responseContent);
             switch (obj)
             {
-                case null:
-                    throw new JsonSerializationException();
-                case JObject jObject:
+                case JObject:
                 {
-                    if (jObject.ContainsKey("total") && !jObject.ContainsKey("limit") && jObject.ContainsKey("data"))
-                    {
-                        var total = jObject["total"]!.ToObject<int>();
-                        var limit = jObject["limit"]!.ToObject<int>();
-                        if (total > limit) return HttpRequest(url.Insert(url.IndexOf('?'), $"&limit={total}"));
-                        if (jObject["data"]!.GetType() == typeof(JArray)) return jObject["data"]!.ToObject<JObject[]>();
-                    }
-
-                    throw new JsonSerializationException();
+                    var data = JsonDeserialize<PjSekaiResponse>(responseContent);
+                    if (data == null) throw new JsonSerializationException();
+                    return data.Total > data.Limit
+                        ? HttpRequest(url.Insert(url.IndexOf('?'), $"&limit={data.Total}"))
+                        : data.Data;
                 }
                 case JArray jArray:
                     return jArray.ToObject<JObject[]>()!;
@@ -133,49 +147,49 @@ public class Fetcher
         }
     }
 
-    public List<Data.GameEvent> GetGameEvents()
+    private List<GameEvent> GetGameEvents()
     {
         var json = HttpRequest(Source.Events);
-        return json == null ? [] : json.Select(Data.GameEvent.FromJson).ToList();
+        return json == null ? [] : json.Select(GameEvent.FromJson).ToList();
     }
 
-    public List<Card> GetCards()
+    private List<Card> GetCards()
     {
         var json = HttpRequest(Source.Cards);
         return json == null ? [] : json.Select(Card.FromJson).ToList();
     }
 
-    public List<Character2d> GetCharacter2ds()
+    private List<Character2d> GetCharacter2ds()
     {
         var json = HttpRequest(Source.Character2ds);
         return json == null ? [] : json.Select(Character2d.FromJson).ToList();
     }
 
-    public List<UnitStory> GetUnitStories()
+    private List<UnitStory> GetUnitStories()
     {
         var json = HttpRequest(Source.UnitStories);
         return json == null ? [] : json.Select(UnitStory.FromJson).ToList();
     }
 
-    public List<EventStory> GetEventStories()
+    private List<EventStory> GetEventStories()
     {
         var json = HttpRequest(Source.EventStories);
         return json == null ? [] : json.Select(EventStory.FromJson).ToList();
     }
 
-    public List<CardEpisode> GetCardEpisodes()
+    private List<CardEpisode> GetCardEpisodes()
     {
         var json = HttpRequest(Source.CardEpisodes);
         return json == null ? [] : json.Select(CardEpisode.FromJson).ToList();
     }
 
-    public List<Action> GetAction()
+    private List<Action> GetAction()
     {
         var json = HttpRequest(Source.ActionSets);
         return json == null ? [] : json.Select(Action.FromJson).ToList();
     }
 
-    public List<SpecialStory> GetSpecialStories()
+    private List<SpecialStory> GetSpecialStories()
     {
         var json = HttpRequest(Source.SpecialStories);
         return json == null ? [] : json.Select(SpecialStory.FromJson).ToList();

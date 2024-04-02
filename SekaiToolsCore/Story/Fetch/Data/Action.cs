@@ -2,7 +2,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SekaiToolsCore.Story.Fetch.Data;
 
-public struct Action
+public class Action
 {
     public int Id { get; set; }
     public int AreaId { get; set; }

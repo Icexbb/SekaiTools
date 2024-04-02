@@ -2,7 +2,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SekaiToolsCore.Story.Fetch.Data;
 
-public struct Card
+public class Card
 {
     public int Id { get; set; }
     public int Seq { get; set; }

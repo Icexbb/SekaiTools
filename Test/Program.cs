@@ -6,29 +6,21 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.Util;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SekaiToolsCore.Process;
+using Action = SekaiToolsCore.Story.Fetch.Data.Action;
 
 const string
-    vfp = @"C:\Users\icexb\Downloads\an125-01.mp4"; //@"D:\ProjectSekai\Archive\event_124_wl_ws\ev_124_01.mp4";
-const string sfp = @"C:\Users\icexb\Downloads\010033_an01.asset";
-const string tfp = @"C:\Users\icexb\Downloads\【翻译】event125-an 前篇 (1).txt";
+    vfp = @"D:\ProjectSekai\test\aprilfool_2024_01.mp4"; 
+const string sfp = @"D:\ProjectSekai\test\aprilfool_2024_01.json";
+const string tfp = @"D:\ProjectSekai\test\aprilfool_2024_01.txt";
 
+var vc = new VideoCapture(vfp);
+Console.WriteLine(vc.Get(CapProp.Fps));
+var vInfo = new VideoInfo(vfp);
+Console.WriteLine(vInfo.Fps.Fps());
+Console.WriteLine(vInfo.Resolution);
 // var config = new Config(vfp, sfp, tfp);
 // var task = new VideoProcess(config);
 // task.Process();
-
-
-var jsonStr = @"[{
-      ""id"": 1,
-      ""areaId"": 4,
-      ""isNextGrade"": false,
-      ""scriptId"": ""as_cdshop_mob"",
-      ""characterIds"": [1],
-      ""archiveDisplayType"": ""none"",
-      ""archivePublishedAt"": 1233284400000,
-      ""releaseConditionId"": 1
-    }]";
-var obj = JObject.Parse(jsonStr);
-
-Console.WriteLine(obj.GetType());
