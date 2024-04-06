@@ -405,8 +405,18 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
         var snackService = (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
         snackService.Show("成功", "字幕文件已保存", ControlAppearance.Success,
             new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
+        ShowFile(fileName);
 
         return;
+
+        void ShowFile(string path)
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo("Explorer.exe")
+            {
+                Arguments = "/e,/select," + path
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
 
         SekaiToolsCore.SubStationAlpha.Subtitle GenerateSubtitle()
         {

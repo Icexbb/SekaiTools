@@ -25,8 +25,8 @@ public partial class SaveFileDialog : ContentDialog
         DataContext = new SaveFileDialogModel();
         ViewModel.FileName = Path.Join(
             Path.GetDirectoryName(VideoFile),
-            Path.GetFileName(VideoFile) + ".ass");
-
+            "[STGenerated] " + Path.ChangeExtension(Path.GetFileName(VideoFile), ".ass")
+        );
         InitializeComponent();
     }
 
