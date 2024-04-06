@@ -1,6 +1,6 @@
 namespace SekaiToolsCore.Story.Event;
 
-internal class Marker(string bodyOriginal, int index) : Event("Marker", bodyOriginal)
+public class Marker(string bodyOriginal, int index) : Event("Marker", bodyOriginal)
 {
     public readonly int Index = index;
 

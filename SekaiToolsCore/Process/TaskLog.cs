@@ -33,12 +33,14 @@ public class TaskLogContext(string content = "") : TaskLog
     public string Content { get; } = content;
 }
 
-public class RequestItem(string content, int startFrame, int endFrame, double fps)
+public class RequestItem(string content, int startFrame, int endFrame, double fps, bool isDialogJitter = false)
 {
     public string Content { get; } = content;
     public int StartFrame { get; } = startFrame;
     public int EndFrame { get; } = endFrame;
     public double Fps { get; } = fps;
+
+    public bool IsDialogJitter { get; } = isDialogJitter;
 }
 
 public class TaskLogRequest(List<RequestItem> collection) : TaskLog

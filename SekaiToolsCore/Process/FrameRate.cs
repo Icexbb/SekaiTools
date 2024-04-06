@@ -251,6 +251,22 @@ public class FrameRate
     public bool IsVfr() => _timecodes.Count > 1;
     public bool IsLoaded() => _numerator > 0;
     public bool NeedDropFrames() => _drop;
+
+    public static FrameRate Fps_23_976 { get; } = new(24000, 1001, true);
+
+    public static FrameRate Fps_24 { get; } = new(24);
+
+    public static FrameRate Fps_25 { get; } = new(25);
+
+    public static FrameRate Fps_29_97 { get; } = new(30000, 1001, true);
+
+    public static FrameRate Fps_30 { get; } = new(30);
+
+    public static FrameRate Fps_50 { get; } = new(50);
+
+    public static FrameRate Fps_59_94 { get; } = new(60000, 1001, true);
+
+    public static FrameRate Fps_60 { get; } = new(60);
 }
 
 public class SubtitleTime(int ms = 0)

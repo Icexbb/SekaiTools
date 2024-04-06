@@ -2,7 +2,7 @@ using SekaiToolsCore.Story.Event;
 
 namespace SekaiToolsCore.Process;
 
-public class BannerFrameSet(Banner banner, FrameRate fps)
+public class BannerFrameSet(Banner data, FrameRate fps)
 {
     private int _start = int.MaxValue, _end = int.MinValue;
 
@@ -12,9 +12,12 @@ public class BannerFrameSet(Banner banner, FrameRate fps)
         if (_end < index) _end = index;
     }
 
-    public readonly Banner Banner = banner;
-    private Frame Start() => new(_start, fps);
-    private Frame End() => new(_end, fps);
+    public readonly Banner Data = data;
+    public readonly FrameRate Fps = fps;
+    public Frame Start() => new(_start, Fps);
+    public Frame End() => new(_end, Fps);
     public string StartTime() => Start().StartTime();
     public string EndTime() => End().EndTime();
+
+    public bool Finished { get; set; }
 }

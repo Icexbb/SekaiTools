@@ -4,7 +4,7 @@ using SekaiToolsCore.Story.Translation;
 
 namespace SekaiToolsCore.Story;
 
-internal class Story
+public class Story
 {
     private readonly Event.Event[] _events;
 

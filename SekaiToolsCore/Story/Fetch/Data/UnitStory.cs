@@ -4,6 +4,7 @@ namespace SekaiToolsCore.Story.Fetch.Data;
 
 public class UnitEpisode
 {
+
     public int Id { get; set; }
     public int UnitStoryEpisodeGroupId { get; set; }
     public int ChapterNo { get; set; }

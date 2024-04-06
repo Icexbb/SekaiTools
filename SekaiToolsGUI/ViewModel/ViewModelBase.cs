@@ -10,11 +10,12 @@ public class ViewModelBase : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     private readonly Dictionary<string, object> _properties = new();
 
-    protected T GetProperty<T>(T defaultValue, [CallerMemberName] string? propertyName = null)
+    protected T GetProperty<T>(T defaultValue = default!, [CallerMemberName] string? propertyName = null)
     {
         ArgumentNullException.ThrowIfNull(propertyName);
         if (_properties.TryGetValue(propertyName, out var value))
             return (T)value;
+
         SetProperty(defaultValue, propertyName);
         return defaultValue;
     }

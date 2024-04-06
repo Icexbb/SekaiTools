@@ -1,33 +1,48 @@
-﻿<hc:Window
+﻿<ui:FluentWindow
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:hc="https://handyorg.github.io/handycontrol"
     xmlns:local="clr-namespace:SekaiToolsGUI"
     xmlns:vs="clr-namespace:SekaiToolsGUI.View"
-    SystemBackdropType="Mica"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     x:Class="SekaiToolsGUI.MainWindow"
     mc:Ignorable="d"
     Title="Sekai Tools"
     Icon="Resource/icon.png"
-    MinHeight="300" Width="600" MinWidth="600">
-    <TabControl>
-        <TabControl.Style>
-            <hc:StaticResource ResourceKey="TabControlInLine" />
-        </TabControl.Style>
-        <TabItem Header="自动轴机">
-            <vs:SubtitleMaker />
-        </TabItem>
-        <TabItem Header="翻译">
-            <vs:TranslationMaker />
-            
-        </TabItem>
-        <TabItem Header="设置">
-            <Grid>
-                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center">没做完</TextBlock>
-            </Grid>
-        </TabItem>
-    </TabControl>
-
-</hc:Window>
+    MinHeight="500" Width="800" MinWidth="800"
+    ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+    ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    ExtendsContentIntoTitleBar="True"
+    WindowBackdropType="Mica"
+    WindowCornerPreference="Round"
+    WindowStartupLocation="CenterScreen"
+    d:DataContext="{d:DesignInstance local:MainWindowViewModel,IsDesignTimeCreatable=True}"
+    Loaded="MainWindow_OnLoaded">
+    <Grid>
+        <ui:NavigationView
+            Margin="0,42,0,0"
+            IsBackButtonVisible="Collapsed"
+            Name="NavigationView"
+            MenuItemsSource="{Binding NavigationItems}"
+            FooterMenuItemsSource="{Binding NavigationFooterItems}"
+            Loaded="NavigationView_OnLoaded" HorizontalContentAlignment="Stretch"
+            VerticalContentAlignment="Stretch"
+            OpenPaneLength="150"
+            Transition="FadeInWithSlide"
+            PaneDisplayMode="LeftMinimal"
+            FrameMargin="0"
+            Navigated="NavigationView_OnNavigated"
+            HeaderVisibility="Collapsed">
+            <ui:NavigationView.ContentOverlay>
+                <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
+            </ui:NavigationView.ContentOverlay>
+        </ui:NavigationView>
+        <ContentPresenter x:Name="RootContentDialog" Grid.Row="0" />
+        <ui:TitleBar Grid.Row="0" Title="Sekai Tools">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="pack://application:,,,/Resource/icon.png" />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
+    </Grid>
+</ui:FluentWindow>

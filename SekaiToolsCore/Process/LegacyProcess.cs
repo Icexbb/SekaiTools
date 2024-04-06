@@ -4,7 +4,6 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
-using SekaiToolsCore.Process;
 using SekaiToolsCore.Story.Event;
 using SekaiToolsCore.SubStationAlpha;
 using SekaiToolsCore.SubStationAlpha.AssDraw;
@@ -12,9 +11,9 @@ using SekaiToolsCore.SubStationAlpha.Tag;
 using SekaiToolsCore.SubStationAlpha.Tag.Modded;
 using SubtitleEvent = SekaiToolsCore.SubStationAlpha.Event;
 
-namespace SekaiToolsCore;
+namespace SekaiToolsCore.Process;
 
-public class VideoProcess
+public class LegacyProcess
 {
     private readonly long _createTime;
 
@@ -32,7 +31,7 @@ public class VideoProcess
 
     private readonly Config _config;
 
-    public VideoProcess(Config config, IProgress<TaskLog>? progress = null)
+    public LegacyProcess(Config config, IProgress<TaskLog>? progress = null)
     {
         _progressCarrier = progress;
         _config = config;
@@ -54,7 +53,7 @@ public class VideoProcess
         _templateManager = new TemplateManager(_videoInfo.Resolution, dbs, names);
     }
 
-    private MatchResult MatchTemplate(Mat img, GaMat tmp,
+    private static MatchResult MatchTemplate(Mat img, GaMat tmp,
         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed)
     {
         var matchResult = new Mat();
@@ -62,34 +61,30 @@ public class VideoProcess
         matchResult.MatRemoveErrorInf();
         double maxVal = 0, minVal = 0;
         Point minLoc = new(), maxLoc = new();
-
         CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
         matchResult.Dispose();
-
-        if (false && _progressCarrier == null)
-        {
-            var show = img.Clone()!;
-            var temp = tmp.Gray.Clone();
-            var emptyMat = new Mat(show.Rows - temp.Rows, temp.Cols, temp.Depth, temp.NumberOfChannels);
-            emptyMat.SetTo(new MCvScalar(0));
-            CvInvoke.VConcat(new VectorOfMat(emptyMat, temp), temp);
-            CvInvoke.HConcat(new VectorOfMat(show, temp), show);
-            temp.Dispose();
-
-            CvInvoke.PutText(show, $"MaxVal: {maxVal:0.00}", maxLoc with { Y = maxLoc.Y - 5 },
-                FontFace.HersheySimplex, 0.4, new MCvScalar(255));
-            CvInvoke.Rectangle(show, new Rectangle(maxLoc, tmp.Size), new MCvScalar(255), 2);
-
-            ShowImg(show, $"MaxVal: {maxVal:0.00}");
-        }
-
+        ShowImg(img, tmp, maxVal, maxLoc);
         return new MatchResult(maxVal, minVal, maxLoc, minLoc);
     }
 
-    private void ShowImg(Mat img, string title = "Image")
+    private static void ShowImg(Mat img, GaMat tmp, double maxVal, Point maxLoc)
     {
+        if (Environment.GetEnvironmentVariable("DebugShowImg") != "true") return;
+
+        var show = img.Clone()!;
+        var temp = tmp.Gray.Clone();
+        var emptyMat = new Mat(show.Rows - temp.Rows, temp.Cols, temp.Depth, temp.NumberOfChannels);
+        emptyMat.SetTo(new MCvScalar(0));
+        CvInvoke.VConcat(new VectorOfMat(emptyMat, temp), temp);
+        CvInvoke.HConcat(new VectorOfMat(show, temp), show);
+        temp.Dispose();
+
+        CvInvoke.PutText(show, $"MaxVal: {maxVal:0.00}", maxLoc with { Y = maxLoc.Y - 5 },
+            FontFace.HersheySimplex, 0.4, new MCvScalar(255));
+        CvInvoke.Rectangle(show, new Rectangle(maxLoc, tmp.Size), new MCvScalar(255), 2);
+
         CvInvoke.Imshow("Image", img);
-        CvInvoke.SetWindowTitle("Image", title);
+        CvInvoke.SetWindowTitle("Image", $"MaxVal: {maxVal:0.00}");
         CvInvoke.WaitKey(1);
     }
 
@@ -372,8 +367,8 @@ public class VideoProcess
 
 
             Rectangle nameTagRect;
-            if (dialogRect.IsEmpty || dialogFrameSets[^1].DialogData.Shake)
-                nameTagRect = DialogMatchNameTag(videoFrame, dialogFrameSets[^1].DialogData.Index);
+            if (dialogRect.IsEmpty || dialogFrameSets[^1].Data.Shake)
+                nameTagRect = DialogMatchNameTag(videoFrame, dialogFrameSets[^1].Data.Index);
             else
                 nameTagRect = dialogRect;
 
@@ -385,7 +380,7 @@ public class VideoProcess
             else
             {
                 var currentDialogStatus = DialogMatchContent(
-                    videoFrame, dialogFrameSets[^1].DialogData.Index, nameTagRect, dialogStatus);
+                    videoFrame, dialogFrameSets[^1].Data.Index, nameTagRect, dialogStatus);
                 needNextFrame = true;
                 switch (currentDialogStatus)
                 {
@@ -558,14 +553,14 @@ public class VideoProcess
         foreach (var set in dialogList)
         {
             var needForceReturn =
-                set.DialogData.BodyOriginal.Split("\n").Length == 3 && (
-                    set.DialogData.FinalContent.Contains("\\R") ||
-                    set.DialogData.FinalContent.Replace("\\N", "").Replace("\n", "")
+                set.Data.BodyOriginal.Split("\n").Length == 3 && (
+                    set.Data.FinalContent.Contains("\\R") ||
+                    set.Data.FinalContent.Replace("\\N", "").Replace("\n", "")
                         .Length > 37
                 );
             if (!needForceReturn) continue;
-            var item = new RequestItem(set.DialogData.FinalContent, set.StartIndex(), set.EndIndex(),
-                _videoInfo.Fps.Fps());
+            var item = new RequestItem(set.Data.FinalContent, set.StartIndex(), set.EndIndex(),
+                _videoInfo.Fps.Fps(), set.IsJitter);
             needSepCount.Add(item);
         }
 
@@ -622,21 +617,21 @@ public class VideoProcess
 
         List<DialogFrameSet> SeparateDialogSet(DialogFrameSet dialogFrameSet, LineSepInfo info)
         {
-            var content = dialogFrameSet.DialogData.FinalContent
+            var content = dialogFrameSet.Data.FinalContent
                 .Replace("\n", "")
                 .Replace("\\N", "")
                 .Replace("\\R", "");
 
             var sepCount = info.Frame - dialogFrameSet.StartIndex();
 
-            var sepSet1 = new DialogFrameSet((Dialog)dialogFrameSet.DialogData.Clone(), _videoInfo.Fps);
-            var sepSet2 = new DialogFrameSet((Dialog)dialogFrameSet.DialogData.Clone(), _videoInfo.Fps);
+            var sepSet1 = new DialogFrameSet((Dialog)dialogFrameSet.Data.Clone(), _videoInfo.Fps);
+            var sepSet2 = new DialogFrameSet((Dialog)dialogFrameSet.Data.Clone(), _videoInfo.Fps);
 
             sepSet1.Frames.AddRange(dialogFrameSet.Frames[..sepCount]);
             sepSet2.Frames.AddRange(dialogFrameSet.Frames[sepCount..]);
 
-            sepSet1.DialogData.BodyTranslated = content[..info.Substr];
-            sepSet2.DialogData.BodyTranslated = content[info.Substr..];
+            sepSet1.Data.BodyTranslated = content[..info.Substr];
+            sepSet2.Data.BodyTranslated = content[info.Substr..];
 
             return [sepSet1, sepSet2];
         }
@@ -652,9 +647,9 @@ public class VideoProcess
 
         IEnumerable<SubtitleEvent> GenerateNoneJitterDialogEvents(DialogFrameSet dialogFrameSet)
         {
-            var content = dialogFrameSet.DialogData.FinalContent;
-            var characterName = dialogFrameSet.DialogData.FinalCharacter;
-            var originLineCount = dialogFrameSet.DialogData.BodyOriginal.Split("\n").Length;
+            var content = dialogFrameSet.Data.FinalContent;
+            var characterName = dialogFrameSet.Data.FinalCharacter;
+            var originLineCount = dialogFrameSet.Data.BodyOriginal.Split("\n").Length;
             var styleName = "Line" + originLineCount;
 
             var startTime = dialogFrameSet.StartTime();
@@ -666,7 +661,7 @@ public class VideoProcess
 
             var characterItemPosition =
                 dialogFrameSet.Start().Point +
-                new Size(GetNameTag(dialogFrameSet.DialogData.CharacterOriginal).Size.Width + 10, 0);
+                new Size(GetNameTag(dialogFrameSet.Data.CharacterOriginal).Size.Width + 10, 0);
             var characterItemPositionTag = $@"{{\pos({characterItemPosition.X},{characterItemPosition.Y})}}";
             var characterItem = SubtitleEvent.Dialog(
                 characterItemPositionTag + characterName, startTime, endTime, "Character");
@@ -677,9 +672,9 @@ public class VideoProcess
 
         IEnumerable<SubtitleEvent> GenerateJitterDialogEvents(DialogFrameSet dialogFrameSet)
         {
-            var content = dialogFrameSet.DialogData.FinalContent;
-            var characterName = dialogFrameSet.DialogData.FinalCharacter;
-            var originLineCount = dialogFrameSet.DialogData.BodyOriginal.Split("\n").Length;
+            var content = dialogFrameSet.Data.FinalContent;
+            var characterName = dialogFrameSet.Data.FinalCharacter;
+            var originLineCount = dialogFrameSet.Data.BodyOriginal.Split("\n").Length;
 
             var styleName = "Line" + originLineCount;
             var styles = MakeDialogStyles();
@@ -704,8 +699,7 @@ public class VideoProcess
                 }
                 else
                 {
-                    var dialogItem = SubtitleEvent.Dialog(body, frame.StartTime(), frame.EndTime(), styleName);
-                    dialogEvents.Add(dialogItem);
+                    dialogEvents.Add(SubtitleEvent.Dialog(body, frame.StartTime(), frame.EndTime(), styleName));
                 }
 
                 if (lastPosition.X == x && lastPosition.Y == y && body == characterEvents[^1].Text)
@@ -714,7 +708,7 @@ public class VideoProcess
                 }
                 else
                 {
-                    var offset = GetNameTag(dialogFrameSet.DialogData.CharacterOriginal).Size.Width;
+                    var offset = GetNameTag(dialogFrameSet.Data.CharacterOriginal).Size.Width;
                     var position = frame.Point + new Size(offset + 10, 0);
                     var tag = $@"{{\pos({position.X},{position.Y})}}";
 
@@ -811,7 +805,7 @@ public class VideoProcess
             var frameIndex = FramePos(videoCap);
 
 
-            var res = BannerMatch(videoFrame, bannerFrameSets[eventIndex].Banner.BodyOriginal);
+            var res = BannerMatch(videoFrame, bannerFrameSets[eventIndex].Data.BodyOriginal);
             if (res)
             {
                 bannerFrameSets[eventIndex].Add(frameIndex);
@@ -867,11 +861,11 @@ public class VideoProcess
             var center = _videoInfo.Resolution.Center();
             center.Y += (int)(offset * 2.5);
             center.Y = center.Y / 20 * 20;
-            var content = set.Banner.FinalContent;
+            var content = set.Data.FinalContent;
             var startTime = set.StartTime();
             var endTime = set.EndTime();
 
-            var maskFade = set.Banner.Index == 0 ? Tags.Fade(300, 200) : Tags.Fade(100, 200);
+            var maskFade = set.Data.Index == 0 ? Tags.Fade(300, 200) : Tags.Fade(100, 200);
             var maskBlur = maskFade + Tags.Blur(30) + Tags.Anchor(7) + Tags.Paint(1);
 
             var body = maskFade + Tags.Anchor(5) + Tags.FontSize(offset) +

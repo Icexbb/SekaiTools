@@ -1,0 +1,94 @@
+<UserControl x:Class="SekaiToolsGUI.View.Subtitle.DialogLine"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:SekaiToolsGUI.View.Subtitle"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             mc:Ignorable="d" d:DesignHeight="300" d:DesignWidth="600"
+             d:DataContext="{d:DesignInstance local:DialogLineModel, IsDesignTimeCreatable=False}"
+             HorizontalAlignment="Stretch">
+
+    <ui:CardExpander VerticalAlignment="Top" IsEnabled="{Binding NeedSetSeparator}"
+                     Name="LineCardExpander" Loaded="LineCardExpander_OnLoaded">
+        <ui:CardExpander.Header>
+            <Grid Margin="0,0,10,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <TextBlock Text="{Binding StartTime,Mode=OneWay}" />
+                    <TextBlock Text="{Binding EndTime,Mode=OneWay}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1">
+                    <TextBlock TextAlignment="Right" Text="{Binding Speaker}" />
+                    <TextBlock TextAlignment="Right" Text="{Binding ContentPiece}" />
+                </StackPanel>
+
+            </Grid>
+        </ui:CardExpander.Header>
+        <ui:CardExpander.Content>
+            <StackPanel Grid.Column="0"
+                        Visibility="{Binding NeedSetSeparator,
+                        Converter={StaticResource BooleanVisibilityConverter}}">
+                <Grid>
+                    <TextBlock Text="将文本分割为: " />
+                    <TextBlock Text="*本行文本发生抖动*" HorizontalAlignment="Right"
+                               Visibility="{Binding Path=IsDialogJitter,Mode=OneWay,Converter={StaticResource BooleanVisibilityConverter}}" />
+                </Grid>
+                <Grid HorizontalAlignment="Center">
+                    <TextBlock Grid.Column="0" Margin="10,2"
+                               TextWrapping="WrapWithOverflow" TextAlignment="Center">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0} / {1} ">
+                                <Binding Path="ContentPart1" Mode="OneWay" />
+                                <Binding Path="ContentPart2" Mode="OneWay" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </Grid>
+                <Slider Minimum="1" Maximum="{Binding SeparatorContentIndexLimit}"
+                        Value="{Binding SeparatorContentIndex}" />
+
+                <Separator Margin="0,5" />
+
+                <Grid>
+                    <TextBlock>
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0}=> {1} ">
+                                <Binding Path="StartFrame" Mode="OneWay" />
+                                <Binding Path="StartTime" Mode="OneWay" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                    <TextBlock HorizontalAlignment="Right">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0}=> {1} ">
+                                <Binding Path="EndFrame" Mode="OneWay" />
+                                <Binding Path="EndTime" Mode="OneWay" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </Grid>
+                <Slider
+                    Minimum="{Binding StartFrame}"
+                    Maximum="{Binding EndFrame}"
+                    Value="{Binding SeparateFrame}" />
+                <TextBlock HorizontalAlignment="Center">
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="{}在 {0}=> {1} 处换行">
+                            <Binding Path="SeparateFrame" Mode="OneWay" />
+                            <Binding Path="SeparateTime" Mode="OneWay" />
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+                <TextBlock HorizontalAlignment="Center" Text="{Binding PromptWarning,Mode=OneWay}"
+                           Visibility="{Binding RelativeSource={RelativeSource Self},
+                           Path=Text,Converter={StaticResource ContentEmptyVisibilityConverter}}" />
+            </StackPanel>
+        </ui:CardExpander.Content>
+    </ui:CardExpander>
+
+</UserControl>

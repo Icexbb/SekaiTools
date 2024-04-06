@@ -7,6 +7,11 @@ namespace SekaiToolsCore;
 
 public static partial class Utils
 {
+    public static int LineCount(this string str)
+    {
+        return str.Split('\n').Length;
+    }
+
     public static IEnumerable<T> Contact<T>(params IEnumerable<T>[] arrays)
     {
         return arrays.SelectMany(x => x);

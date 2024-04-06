@@ -1,0 +1,27 @@
+<UserControl x:Class="SekaiToolsGUI.View.Subtitle.BannerLine"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:local="clr-namespace:SekaiToolsGUI.View.Subtitle"
+             mc:Ignorable="d" d:DesignHeight="300" d:DesignWidth="600"
+             d:DataContext="{d:DesignInstance local:BannerLineModel, IsDesignTimeCreatable=False}"
+             HorizontalAlignment="Stretch">
+    <ui:CardControl VerticalAlignment="Top">
+        <ui:CardControl.Header>
+            <Grid Margin="0,0,10,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <TextBlock Text="{Binding StartTime,Mode=OneWay}" />
+                    <TextBlock Text="{Binding EndTime,Mode=OneWay}" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="{Binding Content,Mode=OneWay}" VerticalAlignment="Center" TextAlignment="Right" />
+            </Grid>
+        </ui:CardControl.Header>
+    </ui:CardControl>
+
+</UserControl>

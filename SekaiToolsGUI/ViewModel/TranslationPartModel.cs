@@ -15,7 +15,11 @@ public class TranslationPartModel : ViewModelBase
     public string TranslatedContent
     {
         get => GetProperty<string>(string.Empty);
-        set => SetProperty(value);
+        set
+        {
+            Console.WriteLine(value);
+            SetProperty(value);
+        }
     }
 
     public bool IsDialog

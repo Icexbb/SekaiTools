@@ -20,16 +20,16 @@ public class TemplateManager
     private readonly string[] _ebTexts;
     private readonly bool _noScale;
 
-    public static string ResourcePath(string fileName)
+    private static string ResourcePath(string fileName)
     {
         string[] baseDirs =
-        {
+        [
             Environment.CurrentDirectory,
             AppContext.BaseDirectory,
             AppDomain.CurrentDomain.BaseDirectory,
             AppDomain.CurrentDomain.RelativeSearchPath ?? string.Empty,
             AppDomain.CurrentDomain.SetupInformation.ApplicationBase ?? string.Empty
-        };
+        ];
         foreach (var baseDir in baseDirs)
         {
             var path = Path.Combine(baseDir, "Resource", fileName);
@@ -185,16 +185,18 @@ public class TemplateManager
 
     private void GenerateDbTemplates()
     {
-        Parallel.ForEach(_dbTexts, s => GetDbTemplate(s));
+        foreach (var s in _dbTexts) GetDbTemplate(s);
     }
+
 
     private void GenerateEbTemplates()
     {
-        Parallel.ForEach(_ebTexts, s => GetEbTemplate(s));
+        foreach (var s in _ebTexts) GetEbTemplate(s);
     }
 
     private void GenerateTemplates()
     {
-        Parallel.Invoke([GenerateEbTemplates, GenerateDbTemplates]);
+        GenerateDbTemplates();
+        GenerateEbTemplates();
     }
 }

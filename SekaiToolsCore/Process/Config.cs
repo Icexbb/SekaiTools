@@ -1,5 +1,11 @@
 namespace SekaiToolsCore.Process;
 
+public struct TypewriterSetting(int fadeTime, int charTime)
+{
+    public readonly int FadeTime = fadeTime;
+    public readonly int CharTime = charTime;
+}
+
 public class Config
 {
     public string VideoFilePath { get; }
@@ -7,11 +13,6 @@ public class Config
     public string TranslateFilePath { get; }
     public string OutputFilePath { get; }
 
-    public struct TypewriterSetting(int fadeTime, int charTime)
-    {
-        public readonly int FadeTime = fadeTime;
-        public readonly int CharTime = charTime;
-    }
 
     public TypewriterSetting TyperSetting = new(50, 80);
 
