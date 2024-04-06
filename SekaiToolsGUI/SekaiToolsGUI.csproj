@@ -12,13 +12,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
         <PackageReference Include="Emgu.CV.Wpf" Version="4.8.1.5350" />
-        <PackageReference Include="HandyControls" Version="3.5.2"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0-preview.2.24128.5" />
         <PackageReference Include="WPF-UI" Version="3.0.3" />
-        <PackageReference Include="WPF-UI.Tray" Version="3.0.3" />
-        <PackageReference Include="WPF-UI_preview" Version="3.0.0-preview.4" />
     </ItemGroup>
 
     <ItemGroup>

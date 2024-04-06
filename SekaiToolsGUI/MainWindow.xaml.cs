@@ -1,16 +1,11 @@
-﻿using System.Collections.ObjectModel;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
-using CommunityToolkit.Mvvm.ComponentModel;
-using SekaiToolsGUI.View;
 using SekaiToolsGUI.View.Subtitle;
 using SekaiToolsGUI.ViewModel;
 using Wpf.Ui;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
-using Wpf.Ui.Extensions;
-using Wpf.Ui.Markup;
 
 namespace SekaiToolsGUI;
 
