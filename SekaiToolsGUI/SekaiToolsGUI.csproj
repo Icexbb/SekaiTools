@@ -9,11 +9,12 @@
         <ApplicationIcon>Resource\icon.ico</ApplicationIcon>
         <Configurations>Debug;Release</Configurations>
         <Platforms>AnyCPU;x64</Platforms>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Emgu.CV.Wpf" Version="4.8.1.5350" />
-        <PackageReference Include="WPF-UI" Version="3.0.3" />
+        <PackageReference Include="Emgu.CV.Wpf" Version="4.8.1.5350"/>
+        <PackageReference Include="WPF-UI" Version="3.0.3"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -88,11 +89,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Page Remove="View\PlaceHolderTextBox.xaml" />
+      <Page Update="View\Translate\SaveFileDialog.xaml">
+        <Generator>MSBuild:Compile</Generator>
+        <XamlRuntime>Wpf</XamlRuntime>
+        <SubType>Designer</SubType>
+      </Page>
     </ItemGroup>
-
-    <ItemGroup>
-      <Compile Remove="View\PlaceHolderTextBox.xaml.cs" />
-    </ItemGroup>
-
 </Project>

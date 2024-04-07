@@ -7,9 +7,8 @@ public class Dialog(
     string characterOriginal,
     bool closeWindow,
     bool shake)
-    : Event("Dialog", bodyOriginal)
+    : Event("Dialog", index, bodyOriginal)
 {
-    public readonly int Index = index;
     public readonly int CharacterId = characterId;
     public readonly string CharacterOriginal = characterOriginal;
     public string CharacterTranslated = "";
@@ -20,6 +19,18 @@ public class Dialog(
     {
         CharacterTranslated = character;
         BodyTranslated = body;
+    }
+
+    public static Dialog FromData(Game.Talk talkData, int index = 0)
+    {
+        return new Dialog(
+            index,
+            talkData.Body,
+            talkData.GetCharacterId(),
+            talkData.WindowDisplayName,
+            talkData.WhenFinishCloseWindow == 1,
+            talkData.Shake
+        );
     }
 
     public string FinalCharacter => CharacterTranslated.Length > 0 && CharacterTranslated != CharacterOriginal

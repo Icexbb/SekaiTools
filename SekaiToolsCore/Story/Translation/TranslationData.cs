@@ -31,17 +31,17 @@ public partial class TranslationData
 
     private int EffectCount() => Translations.Count(translation => translation is EffectTranslate);
 
-    public bool IsApplicable(Data data)
+    public bool IsApplicable(GameData gameData)
     {
-        if (data.Empty()) return true;
+        if (gameData.Empty()) return true;
         if (IsEmpty()) return true;
 
-        if (DialogCount() != data.TalkData.Length) return false;
-        if (EffectCount() != data.SpecialEffectData.Length) return false;
+        if (DialogCount() != gameData.TalkData.Length) return false;
+        if (EffectCount() != gameData.SpecialEffectData.Length) return false;
 
-        for (var i = 0; i < data.Snippets.Length; i++)
+        for (var i = 0; i < gameData.Snippets.Length; i++)
         {
-            switch (data.Snippets[i].Action)
+            switch (gameData.Snippets[i].Action)
             {
                 case 1:
                     if (Translations[i] is not DialogTranslate) return false;

@@ -20,17 +20,16 @@ public class DialogLineModel : ViewModelBase
         Set = set;
         _frameRate = set.Fps;
 
-        if (NeedSetSeparator)
-        {
-            SeparateFrame = Utils.Middle(set.StartIndex() + 1, set.EndIndex() - 1,
-                set.StartIndex() + set.Frames.Count / 2);
-            if (set.Data.BodyTranslated.Contains("\\R"))
-                SeparatorContentIndex = set.Data.BodyTranslated
-                    .Replace("\n", "").Replace("\\N", "")
-                    .IndexOf("\\R", StringComparison.Ordinal);
-            else
-                SeparatorContentIndex = CleanContent.Length / 2;
-        }
+        if (!NeedSetSeparator) return;
+
+        SeparateFrame = Utils.Middle(set.StartIndex() + 1, set.EndIndex() - 1,
+            set.StartIndex() + set.Frames.Count / 2);
+        if (set.Data.BodyTranslated.Contains("\\R"))
+            SeparatorContentIndex = set.Data.BodyTranslated
+                .Replace("\n", "").Replace("\\N", "")
+                .IndexOf("\\R", StringComparison.Ordinal);
+        else
+            SeparatorContentIndex = CleanContent.Length / 2;
     }
 
     public int Index => Set.Data.Index;

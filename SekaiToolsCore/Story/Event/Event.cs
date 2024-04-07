@@ -1,10 +1,12 @@
 namespace SekaiToolsCore.Story.Event;
 
-public abstract class Event(string type, string bodyOriginal) : ICloneable
+public abstract class Event(string type, int index, string origin, string translated = "") : ICloneable
 {
+    public readonly int Index = index;
+
     public readonly string Type = type;
-    public readonly string BodyOriginal = bodyOriginal;
-    public string BodyTranslated = "";
+    public readonly string BodyOriginal = origin;
+    public string BodyTranslated = translated;
 
     public string FinalContent => BodyTranslated.Length > 0 ? BodyTranslated : BodyOriginal;
 

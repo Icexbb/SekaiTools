@@ -6,23 +6,23 @@ namespace SekaiToolsCore.Story;
 
 public class Story
 {
-    private readonly Event.Event[] _events;
+    public readonly Event.Event[] Events;
 
-    private Story(Data data, TranslationData translationData)
+    public Story(GameData gameData, TranslationData translationData)
     {
         List<Event.Event> events = [];
-        if (!data.Empty())
+        if (!gameData.Empty())
         {
             int dialogCount = 0, effectCount = 0;
             int bannerCount = 0, markerCount = 0;
-            foreach (var snippet in data.Snippets)
+            foreach (var snippet in gameData.Snippets)
                 switch (snippet.Action)
                 {
                     case 1:
                     {
-                        var talkData = data.TalkData[dialogCount];
+                        var talkData = gameData.TalkData[dialogCount];
 
-                        if (dialogCount < data.TalkData.Length)
+                        if (dialogCount < gameData.TalkData.Length)
                         {
                             var storyDialogEvent = new Dialog(
                                 dialogCount,
@@ -39,7 +39,7 @@ public class Story
                     }
                     case 6:
                     {
-                        var seData = data.SpecialEffectData[effectCount];
+                        var seData = gameData.SpecialEffectData[effectCount];
                         switch (seData.EffectType)
                         {
                             case 8:
@@ -58,15 +58,15 @@ public class Story
                 }
         }
 
-        _events = events.ToArray();
+        Events = events.ToArray();
         if (translationData.IsEmpty()) return;
-        if (!translationData.IsApplicable(data)) throw new Exception("Translation data is not applicable");
-        for (var i = 0; i < _events.Length; i++)
+        if (!translationData.IsApplicable(gameData)) throw new Exception("Translation data is not applicable");
+        for (var i = 0; i < Events.Length; i++)
         {
-            if (_events[i] is not Dialog) _events[i].BodyTranslated = translationData.Translations[i].Body;
+            if (Events[i] is not Dialog) Events[i].BodyTranslated = translationData.Translations[i].Body;
             else
             {
-                var dialog = (Dialog)_events[i];
+                var dialog = (Dialog)Events[i];
                 dialog.SetTranslation(((DialogTranslate)translationData.Translations[i]).Chara,
                     ((DialogTranslate)translationData.Translations[i]).Body);
             }
@@ -76,7 +76,7 @@ public class Story
     public static Story FromFile(string gameStoryDataPath, string translationDataPath = "")
     {
         if (!File.Exists(gameStoryDataPath)) throw new Exception("File not found");
-        var jsonData = new Data(gameStoryDataPath);
+        var jsonData = new GameData(gameStoryDataPath);
         var textData = File.Exists(translationDataPath)
             ? new TranslationData(translationDataPath)
             : new TranslationData(null);
@@ -95,7 +95,7 @@ public class Story
     private int IndexInType(StoryEventType types, int index)
     {
         var i = 0;
-        foreach (var e in _events)
+        foreach (var e in Events)
         {
             if (types.HasFlag(StoryEventType.Dialog) && e.Type == "Dialog")
             {
@@ -119,7 +119,7 @@ public class Story
     private Event.Event[] GetTypes(StoryEventType types)
     {
         var result = new List<Event.Event>();
-        foreach (var @event in _events)
+        foreach (var @event in Events)
         {
             if (types.HasFlag(StoryEventType.Dialog) && @event.Type == "Dialog") result.Add(@event);
             else if (types.HasFlag(StoryEventType.Banner) && @event.Type == "Banner") result.Add(@event);
@@ -132,7 +132,7 @@ public class Story
     public Dialog[] Dialogs()
     {
         var result = new List<Dialog>();
-        foreach (var v in _events)
+        foreach (var v in Events)
         {
             if (v is Dialog @event) result.Add(@event);
         }
@@ -143,7 +143,7 @@ public class Story
     public Banner[] Banners()
     {
         var result = new List<Banner>();
-        foreach (var v in _events)
+        foreach (var v in Events)
         {
             if (v is Banner @event) result.Add(@event);
         }
@@ -154,7 +154,7 @@ public class Story
     public Marker[] Markers()
     {
         var result = new List<Marker>();
-        foreach (var v in _events)
+        foreach (var v in Events)
         {
             if (v is Marker @event) result.Add(@event);
         }
@@ -165,7 +165,7 @@ public class Story
     public Event.Event[] Effects()
     {
         var result = new List<Event.Event>();
-        foreach (var v in _events)
+        foreach (var v in Events)
         {
             switch (v)
             {

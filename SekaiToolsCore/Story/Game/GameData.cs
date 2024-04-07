@@ -3,13 +3,13 @@ using Newtonsoft.Json.Linq;
 
 namespace SekaiToolsCore.Story.Game;
 
-public class Data
+public class GameData
 {
     internal Snippet[] Snippets;
     internal SpecialEffect[] SpecialEffectData;
     internal readonly Talk[] TalkData;
 
-    public Data(string jsonFilePath)
+    public GameData(string jsonFilePath)
     {
         if (!File.Exists(jsonFilePath)) throw new Exception("File not found");
 

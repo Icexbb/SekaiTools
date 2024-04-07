@@ -1,0 +1,56 @@
+<UserControl x:Class="SekaiToolsGUI.View.Translate.TranslateLineDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:SekaiToolsGUI.View.Translate"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance local:LineDialogModel, IsDesignTimeCreatable=False}"
+             HorizontalAlignment="Stretch">
+    <ui:CardControl Padding="10">
+        <ui:CardControl.Header>
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+
+                        <ColumnDefinition Width="*" MinWidth="200" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBox Grid.Column="0" Grid.ColumnSpan="3"
+                                HorizontalContentAlignment="Stretch"
+                                HorizontalAlignment="Stretch" PlaceholderEnabled="True"
+                                TextAlignment="Center" Margin="5" IconPlacement="Left"
+                                PlaceholderText="{Binding Path= OriginalCharacter}"
+                                Text="{Binding Path= TranslatedCharacter}" />
+                    <ui:SymbolIcon Grid.Column="0" Margin="13,0,0,0"
+                                   Width="28" Height="28" Symbol="Comment28">
+                    </ui:SymbolIcon>
+                    <ui:ImageIcon Grid.Column="2"
+                                  Source="{Binding Path= Icon}"
+                                  Margin="0,0,13,0" Width="28" Height="28"
+                                  VerticalAlignment="Center" />
+                </Grid>
+
+                <Grid Margin="5" Height="75">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBox Name="OriginalContentTextBox" TextWrapping="NoWrap"
+                                Grid.Column="0" IsReadOnly="True" IsReadOnlyCaretVisible="False"
+                                Text="{Binding OriginalContent}" />
+                    <ui:SymbolIcon Grid.Column="1" Symbol="ArrowRight28" Margin="5" />
+                    <ui:TextBox Name="TranslatedContentTextBox"
+                                Width="{Binding ElementName=OriginalContentTextBox,Path=ActualWidth}"
+                                PreviewKeyDown="TranslatedContentTextBox_OnPreviewKeyDown"
+                                AcceptsReturn="True" TextWrapping="NoWrap"
+                                Grid.Column="2"
+                                Text="{Binding TranslatedContent,UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
+            </StackPanel>
+        </ui:CardControl.Header>
+    </ui:CardControl>
+</UserControl>
