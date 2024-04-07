@@ -108,11 +108,11 @@ public static partial class Utils
         negativeInf.SetTo(new MCvScalar(0));
 
         var mask = new Mat(mat.Size, mat.Depth, 1);
-        CvInvoke.Compare(mat, positiveInf, mask, CmpType.Equal);
+        CvInvoke.Compare(mat, positiveInf, mask, CmpType.GreaterEqual);
         mat.SetTo(new MCvScalar(0), mask);
 
         mask = new Mat(mat.Size, mat.Depth, 1);
-        CvInvoke.Compare(mat, negativeInf, mask, CmpType.Equal);
+        CvInvoke.Compare(mat, negativeInf, mask, CmpType.LessEqual);
         mat.SetTo(new MCvScalar(0), mask);
     }
 }

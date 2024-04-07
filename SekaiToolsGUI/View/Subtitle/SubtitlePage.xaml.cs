@@ -270,7 +270,6 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                 {
                     snackService.Show("错误", "运行结束", ControlAppearance.Danger,
                         new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
-                    return;
                 }
                 else
                 {

@@ -9,7 +9,9 @@ namespace SekaiToolsCore.Process;
 public static class Matcher
 {
     public static MatchResult MatchTemplate(Mat img, GaMat tmp,
-        TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed)
+        TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
+        [System.Runtime.CompilerServices.CallerMemberName]
+        string memberName = "")
     {
         var matchResult = new Mat();
         CvInvoke.MatchTemplate(img, tmp.Gray, matchResult, matchingType, mask: tmp.Alpha);
@@ -17,14 +19,15 @@ public static class Matcher
         double maxVal = 0, minVal = 0;
         Point minLoc = new(), maxLoc = new();
         CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
+        ShowImg(img, tmp, maxVal, maxLoc, memberName);
         matchResult.Dispose();
-        ShowImg(img, tmp, maxVal, maxLoc);
         return new MatchResult(maxVal, minVal, maxLoc, minLoc);
     }
 
-    private static void ShowImg(Mat img, GaMat tmp, double maxVal, Point maxLoc)
+    private static void ShowImg(Mat img, GaMat tmp, double maxVal, Point maxLoc, string memberName)
     {
-        if (Environment.GetEnvironmentVariable("DebugShowImg") != "true") return;
+        if (!(Environment.GetEnvironmentVariable("DebugShowImg")?.Contains(memberName) ?? false))
+            return;
 
         var show = img.Clone()!;
         var temp = tmp.Gray.Clone();
@@ -38,8 +41,7 @@ public static class Matcher
             FontFace.HersheySimplex, 0.4, new MCvScalar(255));
         CvInvoke.Rectangle(show, new Rectangle(maxLoc, tmp.Size), new MCvScalar(255), 2);
 
-        CvInvoke.Imshow("Image", show);
-        CvInvoke.SetWindowTitle("Image", $"MaxVal: {maxVal:0.00}");
-        CvInvoke.WaitKey(1);
+        CvInvoke.Imshow(memberName, show);
+        CvInvoke.WaitKey(Environment.GetEnvironmentVariable("DebugImgWait") == "true" ? 0 : 1);
     }
 }

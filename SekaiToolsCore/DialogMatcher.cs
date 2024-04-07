@@ -126,10 +126,10 @@ public class DialogMatcher(VideoInfo videoInfo, Story.Story storyData, TemplateM
         {
             var offset = templateManager.DbTemplateMaxSize().Height;
             Rectangle dialogStartPosition = new(
-                x: point.X + (int)(0.15 * offset),
-                y: point.Y + (int)(1.2 * offset),
-                width: (int)(3.5 * offset),
-                height: (int)(1.5 * offset)
+                x: point.X + (int)(0.1 * offset),
+                y: point.Y + (int)(1.1 * offset),
+                width: (int)(3.6 * offset),
+                height: (int)(1.6 * offset)
             );
             var imgCropped = new Mat(src, dialogStartPosition);
             var result = Matcher.MatchTemplate(imgCropped, tmp);

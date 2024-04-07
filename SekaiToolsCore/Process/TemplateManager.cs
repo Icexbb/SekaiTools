@@ -135,23 +135,28 @@ public class TemplateManager
         bitmap.MakeTransparent();
         var graphics = Graphics.FromImage(bitmap);
         graphics.SmoothingMode = SmoothingMode.HighQuality;
-        using (GraphicsPath path = new())
+        if (byChar)
         {
-            if (byChar)
+            for (var i = 0; i < text.Length; i++)
             {
-                for (var i = 0; i < text.Length; i++)
-                {
-                    var sf = new StringFormat();
-                    var pos = new Point((int)(10 + font.Size * 1.01 * i), 10);
-                    path.AddString(text[i].ToString(), font.FontFamily, (int)font.Style, font.Size, pos, sf);
-                }
+                var sf = new StringFormat();
+                var pos = new Point((int)(10 + font.Size * 1.01 * i), 10);
+                using GraphicsPath path = new();
+                path.AddString(text[i].ToString(), font.FontFamily, (int)font.Style, font.Size, pos, sf);
+                using Pen pen = new(Color.FromArgb(255, 64, 64, 64), font.Size / 4.5f);
+                pen.LineJoin = LineJoin.Round;
+                graphics.DrawPath(pen, path);
+                // 填充
+                using Brush brush = new SolidBrush(Color.White);
+                graphics.FillPath(brush, path);
             }
-            else
-            {
-                path.AddString(text, font.FontFamily, (int)font.Style, font.Size, new Point(10, 10),
-                    new StringFormat());
-            }
+        }
+        else
+        {
+            using GraphicsPath path = new();
 
+            path.AddString(text, font.FontFamily, (int)font.Style, font.Size, new Point(10, 10),
+                new StringFormat());
             using Pen pen = new(Color.FromArgb(255, 64, 64, 64), font.Size / 4.5f);
             pen.LineJoin = LineJoin.Round;
             graphics.DrawPath(pen, path);
