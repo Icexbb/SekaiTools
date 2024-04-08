@@ -331,7 +331,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             var startTime = set.StartTime();
             var endTime = set.EndTime();
 
-            var maskFade = set.Data.Index == 0 ? Tags.Fade(300, 200) : Tags.Fade(100, 200);
+            var maskFade = Tags.Fade(set.Data.TotalIndex == 0 ? 300 : 100, 200);
             var maskBlur = maskFade + Tags.Blur(30) + Tags.Anchor(7) + Tags.Paint(1);
 
             var body = maskFade + Tags.Anchor(5) + Tags.FontSize(offset) +
@@ -396,16 +396,22 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
     public Subtitle Make(List<DialogFrameSet> dialogList, List<BannerFrameSet> bannerList)
     {
-        _nameTagPosition = dialogList[0].Frames[0].Point;
-        var dialogEvents = MakeDialogEvents(dialogList);
-        var bannerEvents = MakeBannerEvents(bannerList);
         var events = new List<SubtitleEvent>();
-        events.AddRange(dialogEvents);
-        events.AddRange(bannerEvents);
-
         var styles = new List<Style>();
-        styles.AddRange(MakeDialogStyles());
-        styles.AddRange(MakeBannerStyles());
+
+        if (dialogList.Count != 0)
+        {
+            _nameTagPosition = dialogList[0].Frames[0].Point;
+            events.AddRange(MakeDialogEvents(dialogList));
+            styles.AddRange(MakeDialogStyles());
+        }
+
+        if (bannerList.Count != 0)
+        {
+            events.AddRange(MakeBannerEvents(bannerList));
+            styles.AddRange(MakeBannerStyles());
+        }
+
 
         return new Subtitle(
             new ScriptInfo(videoInfo.Resolution.Width, videoInfo.Resolution.Height),

@@ -103,9 +103,12 @@ public static partial class Utils
     {
         Mat positiveInf = new(mat.Size, mat.Depth, 1);
         Mat negativeInf = new(mat.Size, mat.Depth, 1);
+        Mat nan = new(mat.Size, mat.Depth, 1);
 
         positiveInf.SetTo(new MCvScalar(1));
         negativeInf.SetTo(new MCvScalar(0));
+        nan.SetTo(new MCvScalar(float.NaN));
+
 
         var mask = new Mat(mat.Size, mat.Depth, 1);
         CvInvoke.Compare(mat, positiveInf, mask, CmpType.GreaterEqual);
@@ -113,6 +116,10 @@ public static partial class Utils
 
         mask = new Mat(mat.Size, mat.Depth, 1);
         CvInvoke.Compare(mat, negativeInf, mask, CmpType.LessEqual);
+        mat.SetTo(new MCvScalar(0), mask);
+
+        mask = new Mat(mat.Size, mat.Depth, 1);
+        CvInvoke.Compare(mat, nan, mask, CmpType.Equal);
         mat.SetTo(new MCvScalar(0), mask);
     }
 }

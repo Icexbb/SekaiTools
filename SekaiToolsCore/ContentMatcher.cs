@@ -17,8 +17,8 @@ public class ContentMatcher(TemplateManager templateManager)
         roi.Extend(0.1);
         var frameCropped = new Mat(mat, roi);
         var result = Matcher.MatchTemplate(frameCropped, menuSign);
-        IsFinished = result.MaxVal > startThreshold;
+        Finished = result.MaxVal > startThreshold;
     }
 
-    public bool IsFinished { get; set; }
+    public bool Finished { get; set; }
 }

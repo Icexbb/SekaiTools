@@ -11,37 +11,70 @@ using Newtonsoft.Json.Linq;
 using SekaiToolsCore.Process;
 using Action = SekaiToolsCore.Story.Fetch.Data.Action;
 
-const string vfp = @"D:\ProjectSekai\Archive\126\126-07.mp4";
-const string sfp = @"D:\ProjectSekai\Archive\126\126-07.json";
-const string tfp = @"D:\ProjectSekai\Archive\126\126-07.txt";
+const string vfp = @"D:\ProjectSekai\test\aprilfool_2024_01.mp4";
+const string sfp = @"D:\ProjectSekai\test\aprilfool_2024_01.json";
+const string tfp = @"D:\ProjectSekai\test\aprilfool_2024_01.txt";
 
 var videoCapture = new VideoCapture(vfp);
 var matcherCreator = new MatcherCreator(vfp, sfp, tfp);
 var dialogMatcher = matcherCreator.DialogMatcher();
+var bannerMatcher = matcherCreator.BannerMatcher();
+var contentMatcher = matcherCreator.ContentMatcher();
 
-for (var i = 0; i < 53; i++)
-{
-    dialogMatcher.Set[i].Finished = true;
-}
-
-videoCapture.Set(CapProp.PosFrames, 17275);
 
 var frame = new Mat();
 while (true)
 {
+    if (
+        bannerMatcher.Finished
+        // && dialogMatcher.Finished
+        && contentMatcher.Finished
+    ) break;
     if (!videoCapture.Read(frame)) break;
     CvInvoke.CvtColor(frame, frame, ColorConversion.Bgr2Gray);
 
     var frameIndex = (int)videoCapture.Get(CapProp.PosFrames);
 
-    if (!dialogMatcher.Finished)
+    if (!contentMatcher.Finished)
     {
-        var dialogIndex = dialogMatcher.LastNotProcessedIndex();
-        var r = dialogMatcher.Process(frame, frameIndex);
-        Console.WriteLine($"Dialog {dialogIndex} processed at frame {frameIndex} with result {r}");
+        contentMatcher.Process(frame);
+        if (contentMatcher.Finished)
+        {
+            Console.WriteLine($"Content Start At {frameIndex}");
+        }
+        else
+        {
+            continue;
+        }
+    }
 
+    var matchBanner = true;
+    // if (!dialogMatcher.Finished)
+    // {
+    //     var dialogIndex = dialogMatcher.LastNotProcessedIndex();
+    //     var r = dialogMatcher.Process(frame, frameIndex);
+    //     if (r) matchBanner = false;
+    //
+    //     if (dialogMatcher.Set[dialogIndex].Finished)
+    //         Console.WriteLine($"Dialog {dialogIndex} finished at frame {frameIndex}");
+    // }
 
-        if (dialogMatcher.Set[dialogIndex].Finished)
-            Console.WriteLine($"Dialog {dialogIndex} finished at frame {frameIndex}");
+    if (matchBanner)
+    {
+        if (!bannerMatcher.Finished)
+        {
+            var bannerIndex = bannerMatcher.LastNotProcessedIndex();
+            bannerMatcher.Process(frame, frameIndex);
+            if (bannerMatcher.Set[bannerIndex].Finished)
+                Console.WriteLine($"Banner {bannerIndex} finished at frame {frameIndex}");
+        }
     }
 }
+
+videoCapture.Dispose();
+
+Console.WriteLine("Finished");
+
+var maker = matcherCreator.SubtitleMaker();
+var sub = maker.Make([], bannerMatcher.Set);
+Console.WriteLine(sub.ToString());

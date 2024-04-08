@@ -35,19 +35,15 @@ public class LineEffectModel : ViewModelBase
 
     private SekaiBanner ExportBanner()
     {
-        var banner = new SekaiBanner(OriginalContent, _event.Index)
-        {
-            BodyTranslated = TranslatedContent
-        };
+        var banner = (SekaiBanner)_event.Clone();
+        banner.BodyTranslated = TranslatedContent;
         return banner;
     }
 
     private SekaiMarker ExportMarker()
     {
-        var marker = new SekaiMarker(OriginalContent, _event.Index)
-        {
-            BodyTranslated = TranslatedContent
-        };
+        var marker = (SekaiMarker)_event.Clone();
+        marker.BodyTranslated = TranslatedContent;
         return marker;
     }
 

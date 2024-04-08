@@ -43,7 +43,7 @@ public class Story
                         switch (seData.EffectType)
                         {
                             case 8:
-                                events.Add(new Banner(seData.StringVal, bannerCount));
+                                events.Add(new Banner(seData.StringVal, bannerCount, events.Count));
                                 bannerCount++;
                                 break;
                             case 18:

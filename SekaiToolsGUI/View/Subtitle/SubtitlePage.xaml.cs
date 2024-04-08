@@ -14,7 +14,6 @@ using SekaiToolsGUI.ViewModel;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
-using Image = System.Drawing.Image;
 
 namespace SekaiToolsGUI.View.Subtitle;
 
@@ -266,7 +265,7 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
 
                 ViewModel.IsRunning = false;
                 if (_contentMatcher == null || _dialogMatcher == null || _bannerMatcher == null) return;
-                if (!_contentMatcher.IsFinished || !_dialogMatcher.Finished || !_bannerMatcher.Finished)
+                if (!_contentMatcher.Finished || !_dialogMatcher.Finished || !_bannerMatcher.Finished)
                 {
                     snackService.Show("错误", "运行结束", ControlAppearance.Danger,
                         new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
@@ -297,7 +296,7 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
             if (frameIndex % ((int)frameRate / 2) == 0)
                 Dispatcher.Invoke(() => { ViewModel.FramePreviewImage = frame.Clone().ToBitmapSource(); },
                     DispatcherPriority.Normal);
-            if (!_contentMatcher.IsFinished)
+            if (!_contentMatcher.Finished)
             {
                 _contentMatcher.Process(frame);
                 continue;
@@ -419,8 +418,8 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
 
         SekaiToolsCore.SubStationAlpha.Subtitle GenerateSubtitle()
         {
-            List<BannerFrameSet> bannerFrameSets = new();
-            List<DialogFrameSet> dialogFrameSets = new();
+            List<BannerFrameSet> bannerFrameSets = [];
+            List<DialogFrameSet> dialogFrameSets = [];
             foreach (var child in LinePanel.Children)
             {
                 switch (child)

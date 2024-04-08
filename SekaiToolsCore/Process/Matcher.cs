@@ -26,7 +26,8 @@ public static class Matcher
 
     private static void ShowImg(Mat img, GaMat tmp, double maxVal, Point maxLoc, string memberName)
     {
-        if (!(Environment.GetEnvironmentVariable("DebugShowImg")?.Contains(memberName) ?? false))
+        var areas = Environment.GetEnvironmentVariable("DebugShowImg") ?? "";
+        if (!areas.Contains(memberName))
             return;
 
         var show = img.Clone()!;
