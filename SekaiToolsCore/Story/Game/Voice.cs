@@ -8,7 +8,7 @@ public struct Voice
     public readonly int GetCharacterId()
     {
         var charaIdFromCharaL2dId =
-            Constants.CharacterLive2dIdToCharacterId.GetValueOrDefault(Character2DId, 0);
+            Constants.C2dIdToCid.GetValueOrDefault(Character2DId, 0);
         if (charaIdFromCharaL2dId is >= 1 and <= 26) return charaIdFromCharaL2dId;
         var idSplit = VoiceId.Split('_');
         List<int> idList = [];

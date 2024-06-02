@@ -39,8 +39,8 @@ public class LineDialogModel : ViewModelBase
     }
 
     public string Icon => Dialog.CharacterId is > 0 and <= 31
-        // ? $"pack://application:,,,/Resource/Characters/chr_{Dialog.CharacterId}.png"
-        ? ""
+        ? $"pack://application:,,,/Resource/Characters/chr_{Dialog.CharacterId}.png"
+        // ? ""
         : string.Empty;
 
     public string OriginalCharacter

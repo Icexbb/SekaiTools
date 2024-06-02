@@ -20,12 +20,17 @@ public class GameData
             .ToObject<JObject[]>()!
             .Select(v => new Talk
             {
-                WindowDisplayName = v["WindowDisplayName"]!.ToObject<string>()!, Body = v["Body"]!.ToObject<string>()!,
+                WindowDisplayName = v["WindowDisplayName"]!.ToObject<string>()!,
+                Body = v["Body"]!.ToObject<string>()!,
                 WhenFinishCloseWindow = v["WhenFinishCloseWindow"]!.ToObject<int>(),
                 Voices = v["Voices"]!.ToObject<JObject[]>()!.Select(voice => new Voice
                 {
                     Character2DId = voice["Character2dId"]!.ToObject<int>(),
                     VoiceId = voice["VoiceId"]!.ToObject<string>()!
+                }).ToArray(),
+                Characters = v["TalkCharacters"]!.ToObject<JObject[]>()!.Select(c => new Talk.TalkCharacters
+                {
+                    Character2dId = c["Character2dId"]!.ToObject<int>()
                 }).ToArray()
             }).ToArray();
 
