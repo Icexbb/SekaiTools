@@ -1,7 +1,7 @@
-namespace SekaiToolsCore.Story.Fetch.Data;
+namespace SekaiDataFetch.Data;
 
 public class Data(
-    List<Action> actions,
+    List<ActionSet> actions,
     List<Card> cards,
     List<CardEpisode> cardEpisodes,
     List<Character2d> character2ds,
@@ -10,7 +10,7 @@ public class Data(
     List<SpecialStory> specialStories,
     List<UnitStory> unitStories)
 {
-    public List<Action> Actions { get; set; } = actions;
+    public List<ActionSet> Actions { get; set; } = actions;
     public List<Card> Cards { get; set; } = cards;
     public List<CardEpisode> CardEpisodes { get; set; } = cardEpisodes;
     public List<Character2d> Character2ds { get; set; } = character2ds;

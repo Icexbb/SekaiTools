@@ -1,6 +1,5 @@
 using Newtonsoft.Json.Linq;
-
-namespace SekaiToolsCore.Story.Fetch.Data;
+namespace SekaiDataFetch.Data;
 
 public class EpisodeReward
 {

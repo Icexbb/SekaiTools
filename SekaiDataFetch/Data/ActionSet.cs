@@ -1,8 +1,8 @@
 using Newtonsoft.Json.Linq;
 
-namespace SekaiToolsCore.Story.Fetch.Data;
+namespace SekaiDataFetch.Data;
 
-public class Action
+public class ActionSet
 {
     public int Id { get; set; }
     public int AreaId { get; set; }
@@ -14,9 +14,9 @@ public class Action
     public int ReleaseConditionId { get; set; }
 
 
-    public static Action FromJson(JObject json)
+    public static ActionSet FromJson(JObject json)
     {
-        return new Action
+        return new ActionSet
         {
             Id = json["id"]!.ToObject<int>(),
             AreaId = json["areaId"]!.ToObject<int>(),

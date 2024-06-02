@@ -1,4 +1,4 @@
-namespace SekaiToolsCore.Story.Fetch;
+namespace SekaiDataFetch;
 
 public class Proxy(
     string host,

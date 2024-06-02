@@ -1,79 +1,16 @@
 using System.Net;
-using System.Text.Json.Nodes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SekaiToolsCore.Story.Fetch.Data;
-using Action = SekaiToolsCore.Story.Fetch.Data.Action;
+using SekaiDataFetch.Data;
 
-namespace SekaiToolsCore.Story.Fetch;
+
+namespace SekaiDataFetch;
 
 public class Fetcher
 {
-    public class SourceList
-    {
-        public enum SourceType
-        {
-            SekaiBest,
-            Pjsekai,
-            // UniPjsk
-        }
-
-        private SourceType _source;
-
-        public SourceList(SourceType sourceType = 0) => SetSource(sourceType);
-
-        public SourceType Source
-        {
-            get => _source;
-            set
-            {
-                _source = value;
-                string root;
-                switch (_source)
-                {
-                    case SourceType.SekaiBest:
-                        root = "https://sekai-world.github.io/sekai-master-db-diff/";
-                        Events = root + "events.json";
-                        Cards = root + "cards.json";
-                        Character2ds = root + "character2ds.json";
-                        UnitStories = root + "unitStories.json";
-                        EventStories = root + "eventStories.json";
-                        CardEpisodes = root + "cardEpisodes.json";
-                        ActionSets = root + "actionSets.json";
-                        SpecialStories = root + "specialStories.json";
-                        break;
-                    case SourceType.Pjsekai:
-                        root = "https://api.pjsek.ai/database/master/";
-                        Events = root + "events?$limit=2000";
-                        Cards = root + "cards?$limit=2000";
-                        Character2ds = root + "character2ds?$limit=2000";
-                        UnitStories = root + "unitStories?$limit=2000";
-                        EventStories = root + "eventStories?$limit=2000";
-                        CardEpisodes = root + "cardEpisodes?$limit=2000";
-                        ActionSets = root + "actionSets?$limit=2000";
-                        SpecialStories = root + "specialStories?$limit=2000";
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
-            }
-        }
-
-        public void SetSource(SourceType sourceType) => Source = sourceType;
-
-        public string Events { get; private set; } = "";
-        public string Cards { get; private set; } = "";
-        public string Character2ds { get; private set; } = "";
-        public string UnitStories { get; private set; } = "";
-        public string EventStories { get; private set; } = "";
-        public string CardEpisodes { get; private set; } = "";
-        public string ActionSets { get; private set; } = "";
-        public string SpecialStories { get; private set; } = "";
-    }
-
     private SourceList Source { get; } = new();
-    public void SetSource(SourceList.SourceType sourceType) => Source.SetSource(sourceType);
     private Proxy UserProxy { get; set; } = Proxy.None;
+    public void SetSource(SourceList.SourceType sourceType) => Source.SetSource(sourceType);
     public void SetProxy(Proxy proxy) => UserProxy = proxy;
 
     private HttpMessageHandler GetHttpHandler()
@@ -183,10 +120,10 @@ public class Fetcher
         return json == null ? [] : json.Select(CardEpisode.FromJson).ToList();
     }
 
-    private List<Action> GetAction()
+    private List<ActionSet> GetAction()
     {
         var json = HttpRequest(Source.ActionSets);
-        return json == null ? [] : json.Select(Action.FromJson).ToList();
+        return json == null ? [] : json.Select(ActionSet.FromJson).ToList();
     }
 
     private List<SpecialStory> GetSpecialStories()
@@ -197,7 +134,7 @@ public class Fetcher
 
     public Data.Data GetData()
     {
-        var taskAction = new Task<List<Action>>(GetAction);
+        var taskAction = new Task<List<ActionSet>>(GetAction);
         var taskCard = new Task<List<Card>>(GetCards);
         var taskCardEpisode = new Task<List<CardEpisode>>(GetCardEpisodes);
         var taskCharacter2d = new Task<List<Character2d>>(GetCharacter2ds);

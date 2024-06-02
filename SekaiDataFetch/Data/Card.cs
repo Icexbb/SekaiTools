@@ -1,6 +1,6 @@
 using Newtonsoft.Json.Linq;
+namespace SekaiDataFetch.Data;
 
-namespace SekaiToolsCore.Story.Fetch.Data;
 
 public class Card
 {

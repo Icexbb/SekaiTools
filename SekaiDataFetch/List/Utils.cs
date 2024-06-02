@@ -1,4 +1,4 @@
-namespace SekaiToolsCore.Story.Fetch.List;
+namespace SekaiDataFetch.List;
 
 public static class Utils
 {
