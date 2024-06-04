@@ -10,6 +10,7 @@ public class Data(
     List<SpecialStory> specialStories,
     List<UnitStory> unitStories)
 {
+    public SourceList.SourceType Source { get; set; } = SourceList.SourceType.SiteBest;
     public List<ActionSet> Actions { get; set; } = actions;
     public List<Card> Cards { get; set; } = cards;
     public List<CardEpisode> CardEpisodes { get; set; } = cardEpisodes;

@@ -7,9 +7,9 @@ public class ActionSet
     public int Id { get; set; }
     public int AreaId { get; set; }
     public bool IsNextGrade { get; set; }
-    public string ScriptId { get; set; }
-    public List<int> CharacterIds { get; set; }
-    public string ArchiveDisplayType { get; set; }
+    public string ScriptId { get; set; } = "";
+    public int[] CharacterIds { get; set; } = [];
+    public string ActionSetType { get; set; } = "";
     public long ArchivePublishedAt { get; set; }
     public int ReleaseConditionId { get; set; }
 
@@ -18,14 +18,14 @@ public class ActionSet
     {
         return new ActionSet
         {
-            Id = json["id"]!.ToObject<int>(),
-            AreaId = json["areaId"]!.ToObject<int>(),
-            IsNextGrade = json["isNextGrade"]!.ToObject<bool>(),
-            ScriptId = json["scriptId"]!.ToObject<string>()!,
-            CharacterIds = json["characterIds"]!.ToObject<int[]>()?.ToList() ?? new List<int>(),
-            ArchiveDisplayType = json["archiveDisplayType"]!.ToObject<string>()!,
-            ArchivePublishedAt = json["archivePublishedAt"]!.ToObject<long>(),
-            ReleaseConditionId = json["releaseConditionId"]!.ToObject<int>()
+            Id = json.Get("id", 0),
+            AreaId = json.Get("areaId", 0),
+            IsNextGrade = json.Get("isNextGrade", false),
+            ScriptId = json.Get("scriptId", ""),
+            CharacterIds = json.Get("characterIds", Array.Empty<int>()),
+            ActionSetType = json.Get("actionSetType", "normal"),
+            ArchivePublishedAt = json.Get("archivePublishedAt", 0L),
+            ReleaseConditionId = json.Get("releaseConditionId", 0),
         };
     }
 }

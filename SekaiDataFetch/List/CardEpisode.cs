@@ -2,30 +2,42 @@ namespace SekaiDataFetch.List;
 
 public class CardEpisode()
 {
-    public Dictionary<string, Dictionary<string, string>> Data = new();
+    public Dictionary<string, Dictionary<string, Dictionary<string, string>>> Data = new();
 
-    public CardEpisode(IEnumerable<Data.CardEpisode> cardEpisodes, IReadOnlyCollection<Data.Card> cards,
+    public CardEpisode(IReadOnlyCollection<Data.CardEpisode> cardEpisodes, IReadOnlyCollection<Data.Card> cards,
         SourceList.SourceType source = SourceList.SourceType.SiteBest) : this()
     {
-        Data = new Dictionary<string, Dictionary<string, string>>();
-        foreach (var cardEpisode in cardEpisodes)
+        foreach (var charaId in Constants.CharacterIdToName.Keys)
         {
-            if (cardEpisode.ScenarioId == string.Empty) continue;
-            var card = cards.FirstOrDefault(x => x.Id == cardEpisode.CardId);
-            if (card == null) continue;
-            var charaName = ""; // Constants.CharacterIdToName.TryGetValue(card.CharacterId, out var charaName);
-            if (charaName == null) continue;
+            var charaName = Constants.CharacterIdToName[charaId];
+            var charaDict = new Dictionary<string, Dictionary<string, string>>();
+            foreach (var card in cards.Where(card => card.CharacterId == charaId))
+            {
+                var cardDict = new Dictionary<string, string>();
+                var rarity = $"★{card.CardRarityType[7..].ToUpper()}";
+                var key = $"{card.Id} - {rarity} {card.Prefix}";
 
-            var rarity = $"★{card.CardRarityType[7..].ToUpper()}";
-            var prefix = card.Prefix;
-            var section = cardEpisode.CardEpisodePartType == "first_part" ? "前篇" : "后篇";
+                foreach (var episode in cardEpisodes.Where(episode => episode.CardId == card.Id))
+                {
+                    var section = episode.CardEpisodePartType == "first_part" ? "前篇" : "后篇";
 
-            var url = source == SourceList.SourceType.SiteBest
-                ? $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/character/member/{cardEpisode.AssetBundleName}/{cardEpisode.ScenarioId}.json"
-                : $"https://storage.sekai.best/sekai-assets/character/member/{cardEpisode.AssetBundleName}_rip/{cardEpisode.ScenarioId}.asset";
-            var key = $"{cardEpisode.CardId} - {rarity} {prefix} {section}";
+                    var url = source switch
+                    {
+                        SourceList.SourceType.SiteBest =>
+                            $"https://storage.sekai.best/sekai-assets/character" +
+                            $"/member/{episode.AssetBundleName}_rip/{episode.ScenarioId}.asset",
+                        SourceList.SourceType.SiteAi =>
+                            $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/character" +
+                            $"/member/{episode.AssetBundleName}/{episode.ScenarioId}.json",
+                        _ => throw new ArgumentOutOfRangeException(nameof(source), source, null)
+                    };
+                    cardDict.Add(section, url);
+                }
 
-            Data.Set(charaName, key, url);
+                charaDict.Add(key, cardDict);
+            }
+
+            Data.Add(charaName, charaDict);
         }
     }
 }

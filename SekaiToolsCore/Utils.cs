@@ -8,9 +8,12 @@ namespace SekaiToolsCore;
 public static partial class Utils
 {
     public static int LineCount(this string str)
-    {
-        return str.Split('\n').Length;
-    }
+        => str.Split('\n').Select(value => value.Length > 0 ? 1 : 0).Sum();
+
+
+    public static int MaxLineLength(this string str)
+        => str.Split('\n').Max(x => x.Trim().Length);
+
 
     public static IEnumerable<T> Contact<T>(params IEnumerable<T>[] arrays)
     {

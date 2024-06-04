@@ -8,7 +8,7 @@ namespace SekaiDataFetch;
 
 public class Fetcher
 {
-    private SourceList Source { get; } = new();
+    public SourceList Source { get; } = new();
     private Proxy UserProxy { get; set; } = Proxy.None;
     public void SetSource(SourceList.SourceType sourceType) => Source.SetSource(sourceType);
     public void SetProxy(Proxy proxy) => UserProxy = proxy;
@@ -35,7 +35,7 @@ public class Fetcher
     {
         public int Total { get; set; }
         public int Limit { get; set; }
-        public JObject[] Data { get; set; }
+        public JObject[] Data { get; set; } = [];
     }
 
     private static T? JsonDeserialize<T>(string json) where T : class
@@ -57,7 +57,9 @@ public class Fetcher
         {
             var handler = GetHttpHandler();
             using var client = new HttpClient(handler);
+            Console.WriteLine($"GET {url}");
             var response = client.GetAsync(url).Result;
+            Console.WriteLine($"GET {url} {response.StatusCode}");
             response.EnsureSuccessStatusCode();
             var responseContent = response.Content.ReadAsStringAsync().Result;
             var obj = JsonConvert.DeserializeObject(responseContent);
@@ -68,7 +70,7 @@ public class Fetcher
                     var data = JsonDeserialize<PjSekaiResponse>(responseContent);
                     if (data == null) throw new JsonSerializationException();
                     return data.Total > data.Limit
-                        ? HttpRequest(url.Insert(url.IndexOf('?'), $"&limit={data.Total}"))
+                        ? HttpRequest(url.Insert(url.IndexOf('?') + 1, $"$limit={data.Total}&"))
                         : data.Data;
                 }
                 case JArray jArray:
@@ -155,6 +157,25 @@ public class Fetcher
             taskEventStory.Result,
             taskSpecialStory.Result,
             taskUnitStory.Result
+        );
+        if (result.NotComplete) throw new Exception("Failed to fetch data");
+        return result;
+    }
+
+    public Data.Data GetDataSync()
+    {
+        var taskAction = GetAction();
+        var taskCard = GetCards();
+        var taskCardEpisode = GetCardEpisodes();
+        var taskCharacter2d = GetCharacter2ds();
+        var taskGameEvent = GetGameEvents();
+        var taskEventStory = GetEventStories();
+        var taskSpecialStory = GetSpecialStories();
+        var taskUnitStory = GetUnitStories();
+
+        var result = new Data.Data(
+            taskAction, taskCard, taskCardEpisode, taskCharacter2d,
+            taskGameEvent, taskEventStory, taskSpecialStory, taskUnitStory
         );
         if (result.NotComplete) throw new Exception("Failed to fetch data");
         return result;

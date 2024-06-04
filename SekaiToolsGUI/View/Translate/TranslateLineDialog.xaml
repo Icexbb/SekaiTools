@@ -13,11 +13,9 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
-
                         <ColumnDefinition Width="*" MinWidth="200" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-
                     <ui:TextBox Grid.Column="0" Grid.ColumnSpan="3"
                                 HorizontalContentAlignment="Stretch"
                                 HorizontalAlignment="Stretch" PlaceholderEnabled="True"
@@ -25,8 +23,7 @@
                                 PlaceholderText="{Binding Path= OriginalCharacter}"
                                 Text="{Binding Path= TranslatedCharacter}" />
                     <ui:SymbolIcon Grid.Column="0" Margin="13,0,0,0"
-                                   Width="28" Height="28" Symbol="Comment28">
-                    </ui:SymbolIcon>
+                                   Width="28" Height="28" Symbol="Comment28" />
                     <ui:ImageIcon Grid.Column="2"
                                   Source="{Binding Path= Icon}"
                                   Margin="0,0,13,0" Width="28" Height="28"
@@ -43,12 +40,65 @@
                                 Grid.Column="0" IsReadOnly="True" IsReadOnlyCaretVisible="False"
                                 Text="{Binding OriginalContent}" />
                     <ui:SymbolIcon Grid.Column="1" Symbol="ArrowRight28" Margin="5" />
-                    <ui:TextBox Name="TranslatedContentTextBox"
-                                Width="{Binding ElementName=OriginalContentTextBox,Path=ActualWidth}"
-                                PreviewKeyDown="TranslatedContentTextBox_OnPreviewKeyDown"
-                                AcceptsReturn="True" TextWrapping="NoWrap"
-                                Grid.Column="2"
-                                Text="{Binding TranslatedContent,UpdateSourceTrigger=PropertyChanged}" />
+                    <Grid Grid.Column="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ui:TextBox
+                            Grid.RowSpan="2" Grid.ColumnSpan="3" Name="TranslatedContentTextBox"
+                            Width="{Binding ElementName=OriginalContentTextBox,Path=ActualWidth}"
+                            PreviewKeyDown="TranslatedContentTextBox_OnPreviewKeyDown"
+                            AcceptsReturn="True" TextWrapping="NoWrap"
+                            Text="{Binding TranslatedContent,UpdateSourceTrigger=PropertyChanged}" />
+                        <ui:TextBlock Grid.Column="2" Grid.Row="1" Margin="0,0,10,4">
+                            <ui:TextBlock.Style>
+                                <Style TargetType="ui:TextBlock">
+                                    <Style.Triggers>
+                                        <DataTrigger
+                                            Binding="{Binding TranslatedContent.Length,Mode=OneWay}" Value="0">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:TextBlock.Style>
+                            <Run>
+                                <Run.Style>
+                                    <Style TargetType="{x:Type Run}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding TooLong}" Value="True">
+                                                <Setter Property="Foreground" Value="Red" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Run.Style>
+                                <Run.Text>
+                                    <Binding Path="MaxLineLength" Mode="OneWay" />
+                                </Run.Text>
+                            </Run>
+                            <Run Text="/" />
+                            <Run Text="{Binding TranslatedContent.Length,Mode=OneWay}" />
+                        </ui:TextBlock>
+                        <ui:SymbolIcon Grid.Column="0" Grid.Row="1" Foreground="Red" Margin="10,0,0,4"
+                                       Symbol="Warning28" ToolTip="{Binding Check}">
+                            <ui:SymbolIcon.Style>
+                                <Style TargetType="ui:SymbolIcon">
+                                    <Style.Triggers>
+                                        <DataTrigger
+                                            Binding="{Binding Check.Length,Mode=OneWay}" Value="0">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+
+                            </ui:SymbolIcon.Style>
+                        </ui:SymbolIcon>
+                    </Grid>
                 </Grid>
             </StackPanel>
         </ui:CardControl.Header>
