@@ -13,7 +13,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Emgu.CV.Wpf" Version="4.8.1.5350"/>
+        <PackageReference Include="Emgu.CV.Wpf" Version="4.9.0.5494" />
         <PackageReference Include="WPF-UI" Version="3.0.3"/>
     </ItemGroup>
 

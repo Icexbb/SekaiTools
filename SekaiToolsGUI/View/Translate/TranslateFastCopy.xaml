@@ -1,0 +1,68 @@
+<UserControl x:Class="SekaiToolsGUI.View.Translate.TranslateFastCopy"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:SekaiToolsGUI.View.Translate"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="160">
+    <ui:CardControl HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                    VerticalContentAlignment="Top">
+        <ui:CardControl.Header>
+            <StackPanel>
+                <ui:TextBlock TextAlignment="Center" Text="特殊字符快速复制" />
+                <Grid Margin="0,5" HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:Button Content="【】" Click="ButtonBase_OnClick" Grid.Column="0"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                    <ui:Button Content="「」" Click="ButtonBase_OnClick" Grid.Column="1"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                </Grid>
+                <Grid Margin="0,5" HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:Button Content="『』" Click="ButtonBase_OnClick" Grid.Column="0"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                    <ui:Button Content="《》" Click="ButtonBase_OnClick" Grid.Column="1"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                </Grid>
+                <Grid Margin="0,5" HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:Button Content="（）" Click="ButtonBase_OnClick" Grid.Column="0"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                    <ui:Button Content="“”" Click="ButtonBase_OnClick" Grid.Column="1"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                </Grid>
+                <Grid Margin="0,5" HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:Button Content="~" Click="ButtonBase_OnClick" Grid.Column="0"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                    <ui:Button Content="♪" Click="ButtonBase_OnClick" Grid.Column="1"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                </Grid>
+                <Grid Margin="0,5" HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:Button Content="☆" Click="ButtonBase_OnClick" Grid.Column="0"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                    <ui:Button Content="——" Click="ButtonBase_OnClick" Grid.Column="1"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                </Grid>
+            </StackPanel>
+        </ui:CardControl.Header>
+    </ui:CardControl>
+</UserControl>

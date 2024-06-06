@@ -92,5 +92,29 @@ public partial class MainWindow : FluentWindow
                     new Binding("ActualHeight") { Source = NavigationView });
             }
         }
+
+        switch (args.Page)
+        {
+            case TranslatePage:
+                Width = 1600;
+                Height = 800;
+                CenterWindowOnScreen();
+                break;
+            case SubtitlePage:
+                Width = 800;
+                Height = 600;
+                CenterWindowOnScreen();
+                break;
+        }
+    }
+
+    private void CenterWindowOnScreen()
+    {
+        var screenWidth = SystemParameters.PrimaryScreenWidth;
+        var screenHeight = SystemParameters.PrimaryScreenHeight;
+        var windowWidth = Width;
+        var windowHeight = Height;
+        Left = (screenWidth / 2) - (windowWidth / 2);
+        Top = (screenHeight / 2) - (windowHeight / 2);
     }
 }

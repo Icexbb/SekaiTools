@@ -5,13 +5,18 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:SekaiToolsGUI.View.Translate"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             mc:Ignorable="d">
-    <Grid>
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="800" d:Background="White">
+    <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <ui:CardControl Grid.Row="0" Margin="10" Name="TranslateControl">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <ui:CardControl Grid.ColumnSpan="2" Grid.Row="0" Name="TranslateControl" Margin="0,0,0,5">
             <StackPanel Orientation="Horizontal">
                 <ui:Button Margin="5,0" Click="LoadFileButton_OnClick" Name="LoadScriptButton">载入剧本</ui:Button>
                 <ui:Button Margin="5,0" Click="LoadTranslationButton_OnClick" Name="LoadTranslationButton">打开翻译</ui:Button>
@@ -19,9 +24,10 @@
                 <ui:Button Margin="5,0" Click="SaveButton_OnClick" Name="SaveButton">保存</ui:Button>
             </StackPanel>
         </ui:CardControl>
-        <ui:CardControl
-            Grid.Row="1" Margin="10,0,10,10" Name="TranslateContainer"
-            VerticalContentAlignment="Top" VerticalAlignment="Stretch" Padding="5">
+        <local:TranslateFastCopy Grid.Row="1" Grid.Column="0"  Width="160"/>
+        <ui:CardControl Grid.Column="1" Margin="5,0,0,0"
+                        Grid.Row="1" Name="TranslateContainer"
+                        VerticalContentAlignment="Top" VerticalAlignment="Stretch" Padding="5">
             <ui:CardControl.Header>
                 <ui:PassiveScrollViewer
                     VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
