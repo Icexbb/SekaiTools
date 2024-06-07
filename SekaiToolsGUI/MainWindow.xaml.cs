@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
+using SekaiToolsGUI.View.Download;
 using SekaiToolsGUI.View.Setting;
 using SekaiToolsGUI.View.Subtitle;
 using SekaiToolsGUI.View.Translate;
@@ -33,6 +34,7 @@ public class MainWindowViewModel : ViewModelBase
         {
             Content = "数据下载",
             Icon = new SymbolIcon { Symbol = SymbolRegular.ArrowDownload24 },
+            TargetPageType = typeof(DownloadPage),
             NavigationCacheMode = NavigationCacheMode.Required
         }
     ];

@@ -42,43 +42,46 @@ public class SettingPageModel : ViewModelBase
         }
     }
 
-    public string AppVersion
+    public readonly List<string> CustomSpecialCharacters = [];
+
+    public static string AppVersion
         => (Application.ResourceAssembly.GetName().Version ??
             new Version(0, 0, 0, 0)).ToString();
 
     public struct Setting
     {
-        public int CurrentApplicationTheme { get; set; }
+        public int CurrentApplicationTheme { get; init; }
+        public string[] CustomSpecialCharacters { get; init; }
     }
 
-    private Setting ToSetting()
+
+    private static string GetSettingPath() =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SekaiTools",
+            "setting.json");
+
+    public void SaveSetting()
     {
-        return new Setting
+        var setting = new Setting
         {
-            CurrentApplicationTheme = CurrentApplicationTheme
+            CurrentApplicationTheme = CurrentApplicationTheme,
+            CustomSpecialCharacters = CustomSpecialCharacters.ToArray()
         };
-    }
-
-    private void SaveSetting()
-    {
-        var setting = ToSetting();
         var json = JsonConvert.SerializeObject(setting);
-        File.WriteAllText("setting.json", json, Encoding.UTF8);
+        Directory.CreateDirectory(Path.GetDirectoryName(GetSettingPath())!);
+        File.WriteAllText(GetSettingPath(), json, Encoding.UTF8);
     }
 
     private void LoadSetting()
     {
-        if (!File.Exists("setting.json")) return;
-        var json = File.ReadAllText("setting.json", Encoding.UTF8);
+        if (!File.Exists(GetSettingPath())) return;
+        var json = File.ReadAllText(GetSettingPath(), Encoding.UTF8);
         var setting = JsonConvert.DeserializeObject<Setting>(json);
         CurrentApplicationTheme = setting.CurrentApplicationTheme;
+        CustomSpecialCharacters.AddRange(setting.CustomSpecialCharacters);
         SaveSetting();
     }
 
-    public SettingPageModel()
-    {
-        LoadSetting();
-    }
+    public SettingPageModel() => LoadSetting();
 }
 
 public partial class SettingPage : UserControl, INavigableView<SettingPageModel>
