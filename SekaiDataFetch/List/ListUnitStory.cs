@@ -2,12 +2,12 @@ using SekaiDataFetch.Data;
 
 namespace SekaiDataFetch.List;
 
-public class UnitEpisode
+public class ListUnitStory
 {
     public Dictionary<string, Dictionary<string, Dictionary<string, string>>> Data = new();
 
 
-    public UnitEpisode(IEnumerable<UnitStory> unitStory,
+    public ListUnitStory(IEnumerable<UnitStory> unitStory,
         SourceList.SourceType sourceType = SourceList.SourceType.SiteBest)
     {
         foreach (var unit in unitStory)

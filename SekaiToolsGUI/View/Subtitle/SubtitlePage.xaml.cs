@@ -293,9 +293,9 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
 
             CvInvoke.CvtColor(frame, frame, ColorConversion.Bgr2Gray);
             var frameIndex = (int)_videoCapture.Get(CapProp.PosFrames);
-            if (frameIndex % ((int)frameRate / 2) == 0)
+            if (frameIndex % ((int)frameRate / 5) == 0)
                 Dispatcher.Invoke(() => { ViewModel.FramePreviewImage = frame.Clone().ToBitmapSource(); },
-                    DispatcherPriority.Normal);
+                    DispatcherPriority.Normal, CancellationToken);
             if (!_contentMatcher.Finished)
             {
                 _contentMatcher.Process(frame);
@@ -327,6 +327,7 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
 
     private void LinePanel_AddDialogLine(DialogFrameSet set)
     {
+        Console.WriteLine($"{set.Start().Index}->{set.End().Index}");
         Dispatcher.Invoke(() =>
         {
             var binding = new Binding("IsChecked")

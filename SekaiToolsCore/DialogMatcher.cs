@@ -170,10 +170,10 @@ public class DialogMatcher(VideoInfo videoInfo, Story.Story storyData, TemplateM
         var dIndex = LastNotProcessedIndex(Set);
         var dialogRefers = Set[dIndex];
 
-        var matchResult = MatchForDialog(frame, dialogRefers, _status);
+        var matchResult = MatchForDialog(frame, dialogRefers);
 
         _status = matchResult.Status;
-        switch (matchResult.Status)
+        switch (_status)
         {
             case MatchStatus.DialogDropped:
                 Set[dIndex].Finished = true;
@@ -210,8 +210,11 @@ public class DialogMatcher(VideoInfo videoInfo, Story.Story storyData, TemplateM
         public readonly MatchStatus Status = status;
     }
 
-    private MatchResult MatchForDialog(Mat frame, DialogFrameSet dialog, MatchStatus status)
+    private MatchResult MatchForDialog(Mat frame, DialogFrameSet dialog)
     {
+        var lastStatus = _status;
+        if (lastStatus is MatchStatus.DialogDropped && dialog.IsEmpty)
+            lastStatus = MatchStatus.DialogNotMatched;
         Point point;
         if (dialog.Data.Shake || dialog.IsEmpty)
             point = DialogMatchNameTag(frame, dialog.Data.CharacterOriginal);
@@ -219,10 +222,10 @@ public class DialogMatcher(VideoInfo videoInfo, Story.Story storyData, TemplateM
             point = dialog.Start().Point;
 
         if (point.IsEmpty)
-            return new MatchResult(Point.Empty, IsStatusMatched(status)
+            return new MatchResult(Point.Empty, IsStatusMatched(lastStatus)
                 ? MatchStatus.DialogDropped
                 : MatchStatus.NameTagNotMatched);
 
-        return new MatchResult(point, DialogMatchContent(frame, dialog.Data.BodyOriginal, point, status));
+        return new MatchResult(point, DialogMatchContent(frame, dialog.Data.BodyOriginal, point, lastStatus));
     }
 }

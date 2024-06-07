@@ -1,10 +1,10 @@
 namespace SekaiDataFetch.List;
 
-public class EventEpisode()
+public class ListEventStory()
 {
     public Dictionary<string, Dictionary<string, string>> Data = new();
 
-    public EventEpisode(IEnumerable<Data.EventStory> evStories, ICollection<Data.GameEvent> events,
+    public ListEventStory(IEnumerable<Data.EventStory> evStories, ICollection<Data.GameEvent> events,
         SourceList.SourceType sourceType = SourceList.SourceType.SiteBest) : this()
     {
         foreach (var eventStory in evStories)
