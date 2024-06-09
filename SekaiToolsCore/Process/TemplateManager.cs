@@ -20,7 +20,11 @@ public class TemplateManager
     private readonly string[] _ebTexts;
     private readonly bool _noScale;
 
-    private static string ResourcePath(string fileName)
+    private static string ResourceDir { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "SekaiTools", "Resource");
+
+    private static void MoveResource()
     {
         string[] baseDirs =
         [
@@ -32,9 +36,33 @@ public class TemplateManager
         ];
         foreach (var baseDir in baseDirs)
         {
-            var path = Path.Combine(baseDir, "Resource", fileName);
-            if (File.Exists(path)) return path;
+            var dirname = Path.Combine(baseDir, "Resource");
+            if (!Directory.Exists(dirname)) continue;
+            Directory.GetFiles(dirname).ToList()
+                .ForEach(p =>
+                {
+                    var filename = Path.GetFileName(p);
+                    var dstFilePath = Path.Combine(ResourceDir, filename);
+                    if (!File.Exists(dstFilePath))
+                        File.Move(p, dstFilePath);
+                    else
+                        File.Delete(p);
+                });
+            Directory.Delete(dirname);
         }
+    }
+
+    private static string ResourcePath(string fileName)
+    {
+        var targetPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "SekaiTools");
+        if (!Directory.Exists(targetPath)) Directory.CreateDirectory(targetPath);
+        if (File.Exists(Path.Combine(targetPath, "Resource", fileName)))
+            return Path.Combine(targetPath, "Resource", fileName);
+
+        MoveResource();
+        if (File.Exists(Path.Combine(targetPath, "Resource", fileName)))
+            return Path.Combine(targetPath, "Resource", fileName);
 
         throw new FileNotFoundException($"{Path.Combine("Resource", fileName)} not found");
     }
