@@ -1,0 +1,62 @@
+<UserControl x:Class="SekaiToolsGUI.View.Download.Tabs.EventStory.EventStoryTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:SekaiToolsGUI.View.Download.Tabs.EventStory"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             mc:Ignorable="d" Loaded="EventStoryTab_OnLoaded"
+             d:DesignHeight="300" d:DesignWidth="300" d:DataContext="{d:DesignInstance local:EventStoryTab }">
+    <UserControl.Resources>
+        <DataTemplate x:Key="TextTemplate">
+            <TextBlock Text="{Binding ListSource}" TextAlignment="Center"
+                       d:DataContext="{d:DesignInstance local:ComboBoxData}" />
+        </DataTemplate>
+        <DataTemplate x:Key="ImageTemplate">
+            <Image Source="{Binding ListSource}" Height="18"
+                   d:DataContext="{d:DesignInstance local:ComboBoxData}" />
+        </DataTemplate>
+        <local:ComboBoxItemTemplateSelector
+            x:Key="ComboBoxItemTemplateSelector"
+            TextTemplate="{StaticResource TextTemplate}"
+            ImageTemplate="{StaticResource ImageTemplate}" />
+    </UserControl.Resources>
+    <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <ui:Card Name="CardUnits"
+                 Grid.Row="0" Padding="5" HorizontalContentAlignment="Stretch" Margin="0,0,0,5">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ComboBox Margin="5" Grid.Column="0" Name="BoxUnit"
+                          ItemsSource="{Binding  BoxUnitData}"
+                          SelectedItem="{Binding SelectedUnit}"
+                          ItemTemplateSelector="{StaticResource ComboBoxItemTemplateSelector}" />
+                <ComboBox Margin="5" Grid.Column="1" Name="BoxType" SelectionChanged="BoxType_OnSelected">
+                    <ComboBoxItem>
+                        <TextBlock HorizontalAlignment="Stretch" TextAlignment="Center"> 不指定 </TextBlock>
+                    </ComboBoxItem>
+                    <ComboBoxItem>
+                        <TextBlock HorizontalAlignment="Stretch" TextAlignment="Center"> 马拉松 </TextBlock>
+                    </ComboBoxItem>
+                    <ComboBoxItem>
+                        <TextBlock HorizontalAlignment="Stretch" TextAlignment="Center"> Cheerful Carnival </TextBlock>
+                    </ComboBoxItem>
+                    <ComboBoxItem>
+                        <TextBlock HorizontalAlignment="Stretch" TextAlignment="Center"> World Link </TextBlock>
+                    </ComboBoxItem>
+                </ComboBox>
+            </Grid>
+        </ui:Card>
+        <ui:Card Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
+            <ui:PassiveScrollViewer>
+                <StackPanel Margin="5" Name="CardContents" />
+            </ui:PassiveScrollViewer>
+        </ui:Card>
+    </Grid>
+</UserControl>

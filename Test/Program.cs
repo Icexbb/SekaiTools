@@ -4,6 +4,7 @@
 // using Emgu.CV;
 // using Emgu.CV.CvEnum;
 
+using Newtonsoft.Json;
 using SekaiDataFetch;
 using SekaiDataFetch.Data;
 using SekaiDataFetch.List;
@@ -11,10 +12,16 @@ using SekaiDataFetch.List;
 var fetcher = new Fetcher();
 fetcher.SetSource(SourceList.SourceType.SiteBest);
 fetcher.SetProxy(new Proxy("127.0.0.1", 20001, Proxy.Type.Http));
-var data = fetcher.GetDataSync();
+var data = await fetcher.GetData();
 Console.WriteLine(data);
 var unitStory = new ListUnitStory(data.UnitStories);
-foreach (var (key, value) in unitStory.Data)
+
+
+var json = JsonConvert.SerializeObject(unitStory.Data);
+Console.WriteLine(json);
+var obj = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, Dictionary<string, string>>>>(json);
+
+foreach (var (key, value) in obj)
 {
     foreach (var (key1, value1) in value)
     {
@@ -24,6 +31,3 @@ foreach (var (key, value) in unitStory.Data)
         }
     }
 }
-// var ApplicationData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-//
-// Console.WriteLine(ApplicationData);

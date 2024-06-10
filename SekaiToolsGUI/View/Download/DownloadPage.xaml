@@ -5,24 +5,84 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:SekaiToolsGUI.View.Download"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+
+             ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+             ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+             Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+             Loaded="DownloadPage_OnLoaded"
              mc:Ignorable="d"
-             d:DesignHeight="300" d:DesignWidth="300">
+             d:DesignHeight="400" d:DesignWidth="600">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <ui:CardControl Grid.Row="0">
-            <ui:CardControl.Header>
-                <ComboBox>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <ui:Card Grid.Column="0" Grid.Row="0" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ComboBox Grid.Column="0" Name="BoxSource">
+                    <ComboBox.Items>
+                        <ComboBoxItem Content="Sekai.Best" />
+                        <ComboBoxItem Content="PjSek.Ai" />
+                    </ComboBox.Items>
+                </ComboBox>
+                <ComboBox Grid.Column="1" Margin="5,0"
+                          Name="BoxStoryType"
+                          SelectionChanged="StoryTypeSelector_OnSelected">
                     <ComboBox.Items>
                         <ComboBoxItem Content="主线剧情" />
                         <ComboBoxItem Content="活动剧情" />
                         <ComboBoxItem Content="地图对话" />
-                        <ComboBoxItem Content="特殊剧情" IsEnabled="False" />
+                        <ComboBoxItem Content="特殊剧情" />
                     </ComboBox.Items>
                 </ComboBox>
-            </ui:CardControl.Header>
-        </ui:CardControl>
+                <Button Grid.Column="2" Content="刷新" />
+            </Grid>
+        </ui:Card>
+        <ui:Card Grid.Column="0" Padding="0" Grid.Row="1"
+                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                 VerticalContentAlignment="Top"
+                 Name="ContentCard" />
+
+        <ui:Card Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"
+                 VerticalContentAlignment="Top" Padding="0" Margin="10,0,0,0"
+                 VerticalAlignment="Stretch" Width="210">
+            <ui:Card.Content>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:Button Grid.Column="0" Name="TaskClearButton"
+                                   Click="ClearButton_OnClick"
+                                   HorizontalAlignment="Right" Margin="5" Content="清空" />
+                        <ui:TextBlock Grid.Column="1" Margin="5" Text="下载列表"
+                                      TextAlignment="Center" VerticalAlignment="Center" />
+
+                        <ui:Button Grid.Column="2" 
+                                   Click="DownloadButton_OnClick"
+                                   HorizontalAlignment="Right" Margin="5" Content="下载" />
+                    </Grid>
+                    <ListBox Grid.Row="1" IsEnabled="False"
+                             VerticalAlignment="Stretch"
+                             HorizontalAlignment="Stretch"
+                             Name="DownloadItemBox" />
+                </Grid>
+            </ui:Card.Content>
+        </ui:Card>
     </Grid>
 </UserControl>

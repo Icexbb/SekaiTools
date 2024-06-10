@@ -9,7 +9,7 @@
              mc:Ignorable="d">
 
     <StackPanel Margin="10">
-        <ui:CardControl Margin="0,0,0,12" Icon="{ui:SymbolIcon Color24}">
+        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Color24}">
             <ui:CardControl.Header>
                 <Grid>
                     <Grid.RowDefinitions>
@@ -35,7 +35,41 @@
                 <!-- <ComboBoxItem Content="跟随系统" /> -->
             </ComboBox>
         </ui:CardControl>
-
+        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Earth24}">
+            <ui:CardControl.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ui:TextBlock
+                        Grid.Row="0"
+                        FontTypography="Body"
+                        Text="代理" />
+                    <ui:TextBlock
+                        Grid.Row="1"
+                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                        Text="下载剧本时所用的代理" />
+                </Grid>
+            </ui:CardControl.Header>
+            <ui:CardControl.Content>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <ComboBox SelectedIndex="{Binding ProxyType ,Mode=TwoWay }">
+                        <ComboBoxItem>不使用</ComboBoxItem>
+                        <ComboBoxItem>http://</ComboBoxItem>
+                        <ComboBoxItem>sock5://</ComboBoxItem>
+                    </ComboBox>
+                    <ui:TextBox Width="150" Margin="5,0"
+                                Visibility="{Binding ProxyChangeable}"
+                                Text="{Binding ProxyHost,Mode=TwoWay}"
+                                ClearButtonEnabled="False" AcceptsReturn="False" AcceptsTab="False" />
+                    <ui:NumberBox Width="150" Maximum="65536" Minimum="0"
+                                  Visibility="{Binding ProxyChangeable}"
+                                  Value="{Binding ProxyPort,Mode=TwoWay}"
+                                  ClearButtonEnabled="False" />
+                </StackPanel>
+            </ui:CardControl.Content>
+        </ui:CardControl>
 
         <ui:CardExpander ContentPadding="0"
                          Icon="{ui:ImageIcon 'pack://application:,,,/Resource/icon.png', Width=28, Height=28}">

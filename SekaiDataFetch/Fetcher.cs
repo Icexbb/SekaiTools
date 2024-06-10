@@ -31,6 +31,7 @@ public class Fetcher
         };
     }
 
+
     private class PjSekaiResponse
     {
         public int Total { get; set; }
@@ -51,131 +52,125 @@ public class Fetcher
         }
     }
 
-    private JObject[]? HttpRequest(string url)
+
+    private async Task<JObject[]?> FetchSource(string url)
     {
-        try
+        var responseContent = await TryGet();
+        var obj = JsonConvert.DeserializeObject(responseContent);
+        switch (obj)
         {
-            var handler = GetHttpHandler();
-            using var client = new HttpClient(handler);
-            Console.WriteLine($"GET {url}");
-            var response = client.GetAsync(url).Result;
-            Console.WriteLine($"GET {url} {response.StatusCode}");
-            response.EnsureSuccessStatusCode();
-            var responseContent = response.Content.ReadAsStringAsync().Result;
-            var obj = JsonConvert.DeserializeObject(responseContent);
-            switch (obj)
+            case JObject:
             {
-                case JObject:
-                {
-                    var data = JsonDeserialize<PjSekaiResponse>(responseContent);
-                    if (data == null) throw new JsonSerializationException();
-                    return data.Total > data.Limit
-                        ? HttpRequest(url.Insert(url.IndexOf('?') + 1, $"$limit={data.Total}&"))
-                        : data.Data;
-                }
-                case JArray jArray:
-                    return jArray.ToObject<JObject[]>()!;
-                default:
-                    throw new NotSupportedException();
+                var data = JsonDeserialize<PjSekaiResponse>(responseContent);
+                if (data == null) throw new JsonSerializationException();
+                return data.Total > data.Limit
+                    ? await FetchSource(url.Insert(url.IndexOf('?') + 1, $"$limit={data.Total}&"))
+                    : data.Data;
+            }
+            case JArray jArray:
+                return jArray.ToObject<JObject[]>()!;
+            default:
+                throw new NotSupportedException();
+        }
+
+        async Task<string> TryGet(int time = 5)
+        {
+            Console.WriteLine($"GET {url}");
+            try
+            {
+                return await Get();
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine($"GET {url} Error: " + (e.InnerException?.Message ?? e.Message));
+                if (time > 0) return await TryGet(time - 1);
+                throw;
             }
         }
-        catch (Exception e)
+
+        async Task<string> Get()
         {
-            Console.WriteLine(e);
-            return null;
+            using var client = new HttpClient(GetHttpHandler());
+            var response = await client.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsStringAsync();
         }
     }
 
-    private List<GameEvent> GetGameEvents()
+
+    public async Task<List<GameEvent>> GetGameEvents()
     {
-        var json = HttpRequest(Source.Events);
+        var json = await FetchSource(Source.Events);
         return json == null ? [] : json.Select(GameEvent.FromJson).ToList();
     }
 
-    private List<Card> GetCards()
+    private async Task<List<Card>> GetCards()
     {
-        var json = HttpRequest(Source.Cards);
+        var json = await FetchSource(Source.Cards);
         return json == null ? [] : json.Select(Card.FromJson).ToList();
     }
 
-    private List<Character2d> GetCharacter2ds()
+    private async Task<List<Character2d>> GetCharacter2ds()
     {
-        var json = HttpRequest(Source.Character2ds);
+        var json = await FetchSource(Source.Character2ds);
         return json == null ? [] : json.Select(Character2d.FromJson).ToList();
     }
 
-    private List<UnitStory> GetUnitStories()
+    public async Task<List<UnitStory>> GetUnitStories()
     {
-        var json = HttpRequest(Source.UnitStories);
+        var json = await FetchSource(Source.UnitStories);
         return json == null ? [] : json.Select(UnitStory.FromJson).ToList();
     }
 
-    private List<EventStory> GetEventStories()
+    public async Task<List<EventStory>> GetEventStories()
     {
-        var json = HttpRequest(Source.EventStories);
+        var json = await FetchSource(Source.EventStories);
         return json == null ? [] : json.Select(EventStory.FromJson).ToList();
     }
 
-    private List<CardEpisode> GetCardEpisodes()
+    private async Task<List<CardEpisode>> GetCardEpisodes()
     {
-        var json = HttpRequest(Source.CardEpisodes);
+        var json = await FetchSource(Source.CardEpisodes);
         return json == null ? [] : json.Select(CardEpisode.FromJson).ToList();
     }
 
-    private List<ActionSet> GetAction()
+    private async Task<List<ActionSet>> GetAction()
     {
-        var json = HttpRequest(Source.ActionSets);
+        var json = await FetchSource(Source.ActionSets);
         return json == null ? [] : json.Select(ActionSet.FromJson).ToList();
     }
 
-    private List<SpecialStory> GetSpecialStories()
+    private async Task<List<SpecialStory>> GetSpecialStories()
     {
-        var json = HttpRequest(Source.SpecialStories);
+        var json = await FetchSource(Source.SpecialStories);
         return json == null ? [] : json.Select(SpecialStory.FromJson).ToList();
     }
 
-    public Data.Data GetData()
+    public async Task<Data.Data> GetData()
     {
-        var taskAction = new Task<List<ActionSet>>(GetAction);
-        var taskCard = new Task<List<Card>>(GetCards);
-        var taskCardEpisode = new Task<List<CardEpisode>>(GetCardEpisodes);
-        var taskCharacter2d = new Task<List<Character2d>>(GetCharacter2ds);
-        var taskGameEvent = new Task<List<GameEvent>>(GetGameEvents);
-        var taskEventStory = new Task<List<EventStory>>(GetEventStories);
-        var taskSpecialStory = new Task<List<SpecialStory>>(GetSpecialStories);
-        var taskUnitStory = new Task<List<UnitStory>>(GetUnitStories);
+        var taskAction = GetAction();
+        var taskCards = GetCards();
+        var taskCardEpisodes = GetCardEpisodes();
+        var taskCharacter2ds = GetCharacter2ds();
+        var taskGameEvents = GetGameEvents();
+        var taskEventStories = GetEventStories();
+        var taskSpecialStories = GetSpecialStories();
+        var taskUnitStories = GetUnitStories();
 
-        Task.WaitAll(taskAction, taskCard, taskCardEpisode, taskCharacter2d, taskGameEvent,
-            taskEventStory, taskSpecialStory, taskUnitStory);
+        await Task.WhenAll(
+            taskAction, taskCards, taskCardEpisodes, taskCharacter2ds,
+            taskGameEvents, taskEventStories, taskSpecialStories, taskUnitStories
+        );
 
         var result = new Data.Data(
             taskAction.Result,
-            taskCard.Result,
-            taskCardEpisode.Result,
-            taskCharacter2d.Result,
-            taskGameEvent.Result,
-            taskEventStory.Result,
-            taskSpecialStory.Result,
-            taskUnitStory.Result
-        );
-        if (result.NotComplete) throw new Exception("Failed to fetch data");
-        return result;
-    }
-
-    public Data.Data GetDataSync()
-    {
-        var taskAction = GetAction();
-        var taskCard = GetCards();
-        var taskCardEpisode = GetCardEpisodes();
-        var taskCharacter2d = GetCharacter2ds();
-        var taskGameEvent = GetGameEvents();
-        var taskEventStory = GetEventStories();
-        var taskSpecialStory = GetSpecialStories();
-        var taskUnitStory = GetUnitStories();
-
-        var result = new Data.Data(
-            taskAction, taskCard, taskCardEpisode, taskCharacter2d,
-            taskGameEvent, taskEventStory, taskSpecialStory, taskUnitStory
+            taskCards.Result,
+            taskCardEpisodes.Result,
+            taskCharacter2ds.Result,
+            taskGameEvents.Result,
+            taskEventStories.Result,
+            taskSpecialStories.Result,
+            taskUnitStories.Result
         );
         if (result.NotComplete) throw new Exception("Failed to fetch data");
         return result;
