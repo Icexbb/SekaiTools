@@ -318,6 +318,9 @@ public partial class EventStoryTab : UserControl, IRefreshable
         if (ListEventStory == null || ListEventStory.Data.Count == 0) return;
         ChangeAllBannerSelector(true);
         var items = ListEventStory.Data.Select(impl => new EventStoryEvent(impl, GetSourceType()));
+        items = items.OrderBy(x => x.EventStoryImpl.EventStory.EventId);
+        if (_currentDirection == -1)
+            items = items.Reverse();
 
         Dispatcher.BeginInvoke((Action)delegate()
         {
@@ -518,5 +521,15 @@ public partial class EventStoryTab : UserControl, IRefreshable
         CheckBoxUnitPiapro.IsChecked = to;
 
         RefreshItemsDisplay();
+    }
+
+
+    private int _currentDirection = -1;
+
+    private void ButtonSort_OnClick(object sender, RoutedEventArgs e)
+    {
+        ButtonSort.RenderTransform = new ScaleTransform(-1, _currentDirection);
+        _currentDirection *= -1;
+        RefreshItems();
     }
 }

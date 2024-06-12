@@ -65,6 +65,9 @@ public class ListEventStory
                 throw new ArgumentException("EventStory and GameEvent mismatch", nameof(evStories));
             Data.Add(new EventStoryImpl(eventStory, @event));
         }
+
+        // Sort by EventId Biggest to Smallest
+        Data.Sort((x, y) => y.EventStory.EventId.CompareTo(x.EventStory.EventId));
     }
 
     public readonly List<EventStoryImpl> Data = [];
