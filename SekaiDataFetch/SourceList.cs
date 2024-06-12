@@ -15,7 +15,7 @@ public class SourceList
     public SourceType Source
     {
         get => _source;
-        set
+        private set
         {
             _source = value;
             string root;

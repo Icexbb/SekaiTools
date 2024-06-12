@@ -8,7 +8,7 @@ using SekaiToolsGUI.ViewModel;
 
 namespace SekaiToolsGUI.View.Download.Tabs.UnitStory;
 
-public partial class UnitStoryTab : UserControl
+public partial class UnitStoryTab : UserControl, IRefreshable
 {
     private ListUnitStory? ListUnitStory { get; set; }
 
@@ -31,8 +31,8 @@ public partial class UnitStoryTab : UserControl
             _ => throw new ArgumentOutOfRangeException()
         };
         CardContents.Children.Clear();
-
-        foreach (var chapter in ListUnitStory!.Data[selectedUnit].Chapters)
+        if (ListUnitStory == null || ListUnitStory.Data.Count == 0) return;
+        foreach (var chapter in ListUnitStory.Data[selectedUnit].Chapters)
         {
             foreach (var episode in chapter.Episodes)
             {
@@ -47,13 +47,48 @@ public partial class UnitStoryTab : UserControl
         }
     }
 
-    private async void UnitStoryTab_OnLoaded(object sender, RoutedEventArgs e)
+    private void RefreshItems()
+    {
+        if (ListUnitStory == null || ListUnitStory.Data.Count == 0) return;
+        if (RadioLightSound.IsChecked == true)
+            RadioButton_OnChecked(RadioLightSound, null!);
+        else if (RadioIdol.IsChecked == true)
+            RadioButton_OnChecked(RadioIdol, null!);
+        else if (RadioThemePark.IsChecked == true)
+            RadioButton_OnChecked(RadioThemePark, null!);
+        else if (RadioStreet.IsChecked == true)
+            RadioButton_OnChecked(RadioStreet, null!);
+        else if (RadioSchoolRefusal.IsChecked == true)
+            RadioButton_OnChecked(RadioSchoolRefusal, null!);
+        else if (RadioPiapro.IsChecked == true)
+            RadioButton_OnChecked(RadioPiapro, null!);
+        else
+        {
+            RadioLightSound.IsChecked = true;
+            RefreshItems();
+        }
+    }
+
+    private void UnitStoryTab_OnLoaded(object sender, RoutedEventArgs e)
     {
         var settings = new SettingPageModel();
         settings.LoadSetting();
         ListUnitStory = new ListUnitStory(GetSourceType(), settings.GetProxy());
+        RefreshItems();
+    }
+
+    public async Task Refresh()
+    {
         CardUnits.IsEnabled = false;
+        if (ListUnitStory == null)
+        {
+            var settings = new SettingPageModel();
+            settings.LoadSetting();
+            ListUnitStory = new ListUnitStory(GetSourceType(), settings.GetProxy());
+        }
+
         await ListUnitStory.Refresh();
+        RefreshItems();
         CardUnits.IsEnabled = true;
     }
 

@@ -118,8 +118,8 @@ public class SettingPageModel : ViewModelBase
 
 
     private static string GetSettingPath() =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SekaiTools",
-            "setting.json");
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "SekaiTools", "Data", "setting.json");
 
     public void SaveSetting()
     {

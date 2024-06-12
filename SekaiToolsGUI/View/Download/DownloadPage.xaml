@@ -40,11 +40,11 @@
                     <ComboBox.Items>
                         <ComboBoxItem Content="主线剧情" />
                         <ComboBoxItem Content="活动剧情" />
-                        <ComboBoxItem Content="地图对话" />
-                        <ComboBoxItem Content="特殊剧情" />
+                        <ComboBoxItem Content="地图对话" IsEnabled="False" />
+                        <ComboBoxItem Content="特殊剧情" IsEnabled="False" />
                     </ComboBox.Items>
                 </ComboBox>
-                <Button Grid.Column="2" Content="刷新" />
+                <Button Grid.Column="2" Content="刷新"  Click="ButtonRefresh_OnClick"/>
             </Grid>
         </ui:Card>
         <ui:Card Grid.Column="0" Padding="0" Grid.Row="1"
@@ -73,7 +73,7 @@
                         <ui:TextBlock Grid.Column="1" Margin="5" Text="下载列表"
                                       TextAlignment="Center" VerticalAlignment="Center" />
 
-                        <ui:Button Grid.Column="2" 
+                        <ui:Button Grid.Column="2"
                                    Click="DownloadButton_OnClick"
                                    HorizontalAlignment="Right" Margin="5" Content="下载" />
                     </Grid>

@@ -1,8 +1,21 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using SekaiDataFetch.Data;
+
 namespace SekaiDataFetch.List;
 
 public class ListEventStory
 {
-    private Fetcher? Fetcher { get; set; } = null;
+    private Fetcher Fetcher { get; }
+
+
+    private static readonly string CachePathEventStories =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "SekaiTools", "Data", "cache", "eventStories.json");
+
+    private static readonly string CachePathGameEvents =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "SekaiTools", "Data", "cache", "gameEvents.json");
 
     public ListEventStory(SourceList.SourceType sourceType = SourceList.SourceType.SiteBest, Proxy? proxy = null)
     {
@@ -10,22 +23,38 @@ public class ListEventStory
         fetcher.SetSource(sourceType);
         fetcher.SetProxy(proxy ?? Proxy.None);
         Fetcher = fetcher;
+        Load();
+    }
+
+    private void Load()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(CachePathEventStories)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(CachePathGameEvents)!);
+
+        if (!File.Exists(CachePathEventStories) || !File.Exists(CachePathGameEvents)) return;
+        var dataEventStories = File.ReadAllText(CachePathEventStories);
+        var dataGameEvents = File.ReadAllText(CachePathGameEvents);
+        var jObjEventStories = JsonConvert.DeserializeObject<JObject[]>(dataEventStories);
+        var jObjGameEvents = JsonConvert.DeserializeObject<JObject[]>(dataGameEvents);
+        if (jObjEventStories != null && jObjGameEvents != null)
+            GetData(jObjEventStories.Select(EventStory.FromJson).ToList(),
+                jObjGameEvents.Select(GameEvent.FromJson).ToList());
     }
 
     public async Task Refresh()
     {
-        if (Fetcher == null) throw new NullReferenceException();
-        var eventStories = await Fetcher!.GetEventStories();
-        var gameEvents = await Fetcher!.GetGameEvents();
-        GetData(eventStories, gameEvents);
+        var jsonEventStories = await Fetcher.FetchSource(Fetcher.Source.EventStories);
+        var jsonGameEvents = await Fetcher.FetchSource(Fetcher.Source.Events);
+        if (jsonEventStories == null || jsonGameEvents == null)
+            throw new Exception("Failed to fetch event stories or game events");
+        await File.WriteAllTextAsync(CachePathEventStories, JsonConvert.SerializeObject(jsonEventStories));
+        await File.WriteAllTextAsync(CachePathGameEvents, JsonConvert.SerializeObject(jsonGameEvents));
+        GetData(jsonEventStories.Select(EventStory.FromJson).ToList(),
+            jsonGameEvents.Select(GameEvent.FromJson).ToList());
     }
 
-    public ListEventStory(ICollection<Data.EventStory> evStories, ICollection<Data.GameEvent> events)
-    {
-        GetData(evStories, events);
-    }
 
-    private void GetData(ICollection<Data.EventStory> evStories, ICollection<Data.GameEvent> events)
+    private void GetData(ICollection<EventStory> evStories, ICollection<GameEvent> events)
     {
         if (evStories.Count != events.Count)
             throw new ArgumentException("EventStory and GameEvent count mismatch", nameof(evStories));
@@ -40,10 +69,10 @@ public class ListEventStory
 
     public readonly List<EventStoryImpl> Data = [];
 
-    public class EventStoryImpl(Data.EventStory es, Data.GameEvent ge)
+    public class EventStoryImpl(EventStory es, GameEvent ge)
     {
-        public readonly Data.EventStory EventStory = es;
-        public readonly Data.GameEvent GameEvent = ge;
+        public readonly EventStory EventStory = es;
+        public readonly GameEvent GameEvent = ge;
 
         public string Url(int episode, SourceList.SourceType sourceType)
         {

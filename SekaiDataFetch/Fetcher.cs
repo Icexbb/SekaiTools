@@ -32,7 +32,7 @@ public class Fetcher
     }
 
 
-    private class PjSekaiResponse
+    private record PjSekaiResponse
     {
         public int Total { get; set; }
         public int Limit { get; set; }
@@ -53,25 +53,25 @@ public class Fetcher
     }
 
 
-    private async Task<JObject[]?> FetchSource(string url)
+    public async Task<JObject[]?> FetchSource(string url)
     {
         var responseContent = await TryGet();
-        var obj = JsonConvert.DeserializeObject(responseContent);
-        switch (obj)
+        switch (Source.Source)
         {
-            case JObject:
-            {
+            case SourceList.SourceType.SiteBest: // obj is jArray.
+                var jObjects = JsonConvert.DeserializeObject<JObject[]>(responseContent);
+                if (jObjects == null) throw new JsonSerializationException();
+                return jObjects;
+            case SourceList.SourceType.SiteAi:
                 var data = JsonDeserialize<PjSekaiResponse>(responseContent);
                 if (data == null) throw new JsonSerializationException();
                 return data.Total > data.Limit
                     ? await FetchSource(url.Insert(url.IndexOf('?') + 1, $"$limit={data.Total}&"))
                     : data.Data;
-            }
-            case JArray jArray:
-                return jArray.ToObject<JObject[]>()!;
             default:
-                throw new NotSupportedException();
+                throw new ArgumentOutOfRangeException();
         }
+
 
         async Task<string> TryGet(int time = 5)
         {
@@ -144,35 +144,5 @@ public class Fetcher
     {
         var json = await FetchSource(Source.SpecialStories);
         return json == null ? [] : json.Select(SpecialStory.FromJson).ToList();
-    }
-
-    public async Task<Data.Data> GetData()
-    {
-        var taskAction = GetAction();
-        var taskCards = GetCards();
-        var taskCardEpisodes = GetCardEpisodes();
-        var taskCharacter2ds = GetCharacter2ds();
-        var taskGameEvents = GetGameEvents();
-        var taskEventStories = GetEventStories();
-        var taskSpecialStories = GetSpecialStories();
-        var taskUnitStories = GetUnitStories();
-
-        await Task.WhenAll(
-            taskAction, taskCards, taskCardEpisodes, taskCharacter2ds,
-            taskGameEvents, taskEventStories, taskSpecialStories, taskUnitStories
-        );
-
-        var result = new Data.Data(
-            taskAction.Result,
-            taskCards.Result,
-            taskCardEpisodes.Result,
-            taskCharacter2ds.Result,
-            taskGameEvents.Result,
-            taskEventStories.Result,
-            taskSpecialStories.Result,
-            taskUnitStories.Result
-        );
-        if (result.NotComplete) throw new Exception("Failed to fetch data");
-        return result;
     }
 }

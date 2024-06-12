@@ -1,10 +1,16 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using SekaiDataFetch.Data;
 
 namespace SekaiDataFetch.List;
 
 public class ListUnitStory
 {
-    private Fetcher? Fetcher { get; set; } = null;
+    private Fetcher Fetcher { get; }
+
+    private static readonly string CachePathUnitStories =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "SekaiTools", "Data", "cache", "unitStories.json");
 
     public ListUnitStory(SourceList.SourceType sourceType = SourceList.SourceType.SiteBest, Proxy? proxy = null)
     {
@@ -12,19 +18,25 @@ public class ListUnitStory
         fetcher.SetSource(sourceType);
         fetcher.SetProxy(proxy ?? Proxy.None);
         Fetcher = fetcher;
+        Load();
+    }
+
+    private void Load()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(CachePathUnitStories)!);
+
+        if (!File.Exists(CachePathUnitStories)) return;
+        var data = File.ReadAllText(CachePathUnitStories);
+        var jObj = JsonConvert.DeserializeObject<JObject[]>(data);
+        if (jObj != null) GetData(jObj.Select(UnitStory.FromJson).ToList());
     }
 
     public async Task Refresh()
     {
-        if (Fetcher == null) throw new NullReferenceException();
-        var data = await Fetcher!.GetUnitStories();
-        GetData(data);
-    }
-
-
-    public ListUnitStory(IEnumerable<UnitStory> unitStory)
-    {
-        GetData(unitStory);
+        var json = await Fetcher.FetchSource(Fetcher.Source.UnitStories);
+        if (json == null) throw new Exception("Failed to fetch unit stories");
+        await File.WriteAllTextAsync(CachePathUnitStories, JsonConvert.SerializeObject(json));
+        GetData(json.Select(UnitStory.FromJson).ToList());
     }
 
     private void GetData(IEnumerable<UnitStory> unitStory)

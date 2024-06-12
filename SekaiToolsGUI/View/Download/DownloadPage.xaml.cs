@@ -1,9 +1,11 @@
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
 using SekaiDataFetch;
+using SekaiToolsGUI.View.Download.Tabs;
 using SekaiToolsGUI.View.Setting;
 
 namespace SekaiToolsGUI.View.Download;
@@ -130,5 +132,19 @@ public partial class DownloadPage : UserControl
             1 => SourceList.SourceType.SiteAi,
             _ => throw new ArgumentOutOfRangeException()
         };
+    }
+
+    private async void ButtonRefresh_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (ContentCard.Content is not IRefreshable refreshable) return;
+        try
+        {
+            await refreshable.Refresh();
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show("刷新失败: " + exception.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            if (Debugger.IsAttached) throw;
+        }
     }
 }

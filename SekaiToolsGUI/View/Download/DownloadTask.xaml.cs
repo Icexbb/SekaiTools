@@ -1,6 +1,7 @@
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using SekaiDataFetch;
@@ -22,11 +23,12 @@ public partial class DownloadTask : UserControl
         Url = url;
         ScriptTag = scriptTag;
         var filename = Path.GetFileName(url);
-        SavePath = Path.Combine(Directory.GetCurrentDirectory(), "Scripts", filename);
+        SavePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "SekaiTools",
+            "Scripts", filename);
         DataContext = this;
     }
 
-    public bool Downloaded { get; set; }
+    public bool Downloaded { get; private set; }
 
     public void ChangeStatus(int status)
     {
@@ -44,7 +46,7 @@ public partial class DownloadTask : UserControl
                 2 => new SolidColorBrush(Colors.LightPink),
                 _ => null
             };
-            Control.BorderThickness = new(2);
+            Control.BorderThickness = new Thickness(2);
         });
     }
 }
