@@ -6,11 +6,9 @@
              xmlns:local="clr-namespace:SekaiToolsGUI.View.Translate"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml" HorizontalAlignment="Stretch"
              mc:Ignorable="d">
-    <ui:CardControl>
-        <ui:CardControl.Header>
-            <TextBlock TextAlignment="Center">
-                <Run Text="----- ----- -----" />
-            </TextBlock>
-        </ui:CardControl.Header>
-    </ui:CardControl>
+    <ui:Card>
+        <TextBlock TextAlignment="Center">
+            <Run Text="----- ----- -----" />
+        </TextBlock>
+    </ui:Card>
 </UserControl>

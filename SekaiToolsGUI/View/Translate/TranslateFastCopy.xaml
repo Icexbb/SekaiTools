@@ -7,67 +7,65 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d"
              d:DesignHeight="400" d:DesignWidth="160">
-    <ui:CardControl HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                    VerticalContentAlignment="Top">
-        <ui:CardControl.Header>
-            <ui:PassiveScrollViewer>
-                <StackPanel>
-                    <ui:TextBlock TextAlignment="Center" Text="特殊字符快速复制" />
-                    <Grid Margin="0,5" HorizontalAlignment="Stretch">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <ui:Button Content="【】" Click="ButtonBase_OnClick" Grid.Column="0"
-                                   Margin="5,0" HorizontalAlignment="Stretch" />
-                        <ui:Button Content="「」" Click="ButtonBase_OnClick" Grid.Column="1"
-                                   Margin="5,0" HorizontalAlignment="Stretch" />
-                    </Grid>
-                    <Grid Margin="0,5" HorizontalAlignment="Stretch">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <ui:Button Content="『』" Click="ButtonBase_OnClick" Grid.Column="0"
-                                   Margin="5,0" HorizontalAlignment="Stretch" />
-                        <ui:Button Content="《》" Click="ButtonBase_OnClick" Grid.Column="1"
-                                   Margin="5,0" HorizontalAlignment="Stretch" />
-                    </Grid>
-                    <Grid Margin="0,5" HorizontalAlignment="Stretch">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <ui:Button Content="（）" Click="ButtonBase_OnClick" Grid.Column="0"
-                                   Margin="5,0" HorizontalAlignment="Stretch" />
-                        <ui:Button Content="“”" Click="ButtonBase_OnClick" Grid.Column="1"
-                                   Margin="5,0" HorizontalAlignment="Stretch" />
-                    </Grid>
-                    <Grid Margin="0,5" HorizontalAlignment="Stretch">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <ui:Button Content="~" Click="ButtonBase_OnClick" Grid.Column="0"
-                                   Margin="5,0" HorizontalAlignment="Stretch" />
-                        <ui:Button Content="♪" Click="ButtonBase_OnClick" Grid.Column="1"
-                                   Margin="5,0" HorizontalAlignment="Stretch" />
-                    </Grid>
-                    <Grid Margin="0,5" HorizontalAlignment="Stretch">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <ui:Button Content="☆" Click="ButtonBase_OnClick" Grid.Column="0"
-                                   Margin="5,0" HorizontalAlignment="Stretch" />
-                        <ui:Button Content="——" Click="ButtonBase_OnClick" Grid.Column="1"
-                                   Margin="5,0" HorizontalAlignment="Stretch" />
-                    </Grid>
-                    <Separator Margin="0,5" />
-                    <ui:Button Content="添加自定义字符" Click="ButtonAdd_OnClick" HorizontalAlignment="Stretch"></ui:Button>
-                    <StackPanel Name="CustomSpecialCharacters" />
-                </StackPanel>
-            </ui:PassiveScrollViewer>
-        </ui:CardControl.Header>
-    </ui:CardControl>
+    <ui:Card HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+             VerticalContentAlignment="Top">
+        <ui:PassiveScrollViewer>
+            <StackPanel>
+                <ui:TextBlock TextAlignment="Center" Text="特殊字符快速复制" />
+                <Grid Margin="0,5" HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:Button Content="【】" Click="ButtonBase_OnClick" Grid.Column="0"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                    <ui:Button Content="「」" Click="ButtonBase_OnClick" Grid.Column="1"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                </Grid>
+                <Grid Margin="0,5" HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:Button Content="『』" Click="ButtonBase_OnClick" Grid.Column="0"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                    <ui:Button Content="《》" Click="ButtonBase_OnClick" Grid.Column="1"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                </Grid>
+                <Grid Margin="0,5" HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:Button Content="（）" Click="ButtonBase_OnClick" Grid.Column="0"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                    <ui:Button Content="“”" Click="ButtonBase_OnClick" Grid.Column="1"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                </Grid>
+                <Grid Margin="0,5" HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:Button Content="~" Click="ButtonBase_OnClick" Grid.Column="0"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                    <ui:Button Content="♪" Click="ButtonBase_OnClick" Grid.Column="1"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                </Grid>
+                <Grid Margin="0,5" HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:Button Content="☆" Click="ButtonBase_OnClick" Grid.Column="0"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                    <ui:Button Content="——" Click="ButtonBase_OnClick" Grid.Column="1"
+                               Margin="5,0" HorizontalAlignment="Stretch" />
+                </Grid>
+                <Separator Margin="0,5" />
+                <ui:Button Content="添加自定义字符" Click="ButtonAdd_OnClick" HorizontalAlignment="Stretch"></ui:Button>
+                <StackPanel Name="CustomSpecialCharacters" />
+            </StackPanel>
+        </ui:PassiveScrollViewer>
+    </ui:Card>
 </UserControl>

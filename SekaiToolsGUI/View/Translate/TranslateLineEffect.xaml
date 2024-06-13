@@ -7,15 +7,13 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" HorizontalAlignment="Stretch"
              d:DataContext="{d:DesignInstance local:LineEffectModel, IsDesignTimeCreatable=False}">
-    <ui:CardControl>
-        <ui:CardControl.Header>
-            <ui:TextBox
-                HorizontalContentAlignment="Stretch"
-                HorizontalAlignment="Stretch" PlaceholderEnabled="True"
-                TextAlignment="Center" Margin="5" IconPlacement="Left"
-                PlaceholderText="{Binding Path= OriginalContent}"
-                Text="{Binding Path= TranslatedContent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                Icon="{ui:SymbolIcon Location28}" />
-        </ui:CardControl.Header>
-    </ui:CardControl>
+    <ui:Card>
+        <ui:TextBox
+            HorizontalContentAlignment="Stretch"
+            HorizontalAlignment="Stretch" PlaceholderEnabled="True"
+            TextAlignment="Center" Margin="5" IconPlacement="Left"
+            PlaceholderText="{Binding Path= OriginalContent}"
+            Text="{Binding Path= TranslatedContent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            Icon="{ui:SymbolIcon Location28}" />
+    </ui:Card>
 </UserControl>

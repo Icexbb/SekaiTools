@@ -16,25 +16,23 @@
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <ui:CardControl Grid.ColumnSpan="2" Grid.Row="0" Name="TranslateControl" Margin="0,0,0,5">
-            <StackPanel Orientation="Horizontal">
+        <ui:Card Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,5">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <ui:Button Margin="5,0" Click="LoadFileButton_OnClick" Name="LoadScriptButton">载入剧本</ui:Button>
                 <ui:Button Margin="5,0" Click="LoadTranslationButton_OnClick" Name="LoadTranslationButton">打开翻译</ui:Button>
                 <ui:Button Margin="5,0" Click="ResetButton_OnClick" Name="ResetButton">重置</ui:Button>
                 <ui:Button Margin="5,0" Click="SaveButton_OnClick" Name="SaveButton">保存</ui:Button>
             </StackPanel>
-        </ui:CardControl>
-        <local:TranslateFastCopy Grid.Row="1" Grid.Column="0"  Width="160"/>
-        <ui:CardControl Grid.Column="1" Margin="5,0,0,0"
-                        Grid.Row="1" Name="TranslateContainer"
-                        VerticalContentAlignment="Top" VerticalAlignment="Stretch" Padding="5">
-            <ui:CardControl.Header>
-                <ui:PassiveScrollViewer
-                    VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
-                    MaxHeight="{Binding ElementName=TranslateContainer, Path=ActualHeight}">
-                    <StackPanel Name="TranslatePanel" Margin="5,5,5,15" />
-                </ui:PassiveScrollViewer>
-            </ui:CardControl.Header>
-        </ui:CardControl>
+        </ui:Card>
+        <local:TranslateFastCopy Grid.Row="1" Grid.Column="0" Width="160" />
+        <ui:Card Grid.Column="1" Margin="5,0,0,0"
+                 Grid.Row="1" Name="TranslateContainer"
+                 VerticalContentAlignment="Top" VerticalAlignment="Stretch" Padding="5">
+            <ui:PassiveScrollViewer
+                VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
+                MaxHeight="{Binding ElementName=TranslateContainer, Path=ActualHeight}">
+                <StackPanel Name="TranslatePanel" Margin="5,5,5,15" />
+            </ui:PassiveScrollViewer>
+        </ui:Card>
     </Grid>
 </UserControl>
