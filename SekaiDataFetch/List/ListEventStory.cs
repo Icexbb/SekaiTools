@@ -84,7 +84,7 @@ public class ListEventStory
             string abName = EventStory.AssetbundleName;
             return sourceType switch
             {
-                SourceList.SourceType.SiteBest => $"https://storage.sekai.best/sekai-assets/event_story" +
+                SourceList.SourceType.SiteBest => $"https://storage.sekai.best/sekai-jp-assets/event_story" +
                                                   $"/{abName}/scenario_rip" +
                                                   $"/{EventStory.EventStoryEpisodes[episode].ScenarioId}.asset",
                 SourceList.SourceType.SiteAi => $"https://assets.pjsek.ai/file/pjsekai-assets/ondemand" +

@@ -24,7 +24,7 @@ public class ListCardStory()
                     var url = source switch
                     {
                         SourceList.SourceType.SiteBest =>
-                            $"https://storage.sekai.best/sekai-assets/character" +
+                            $"https://storage.sekai.best/sekai-jp-assets/character" +
                             $"/member/{episode.AssetBundleName}_rip/{episode.ScenarioId}.asset",
                         SourceList.SourceType.SiteAi =>
                             $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/character" +
