@@ -1,5 +1,4 @@
 using System.Windows.Controls;
-using SekaiToolsGUI.ViewModel;
 using Wpf.Ui.Controls;
 using SekaiBanner = SekaiToolsCore.Story.Event.Banner;
 using SekaiMarker = SekaiToolsCore.Story.Event.Marker;

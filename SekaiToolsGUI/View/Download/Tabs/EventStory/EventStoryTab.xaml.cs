@@ -6,7 +6,6 @@ using System.Windows.Threading;
 using SekaiDataFetch;
 using SekaiDataFetch.List;
 using SekaiToolsGUI.View.Setting;
-using SekaiToolsGUI.ViewModel;
 
 namespace SekaiToolsGUI.View.Download.Tabs.EventStory;
 

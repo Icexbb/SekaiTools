@@ -4,7 +4,6 @@ using System.Windows.Controls;
 using SekaiToolsCore;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Story.Event;
-using SekaiToolsGUI.ViewModel;
 using Wpf.Ui.Controls;
 using Frame = SekaiToolsCore.Process.Frame;
 
@@ -147,6 +146,16 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
     {
         DataContext = new DialogLineModel(set);
         InitializeComponent();
+        if (ViewModel.NeedSetSeparator)
+        {
+            LineCardNormal.Visibility = Visibility.Collapsed;
+            LineCardExpander.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            LineCardNormal.Visibility = Visibility.Visible;
+            LineCardExpander.Visibility = Visibility.Collapsed;
+        }
     }
 
     private void LineCardExpander_OnLoaded(object sender, RoutedEventArgs e)

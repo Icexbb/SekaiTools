@@ -4,7 +4,6 @@ using System.Windows.Media;
 using SekaiDataFetch;
 using SekaiDataFetch.List;
 using SekaiToolsGUI.View.Setting;
-using SekaiToolsGUI.ViewModel;
 
 namespace SekaiToolsGUI.View.Download.Tabs.UnitStory;
 

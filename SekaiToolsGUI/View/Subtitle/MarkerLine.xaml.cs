@@ -1,6 +1,5 @@
 using System.Windows.Controls;
 using SekaiToolsCore.Process;
-using SekaiToolsGUI.ViewModel;
 using Wpf.Ui.Controls;
 
 namespace SekaiToolsGUI.View.Subtitle;

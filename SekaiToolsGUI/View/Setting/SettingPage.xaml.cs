@@ -4,7 +4,6 @@ using System.Windows;
 using System.Windows.Controls;
 using Newtonsoft.Json;
 using SekaiDataFetch;
-using SekaiToolsGUI.ViewModel;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 

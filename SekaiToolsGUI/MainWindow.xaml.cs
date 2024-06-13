@@ -5,7 +5,6 @@ using SekaiToolsGUI.View.Download;
 using SekaiToolsGUI.View.Setting;
 using SekaiToolsGUI.View.Subtitle;
 using SekaiToolsGUI.View.Translate;
-using SekaiToolsGUI.ViewModel;
 using Wpf.Ui;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
@@ -85,38 +84,12 @@ public partial class MainWindow : FluentWindow
 
     private void NavigationView_OnNavigated(NavigationView sender, NavigatedEventArgs args)
     {
-        if (args.Page is UIElement element)
+        if (args.Page is not UIElement element) return;
+        var vb = BindingOperations.GetBinding(element, HeightProperty);
+        if (vb == null)
         {
-            var vb = BindingOperations.GetBinding(element, HeightProperty);
-            if (vb == null)
-            {
-                BindingOperations.SetBinding(element, HeightProperty,
-                    new Binding("ActualHeight") { Source = NavigationView });
-            }
+            BindingOperations.SetBinding(element, HeightProperty,
+                new Binding("ActualHeight") { Source = NavigationView });
         }
-
-        switch (args.Page)
-        {
-            case TranslatePage:
-                Width = 1600;
-                Height = 800;
-                CenterWindowOnScreen();
-                break;
-            case SubtitlePage:
-                Width = 800;
-                Height = 600;
-                CenterWindowOnScreen();
-                break;
-        }
-    }
-
-    private void CenterWindowOnScreen()
-    {
-        var screenWidth = SystemParameters.PrimaryScreenWidth;
-        var screenHeight = SystemParameters.PrimaryScreenHeight;
-        var windowWidth = Width;
-        var windowHeight = Height;
-        Left = (screenWidth / 2) - (windowWidth / 2);
-        Top = (screenHeight / 2) - (windowHeight / 2);
     }
 }

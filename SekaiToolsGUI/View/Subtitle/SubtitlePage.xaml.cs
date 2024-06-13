@@ -13,7 +13,6 @@ using SekaiToolsCore;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Story;
 using SekaiToolsCore.Story.Event;
-using SekaiToolsGUI.ViewModel;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
@@ -67,7 +66,6 @@ public class SubtitlePageModel : ViewModelBase
         {
             SetProperty(value);
             SetResetEnabled();
-
             SetRunningStatus();
         }
     }
@@ -119,7 +117,8 @@ public class SubtitlePageModel : ViewModelBase
 
     private void SetResetEnabled()
     {
-        if (VideoFilePath != "" || ScriptFilePath != "" || TranslateFilePath != "" || IsRunning || IsFinished)
+        if (VideoFilePath != "" || ScriptFilePath != "" || TranslateFilePath != "" ||
+            IsRunning || IsFinished)
             ResetEnabled = Visibility.Visible;
         else
             ResetEnabled = Visibility.Collapsed;
@@ -149,58 +148,56 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
         return result == true ? openFileDialog.FileName : null;
     }
 
-    private async Task SelectSameNameFile(int type, string filename)
+    private async Task SelectSameNameFile(string filename)
     {
+        var fileExt = Path.GetExtension(filename).ToLower();
+
         string[] videoExt = [".mp4", ".avi", ".mkv", ".webm", ".wmv"];
         string[] jsonExt = [".json", ".asset"];
         string[] txtExt = [".txt"];
 
-
-        switch (type)
+        if (videoExt.Contains(fileExt))
         {
-            case 0:
-            {
-                var translatePath = txtExt.Select(te => Path.ChangeExtension(filename, te)).FirstOrDefault(File.Exists);
-                var scriptPath = jsonExt.Select(se => Path.ChangeExtension(filename, se)).FirstOrDefault(File.Exists);
+            ViewModel.VideoFilePath = filename;
 
-                if (scriptPath != null || translatePath != null)
-                {
-                    var dialogResult = await ShowDialog();
-                    if (!dialogResult) return;
-                    if (scriptPath != null) ViewModel.ScriptFilePath = scriptPath;
-                    if (translatePath != null) ViewModel.TranslateFilePath = translatePath;
-                }
-            }
-                break;
-            case 1:
-            {
-                var videoPath = videoExt.Select(ve => Path.ChangeExtension(filename, ve)).FirstOrDefault(File.Exists);
-                var translatePath = txtExt.Select(te => Path.ChangeExtension(filename, te)).FirstOrDefault(File.Exists);
+            var translatePath = txtExt.Select(te => Path.ChangeExtension(filename, te)).FirstOrDefault(File.Exists);
+            var scriptPath = jsonExt.Select(se => Path.ChangeExtension(filename, se)).FirstOrDefault(File.Exists);
 
-                if (videoPath != null || translatePath != null)
-                {
-                    var dialogResult = await ShowDialog();
-                    if (!dialogResult) return;
-                    if (videoPath != null) ViewModel.VideoFilePath = videoPath;
-                    if (translatePath != null) ViewModel.TranslateFilePath = translatePath;
-                }
-            }
-                break;
-            case 2:
-            {
-                var videoPath = videoExt.Select(ve => Path.ChangeExtension(filename, ve)).FirstOrDefault(File.Exists);
-                var scriptPath = jsonExt.Select(se => Path.ChangeExtension(filename, se)).FirstOrDefault(File.Exists);
-                if (videoPath != null || scriptPath != null)
-                {
-                    var dialogResult = await ShowDialog();
-                    if (!dialogResult) return;
-                    if (videoPath != null) ViewModel.VideoFilePath = videoPath;
-                    if (scriptPath != null) ViewModel.ScriptFilePath = scriptPath;
-                }
-            }
-                break;
+            if (scriptPath == null && translatePath == null) return;
+
+            var dialogResult = await ShowDialog();
+            if (!dialogResult) return;
+            if (scriptPath != null) ViewModel.ScriptFilePath = scriptPath;
+            if (translatePath != null) ViewModel.TranslateFilePath = translatePath;
         }
+        else if (jsonExt.Contains(fileExt))
+        {
+            ViewModel.ScriptFilePath = filename;
 
+            var videoPath = videoExt.Select(ve => Path.ChangeExtension(filename, ve)).FirstOrDefault(File.Exists);
+            var translatePath = txtExt.Select(te => Path.ChangeExtension(filename, te)).FirstOrDefault(File.Exists);
+
+            if (videoPath == null && translatePath == null) return;
+
+            var dialogResult = await ShowDialog();
+            if (!dialogResult) return;
+            if (videoPath != null) ViewModel.VideoFilePath = videoPath;
+            if (translatePath != null) ViewModel.TranslateFilePath = translatePath;
+        }
+        else if (txtExt.Contains(fileExt))
+        {
+            ViewModel.TranslateFilePath = filename;
+
+            var videoPath = videoExt.Select(ve => Path.ChangeExtension(filename, ve)).FirstOrDefault(File.Exists);
+            var scriptPath = jsonExt.Select(se => Path.ChangeExtension(filename, se)).FirstOrDefault(File.Exists);
+
+            if (videoPath == null && scriptPath == null) return;
+
+            var dialogResult = await ShowDialog();
+            if (!dialogResult) return;
+            if (videoPath != null) ViewModel.VideoFilePath = videoPath;
+            if (scriptPath != null) ViewModel.ScriptFilePath = scriptPath;
+        }
 
         return;
 
@@ -220,30 +217,29 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
         }
     }
 
+
     private async void VideoFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
         var result = SelectFile(sender, e, "视频文件|*.mp4;*.avi;*.mkv;*.webm;*.wmv");
         if (result == null) return;
 
-        ViewModel.VideoFilePath = result;
-
-        await SelectSameNameFile(0, result);
+        await SelectSameNameFile(result);
     }
 
     private async void ScriptFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
         var result = SelectFile(sender, e, "剧情脚本文件|*.json;*.asset");
         if (result == null) return;
-        ViewModel.ScriptFilePath = result;
-        await SelectSameNameFile(1, result);
+
+        await SelectSameNameFile(result);
     }
 
     private async void TranslationFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
         var result = SelectFile(sender, e, "剧情翻译文件|*.txt");
         if (result == null) return;
-        ViewModel.TranslateFilePath = result;
-        await SelectSameNameFile(1, result);
+
+        await SelectSameNameFile(result);
     }
 
     private VideoCapture? _videoCapture;
@@ -355,12 +351,13 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
 
         var avgDuration = 0d;
 
-        try
+        while (true)
         {
-            while (true)
+            var tic = Environment.TickCount;
+            try
             {
-                var tic = Environment.TickCount;
                 if (CancellationToken.IsCancellationRequested) break;
+                if (_videoCapture is not { IsOpened: true }) break;
                 if (!_videoCapture.Read(frame)) break;
 
                 var frameIndex = (int)_videoCapture.Get(CapProp.PosFrames);
@@ -376,8 +373,7 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                 if (!_contentMatcher.Finished)
                 {
                     _contentMatcher.Process(frame);
-                    var tac = Environment.TickCount;
-                    Fps(tac - tic);
+
                     continue;
                 }
 
@@ -406,27 +402,31 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                     if (_markerMatcher.Set[markerIndex].Finished)
                         LinePanel_AddMarkerLine(_markerMatcher.Set[markerIndex]);
                 }
+            }
+            catch (Exception e)
+            {
+                Dispatcher.Invoke(async () =>
+                {
+                    var uiMessageBox = new Wpf.Ui.Controls.MessageBox
+                    {
+                        Title = "视频处理出错",
 
+                        Content = e.Message + "\n" + e.StackTrace,
+                    };
+
+                    await uiMessageBox.ShowDialogAsync(cancellationToken: CancellationToken);
+                    ViewModel.IsRunning = false;
+                });
+                if (Debugger.IsAttached) throw;
+            }
+            finally
+            {
                 var toc = Environment.TickCount;
                 Fps(toc - tic);
             }
         }
-        catch (Exception e)
-        {
-            Dispatcher.Invoke(async () =>
-            {
-                var uiMessageBox = new Wpf.Ui.Controls.MessageBox
-                {
-                    Title = "视频处理出错",
 
-                    Content = e.Message + "\n" + e.StackTrace,
-                };
-
-                await uiMessageBox.ShowDialogAsync(cancellationToken: CancellationToken);
-                ViewModel.IsRunning = false;
-            });
-            if (Debugger.IsAttached) throw;
-        }
+        UpdateProgress(1);
 
         return;
 
@@ -552,6 +552,9 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
         StopProcess();
         ViewModel.Reset();
         LinePanel.Children.Clear();
+        TextBlockProgression.Text = "";
+        TextBlockFps.Text = "";
+        ProgressBarProgression.Value = 0;
     }
 
     private void StopProcess()
@@ -630,45 +633,20 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
         var data = e.Data.GetData(DataFormats.FileDrop)!;
         var fileName = ((Array)data).GetValue(0)!.ToString();
         if (!File.Exists(fileName)) return;
-        var fileExt = Path.GetExtension(fileName);
 
-        switch (((CardControl)sender).Name)
-        {
-            case "CardControlVideo":
-                if (fileExt != ".mp4" && fileExt != ".avi" && fileExt != ".mkv" &&
-                    fileExt != ".webm" && fileExt != ".wmv")
-                {
-                    ShowSnackError();
-                    return;
-                }
+        await GetSameBaseFile(fileName);
+    }
 
-                ViewModel.VideoFilePath = fileName;
-                await SelectSameNameFile(0, fileName);
-                break;
-            case "CardControlScript":
-                if (fileExt != ".json" && fileExt != ".asset")
-                {
-                    ShowSnackError();
-                    return;
-                }
-
-                ViewModel.ScriptFilePath = fileName;
-                await SelectSameNameFile(1, fileName);
-
-                break;
-            case "CardControlTranslation":
-                if (fileExt != ".txt")
-                {
-                    ShowSnackError();
-                    return;
-                }
-
-                ViewModel.TranslateFilePath = fileName;
-                await SelectSameNameFile(2, fileName);
-
-                break;
-        }
-
+    private async Task GetSameBaseFile(string filename)
+    {
+        var fileExt = Path.GetExtension(filename).ToLower();
+        List<string> vExt = [".mp4", ".avi", ".mkv", ".webm", ".wmv"];
+        List<string> sExt = [".json", ".asset"];
+        List<string> tExt = [".txt"];
+        if (vExt.Contains(fileExt) || sExt.Contains(fileExt) || tExt.Contains(fileExt))
+            await SelectSameNameFile(filename);
+        else
+            ShowSnackError();
 
         return;
 
@@ -683,6 +661,8 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
 
     private void UIElement_OnDragEnter(object sender, DragEventArgs e)
     {
-        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Link : DragDropEffects.None;
+        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
+            ? DragDropEffects.Link
+            : DragDropEffects.None;
     }
 }

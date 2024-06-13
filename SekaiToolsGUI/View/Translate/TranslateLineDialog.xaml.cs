@@ -1,7 +1,6 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 using SekaiToolsCore;
-using SekaiToolsGUI.ViewModel;
 using Wpf.Ui.Controls;
 using SekaiDialog = SekaiToolsCore.Story.Event.Dialog;
 
