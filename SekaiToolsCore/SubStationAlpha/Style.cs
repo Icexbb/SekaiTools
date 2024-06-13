@@ -61,7 +61,7 @@ public class Style
 
     public Style(string source)
     {
-        if (!source.StartsWith("Style:")) throw new Exception("Source Not Start With Marker");
+        if (!source.StartsWith("Style: ")) throw new Exception("Source Not Start With Marker");
         var sourcePart = source[^6..].Split(',');
         if (sourcePart.Length != 23) throw new Exception("Source Parameter not Enough");
         Name = sourcePart[0];
@@ -95,7 +95,7 @@ public class Style
     public override string ToString()
     {
         return
-            $"Style:{Name},{_fontName},{Fontsize},{_primaryColour},{_secondaryColour},{_outlineColour}," +
+            $"Style: {Name},{_fontName},{Fontsize},{_primaryColour},{_secondaryColour},{_outlineColour}," +
             $"{_backColour},{_bold},{_italic},{_underline},{_strikeOut},{_scaleX},{_scaleY}," +
             $"{_spacing:0.0},{_angle},{_borderStyle},{_outline:0.0},{_shadow:0.0},{_alignment}," +
             $"{MarginL},{MarginR},{MarginV},{_encoding}";
