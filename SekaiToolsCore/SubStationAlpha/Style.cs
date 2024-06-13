@@ -7,7 +7,13 @@ public class Style
     public int MarginR { get; }
     public int MarginV { get; }
     private readonly int _encoding;
-    private readonly int _fontsize, _bold, _italic, _underline, _strikeOut, _scaleX, _scaleY;
+    public readonly int Fontsize;
+    private readonly int _bold;
+    private readonly int _italic;
+    private readonly int _underline;
+    private readonly int _strikeOut;
+    private readonly int _scaleX;
+    private readonly int _scaleY;
     public string Name { get; }
 
     private readonly string _fontName;
@@ -30,7 +36,7 @@ public class Style
     {
         Name = name;
         _fontName = fontName;
-        _fontsize = fontsize;
+        Fontsize = fontsize;
         _primaryColour = primaryColour ?? AlphaColor.White;
         _secondaryColour = secondaryColour ?? AlphaColor.Red;
         _outlineColour = outlineColour ?? AlphaColor.Black;
@@ -60,7 +66,7 @@ public class Style
         if (sourcePart.Length != 23) throw new Exception("Source Parameter not Enough");
         Name = sourcePart[0];
         _fontName = sourcePart[1];
-        if (int.TryParse(sourcePart[2], out _fontsize)) _fontsize = 50;
+        if (int.TryParse(sourcePart[2], out Fontsize)) Fontsize = 50;
         _primaryColour = AlphaColor.FromString(sourcePart[3]);
         _secondaryColour = AlphaColor.FromString(sourcePart[4]);
         _outlineColour = AlphaColor.FromString(sourcePart[5]);
@@ -89,7 +95,7 @@ public class Style
     public override string ToString()
     {
         return
-            $"Style:{Name},{_fontName},{_fontsize},{_primaryColour},{_secondaryColour},{_outlineColour}," +
+            $"Style:{Name},{_fontName},{Fontsize},{_primaryColour},{_secondaryColour},{_outlineColour}," +
             $"{_backColour},{_bold},{_italic},{_underline},{_strikeOut},{_scaleX},{_scaleY}," +
             $"{_spacing:0.0},{_angle},{_borderStyle},{_outline:0.0},{_shadow:0.0},{_alignment}," +
             $"{MarginL},{MarginR},{MarginV},{_encoding}";

@@ -74,7 +74,7 @@ public partial class DownloadPage : UserControl
             }
 
             button.IsEnabled = true;
-            if (savePath.Length == 0)
+            if (savePath.Length != 0)
                 ShowFile(savePath);
             return;
 

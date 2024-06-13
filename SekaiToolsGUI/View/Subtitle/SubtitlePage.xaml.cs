@@ -1,5 +1,5 @@
-using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -227,7 +227,6 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
         await SelectSameNameFile(0, result);
     }
 
-
     private async void ScriptFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
         var result = SelectFile(sender, e, "剧情脚本文件|*.json;*.asset");
@@ -249,6 +248,7 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
     private DialogMatcher? _dialogMatcher;
     private ContentMatcher? _contentMatcher;
     private BannerMatcher? _bannerMatcher;
+    private MarkerMatcher? _markerMatcher;
 
     private Task? _task;
     private CancellationTokenSource? _cancellationTokenSource = new();
@@ -307,6 +307,7 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
         _dialogMatcher = _matcherCreator.DialogMatcher();
         _contentMatcher = _matcherCreator.ContentMatcher();
         _bannerMatcher = _matcherCreator.BannerMatcher();
+        _markerMatcher = _matcherCreator.MarkerMatcher();
 
         ViewModel.IsRunning = true;
         ViewModel.HasNotStarted = false;
@@ -320,8 +321,10 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                 var snackService = (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
 
                 ViewModel.IsRunning = false;
-                if (_contentMatcher == null || _dialogMatcher == null || _bannerMatcher == null) return;
-                if (!_contentMatcher.Finished || !_dialogMatcher.Finished || !_bannerMatcher.Finished)
+                if (_contentMatcher == null || _dialogMatcher == null ||
+                    _bannerMatcher == null || _markerMatcher == null) return;
+                if (!_contentMatcher.Finished || !_dialogMatcher.Finished ||
+                    !_bannerMatcher.Finished || !_markerMatcher.Finished)
                 {
                     snackService.Show("错误", "运行结束", ControlAppearance.Danger,
                         new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
@@ -339,7 +342,8 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
     private void Process()
     {
         if (_videoCapture == null || _videoCapture.Ptr == IntPtr.Zero) return;
-        if (_dialogMatcher == null || _contentMatcher == null || _bannerMatcher == null) return;
+        if (_dialogMatcher == null || _contentMatcher == null ||
+            _bannerMatcher == null || _markerMatcher == null) return;
         var frameRate = _videoCapture.Get(CapProp.Fps);
         var frame = new Mat();
         while (true)
@@ -377,6 +381,14 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                     if (_bannerMatcher.Set[bannerIndex].Finished)
                         LinePanel_AddBannerLine(_bannerMatcher.Set[bannerIndex]);
                 }
+            }
+
+            if (!_markerMatcher.Finished)
+            {
+                var markerIndex = _markerMatcher.LastNotProcessedIndex();
+                _markerMatcher.Process(frame, frameIndex);
+                if (_markerMatcher.Set[markerIndex].Finished)
+                    LinePanel_AddMarkerLine(_markerMatcher.Set[markerIndex]);
             }
         }
     }
@@ -423,6 +435,26 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
         });
     }
 
+    private void LinePanel_AddMarkerLine(MarkerFrameSet set)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            var binding = new Binding("IsChecked")
+            {
+                Source = OnlyTooLongSwitch,
+                Converter = new InverseBooleanToVisibilityConverter(),
+                Mode = BindingMode.OneWay,
+            };
+            var line = new MarkerLine(set)
+            {
+                Margin = new Thickness(5, 5, 10, 5)
+            };
+            line.SetBinding(VisibilityProperty, binding);
+            LinePanel.Children.Add(line);
+            LineViewer.ScrollToEnd();
+        });
+    }
+
     private void ResetButton_OnClick(object sender, RoutedEventArgs e)
     {
         StopProcess();
@@ -455,7 +487,8 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
         var fileName = dialog.ViewModel.FileName;
 
         var subtitle = GenerateSubtitle();
-        await File.WriteAllTextAsync(fileName, subtitle.ToString(), token);
+        await File.WriteAllTextAsync(fileName, subtitle.ToString(),
+            Encoding.UTF8, token);
 
         var snackService = (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
         snackService.Show("成功", "字幕文件已保存", ControlAppearance.Success,
@@ -477,6 +510,7 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
         {
             List<BannerFrameSet> bannerFrameSets = [];
             List<DialogFrameSet> dialogFrameSets = [];
+            List<MarkerFrameSet> markerFrameSets = [];
             foreach (var child in LinePanel.Children)
             {
                 switch (child)
@@ -487,11 +521,15 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                     case BannerLine bannerLine:
                         bannerFrameSets.Add(bannerLine.ViewModel.Set);
                         break;
+                    case MarkerLine markerLine:
+                        markerFrameSets.Add(markerLine.ViewModel.Set);
+                        break;
                 }
             }
 
-            var maker = _matcherCreator!.SubtitleMaker();
-            return maker.Make(dialogFrameSets, bannerFrameSets);
+            if (_matcherCreator == null) throw new NullReferenceException();
+            var maker = _matcherCreator.SubtitleMaker();
+            return maker.Make(dialogFrameSets, bannerFrameSets, markerFrameSets);
         }
     }
 
@@ -554,18 +592,5 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
     private void UIElement_OnDragEnter(object sender, DragEventArgs e)
     {
         e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Link : DragDropEffects.None;
-    }
-}
-
-public class InverseBooleanToVisibilityConverter : IValueConverter
-{
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        return (bool)value ? Visibility.Collapsed : Visibility.Visible;
-    }
-
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        return value is Visibility visibility && visibility == Visibility.Collapsed;
     }
 }

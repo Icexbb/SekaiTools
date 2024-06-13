@@ -18,7 +18,10 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
     private static Queue<char> FormatDialogBodyArr(string body)
     {
-        var bodyCopy = body.Replace("\\N", "\n").Replace("\\n", "\n");
+        var bodyCopy = body
+            .Replace("…", "...")
+            .Replace("... ...", "......")
+            .Replace("\\N", "\n").Replace("\\n", "\n");
         var lineCount = bodyCopy.Count(t => t == '\n');
         if (lineCount == 2) bodyCopy = bodyCopy.Replace("\n", "");
         var queue = new Queue<char>();
@@ -300,8 +303,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
     #endregion
 
-
-    #region Events
+    #region Banner
 
     private List<SubtitleEvent> MakeBannerEvents(List<BannerFrameSet> bannerList)
     {
@@ -312,10 +314,10 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             count++;
 
             var events = new List<SubtitleEvent>();
-            var dialogMarker = $"-----  {count:000}  -----";
-            events.Add(SubtitleEvent.Comment($"{dialogMarker}  Start", set.StartTime(), set.EndTime(), "Screen"));
+            var markerString = $"-----  {count:000}  -----";
+            events.Add(SubtitleEvent.Comment($"{markerString}  Start", set.StartTime(), set.EndTime(), "Screen"));
             events.AddRange(GenerateBannerEvent(set));
-            events.Add(SubtitleEvent.Comment($"{dialogMarker}  End", set.StartTime(), set.EndTime(), "Screen"));
+            events.Add(SubtitleEvent.Comment($"{markerString}  End", set.StartTime(), set.EndTime(), "Screen"));
             result.AddRange(events);
         }
 
@@ -392,31 +394,120 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
     #endregion
 
-    private Point _nameTagPosition = new(0, 0);
+    #region Marker
 
-    public Subtitle Make(List<DialogFrameSet> dialogList, List<BannerFrameSet> bannerList)
+    private List<SubtitleEvent> MakeMarkerEvents(List<MarkerFrameSet> markerList)
+    {
+        List<SubtitleEvent> result = [];
+        var count = 0;
+        foreach (var set in markerList)
+        {
+            count++;
+
+            var events = new List<SubtitleEvent>();
+            var markerString = $"-----  {count:000}  -----";
+            events.Add(SubtitleEvent.Comment($"{markerString}  Start", set.StartTime(), set.EndTime(), "Screen"));
+            events.AddRange(GenerateMarkerEvent(set));
+            events.Add(SubtitleEvent.Comment($"{markerString}  End", set.StartTime(), set.EndTime(), "Screen"));
+            result.AddRange(events);
+        }
+
+        return result;
+
+        List<SubtitleEvent> GenerateMarkerEvent(MarkerFrameSet frameSet)
+        {
+            List<SubtitleEvent> markerEventText = [];
+            List<SubtitleEvent> markerEventMask = [];
+            var content = frameSet.Data.FinalContent;
+
+            foreach (var frame in frameSet.Frames)
+            {
+                var startTime = frame.StartTime();
+                var endTime = frame.EndTime();
+                var position = frame.Point;
+                var fs = _styles.First(style => style.Name == "MarkerText").Fontsize;
+                var tagText = new Tags(Tags.Position(position.X, position.Y + (int)(fs * 1.6)));
+                markerEventText.Add(
+                    SubtitleEvent.Dialog(tagText + content, startTime, endTime, "MarkerText"));
+
+                var tagMask = new Tags(
+                    Tags.Anchor(7),
+                    Tags.Bord(0),
+                    Tags.Blur(50),
+                    Tags.Clip(
+                        new Point(0, position.Y + (int)(fs * 1.6)),
+                        new Point(fs * content.Length * 2, position.Y + (int)(fs * 2.6))),
+                    Tags.Paint(1)
+                );
+                var mask = AssDraw.Rectangle(
+                    new Rectangle(
+                        new Point(-100, 0),
+                        new Size(100 + 100 + position.X, fs * 5)
+                    )).ToString();
+
+                markerEventMask.Add(
+                    SubtitleEvent.Dialog(tagMask + mask, startTime, endTime, "MarkerMask"));
+            }
+
+            return markerEventMask.Concat(markerEventText).ToList();
+        }
+    }
+
+    private List<Style> MakeMarkerStyles()
+    {
+        var result = new List<Style>();
+        var fontsize = (int)((videoInfo.FrameRatio > 16.0 / 9
+            ? videoInfo.Resolution.Height * 0.043
+            : videoInfo.Resolution.Width * 0.024) * (70 / 61D));
+        const string fontName = "思源黑体 CN Bold";
+
+        var whiteColor = new AlphaColor(0, 255, 255, 255);
+        var outlineColor = new AlphaColor(30, 95, 92, 123);
+        result.Add(new Style("MarkerMask", fontName, fontsize, primaryColour: outlineColor,
+            outlineColour: outlineColor,
+            outline: 0, shadow: 0, alignment: 9));
+        result.Add(new Style("MarkerText", fontName, fontsize, primaryColour: whiteColor,
+            outlineColour: outlineColor,
+            outline: 0, shadow: 0, alignment: 9));
+        return result;
+    }
+
+    #endregion
+
+    private Point _nameTagPosition = new(0, 0);
+    private readonly List<Style> _styles = [];
+
+    public Subtitle Make(
+        List<DialogFrameSet> dialogList,
+        List<BannerFrameSet> bannerList,
+        List<MarkerFrameSet> markerList)
     {
         var events = new List<SubtitleEvent>();
-        var styles = new List<Style>();
+        _styles.AddRange(MakeDialogStyles());
+        _styles.AddRange(MakeBannerStyles());
+        _styles.AddRange(MakeMarkerStyles());
 
         if (dialogList.Count != 0)
         {
             _nameTagPosition = dialogList[0].Frames[0].Point;
             events.AddRange(MakeDialogEvents(dialogList));
-            styles.AddRange(MakeDialogStyles());
         }
 
         if (bannerList.Count != 0)
         {
             events.AddRange(MakeBannerEvents(bannerList));
-            styles.AddRange(MakeBannerStyles());
+        }
+
+        if (markerList.Count != 0)
+        {
+            events.AddRange(MakeMarkerEvents(markerList));
         }
 
 
         return new Subtitle(
             new ScriptInfo(videoInfo.Resolution.Width, videoInfo.Resolution.Height),
             new Garbage(Path.GetFileName(videoInfo.Path), Path.GetFileName(videoInfo.Path)),
-            new Styles(styles.ToArray()),
+            new Styles(_styles.ToArray()),
             new Events(events.ToArray())
         );
     }

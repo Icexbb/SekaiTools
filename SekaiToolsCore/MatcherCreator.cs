@@ -44,6 +44,11 @@ public class MatcherCreator
         return new BannerMatcher(VInfo, Story, Manager);
     }
 
+    public MarkerMatcher MarkerMatcher()
+    {
+        return new MarkerMatcher(VInfo, Story, Manager);
+    }
+
     public SubtitleMaker SubtitleMaker()
     {
         return new SubtitleMaker(VInfo, Manager, Config.TyperSetting);

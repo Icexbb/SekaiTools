@@ -130,7 +130,11 @@ public partial class Tags
 
     public static RotateCenter RotateCenter(int x, int y) => new(x, y);
     public static RotateCenter RotateCenter(Point point) => new(point);
+    public static Bord Bord(int value) => new(value);
 
+    public static XBord XBord(int value) => new(value);
+
+    public static YBord YBord(int value) => new(value);
     public static Shad Shad(int value) => new(value);
 
     public static XShad XShad(int value) => new(value);
