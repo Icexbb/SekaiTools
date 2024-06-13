@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -10,6 +11,8 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using SekaiToolsCore;
 using SekaiToolsCore.Process;
+using SekaiToolsCore.Story;
+using SekaiToolsCore.Story.Event;
 using SekaiToolsGUI.ViewModel;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
@@ -346,56 +349,145 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
             _bannerMatcher == null || _markerMatcher == null) return;
         var frameRate = _videoCapture.Get(CapProp.Fps);
         var frame = new Mat();
-        while (true)
+        if (_matcherCreator == null) throw new NullReferenceException();
+        var frameCount = _videoCapture.Get(CapProp.FrameCount);
+        var markerIndexInDialog = MarkerIndexOfDialog();
+
+        var avgDuration = 0d;
+
+        try
         {
-            if (CancellationToken.IsCancellationRequested) break;
-            if (!_videoCapture.Read(frame)) break;
-
-            CvInvoke.CvtColor(frame, frame, ColorConversion.Bgr2Gray);
-            var frameIndex = (int)_videoCapture.Get(CapProp.PosFrames);
-            if (frameIndex % ((int)frameRate / 5) == 0)
-                Dispatcher.Invoke(() => { ViewModel.FramePreviewImage = frame.Clone().ToBitmapSource(); },
-                    DispatcherPriority.Normal, CancellationToken);
-            if (!_contentMatcher.Finished)
+            while (true)
             {
-                _contentMatcher.Process(frame);
-                continue;
-            }
+                var tic = Environment.TickCount;
+                if (CancellationToken.IsCancellationRequested) break;
+                if (!_videoCapture.Read(frame)) break;
 
-            var matchBanner = false;
-            if (!_dialogMatcher.Finished)
-            {
-                var dialogIndex = _dialogMatcher.LastNotProcessedIndex();
-                var r = _dialogMatcher.Process(frame, frameIndex);
-                matchBanner = !r;
-                if (_dialogMatcher.Set[dialogIndex].Finished)
-                    LinePanel_AddDialogLine(_dialogMatcher.Set[dialogIndex]);
-            }
+                var frameIndex = (int)_videoCapture.Get(CapProp.PosFrames);
+                if (frameIndex % ((int)frameRate / 10) == 0)
+                {
+                    UpdateProgress(frameIndex / frameCount);
+                    Dispatcher.Invoke(() => { ViewModel.FramePreviewImage = frame.Clone().ToBitmapSource(); },
+                        DispatcherPriority.Normal, CancellationToken);
+                }
 
-            if (matchBanner)
-            {
-                if (!_bannerMatcher.Finished)
+                CvInvoke.CvtColor(frame, frame, ColorConversion.Bgr2Gray);
+
+                if (!_contentMatcher.Finished)
+                {
+                    _contentMatcher.Process(frame);
+                    var tac = Environment.TickCount;
+                    Fps(tac - tic);
+                    continue;
+                }
+
+                var matchBannerNow = true;
+                if (!_dialogMatcher.Finished)
+                {
+                    var dialogIndex = _dialogMatcher.LastNotProcessedIndex();
+                    var r = _dialogMatcher.Process(frame, frameIndex);
+                    matchBannerNow = !r;
+                    if (_dialogMatcher.Set[dialogIndex].Finished)
+                        LinePanel_AddDialogLine(_dialogMatcher.Set[dialogIndex]);
+                }
+
+                if (matchBannerNow && !_bannerMatcher.Finished)
                 {
                     var bannerIndex = _bannerMatcher.LastNotProcessedIndex();
                     _bannerMatcher.Process(frame, frameIndex);
                     if (_bannerMatcher.Set[bannerIndex].Finished)
                         LinePanel_AddBannerLine(_bannerMatcher.Set[bannerIndex]);
                 }
+
+                if (MatchMarkerNow() && !_markerMatcher.Finished)
+                {
+                    var markerIndex = _markerMatcher.LastNotProcessedIndex();
+                    _markerMatcher.Process(frame, frameIndex);
+                    if (_markerMatcher.Set[markerIndex].Finished)
+                        LinePanel_AddMarkerLine(_markerMatcher.Set[markerIndex]);
+                }
+
+                var toc = Environment.TickCount;
+                Fps(toc - tic);
+            }
+        }
+        catch (Exception e)
+        {
+            Dispatcher.Invoke(async () =>
+            {
+                var uiMessageBox = new Wpf.Ui.Controls.MessageBox
+                {
+                    Title = "视频处理出错",
+
+                    Content = e.Message + "\n" + e.StackTrace,
+                };
+
+                await uiMessageBox.ShowDialogAsync(cancellationToken: CancellationToken);
+                ViewModel.IsRunning = false;
+            });
+            if (Debugger.IsAttached) throw;
+        }
+
+        return;
+
+        bool MatchMarkerNow()
+        {
+            if (_markerMatcher!.Set.Count == 0) return false;
+            var markerIndex = _markerMatcher!.LastNotProcessedIndex();
+            var dialogIndex = _dialogMatcher!.LastNotProcessedIndex();
+            if (dialogIndex < 0) return true;
+            return dialogIndex >= markerIndexInDialog[markerIndex];
+        }
+
+
+        List<int> MarkerIndexOfDialog()
+        {
+            var dialogCount = -1;
+            var markerIndex = new List<int>();
+            var events = new Queue<Event>(
+                _matcherCreator!.Story.GetTypes(Story.StoryEventType.Dialog | Story.StoryEventType.Marker)
+            );
+            while (events.TryDequeue(out var ev))
+            {
+                switch (ev)
+                {
+                    case Dialog:
+                        dialogCount += 1;
+                        break;
+                    case Marker:
+                        markerIndex.Add(dialogCount);
+                        break;
+                }
             }
 
-            if (!_markerMatcher.Finished)
+            return markerIndex.Select(x => x < 0 ? 0 : x).ToList();
+        }
+
+        void UpdateProgress(double progression)
+        {
+            Dispatcher.Invoke(() =>
             {
-                var markerIndex = _markerMatcher.LastNotProcessedIndex();
-                _markerMatcher.Process(frame, frameIndex);
-                if (_markerMatcher.Set[markerIndex].Finished)
-                    LinePanel_AddMarkerLine(_markerMatcher.Set[markerIndex]);
-            }
+                ProgressBarProgression.Value = progression;
+                ProgressBarProgression.Maximum = 1;
+                TextBlockProgression.Text = $"{progression:P}";
+            });
+        }
+
+        void Fps(int deltaTime)
+        {
+            const double alpha = 1d / 100d; // 采样数设置为100
+
+            if (Math.Abs(frameCount - 1) < double.MinValue)
+                avgDuration = deltaTime;
+            else
+                avgDuration = avgDuration * (1 - alpha) + deltaTime * alpha;
+
+            Dispatcher.Invoke(() => { TextBlockFps.Text = $"FPS: {(int)(1d / avgDuration * 1000)}"; });
         }
     }
 
     private void LinePanel_AddDialogLine(DialogFrameSet set)
     {
-        Console.WriteLine($"{set.Start().Index}->{set.End().Index}");
         Dispatcher.Invoke(() =>
         {
             var binding = new Binding("IsChecked")

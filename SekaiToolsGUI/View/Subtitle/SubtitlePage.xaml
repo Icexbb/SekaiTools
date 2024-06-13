@@ -18,8 +18,8 @@
               Height="{Binding RelativeSource={RelativeSource Mode=FindAncestor,AncestorType=ui:CardControl}, Path=Height}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" MinHeight="60" />
-                <RowDefinition Height="Auto" MinHeight="190" />
+                <RowDefinition Height="80" />
+                <RowDefinition Height="*" MinHeight="190" />
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0" Margin="5,10,0,5">
                 <ui:CardControl
@@ -111,7 +111,8 @@
                     </ui:CardControl.Content>
                 </ui:CardControl>
             </StackPanel>
-            <ui:CardControl Grid.Row="1" Width="350" Margin="5,0,0,5" Height="70">
+            <ui:CardControl Grid.Row="1" Width="350" Margin="5,0,0,5" Height="70"
+                            VerticalAlignment="Center">
                 <ui:CardControl.Header>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{Binding RunningStatus}" VerticalAlignment="Center" />
@@ -129,15 +130,27 @@
                     </StackPanel>
                 </ui:CardControl.Content>
             </ui:CardControl>
-            <ui:CardControl Grid.Row="2" Margin="5,0,0,10" VerticalAlignment="Center" HorizontalAlignment="Center"
-                            Height="190" Width="350"
-                            VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="14,6,14,6">
-                <ui:CardControl.Header>
+            <ui:Card Grid.Row="2"
+                     Margin="5,0,0,10"
+                     MinHeight="200" Width="350" Padding="14,6,14,6"
+                     VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
+                     VerticalContentAlignment="Bottom">
+                <StackPanel>
                     <ui:Image MaxHeight="180" MaxWidth="320" VerticalContentAlignment="Stretch"
                               HorizontalContentAlignment="Stretch"
                               Source="{Binding FramePreviewImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" />
-                </ui:CardControl.Header>
-            </ui:CardControl>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Name="TextBlockFps" Margin="5" />
+                        <ProgressBar Grid.Column="1" Name="ProgressBarProgression" Height="8" Margin="5" />
+                        <TextBlock Grid.Column="2" Name="TextBlockProgression" Margin="5" />
+                    </Grid>
+                </StackPanel>
+            </ui:Card>
         </Grid>
         <GridSplitter Grid.Column="1" />
         <Grid Grid.Column="2" VerticalAlignment="Stretch" Margin="10">
@@ -161,16 +174,14 @@
                     </Grid>
                 </ui:CardControl.Header>
             </ui:CardControl>
-            <ui:CardControl Grid.Row="1" MinWidth="300" VerticalAlignment="Stretch"
-                            VerticalContentAlignment="Stretch" Padding="0">
-                <ui:CardControl.Header>
-                    <ui:PassiveScrollViewer Name="LineViewer"
-                                            VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
-                                            MaxHeight="{Binding RelativeSource= {RelativeSource Mode=FindAncestor, AncestorType=ui:CardControl}, Path=ActualHeight}">
-                        <StackPanel Name="LinePanel" Margin="5,5,5,15" />
-                    </ui:PassiveScrollViewer>
-                </ui:CardControl.Header>
-            </ui:CardControl>
+            <ui:Card Grid.Row="1" MinWidth="300" VerticalAlignment="Stretch"
+                     VerticalContentAlignment="Stretch" Padding="0">
+                <ui:PassiveScrollViewer
+                    Name="LineViewer" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
+                    MaxHeight="{Binding RelativeSource= {RelativeSource Mode=FindAncestor, AncestorType=ui:CardControl}, Path=ActualHeight}">
+                    <StackPanel Name="LinePanel" Margin="5,5,5,15" />
+                </ui:PassiveScrollViewer>
+            </ui:Card>
         </Grid>
     </Grid>
 </UserControl>

@@ -85,7 +85,7 @@ public class Story
 
 
     [Flags]
-    private enum StoryEventType
+    public enum StoryEventType
     {
         Dialog = 0b001,
         Banner = 0b010,
@@ -116,7 +116,7 @@ public class Story
         return -1;
     }
 
-    private Event.Event[] GetTypes(StoryEventType types)
+    public Event.Event[] GetTypes(StoryEventType types)
     {
         var result = new List<Event.Event>();
         foreach (var @event in Events)

@@ -431,18 +431,17 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
                     SubtitleEvent.Dialog(tagText + content, startTime, endTime, "MarkerText"));
 
                 var tagMask = new Tags(
-                    Tags.Anchor(7),
                     Tags.Bord(0),
                     Tags.Blur(50),
                     Tags.Clip(
                         new Point(0, position.Y + (int)(fs * 1.6)),
-                        new Point(fs * content.Length * 2, position.Y + (int)(fs * 2.6))),
+                        new Point((int)(fs * content.Length * 1.5), position.Y + (int)(fs * 2.65))),
                     Tags.Paint(1)
                 );
                 var mask = AssDraw.Rectangle(
                     new Rectangle(
-                        new Point(-100, 0),
-                        new Size(100 + 100 + position.X, fs * 5)
+                        new Point(-50, 0),
+                        new Size(100 + fs * content.Length + position.X, fs * 4)
                     )).ToString();
 
                 markerEventMask.Add(
@@ -465,10 +464,10 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         var outlineColor = new AlphaColor(30, 95, 92, 123);
         result.Add(new Style("MarkerMask", fontName, fontsize, primaryColour: outlineColor,
             outlineColour: outlineColor,
-            outline: 0, shadow: 0, alignment: 9));
+            outline: 0, shadow: 0, alignment: 7));
         result.Add(new Style("MarkerText", fontName, fontsize, primaryColour: whiteColor,
             outlineColour: outlineColor,
-            outline: 0, shadow: 0, alignment: 9));
+            outline: 0, shadow: 0, alignment: 7));
         return result;
     }
 

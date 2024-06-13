@@ -7,7 +7,7 @@ public class MatcherCreator
 {
     private Config Config { get; }
     private VideoInfo VInfo { get; }
-    private SekaiStory Story { get; }
+    public SekaiStory Story { get; }
     private TemplateManager Manager { get; }
 
     public MatcherCreator(string videoFilePath, string scriptFilePath, string translateFilePath = "",

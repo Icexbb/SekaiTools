@@ -41,21 +41,18 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
 
     private MatchResult MarkerMatch(Mat img, string text)
     {
+        var templateAll = GetTemplate(text);
         var sText = text[^1].ToString();
         var template = GetTemplate(sText);
         var match = LocalMatch(img, template, TemplateMatchingType.CcoeffNormed);
 
-        switch (_status)
+        return _status switch
         {
-            case MatchStatus.Matched:
-                return new MatchResult(match, match.IsEmpty ? MatchStatus.Dropped : MatchStatus.Matched);
-            case MatchStatus.NotMatched:
-            case MatchStatus.Dropped:
-                return new MatchResult(match, match.IsEmpty ? MatchStatus.NotMatched : MatchStatus.Matched);
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
-
+            MatchStatus.Matched => new MatchResult(match, match.IsEmpty ? MatchStatus.Dropped : MatchStatus.Matched),
+            MatchStatus.NotMatched or MatchStatus.Dropped => new MatchResult(match,
+                match.IsEmpty ? MatchStatus.NotMatched : MatchStatus.Matched),
+            _ => throw new ArgumentOutOfRangeException()
+        };
 
         Point LocalMatch(Mat src, GaMat tmp, TemplateMatchingType matchingType)
         {
@@ -64,7 +61,9 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
             var imgCropped = new Mat(src, cropArea);
             var result = Matcher.MatchTemplate(imgCropped, tmp, matchingType);
 
-            return result.MaxVal is > 0.75 and < 1 ? result.MaxLoc : Point.Empty;
+            return result.MaxVal is > 0.75 and < 1
+                ? result.MaxLoc + tmp.Size - templateAll.Size
+                : Point.Empty;
         }
     }
 
