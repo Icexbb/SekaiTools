@@ -54,9 +54,11 @@ public partial class DownloadPage : UserControl
         async Task FuncDownload()
         {
             button.IsEnabled = false;
+            var savePath = "";
             foreach (var item in DownloadItemBox.Items)
             {
                 if (item is not DownloadTask downloadItem) continue;
+                savePath = Path.GetDirectoryName(downloadItem.SavePath)!;
                 if (downloadItem.Downloaded) continue;
                 downloadItem.ChangeStatus(0);
                 try
@@ -72,16 +74,17 @@ public partial class DownloadPage : UserControl
             }
 
             button.IsEnabled = true;
-            ShowFile(Path.Combine(Directory.GetCurrentDirectory(), "Scripts"));
+            if (savePath.Length == 0)
+                ShowFile(savePath);
             return;
 
             void ShowFile(string path)
             {
-                var psi = new System.Diagnostics.ProcessStartInfo("Explorer.exe")
+                var psi = new ProcessStartInfo("Explorer.exe")
                 {
                     Arguments = "/e," + path
                 };
-                System.Diagnostics.Process.Start(psi);
+                Process.Start(psi);
             }
         }
     }
