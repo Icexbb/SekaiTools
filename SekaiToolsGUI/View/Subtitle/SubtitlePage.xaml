@@ -21,7 +21,7 @@
                 <RowDefinition Height="80" />
                 <RowDefinition Height="*" MinHeight="190" />
             </Grid.RowDefinitions>
-            <StackPanel Grid.Row="0" Margin="5,10,0,5"
+            <StackPanel Grid.Row="0" Margin="5,10,0,5" Width="350"
                         AllowDrop="True" DragEnter="UIElement_OnDragEnter" Drop="UIElement_OnDrop">
                 <ui:Card Height="70" VerticalAlignment="Stretch"
                          Margin="0,0,0,5" HorizontalAlignment="Stretch">

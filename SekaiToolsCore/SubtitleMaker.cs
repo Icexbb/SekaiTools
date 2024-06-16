@@ -482,23 +482,23 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         List<MarkerFrameSet> markerList)
     {
         var events = new List<SubtitleEvent>();
-        _styles.AddRange(MakeDialogStyles());
-        _styles.AddRange(MakeBannerStyles());
-        _styles.AddRange(MakeMarkerStyles());
 
         if (dialogList.Count != 0)
         {
             _nameTagPosition = dialogList[0].Frames[0].Point;
+            _styles.AddRange(MakeDialogStyles());
             events.AddRange(MakeDialogEvents(dialogList));
         }
 
         if (bannerList.Count != 0)
         {
+            _styles.AddRange(MakeBannerStyles());
             events.AddRange(MakeBannerEvents(bannerList));
         }
 
         if (markerList.Count != 0)
         {
+            _styles.AddRange(MakeMarkerStyles());
             events.AddRange(MakeMarkerEvents(markerList));
         }
 
