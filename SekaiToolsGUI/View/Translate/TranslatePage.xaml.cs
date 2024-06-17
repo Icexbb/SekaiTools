@@ -67,7 +67,7 @@ public partial class TranslatePage : UserControl
     {
         var openFileDialog = new OpenFileDialog
         {
-            Filter = "Json files (*.json)|*.json",
+            Filter = "剧本文件|*.json;*.asset",
         };
 
         if (openFileDialog.ShowDialog() != true) return;
