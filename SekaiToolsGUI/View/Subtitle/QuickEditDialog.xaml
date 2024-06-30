@@ -1,0 +1,44 @@
+<ui:ContentDialog x:Class="SekaiToolsGUI.View.Subtitle.QuickEditDialog"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:local="clr-namespace:SekaiToolsGUI.View.Subtitle"
+                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                  mc:Ignorable="d"
+                  ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+                  ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                  d:DataContext="{d:DesignInstance local:QuickEditDialogModel, IsDesignTimeCreatable=True}"
+                  IsPrimaryButtonEnabled="True" DefaultButton="Primary" PrimaryButtonText="确认" CloseButtonText="取消">
+    <ui:ContentDialog.Resources>
+        <!-- ReSharper disable once Xaml.StaticResourceNotResolved -->
+        <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"
+               TargetType="{x:Type local:QuickEditDialog}" />
+    </ui:ContentDialog.Resources>
+    <ui:ContentDialog.Title>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="对话语句快速调整" />
+            <ui:ToggleSwitch
+                Grid.Column="1" Name="SwitchCanReturn" OnContent="换行" OffContent="不换行"
+                Margin="10,0"
+                IsChecked="{Binding UseReturn}"
+                HorizontalAlignment="Right" />
+
+        </Grid>
+    </ui:ContentDialog.Title>
+    <ui:ContentDialog.Content>
+        <StackPanel>
+
+            <TextBlock Name="TextBlockOriginal" Margin="10"
+                       Text="{Binding ContentOriginal}" TextWrapping="Wrap" />
+            <TextBox MaxLines="2" Height="55" Name="TextBoxTranslated" TextWrapping="NoWrap"
+                     PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"
+                     AcceptsReturn="True"
+                     Text="{Binding Path=ContentTranslated, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
+    </ui:ContentDialog.Content>
+</ui:ContentDialog>

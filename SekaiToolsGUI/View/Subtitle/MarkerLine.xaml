@@ -5,23 +5,19 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:local="clr-namespace:SekaiToolsGUI.View.Subtitle"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:MarkerLineModel, IsDesignTimeCreatable=False}"
              HorizontalAlignment="Stretch">
-    <ui:CardControl VerticalAlignment="Top">
-        <ui:CardControl.Header>
-            <Grid Margin="0,0,10,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                    <TextBlock Text="{Binding StartTime,Mode=OneWay}" />
-                    <TextBlock Text="{Binding EndTime,Mode=OneWay}" />
-                </StackPanel>
-                <TextBlock Grid.Column="1" Text="{Binding Content,Mode=OneWay}" VerticalAlignment="Center" TextAlignment="Right" />
-            </Grid>
-        </ui:CardControl.Header>
-    </ui:CardControl>
-
+    <ui:Card>
+        <Grid Margin="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="{Binding StartTime,Mode=OneWay}" />
+            <TextBlock Grid.Column="1" HorizontalAlignment="Center" Text="{Binding Content}" />
+            <TextBlock Grid.Column="2" Text="{Binding EndTime,Mode=OneWay}" />
+        </Grid>
+    </ui:Card>
 </UserControl>

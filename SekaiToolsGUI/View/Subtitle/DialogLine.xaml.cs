@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using SekaiToolsCore;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Story.Event;
@@ -12,59 +13,83 @@ namespace SekaiToolsGUI.View.Subtitle;
 public class DialogLineModel : ViewModelBase
 {
     public readonly DialogFrameSet Set;
-    private readonly FrameRate _frameRate;
+
+    private FrameRate FrameRate { get; set; }
 
     public DialogLineModel(DialogFrameSet set)
     {
+        set.Data.BodyTranslated = set.Data.BodyTranslated.Replace("...", "…");
         Set = set;
-        _frameRate = set.Fps;
+        RawContent = set.Data.BodyOriginal;
+        TranslatedContent = set.Data.BodyTranslated
+            .Replace("\\N", "\n")
+            .Replace("\\R", "\n");
+        FrameRate = set.Fps;
 
+        UseSeparator = NeedSetSeparator;
         if (!NeedSetSeparator) return;
 
         SeparateFrame = Utils.Middle(set.StartIndex() + 1, set.EndIndex() - 1,
             set.StartIndex() + set.Frames.Count / 2);
         if (set.Data.BodyTranslated.Contains("\\R"))
+        {
             SeparatorContentIndex = set.Data.BodyTranslated
                 .Replace("\n", "").Replace("\\N", "")
                 .IndexOf("\\R", StringComparison.Ordinal);
-        else
-            SeparatorContentIndex = CleanContent.Length / 2;
-    }
-
-    public int Index => Set.Data.Index;
-    public string Speaker => Set.Data.CharacterTranslated;
-
-    public string ContentPiece
-    {
-        get
+        }
+        else if (set.Data.BodyTranslated.Count(c => c == '\n') == 1)
         {
-            var s = CleanContent[..Math.Min(10, CleanContent.Length)];
-            if (s.Length < CleanContent.Length) s += "...";
-            return s;
+            SeparatorContentIndex = set.Data.BodyTranslated
+                .IndexOf("\\R", StringComparison.Ordinal);
+        }
+        else
+        {
+            SeparatorContentIndex = CleanContent.Length / 2;
         }
     }
 
+    public string SpeakerName => Set.Data.CharacterTranslated;
+
+
+    public string RawContent
+    {
+        get => GetProperty("");
+        set => SetProperty(value);
+    }
+
+    public string TranslatedContent
+    {
+        get => GetProperty("");
+        set => SetProperty(value);
+    }
+
     public int StartFrame => Set.StartIndex();
-    public string StartTime => _frameRate.TimeAtFrame(StartFrame).GetAssFormatted();
     public int EndFrame => Set.EndIndex();
-    public string EndTime => _frameRate.TimeAtFrame(EndFrame).GetAssFormatted();
+    public string StartTime => FrameRate.TimeAtFrame(StartFrame).GetAssFormatted();
+    public string EndTime => FrameRate.TimeAtFrame(EndFrame).GetAssFormatted();
 
     public bool IsDialogJitter => Set.IsJitter;
 
-    public string CleanContent => Set.Data.BodyTranslated
+    private string CleanContent => Set.Data.BodyTranslated
         .Replace("\n", "")
         .Replace("\\R", "")
         .Replace("\\N", "");
 
     public int SeparatorContentIndexLimit => CleanContent.Length - 1;
 
-    public bool NeedSetSeparator =>
+    private bool NeedSetSeparator =>
         Set.Data.BodyTranslated != string.Empty &&
         Set.Data.BodyOriginal.LineCount() == 3 &&
         Set.Data.BodyTranslated.Replace("\n", "")
-            .Replace("\\R", "").Replace("\\N", "")
+            .Replace("\\R", "")
+            .Replace("\\N", "")
             .Length > 37;
 
+    public bool UseSeparator
+    {
+        get => GetProperty(false);
+        set => SetProperty(value);
+    }
 
     public int SeparateFrame
     {
@@ -73,7 +98,7 @@ public class DialogLineModel : ViewModelBase
         {
             SetProperty(value);
             SetPromptWarning();
-            SeparateTime = new Frame(value, _frameRate).StartTime();
+            SeparateTime = new Frame(value, FrameRate).StartTime();
             Set.SetSeparator(SeparateFrame, SeparatorContentIndex);
         }
     }
@@ -109,6 +134,8 @@ public class DialogLineModel : ViewModelBase
         private set => SetProperty(value);
     }
 
+
+
     public string PromptWarning
     {
         get => GetProperty("");
@@ -119,7 +146,7 @@ public class DialogLineModel : ViewModelBase
 
     private void SetPromptWarning()
     {
-        var frameTime = 1000 / _frameRate.Fps();
+        var frameTime = 1000 / FrameRate.Fps();
         var frameTime1 = (SeparateFrame - Set.StartIndex()) * frameTime;
         if (ContentPart1.Length * CharTime > frameTime1)
         {
@@ -146,20 +173,40 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
     {
         DataContext = new DialogLineModel(set);
         InitializeComponent();
-        if (ViewModel.NeedSetSeparator)
-        {
-            LineCardNormal.Visibility = Visibility.Collapsed;
-            LineCardExpander.Visibility = Visibility.Visible;
-        }
-        else
-        {
-            LineCardNormal.Visibility = Visibility.Visible;
-            LineCardExpander.Visibility = Visibility.Collapsed;
-        }
+        CheckLineExpander();
     }
 
-    private void LineCardExpander_OnLoaded(object sender, RoutedEventArgs e)
+    private void CheckLineExpander()
     {
-        LineCardExpander.IsExpanded = ViewModel.NeedSetSeparator;
+        Dispatcher.Invoke(() =>
+        {
+            PanelSeparator.Visibility = ViewModel.UseSeparator ? Visibility.Visible : Visibility.Collapsed;
+        });
+    }
+
+    private async void DialogLine_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+
+        var dialog = new QuickEditDialog(ViewModel.Set.Data);
+
+        var token = new CancellationToken();
+        var dialogResult = await dialogService.ShowAsync(dialog, token);
+        if (dialogResult != ContentDialogResult.Primary) return;
+
+        var set = ViewModel.Set;
+        var edited = dialog.ViewModel.ContentTranslated;
+        set.Data.SetTranslationContent(edited);
+
+
+        DataContext = new DialogLineModel(set);
+        ViewModel.UseSeparator = dialog.ViewModel.UseReturn;
+        if (edited.Contains('\n'))
+        {
+            var parts = edited.Split('\n');
+            ViewModel.SeparatorContentIndex = parts[0].Length;
+        }
+
+        CheckLineExpander();
     }
 }

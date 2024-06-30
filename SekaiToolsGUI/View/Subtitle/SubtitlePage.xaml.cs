@@ -334,6 +334,7 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                     snackService.Show("成功", "运行结束", ControlAppearance.Success,
                         new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
                 }
+                TextBlockETA.Text = "";
             });
         }, CancellationToken);
     }
@@ -350,7 +351,8 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
         var markerIndexInDialog = MarkerIndexOfDialog();
 
         var avgDuration = 0d;
-
+        var frameIndex = 0;
+        var updateTime = 0;
         while (true)
         {
             var tic = Environment.TickCount;
@@ -360,7 +362,7 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                 if (_videoCapture is not { IsOpened: true }) break;
                 if (!_videoCapture.Read(frame)) break;
 
-                var frameIndex = (int)_videoCapture.Get(CapProp.PosFrames);
+                frameIndex = (int)_videoCapture.Get(CapProp.PosFrames);
                 if (frameIndex % ((int)frameRate / 10) == 0)
                 {
                     UpdateProgress(frameIndex / frameCount);
@@ -482,7 +484,19 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
             else
                 avgDuration = avgDuration * (1 - alpha) + deltaTime * alpha;
 
-            Dispatcher.Invoke(() => { TextBlockFps.Text = $"FPS: {(int)(1d / avgDuration * 1000)}"; });
+            updateTime += deltaTime;
+            if (TextBlockFps.Text != "" && TextBlockETA.Text != "")
+                if (updateTime < 1000) { return; }
+                else updateTime = 0;
+
+            var etaMs = (frameCount - frameIndex) * avgDuration;
+            var eta = new TimeSpan(0, 0, 0, 0, (int)etaMs);
+
+            Dispatcher.Invoke(() =>
+            {
+                TextBlockFps.Text = $"FPS: {(int)(1d / avgDuration * 1000)}";
+                TextBlockETA.Text = etaMs >= 1000 ? $"ETA: {eta.Remains()}" : "";
+            });
         }
     }
 
@@ -500,7 +514,7 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
             {
                 Margin = new Thickness(5, 5, 10, 5)
             };
-            if (!line.ViewModel.NeedSetSeparator)
+            if (!line.ViewModel.UseSeparator)
                 line.SetBinding(VisibilityProperty, binding);
             LinePanel.Children.Add(line);
             LineViewer.ScrollToEnd();
@@ -611,6 +625,8 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                 switch (child)
                 {
                     case DialogLine dialogLine:
+                        var set = dialogLine.ViewModel.Set;
+                        set.Data.BodyTranslated.Replace("…", "..."); // 修正省略号
                         dialogFrameSets.Add(dialogLine.ViewModel.Set);
                         break;
                     case BannerLine bannerLine:

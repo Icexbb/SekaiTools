@@ -21,6 +21,11 @@ public class Dialog(
         BodyTranslated = body;
     }
 
+    public void SetTranslationContent(string body)
+    {
+        BodyTranslated = body;
+    }
+
     public static Dialog FromData(Game.Talk talkData, int index = 0)
     {
         return new Dialog(

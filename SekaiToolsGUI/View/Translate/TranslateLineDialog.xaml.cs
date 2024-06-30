@@ -3,6 +3,7 @@ using System.Windows.Input;
 using SekaiToolsCore;
 using Wpf.Ui.Controls;
 using SekaiDialog = SekaiToolsCore.Story.Event.Dialog;
+using TextBox = Wpf.Ui.Controls.TextBox;
 
 namespace SekaiToolsGUI.View.Translate;
 
@@ -114,7 +115,7 @@ public class LineDialogModel : ViewModelBase
 
             if (lineRes != "")
             {
-                result += $"行{i+1}:{lineRes}\n";
+                result += $"行{i + 1}:{lineRes}\n";
             }
         }
 
@@ -160,12 +161,33 @@ public partial class TranslateLineDialog : UserControl, INavigableView<LineDialo
         InitializeComponent();
     }
 
-    private void TranslatedContentTextBox_OnPreviewKeyDown(object sender, KeyEventArgs e)
+
+    private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter)
+        if (sender is TextBox textBox)
         {
-            if ((TranslatedContentTextBox.Text + "\n").LineCount() == 3)
-                e.Handled = true;
+            if (e.Key == Key.Enter)
+            {
+                var lineCount = textBox.LineCount;
+                if (lineCount >= 2)
+                {
+                    e.Handled = true; // 阻止回车键输入新行
+                }
+            }
+        }
+    }
+
+    private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    {
+        if (sender is TextBox textBox)
+        {
+            var newText = textBox.Text.Insert(textBox.CaretIndex, e.Text);
+            var newLineCount = newText.Split('\n').Length;
+
+            if (newLineCount > 2)
+            {
+                e.Handled = true; // 阻止输入导致超过三行
+            }
         }
     }
 

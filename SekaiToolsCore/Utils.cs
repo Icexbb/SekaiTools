@@ -10,6 +10,31 @@ public static partial class Utils
     public static int LineCount(this string str)
         => str.Split('\n').Select(value => value.Length > 0 ? 1 : 0).Sum();
 
+    public static int Count(this string str, string part)
+    {
+        int count = 0;
+        int i = 0;
+        while ((i = str.IndexOf(part, i)) != -1)
+        {
+            i += part.Length;
+            count++;
+        }
+        return count;
+    }
+
+    public static string Remains(this TimeSpan timeSpan)
+    {
+        if (timeSpan.TotalDays >= 1)
+            return $"{timeSpan.Days}d {timeSpan.Hours}h {timeSpan.Minutes}m {timeSpan.Seconds}s";
+        if (timeSpan.TotalHours >= 1)
+            return $"{timeSpan.Hours}h {timeSpan.Minutes}m {timeSpan.Seconds}s";
+        if (timeSpan.TotalMinutes >= 1)
+            return $"{timeSpan.Minutes}m {timeSpan.Seconds}s";
+        if (timeSpan.TotalSeconds >= 1)
+            return $"{timeSpan.Seconds}s";
+        return $"{timeSpan.Milliseconds}ms";
+    }
+
 
     public static int MaxLineLength(this string str)
         => str.Split('\n').Max(x => x.Trim().Length);
