@@ -485,15 +485,15 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                 avgDuration = avgDuration * (1 - alpha) + deltaTime * alpha;
 
             updateTime += deltaTime;
-            if (TextBlockFps.Text != "" && TextBlockETA.Text != "")
-                if (updateTime < 1000) { return; }
-                else updateTime = 0;
-
-            var etaMs = (frameCount - frameIndex) * avgDuration;
-            var eta = new TimeSpan(0, 0, 0, 0, (int)etaMs);
-
+            
             Dispatcher.Invoke(() =>
             {
+                if (TextBlockFps.Text != "" && TextBlockETA.Text != "")
+                    if (updateTime < 1000) { return; }
+                    else updateTime = 0;
+
+                var etaMs = (frameCount - frameIndex) * avgDuration;
+                var eta = new TimeSpan(0, 0, 0, 0, (int)etaMs);
                 TextBlockFps.Text = $"FPS: {(int)(1d / avgDuration * 1000)}";
                 TextBlockETA.Text = etaMs >= 1000 ? $"ETA: {eta.Remains()}" : "";
             });
