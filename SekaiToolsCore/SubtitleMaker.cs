@@ -419,6 +419,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             List<SubtitleEvent> markerEventText = [];
             List<SubtitleEvent> markerEventMask = [];
             var content = frameSet.Data.FinalContent;
+            var contentLength = (content.Length + content.Count(c => c > 127)) / 2;
 
             foreach (var frame in frameSet.Frames)
             {
@@ -427,28 +428,36 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
                 var position = frame.Point;
                 var fs = _styles.First(style => style.Name == "MarkerText").Fontsize;
                 var tagText = new Tags(Tags.Position(position.X, position.Y + (int)(fs * 1.6)));
-                markerEventText.Add(
-                    SubtitleEvent.Dialog(tagText + content, startTime, endTime, "MarkerText"));
 
                 var tagMask = new Tags(
-                    Tags.Bord(0),
-                    Tags.Blur(50),
-                    Tags.Clip(
+                    Tags.Bord(0), Tags.Blur(50), Tags.Clip(
                         new Point(0, position.Y + (int)(fs * 1.6)),
-                        new Point((int)(fs * content.Length * 1.5), position.Y + (int)(fs * 2.65))),
+                        new Point((int)(fs * contentLength * 1.5), position.Y + (int)(fs * 2.65))),
                     Tags.Paint(1)
                 );
                 var mask = AssDraw.Rectangle(
-                    new Rectangle(
-                        new Point(-50, 0),
-                        new Size(100 + fs * content.Length + position.X, fs * 4)
-                    )).ToString();
+                    new Rectangle(new Point(-50, 0), new Size(100 + fs * contentLength + position.X, fs * 4))
+                ).ToString();
 
+
+                var maskText = tagMask + mask;
+                var bodyText = tagText + content;
+                if (markerEventMask.Count > 0 && markerEventText.Count > 0)
+                {
+                    if (markerEventMask[^1].Text == maskText && markerEventText[^1].Text == bodyText)
+                    {
+                        markerEventMask[^1].End = endTime;
+                        markerEventText[^1].End = endTime;
+                        continue;
+                    }
+                }
                 markerEventMask.Add(
-                    SubtitleEvent.Dialog(tagMask + mask, startTime, endTime, "MarkerMask"));
+                   SubtitleEvent.Dialog(maskText, startTime, endTime, "MarkerMask"));
+                markerEventText.Add(
+                    SubtitleEvent.Dialog(bodyText, startTime, endTime, "MarkerText"));
             }
 
-            return markerEventMask.Concat(markerEventText).ToList();
+            return [.. markerEventMask, .. markerEventText];
         }
     }
 
