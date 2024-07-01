@@ -27,8 +27,8 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
     private enum MatchStatus
     {
         NotMatched,
+        Dropped,
         Matched,
-        Dropped
     }
 
     private MatchStatus _status;
@@ -44,27 +44,50 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
         var templateAll = GetTemplate(text);
         var sText = text[^1].ToString();
         var template = GetTemplate(sText);
-        var match = LocalMatch(img, template, TemplateMatchingType.CcoeffNormed);
+        var matchedPoint = LocalMatch(img, template, TemplateMatchingType.CcoeffNormed);
 
         return _status switch
         {
-            MatchStatus.Matched => new MatchResult(match, match.IsEmpty ? MatchStatus.Dropped : MatchStatus.Matched),
-            MatchStatus.NotMatched or MatchStatus.Dropped => new MatchResult(match,
-                match.IsEmpty ? MatchStatus.NotMatched : MatchStatus.Matched),
+            MatchStatus.Matched => new MatchResult(matchedPoint, matchedPoint.IsEmpty ? MatchStatus.Dropped : MatchStatus.Matched),
+            MatchStatus.NotMatched or MatchStatus.Dropped => new MatchResult(matchedPoint,
+                matchedPoint.IsEmpty ? MatchStatus.NotMatched : MatchStatus.Matched),
             _ => throw new ArgumentOutOfRangeException()
         };
 
-        Point LocalMatch(Mat src, GaMat tmp, TemplateMatchingType matchingType)
+        Point LocalMatch(Mat src, GaMat tmp, TemplateMatchingType matchingType, Point startPos = default)
         {
-            var cropArea = new Rectangle(Point.Empty, new Size(
-                (int)(tmp.Size.Height * text.Length * 1.5), tmp.Size.Height * 3));
-            var imgCropped = new Mat(src, cropArea);
-            var result = Matcher.MatchTemplate(imgCropped, tmp, matchingType);
+            var cropArea = GetRectNormal(tmp, startPos);
+            if (cropArea.IsEmpty)
+                return Point.Empty;
 
-            return result.MaxVal is > 0.75 and < 1
-                ? result.MaxLoc + tmp.Size - templateAll.Size
-                : Point.Empty;
+            var imgCropped = new Mat(src, cropArea);
+            var matchResult = Matcher.MatchTemplate(imgCropped, tmp, matchingType);
+            var matched = matchResult.MaxVal is > 0.75 and < 1;
+
+            if (!matched) return Point.Empty;
+
+            var result = matchResult.MaxLoc + new Size(cropArea.X, cropArea.Y) - templateAll.Size + tmp.Size;
+
+            if (_status != MatchStatus.Matched) return result;
+
+            var resultRight = LocalMatch(src, tmp, matchingType, new Point(cropArea.Left + matchResult.MaxLoc.X + tmp.Size.Width, 0));
+
+            return resultRight.IsEmpty ? result : resultRight;
         }
+
+        Rectangle GetRectNormal(GaMat tmp, Point startPos)
+        {
+            var size = new Size(
+                (int)(templateAll.Size.Width * 1.5) - startPos.X,
+                (int)(tmp.Size.Height * 3.0)
+            );
+            if (size.Width <= 0 || size.Height <= 0)
+                return Rectangle.Empty;
+            if (size.Width < tmp.Size.Width || size.Height < tmp.Size.Height)
+                return Rectangle.Empty;
+            return new Rectangle(new Point(startPos.X, 0), size);
+        }
+
     }
 
     public readonly List<MarkerFrameSet> Set = storyData.Markers().Select(d => new MarkerFrameSet(d, videoInfo.Fps))
