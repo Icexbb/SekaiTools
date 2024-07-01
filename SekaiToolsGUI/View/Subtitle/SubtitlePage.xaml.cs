@@ -389,7 +389,7 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                         LinePanel_AddDialogLine(_dialogMatcher.Set[dialogIndex]);
                 }
 
-                if (matchBannerNow && !_bannerMatcher.Finished)
+                if (!_bannerMatcher.Finished&&matchBannerNow  )
                 {
                     var bannerIndex = _bannerMatcher.LastNotProcessedIndex();
                     _bannerMatcher.Process(frame, frameIndex);
@@ -397,7 +397,7 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                         LinePanel_AddBannerLine(_bannerMatcher.Set[bannerIndex]);
                 }
 
-                if (MatchMarkerNow() && !_markerMatcher.Finished)
+                if (!_markerMatcher.Finished&& MatchMarkerNow()  )
                 {
                     var markerIndex = _markerMatcher.LastNotProcessedIndex();
                     _markerMatcher.Process(frame, frameIndex);
