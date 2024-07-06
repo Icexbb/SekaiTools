@@ -6,7 +6,7 @@ using SekaiStory = SekaiToolsCore.Story.Story;
 
 namespace SekaiToolsCore;
 
-public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateManager templateManager)
+public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateManager templateManager, Config config)
 {
     private GaMat GetTemplate(string content) => new GaMat(templateManager.GetDbTemplate(content));
 
@@ -33,7 +33,7 @@ public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
     {
         var sText = TrimContent(text);
         var template = GetTemplate(sText);
-        var match = LocalMatch(img, template, TemplateMatchingType.CcoeffNormed);
+        var match = LocalMatch(img, template);
 
         switch (_status)
         {
@@ -47,13 +47,13 @@ public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
         }
 
 
-        bool LocalMatch(Mat src, GaMat tmp, TemplateMatchingType matchingType)
+        bool LocalMatch(Mat src, GaMat tmp)
         {
             var cropArea = Utils.FromCenter(
                 img.Size.Center(), new Size((int)(tmp.Size.Height * text.Length * 1.5), (int)(tmp.Size.Height * 1.5)));
             var imgCropped = new Mat(src, cropArea);
-            var result = Matcher.MatchTemplate(imgCropped, tmp, matchingType);
-            return result.MaxVal is > 0.7 and < 1;
+            var result = Matcher.MatchTemplate(imgCropped, tmp);
+            return !(result.MaxVal < config.MatchingThreshold.Normal) && !(result.MaxVal > 1);
         }
     }
 

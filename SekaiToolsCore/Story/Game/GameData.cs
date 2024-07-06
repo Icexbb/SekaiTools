@@ -16,36 +16,30 @@ public class GameData
         var jsonString = File.ReadAllText(jsonFilePath);
         var data = JsonConvert.DeserializeObject<JObject>(jsonString) ?? throw new Exception("Json parse error");
 
-        TalkData = data["TalkData"]!
-            .ToObject<JObject[]>()!
+        TalkData = data.Get("TalkData", Array.Empty<JObject>())
             .Select(v => new Talk
             {
-                WindowDisplayName = v["WindowDisplayName"]!.ToObject<string>()!,
-                Body = v["Body"]!.ToObject<string>()!,
-                WhenFinishCloseWindow = v["WhenFinishCloseWindow"]!.ToObject<int>(),
-                Voices = v["Voices"]!.ToObject<JObject[]>()!.Select(voice => new Voice
+                WindowDisplayName = v.Get("WindowDisplayName", ""),
+                Body = v.Get("Body", ""),
+                WhenFinishCloseWindow = v.Get("WhenFinishCloseWindow", 0),
+                Voices = v.Get("Voices", Array.Empty<JObject>()).Select(voice => new Voice
                 {
-                    Character2DId = voice["Character2dId"]!.ToObject<int>(),
-                    VoiceId = voice["VoiceId"]!.ToObject<string>()!
+                    Character2DId = voice.Get("Character2dId", 0),
+                    VoiceId = voice.Get("VoiceId", ""),
                 }).ToArray(),
-                Characters = v["TalkCharacters"]!.ToObject<JObject[]>()!.Select(c => new Talk.TalkCharacters
-                {
-                    Character2dId = c["Character2dId"]!.ToObject<int>()
-                }).ToArray()
+                Characters = v.Get("Characters", Array.Empty<JObject>())
+                    .Select(c => new Talk.TalkCharacters
+                    {
+                        Character2dId = c.Get("Character2dId", 0)
+                    }).ToArray()
             }).ToArray();
 
-        Snippets = data["Snippets"]!
-            .ToObject<JObject[]>()!
-            .Select(v => new Snippet { Action = v["Action"]!.ToObject<int>() })
+        Snippets = data.Get("Snippets", Array.Empty<JObject>())
+            .Select(Snippet.FromJObject)
             .ToArray();
 
-        SpecialEffectData = data["SpecialEffectData"]!
-            .ToObject<JObject[]>()!
-            .Select(v => new SpecialEffect
-            {
-                EffectType = v["EffectType"]!.ToObject<int>(),
-                StringVal = v["StringVal"]!.ToObject<string>() ?? string.Empty
-            })
+        SpecialEffectData = data.Get("SpecialEffectData", Array.Empty<JObject>())
+            .Select(SpecialEffect.FromJObject)
             .ToArray();
         Clean();
     }
@@ -53,19 +47,42 @@ public class GameData
     private void Clean()
     {
         List<int> shakeIndex = [];
-        var tdc = 0;
-        var sec = 0;
+        var talkDataCount = 0;
+        var spEffCount = 0;
+        var shaking = 0;
         foreach (var item in Snippets)
         {
             switch (item.Action)
             {
                 case 1:
-                    tdc += 1;
+                {
+                    if (shaking != 0)
+                    {
+                        shakeIndex.Add(talkDataCount);
+                        shaking -= 1;
+                    }
+                }
+                    talkDataCount += 1;
                     break;
                 case 6:
                 {
-                    if (SpecialEffectData[sec].EffectType is 6) shakeIndex.Add(tdc - 1);
-                    sec += 1;
+                    var eff = SpecialEffectData[spEffCount];
+                    switch (eff.EffectType)
+                    {
+                        case 6 when eff.Duration > 10:
+                            shaking = -1;
+                            shakeIndex.Add(talkDataCount - 1);
+                            break;
+                        case 6:
+                            shaking = 1;
+                            shakeIndex.Add(talkDataCount - 1);
+                            break;
+                        case 26:
+                            shaking = 0;
+                            break;
+                    }
+
+                    spEffCount += 1;
                     break;
                 }
             }

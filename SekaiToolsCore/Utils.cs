@@ -2,11 +2,18 @@ using System.Drawing;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using Newtonsoft.Json.Linq;
 
 namespace SekaiToolsCore;
 
 public static partial class Utils
 {
+    public static TU Get<TU>(this JObject json, string key, TU defaultValue)
+    {
+        if (json.TryGetValue(key, out var value)) return value.ToObject<TU>() ?? defaultValue;
+        return defaultValue;
+    }
+
     public static int LineCount(this string str)
         => str.Split('\n').Select(value => value.Length > 0 ? 1 : 0).Sum();
 
@@ -14,12 +21,26 @@ public static partial class Utils
     {
         int count = 0;
         int i = 0;
-        while ((i = str.IndexOf(part, i)) != -1)
+        while ((i = str.IndexOf(part, i, StringComparison.Ordinal)) != -1)
         {
             i += part.Length;
             count++;
         }
+
         return count;
+    }
+
+    public static string TrimAll(this string str)
+    {
+        return str.Trim().Replace("\n", "")
+            .Replace("\\R", "")
+            .Replace("\\N", "");
+    }
+
+    public static string EscapedReturn(this string str)
+    {
+        return str.Replace("\\N", "\n")
+            .Replace("\\R", "\n");
     }
 
     public static string Remains(this TimeSpan timeSpan)
@@ -100,6 +121,14 @@ public static partial class Utils
         var x = (int)(rect.Width * ratio);
         var y = (int)(rect.Height * ratio);
         rect.Extend(x, y);
+    }
+
+    public static void Limit(this Rectangle rect, Rectangle limit)
+    {
+        if (rect.X < limit.X) rect.X = limit.X;
+        if (rect.Y < limit.Y) rect.Y = limit.Y;
+        if (rect.Right > limit.Right) rect.X = limit.Right - rect.Width;
+        if (rect.Bottom > limit.Bottom) rect.Y = limit.Bottom - rect.Height;
     }
 
     public static Rectangle FromCenter(Point center, Size size)

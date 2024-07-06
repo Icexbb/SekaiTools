@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using SekaiToolsCore;
+using SekaiToolsCore.Process;
 using SekaiToolsCore.Story.Event;
 using Wpf.Ui;
 
@@ -9,11 +10,11 @@ namespace SekaiToolsGUI.View.Subtitle;
 
 public class QuickEditDialogModel : ViewModelBase
 {
-    public QuickEditDialogModel(Dialog dialog)
+    public QuickEditDialogModel(DialogFrameSet dialog)
     {
         // Dialog = dialog;
-        ContentOriginal = dialog.BodyOriginal;
-        ContentTranslated = dialog.BodyTranslated;
+        ContentOriginal = dialog.Data.BodyOriginal;
+        ContentTranslated = dialog.Data.BodyTranslated;
         if (ContentTranslated.Contains("\\R"))
         {
             ContentTranslated = ContentTranslated.Replace("\n", "")
@@ -27,8 +28,8 @@ public class QuickEditDialogModel : ViewModelBase
         if (ContentTranslated.LineCount() == 3)
             ContentTranslated = ContentTranslated.Replace("\n", "");
 
-        CanReturn = dialog.BodyOriginal.LineCount() == 3;
-        UseReturn = CanReturn && LineContent(dialog.BodyTranslated).Length > 37;
+        CanReturn = dialog.Data.BodyOriginal.LineCount() == 3;
+        UseReturn = CanReturn && dialog.UseSeparator;
     }
 
     // private Dialog Dialog { get; }
@@ -56,11 +57,7 @@ public class QuickEditDialogModel : ViewModelBase
         set => SetProperty(value);
     }
 
-    public bool CanReturn
-    {
-        get => GetProperty(false);
-        set => SetProperty(value);
-    }
+    public bool CanReturn { get; }
 
     public bool UseReturn
     {
@@ -73,7 +70,7 @@ public partial class QuickEditDialog : Wpf.Ui.Controls.ContentDialog
 {
     public QuickEditDialogModel ViewModel => (QuickEditDialogModel)DataContext;
 
-    public QuickEditDialog(Dialog dialog)
+    public QuickEditDialog(DialogFrameSet dialog)
     {
         DataContext = new QuickEditDialogModel(dialog);
         InitializeComponent();
@@ -82,30 +79,24 @@ public partial class QuickEditDialog : Wpf.Ui.Controls.ContentDialog
 
     private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (sender is TextBox textBox)
+        if (sender is not TextBox textBox) return;
+        if (e.Key != Key.Enter) return;
+        var lineCount = textBox.LineCount;
+        if (lineCount >= 2)
         {
-            if (e.Key == Key.Enter)
-            {
-                var lineCount = textBox.LineCount;
-                if (lineCount >= 2)
-                {
-                    e.Handled = true; // 阻止回车键输入新行
-                }
-            }
+            e.Handled = true; // 阻止回车键输入新行
         }
     }
 
     private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
     {
-        if (sender is TextBox textBox)
-        {
-            var newText = textBox.Text.Insert(textBox.CaretIndex, e.Text);
-            var newLineCount = newText.Split('\n').Length;
+        if (sender is not TextBox textBox) return;
+        var newText = textBox.Text.Insert(textBox.CaretIndex, e.Text);
+        var newLineCount = newText.Split('\n').Length;
 
-            if (newLineCount > 2)
-            {
-                e.Handled = true; // 阻止输入导致超过三行
-            }
+        if (newLineCount > 2)
+        {
+            e.Handled = true; // 阻止输入导致超过三行
         }
     }
 }

@@ -10,12 +10,11 @@ public class MatcherCreator
     public SekaiStory Story { get; }
     private TemplateManager Manager { get; }
 
-    public MatcherCreator(string videoFilePath, string scriptFilePath, string translateFilePath = "",
-        string outputFilePath = "")
+    public MatcherCreator(Config config)
     {
-        Config = new Config(videoFilePath, scriptFilePath, translateFilePath, outputFilePath);
-        VInfo = new VideoInfo(videoFilePath);
-        Story = SekaiStory.FromFile(scriptFilePath, translateFilePath);
+        Config = config;
+        VInfo = new VideoInfo(Config.VideoFilePath);
+        Story = SekaiStory.FromFile(Config.ScriptFilePath, Config.TranslateFilePath);
 
         var names = Story.Dialogs().Select(dialog => dialog.CharacterOriginal).ToList();
         var dbs = new List<string>();
@@ -31,22 +30,22 @@ public class MatcherCreator
 
     public DialogMatcher DialogMatcher()
     {
-        return new DialogMatcher(VInfo, Story, Manager);
+        return new DialogMatcher(VInfo, Story, Manager, Config);
     }
 
     public ContentMatcher ContentMatcher()
     {
-        return new ContentMatcher(Manager);
+        return new ContentMatcher(Manager, Config);
     }
 
     public BannerMatcher BannerMatcher()
     {
-        return new BannerMatcher(VInfo, Story, Manager);
+        return new BannerMatcher(VInfo, Story, Manager, Config);
     }
 
     public MarkerMatcher MarkerMatcher()
     {
-        return new MarkerMatcher(VInfo, Story, Manager);
+        return new MarkerMatcher(VInfo, Story, Manager, Config);
     }
 
     public SubtitleMaker SubtitleMaker()

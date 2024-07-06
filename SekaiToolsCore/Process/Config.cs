@@ -6,19 +6,31 @@ public struct TypewriterSetting(int fadeTime, int charTime)
     public readonly int CharTime = charTime;
 }
 
+public struct MatchingThreshold(double normal, double special)
+{
+    public readonly double Normal = normal;
+    public readonly double Special = special;
+}
+
 public class Config
 {
     public string VideoFilePath { get; }
     public string ScriptFilePath { get; }
     public string TranslateFilePath { get; }
-    public string OutputFilePath { get; }
 
 
-    public TypewriterSetting TyperSetting = new(50, 80);
+    public TypewriterSetting TyperSetting { get; }
+
+    public MatchingThreshold MatchingThreshold { get; }
 
 
-    public Config(string videoFilePath, string scriptFilePath,
-        string translateFilePath = "", string outputFilePath = "")
+    public Config(
+        string videoFilePath,
+        string scriptFilePath,
+        string translateFilePath,
+        TypewriterSetting? typerSetting = null,
+        MatchingThreshold? matchingThreshold = null
+    )
     {
         if (!Path.Exists(videoFilePath))
             throw new FileNotFoundException("Video file not found.", videoFilePath);
@@ -31,27 +43,8 @@ public class Config
         if (translateFilePath != "" && !Path.Exists(translateFilePath))
             throw new FileNotFoundException("Translation file not found.", translateFilePath);
         TranslateFilePath = translateFilePath;
-        if (outputFilePath != "")
-        {
-            if (Path.GetExtension(outputFilePath) != ".ass")
-                throw new FileNotFoundException("Output Path must be a .ass file ", outputFilePath);
-            OutputFilePath = outputFilePath;
-        }
-        else
-        {
-            OutputFilePath = Path.Join(Path.GetDirectoryName(videoFilePath),
-                "[STGenerated] " + Path.GetFileNameWithoutExtension(videoFilePath) + ".ass");
-        }
-    }
 
-    public void SetSubtitleTyperSetting(int fadeTime, int charTime)
-    {
-        TyperSetting = new TypewriterSetting(fadeTime, charTime);
-    }
-
-    public override int GetHashCode()
-    {
-        var contents = $"{VideoFilePath}{ScriptFilePath}{TranslateFilePath}{OutputFilePath}";
-        return contents.GetHashCode();
+        TyperSetting = typerSetting ?? new TypewriterSetting(50, 80);
+        MatchingThreshold = matchingThreshold ?? new MatchingThreshold(0.8, 0.65);
     }
 }

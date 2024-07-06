@@ -153,7 +153,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  Start",
                 set.StartTime(), set.EndTime(), "Screen"));
 
-            if (set.NeedSetSeparator)
+            if (set.UseSeparator)
             {
                 var items = SeparateDialogSet(set);
                 dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  Line 1 ↓",
@@ -168,6 +168,8 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             }
             else
             {
+                if (set.Data.BodyTranslated.LineCount() == 3)
+                    set.Data.SetTranslationContent(set.Data.BodyTranslated.TrimAll());
                 dialogEvents.AddRange(GenerateDialogEvent(set));
             }
 
@@ -175,7 +177,8 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             {
                 dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  Debug ↓",
                     set.StartTime(), set.EndTime(), "Screen"));
-                var t = GenerateNoneJitterDialogEvents(set).Select(item => item.ToComment()).ToList();
+                var t = GenerateNoneJitterDialogEvents(set)
+                    .Select(item => item.ToComment()).ToList();
                 dialogEvents.AddRange(t);
             }
 
@@ -190,11 +193,6 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
         List<DialogFrameSet> SeparateDialogSet(DialogFrameSet dialogFrameSet)
         {
-            var content = dialogFrameSet.Data.FinalContent
-                .Replace("\n", "")
-                .Replace("\\N", "")
-                .Replace("\\R", "");
-
             var sepCount = dialogFrameSet.Separate.SeparateFrame - dialogFrameSet.StartIndex();
 
             var sepSet1 = new DialogFrameSet((Dialog)dialogFrameSet.Data.Clone(), videoInfo.Fps);
@@ -203,6 +201,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             sepSet1.Frames.AddRange(dialogFrameSet.Frames[..sepCount]);
             sepSet2.Frames.AddRange(dialogFrameSet.Frames[sepCount..]);
 
+            var content = dialogFrameSet.Data.FinalContent.TrimAll();
             sepSet1.Data.BodyTranslated = content[..dialogFrameSet.Separate.SeparatorContentIndex];
             sepSet2.Data.BodyTranslated = content[dialogFrameSet.Separate.SeparatorContentIndex..];
 
@@ -451,8 +450,9 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
                         continue;
                     }
                 }
+
                 markerEventMask.Add(
-                   SubtitleEvent.Dialog(maskText, startTime, endTime, "MarkerMask"));
+                    SubtitleEvent.Dialog(maskText, startTime, endTime, "MarkerMask"));
                 markerEventText.Add(
                     SubtitleEvent.Dialog(bodyText, startTime, endTime, "MarkerText"));
             }

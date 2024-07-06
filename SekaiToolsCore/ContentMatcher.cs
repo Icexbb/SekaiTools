@@ -5,12 +5,12 @@ using SekaiToolsCore.Process;
 
 namespace SekaiToolsCore;
 
-public class ContentMatcher(TemplateManager templateManager)
+public class ContentMatcher(TemplateManager templateManager, Config config)
 {
     public void Process(Mat mat)
     {
         var menuSign = new GaMat(templateManager.GetMenuSign(), false);
-        const double startThreshold = 0.85;
+        var startThreshold = config.MatchingThreshold.Normal;
         var roi = new Rectangle(
             mat.Width - menuSign.Size.Width * 2, 0, menuSign.Size.Width * 2, menuSign.Size.Height * 2
         );

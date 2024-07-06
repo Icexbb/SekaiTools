@@ -8,7 +8,7 @@ using SekaiStory = SekaiToolsCore.Story.Story;
 
 namespace SekaiToolsCore;
 
-public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateManager templateManager)
+public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateManager templateManager, Config config)
 {
     private readonly Dictionary<string, GaMat> _templates = new();
 
@@ -48,7 +48,8 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
 
         return _status switch
         {
-            MatchStatus.Matched => new MatchResult(matchedPoint, matchedPoint.IsEmpty ? MatchStatus.Dropped : MatchStatus.Matched),
+            MatchStatus.Matched => new MatchResult(matchedPoint,
+                matchedPoint.IsEmpty ? MatchStatus.Dropped : MatchStatus.Matched),
             MatchStatus.NotMatched or MatchStatus.Dropped => new MatchResult(matchedPoint,
                 matchedPoint.IsEmpty ? MatchStatus.NotMatched : MatchStatus.Matched),
             _ => throw new ArgumentOutOfRangeException()
@@ -62,7 +63,7 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
 
             var imgCropped = new Mat(src, cropArea);
             var matchResult = Matcher.MatchTemplate(imgCropped, tmp, matchingType);
-            var matched = matchResult.MaxVal is > 0.75 and < 1;
+            var matched = matchResult.MaxVal > config.MatchingThreshold.Normal && matchResult.MaxVal < 1;
 
             if (!matched) return Point.Empty;
 
@@ -70,7 +71,8 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
 
             if (_status != MatchStatus.Matched) return result;
 
-            var resultRight = LocalMatch(src, tmp, matchingType, new Point(cropArea.Left + matchResult.MaxLoc.X + tmp.Size.Width, 0));
+            var resultRight = LocalMatch(src, tmp, matchingType,
+                new Point(cropArea.Left + matchResult.MaxLoc.X + tmp.Size.Width, 0));
 
             return resultRight.IsEmpty ? result : resultRight;
         }
@@ -87,7 +89,6 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
                 return Rectangle.Empty;
             return new Rectangle(new Point(startPos.X, 0), size);
         }
-
     }
 
     public readonly List<MarkerFrameSet> Set = storyData.Markers().Select(d => new MarkerFrameSet(d, videoInfo.Fps))

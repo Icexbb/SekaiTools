@@ -967,6 +967,8 @@ public class LegacyProcess
             ReportFinished();
         }
 
+        var outputFilePath = Path.ChangeExtension(_config.VideoFilePath, ".ass");
+
         if (!_setStop)
         {
             Write(subtitleEventItems);
@@ -977,7 +979,7 @@ public class LegacyProcess
             Log("Process Stopped");
         }
 
-        return _setStop ? "" : _config.OutputFilePath;
+        return _setStop ? "" : outputFilePath;
 
         void Write(List<SubtitleEvent> eventList)
         {
@@ -989,7 +991,7 @@ public class LegacyProcess
 
             var events = new Events(eventList.ToArray());
             var assData = new Subtitle(scriptInfo, garbage, style, events);
-            var outputFile = new StreamWriter(_config.OutputFilePath, false, Encoding.UTF8);
+            var outputFile = new StreamWriter(outputFilePath, false, Encoding.UTF8);
             outputFile.Write(assData.ToString());
             outputFile.Close();
         }

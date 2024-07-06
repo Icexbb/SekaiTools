@@ -21,35 +21,18 @@ public class DialogLineModel : ViewModelBase
         set.Data.BodyTranslated = set.Data.BodyTranslated.Replace("...", "…");
         Set = set;
         RawContent = set.Data.BodyOriginal;
-        TranslatedContent = set.Data.BodyTranslated
-            .Replace("\\N", "\n")
-            .Replace("\\R", "\n");
+        TranslatedContent = set.Data.BodyTranslated.EscapedReturn();
         FrameRate = set.Fps;
 
-        UseSeparator = NeedSetSeparator;
-        if (!NeedSetSeparator) return;
-
-        SeparateFrame = Utils.Middle(set.StartIndex() + 1, set.EndIndex() - 1,
-            set.StartIndex() + set.Frames.Count / 2);
-        if (set.Data.BodyTranslated.Contains("\\R"))
+        UseSeparator = set.NeedSetSeparator;
+        if (set.NeedSetSeparator)
         {
-            SeparatorContentIndex = set.Data.BodyTranslated
-                .Replace("\n", "").Replace("\\N", "")
-                .IndexOf("\\R", StringComparison.Ordinal);
-        }
-        else if (set.Data.BodyTranslated.Count(c => c == '\n') == 1)
-        {
-            SeparatorContentIndex = set.Data.BodyTranslated
-                .IndexOf("\\R", StringComparison.Ordinal);
-        }
-        else
-        {
-            SeparatorContentIndex = CleanContent.Length / 2;
+            SeparateFrame = set.Separate.SeparateFrame;
+            SeparatorContentIndex = set.Separate.SeparatorContentIndex;
         }
     }
 
     public string SpeakerName => Set.Data.CharacterTranslated;
-
 
     public string RawContent
     {
@@ -60,7 +43,11 @@ public class DialogLineModel : ViewModelBase
     public string TranslatedContent
     {
         get => GetProperty("");
-        set => SetProperty(value);
+        set
+        {
+            SetProperty(value);
+            Set.Data.BodyTranslated = value;
+        }
     }
 
     public int StartFrame => Set.StartIndex();
@@ -70,30 +57,22 @@ public class DialogLineModel : ViewModelBase
 
     public bool IsDialogJitter => Set.IsJitter;
 
-    private string CleanContent => Set.Data.BodyTranslated
-        .Replace("\n", "")
-        .Replace("\\R", "")
-        .Replace("\\N", "");
-
-    public int SeparatorContentIndexLimit => CleanContent.Length - 1;
-
-    private bool NeedSetSeparator =>
-        Set.Data.BodyTranslated != string.Empty &&
-        Set.Data.BodyOriginal.LineCount() == 3 &&
-        Set.Data.BodyTranslated.Replace("\n", "")
-            .Replace("\\R", "")
-            .Replace("\\N", "")
-            .Length > 37;
+    public int SeparatorContentIndexLimit => Set.Data.BodyTranslated.TrimAll().Length - 1;
 
     public bool UseSeparator
     {
         get => GetProperty(false);
-        set => SetProperty(value);
+        set
+        {
+            SetProperty(value);
+            Set.UseSeparator = value;
+        }
     }
 
     public int SeparateFrame
     {
-        get => GetProperty(Set.StartIndex());
+        // get => GetProperty(Set.StartIndex());
+        get => GetProperty(Set.Separate.SeparatorContentIndex);
         set
         {
             SetProperty(value);
@@ -111,12 +90,12 @@ public class DialogLineModel : ViewModelBase
 
     public int SeparatorContentIndex
     {
-        get => GetProperty(0);
+        get => GetProperty(Set.Separate.SeparatorContentIndex);
         set
         {
             SetProperty(value);
-            ContentPart1 = CleanContent[..value];
-            ContentPart2 = CleanContent[value..];
+            ContentPart1 = Set.Data.BodyTranslated.TrimAll()[..value];
+            ContentPart2 = Set.Data.BodyTranslated.TrimAll()[value..];
             SetPromptWarning();
             Set.SetSeparator(SeparateFrame, SeparatorContentIndex);
         }
@@ -124,16 +103,15 @@ public class DialogLineModel : ViewModelBase
 
     public string ContentPart1
     {
-        get => GetProperty(CleanContent[..SeparatorContentIndex]);
+        get => GetProperty("");
         private set => SetProperty(value);
     }
 
     public string ContentPart2
     {
-        get => GetProperty(CleanContent[SeparatorContentIndex..]);
+        get => GetProperty("");
         private set => SetProperty(value);
     }
-
 
 
     public string PromptWarning
@@ -171,6 +149,7 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
 
     public DialogLine(DialogFrameSet set)
     {
+        set.InitSeparator();
         DataContext = new DialogLineModel(set);
         InitializeComponent();
         CheckLineExpander();
@@ -188,7 +167,7 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
     {
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
 
-        var dialog = new QuickEditDialog(ViewModel.Set.Data);
+        var dialog = new QuickEditDialog(ViewModel.Set);
 
         var token = new CancellationToken();
         var dialogResult = await dialogService.ShowAsync(dialog, token);
@@ -196,8 +175,7 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
 
         var set = ViewModel.Set;
         var edited = dialog.ViewModel.ContentTranslated;
-        set.Data.SetTranslationContent(edited);
-
+        ViewModel.TranslatedContent = dialog.ViewModel.ContentTranslated;
 
         DataContext = new DialogLineModel(set);
         ViewModel.UseSeparator = dialog.ViewModel.UseReturn;

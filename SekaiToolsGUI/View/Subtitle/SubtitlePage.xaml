@@ -168,7 +168,7 @@
                     </Grid.ColumnDefinitions>
 
                     <ui:ToggleSwitch Grid.Column="0" HorizontalAlignment="Left"
-                        Name="OnlyTooLongSwitch" Margin="5"
+                        Name="OnlyTooLongSwitch" Margin="5" Click="OnlyTooLongSwitch_OnClick"
                         OnContent="仅显示过长行" OffContent="显示所有行" />
                     <ui:Button Grid.Column="2" HorizontalAlignment="Right"
                         Content="输出" Margin="5" Click="OutputButton_OnClick"
