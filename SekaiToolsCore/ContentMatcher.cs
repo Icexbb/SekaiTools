@@ -7,18 +7,28 @@ namespace SekaiToolsCore;
 
 public class ContentMatcher(TemplateManager templateManager, Config config)
 {
-    public void Process(Mat mat)
+    private GaMat Template { get; set; } = new GaMat(templateManager.GetMenuSign(), false);
+
+    private double Threshold { get; set; } = config.MatchingThreshold.Normal;
+
+    private bool MatchContentStartSign(Mat mat)
     {
-        var menuSign = new GaMat(templateManager.GetMenuSign(), false);
-        var startThreshold = config.MatchingThreshold.Normal;
         var roi = new Rectangle(
-            mat.Width - menuSign.Size.Width * 2, 0, menuSign.Size.Width * 2, menuSign.Size.Height * 2
+            mat.Width - Template.Size.Width * 3, 0,
+            Template.Size.Width * 3,
+            Template.Size.Height * 2
         );
         roi.Extend(0.1);
+
         var frameCropped = new Mat(mat, roi);
-        var result = Matcher.MatchTemplate(frameCropped, menuSign);
-        Finished = result.MaxVal > startThreshold;
+        var result = Matcher.MatchTemplate(frameCropped, Template);
+        return result.MaxVal > Threshold;
     }
 
-    public bool Finished { get; set; }
+    public void Process(Mat mat)
+    {
+        if (MatchContentStartSign(mat)) Finished = true;
+    }
+
+    public bool Finished { get; private set; }
 }
