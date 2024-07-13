@@ -3,7 +3,7 @@ namespace SekaiToolsCore.SubStationAlpha.Tag;
 public abstract class ShadBase : Tag,INestableTag
 {
     public abstract override string Name { get; }
-    public float Value { get; } = 0;
+    public float Value { get; }
 
     protected ShadBase(float value)
     {

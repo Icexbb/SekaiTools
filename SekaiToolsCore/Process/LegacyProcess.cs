@@ -186,12 +186,12 @@ public class LegacyProcess
     {
         var template = GetNameTag(ShortName(_storyData.Dialogs()[dialogIndex].CharacterOriginal));
 
-        var res = LocalMatch(img, template, 0.7, TemplateMatchingType.CcoeffNormed);
+        var res = LocalMatch(img, template, 0.7);
 
         if (!res.IsEmpty && _nameTagPosition.IsEmpty) _nameTagPosition = new Point(res.X, res.Y);
         return res;
 
-        Rectangle LocalMatch(Mat src, GaMat tmp, double threshold, TemplateMatchingType matchingType)
+        Rectangle LocalMatch(Mat src, GaMat tmp, double threshold)
         {
             var cropArea = LocalGetCropArea(tmp.Size);
             var imgCropped = new Mat(src, cropArea);
@@ -876,7 +876,7 @@ public class LegacyProcess
             var cRec = Utils.FromCenter(center,
                 new Size((offset * 12) / 20 * 20, (int)(offset * 1.4) / 20 * 20));
             var mRec = Utils.FromCenter(center,
-                new Size((offset * 12) / 20 * 20, (int)(offset * 2) / 20 * 20));
+                new Size((offset * 12) / 20 * 20, (int)(offset * 2.0) / 20 * 20));
             var mask = AssDraw.Rectangle(mRec).ToString();
             var clipLeft = (
                     Tags.Clip(0, cRec.Y, cRec.X, cRec.Y + cRec.Height) +

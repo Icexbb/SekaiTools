@@ -1,7 +1,6 @@
 using System.Drawing;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using Emgu.CV.Structure;
 using SekaiToolsCore.Process;
 using SekaiStory = SekaiToolsCore.Story.Story;
 
@@ -28,7 +27,7 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
     {
         NotMatched,
         Dropped,
-        Matched,
+        Matched
     }
 
     private MatchStatus _status;
@@ -52,7 +51,7 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
                 matchedPoint.IsEmpty ? MatchStatus.Dropped : MatchStatus.Matched),
             MatchStatus.NotMatched or MatchStatus.Dropped => new MatchResult(matchedPoint,
                 matchedPoint.IsEmpty ? MatchStatus.NotMatched : MatchStatus.Matched),
-            _ => throw new ArgumentOutOfRangeException()
+            _ => throw new ArgumentOutOfRangeException(nameof(_status), _status, null)
         };
 
         Point LocalMatch(Mat src, GaMat tmp, TemplateMatchingType matchingType, Point startPos = default)
@@ -87,7 +86,7 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
                 return Rectangle.Empty;
             if (size.Width < tmp.Size.Width || size.Height < tmp.Size.Height)
                 return Rectangle.Empty;
-            return new Rectangle(new Point(startPos.X, 0), size);
+            return new Rectangle(startPos with { Y = 0 }, size);
         }
     }
 

@@ -5,9 +5,9 @@ namespace SekaiToolsCore.Story.Game;
 
 public class GameData
 {
-    internal Snippet[] Snippets;
-    internal SpecialEffect[] SpecialEffectData;
-    internal readonly Talk[] TalkData;
+    public readonly SpecialEffect[] SpecialEffectData;
+    public readonly Talk[] TalkData;
+    public readonly Snippet[] Snippets;
 
     public GameData(string jsonFilePath)
     {
@@ -17,22 +17,7 @@ public class GameData
         var data = JsonConvert.DeserializeObject<JObject>(jsonString) ?? throw new Exception("Json parse error");
 
         TalkData = data.Get("TalkData", Array.Empty<JObject>())
-            .Select(v => new Talk
-            {
-                WindowDisplayName = v.Get("WindowDisplayName", ""),
-                Body = v.Get("Body", ""),
-                WhenFinishCloseWindow = v.Get("WhenFinishCloseWindow", 0),
-                Voices = v.Get("Voices", Array.Empty<JObject>()).Select(voice => new Voice
-                {
-                    Character2DId = voice.Get("Character2dId", 0),
-                    VoiceId = voice.Get("VoiceId", ""),
-                }).ToArray(),
-                Characters = v.Get("Characters", Array.Empty<JObject>())
-                    .Select(c => new Talk.TalkCharacters
-                    {
-                        Character2dId = c.Get("Character2dId", 0)
-                    }).ToArray()
-            }).ToArray();
+            .Select(Talk.FromJson).ToArray();
 
         Snippets = data.Get("Snippets", Array.Empty<JObject>())
             .Select(Snippet.FromJObject)
@@ -41,11 +26,7 @@ public class GameData
         SpecialEffectData = data.Get("SpecialEffectData", Array.Empty<JObject>())
             .Select(SpecialEffect.FromJObject)
             .ToArray();
-        Clean();
-    }
 
-    private void Clean()
-    {
         List<int> shakeIndex = [];
         var talkDataCount = 0;
         var spEffCount = 0;
@@ -104,6 +85,6 @@ public class GameData
 
     public bool Empty()
     {
-        return TalkData.Length + Snippets.Length + SpecialEffectData.Length == 0;
+        return TalkData.Length + SpecialEffectData.Length == 0;
     }
 }

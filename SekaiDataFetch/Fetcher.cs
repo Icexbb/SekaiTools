@@ -34,8 +34,8 @@ public class Fetcher
 
     private record PjSekaiResponse
     {
-        public int Total { get; set; }
-        public int Limit { get; set; }
+        public int Total { get; set; } = 0;
+        public int Limit { get; set; } = 0;
         public JObject[] Data { get; set; } = [];
     }
 
@@ -63,7 +63,7 @@ public class Fetcher
                 if (jObjects == null) throw new JsonSerializationException();
                 return jObjects;
             case SourceList.SourceType.SiteAi:
-                var data = JsonDeserialize<PjSekaiResponse>(responseContent);
+                var data = JsonConvert.DeserializeObject<PjSekaiResponse>(responseContent);
                 if (data == null) throw new JsonSerializationException();
                 return data.Total > data.Limit
                     ? await FetchSource(url.Insert(url.IndexOf('?') + 1, $"$limit={data.Total}&"))

@@ -1,9 +1,8 @@
-using System.Text.RegularExpressions;
 using SekaiToolsCore.Story.Game;
 
 namespace SekaiToolsCore.Story.Translation;
 
-public partial class TranslationData
+public class TranslationData
 {
     public readonly List<Translation> Translations = [];
 
@@ -52,7 +51,4 @@ public partial class TranslationData
 
         return true;
     }
-
-    [GeneratedRegex("^([^：]+)：(.*)$")]
-    private static partial Regex DialogPattern();
 }

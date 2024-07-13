@@ -1,7 +1,6 @@
 using System.Drawing;
 using Emgu.CV;
 using SekaiToolsCore.Process;
-using SekaiToolsCore.Story.Event;
 
 namespace SekaiToolsCore;
 
@@ -42,7 +41,7 @@ public class DialogMatcher(
                 X = (videoInfo.Resolution.Width - dialogAreaSize.Width) / 2,
                 Y = (videoInfo.Resolution.Height - dialogAreaSize.Height - (int)(ntt.Height * 1.1)) / 1,
                 Height = (int)(ntt.Height * 1.8),
-                Width = (int)(ntt.Width + ntt.Height * 0.8),
+                Width = (int)(ntt.Width + ntt.Height * 0.8)
             };
             if (dialog.Data.Shake)
                 rect.Extend(0.2);
@@ -208,7 +207,7 @@ public class DialogMatcher(
         DialogMatched1 = 1,
         DialogMatched2 = 2,
         DialogMatched3 = 3,
-        DialogDropped = -1,
+        DialogDropped = -1
     }
 
     private static bool IsStatusMatched(MatchStatus status) => status is MatchStatus.DialogMatched1

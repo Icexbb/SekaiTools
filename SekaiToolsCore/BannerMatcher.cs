@@ -1,6 +1,5 @@
 using System.Drawing;
 using Emgu.CV;
-using Emgu.CV.CvEnum;
 using SekaiToolsCore.Process;
 using SekaiStory = SekaiToolsCore.Story.Story;
 
@@ -8,7 +7,7 @@ namespace SekaiToolsCore;
 
 public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateManager templateManager, Config config)
 {
-    private GaMat GetTemplate(string content) => new GaMat(templateManager.GetDbTemplate(content));
+    private GaMat GetTemplate(string content) => new(templateManager.GetDbTemplate(content));
 
 
     private static string TrimContent(string content)
@@ -35,17 +34,12 @@ public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
         var template = GetTemplate(sText);
         var match = LocalMatch(img, template);
 
-        switch (_status)
+        return _status switch
         {
-            case MatchStatus.Matched:
-                return match ? MatchStatus.Matched : MatchStatus.Dropped;
-            case MatchStatus.NotMatched:
-            case MatchStatus.Dropped:
-                return match ? MatchStatus.Matched : MatchStatus.NotMatched;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
-
+            MatchStatus.Matched => match ? MatchStatus.Matched : MatchStatus.Dropped,
+            MatchStatus.NotMatched or MatchStatus.Dropped => match ? MatchStatus.Matched : MatchStatus.NotMatched,
+            _ => throw new ArgumentOutOfRangeException(nameof(_status), _status, null)
+        };
 
         bool LocalMatch(Mat src, GaMat tmp)
         {

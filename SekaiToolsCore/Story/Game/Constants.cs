@@ -60,7 +60,5 @@ public static class Constants
         { 27, "MIKU_LN" }, { 28, "MIKU_MMJ" }, { 29, "MIKU_VBS" }, { 30, "MIKU_WS" }, { 31, "MIKU_25" }
     };
 
-    public static readonly Dictionary<string, int> DisNameToId = new()
-    {
-    };
+    public static readonly Dictionary<string, int> DisNameToId = new();
 }

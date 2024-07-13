@@ -43,10 +43,10 @@ public class ListUnitStory
     {
         foreach (var unit in unitStory)
         {
-            var chapterDict = new List<UnitStorySet.Chapter> { };
+            var chapterDict = new List<UnitStorySet.Chapter>();
             foreach (var chapter in unit.Chapters)
             {
-                var episodeDict = new List<UnitStorySet.Chapter.Episode> { };
+                var episodeDict = new List<UnitStorySet.Chapter.Episode>();
                 episodeDict.AddRange(chapter.Episodes.Select(episode =>
                     new UnitStorySet.Chapter.Episode(episode.EpisodeNoLabel, episode.Title, episode.ScenarioId)));
 

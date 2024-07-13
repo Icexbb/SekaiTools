@@ -252,21 +252,21 @@ public class FrameRate
     public bool IsLoaded() => _numerator > 0;
     public bool NeedDropFrames() => _drop;
 
-    public static FrameRate Fps_23_976 { get; } = new(24000, 1001, true);
+    public static FrameRate Fps23976 { get; } = new(24000, 1001, true);
 
-    public static FrameRate Fps_24 { get; } = new(24);
+    public static FrameRate Fps24 { get; } = new(24);
 
-    public static FrameRate Fps_25 { get; } = new(25);
+    public static FrameRate Fps25 { get; } = new(25);
 
-    public static FrameRate Fps_29_97 { get; } = new(30000, 1001, true);
+    public static FrameRate Fps2997 { get; } = new(30000, 1001, true);
 
-    public static FrameRate Fps_30 { get; } = new(30);
+    public static FrameRate Fps30 { get; } = new(30);
 
-    public static FrameRate Fps_50 { get; } = new(50);
+    public static FrameRate Fps50 { get; } = new(50);
 
-    public static FrameRate Fps_59_94 { get; } = new(60000, 1001, true);
+    public static FrameRate Fps5994 { get; } = new(60000, 1001, true);
 
-    public static FrameRate Fps_60 { get; } = new(60);
+    public static FrameRate Fps60 { get; } = new(60);
 }
 
 public class SubtitleTime(int ms = 0)

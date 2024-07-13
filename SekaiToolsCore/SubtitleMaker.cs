@@ -341,9 +341,9 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             var contentItem = SubtitleEvent.Dialog(body, startTime, endTime, "BannerText");
 
             var cRec = Utils.FromCenter(center,
-                new Size((offset * 12) / 20 * 20, (int)(offset * 1.4) / 20 * 20));
+                new Size(offset * 12 / 20 * 20, (int)(offset * 1.4) / 20 * 20));
             var mRec = Utils.FromCenter(center,
-                new Size((offset * 12) / 20 * 20, (int)(offset * 2) / 20 * 20));
+                new Size(offset * 12 / 20 * 20, (int)(offset * 2.0) / 20 * 20));
             var mask = AssDraw.Rectangle(mRec).ToString();
             var clipLeft = (
                     Tags.Clip(0, cRec.Y, cRec.X, cRec.Y + cRec.Height) +

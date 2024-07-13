@@ -14,11 +14,11 @@ public struct Snippet(int action, int index, int progressBehavior, int reference
      * 7 SoundData
      * 8 ScenarioSnippetCharacterLayoutModes
      */
-    public int Action = action;
-    public int Index = index;
-    public int ProgressBehavior = progressBehavior;
-    public int ReferenceIndex = referenceIndex;
-    public int Delay = delay;
+    public readonly int Action = action;
+    public readonly int Index = index;
+    public readonly int ProgressBehavior = progressBehavior;
+    public readonly int ReferenceIndex = referenceIndex;
+    public readonly int Delay = delay;
 
     public static Snippet FromJObject(JObject json)
     {

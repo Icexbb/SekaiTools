@@ -8,9 +8,9 @@ public class Transformation : Tag
 
     public float Acceleration { get; } = 1;
 
-    public int From { get; } = 0;
+    public int From { get; }
 
-    public int To { get; } = 0;
+    public int To { get; }
 
     public Transformation(INestableTag[] tags)
     {

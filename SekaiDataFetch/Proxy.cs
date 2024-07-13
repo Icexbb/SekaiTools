@@ -30,7 +30,7 @@ public class Proxy(
         return $"{ProxyType.ToString().ToLower()}://{Username}:{Password}@{Host}:{Port}";
     }
 
-    public void SetProxy(string host, int port, Proxy.Type proxyType = Proxy.Type.None, string username = "",
+    public void SetProxy(string host, int port, Type proxyType = Type.None, string username = "",
         string password = "")
     {
         Host = host;
@@ -49,5 +49,5 @@ public class Proxy(
         Password = proxy.Password;
     }
 
-    public static Proxy None => new Proxy("", 0, Type.None);
+    public static Proxy None => new("", 0);
 }

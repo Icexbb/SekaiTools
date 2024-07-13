@@ -2,11 +2,11 @@ namespace SekaiToolsCore.SubStationAlpha.AssDraw;
 
 public class Successive(params AssDrawPoint[] parts) : AssDrawPart("s")
 {
-    private readonly List<AssDrawPoint> parts = parts.ToList();
+    private readonly List<AssDrawPoint> _parts = parts.ToList();
 
     public override void Move(int x, int y)
     {
-        foreach (var part in parts)
+        foreach (var part in _parts)
         {
             part.Move(x, y);
         }
@@ -14,7 +14,7 @@ public class Successive(params AssDrawPoint[] parts) : AssDrawPart("s")
 
     public override void Scale(double ratio)
     {
-        foreach (var part in parts)
+        foreach (var part in _parts)
         {
             part.Scale(ratio);
         }
@@ -22,11 +22,11 @@ public class Successive(params AssDrawPoint[] parts) : AssDrawPart("s")
 
     public override void Scale(float ratio)
     {
-        foreach (var part in parts)
+        foreach (var part in _parts)
         {
             part.Scale(ratio);
         }
     }
 
-    public override string ToString() => $"{Type} {string.Join(" ", parts.Select(part => part.ToString()))}";
+    public override string ToString() => $"{Type} {string.Join(" ", _parts.Select(part => part.ToString()))}";
 }

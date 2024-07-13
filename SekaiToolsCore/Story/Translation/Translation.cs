@@ -7,7 +7,7 @@ public abstract class Translation(string body)
 
 public class DialogTranslate(string chara, string body) : Translation(body)
 {
-    public string Chara = chara.Trim();
+    public readonly string Chara = chara.Trim();
 }
 
 public class EffectTranslate(string body) : Translation(body)

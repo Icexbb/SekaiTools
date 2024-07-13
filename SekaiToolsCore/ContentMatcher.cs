@@ -1,15 +1,14 @@
 using System.Drawing;
 using Emgu.CV;
-using Emgu.CV.CvEnum;
 using SekaiToolsCore.Process;
 
 namespace SekaiToolsCore;
 
 public class ContentMatcher(TemplateManager templateManager, Config config)
 {
-    private GaMat Template { get; set; } = new GaMat(templateManager.GetMenuSign(), false);
+    private GaMat Template { get; } = new(templateManager.GetMenuSign(), false);
 
-    private double Threshold { get; set; } = config.MatchingThreshold.Normal;
+    private double Threshold { get; } = config.MatchingThreshold.Normal;
 
     private bool MatchContentStartSign(Mat mat)
     {
