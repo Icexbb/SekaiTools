@@ -4,7 +4,7 @@ namespace SekaiToolsCore.Story.Game;
 
 public struct SpecialEffect(int effectType, string stringVal, string stringValSub, double duration, double intVal)
 {
-    public int EffectType = effectType;
+    public readonly int EffectType = effectType;
 
     /* EffectType
      * 1 渐入
@@ -20,11 +20,11 @@ public struct SpecialEffect(int effectType, string stringVal, string stringValSu
      * 25 画面震动-停止
      * 26 对话震动-停止
      */
-    public string StringVal = stringVal;
+    public readonly string StringVal = stringVal;
 
-    public string StringValSub = stringValSub;
-    public double Duration = duration;
-    public double IntVal = intVal;
+    // public string StringValSub = stringValSub;
+    public readonly double Duration = duration;
+    // public double IntVal = intVal;
 
     public static SpecialEffect FromJObject(JObject json)
     {

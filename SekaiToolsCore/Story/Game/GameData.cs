@@ -49,19 +49,13 @@ public class GameData
         List<int> shakeIndex = [];
         var talkDataCount = 0;
         var spEffCount = 0;
-        var shaking = 0;
+        var shaking = false;
         foreach (var item in Snippets)
         {
             switch (item.Action)
             {
                 case 1:
-                {
-                    if (shaking != 0)
-                    {
-                        shakeIndex.Add(talkDataCount);
-                        shaking -= 1;
-                    }
-                }
+                    if (shaking) shakeIndex.Add(talkDataCount);
                     talkDataCount += 1;
                     break;
                 case 6:
@@ -69,16 +63,12 @@ public class GameData
                     var eff = SpecialEffectData[spEffCount];
                     switch (eff.EffectType)
                     {
-                        case 6 when eff.Duration > 10:
-                            shaking = -1;
-                            shakeIndex.Add(talkDataCount - 1);
-                            break;
                         case 6:
-                            shaking = 1;
                             shakeIndex.Add(talkDataCount - 1);
+                            if (eff.Duration > 10) shaking = true;
                             break;
                         case 26:
-                            shaking = 0;
+                            shaking = false;
                             break;
                     }
 
