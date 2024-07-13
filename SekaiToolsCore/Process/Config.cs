@@ -23,11 +23,16 @@ public class Config
 
     public MatchingThreshold MatchingThreshold { get; }
 
+    public string FontName { get; }
+
+    public bool ExportComment { get; }
 
     public Config(
         string videoFilePath,
         string scriptFilePath,
         string translateFilePath,
+        string? fontName = null,
+        bool exportComment = false,
         TypewriterSetting? typerSetting = null,
         MatchingThreshold? matchingThreshold = null
     )
@@ -39,6 +44,8 @@ public class Config
 
         VideoFilePath = videoFilePath;
         ScriptFilePath = scriptFilePath;
+        FontName = fontName ?? "思源黑体 CN Bold";
+        ExportComment = exportComment;
 
         if (translateFilePath != "" && !Path.Exists(translateFilePath))
             throw new FileNotFoundException("Translation file not found.", translateFilePath);

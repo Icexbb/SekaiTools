@@ -50,6 +50,6 @@ public class MatcherCreator
 
     public SubtitleMaker SubtitleMaker()
     {
-        return new SubtitleMaker(VInfo, Manager, Config.TyperSetting);
+        return new SubtitleMaker(VInfo, Manager, Config);
     }
 }

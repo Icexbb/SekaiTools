@@ -13,6 +13,7 @@ using SekaiToolsCore;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Story;
 using SekaiToolsCore.Story.Event;
+using SekaiToolsGUI.View.Setting;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
@@ -299,13 +300,18 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
 
     private void StartProcess()
     {
+        var settings = new SettingPageModel();
         _matcherCreator =
             new MatcherCreator(new Config(
                 ViewModel.VideoFilePath,
                 ViewModel.ScriptFilePath,
                 ViewModel.TranslateFilePath,
-                new TypewriterSetting(50, 80),
-                new MatchingThreshold(0.7, 0.55)
+                settings.FontFamily,
+                settings.ExportComment,
+                new TypewriterSetting(
+                    int.Min(settings.TypewriterFadeTime, settings.TypewriterCharTime),
+                    int.Max(settings.TypewriterFadeTime, settings.TypewriterCharTime)),
+                new MatchingThreshold(settings.ThresholdNormal, settings.ThresholdSpecial)
             ));
         _videoCapture = new VideoCapture(ViewModel.VideoFilePath);
         _dialogMatcher = _matcherCreator.DialogMatcher();
@@ -537,12 +543,14 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
     {
         Dispatcher.Invoke(() =>
         {
+            var needScroll = Math.Abs(LineViewer.ScrollableHeight - LineViewer.VerticalOffset) < 1;
+
             var line = new BannerLine(set)
             {
                 Margin = new Thickness(5, 5, 10, 5)
             };
             LinePanel.Children.Add(line);
-            LineViewer.ScrollToEnd();
+            if (needScroll) LineViewer.ScrollToEnd();
         });
     }
 
@@ -550,12 +558,14 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
     {
         Dispatcher.Invoke(() =>
         {
+            var needScroll = Math.Abs(LineViewer.ScrollableHeight - LineViewer.VerticalOffset) < 1;
+
             var line = new MarkerLine(set)
             {
                 Margin = new Thickness(5, 5, 10, 5)
             };
             LinePanel.Children.Add(line);
-            LineViewer.ScrollToEnd();
+            if (needScroll) LineViewer.ScrollToEnd();
         });
     }
 

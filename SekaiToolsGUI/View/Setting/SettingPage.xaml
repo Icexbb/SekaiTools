@@ -70,8 +70,98 @@
                 </StackPanel>
             </ui:CardControl.Content>
         </ui:CardControl>
+        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon TextContinuous24}">
+            <ui:CardControl.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="打字机设置" />
+                    <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                  Text="设置打字机的渐变时间参数" />
+                </Grid>
+            </ui:CardControl.Header>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:NumberBox Width="120" Margin="5,0"
+                              Maximum="{Binding TypewriterFadeTime}" Minimum="0"
+                              SmallChange="1" LargeChange="10"
+                              Value="{Binding TypewriterCharTime,Mode=TwoWay}"
+                              ClearButtonEnabled="False" />
+                <ui:NumberBox Width="120"
+                              Minimum="{Binding TypewriterCharTime,Mode=TwoWay}"
+                              SmallChange="1" LargeChange="10"
+                              Value="{Binding TypewriterFadeTime,Mode=TwoWay}"
+                              ClearButtonEnabled="False" />
+            </StackPanel>
+        </ui:CardControl>
+
+        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon TextFont24}">
+            <ui:CardControl.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="字体自定义" />
+                    <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                  Text="选择字幕样式所用的字体" />
+                </Grid>
+            </ui:CardControl.Header>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:TextBox Width="150" Margin="5,0"
+                            AcceptsReturn="False" AcceptsTab="False" TextWrapping="NoWrap"
+                            Text="{Binding  FontFamily,Mode=TwoWay}"
+                            ClearButtonEnabled="False" />
+                <ui:Button Content="选择" Click="ChooseFont" />
+            </StackPanel>
+        </ui:CardControl>
+
+        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon CommentNote24}">
+            <ui:CardControl.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="输出注释" />
+                    <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                  Text="选择字幕是否输出注释" />
+                </Grid>
+            </ui:CardControl.Header>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:ToggleSwitch IsChecked="{Binding  ExportComment}" />
+            </StackPanel>
+        </ui:CardControl>
+
+        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon MatchAppLayout24}"
+                        Visibility="Collapsed"
+                        Name="ControlThreshold">
+            <ui:CardControl.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="匹配阈值" />
+                    <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                  Text="自定义图像匹配的阈值设定" />
+                </Grid>
+            </ui:CardControl.Header>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:NumberBox Width="120" Margin="5,0"
+                              Maximum="1" Minimum="0" SmallChange="0.01" LargeChange="0.1"
+                              Value="{Binding  ThresholdNormal,Mode=TwoWay}"
+                              ClearButtonEnabled="False" />
+                <ui:NumberBox Width="120"
+                              Maximum="1" Minimum="0" SmallChange="0.01" LargeChange="0.1"
+                              Value="{Binding ThresholdSpecial,Mode=TwoWay}"
+                              ClearButtonEnabled="False" />
+            </StackPanel>
+        </ui:CardControl>
 
         <ui:CardExpander ContentPadding="0"
+                         MouseDoubleClick="DevClick"
                          Icon="{ui:ImageIcon 'pack://application:,,,/Resource/icon.png', Width=28, Height=28}">
             <ui:CardExpander.Header>
                 <Grid>
@@ -93,10 +183,9 @@
                         Grid.Column="0"
                         Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                         Text="© 2024 PJS字幕组 | Icexbb 以 AGPL-3.0 协议开源" />
-                    <TextBlock
-                        Grid.Row="0"
-                        Grid.RowSpan="2"
-                        Grid.Column="1"
+
+                    <ui:TextBlock
+                        Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"
                         Margin="0,0,16,0"
                         VerticalAlignment="Center"
                         Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"

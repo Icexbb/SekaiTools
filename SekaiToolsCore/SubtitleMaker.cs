@@ -10,8 +10,13 @@ using SubtitleEvent = SekaiToolsCore.SubStationAlpha.Event;
 
 namespace SekaiToolsCore;
 
-public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager, TypewriterSetting typewriterSetting)
+public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager, Config config)
 {
+    private string FontName { get; } = config.FontName;
+    private TypewriterSetting TypewriterSetting { get; } = config.TyperSetting;
+
+    private bool ExportComment { get; } = config.ExportComment;
+
     #region Dialog
 
     private GaMat GetNameTag(string name) => new(templateManager.GetEbTemplate(name));
@@ -32,8 +37,8 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
     private string MakeDialogTypewriter(string body)
     {
         var queue = FormatDialogBodyArr(body);
-        var fadeTime = typewriterSetting.FadeTime;
-        var charTime = typewriterSetting.CharTime;
+        var fadeTime = TypewriterSetting.FadeTime;
+        var charTime = TypewriterSetting.CharTime;
         if (fadeTime <= 0 && charTime <= 0)
             return string.Join("", queue);
 
@@ -59,8 +64,8 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
     private string MakeDialogTypewriter(string body, int frameCount)
     {
         var queue = FormatDialogBodyArr(body);
-        var fadeTime = typewriterSetting.FadeTime;
-        var charTime = typewriterSetting.CharTime;
+        var fadeTime = TypewriterSetting.FadeTime;
+        var charTime = TypewriterSetting.CharTime;
         if (fadeTime <= 0 && charTime <= 0)
             return string.Join("", queue);
 
@@ -108,31 +113,31 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
         var charaFontsize = (int)(fontsize * 0.9);
         var charaOutlineSize = (int)Math.Ceiling(charaFontsize / 15.0);
-        const string fontName = "思源黑体 CN Bold";
+
 
         var blackColor = new AlphaColor(0, 255, 255, 255);
         var outlineColor = new AlphaColor(50, 73, 71, 102);
         var result = new List<Style>
         {
-            new("Line1", fontName, fontsize,
+            new("Line1", FontName, fontsize,
                 primaryColour: blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7, marginL: marginH, marginR: marginH, marginV: marginV),
 
-            new("Line2", fontName, fontsize,
+            new("Line2", FontName, fontsize,
                 primaryColour: blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7, marginL: marginH, marginR: marginH,
                 marginV: marginV + (int)(fontsize * 1.01)),
 
-            new("Line3", fontName, fontsize,
+            new("Line3", FontName, fontsize,
                 primaryColour: blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7, marginL: marginH, marginR: marginH,
                 marginV: marginV + (int)(fontsize * 1.01 * 2)),
 
-            new("Character", fontName, charaFontsize,
+            new("Character", FontName, charaFontsize,
                 primaryColour: blackColor, outlineColour: outlineColor,
                 outline: charaOutlineSize, shadow: 0, alignment: 7),
 
-            new("Screen", fontName, charaFontsize,
+            new("Screen", FontName, charaFontsize,
                 primaryColour: blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7)
         };
@@ -378,14 +383,14 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         var fontsize = (int)((videoInfo.FrameRatio > 16.0 / 9
             ? videoInfo.Resolution.Height * 0.043
             : videoInfo.Resolution.Width * 0.024) * (70 / 61D));
-        const string fontName = "思源黑体 CN Bold";
+
 
         var whiteColor = new AlphaColor(0, 255, 255, 255);
         var outlineColor = new AlphaColor(30, 95, 92, 123);
-        result.Add(new Style("BannerMask", fontName, fontsize, primaryColour: outlineColor,
+        result.Add(new Style("BannerMask", FontName, fontsize, primaryColour: outlineColor,
             outlineColour: outlineColor,
             outline: 0, shadow: 0, alignment: 7));
-        result.Add(new Style("BannerText", fontName, fontsize, primaryColour: whiteColor,
+        result.Add(new Style("BannerText", FontName, fontsize, primaryColour: whiteColor,
             outlineColour: outlineColor,
             outline: 0, shadow: 0, alignment: 7));
         return result;
@@ -467,14 +472,13 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         var fontsize = (int)((videoInfo.FrameRatio > 16.0 / 9
             ? videoInfo.Resolution.Height * 0.043
             : videoInfo.Resolution.Width * 0.024) * (70 / 61D));
-        const string fontName = "思源黑体 CN Bold";
 
         var whiteColor = new AlphaColor(0, 255, 255, 255);
         var outlineColor = new AlphaColor(30, 95, 92, 123);
-        result.Add(new Style("MarkerMask", fontName, fontsize, primaryColour: outlineColor,
+        result.Add(new Style("MarkerMask", FontName, fontsize, primaryColour: outlineColor,
             outlineColour: outlineColor,
             outline: 0, shadow: 0, alignment: 7));
-        result.Add(new Style("MarkerText", fontName, fontsize, primaryColour: whiteColor,
+        result.Add(new Style("MarkerText", FontName, fontsize, primaryColour: whiteColor,
             outlineColour: outlineColor,
             outline: 0, shadow: 0, alignment: 7));
         return result;
@@ -511,6 +515,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             events.AddRange(MakeMarkerEvents(markerList));
         }
 
+        if (!ExportComment) events.RemoveAll(e => e.Type == "Comment");
 
         return new Subtitle(
             new ScriptInfo(videoInfo.Resolution.Width, videoInfo.Resolution.Height),
