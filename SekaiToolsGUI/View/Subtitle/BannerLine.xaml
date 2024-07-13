@@ -16,7 +16,10 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" Text="{Binding StartTime,Mode=OneWay}" />
-            <TextBlock Grid.Column="1" HorizontalAlignment="Center" Text="{Binding Content}" />
+            <TextBlock Grid.Column="1" HorizontalAlignment="Center"
+                       Name="TextBlockContent"
+                       MouseEnter="TextBlockContent_OnMouseEnter"
+                       MouseLeave="TextBlockContent_OnMouseLeave" />
             <TextBlock Grid.Column="2" Text="{Binding EndTime,Mode=OneWay}" />
         </Grid>
     </ui:Card>

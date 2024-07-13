@@ -1,13 +1,13 @@
 <UserControl x:Class="SekaiToolsGUI.View.Subtitle.DialogLine"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:SekaiToolsGUI.View.Subtitle"
-    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    mc:Ignorable="d" d:DesignWidth="500"
-    d:DataContext="{d:DesignInstance local:DialogLineModel, IsDesignTimeCreatable=False}"
-    HorizontalAlignment="Stretch">
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:SekaiToolsGUI.View.Subtitle"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             mc:Ignorable="d" d:DesignWidth="500"
+             d:DataContext="{d:DesignInstance local:DialogLineModel, IsDesignTimeCreatable=False}"
+             HorizontalAlignment="Stretch">
     <ui:Card>
         <StackPanel>
             <Grid Margin="5">
@@ -17,23 +17,37 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="{Binding StartTime,Mode=OneWay}" />
-                <TextBlock Grid.Column="1" HorizontalAlignment="Center" Text="{Binding SpeakerName}" />
+                <TextBlock Grid.Column="1" HorizontalAlignment="Center" 
+                            Name="TextBlockCharacter"
+                            MouseEnter="TextBlockCharacter_OnMouseEnter"
+                            MouseLeave="TextBlockCharacter_OnMouseLeave"
+                      />
                 <TextBlock Grid.Column="2" Text="{Binding EndTime,Mode=OneWay}" />
             </Grid>
             <ui:Card Padding="2" VerticalAlignment="Stretch"
-                MouseDoubleClick="DialogLine_OnMouseDoubleClick">
-                <TextBlock Margin="10" Text="{Binding TranslatedContent}" />
+                     MouseDoubleClick="DialogLine_OnMouseDoubleClick">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Margin="10" Name="TextContentPreview" TextWrapping="NoWrap"
+                               MouseEnter="TextContentPreview_OnMouseEnter"
+                               MouseLeave="TextContentPreview_OnMouseLeave" />
+                    <ui:SymbolIcon Grid.Column="1" Symbol="PhoneShake24" Margin="5,0"
+                                   Visibility="{Binding ShakeVisibility}" />
+                </Grid>
             </ui:Card>
             <StackPanel Name="PanelSeparator">
                 <Separator Margin="5" />
                 <Grid>
                     <TextBlock Text="将文本分割为: " />
                     <TextBlock Text="*本行文本发生抖动*" HorizontalAlignment="Right"
-                        Visibility="{Binding Path=IsDialogJitter,Mode=OneWay,Converter={StaticResource BooleanVisibilityConverter}}" />
+                               Visibility="{Binding Path=IsDialogJitter,Mode=OneWay,Converter={StaticResource BooleanVisibilityConverter}}" />
                 </Grid>
                 <Grid HorizontalAlignment="Center">
                     <TextBlock Grid.Column="0" Margin="10,2"
-                        TextWrapping="WrapWithOverflow" TextAlignment="Center">
+                               TextWrapping="WrapWithOverflow" TextAlignment="Center">
                         <TextBlock.Text>
                             <MultiBinding StringFormat="{}{0} / {1} ">
                                 <Binding Path="ContentPart1" Mode="OneWay" />
@@ -51,9 +65,9 @@
                     <TextBlock Margin="5" Grid.Column="0" Text="{Binding ContentPart1.Length}" />
                     <TextBlock Margin="5" Grid.Column="2" Text="{Binding ContentPart2.Length}" />
                     <Slider Grid.Column="1" Minimum="1"
-                        VerticalAlignment="Center"
-                        Maximum="{Binding SeparatorContentIndexLimit}"
-                        Value="{Binding SeparatorContentIndex}" />
+                            VerticalAlignment="Center"
+                            Maximum="{Binding SeparatorContentIndexLimit}"
+                            Value="{Binding SeparatorContentIndex}" />
                 </Grid>
 
                 <Separator Margin="0,5" />
@@ -89,7 +103,7 @@
                     </TextBlock.Text>
                 </TextBlock>
                 <TextBlock HorizontalAlignment="Center" Text="{Binding PromptWarning,Mode=OneWay}"
-                    Visibility="{Binding RelativeSource={RelativeSource Self},
+                           Visibility="{Binding RelativeSource={RelativeSource Self},
                                    Path=Text,Converter={StaticResource ContentEmptyVisibilityConverter}}" />
             </StackPanel>
         </StackPanel>

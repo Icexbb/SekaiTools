@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using System.Windows.Input;
 using SekaiToolsCore.Process;
 using Wpf.Ui.Controls;
 
@@ -26,5 +27,18 @@ public partial class MarkerLine : UserControl, INavigableView<MarkerLineModel>
     {
         DataContext = new MarkerLineModel(set);
         InitializeComponent();
+        if (ViewModel.Set.Data.BodyTranslated.Length > 0)
+            TextBlockContent.Text = ViewModel.Set.Data.BodyTranslated;
+    }
+
+    private void TextBlockContent_OnMouseEnter(object sender, MouseEventArgs e)
+    {
+        TextBlockContent.Text = ViewModel.Set.Data.BodyOriginal;
+    }
+
+    private void TextBlockContent_OnMouseLeave(object sender, MouseEventArgs e)
+    {
+        if (ViewModel.Set.Data.BodyTranslated.Length > 0)
+            TextBlockContent.Text = ViewModel.Set.Data.BodyTranslated;
     }
 }

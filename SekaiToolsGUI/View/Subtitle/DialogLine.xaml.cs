@@ -50,6 +50,7 @@ public class DialogLineModel : ViewModelBase
         }
     }
 
+    public Visibility ShakeVisibility => Set.Data.Shake ? Visibility.Visible : Visibility.Collapsed;
     public int StartFrame => Set.StartIndex();
     public int EndFrame => Set.EndIndex();
     public string StartTime => FrameRate.TimeAtFrame(StartFrame).GetAssFormatted();
@@ -153,6 +154,10 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
         DataContext = new DialogLineModel(set);
         InitializeComponent();
         CheckLineExpander();
+        TextContentPreview.Text = ViewModel.TranslatedContent;
+        TextBlockCharacter.Text = ViewModel.Set.Data.CharacterTranslated.Length > 0
+            ? ViewModel.Set.Data.CharacterTranslated
+            : ViewModel.Set.Data.CharacterOriginal;
     }
 
     private void CheckLineExpander()
@@ -186,5 +191,26 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
         }
 
         CheckLineExpander();
+    }
+
+    private void TextContentPreview_OnMouseEnter(object sender, MouseEventArgs e)
+    {
+        TextContentPreview.Text = ViewModel.RawContent;
+    }
+
+    private void TextContentPreview_OnMouseLeave(object sender, MouseEventArgs e)
+    {
+        TextContentPreview.Text = ViewModel.TranslatedContent;
+    }
+
+    private void TextBlockCharacter_OnMouseEnter(object sender, MouseEventArgs e)
+    {
+        TextBlockCharacter.Text = ViewModel.Set.Data.CharacterOriginal;
+    }
+
+    private void TextBlockCharacter_OnMouseLeave(object sender, MouseEventArgs e)
+    {
+        if (ViewModel.Set.Data.CharacterTranslated.Length > 0)
+            TextBlockCharacter.Text = ViewModel.Set.Data.CharacterTranslated;
     }
 }

@@ -512,12 +512,13 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
     {
         Dispatcher.Invoke(() =>
         {
+            var needScroll = Math.Abs(LineViewer.ScrollableHeight - LineViewer.VerticalOffset) < 1;
             var line = new DialogLine(set)
             {
                 Margin = new Thickness(5, 5, 10, 5)
             };
             LinePanel.Children.Add(line);
-            LineViewer.ScrollToEnd();
+            if (needScroll) LineViewer.ScrollToEnd();
         });
     }
 
