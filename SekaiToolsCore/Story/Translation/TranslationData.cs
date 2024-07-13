@@ -13,16 +13,14 @@ public partial class TranslationData
         if (!File.Exists(filePath)) throw new Exception("File not found");
 
         var fileStrings = File.ReadAllLines(filePath).ToList();
-        fileStrings.Select(line => line.Trim()).ToList().RemoveAll(line => line == "");
-        foreach (var line in fileStrings)
+
+        fileStrings = fileStrings.Where(l => l.Trim().Length > 0).Select(l => l.Trim()).ToList();
+        fileStrings.ForEach(line =>
         {
-            if (line.Length == 0) continue;
-            var matches = DialogPattern().Match(line);
-            if (matches.Success)
-                Translations.Add(new DialogTranslate(matches.Groups[1].Value, matches.Groups[2].Value));
-            else
-                Translations.Add(new EffectTranslate(line));
-        }
+            Translations.Add(line.Contains('：')
+                ? new DialogTranslate(line.Split('：', 2)[0], line.Split('：', 2)[1])
+                : new EffectTranslate(line));
+        });
     }
 
     public bool IsEmpty() => Translations.Count == 0;

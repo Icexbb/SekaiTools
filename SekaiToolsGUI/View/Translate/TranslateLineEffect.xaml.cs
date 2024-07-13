@@ -72,8 +72,7 @@ public partial class TranslateLineEffect : UserControl, INavigableView<LineEffec
 
     public string Export()
     {
-        return ViewModel.TranslatedContent == string.Empty
-            ? ViewModel.OriginalContent
-            : ViewModel.TranslatedContent;
+        var result = ViewModel.TranslatedContent;
+        return string.IsNullOrWhiteSpace(result) ? "地点" : result;
     }
 }
