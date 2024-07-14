@@ -19,8 +19,8 @@ body:
     validations:
       required: true
   - type: input
+    id: input  
     attributes:
-      id: input
       label: 轴机输入
       description: 轴机在发生错误时的输入文件/操作是什么 请进行描述或上传文件，自动轴机部分的问题请提供视频和剧本以及翻译文件（组内视频可只填视频来源）
     validations:
