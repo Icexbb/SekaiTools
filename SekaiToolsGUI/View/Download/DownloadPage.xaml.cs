@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
 using SekaiDataFetch;
+using SekaiToolsGUI.View.Download.Components;
 using SekaiToolsGUI.View.Download.Tabs;
 using SekaiToolsGUI.View.Setting;
 
@@ -26,8 +27,8 @@ public partial class DownloadPage : UserControl
     {
         ContentCard.Content = BoxStoryType.SelectedIndex switch
         {
-            0 => new Tabs.UnitStory.UnitStoryTab(),
-            1 => new Tabs.EventStory.EventStoryTab(),
+            0 => new UnitStoryTab(),
+            1 => new EventStoryTab(),
             _ => null
         };
     }

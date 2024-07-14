@@ -2,14 +2,15 @@ using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media.Effects;
 using Microsoft.Win32;
 using SekaiToolsCore.Story;
 using SekaiToolsCore.Story.Event;
 using SekaiToolsCore.Story.Game;
 using SekaiToolsCore.Story.Translation;
+using SekaiToolsGUI.View.Translate.Components;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
+using SaveFileDialog = SekaiToolsGUI.View.Translate.Components.SaveFileDialog;
 
 namespace SekaiToolsGUI.View.Translate;
 

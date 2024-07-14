@@ -1,0 +1,22 @@
+<ui:ContentDialog
+    x:Class="SekaiToolsGUI.View.Setting.Components.FontSelectDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:SekaiToolsGUI.View.Setting.Components"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:components="clr-namespace:SekaiToolsGUI.View.Setting.Components"
+    ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+    ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    Title="字体选择" MinWidth="500" DialogWidth="500"
+    IsPrimaryButtonEnabled="True" DefaultButton="Primary" PrimaryButtonText="确认" CloseButtonText="取消">
+    <ui:ContentDialog.Resources>
+        <!-- ReSharper disable once Xaml.StaticResourceNotResolved -->
+        <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"
+               TargetType="{x:Type components:FontSelectDialog}" />
+    </ui:ContentDialog.Resources>
+    <ui:ContentDialog.Content>
+        <ComboBox Name="BoxFontName" SelectionChanged="BoxFontName_OnSelectionChanged"></ComboBox>
+    </ui:ContentDialog.Content>
+</ui:ContentDialog>

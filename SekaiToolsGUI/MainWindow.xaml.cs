@@ -1,12 +1,9 @@
 ﻿using System.Windows;
-using System.Windows.Data;
-using System.Windows.Input;
 using SekaiToolsGUI.View.Download;
 using SekaiToolsGUI.View.Setting;
 using SekaiToolsGUI.View.Subtitle;
 using SekaiToolsGUI.View.Translate;
 using Wpf.Ui;
-using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
 namespace SekaiToolsGUI;
@@ -35,7 +32,14 @@ public class MainWindowViewModel : ViewModelBase
             Icon = new SymbolIcon { Symbol = SymbolRegular.ArrowDownload24 },
             TargetPageType = typeof(DownloadPage),
             NavigationCacheMode = NavigationCacheMode.Required
-        }
+        },
+        new NavigationViewItem
+        {
+            Content = "后处理器",
+            Icon = new SymbolIcon { Symbol = SymbolRegular.PhotoFilter24 },
+            // TargetPageType = typeof(DownloadPage),
+            NavigationCacheMode = NavigationCacheMode.Required
+        },
     ];
 
     public object[] NavigationFooterItems { get; set; } =
