@@ -222,7 +222,6 @@ public class SettingPageModel : ViewModelBase
         var setting = Setting.FromModel(this);
         Directory.CreateDirectory(Path.GetDirectoryName(GetSettingPath())!);
         File.WriteAllText(GetSettingPath(), setting.Dump(), Encoding.UTF8);
-        Console.WriteLine("Setting saved");
     }
 
     public void LoadSetting()

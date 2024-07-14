@@ -692,20 +692,20 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
 
     private void OnlyTooLongSwitch_OnClick(object sender, RoutedEventArgs e)
     {
-        var targetVisiblity = (OnlyTooLongSwitch.IsChecked ?? false) ? Visibility.Collapsed : Visibility.Visible;
+        var targetVisibility = (OnlyTooLongSwitch.IsChecked ?? false) ? Visibility.Collapsed : Visibility.Visible;
         foreach (var child in LinePanel.Children)
         {
             switch (child)
             {
                 case DialogLine dialogLine:
                     if (dialogLine.ViewModel.Set.NeedSetSeparator) continue;
-                    dialogLine.Visibility = targetVisiblity;
+                    dialogLine.Visibility = targetVisibility;
                     break;
                 case BannerLine bannerLine:
-                    bannerLine.Visibility = targetVisiblity;
+                    bannerLine.Visibility = targetVisibility;
                     break;
                 case MarkerLine markerLine:
-                    markerLine.Visibility = targetVisiblity;
+                    markerLine.Visibility = targetVisibility;
                     break;
             }
         }
