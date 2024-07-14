@@ -35,7 +35,8 @@ public class MainWindowViewModel : ViewModelBase
         },
         new NavigationViewItem
         {
-            Content = "后处理器",
+            Content = "后期处理",
+            IsEnabled = false,
             Icon = new SymbolIcon { Symbol = SymbolRegular.PhotoFilter24 },
             // TargetPageType = typeof(DownloadPage),
             NavigationCacheMode = NavigationCacheMode.Required
@@ -67,7 +68,7 @@ public partial class MainWindow : FluentWindow
     private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
     {
         WindowSnackbarService.SetSnackbarPresenter(SnackbarPresenter);
-        WindowContentDialogService.SetContentPresenter(RootContentDialog);
+        WindowContentDialogService.SetDialogHost(RootContentDialog);
     }
 
     public ISnackbarService WindowSnackbarService { get; } = new SnackbarService()

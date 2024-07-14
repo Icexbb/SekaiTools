@@ -597,7 +597,7 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
     {
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
 
-        var dialog = new SaveFileDialog(dialogService.GetContentPresenter(), ViewModel.VideoFilePath);
+        var dialog = new SaveFileDialog(dialogService.GetDialogHost() ?? throw new InvalidOperationException(), ViewModel.VideoFilePath);
         var token = new CancellationToken();
         var dialogResult = await dialogService.ShowAsync(dialog, token);
         if (dialogResult != ContentDialogResult.Primary) return;
