@@ -1,0 +1,35 @@
+name: 功能请求
+description: 提交一个需要添加的功能
+labels: [ "enhancement" ]
+
+body:
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 优先级
+      description: 请根据你认为的重要性选择一个优先级
+      options:
+        - P0
+        - P1
+        - P2
+    validations:
+      required: true
+  - type: textarea
+    id: feature-request
+    attributes:
+      label: 功能请求
+      description: 请简要描述你希望添加的功能
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: 为什么需要这个功能
+      description: 请简要描述为什么你认为这个功能对轴机有帮助
+    validations:
+      required: true
+  - type: textarea
+    id: others
+    attributes:
+      label: 其他
+      description: 其他任何需要告知开发者的内容，请在此填写

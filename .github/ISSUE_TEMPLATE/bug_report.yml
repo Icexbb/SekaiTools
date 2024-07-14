@@ -1,12 +1,23 @@
-name: Bug 报告
+name: 错误报告
 description: 提交一个需要修复的Bug
-labels: ["bug", "triage"]
+labels: [ "bug" ]
 
 body:
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 优先级
+      description: 请根据你认为的重要性选择一个优先级
+      options:
+        - P0
+        - P1
+        - P2
+    validations:
+      required: true
   - type: input
     attributes:
       label: 填写你遇到bug所用的版本
-      description: 可从轴机设置界面获知
+      description: 可从轴机设置界面获知，若非最新版本请先下载最新版本测试是否仍存在此问题
       placeholder: ex. 1.0.0.xxxx
     validations:
       required: true
@@ -15,18 +26,17 @@ body:
     attributes:
       label: Bug 描述
       description: 请简要描述你遇到了什么，以及你的预期是什么
-      placeholder: Tell us what you see!
     validations:
       required: true
-  - type: input
-    id: input  
+  - type: textarea
+    id: input
     attributes:
       label: 轴机输入
       description: 轴机在发生错误时的输入文件/操作是什么 请进行描述或上传文件，自动轴机部分的问题请提供视频和剧本以及翻译文件（组内视频可只填视频来源）
     validations:
       required: true
   - type: textarea
-    id: logs
+    id: output
     attributes:
       label: 轴机输出
       description: 请提供轴机在出现bug时的表现：轴的问题请提交输出`.ass`文件，其他问题请提供轴机截图
