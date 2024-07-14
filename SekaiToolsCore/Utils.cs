@@ -128,6 +128,15 @@ public static partial class Utils
 
     public static void Extend(this Rectangle rect, double ratio)
     {
+        switch (ratio)
+        {
+            case < 0:
+                return;
+            case < 1:
+                ratio = 1 + ratio;
+                break;
+        }
+
         var x = (int)(rect.Width * ratio);
         var y = (int)(rect.Height * ratio);
         rect.Extend(x, y);

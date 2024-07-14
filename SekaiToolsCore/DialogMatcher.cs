@@ -44,7 +44,7 @@ public class DialogMatcher(
                 Width = (int)(ntt.Width + ntt.Height * 0.8)
             };
             if (dialog.Data.Shake)
-                rect.Extend(0.2);
+                rect.Extend(0.4);
 
             rect.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
             return rect;
@@ -134,12 +134,12 @@ public class DialogMatcher(
             var offset = templateManager.DbTemplateMaxSize().Height;
             Rectangle dialogStartPosition = new(
                 x: point.X + (int)(0.1 * offset),
-                y: point.Y + (int)(1.2 * offset),
-                width: (int)(3.6 * offset),
+                y: point.Y + (int)(1.0 * offset),
+                width: (int)(3.5 * offset),
                 height: (int)(1.8 * offset)
             );
             if (dialog.Data.Shake)
-                dialogStartPosition.Extend(0.2);
+                dialogStartPosition.Extend(0.4);
             dialogStartPosition.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
 
             var imgCropped = new Mat(src, dialogStartPosition);
