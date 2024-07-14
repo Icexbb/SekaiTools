@@ -9,6 +9,66 @@ using Wpf.Ui.Controls;
 
 namespace SekaiToolsGUI.View.Setting;
 
+public struct Setting
+{
+    public string AppVersion { get; init; }
+    public int CurrentApplicationTheme { get; init; }
+    public string[] CustomSpecialCharacters { get; init; }
+
+    public int ProxyType { get; init; }
+    public string ProxyHost { get; init; }
+
+    public int ProxyPort { get; init; }
+
+    // public string ProxyUsername { get; init; }
+    // public string ProxyPassword { get; init; }
+
+    public int TypewriterFadeTime { get; init; }
+    public int TypewriterCharTime { get; init; }
+    public double ThresholdNormal { get; init; }
+    public double ThresholdSpecial { get; init; }
+
+    public bool ExportComment { get; init; }
+
+    public string FontFamily { get; init; }
+
+    public static Setting Default => new()
+    {
+        ProxyType = 0,
+        ProxyHost = "127.0.0.1",
+        ProxyPort = 1080,
+        TypewriterFadeTime = 50,
+        TypewriterCharTime = 80,
+        ThresholdNormal = 0.7,
+        ThresholdSpecial = 0.7,
+        ExportComment = true,
+        FontFamily = "思源黑体 CN Bold",
+    };
+
+    public static Setting FromModel(SettingPageModel model) => new()
+    {
+        AppVersion = SettingPageModel.AppVersion,
+        CurrentApplicationTheme = model.CurrentApplicationTheme,
+        CustomSpecialCharacters = model.CustomSpecialCharacters.ToArray(),
+        ProxyType = model.ProxyType,
+        ProxyHost = model.ProxyHost,
+        ProxyPort = model.ProxyPort,
+        TypewriterFadeTime = model.TypewriterFadeTime,
+        TypewriterCharTime = model.TypewriterCharTime,
+        ThresholdNormal = model.ThresholdNormal,
+        ThresholdSpecial = model.ThresholdSpecial,
+        FontFamily = model.FontFamily,
+        ExportComment = model.ExportComment
+    };
+
+    public string Dump() => JsonConvert.SerializeObject(this, Formatting.Indented);
+
+    public static Setting Load(string filepath)
+    {
+        return !File.Exists(filepath) ? Default : JsonConvert.DeserializeObject<Setting>(File.ReadAllText(filepath));
+    }
+}
+
 public class SettingPageModel : ViewModelBase
 {
     public int CurrentApplicationTheme
@@ -64,7 +124,6 @@ public class SettingPageModel : ViewModelBase
             SaveSetting();
         }
     }
-
 
     public string ProxyHost
     {
@@ -134,18 +193,6 @@ public class SettingPageModel : ViewModelBase
         _ => throw new ArgumentOutOfRangeException()
     });
 
-    // public string ProxyUsername
-    // {
-    //     get => GetProperty("");
-    //     set => SetProperty(value);
-    // }
-    //
-    // public string ProxyPassword
-    // {
-    //     get => GetProperty("");
-    //     set => SetProperty(value);
-    // }
-
     public string FontFamily
     {
         get => GetProperty("思源黑体 CN Bold");
@@ -166,80 +213,46 @@ public class SettingPageModel : ViewModelBase
         }
     }
 
-    public struct Setting
-    {
-        public int CurrentApplicationTheme { get; init; }
-        public string[] CustomSpecialCharacters { get; init; }
-
-        public int ProxyType { get; init; }
-        public string ProxyHost { get; init; }
-        public int ProxyPort { get; init; }
-        public string ProxyUsername { get; init; }
-        public string ProxyPassword { get; init; }
-
-        public int TypewriterFadeTime { get; init; }
-        public int TypewriterCharTime { get; init; }
-        public double ThresholdNormal { get; init; }
-        public double ThresholdSpecial { get; init; }
-
-        public bool ExportComment { get; init; }
-
-        public string FontFamily { get; init; }
-    }
-
-
     private static string GetSettingPath() =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "setting.json");
 
     public void SaveSetting()
     {
-        var setting = new Setting
-        {
-            CurrentApplicationTheme = CurrentApplicationTheme,
-            CustomSpecialCharacters = CustomSpecialCharacters.ToArray(),
-            ProxyType = ProxyType,
-            ProxyHost = ProxyHost,
-            ProxyPort = ProxyPort,
-            // ProxyUsername = ProxyUsername,
-            // ProxyPassword = ProxyPassword
-
-            TypewriterFadeTime = TypewriterFadeTime,
-            TypewriterCharTime = TypewriterCharTime,
-
-            ThresholdNormal = ThresholdNormal,
-            ThresholdSpecial = ThresholdSpecial,
-
-            FontFamily = FontFamily,
-
-            ExportComment = ExportComment
-        };
-        var json = JsonConvert.SerializeObject(setting);
+        var setting = Setting.FromModel(this);
         Directory.CreateDirectory(Path.GetDirectoryName(GetSettingPath())!);
-        File.WriteAllText(GetSettingPath(), json, Encoding.UTF8);
+        File.WriteAllText(GetSettingPath(), setting.Dump(), Encoding.UTF8);
+        Console.WriteLine("Setting saved");
     }
 
     public void LoadSetting()
     {
-        if (!File.Exists(GetSettingPath())) return;
-        var json = File.ReadAllText(GetSettingPath(), Encoding.UTF8);
-        var setting = JsonConvert.DeserializeObject<Setting>(json);
+        var setting = Setting.Load(GetSettingPath());
+
         CurrentApplicationTheme = setting.CurrentApplicationTheme;
         CustomSpecialCharacters.AddRange(setting.CustomSpecialCharacters);
         ProxyType = setting.ProxyType;
         ProxyHost = setting.ProxyHost;
         ProxyPort = setting.ProxyPort;
-        // ProxyUsername = setting.ProxyUsername;
-        // ProxyPassword = setting.ProxyPassword;
-        TypewriterFadeTime = setting.TypewriterFadeTime == 0 ? 50 : setting.TypewriterFadeTime;
-        TypewriterCharTime = setting.TypewriterCharTime == 0 ? 80 : setting.TypewriterCharTime;
 
-        ThresholdNormal = setting.ThresholdNormal == 0 ? 0.7 : setting.ThresholdNormal;
-        ThresholdSpecial = setting.ThresholdSpecial == 0 ? 0.55 : setting.ThresholdSpecial;
-
-        FontFamily = setting.FontFamily == "" ? "思源黑体 CN Bold" : setting.FontFamily;
-
-        ExportComment = setting.ExportComment;
+        if (AppVersion != setting.AppVersion)
+        {
+            TypewriterFadeTime = Setting.Default.TypewriterFadeTime;
+            TypewriterCharTime = Setting.Default.TypewriterCharTime;
+            ThresholdNormal = Setting.Default.ThresholdNormal;
+            ThresholdSpecial = Setting.Default.ThresholdSpecial;
+            FontFamily = Setting.Default.FontFamily;
+            ExportComment = Setting.Default.ExportComment;
+        }
+        else
+        {
+            TypewriterFadeTime = setting.TypewriterFadeTime;
+            TypewriterCharTime = setting.TypewriterCharTime;
+            ThresholdNormal = setting.ThresholdNormal;
+            ThresholdSpecial = setting.ThresholdSpecial;
+            FontFamily = setting.FontFamily == "" ? Setting.Default.FontFamily : setting.FontFamily;
+            ExportComment = setting.ExportComment;
+        }
 
         SaveSetting();
     }

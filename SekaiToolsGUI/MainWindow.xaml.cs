@@ -80,16 +80,4 @@ public partial class MainWindow : FluentWindow
         if (NavigationView.MenuItems.Count != 0)
             NavigationView.Navigate((NavigationView.MenuItems[0] as NavigationViewItem)?.TargetPageType!);
     }
-
-
-    private void NavigationView_OnNavigated(NavigationView sender, NavigatedEventArgs args)
-    {
-        if (args.Page is not UIElement element) return;
-        var vb = BindingOperations.GetBinding(element, HeightProperty);
-        if (vb == null)
-        {
-            BindingOperations.SetBinding(element, HeightProperty,
-                new Binding("ActualHeight") { Source = NavigationView });
-        }
-    }
 }

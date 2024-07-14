@@ -32,7 +32,6 @@
             Transition="FadeInWithSlide"
             PaneDisplayMode="LeftMinimal"
             FrameMargin="0"
-            Navigated="NavigationView_OnNavigated"
             HeaderVisibility="Collapsed">
             <ui:NavigationView.ContentOverlay>
                 <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
