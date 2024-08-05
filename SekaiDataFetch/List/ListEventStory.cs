@@ -6,9 +6,6 @@ namespace SekaiDataFetch.List;
 
 public class ListEventStory
 {
-    private Fetcher Fetcher { get; }
-
-
     private static readonly string CachePathEventStories =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "cache", "eventStories.json");
@@ -16,6 +13,8 @@ public class ListEventStory
     private static readonly string CachePathGameEvents =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "cache", "gameEvents.json");
+
+    public readonly List<EventStoryImpl> Data = [];
 
     public ListEventStory(SourceList.SourceType sourceType = SourceList.SourceType.SiteBest, Proxy? proxy = null)
     {
@@ -25,6 +24,8 @@ public class ListEventStory
         Fetcher = fetcher;
         Load();
     }
+
+    private Fetcher Fetcher { get; }
 
     private void Load()
     {
@@ -70,8 +71,6 @@ public class ListEventStory
         Data.Sort((x, y) => y.EventStory.EventId.CompareTo(x.EventStory.EventId));
     }
 
-    public readonly List<EventStoryImpl> Data = [];
-
     public class EventStoryImpl(EventStory es, GameEvent ge)
     {
         public readonly EventStory EventStory = es;
@@ -81,7 +80,7 @@ public class ListEventStory
         {
             if (episode < 0 || episode >= EventStory.EventStoryEpisodes.Length)
                 throw new ArgumentOutOfRangeException(nameof(episode), episode, null);
-            string abName = EventStory.AssetbundleName;
+            var abName = EventStory.AssetbundleName;
             return sourceType switch
             {
                 SourceList.SourceType.SiteBest => $"https://storage.sekai.best/sekai-jp-assets/event_story" +

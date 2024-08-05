@@ -6,27 +6,21 @@ public class Successive(params AssDrawPoint[] parts) : AssDrawPart("s")
 
     public override void Move(int x, int y)
     {
-        foreach (var part in _parts)
-        {
-            part.Move(x, y);
-        }
+        foreach (var part in _parts) part.Move(x, y);
     }
 
     public override void Scale(double ratio)
     {
-        foreach (var part in _parts)
-        {
-            part.Scale(ratio);
-        }
+        foreach (var part in _parts) part.Scale(ratio);
     }
 
     public override void Scale(float ratio)
     {
-        foreach (var part in _parts)
-        {
-            part.Scale(ratio);
-        }
+        foreach (var part in _parts) part.Scale(ratio);
     }
 
-    public override string ToString() => $"{Type} {string.Join(" ", _parts.Select(part => part.ToString()))}";
+    public override string ToString()
+    {
+        return $"{Type} {string.Join(" ", _parts.Select(part => part.ToString()))}";
+    }
 }

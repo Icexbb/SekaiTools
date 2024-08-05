@@ -14,7 +14,10 @@ public abstract class GradientAlphaBase(
     public SubStationAlpha.Alpha LeftBottom { get; } = leftBottom;
     public SubStationAlpha.Alpha RightBottom { get; } = rightBottom;
 
-    public override string ToString() => $"\\{Name}({LeftTop},{RightTop},{LeftBottom},{RightBottom})";
+    public override string ToString()
+    {
+        return $"\\{Name}({LeftTop},{RightTop},{LeftBottom},{RightBottom})";
+    }
 }
 
 public class PrimaryGradientAlpha(

@@ -2,7 +2,6 @@ namespace SekaiToolsCore.SubStationAlpha.Tag;
 
 public class FontSize : Tag, INestableTag
 {
-    public override string Name => "fs";
     public int Value;
 
     public FontSize(int value)
@@ -12,5 +11,10 @@ public class FontSize : Tag, INestableTag
         Value = value;
     }
 
-    public override string ToString() => $"\\{Name}{Value}";
+    public override string Name => "fs";
+
+    public override string ToString()
+    {
+        return $"\\{Name}{Value}";
+    }
 }

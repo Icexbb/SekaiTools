@@ -13,12 +13,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Emgu.CV.Wpf" Version="4.9.0.5494" />
-        <PackageReference Include="WPF-UI" Version="3.0.4" />
+        <PackageReference Include="CalcBinding" Version="2.5.2"/>
+        <PackageReference Include="Emgu.CV.Wpf" Version="4.9.0.5494"/>
+        <PackageReference Include="WPF-UI" Version="3.0.4"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\SekaiDataFetch\SekaiDataFetch.csproj" />
+        <ProjectReference Include="..\SekaiDataFetch\SekaiDataFetch.csproj"/>
         <ProjectReference Include="..\SekaiToolsCore\SekaiToolsCore.csproj"/>
     </ItemGroup>
 
@@ -87,105 +88,105 @@
         <Resource Include="Resource\Characters\chr_30.png"/>
         <None Remove="Resource\Characters\chr_31.png"/>
         <Resource Include="Resource\Characters\chr_31.png"/>
-        <None Remove="Resource\Unit\logo_idol.png" />
-        <Resource Include="Resource\Unit\logo_idol.png" />
-        <None Remove="Resource\Unit\logo_light_sound.png" />
-        <Resource Include="Resource\Unit\logo_light_sound.png" />
-        <None Remove="Resource\Unit\logo_piapro.png" />
-        <Resource Include="Resource\Unit\logo_piapro.png" />
-        <None Remove="Resource\Unit\logo_school_refusal.png" />
-        <Resource Include="Resource\Unit\logo_school_refusal.png" />
-        <None Remove="Resource\Unit\logo_street.png" />
-        <Resource Include="Resource\Unit\logo_street.png" />
-        <None Remove="Resource\Unit\logo_theme_park.png" />
-        <Resource Include="Resource\Unit\logo_theme_park.png" />
+        <None Remove="Resource\Unit\logo_idol.png"/>
+        <Resource Include="Resource\Unit\logo_idol.png"/>
+        <None Remove="Resource\Unit\logo_light_sound.png"/>
+        <Resource Include="Resource\Unit\logo_light_sound.png"/>
+        <None Remove="Resource\Unit\logo_piapro.png"/>
+        <Resource Include="Resource\Unit\logo_piapro.png"/>
+        <None Remove="Resource\Unit\logo_school_refusal.png"/>
+        <Resource Include="Resource\Unit\logo_school_refusal.png"/>
+        <None Remove="Resource\Unit\logo_street.png"/>
+        <Resource Include="Resource\Unit\logo_street.png"/>
+        <None Remove="Resource\Unit\logo_theme_park.png"/>
+        <Resource Include="Resource\Unit\logo_theme_park.png"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Page Update="View\Translate\Components\TranslateFastCopy.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Translate\Components\SaveFileDialog.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Translate\Components\AddCustomDialog.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Translate\Components\TranslateLineEffect.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Translate\Components\TranslateLineDialog.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Translate\Components\TranslateLineEmpty.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Subtitle\Components\MarkerLine.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Subtitle\Components\QuickEditDialog.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Subtitle\Components\DialogLine.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Subtitle\Components\BannerLine.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Subtitle\Components\SaveFileDialog.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Setting\Components\FontSelectDialog.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Download\Components\DownloadItem.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Download\Components\DownloadTask.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Download\Components\EventStoryEvent.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Download\Components\EventStoryTab.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
-      <Page Update="View\Download\Components\UnitStoryTab.xaml">
-        <Generator>MSBuild:Compile</Generator>
-        <XamlRuntime>Wpf</XamlRuntime>
-        <SubType>Designer</SubType>
-      </Page>
+        <Page Update="View\Translate\Components\TranslateFastCopy.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Translate\Components\SaveFileDialog.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Translate\Components\AddCustomDialog.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Translate\Components\TranslateLineEffect.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Translate\Components\TranslateLineDialog.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Translate\Components\TranslateLineEmpty.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Subtitle\Components\MarkerLine.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Subtitle\Components\QuickEditDialog.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Subtitle\Components\DialogLine.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Subtitle\Components\BannerLine.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Subtitle\Components\SaveFileDialog.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Setting\Components\FontSelectDialog.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Download\Components\DownloadItem.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Download\Components\DownloadTask.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Download\Components\EventStoryEvent.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Download\Components\EventStoryTab.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Update="View\Download\Components\UnitStoryTab.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
     </ItemGroup>
 </Project>

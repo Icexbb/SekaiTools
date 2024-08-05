@@ -6,11 +6,11 @@ namespace SekaiDataFetch.List;
 
 public class ListUnitStory
 {
-    private Fetcher Fetcher { get; }
-
     private static readonly string CachePathUnitStories =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "cache", "unitStories.json");
+
+    public readonly Dictionary<string, UnitStorySet> Data = new();
 
     public ListUnitStory(SourceList.SourceType sourceType = SourceList.SourceType.SiteBest, Proxy? proxy = null)
     {
@@ -20,6 +20,8 @@ public class ListUnitStory
         Fetcher = fetcher;
         Load();
     }
+
+    private Fetcher Fetcher { get; }
 
     private void Load()
     {
@@ -59,41 +61,42 @@ public class ListUnitStory
         }
     }
 
-    public readonly Dictionary<string, UnitStorySet> Data = new();
-
     public class UnitStorySet(string name, UnitStorySet.Chapter[]? chapters = null)
     {
+        public string Name { get; init; } = name;
+
+        public Chapter[] Chapters { get; init; } = chapters ?? [];
+
         public class Chapter(string name = "", string assetBundleName = "", Chapter.Episode[]? episodes = null)
         {
-            public class Episode(string episodeNoLabel, string title, string scenarioId)
-            {
-                private string EpisodeNoLabel { get; init; } = episodeNoLabel;
-                private string Title { get; init; } = title;
-                private string ScenarioId { get; init; } = scenarioId;
-
-                public string Key => $"{EpisodeNoLabel} - {Title}";
-
-                public string Url(string assetBundleName, SourceList.SourceType sourceType = 0) => sourceType switch
-                {
-                    SourceList.SourceType.SiteBest =>
-                        $"https://storage.sekai.best/sekai-jp-assets/scenario/unitstory" +
-                        $"/{assetBundleName}_rip/{ScenarioId}.asset",
-                    SourceList.SourceType.SiteAi =>
-                        $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/scenario/unitstory" +
-                        $"/{assetBundleName}/{ScenarioId}.json",
-                    _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
-                };
-            }
-
             public string Name { get; init; } = name;
 
             public string AssetBundleName { get; init; } = assetBundleName;
 
             public Episode[] Episodes { get; init; } = episodes ?? [];
+
+            public class Episode(string episodeNoLabel, string title, string scenarioId)
+            {
+                private string EpisodeNoLabel { get; } = episodeNoLabel;
+                private string Title { get; } = title;
+                private string ScenarioId { get; } = scenarioId;
+
+                public string Key => $"{EpisodeNoLabel} - {Title}";
+
+                public string Url(string assetBundleName, SourceList.SourceType sourceType = 0)
+                {
+                    return sourceType switch
+                    {
+                        SourceList.SourceType.SiteBest =>
+                            $"https://storage.sekai.best/sekai-jp-assets/scenario/unitstory" +
+                            $"/{assetBundleName}_rip/{ScenarioId}.asset",
+                        SourceList.SourceType.SiteAi =>
+                            $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/scenario/unitstory" +
+                            $"/{assetBundleName}/{ScenarioId}.json",
+                        _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
+                    };
+                }
+            }
         }
-
-        public string Name { get; init; } = name;
-
-        public Chapter[] Chapters { get; init; } = chapters ?? [];
     }
 }

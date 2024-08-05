@@ -47,7 +47,7 @@ public struct SpecialStory
 
     public static SpecialStory FromJson(JObject json)
     {
-        return new SpecialStory()
+        return new SpecialStory
         {
             Id = json.Get("id", 0),
             Seq = json.Get("seq", 0),

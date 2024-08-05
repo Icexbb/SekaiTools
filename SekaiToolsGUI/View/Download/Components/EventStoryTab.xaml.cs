@@ -200,14 +200,32 @@ public class EventStoryTabModel : ViewModelBase
 public partial class EventStoryTab : UserControl, IRefreshable
 
 {
-    private ListEventStory? ListEventStory { get; set; }
-
-    private EventStoryTabModel Model => (EventStoryTabModel)DataContext;
+    private int _currentDirection = -1;
 
     public EventStoryTab()
     {
         InitializeComponent();
         DataContext = new EventStoryTabModel();
+    }
+
+    private ListEventStory? ListEventStory { get; set; }
+
+    private EventStoryTabModel Model => (EventStoryTabModel)DataContext;
+
+    public async Task Refresh()
+    {
+        CardUnits.IsEnabled = false;
+        if (ListEventStory == null)
+        {
+            var settings = new SettingPageModel();
+            settings.LoadSetting();
+            ListEventStory = new ListEventStory(GetSourceType(), settings.GetProxy());
+        }
+
+        await ListEventStory.Refresh();
+        RefreshItems();
+        ChangeAllBannerSelector(true);
+        CardUnits.IsEnabled = true;
     }
 
     private void Filter_OnSelected(object sender, SelectionChangedEventArgs e)
@@ -234,7 +252,6 @@ public partial class EventStoryTab : UserControl, IRefreshable
                 ? Visibility.Visible
                 : Visibility.Collapsed;
             if (item.Visibility == Visibility.Visible)
-            {
                 item.Visibility = item.EventStoryImpl.GameEvent.EventType switch
                 {
                     "marathon" or "cheerful_carnival" => item.EventStoryImpl.EventStory.BannerGameCharacterUnitId switch
@@ -303,7 +320,6 @@ public partial class EventStoryTab : UserControl, IRefreshable
                     },
                     _ => item.Visibility
                 };
-            }
 
             item.Margin = new Thickness(item.Visibility == Visibility.Visible ? 5 : 0);
         }
@@ -320,12 +336,9 @@ public partial class EventStoryTab : UserControl, IRefreshable
         if (_currentDirection == -1)
             items = items.Reverse();
 
-        Dispatcher.BeginInvoke((Action)delegate()
+        Dispatcher.BeginInvoke((Action)delegate
         {
-            foreach (var item in items)
-            {
-                CardContents.Children.Add(item);
-            }
+            foreach (var item in items) CardContents.Children.Add(item);
         });
     }
 
@@ -338,29 +351,10 @@ public partial class EventStoryTab : UserControl, IRefreshable
         RefreshItems();
     }
 
-    public async Task Refresh()
-    {
-        CardUnits.IsEnabled = false;
-        if (ListEventStory == null)
-        {
-            var settings = new SettingPageModel();
-            settings.LoadSetting();
-            ListEventStory = new ListEventStory(GetSourceType(), settings.GetProxy());
-        }
-
-        await ListEventStory.Refresh();
-        RefreshItems();
-        ChangeAllBannerSelector(true);
-        CardUnits.IsEnabled = true;
-    }
-
     private SourceList.SourceType GetSourceType()
     {
         var parent = Parent;
-        while (parent != null && parent is not DownloadPage)
-        {
-            parent = VisualTreeHelper.GetParent(parent);
-        }
+        while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
 
         return (parent as DownloadPage)?.GetSourceType() ?? throw new NullReferenceException();
     }
@@ -520,9 +514,6 @@ public partial class EventStoryTab : UserControl, IRefreshable
 
         RefreshItemsDisplay();
     }
-
-
-    private int _currentDirection = -1;
 
     private void ButtonSort_OnClick(object sender, RoutedEventArgs e)
     {

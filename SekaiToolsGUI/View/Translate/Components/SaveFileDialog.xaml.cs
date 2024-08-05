@@ -15,10 +15,6 @@ public class SaveFileDialogModel : ViewModelBase
 
 public partial class SaveFileDialog : ContentDialog
 {
-    public SaveFileDialogModel ViewModel => (SaveFileDialogModel)DataContext;
-    private string ScriptFile { get; }
-    private string TranslationFile { get; }
-
     public SaveFileDialog(ContentPresenter contentPresenter, string scriptFile, string translationFile = "") : base(
         contentPresenter)
     {
@@ -30,6 +26,10 @@ public partial class SaveFileDialog : ContentDialog
             : TranslationFile;
         InitializeComponent();
     }
+
+    public SaveFileDialogModel ViewModel => (SaveFileDialogModel)DataContext;
+    private string ScriptFile { get; }
+    private string TranslationFile { get; }
 
     protected override void OnButtonClick(ContentDialogButton button)
     {

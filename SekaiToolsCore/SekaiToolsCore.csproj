@@ -11,11 +11,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Emgu.CV" Version="4.9.0.5494" />
-        <PackageReference Include="Emgu.CV.Bitmap" Version="4.9.0.5494" />
-        <PackageReference Include="Emgu.CV.runtime.windows" Version="4.9.0.5494" />
+        <PackageReference Include="Emgu.CV" Version="4.9.0.5494"/>
+        <PackageReference Include="Emgu.CV.Bitmap" Version="4.9.0.5494"/>
+        <PackageReference Include="Emgu.CV.runtime.windows" Version="4.9.0.5494"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
-        <PackageReference Include="System.Drawing.Common" Version="9.0.0-preview.6.24327.6" />
+        <PackageReference Include="System.Drawing.Common" Version="9.0.0-preview.6.24327.6"/>
     </ItemGroup>
 
 </Project>

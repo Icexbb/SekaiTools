@@ -22,11 +22,20 @@ public class TranslationData
         });
     }
 
-    public bool IsEmpty() => Translations.Count == 0;
+    public bool IsEmpty()
+    {
+        return Translations.Count == 0;
+    }
 
-    private int DialogCount() => Translations.Count(translation => translation is DialogTranslate);
+    private int DialogCount()
+    {
+        return Translations.Count(translation => translation is DialogTranslate);
+    }
 
-    private int EffectCount() => Translations.Count(translation => translation is EffectTranslate);
+    private int EffectCount()
+    {
+        return Translations.Count(translation => translation is EffectTranslate);
+    }
 
     public bool IsApplicable(GameData gameData)
     {
@@ -37,7 +46,6 @@ public class TranslationData
         if (EffectCount() != gameData.SpecialEffectData.Length) return false;
 
         for (var i = 0; i < gameData.Snippets.Length; i++)
-        {
             switch (gameData.Snippets[i].Action)
             {
                 case 1:
@@ -47,7 +55,6 @@ public class TranslationData
                     if (Translations[i] is not EffectTranslate) return false;
                     break;
             }
-        }
 
         return true;
     }

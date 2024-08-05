@@ -1,8 +1,9 @@
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using SekaiToolsCore;
 using SekaiToolsCore.Process;
+using Wpf.Ui.Controls;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace SekaiToolsGUI.View.Subtitle.Components;
 
@@ -14,33 +15,16 @@ public class QuickEditDialogModel : ViewModelBase
         ContentOriginal = dialog.Data.BodyOriginal;
         ContentTranslated = dialog.Data.BodyTranslated;
         if (ContentTranslated.Contains("\\R"))
-        {
             ContentTranslated = ContentTranslated.Replace("\n", "")
                 .Replace("\\N", "").Replace("\\R", "\n");
-        }
         else
-        {
             ContentTranslated = ContentTranslated.Replace("\\N", "\n");
-        }
 
         if (ContentTranslated.LineCount() == 3)
             ContentTranslated = ContentTranslated.Replace("\n", "");
 
         CanReturn = dialog.Data.BodyOriginal.LineCount() == 3;
         UseReturn = CanReturn && dialog.UseSeparator;
-    }
-
-    // private Dialog Dialog { get; }
-    private static string NormalContent(string str)
-    {
-        return str.Replace("\\R", "\n")
-            .Replace("\\N", "\n")
-            .Trim();
-    }
-
-    private static string LineContent(string str)
-    {
-        return NormalContent(str).Replace("\n", "").Trim();
     }
 
     public string ContentOriginal
@@ -62,12 +46,23 @@ public class QuickEditDialogModel : ViewModelBase
         get => GetProperty(false);
         set => SetProperty(value);
     }
+
+    // private Dialog Dialog { get; }
+    private static string NormalContent(string str)
+    {
+        return str.Replace("\\R", "\n")
+            .Replace("\\N", "\n")
+            .Trim();
+    }
+
+    private static string LineContent(string str)
+    {
+        return NormalContent(str).Replace("\n", "").Trim();
+    }
 }
 
-public partial class QuickEditDialog : Wpf.Ui.Controls.ContentDialog
+public partial class QuickEditDialog : ContentDialog
 {
-    public QuickEditDialogModel ViewModel => (QuickEditDialogModel)DataContext;
-
     public QuickEditDialog(DialogFrameSet dialog)
     {
         DataContext = new QuickEditDialogModel(dialog);
@@ -75,15 +70,14 @@ public partial class QuickEditDialog : Wpf.Ui.Controls.ContentDialog
         SwitchCanReturn.Visibility = ViewModel.CanReturn ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    public QuickEditDialogModel ViewModel => (QuickEditDialogModel)DataContext;
+
     private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (sender is not TextBox textBox) return;
         if (e.Key != Key.Enter) return;
         var lineCount = textBox.LineCount;
-        if (lineCount >= 2)
-        {
-            e.Handled = true; // 阻止回车键输入新行
-        }
+        if (lineCount >= 2) e.Handled = true; // 阻止回车键输入新行
     }
 
     private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -92,9 +86,6 @@ public partial class QuickEditDialog : Wpf.Ui.Controls.ContentDialog
         var newText = textBox.Text.Insert(textBox.CaretIndex, e.Text);
         var newLineCount = newText.Split('\n').Length;
 
-        if (newLineCount > 2)
-        {
-            e.Handled = true; // 阻止输入导致超过三行
-        }
+        if (newLineCount > 2) e.Handled = true; // 阻止输入导致超过三行
     }
 }

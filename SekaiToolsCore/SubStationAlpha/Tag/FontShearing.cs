@@ -6,7 +6,10 @@ public abstract class FontShearing(float factor) : Tag, INestableTag
 
     public abstract override string Name { get; }
 
-    public override string ToString() => $"\\{Name}{Factor}";
+    public override string ToString()
+    {
+        return $"\\{Name}{Factor}";
+    }
 }
 
 public class FontShearingX(float factor) : FontShearing(factor)

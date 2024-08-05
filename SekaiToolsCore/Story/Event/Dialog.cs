@@ -1,3 +1,5 @@
+using SekaiToolsCore.Story.Game;
+
 namespace SekaiToolsCore.Story.Event;
 
 public class Dialog(
@@ -11,9 +13,13 @@ public class Dialog(
 {
     public readonly int CharacterId = characterId;
     public readonly string CharacterOriginal = characterOriginal;
-    public string CharacterTranslated = "";
     public readonly bool CloseWindow = closeWindow;
     public readonly bool Shake = shake;
+    public string CharacterTranslated = "";
+
+    public string FinalCharacter => CharacterTranslated.Length > 0 && CharacterTranslated != CharacterOriginal
+        ? CharacterTranslated
+        : CharacterOriginal;
 
     public void SetTranslation(string character, string body)
     {
@@ -26,7 +32,7 @@ public class Dialog(
         BodyTranslated = body;
     }
 
-    public static Dialog FromData(Game.Talk talkData, int index = 0)
+    public static Dialog FromData(Talk talkData, int index = 0)
     {
         return new Dialog(
             index,
@@ -37,10 +43,6 @@ public class Dialog(
             talkData.Shake
         );
     }
-
-    public string FinalCharacter => CharacterTranslated.Length > 0 && CharacterTranslated != CharacterOriginal
-        ? CharacterTranslated
-        : CharacterOriginal;
 
     public override object Clone()
     {

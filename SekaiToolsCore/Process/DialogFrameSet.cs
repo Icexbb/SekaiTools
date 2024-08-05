@@ -16,22 +16,10 @@ public struct Separator
 
 public partial class DialogFrameSet
 {
-    public readonly List<DialogFrameResult> Frames = new();
+    private const int FrameIndexOffset = -1;
     public readonly Dialog Data;
     public readonly FrameRate Fps;
-    private const int FrameIndexOffset = -1;
-
-    public bool IsEmpty => Frames.Count == 0;
-
-    public bool IsJitter => Data.Shake;
-
-    public bool Finished { get; set; }
-
-    public bool NeedSetSeparator => Data.BodyTranslated != string.Empty &&
-                                    Data.BodyOriginal.LineCount() == 3 &&
-                                    Data.BodyTranslated.TrimAll().Length > 37;
-
-    public bool UseSeparator { get; set; }
+    public readonly List<DialogFrameResult> Frames = new();
 
     public Separator Separate;
 
@@ -46,25 +34,31 @@ public partial class DialogFrameSet
         int separatorContentIndex;
 
         if (Data.BodyTranslated.Contains("\\R"))
-        {
             separatorContentIndex = Data.BodyTranslated
                 .Replace("\n", "").Replace("\\N", "")
                 .IndexOf("\\R", StringComparison.Ordinal);
-        }
         else if (Data.BodyTranslated.Count(c => c == '\n') == 1)
-        {
             separatorContentIndex = Data.BodyTranslated
                 .IndexOf("\\R", StringComparison.Ordinal);
-        }
         else
-        {
             separatorContentIndex = Data.BodyTranslated.TrimAll().Length / 2;
-        }
 
         Separate.SeparatorContentIndex = separatorContentIndex;
 
         #endregion
     }
+
+    public bool IsEmpty => Frames.Count == 0;
+
+    public bool IsJitter => Data.Shake;
+
+    public bool Finished { get; set; }
+
+    public bool NeedSetSeparator => Data.BodyTranslated != string.Empty &&
+                                    Data.BodyOriginal.LineCount() == 3 &&
+                                    Data.BodyTranslated.TrimAll().Length > 37;
+
+    public bool UseSeparator { get; set; }
 
     public void InitSeparator()
     {
@@ -81,21 +75,43 @@ public partial class DialogFrameSet
 
 public partial class DialogFrameSet
 {
-    public DialogFrameResult Start() => Frames[0];
+    public DialogFrameResult Start()
+    {
+        return Frames[0];
+    }
 
-    public DialogFrameResult End() => Frames[^1];
+    public DialogFrameResult End()
+    {
+        return Frames[^1];
+    }
 
-    public string StartTime() => Start().StartTime();
+    public string StartTime()
+    {
+        return Start().StartTime();
+    }
 
-    public string EndTime() => End().EndTime();
+    public string EndTime()
+    {
+        return End().EndTime();
+    }
 
-    public int StartIndex() => Start().Index;
+    public int StartIndex()
+    {
+        return Start().Index;
+    }
 
-    public int EndIndex() => End().Index;
+    public int EndIndex()
+    {
+        return End().Index;
+    }
 
-    public void Add(int index, Rectangle rect) =>
+    public void Add(int index, Rectangle rect)
+    {
         Frames.Add(new DialogFrameResult(index + FrameIndexOffset, Fps, rect.Location));
+    }
 
-    public void Add(int index, Point point) =>
+    public void Add(int index, Point point)
+    {
         Frames.Add(new DialogFrameResult(index + FrameIndexOffset, Fps, point));
+    }
 }

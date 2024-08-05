@@ -43,26 +43,32 @@ public struct Setting
         ThresholdNormal = 0.7,
         ThresholdSpecial = 0.7,
         ExportComment = true,
-        FontFamily = "思源黑体 CN Bold",
+        FontFamily = "思源黑体 CN Bold"
     };
 
-    public static Setting FromModel(SettingPageModel model) => new()
+    public static Setting FromModel(SettingPageModel model)
     {
-        AppVersion = SettingPageModel.AppVersion,
-        CurrentApplicationTheme = model.CurrentApplicationTheme,
-        CustomSpecialCharacters = model.CustomSpecialCharacters.ToArray(),
-        ProxyType = model.ProxyType,
-        ProxyHost = model.ProxyHost,
-        ProxyPort = model.ProxyPort,
-        TypewriterFadeTime = model.TypewriterFadeTime,
-        TypewriterCharTime = model.TypewriterCharTime,
-        ThresholdNormal = model.ThresholdNormal,
-        ThresholdSpecial = model.ThresholdSpecial,
-        FontFamily = model.FontFamily,
-        ExportComment = model.ExportComment
-    };
+        return new Setting
+        {
+            AppVersion = SettingPageModel.AppVersion,
+            CurrentApplicationTheme = model.CurrentApplicationTheme,
+            CustomSpecialCharacters = model.CustomSpecialCharacters.ToArray(),
+            ProxyType = model.ProxyType,
+            ProxyHost = model.ProxyHost,
+            ProxyPort = model.ProxyPort,
+            TypewriterFadeTime = model.TypewriterFadeTime,
+            TypewriterCharTime = model.TypewriterCharTime,
+            ThresholdNormal = model.ThresholdNormal,
+            ThresholdSpecial = model.ThresholdSpecial,
+            FontFamily = model.FontFamily,
+            ExportComment = model.ExportComment
+        };
+    }
 
-    public string Dump() => JsonConvert.SerializeObject(this, Formatting.Indented);
+    public string Dump()
+    {
+        return JsonConvert.SerializeObject(this, Formatting.Indented);
+    }
 
     public static Setting Load(string filepath)
     {
@@ -72,6 +78,13 @@ public struct Setting
 
 public class SettingPageModel : ViewModelBase
 {
+    public readonly List<string> CustomSpecialCharacters = [];
+
+    public SettingPageModel()
+    {
+        LoadSetting();
+    }
+
     public int CurrentApplicationTheme
     {
         get => GetProperty(0);
@@ -102,8 +115,6 @@ public class SettingPageModel : ViewModelBase
             }
         }
     }
-
-    public readonly List<string> CustomSpecialCharacters = [];
 
     public int ProxyType
     {
@@ -186,14 +197,6 @@ public class SettingPageModel : ViewModelBase
         }
     }
 
-    public Proxy GetProxy() => new(ProxyHost, ProxyPort, ProxyType switch
-    {
-        0 => Proxy.Type.None,
-        1 => Proxy.Type.Http,
-        2 => Proxy.Type.Socks5,
-        _ => throw new ArgumentOutOfRangeException()
-    });
-
     public string FontFamily
     {
         get => GetProperty("思源黑体 CN Bold");
@@ -214,9 +217,26 @@ public class SettingPageModel : ViewModelBase
         }
     }
 
-    private static string GetSettingPath() =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+    public static string AppVersion
+        => (Application.ResourceAssembly.GetName().Version ??
+            new Version(0, 0, 0, 0)).ToString();
+
+    public Proxy GetProxy()
+    {
+        return new Proxy(ProxyHost, ProxyPort, ProxyType switch
+        {
+            0 => Proxy.Type.None,
+            1 => Proxy.Type.Http,
+            2 => Proxy.Type.Socks5,
+            _ => throw new ArgumentOutOfRangeException()
+        });
+    }
+
+    private static string GetSettingPath()
+    {
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "setting.json");
+    }
 
     public void SaveSetting()
     {
@@ -256,33 +276,24 @@ public class SettingPageModel : ViewModelBase
 
         SaveSetting();
     }
-
-    public SettingPageModel() => LoadSetting();
-
-    public static string AppVersion
-        => (Application.ResourceAssembly.GetName().Version ??
-            new Version(0, 0, 0, 0)).ToString();
 }
 
 public partial class SettingPage : UserControl, INavigableView<SettingPageModel>
 {
-    public SettingPageModel ViewModel => (SettingPageModel)DataContext;
-
     private int _devClickCount;
-
-    private void DevClick(object sender, RoutedEventArgs e)
-    {
-        _devClickCount++;
-        if (_devClickCount == 5)
-        {
-            ControlThreshold.Visibility = Visibility.Visible;
-        }
-    }
 
     public SettingPage()
     {
         DataContext = ((MainWindowViewModel)Application.Current.MainWindow!.DataContext).SettingPageModel;
         InitializeComponent();
+    }
+
+    public SettingPageModel ViewModel => (SettingPageModel)DataContext;
+
+    private void DevClick(object sender, RoutedEventArgs e)
+    {
+        _devClickCount++;
+        if (_devClickCount == 5) ControlThreshold.Visibility = Visibility.Visible;
     }
 
     private async void ChooseFont(object sender, RoutedEventArgs e)

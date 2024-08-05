@@ -88,17 +88,33 @@ public class AssDraw(params AssDrawPart[] parts) : AssDrawPart("")
         return new AssDraw(parts.ToArray());
     }
 
-    public static Append Append(Point point) => new(point.X, point.Y);
+    public static Append Append(Point point)
+    {
+        return new Append(point.X, point.Y);
+    }
 
-    public static AssDrawLine Line(Point point) => new(point.X, point.Y);
+    public static AssDrawLine Line(Point point)
+    {
+        return new AssDrawLine(point.X, point.Y);
+    }
 
-    public static AssDrawMove Move(Point point) => new(point.X, point.Y);
+    public static AssDrawMove Move(Point point)
+    {
+        return new AssDrawMove(point.X, point.Y);
+    }
 
-    public static Bezier Bezier(Point pointA, Point pointB, Point pointC) =>
-        new(pointA.X, pointA.Y, pointB.X, pointB.Y, pointC.X, pointC.Y);
+    public static Bezier Bezier(Point pointA, Point pointB, Point pointC)
+    {
+        return new Bezier(pointA.X, pointA.Y, pointB.X, pointB.Y, pointC.X, pointC.Y);
+    }
 
-    public static AssDrawClose Close() => new();
+    public static AssDrawClose Close()
+    {
+        return new AssDrawClose();
+    }
 
-    public static Successive Successive(params Point[] parts) =>
-        new(parts.Select(p => new AssDrawPoint(p.X, p.Y)).ToArray());
+    public static Successive Successive(params Point[] parts)
+    {
+        return new Successive(parts.Select(p => new AssDrawPoint(p.X, p.Y)).ToArray());
+    }
 }

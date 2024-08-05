@@ -10,9 +10,8 @@ namespace SekaiToolsGUI.View.Subtitle.Components;
 
 public class DialogLineModel : ViewModelBase
 {
+    private const int CharTime = 80;
     public readonly DialogFrameSet Set;
-
-    private FrameRate FrameRate { get; set; }
 
     public DialogLineModel(DialogFrameSet set)
     {
@@ -29,6 +28,8 @@ public class DialogLineModel : ViewModelBase
             SeparatorContentIndex = set.Separate.SeparatorContentIndex;
         }
     }
+
+    private FrameRate FrameRate { get; }
 
     public string SpeakerName => Set.Data.CharacterTranslated;
 
@@ -119,8 +120,6 @@ public class DialogLineModel : ViewModelBase
         private set => SetProperty(value);
     }
 
-    private const int CharTime = 80;
-
     private void SetPromptWarning()
     {
         var frameTime = 1000 / FrameRate.Fps();
@@ -144,8 +143,6 @@ public class DialogLineModel : ViewModelBase
 
 public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
 {
-    public DialogLineModel ViewModel => (DialogLineModel)DataContext;
-
     public DialogLine(DialogFrameSet set)
     {
         set.InitSeparator();
@@ -157,6 +154,8 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
             ? ViewModel.Set.Data.CharacterTranslated
             : ViewModel.Set.Data.CharacterOriginal;
     }
+
+    public DialogLineModel ViewModel => (DialogLineModel)DataContext;
 
     private void CheckLineExpander()
     {

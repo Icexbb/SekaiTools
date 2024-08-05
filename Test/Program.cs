@@ -4,4 +4,3 @@
 using System.Text;
 
 Console.WriteLine(Encoding.GetEncoding("UTF-8"));
-

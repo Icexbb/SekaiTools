@@ -11,13 +11,8 @@ public abstract class ImageBase(string path, int x = 0, int y = 0) : Tag, INesta
     public override string ToString()
     {
         if (OffsetX == 0 && OffsetY == 0)
-        {
             return $"\\{Name}({Path})";
-        }
-        else
-        {
-            return $"\\{Name}({Path},{OffsetX},{OffsetY})";
-        }
+        return $"\\{Name}({Path},{OffsetX},{OffsetY})";
     }
 }
 

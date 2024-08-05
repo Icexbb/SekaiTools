@@ -14,7 +14,10 @@ public abstract class GradientsColorBase(
     public SubStationAlpha.Color LeftBottom { get; } = leftBottom;
     public SubStationAlpha.Color RightBottom { get; } = rightBottom;
 
-    public override string ToString() => $"\\{Name}({LeftTop},{RightTop},{LeftBottom},{RightBottom})";
+    public override string ToString()
+    {
+        return $"\\{Name}({LeftTop},{RightTop},{LeftBottom},{RightBottom})";
+    }
 }
 
 public class PrimaryGradientsColor(

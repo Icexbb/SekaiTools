@@ -30,7 +30,9 @@ public static partial class Utils
     }
 
     public static int LineCount(this string str)
-        => str.Split('\n').Select(value => value.Length > 0 ? 1 : 0).Sum();
+    {
+        return str.Split('\n').Select(value => value.Length > 0 ? 1 : 0).Sum();
+    }
 
     public static int Count(this string str, string part)
     {
@@ -73,7 +75,9 @@ public static partial class Utils
 
 
     public static int MaxLineLength(this string str)
-        => str.Split('\n').Max(x => x.Trim().Length);
+    {
+        return str.Split('\n').Max(x => x.Trim().Length);
+    }
 
 
     public static IEnumerable<T> Contact<T>(params IEnumerable<T>[] arrays)
@@ -251,10 +255,7 @@ public partial class Utils
                         return;
                     }
 
-                    if (times < times2)
-                    {
-                        times2 = times;
-                    }
+                    if (times < times2) times2 = times;
 
                     fn.Invoke();
                 })

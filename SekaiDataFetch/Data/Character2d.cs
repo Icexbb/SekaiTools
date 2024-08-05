@@ -22,7 +22,7 @@ public class Character2d
             CharacterId = json.Get("characterId", 0),
             Unit = json.Get("unit", ""),
             IsEnabledFlipDisplay = json.Get("isEnabledFlipDisplay", false),
-            AssetName = json.Get("assetName", ""),
+            AssetName = json.Get("assetName", "")
         };
     }
 }

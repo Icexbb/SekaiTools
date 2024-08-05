@@ -1,6 +1,6 @@
 namespace SekaiToolsCore.SubStationAlpha.Tag;
 
-public abstract class BordBase : Tag,INestableTag
+public abstract class BordBase : Tag, INestableTag
 {
     protected BordBase(float value)
     {
@@ -11,7 +11,11 @@ public abstract class BordBase : Tag,INestableTag
 
     public abstract override string Name { get; }
     public float Value { get; set; }
-    public override string ToString() => $"\\{Name}{Value}";
+
+    public override string ToString()
+    {
+        return $"\\{Name}{Value}";
+    }
 }
 
 public class Bord(float value) : BordBase(value)

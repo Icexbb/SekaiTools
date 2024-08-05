@@ -1,10 +1,12 @@
+using SekaiDataFetch.Data;
+
 namespace SekaiDataFetch.List;
 
 public class ListCardStory()
 {
     public Dictionary<string, Dictionary<string, Dictionary<string, string>>> Data = new();
 
-    public ListCardStory(IReadOnlyCollection<Data.CardEpisode> cardEpisodes, IReadOnlyCollection<Data.Card> cards,
+    public ListCardStory(IReadOnlyCollection<CardEpisode> cardEpisodes, IReadOnlyCollection<Card> cards,
         SourceList.SourceType source = SourceList.SourceType.SiteBest) : this()
     {
         foreach (var charaId in Constants.CharacterIdToName.Keys)

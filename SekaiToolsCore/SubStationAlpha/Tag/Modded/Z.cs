@@ -6,5 +6,8 @@ public class Z(int value) : Tag, INestableTag
 
     public int Value { get; set; } = value;
 
-    public override string ToString() => $"\\{Name}{Value}";
+    public override string ToString()
+    {
+        return $"\\{Name}{Value}";
+    }
 }

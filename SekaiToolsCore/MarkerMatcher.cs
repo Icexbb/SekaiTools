@@ -11,6 +11,13 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
 {
     private readonly Dictionary<string, GaMat> _templates = new();
 
+    public readonly List<MarkerFrameSet> Set = storyData.Markers().Select(d => new MarkerFrameSet(d, videoInfo.Fps))
+        .ToList();
+
+    private MatchStatus _status;
+
+    public bool Finished => Set.All(d => d.Finished) || Set.Count == 0;
+
     private GaMat GetTemplate(string content)
     {
         if (_templates.TryGetValue(content, out var template))
@@ -21,21 +28,6 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
         CvInvoke.Resize(mat, mat, new Size((int)(mat.Width * resizeRatio), (int)(mat.Height * resizeRatio)));
         _templates.Add(content, new GaMat(mat));
         return _templates[content];
-    }
-
-    private enum MatchStatus
-    {
-        NotMatched,
-        Dropped,
-        Matched
-    }
-
-    private MatchStatus _status;
-
-    private struct MatchResult(Point point, MatchStatus status)
-    {
-        public readonly Point Point = point;
-        public readonly MatchStatus Status = status;
     }
 
     private MatchResult MarkerMatch(Mat img, string text)
@@ -90,9 +82,6 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
         }
     }
 
-    public readonly List<MarkerFrameSet> Set = storyData.Markers().Select(d => new MarkerFrameSet(d, videoInfo.Fps))
-        .ToList();
-
     private static int LastNotProcessedIndex(IReadOnlyList<MarkerFrameSet> set)
     {
         for (var i = 0; i < set.Count; i++)
@@ -101,7 +90,10 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
         return -1;
     }
 
-    public int LastNotProcessedIndex() => LastNotProcessedIndex(Set);
+    public int LastNotProcessedIndex()
+    {
+        return LastNotProcessedIndex(Set);
+    }
 
     public void Process(Mat frame, int frameIndex)
     {
@@ -124,5 +116,16 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
         }
     }
 
-    public bool Finished => Set.All(d => d.Finished) || Set.Count == 0;
+    private enum MatchStatus
+    {
+        NotMatched,
+        Dropped,
+        Matched
+    }
+
+    private struct MatchResult(Point point, MatchStatus status)
+    {
+        public readonly Point Point = point;
+        public readonly MatchStatus Status = status;
+    }
 }

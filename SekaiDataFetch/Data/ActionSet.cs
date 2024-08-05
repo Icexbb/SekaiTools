@@ -25,7 +25,7 @@ public class ActionSet
             CharacterIds = json.Get("characterIds", Array.Empty<int>()),
             ActionSetType = json.Get("actionSetType", "normal"),
             ArchivePublishedAt = json.Get("archivePublishedAt", 0L),
-            ReleaseConditionId = json.Get("releaseConditionId", 0),
+            ReleaseConditionId = json.Get("releaseConditionId", 0)
         };
     }
 }

@@ -14,5 +14,8 @@ public class AssDrawClose() : AssDrawPart("c")
     {
     }
 
-    public override string ToString() => $"{Type}";
+    public override string ToString()
+    {
+        return $"{Type}";
+    }
 }

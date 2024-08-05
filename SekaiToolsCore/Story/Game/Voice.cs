@@ -22,6 +22,6 @@ public readonly struct Voice(int character2DId, string voiceId)
 
     public static Voice FromJson(JObject json)
     {
-        return new Voice(character2DId: json.GetInt("Character2dId"), voiceId: json.GetString("VoiceId"));
+        return new Voice(json.GetInt("Character2dId"), json.GetString("VoiceId"));
     }
 }

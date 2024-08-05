@@ -4,7 +4,11 @@ namespace SekaiToolsCore.Process;
 
 public class BannerFrameSet(Banner data, FrameRate fps)
 {
+    public readonly Banner Data = data;
+    public readonly FrameRate Fps = fps;
     private int _start = int.MaxValue, _end = int.MinValue;
+
+    public bool Finished { get; set; }
 
     public void Add(int index)
     {
@@ -12,12 +16,23 @@ public class BannerFrameSet(Banner data, FrameRate fps)
         if (_end < index) _end = index;
     }
 
-    public readonly Banner Data = data;
-    public readonly FrameRate Fps = fps;
-    public Frame Start() => new(_start, Fps);
-    public Frame End() => new(_end, Fps);
-    public string StartTime() => Start().StartTime();
-    public string EndTime() => End().EndTime();
+    public Frame Start()
+    {
+        return new Frame(_start, Fps);
+    }
 
-    public bool Finished { get; set; }
+    public Frame End()
+    {
+        return new Frame(_end, Fps);
+    }
+
+    public string StartTime()
+    {
+        return Start().StartTime();
+    }
+
+    public string EndTime()
+    {
+        return End().EndTime();
+    }
 }

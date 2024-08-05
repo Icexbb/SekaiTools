@@ -38,7 +38,7 @@ public class GameEvent
             ClosedAt = json.Get("closedAt", 0L),
             DistributionEndAt = json.Get("distributionEndAt", 0L),
             VirtualLiveId = json.Get("virtualLiveId", 0),
-            Unit = json.Get("unit", ""),
+            Unit = json.Get("unit", "")
         };
     }
 }

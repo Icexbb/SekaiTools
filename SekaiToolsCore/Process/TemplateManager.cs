@@ -11,14 +11,25 @@ namespace SekaiToolsCore.Process;
 [SuppressMessage("Interoperability", "CA1416")]
 public class TemplateManager
 {
-    private readonly Size _videoResolution;
-    private double VideoRatio => _videoResolution.Width / (double)_videoResolution.Height;
     private readonly Dictionary<string, Mat> _dbTemplate = new();
-    private readonly Dictionary<string, Mat> _ebTemplate = new();
-    private Mat? _menuSign;
     private readonly string[] _dbTexts;
+    private readonly Dictionary<string, Mat> _ebTemplate = new();
     private readonly string[] _ebTexts;
     private readonly bool _noScale;
+    private readonly Size _videoResolution;
+    private Mat? _menuSign;
+
+    public TemplateManager(Size videoResolution, IEnumerable<string> dbTexts, IEnumerable<string> ebTexts,
+        bool noScale = false)
+    {
+        _videoResolution = videoResolution;
+        _dbTexts = dbTexts.GroupBy(p => p).Select(p => p.Key).ToArray();
+        _ebTexts = ebTexts.GroupBy(p => p).Select(p => p.Key).ToArray();
+        _noScale = noScale;
+        GenerateTemplates();
+    }
+
+    private double VideoRatio => _videoResolution.Width / (double)_videoResolution.Height;
 
 
     private static string ResourcePath(string fileName)
@@ -72,18 +83,14 @@ public class TemplateManager
             _noScale ? new Size(maxWidth, maxHeight) : new Size(maxWidth / 5, maxHeight / 5);
     }
 
-    public Size EbTemplateMaxSize(bool real = false) => MaxSize(_ebTemplate.Values, real);
-
-    public Size DbTemplateMaxSize(bool real = false) => MaxSize(_dbTemplate.Values, real);
-
-    public TemplateManager(Size videoResolution, IEnumerable<string> dbTexts, IEnumerable<string> ebTexts,
-        bool noScale = false)
+    public Size EbTemplateMaxSize(bool real = false)
     {
-        _videoResolution = videoResolution;
-        _dbTexts = dbTexts.GroupBy(p => p).Select(p => p.Key).ToArray();
-        _ebTexts = ebTexts.GroupBy(p => p).Select(p => p.Key).ToArray();
-        _noScale = noScale;
-        GenerateTemplates();
+        return MaxSize(_ebTemplate.Values, real);
+    }
+
+    public Size DbTemplateMaxSize(bool real = false)
+    {
+        return MaxSize(_dbTemplate.Values, real);
     }
 
     private int GetFontSize()

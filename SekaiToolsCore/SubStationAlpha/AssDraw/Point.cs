@@ -22,5 +22,8 @@ public class AssDrawPoint(int x, int y)
         Y = (int)(Y * ratio);
     }
 
-    public override string ToString() => $"{X} {Y}";
+    public override string ToString()
+    {
+        return $"{X} {Y}";
+    }
 }

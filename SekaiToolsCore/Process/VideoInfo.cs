@@ -6,11 +6,11 @@ namespace SekaiToolsCore.Process;
 
 public class VideoInfo
 {
-    public readonly string Path;
-    public readonly Size Resolution;
-    public readonly double FrameRatio;
     public readonly FrameRate Fps;
     public readonly int FrameCount;
+    public readonly double FrameRatio;
+    public readonly string Path;
+    public readonly Size Resolution;
 
     public VideoInfo(string path)
     {

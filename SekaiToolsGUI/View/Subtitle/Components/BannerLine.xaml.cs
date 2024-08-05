@@ -15,8 +15,6 @@ public class BannerLineModel(BannerFrameSet set) : ViewModelBase
 
 public partial class BannerLine : UserControl, INavigableView<BannerLineModel>
 {
-    public BannerLineModel ViewModel => (BannerLineModel)DataContext;
-
     public BannerLine(BannerFrameSet set)
     {
         DataContext = new BannerLineModel(set);
@@ -24,6 +22,8 @@ public partial class BannerLine : UserControl, INavigableView<BannerLineModel>
         if (ViewModel.Set.Data.BodyTranslated.Length > 0)
             TextBlockContent.Text = ViewModel.Set.Data.BodyTranslated;
     }
+
+    public BannerLineModel ViewModel => (BannerLineModel)DataContext;
 
     private void TextBlockContent_OnMouseEnter(object sender, MouseEventArgs e)
     {

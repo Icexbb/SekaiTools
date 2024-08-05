@@ -9,8 +9,6 @@ namespace SekaiToolsGUI.View.Translate.Components;
 
 public class LineDialogModel : ViewModelBase
 {
-    private SekaiDialog Dialog { get; }
-
     public LineDialogModel(SekaiDialog dialog)
     {
         Dialog = dialog;
@@ -20,19 +18,7 @@ public class LineDialogModel : ViewModelBase
         TranslatedContent = dialog.BodyTranslated;
     }
 
-    public SekaiDialog Export()
-    {
-        var dialog = new SekaiDialog(
-            Dialog.Index,
-            OriginalContent,
-            Dialog.CharacterId,
-            OriginalCharacter,
-            Dialog.CloseWindow,
-            Dialog.Shake
-        );
-        dialog.SetTranslation(TranslatedCharacter, TranslatedContent);
-        return dialog;
-    }
+    private SekaiDialog Dialog { get; }
 
     public string Icon => Dialog.CharacterId is > 0 and <= 31
         ? $"pack://application:,,,/Resource/Characters/chr_{Dialog.CharacterId}.png"
@@ -73,6 +59,48 @@ public class LineDialogModel : ViewModelBase
         }
     }
 
+    public int LineCount
+    {
+        get => GetProperty(0);
+        set => SetProperty(value);
+    }
+
+    public int MaxLineLength
+    {
+        get => GetProperty(0);
+        set
+        {
+            SetProperty(value);
+            TooLong = OriginalContent.LineCount() == 3 ? value > 45 : value > 37;
+        }
+    }
+
+    public bool TooLong
+    {
+        get => GetProperty(false);
+        set => SetProperty(value);
+    }
+
+    public string Check
+    {
+        get => GetProperty("");
+        set => SetProperty(value);
+    }
+
+    public SekaiDialog Export()
+    {
+        var dialog = new SekaiDialog(
+            Dialog.Index,
+            OriginalContent,
+            Dialog.CharacterId,
+            OriginalCharacter,
+            Dialog.CloseWindow,
+            Dialog.Shake
+        );
+        dialog.SetTranslation(TranslatedCharacter, TranslatedContent);
+        return dialog;
+    }
+
     private static string FormatContent(string content)
     {
         return content.Replace("…", "...")
@@ -109,80 +137,21 @@ public class LineDialogModel : ViewModelBase
 
             if (line.Contains('—') && line.Contains("——") &&
                 line.Split("—").Length != line.Split("——").Length * 2 - 1)
-            {
                 lineRes += "【破折号使用错误】";
-            }
 
-            if (lineRes != "")
-            {
-                result += $"行{i + 1}:{lineRes}\n";
-            }
+            if (lineRes != "") result += $"行{i + 1}:{lineRes}\n";
         }
 
         return result.Trim();
-    }
-
-    public int LineCount
-    {
-        get => GetProperty(0);
-        set => SetProperty(value);
-    }
-
-    public int MaxLineLength
-    {
-        get => GetProperty(0);
-        set
-        {
-            SetProperty(value);
-            TooLong = OriginalContent.LineCount() == 3 ? value > 45 : value > 37;
-        }
-    }
-
-    public bool TooLong
-    {
-        get => GetProperty(false);
-        set => SetProperty(value);
-    }
-
-    public string Check
-    {
-        get => GetProperty("");
-        set => SetProperty(value);
     }
 }
 
 public partial class TranslateLineDialog : UserControl, INavigableView<LineDialogModel>, IExportable
 {
-    public LineDialogModel ViewModel => (LineDialogModel)DataContext;
-
     public TranslateLineDialog(SekaiDialog dialog)
     {
         DataContext = new LineDialogModel(dialog);
         InitializeComponent();
-    }
-
-
-    private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        if (sender is not TextBox textBox) return;
-        if (e.Key != Key.Enter) return;
-        var lineCount = textBox.LineCount;
-        if (lineCount >= 2)
-        {
-            e.Handled = true; // 阻止回车键输入新行
-        }
-    }
-
-    private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
-    {
-        if (sender is not TextBox textBox) return;
-        var newText = textBox.Text.Insert(textBox.CaretIndex, e.Text);
-        var newLineCount = newText.Split('\n').Length;
-
-        if (newLineCount > 2)
-        {
-            e.Handled = true; // 阻止输入导致超过三行
-        }
     }
 
     public string Export()
@@ -192,5 +161,25 @@ public partial class TranslateLineDialog : UserControl, INavigableView<LineDialo
             : ViewModel.OriginalCharacter;
         var content = ViewModel.TranslatedContent;
         return $"{character}：{content.Replace("\n", "\\N")}";
+    }
+
+    public LineDialogModel ViewModel => (LineDialogModel)DataContext;
+
+
+    private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is not TextBox textBox) return;
+        if (e.Key != Key.Enter) return;
+        var lineCount = textBox.LineCount;
+        if (lineCount >= 2) e.Handled = true; // 阻止回车键输入新行
+    }
+
+    private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    {
+        if (sender is not TextBox textBox) return;
+        var newText = textBox.Text.Insert(textBox.CaretIndex, e.Text);
+        var newLineCount = newText.Split('\n').Length;
+
+        if (newLineCount > 2) e.Handled = true; // 阻止输入导致超过三行
     }
 }

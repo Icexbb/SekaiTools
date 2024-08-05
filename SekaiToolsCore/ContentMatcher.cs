@@ -10,6 +10,8 @@ public class ContentMatcher(TemplateManager templateManager, Config config)
 
     private double Threshold { get; } = config.MatchingThreshold.Normal;
 
+    public bool Finished { get; private set; }
+
     private bool MatchContentStartSign(Mat mat)
     {
         var roi = new Rectangle(
@@ -28,6 +30,4 @@ public class ContentMatcher(TemplateManager templateManager, Config config)
     {
         if (MatchContentStartSign(mat)) Finished = true;
     }
-
-    public bool Finished { get; private set; }
 }

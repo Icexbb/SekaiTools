@@ -25,5 +25,8 @@ public class Events(IEnumerable<Event> items)
         return string.Join("\n", sb).Trim();
     }
 
-    public void Add(Event item) => _subtitleEventItems.Add(item);
+    public void Add(Event item)
+    {
+        _subtitleEventItems.Add(item);
+    }
 }

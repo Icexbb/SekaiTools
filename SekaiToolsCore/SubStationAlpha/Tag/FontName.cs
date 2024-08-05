@@ -2,7 +2,6 @@ namespace SekaiToolsCore.SubStationAlpha.Tag;
 
 public class FontName : Tag
 {
-    public override string Name => "fn";
     public string Value;
 
     public FontName(string value)
@@ -12,5 +11,10 @@ public class FontName : Tag
         Value = value.Trim();
     }
 
-    public override string ToString() => $"\\{Name}{Value}";
+    public override string Name => "fn";
+
+    public override string ToString()
+    {
+        return $"\\{Name}{Value}";
+    }
 }

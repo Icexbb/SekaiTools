@@ -6,9 +6,6 @@ namespace SekaiToolsGUI.View.Download.Components;
 
 public partial class DownloadItem : UserControl
 {
-    public string Url { get; set; }
-    public string Key { get; set; }
-
     public DownloadItem(string url, string key)
     {
         Url = url;
@@ -17,15 +14,15 @@ public partial class DownloadItem : UserControl
         DataContext = this;
     }
 
+    public string Url { get; set; }
+    public string Key { get; set; }
+
     private void Add()
     {
         Dispatcher.Invoke(() =>
         {
             var parent = Parent;
-            while (parent != null && parent is not DownloadPage)
-            {
-                parent = VisualTreeHelper.GetParent(parent);
-            }
+            while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
 
             (parent as DownloadPage)?.AddTask(Key, Url);
         });

@@ -10,6 +10,10 @@ public class Data(
     List<SpecialStory> specialStories,
     List<UnitStory> unitStories)
 {
+    public Data() : this([], [], [], [], [], [], [], [])
+    {
+    }
+
     public SourceList.SourceType Source { get; set; } = SourceList.SourceType.SiteBest;
     public List<ActionSet> Actions { get; set; } = actions;
     public List<Card> Cards { get; set; } = cards;
@@ -19,11 +23,6 @@ public class Data(
     public List<EventStory> EventStories { get; set; } = eventStories;
     public List<SpecialStory> SpecialStories { get; set; } = specialStories;
     public List<UnitStory> UnitStories { get; set; } = unitStories;
-
-
-    public Data() : this([], [], [], [], [], [], [], [])
-    {
-    }
 
     public bool NotComplete => Actions.Count == 0 || Cards.Count == 0 || CardEpisodes.Count == 0 ||
                                Character2ds.Count == 0 || Events.Count == 0 || EventStories.Count == 0 ||

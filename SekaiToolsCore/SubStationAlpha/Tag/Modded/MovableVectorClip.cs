@@ -15,15 +15,9 @@ public class MovableVectorClip(int x1, int y1, int? x2 = null, int? y2 = null, i
     public override string ToString()
     {
         var result = $"\\{Name}({X1},{Y1}";
-        if (X2.HasValue && Y2.HasValue)
-        {
-            result += $",{X2},{Y2}";
-        }
+        if (X2.HasValue && Y2.HasValue) result += $",{X2},{Y2}";
 
-        if (Time1.HasValue && Time2.HasValue)
-        {
-            result += $",{Time1},{Time2}";
-        }
+        if (Time1.HasValue && Time2.HasValue) result += $",{Time1},{Time2}";
 
         return result + ")";
     }

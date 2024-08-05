@@ -5,8 +5,8 @@ namespace SekaiToolsGUI;
 
 public class ViewModelBase : INotifyPropertyChanged
 {
-    public event PropertyChangedEventHandler? PropertyChanged;
     private readonly Dictionary<string, object> _properties = new();
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     protected T GetProperty<T>(T defaultValue = default!, [CallerMemberName] string? propertyName = null)
     {

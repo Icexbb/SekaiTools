@@ -7,7 +7,17 @@ namespace SekaiToolsCore;
 
 public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateManager templateManager, Config config)
 {
-    private GaMat GetTemplate(string content) => new(templateManager.GetDbTemplate(content));
+    public readonly List<BannerFrameSet> Set = storyData.Banners().Select(d => new BannerFrameSet(d, videoInfo.Fps))
+        .ToList();
+
+    private MatchStatus _status;
+
+    public bool Finished => Set.All(d => d.Finished) || Set.Count == 0;
+
+    private GaMat GetTemplate(string content)
+    {
+        return new GaMat(templateManager.GetDbTemplate(content));
+    }
 
 
     private static string TrimContent(string content)
@@ -51,9 +61,6 @@ public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
         }
     }
 
-    public readonly List<BannerFrameSet> Set = storyData.Banners().Select(d => new BannerFrameSet(d, videoInfo.Fps))
-        .ToList();
-
     private static int LastNotProcessedIndex(IReadOnlyList<BannerFrameSet> set)
     {
         for (var i = 0; i < set.Count; i++)
@@ -62,16 +69,10 @@ public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
         return -1;
     }
 
-    public int LastNotProcessedIndex() => LastNotProcessedIndex(Set);
-
-    private enum MatchStatus
+    public int LastNotProcessedIndex()
     {
-        NotMatched,
-        Matched,
-        Dropped
+        return LastNotProcessedIndex(Set);
     }
-
-    private MatchStatus _status;
 
     public void Process(Mat frame, int frameIndex)
     {
@@ -93,5 +94,10 @@ public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
         }
     }
 
-    public bool Finished => Set.All(d => d.Finished) || Set.Count == 0;
+    private enum MatchStatus
+    {
+        NotMatched,
+        Matched,
+        Dropped
+    }
 }

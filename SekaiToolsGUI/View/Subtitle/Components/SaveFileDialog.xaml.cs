@@ -15,9 +15,6 @@ public class SaveFileDialogModel : ViewModelBase
 
 public partial class SaveFileDialog : ContentDialog
 {
-    public SaveFileDialogModel ViewModel => (SaveFileDialogModel)DataContext;
-    private string VideoFile { get; }
-
     public SaveFileDialog(ContentPresenter contentPresenter, string videoFile) : base(contentPresenter)
     {
         VideoFile = videoFile;
@@ -28,6 +25,9 @@ public partial class SaveFileDialog : ContentDialog
         );
         InitializeComponent();
     }
+
+    public SaveFileDialogModel ViewModel => (SaveFileDialogModel)DataContext;
+    private string VideoFile { get; }
 
     protected override void OnButtonClick(ContentDialogButton button)
     {

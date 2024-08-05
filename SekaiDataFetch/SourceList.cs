@@ -5,11 +5,17 @@ public class SourceList
     public enum SourceType
     {
         SiteBest,
-        SiteAi,
+
+        SiteAi
         // UniPjsk
     }
 
     private SourceType _source;
+
+    public SourceList(SourceType sourceType = 0)
+    {
+        SetSource(sourceType);
+    }
 
 
     public SourceType Source
@@ -49,10 +55,6 @@ public class SourceList
         }
     }
 
-    public void SetSource(SourceType sourceType) => Source = sourceType;
-
-    public SourceList(SourceType sourceType = 0) => SetSource(sourceType);
-
     public string Events { get; private set; } = "";
     public string Cards { get; private set; } = "";
     public string Character2ds { get; private set; } = "";
@@ -61,4 +63,9 @@ public class SourceList
     public string CardEpisodes { get; private set; } = "";
     public string ActionSets { get; private set; } = "";
     public string SpecialStories { get; private set; } = "";
+
+    public void SetSource(SourceType sourceType)
+    {
+        Source = sourceType;
+    }
 }

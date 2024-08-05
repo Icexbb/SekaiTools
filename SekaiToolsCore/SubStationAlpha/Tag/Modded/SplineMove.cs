@@ -4,16 +4,6 @@ namespace SekaiToolsCore.SubStationAlpha.Tag.Modded;
 
 public class SplineMove : Tag
 {
-    public Point Point1 { get; set; }
-    public Point Point2 { get; set; }
-    public Point Point3 { get; set; }
-    public Point? Point4 { get; set; }
-
-    public int Time1 { get; set; }
-    public int Time2 { get; set; }
-
-    public override string Name => "moves";
-
     public SplineMove(Point point1, Point point2, Point point3, int time1 = 0, int time2 = 0)
     {
         Point1 = point1;
@@ -32,6 +22,16 @@ public class SplineMove : Tag
         Time1 = time1;
         Time2 = time2;
     }
+
+    public Point Point1 { get; set; }
+    public Point Point2 { get; set; }
+    public Point Point3 { get; set; }
+    public Point? Point4 { get; set; }
+
+    public int Time1 { get; set; }
+    public int Time2 { get; set; }
+
+    public override string Name => "moves";
 
     public override string ToString()
     {

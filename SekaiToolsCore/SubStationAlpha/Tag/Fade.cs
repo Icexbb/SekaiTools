@@ -6,20 +6,14 @@ public class Fade(int start, int end) : Tag
     public int Start { get; } = start;
     public int End { get; } = end;
 
-    public override string ToString() => $"\\{Name}({Start},{End})";
+    public override string ToString()
+    {
+        return $"\\{Name}({Start},{End})";
+    }
 }
 
 public class FadeComplex : Tag
 {
-    public int Alpha1 { get; }
-    public int Alpha2 { get; }
-    public int Alpha3 { get; }
-
-    public int Time1 { get; }
-    public int Time2 { get; }
-    public int Time3 { get; }
-    public int Time4 { get; }
-
     public FadeComplex(int alpha1, int alpha2, int alpha3, int time1, int time2, int time3, int time4)
     {
         if (alpha1 is < 0 or > 255)
@@ -37,8 +31,20 @@ public class FadeComplex : Tag
         Time4 = time4;
     }
 
+    public int Alpha1 { get; }
+    public int Alpha2 { get; }
+    public int Alpha3 { get; }
+
+    public int Time1 { get; }
+    public int Time2 { get; }
+    public int Time3 { get; }
+    public int Time4 { get; }
+
 
     public override string Name => "fade";
 
-    public override string ToString() => $"\\{Name}({Alpha1},{Alpha2},{Alpha3},{Time1},{Time2},{Time3},{Time4})";
+    public override string ToString()
+    {
+        return $"\\{Name}({Alpha1},{Alpha2},{Alpha3},{Time1},{Time2},{Time3},{Time4})";
+    }
 }

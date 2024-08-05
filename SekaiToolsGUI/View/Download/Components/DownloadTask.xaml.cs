@@ -7,12 +7,6 @@ namespace SekaiToolsGUI.View.Download.Components;
 
 public partial class DownloadTask : UserControl
 {
-    public string ScriptTag { get; set; }
-
-    public string Url { get; set; }
-
-    public string SavePath { get; set; }
-
     public DownloadTask(string scriptTag, string url)
     {
         InitializeComponent();
@@ -24,14 +18,17 @@ public partial class DownloadTask : UserControl
         DataContext = this;
     }
 
+    public string ScriptTag { get; set; }
+
+    public string Url { get; set; }
+
+    public string SavePath { get; set; }
+
     public bool Downloaded { get; private set; }
 
     public void ChangeStatus(int status)
     {
-        if (status == 1)
-        {
-            Downloaded = true;
-        }
+        if (status == 1) Downloaded = true;
 
         Dispatcher.Invoke(() =>
         {

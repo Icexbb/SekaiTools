@@ -40,7 +40,7 @@ public class MainWindowViewModel : ViewModelBase
             Icon = new SymbolIcon { Symbol = SymbolRegular.PhotoFilter24 },
             // TargetPageType = typeof(DownloadPage),
             NavigationCacheMode = NavigationCacheMode.Required
-        },
+        }
     ];
 
     public object[] NavigationFooterItems { get; set; } =
@@ -51,7 +51,7 @@ public class MainWindowViewModel : ViewModelBase
             Icon = new SymbolIcon { Symbol = SymbolRegular.Settings24 },
             TargetPageType = typeof(SettingPage),
             NavigationCacheMode = NavigationCacheMode.Disabled
-        },
+        }
     ];
 
     public SettingPageModel SettingPageModel { get; } = new();
@@ -65,18 +65,18 @@ public partial class MainWindow : FluentWindow
         DataContext = new MainWindowViewModel();
     }
 
-    private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
-    {
-        WindowSnackbarService.SetSnackbarPresenter(SnackbarPresenter);
-        WindowContentDialogService.SetDialogHost(RootContentDialog);
-    }
-
-    public ISnackbarService WindowSnackbarService { get; } = new SnackbarService()
+    public ISnackbarService WindowSnackbarService { get; } = new SnackbarService
     {
         DefaultTimeOut = TimeSpan.FromSeconds(3)
     };
 
     public IContentDialogService WindowContentDialogService { get; } = new ContentDialogService();
+
+    private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
+    {
+        WindowSnackbarService.SetSnackbarPresenter(SnackbarPresenter);
+        WindowContentDialogService.SetDialogHost(RootContentDialog);
+    }
 
 
     private void NavigationView_OnLoaded(object sender, RoutedEventArgs e)

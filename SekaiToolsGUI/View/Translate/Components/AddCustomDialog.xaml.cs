@@ -14,11 +14,11 @@ public class AddCustomDialogModel : ViewModelBase
 
 public partial class AddCustomDialog : ContentDialog
 {
-    public AddCustomDialogModel ViewModel => (AddCustomDialogModel)DataContext;
-
     public AddCustomDialog(ContentPresenter contentPresenter) : base(contentPresenter)
     {
         DataContext = new AddCustomDialogModel();
         InitializeComponent();
     }
+
+    public AddCustomDialogModel ViewModel => (AddCustomDialogModel)DataContext;
 }

@@ -5,11 +5,6 @@ namespace SekaiToolsCore;
 
 public class MatcherCreator
 {
-    private Config Config { get; }
-    private VideoInfo VInfo { get; }
-    public SekaiStory Story { get; }
-    private TemplateManager Manager { get; }
-
     public MatcherCreator(Config config)
     {
         Config = config;
@@ -27,6 +22,11 @@ public class MatcherCreator
 
         Manager = new TemplateManager(VInfo.Resolution, dbs, names);
     }
+
+    private Config Config { get; }
+    private VideoInfo VInfo { get; }
+    public SekaiStory Story { get; }
+    private TemplateManager Manager { get; }
 
     public DialogMatcher DialogMatcher()
     {

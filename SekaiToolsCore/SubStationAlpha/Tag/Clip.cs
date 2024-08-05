@@ -4,11 +4,6 @@ namespace SekaiToolsCore.SubStationAlpha.Tag;
 
 public abstract class ClipBase(Point from, Point to) : Tag, INestableTag
 {
-    public Point From { get; } = from;
-    public Point To { get; } = to;
-
-    public abstract override string Name { get; }
-
     protected ClipBase(int fromX, int fromY, int toX, int toY) : this(new Point(fromX, fromY), new Point(toX, toY))
     {
     }
@@ -17,13 +12,19 @@ public abstract class ClipBase(Point from, Point to) : Tag, INestableTag
     {
     }
 
-    public override string ToString() => $"\\{Name}({From.X},{From.Y},{To.X},{To.Y})";
+    public Point From { get; } = from;
+    public Point To { get; } = to;
+
+    public abstract override string Name { get; }
+
+    public override string ToString()
+    {
+        return $"\\{Name}({From.X},{From.Y},{To.X},{To.Y})";
+    }
 }
 
 public class Clip : ClipBase
 {
-    public override string Name => "clip";
-
     public Clip(Point from, Point to) : base(from, to)
     {
     }
@@ -35,12 +36,12 @@ public class Clip : ClipBase
     public Clip(Rectangle rect) : base(rect)
     {
     }
+
+    public override string Name => "clip";
 }
 
 public class ClipInverse : ClipBase
 {
-    public override string Name => "iclip";
-
     public ClipInverse(Point from, Point to) : base(from, to)
     {
     }
@@ -52,15 +53,12 @@ public class ClipInverse : ClipBase
     public ClipInverse(Rectangle rect) : base(rect)
     {
     }
+
+    public override string Name => "iclip";
 }
 
 public abstract class ClipVectorBase : Tag
 {
-    public AssDraw.AssDraw Vector { get; }
-
-    public int Scale { get; } = 1;
-    public abstract override string Name { get; }
-
     protected ClipVectorBase(AssDraw.AssDraw vector)
     {
         Vector = vector;
@@ -72,14 +70,20 @@ public abstract class ClipVectorBase : Tag
         Scale = scale;
     }
 
+    public AssDraw.AssDraw Vector { get; }
 
-    public override string ToString() => Scale == 1 ? $"\\{Name}({Vector})" : $"\\{Name}({Scale},{Vector})";
+    public int Scale { get; } = 1;
+    public abstract override string Name { get; }
+
+
+    public override string ToString()
+    {
+        return Scale == 1 ? $"\\{Name}({Vector})" : $"\\{Name}({Scale},{Vector})";
+    }
 }
 
 public class ClipVector : ClipVectorBase
 {
-    public override string Name => "clip";
-
     public ClipVector(AssDraw.AssDraw vector) : base(vector)
     {
     }
@@ -88,12 +92,12 @@ public class ClipVector : ClipVectorBase
     public ClipVector(AssDraw.AssDraw vector, int scale) : base(vector, scale)
     {
     }
+
+    public override string Name => "clip";
 }
 
 public class ClipInverseVector : ClipVectorBase
 {
-    public override string Name => "iclip";
-
     public ClipInverseVector(AssDraw.AssDraw vector) : base(vector)
     {
     }
@@ -101,4 +105,6 @@ public class ClipInverseVector : ClipVectorBase
     public ClipInverseVector(AssDraw.AssDraw vector, int scale) : base(vector, scale)
     {
     }
+
+    public override string Name => "iclip";
 }

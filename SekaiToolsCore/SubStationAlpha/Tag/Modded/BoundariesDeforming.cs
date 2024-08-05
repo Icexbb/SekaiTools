@@ -5,7 +5,11 @@ public abstract class BoundariesDeformingBase(int arg) : Tag, INestableTag
     public int Arg { get; set; } = arg;
 
     public abstract override string Name { get; }
-    public override string ToString() => $"\\{Name}{Arg}";
+
+    public override string ToString()
+    {
+        return $"\\{Name}{Arg}";
+    }
 }
 
 public class BoundariesDeforming(int arg) : BoundariesDeformingBase(arg)

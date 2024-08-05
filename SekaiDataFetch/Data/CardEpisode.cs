@@ -24,16 +24,16 @@ public class CardEpisode
     public int Id { get; set; }
     public int Seq { get; set; }
     public int CardId { get; set; }
-    public string Title { get; set; }="";
-    public string ScenarioId { get; set; }="";
-    public string AssetBundleName { get; set; }="";
+    public string Title { get; set; } = "";
+    public string ScenarioId { get; set; } = "";
+    public string AssetBundleName { get; set; } = "";
     public int ReleaseConditionId { get; set; }
     public int Power1BonusFixed { get; set; }
     public int Power2BonusFixed { get; set; }
     public int Power3BonusFixed { get; set; }
     public int[] RewardResourceBoxIds { get; set; } = [];
     public Cost[] Costs { get; set; } = [];
-    public string CardEpisodePartType { get; set; }="";
+    public string CardEpisodePartType { get; set; } = "";
 
     public static CardEpisode FromJson(JObject json)
     {
@@ -51,7 +51,7 @@ public class CardEpisode
             Power3BonusFixed = json.Get("power3BonusFixed", 0),
             RewardResourceBoxIds = json.Get("rewardResourceBoxIds", Array.Empty<int>()),
             Costs = json.Get("costs", Array.Empty<JObject>()).Select(Cost.FromJson).ToArray(),
-            CardEpisodePartType = json.Get("cardEpisodePartType", ""),
+            CardEpisodePartType = json.Get("cardEpisodePartType", "")
         };
     }
 }

@@ -26,5 +26,8 @@ public class Bold : Tag
     public override string Name => "b";
     public int Weight { get; }
 
-    public override string ToString() => $"\\{Name}{Weight}";
+    public override string ToString()
+    {
+        return $"\\{Name}{Weight}";
+    }
 }

@@ -17,6 +17,19 @@ public class LineEffectModel : ViewModelBase
         TranslatedContent = _event.BodyTranslated;
     }
 
+
+    public string OriginalContent
+    {
+        get => GetProperty(string.Empty);
+        set => SetProperty(value);
+    }
+
+    public string TranslatedContent
+    {
+        get => GetProperty(string.Empty);
+        set => SetProperty(value);
+    }
+
     public SekaiEvent Export()
     {
         switch (_event)
@@ -45,25 +58,10 @@ public class LineEffectModel : ViewModelBase
         marker.BodyTranslated = TranslatedContent;
         return marker;
     }
-
-
-    public string OriginalContent
-    {
-        get => GetProperty(string.Empty);
-        set => SetProperty(value);
-    }
-
-    public string TranslatedContent
-    {
-        get => GetProperty(string.Empty);
-        set => SetProperty(value);
-    }
 }
 
 public partial class TranslateLineEffect : UserControl, INavigableView<LineEffectModel>, IExportable
 {
-    public LineEffectModel ViewModel => (LineEffectModel)DataContext;
-
     public TranslateLineEffect(SekaiEvent eEvent)
     {
         DataContext = new LineEffectModel(eEvent);
@@ -75,4 +73,6 @@ public partial class TranslateLineEffect : UserControl, INavigableView<LineEffec
         var result = ViewModel.TranslatedContent;
         return string.IsNullOrWhiteSpace(result) ? "地点" : result;
     }
+
+    public LineEffectModel ViewModel => (LineEffectModel)DataContext;
 }

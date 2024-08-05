@@ -2,15 +2,18 @@ namespace SekaiToolsCore.SubStationAlpha.Tag;
 
 public abstract class AlphaBase(SubStationAlpha.Alpha a) : Tag, INestableTag
 {
-    public SubStationAlpha.Alpha A { get; } = a;
-
     public AlphaBase(int a) : this(new SubStationAlpha.Alpha(a))
     {
     }
 
+    public SubStationAlpha.Alpha A { get; } = a;
+
     public abstract override string Name { get; }
 
-    public override string ToString() => $"\\{Name}{A}";
+    public override string ToString()
+    {
+        return $"\\{Name}{A}";
+    }
 }
 
 public class Alpha(SubStationAlpha.Alpha a) : AlphaBase(a)

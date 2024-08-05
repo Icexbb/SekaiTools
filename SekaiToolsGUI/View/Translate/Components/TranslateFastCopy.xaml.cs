@@ -4,6 +4,7 @@ using SekaiToolsGUI.View.Setting;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Input;
 using Button = System.Windows.Controls.Button;
+using MenuItem = Wpf.Ui.Controls.MenuItem;
 
 namespace SekaiToolsGUI.View.Translate.Components;
 
@@ -26,14 +27,14 @@ public partial class TranslateFastCopy : UserControl
             VerticalContentAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch,
-            ContextMenu = new ContextMenu()
+            ContextMenu = new ContextMenu
             {
                 Items =
                 {
-                    new Wpf.Ui.Controls.MenuItem
+                    new MenuItem
                     {
                         Header = "删除",
-                        Command = new RelayCommand<Type>((t) =>
+                        Command = new RelayCommand<Type>(t =>
                         {
                             var setting = new SettingPageModel();
                             setting.CustomSpecialCharacters.Remove(content);
@@ -52,18 +53,12 @@ public partial class TranslateFastCopy : UserControl
     {
         CustomSpecialCharacters.Children.Clear();
         var setting = new SettingPageModel();
-        foreach (var character in setting.CustomSpecialCharacters)
-        {
-            AddCustomButton(character);
-        }
+        foreach (var character in setting.CustomSpecialCharacters) AddCustomButton(character);
     }
 
     private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
     {
-        if (sender is Button button)
-        {
-            Clipboard.SetText(button.Content.ToString()!);
-        }
+        if (sender is Button button) Clipboard.SetText(button.Content.ToString()!);
     }
 
     private async void ButtonAdd_OnClick(object sender, RoutedEventArgs e)

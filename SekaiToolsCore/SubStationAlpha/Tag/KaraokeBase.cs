@@ -2,9 +2,6 @@ namespace SekaiToolsCore.SubStationAlpha.Tag;
 
 public abstract class KaraokeBase : Tag
 {
-    public abstract override string Name { get; }
-    public int Duration { get; }
-
     public KaraokeBase(int duration)
     {
         if (duration < 0)
@@ -13,7 +10,13 @@ public abstract class KaraokeBase : Tag
         Duration = duration;
     }
 
-    public override string ToString() => $"\\{Name}{Duration}";
+    public abstract override string Name { get; }
+    public int Duration { get; }
+
+    public override string ToString()
+    {
+        return $"\\{Name}{Duration}";
+    }
 }
 
 public class Karaoke(int duration) : KaraokeBase(duration)

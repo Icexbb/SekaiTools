@@ -8,8 +8,6 @@ namespace SekaiToolsGUI.View.Download.Components;
 
 public partial class EventStoryEvent : UserControl
 {
-    public ListEventStory.EventStoryImpl EventStoryImpl { get; }
-
     public EventStoryEvent(ListEventStory.EventStoryImpl eventStoryImpl, SourceList.SourceType sourceType)
     {
         EventStoryImpl = eventStoryImpl;
@@ -29,4 +27,6 @@ public partial class EventStoryEvent : UserControl
             PanelItems.Children.Add(item);
         }
     }
+
+    public ListEventStory.EventStoryImpl EventStoryImpl { get; }
 }

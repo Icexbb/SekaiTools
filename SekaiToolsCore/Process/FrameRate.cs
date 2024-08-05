@@ -9,16 +9,22 @@ public enum FrameType
 
 public class SmpteTime(int hour, int minute, int second, int frame, string separator = ":") : ICloneable
 {
+    private readonly string _separator = separator;
+    public int Frame = frame;
     public int Hour = hour;
     public int Minute = minute;
     public int Second = second;
-    public int Frame = frame;
-    private string _separator = separator;
-    public object Clone() => new SmpteTime(Hour, Minute, Second, Frame);
+
+    public object Clone()
+    {
+        return new SmpteTime(Hour, Minute, Second, Frame);
+    }
 
 
-    public override string ToString() =>
-        $"{Hour:00}{_separator}{Minute:00}{_separator}{Second:00}{_separator}{Frame:00}";
+    public override string ToString()
+    {
+        return $"{Hour:00}{_separator}{Minute:00}{_separator}{Second:00}{_separator}{Frame:00}";
+    }
 
 
     public static SmpteTime FromString(string str, string separator = ":")
@@ -37,12 +43,11 @@ public class SmpteTime(int hour, int minute, int second, int frame, string separ
 public class FrameRate
 {
     private const long DefaultDenominator = 1000000000L;
-    private readonly long _denominator;
-    private readonly long _numerator;
     private const long Last = 0;
-    private readonly List<int> _timecodes = [];
+    private readonly long _denominator;
     private readonly bool _drop;
-    public double Fps() => _numerator / (double)_denominator;
+    private readonly long _numerator;
+    private readonly List<int> _timecodes = [];
 
     public FrameRate(double fps)
     {
@@ -73,6 +78,27 @@ public class FrameRate
         _numerator = numerator;
         _drop = drop && _numerator % _denominator != 0;
         _timecodes.Add(0);
+    }
+
+    public static FrameRate Fps23976 { get; } = new(24000, 1001, true);
+
+    public static FrameRate Fps24 { get; } = new(24);
+
+    public static FrameRate Fps25 { get; } = new(25);
+
+    public static FrameRate Fps2997 { get; } = new(30000, 1001, true);
+
+    public static FrameRate Fps30 { get; } = new(30);
+
+    public static FrameRate Fps50 { get; } = new(50);
+
+    public static FrameRate Fps5994 { get; } = new(60000, 1001, true);
+
+    public static FrameRate Fps60 { get; } = new(60);
+
+    public double Fps()
+    {
+        return _numerator / (double)_denominator;
     }
 
     // private void SetFromTimecodes(IEnumerable<int> timecodes)
@@ -248,39 +274,32 @@ public class FrameRate
     }
 
 
-    public bool IsVfr() => _timecodes.Count > 1;
-    public bool IsLoaded() => _numerator > 0;
-    public bool NeedDropFrames() => _drop;
+    public bool IsVfr()
+    {
+        return _timecodes.Count > 1;
+    }
 
-    public static FrameRate Fps23976 { get; } = new(24000, 1001, true);
+    public bool IsLoaded()
+    {
+        return _numerator > 0;
+    }
 
-    public static FrameRate Fps24 { get; } = new(24);
-
-    public static FrameRate Fps25 { get; } = new(25);
-
-    public static FrameRate Fps2997 { get; } = new(30000, 1001, true);
-
-    public static FrameRate Fps30 { get; } = new(30);
-
-    public static FrameRate Fps50 { get; } = new(50);
-
-    public static FrameRate Fps5994 { get; } = new(60000, 1001, true);
-
-    public static FrameRate Fps60 { get; } = new(60);
+    public bool NeedDropFrames()
+    {
+        return _drop;
+    }
 }
 
 public class SubtitleTime(int ms = 0)
 {
     private const int MaxTime = 10 * 60 * 60 * 1000 - 6;
     private const int MinTime = 0;
-    public int Milliseconds { get; } = Utils.Middle(MinTime, ms, MaxTime);
 
     public SubtitleTime(string text) : this()
     {
         var afterDecimal = -1;
         var current = 0;
         foreach (var c in text)
-        {
             switch (c)
             {
                 case ':':
@@ -310,21 +329,43 @@ public class SubtitleTime(int ms = 0)
                     break;
                 }
             }
-        }
 
         if (afterDecimal < 0) Milliseconds = (Milliseconds * 60 + current) * 1000;
 
         Milliseconds = Utils.Middle(0, Milliseconds, 10 * 60 * 60 * 1000 - 6);
     }
 
-    private int ToInt() => Milliseconds + 5 - (Milliseconds + 5) % 10;
+    public int Milliseconds { get; } = Utils.Middle(MinTime, ms, MaxTime);
 
-    public static explicit operator int(SubtitleTime time) => time.ToInt();
-    public static SubtitleTime operator +(SubtitleTime a) => a;
-    public static SubtitleTime operator -(SubtitleTime a) => new(-a.Milliseconds);
+    private int ToInt()
+    {
+        return Milliseconds + 5 - (Milliseconds + 5) % 10;
+    }
 
-    public static SubtitleTime operator +(SubtitleTime a, SubtitleTime b) => new(a.Milliseconds + b.Milliseconds);
-    public static SubtitleTime operator -(SubtitleTime a, SubtitleTime b) => new(a.Milliseconds - b.Milliseconds);
+    public static explicit operator int(SubtitleTime time)
+    {
+        return time.ToInt();
+    }
+
+    public static SubtitleTime operator +(SubtitleTime a)
+    {
+        return a;
+    }
+
+    public static SubtitleTime operator -(SubtitleTime a)
+    {
+        return new SubtitleTime(-a.Milliseconds);
+    }
+
+    public static SubtitleTime operator +(SubtitleTime a, SubtitleTime b)
+    {
+        return new SubtitleTime(a.Milliseconds + b.Milliseconds);
+    }
+
+    public static SubtitleTime operator -(SubtitleTime a, SubtitleTime b)
+    {
+        return new SubtitleTime(a.Milliseconds - b.Milliseconds);
+    }
 
     public string GetAssFormatted(bool msPrecision = false)
     {

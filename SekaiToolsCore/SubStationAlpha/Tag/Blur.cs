@@ -2,7 +2,6 @@ namespace SekaiToolsCore.SubStationAlpha.Tag;
 
 public class Blur : Tag, INestableTag
 {
-    public override string Name => "blur";
     public int Value;
 
     public Blur(int value)
@@ -12,5 +11,10 @@ public class Blur : Tag, INestableTag
         Value = value;
     }
 
-    public override string ToString() => $"\\{Name}{Value}";
+    public override string Name => "blur";
+
+    public override string ToString()
+    {
+        return $"\\{Name}{Value}";
+    }
 }

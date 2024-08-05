@@ -1,8 +1,7 @@
 namespace SekaiToolsCore.SubStationAlpha.Tag;
 
-public class Be : Tag,INestableTag
+public class Be : Tag, INestableTag
 {
-    public override string Name => "be";
     public int Value;
 
     public Be(int value)
@@ -12,5 +11,10 @@ public class Be : Tag,INestableTag
         Value = value;
     }
 
-    public override string ToString() => $"\\{Name}{Value}";
+    public override string Name => "be";
+
+    public override string ToString()
+    {
+        return $"\\{Name}{Value}";
+    }
 }

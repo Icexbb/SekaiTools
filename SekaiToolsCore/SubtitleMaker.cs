@@ -12,14 +12,56 @@ namespace SekaiToolsCore;
 
 public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager, Config config)
 {
+    private readonly List<Style> _styles = [];
+
+    private Point _nameTagPosition = new(0, 0);
     private string FontName { get; } = config.FontName;
     private TypewriterSetting TypewriterSetting { get; } = config.TyperSetting;
 
     private bool ExportComment { get; } = config.ExportComment;
 
+    public Subtitle Make(
+        List<DialogFrameSet> dialogList,
+        List<BannerFrameSet> bannerList,
+        List<MarkerFrameSet> markerList)
+    {
+        var events = new List<SubtitleEvent>();
+
+        if (dialogList.Count != 0)
+        {
+            _nameTagPosition = dialogList[0].Frames[0].Point;
+            _styles.AddRange(MakeDialogStyles());
+            events.AddRange(MakeDialogEvents(dialogList));
+        }
+
+        if (bannerList.Count != 0)
+        {
+            _styles.AddRange(MakeBannerStyles());
+            events.AddRange(MakeBannerEvents(bannerList));
+        }
+
+        if (markerList.Count != 0)
+        {
+            _styles.AddRange(MakeMarkerStyles());
+            events.AddRange(MakeMarkerEvents(markerList));
+        }
+
+        if (!ExportComment) events.RemoveAll(e => e.Type == "Comment");
+
+        return new Subtitle(
+            new ScriptInfo(videoInfo.Resolution.Width, videoInfo.Resolution.Height),
+            new Garbage(Path.GetFileName(videoInfo.Path), Path.GetFileName(videoInfo.Path)),
+            new Styles(_styles.ToArray()),
+            new Events(events.ToArray())
+        );
+    }
+
     #region Dialog
 
-    private GaMat GetNameTag(string name) => new(templateManager.GetEbTemplate(name));
+    private GaMat GetNameTag(string name)
+    {
+        return new GaMat(templateManager.GetEbTemplate(name));
+    }
 
     private static Queue<char> FormatDialogBodyArr(string body)
     {
@@ -120,25 +162,25 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         var result = new List<Style>
         {
             new("Line1", FontName, fontsize,
-                primaryColour: blackColor, outlineColour: outlineColor,
+                blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7, marginL: marginH, marginR: marginH, marginV: marginV),
 
             new("Line2", FontName, fontsize,
-                primaryColour: blackColor, outlineColour: outlineColor,
+                blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7, marginL: marginH, marginR: marginH,
                 marginV: marginV + (int)(fontsize * 1.01)),
 
             new("Line3", FontName, fontsize,
-                primaryColour: blackColor, outlineColour: outlineColor,
+                blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7, marginL: marginH, marginR: marginH,
                 marginV: marginV + (int)(fontsize * 1.01 * 2)),
 
             new("Character", FontName, charaFontsize,
-                primaryColour: blackColor, outlineColour: outlineColor,
+                blackColor, outlineColour: outlineColor,
                 outline: charaOutlineSize, shadow: 0, alignment: 7),
 
             new("Screen", FontName, charaFontsize,
-                primaryColour: blackColor, outlineColour: outlineColor,
+                blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7)
         };
 
@@ -271,13 +313,9 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
                            + MakeDialogTypewriter(content, frame.Index - dialogFrameSet.StartIndex());
 
                 if (lastPosition.X == x && lastPosition.Y == y && body == dialogEvents[^1].Text)
-                {
                     dialogEvents[^1].End = frame.EndTime();
-                }
                 else
-                {
                     dialogEvents.Add(SubtitleEvent.Dialog(body, frame.StartTime(), frame.EndTime(), styleName));
-                }
 
                 if (lastPosition.X == x && lastPosition.Y == y && body == characterEvents[^1].Text)
                 {
@@ -387,10 +425,10 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
         var whiteColor = new AlphaColor(0, 255, 255, 255);
         var outlineColor = new AlphaColor(30, 95, 92, 123);
-        result.Add(new Style("BannerMask", FontName, fontsize, primaryColour: outlineColor,
+        result.Add(new Style("BannerMask", FontName, fontsize, outlineColor,
             outlineColour: outlineColor,
             outline: 0, shadow: 0, alignment: 7));
-        result.Add(new Style("BannerText", FontName, fontsize, primaryColour: whiteColor,
+        result.Add(new Style("BannerText", FontName, fontsize, whiteColor,
             outlineColour: outlineColor,
             outline: 0, shadow: 0, alignment: 7));
         return result;
@@ -447,14 +485,12 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
                 var maskText = tagMask + mask;
                 var bodyText = tagText + content;
                 if (markerEventMask.Count > 0 && markerEventText.Count > 0)
-                {
                     if (markerEventMask[^1].Text == maskText && markerEventText[^1].Text == bodyText)
                     {
                         markerEventMask[^1].End = endTime;
                         markerEventText[^1].End = endTime;
                         continue;
                     }
-                }
 
                 markerEventMask.Add(
                     SubtitleEvent.Dialog(maskText, startTime, endTime, "MarkerMask"));
@@ -475,53 +511,14 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
         var whiteColor = new AlphaColor(0, 255, 255, 255);
         var outlineColor = new AlphaColor(30, 95, 92, 123);
-        result.Add(new Style("MarkerMask", FontName, fontsize, primaryColour: outlineColor,
+        result.Add(new Style("MarkerMask", FontName, fontsize, outlineColor,
             outlineColour: outlineColor,
             outline: 0, shadow: 0, alignment: 7));
-        result.Add(new Style("MarkerText", FontName, fontsize, primaryColour: whiteColor,
+        result.Add(new Style("MarkerText", FontName, fontsize, whiteColor,
             outlineColour: outlineColor,
             outline: 0, shadow: 0, alignment: 7));
         return result;
     }
 
     #endregion
-
-    private Point _nameTagPosition = new(0, 0);
-    private readonly List<Style> _styles = [];
-
-    public Subtitle Make(
-        List<DialogFrameSet> dialogList,
-        List<BannerFrameSet> bannerList,
-        List<MarkerFrameSet> markerList)
-    {
-        var events = new List<SubtitleEvent>();
-
-        if (dialogList.Count != 0)
-        {
-            _nameTagPosition = dialogList[0].Frames[0].Point;
-            _styles.AddRange(MakeDialogStyles());
-            events.AddRange(MakeDialogEvents(dialogList));
-        }
-
-        if (bannerList.Count != 0)
-        {
-            _styles.AddRange(MakeBannerStyles());
-            events.AddRange(MakeBannerEvents(bannerList));
-        }
-
-        if (markerList.Count != 0)
-        {
-            _styles.AddRange(MakeMarkerStyles());
-            events.AddRange(MakeMarkerEvents(markerList));
-        }
-
-        if (!ExportComment) events.RemoveAll(e => e.Type == "Comment");
-
-        return new Subtitle(
-            new ScriptInfo(videoInfo.Resolution.Width, videoInfo.Resolution.Height),
-            new Garbage(Path.GetFileName(videoInfo.Path), Path.GetFileName(videoInfo.Path)),
-            new Styles(_styles.ToArray()),
-            new Events(events.ToArray())
-        );
-    }
 }

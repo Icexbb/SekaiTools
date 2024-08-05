@@ -5,7 +5,10 @@ public abstract class FontRotateBase(int value) : Tag, INestableTag
     public int Value = value;
     public abstract override string Name { get; }
 
-    public override string ToString() => $"\\{Name}{Value}";
+    public override string ToString()
+    {
+        return $"\\{Name}{Value}";
+    }
 }
 
 public class FontRotate(int value) : FontRotateBase(value)

@@ -5,9 +5,9 @@ namespace SekaiToolsCore.Story.Game;
 
 public class GameData
 {
+    public readonly Snippet[] Snippets;
     public readonly SpecialEffect[] SpecialEffectData;
     public readonly Talk[] TalkData;
-    public readonly Snippet[] Snippets;
 
     public GameData(string jsonFilePath)
     {
@@ -32,7 +32,6 @@ public class GameData
         var spEffCount = 0;
         var shaking = false;
         foreach (var item in Snippets)
-        {
             switch (item.Action)
             {
                 case 1:
@@ -57,7 +56,6 @@ public class GameData
                     break;
                 }
             }
-        }
 
         foreach (var i in shakeIndex) TalkData[i].Shake = true;
 

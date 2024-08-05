@@ -19,10 +19,7 @@ public static class Utils
         where TPrimaryKey : notnull
         where TSubKey : notnull
     {
-        if (!data.TryGetValue(primaryKey, out var added))
-        {
-            added = new Dictionary<TSubKey, TValue>();
-        }
+        if (!data.TryGetValue(primaryKey, out var added)) added = new Dictionary<TSubKey, TValue>();
 
         added[subKey] = value;
         data[primaryKey] = added;

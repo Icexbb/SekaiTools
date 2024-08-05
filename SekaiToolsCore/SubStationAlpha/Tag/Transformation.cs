@@ -2,16 +2,6 @@ namespace SekaiToolsCore.SubStationAlpha.Tag;
 
 public class Transformation : Tag
 {
-    public override string Name => "t";
-
-    public INestableTag[] Tags { get; }
-
-    public float Acceleration { get; } = 1;
-
-    public int From { get; }
-
-    public int To { get; }
-
     public Transformation(INestableTag[] tags)
     {
         Tags = tags;
@@ -37,6 +27,16 @@ public class Transformation : Tag
         From = from;
         To = to;
     }
+
+    public override string Name => "t";
+
+    public INestableTag[] Tags { get; }
+
+    public float Acceleration { get; } = 1;
+
+    public int From { get; }
+
+    public int To { get; }
 
 
     public override string ToString()

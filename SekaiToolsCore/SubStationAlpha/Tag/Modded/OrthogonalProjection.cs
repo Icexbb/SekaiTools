@@ -5,5 +5,8 @@ public class OrthogonalProjection(bool value) : Tag
     public override string Name => "ortho";
     public bool Value { get; } = value;
 
-    public override string ToString() => $"\\{Name}{(Value ? "1" : "0")}";
+    public override string ToString()
+    {
+        return $"\\{Name}{(Value ? "1" : "0")}";
+    }
 }

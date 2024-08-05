@@ -3,22 +3,18 @@ namespace SekaiToolsCore.SubStationAlpha;
 public class Style
 {
     private readonly int _angle, _borderStyle, _alignment;
-    public int MarginL { get; }
-    public int MarginR { get; }
-    public int MarginV { get; }
-    private readonly int _encoding;
-    public readonly int Fontsize;
     private readonly int _bold;
-    private readonly int _italic;
-    private readonly int _underline;
-    private readonly int _strikeOut;
-    private readonly int _scaleX;
-    private readonly int _scaleY;
-    public string Name { get; }
+    private readonly int _encoding;
 
     private readonly string _fontName;
+    private readonly int _italic;
     private readonly AlphaColor _primaryColour, _secondaryColour, _outlineColour, _backColour;
+    private readonly int _scaleX;
+    private readonly int _scaleY;
     private readonly double _spacing, _outline, _shadow;
+    private readonly int _strikeOut;
+    private readonly int _underline;
+    public readonly int Fontsize;
 
     public Style(
         string name = "Default",
@@ -91,6 +87,11 @@ public class Style
         MarginV = mv;
         if (!int.TryParse(sourcePart[22], out _encoding)) _encoding = 1;
     }
+
+    public int MarginL { get; }
+    public int MarginR { get; }
+    public int MarginV { get; }
+    public string Name { get; }
 
     public override string ToString()
     {

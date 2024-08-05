@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Runtime.CompilerServices;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -10,11 +11,10 @@ public static class Matcher
 {
     public static MatchResult MatchTemplate(Mat img, GaMat tmp,
         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
-        [System.Runtime.CompilerServices.CallerMemberName]
-        string memberName = "")
+        [CallerMemberName] string memberName = "")
     {
         var matchResult = new Mat();
-        CvInvoke.MatchTemplate(img, tmp.Gray, matchResult, matchingType, mask: tmp.Alpha);
+        CvInvoke.MatchTemplate(img, tmp.Gray, matchResult, matchingType, tmp.Alpha);
         matchResult.MatRemoveErrorInf();
         double maxVal = 0, minVal = 0;
         Point minLoc = new(), maxLoc = new();

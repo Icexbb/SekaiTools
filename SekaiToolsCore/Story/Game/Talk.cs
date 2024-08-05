@@ -6,7 +6,10 @@ public struct TalkCharacters(int character2dId)
 {
     public readonly int Character2dId = character2dId;
 
-    public static TalkCharacters FromJson(JObject json) => new(json.GetInt("Character2dId"));
+    public static TalkCharacters FromJson(JObject json)
+    {
+        return new TalkCharacters(json.GetInt("Character2dId"));
+    }
 }
 
 public struct Talk(

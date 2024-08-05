@@ -11,9 +11,19 @@ public class DialogMatcher(
     Config config
 )
 {
+    public readonly List<DialogFrameSet> Set =
+        storyData.Dialogs().Select(d => new DialogFrameSet(d, videoInfo.Fps)).ToList();
+
     private Point _nameTagPosition;
 
-    private GaMat GetNameTag(string name) => new(templateManager.GetEbTemplate(name));
+    private MatchStatus _status = 0;
+
+    public bool Finished => Set.All(d => d.Finished) || Set.Count == 0;
+
+    private GaMat GetNameTag(string name)
+    {
+        return new GaMat(templateManager.GetEbTemplate(name));
+    }
 
     private Point DialogMatchNameTag(Mat img, DialogFrameSet dialog)
     {
@@ -133,10 +143,10 @@ public class DialogMatcher(
         {
             var offset = templateManager.DbTemplateMaxSize().Height;
             Rectangle dialogStartPosition = new(
-                x: point.X + (int)(0.1 * offset),
-                y: point.Y + (int)(1.0 * offset),
-                width: (int)(3.5 * offset),
-                height: (int)(1.8 * offset)
+                point.X + (int)(0.1 * offset),
+                point.Y + (int)(1.0 * offset),
+                (int)(3.5 * offset),
+                (int)(1.8 * offset)
             );
             if (dialog.Data.Shake)
                 dialogStartPosition.Extend(0.4);
@@ -159,9 +169,6 @@ public class DialogMatcher(
         }
     }
 
-    public readonly List<DialogFrameSet> Set =
-        storyData.Dialogs().Select(d => new DialogFrameSet(d, videoInfo.Fps)).ToList();
-
     private static int LastNotProcessedIndex(IReadOnlyList<DialogFrameSet> set)
     {
         for (var i = 0; i < set.Count; i++)
@@ -170,11 +177,10 @@ public class DialogMatcher(
         return -1;
     }
 
-    public int LastNotProcessedIndex() => LastNotProcessedIndex(Set);
-
-    private MatchStatus _status = 0;
-
-    public bool Finished => Set.All(d => d.Finished) || Set.Count == 0;
+    public int LastNotProcessedIndex()
+    {
+        return LastNotProcessedIndex(Set);
+    }
 
     public bool Process(Mat frame, int frameIndex)
     {
@@ -200,25 +206,11 @@ public class DialogMatcher(
         return IsStatusMatched(matchResult.Status);
     }
 
-    private enum MatchStatus
+    private static bool IsStatusMatched(MatchStatus status)
     {
-        NameTagNotMatched = -2,
-        DialogNotMatched = 0,
-        DialogMatched1 = 1,
-        DialogMatched2 = 2,
-        DialogMatched3 = 3,
-        DialogDropped = -1
-    }
-
-    private static bool IsStatusMatched(MatchStatus status) => status is MatchStatus.DialogMatched1
-        or MatchStatus.DialogMatched2
-        or MatchStatus.DialogMatched3;
-
-
-    private struct MatchResult(Point point, MatchStatus status)
-    {
-        public readonly Point Point = point;
-        public readonly MatchStatus Status = status;
+        return status is MatchStatus.DialogMatched1
+            or MatchStatus.DialogMatched2
+            or MatchStatus.DialogMatched3;
     }
 
     private MatchResult MatchForDialog(Mat frame, DialogFrameSet dialog)
@@ -238,5 +230,22 @@ public class DialogMatcher(
                 : MatchStatus.NameTagNotMatched);
 
         return new MatchResult(point, DialogMatchContent(frame, dialog, point, lastStatus));
+    }
+
+    private enum MatchStatus
+    {
+        NameTagNotMatched = -2,
+        DialogNotMatched = 0,
+        DialogMatched1 = 1,
+        DialogMatched2 = 2,
+        DialogMatched3 = 3,
+        DialogDropped = -1
+    }
+
+
+    private struct MatchResult(Point point, MatchStatus status)
+    {
+        public readonly Point Point = point;
+        public readonly MatchStatus Status = status;
     }
 }

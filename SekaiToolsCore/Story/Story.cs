@@ -6,6 +6,14 @@ namespace SekaiToolsCore.Story;
 
 public class Story
 {
+    [Flags]
+    public enum StoryEventType
+    {
+        Dialog = 0b001,
+        Banner = 0b010,
+        Marker = 0b100
+    }
+
     public readonly Event.Event[] Events;
 
     public Story(GameData gameData, TranslationData translationData)
@@ -62,15 +70,16 @@ public class Story
         if (translationData.IsEmpty()) return;
         if (!translationData.IsApplicable(gameData)) throw new Exception("Translation data is not applicable");
         for (var i = 0; i < Events.Length; i++)
-        {
-            if (Events[i] is not Dialog) Events[i].BodyTranslated = translationData.Translations[i].Body;
+            if (Events[i] is not Dialog)
+            {
+                Events[i].BodyTranslated = translationData.Translations[i].Body;
+            }
             else
             {
                 var dialog = (Dialog)Events[i];
                 dialog.SetTranslation(((DialogTranslate)translationData.Translations[i]).Chara,
                     ((DialogTranslate)translationData.Translations[i]).Body);
             }
-        }
     }
 
     public static Story FromFile(string gameStoryDataPath, string translationDataPath = "")
@@ -81,15 +90,6 @@ public class Story
             ? new TranslationData(translationDataPath)
             : new TranslationData(null);
         return new Story(jsonData, textData);
-    }
-
-
-    [Flags]
-    public enum StoryEventType
-    {
-        Dialog = 0b001,
-        Banner = 0b010,
-        Marker = 0b100,
     }
 
     private int IndexInType(StoryEventType types, int index)
@@ -120,11 +120,9 @@ public class Story
     {
         var result = new List<Event.Event>();
         foreach (var @event in Events)
-        {
             if (types.HasFlag(StoryEventType.Dialog) && @event.Type == "Dialog") result.Add(@event);
             else if (types.HasFlag(StoryEventType.Banner) && @event.Type == "Banner") result.Add(@event);
             else if (types.HasFlag(StoryEventType.Marker) && @event.Type == "Marker") result.Add(@event);
-        }
 
         return result.ToArray();
     }
@@ -133,9 +131,8 @@ public class Story
     {
         var result = new List<Dialog>();
         foreach (var v in Events)
-        {
-            if (v is Dialog @event) result.Add(@event);
-        }
+            if (v is Dialog @event)
+                result.Add(@event);
 
         return result.ToArray();
     }
@@ -144,9 +141,8 @@ public class Story
     {
         var result = new List<Banner>();
         foreach (var v in Events)
-        {
-            if (v is Banner @event) result.Add(@event);
-        }
+            if (v is Banner @event)
+                result.Add(@event);
 
         return result.ToArray();
     }
@@ -155,9 +151,8 @@ public class Story
     {
         var result = new List<Marker>();
         foreach (var v in Events)
-        {
-            if (v is Marker @event) result.Add(@event);
-        }
+            if (v is Marker @event)
+                result.Add(@event);
 
         return result.ToArray();
     }
@@ -166,7 +161,6 @@ public class Story
     {
         var result = new List<Event.Event>();
         foreach (var v in Events)
-        {
             switch (v)
             {
                 case Banner banner:
@@ -176,7 +170,6 @@ public class Story
                     result.Add(marker);
                     break;
             }
-        }
 
         return result.ToArray();
     }

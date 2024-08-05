@@ -14,19 +14,6 @@ public struct MatchingThreshold(double normal, double special)
 
 public class Config
 {
-    public string VideoFilePath { get; }
-    public string ScriptFilePath { get; }
-    public string TranslateFilePath { get; }
-
-
-    public TypewriterSetting TyperSetting { get; }
-
-    public MatchingThreshold MatchingThreshold { get; }
-
-    public string FontName { get; }
-
-    public bool ExportComment { get; }
-
     public Config(
         string videoFilePath,
         string scriptFilePath,
@@ -54,4 +41,17 @@ public class Config
         TyperSetting = typerSetting ?? new TypewriterSetting(50, 80);
         MatchingThreshold = matchingThreshold ?? new MatchingThreshold(0.8, 0.65);
     }
+
+    public string VideoFilePath { get; }
+    public string ScriptFilePath { get; }
+    public string TranslateFilePath { get; }
+
+
+    public TypewriterSetting TyperSetting { get; }
+
+    public MatchingThreshold MatchingThreshold { get; }
+
+    public string FontName { get; }
+
+    public bool ExportComment { get; }
 }

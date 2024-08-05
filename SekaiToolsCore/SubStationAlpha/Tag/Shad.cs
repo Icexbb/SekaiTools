@@ -1,10 +1,7 @@
 namespace SekaiToolsCore.SubStationAlpha.Tag;
 
-public abstract class ShadBase : Tag,INestableTag
+public abstract class ShadBase : Tag, INestableTag
 {
-    public abstract override string Name { get; }
-    public float Value { get; }
-
     protected ShadBase(float value)
     {
         if (value < 0)
@@ -12,7 +9,13 @@ public abstract class ShadBase : Tag,INestableTag
         Value = value;
     }
 
-    public override string ToString() => $"\\{Name}{Value}";
+    public abstract override string Name { get; }
+    public float Value { get; }
+
+    public override string ToString()
+    {
+        return $"\\{Name}{Value}";
+    }
 }
 
 public class Shad(float value) : ShadBase(value)

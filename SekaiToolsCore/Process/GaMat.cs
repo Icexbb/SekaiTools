@@ -6,9 +6,8 @@ namespace SekaiToolsCore.Process;
 
 public class GaMat // Gray and Alpha Mat
 {
-    public readonly Mat Gray;
     public readonly Mat Alpha;
-    public Size Size => Gray.Size;
+    public readonly Mat Gray;
 
     public GaMat(IInputArray src, bool resize = true)
     {
@@ -27,4 +26,6 @@ public class GaMat // Gray and Alpha Mat
         Gray = grayImage;
         Alpha = alphaChannel;
     }
+
+    public Size Size => Gray.Size;
 }

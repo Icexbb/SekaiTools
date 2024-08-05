@@ -14,5 +14,8 @@ public class LineBreak(LineBreakStyle style) : Tag
 
     public override string Name => "q";
 
-    public override string ToString() => $"\\{Name}{(int)Style}";
+    public override string ToString()
+    {
+        return $"\\{Name}{(int)Style}";
+    }
 }

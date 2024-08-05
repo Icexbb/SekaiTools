@@ -21,8 +21,6 @@ public class MarkerLineModel(MarkerFrameSet set) : ViewModelBase
 
 public partial class MarkerLine : UserControl, INavigableView<MarkerLineModel>
 {
-    public MarkerLineModel ViewModel => (MarkerLineModel)DataContext;
-
     public MarkerLine(MarkerFrameSet set)
     {
         DataContext = new MarkerLineModel(set);
@@ -30,6 +28,8 @@ public partial class MarkerLine : UserControl, INavigableView<MarkerLineModel>
         if (ViewModel.Set.Data.BodyTranslated.Length > 0)
             TextBlockContent.Text = ViewModel.Set.Data.BodyTranslated;
     }
+
+    public MarkerLineModel ViewModel => (MarkerLineModel)DataContext;
 
     private void TextBlockContent_OnMouseEnter(object sender, MouseEventArgs e)
     {

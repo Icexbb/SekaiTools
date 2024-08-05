@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:local="clr-namespace:SekaiToolsGUI.View.Download"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
 
              ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
@@ -44,7 +43,7 @@
                         <ComboBoxItem Content="特殊剧情" IsEnabled="False" />
                     </ComboBox.Items>
                 </ComboBox>
-                <Button Grid.Column="2" Content="刷新"  Click="ButtonRefresh_OnClick"/>
+                <Button Grid.Column="2" Content="刷新" Click="ButtonRefresh_OnClick" />
             </Grid>
         </ui:Card>
         <ui:Card Grid.Column="0" Padding="0" Grid.Row="1"
