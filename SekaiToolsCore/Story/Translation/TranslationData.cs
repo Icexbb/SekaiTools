@@ -17,7 +17,7 @@ public class TranslationData
         fileStrings.ForEach(line =>
         {
             Translations.Add(line.Contains('：')
-                ? new DialogTranslate(line.Split('：', 2)[0], line.Split('：', 2)[1])
+                ? new DialogTranslate(line.Split('：', 2)[0], line.Split('：', 2)[1].Replace("…", "..."))
                 : new EffectTranslate(line));
         });
     }

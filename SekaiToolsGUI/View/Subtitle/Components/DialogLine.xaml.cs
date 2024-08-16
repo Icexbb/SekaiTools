@@ -15,7 +15,7 @@ public class DialogLineModel : ViewModelBase
 
     public DialogLineModel(DialogFrameSet set)
     {
-        set.Data.BodyTranslated = set.Data.BodyTranslated.Replace("...", "…");
+        // set.Data.BodyTranslated = set.Data.BodyTranslated.Replace("...", "…");
         Set = set;
         RawContent = set.Data.BodyOriginal;
         TranslatedContent = set.Data.BodyTranslated.EscapedReturn();
