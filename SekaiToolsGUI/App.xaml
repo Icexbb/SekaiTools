@@ -6,9 +6,6 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
-            <local:InverseBooleanConverter x:Key="InverseBooleanConverter" />
-            <local:ContentEmptyVisibilityConverter x:Key="ContentEmptyVisibilityConverter" />
-            <local:BooleanVisibilityConverter x:Key="BooleanVisibilityConverter" />
             <ResourceDictionary.MergedDictionaries>
                 <ui:ThemesDictionary />
                 <ui:ControlsDictionary />

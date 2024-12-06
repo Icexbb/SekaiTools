@@ -1,7 +1,9 @@
 ﻿using System.Windows;
+using System.Windows.Media.Imaging;
 using SekaiToolsGUI.View.Download;
 using SekaiToolsGUI.View.Setting;
 using SekaiToolsGUI.View.Subtitle;
+using SekaiToolsGUI.View.Suppress;
 using SekaiToolsGUI.View.Translate;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
@@ -35,10 +37,9 @@ public class MainWindowViewModel : ViewModelBase
         },
         new NavigationViewItem
         {
-            Content = "后期处理",
-            IsEnabled = false,
-            Icon = new SymbolIcon { Symbol = SymbolRegular.PhotoFilter24 },
-            // TargetPageType = typeof(DownloadPage),
+            Content = "视频压制",
+            Icon = new SymbolIcon { Symbol = SymbolRegular.AnimalTurtle24 },
+            TargetPageType = typeof(SuppressPage),
             NavigationCacheMode = NavigationCacheMode.Required
         }
     ];
@@ -63,6 +64,10 @@ public partial class MainWindow : FluentWindow
     {
         InitializeComponent();
         DataContext = new MainWindowViewModel();
+        Closed += (sender, args) =>
+        {
+            Suppressor.Instance.Clean();
+        };
     }
 
     public ISnackbarService WindowSnackbarService { get; } = new SnackbarService

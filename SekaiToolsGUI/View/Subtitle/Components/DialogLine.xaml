@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:SekaiToolsGUI.View.Subtitle.Components"
+             xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" d:DesignWidth="500"
              d:DataContext="{d:DesignInstance local:DialogLineModel, IsDesignTimeCreatable=False}"
@@ -42,7 +43,7 @@
                 <Grid>
                     <TextBlock Text="将文本分割为: " />
                     <TextBlock Text="*本行文本发生抖动*" HorizontalAlignment="Right"
-                               Visibility="{Binding Path=IsDialogJitter,Mode=OneWay,Converter={StaticResource BooleanVisibilityConverter}}" />
+                               Visibility="{c:Binding Path=IsDialogJitter,FalseToVisibility=Collapsed}" />
                 </Grid>
                 <Grid HorizontalAlignment="Center">
                     <TextBlock Grid.Column="0" Margin="10,2"
@@ -102,8 +103,8 @@
                     </TextBlock.Text>
                 </TextBlock>
                 <TextBlock HorizontalAlignment="Center" Text="{Binding PromptWarning,Mode=OneWay}"
-                           Visibility="{Binding RelativeSource={RelativeSource Self},
-                                   Path=Text,Converter={StaticResource ContentEmptyVisibilityConverter}}" />
+                           Visibility="{c:Binding  RelativeSource={RelativeSource Self},
+                                   Path='Text.Length!=0',FalseToVisibility=Collapsed}" />
             </StackPanel>
         </StackPanel>
     </ui:Card>

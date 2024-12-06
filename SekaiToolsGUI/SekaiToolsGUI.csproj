@@ -189,4 +189,9 @@
             <SubType>Designer</SubType>
         </Page>
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="View\Suppress\Components\" />
+      <Folder Include="View\Utils\Componets\" />
+    </ItemGroup>
 </Project>

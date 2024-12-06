@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:local="clr-namespace:SekaiToolsGUI.View.Subtitle"
+             xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
              mc:Ignorable="d"
              d:Background="White"
              d:DataContext="{d:DesignInstance local:SubtitlePageModel, IsDesignTimeCreatable=True}">
@@ -38,7 +39,7 @@
                                 Text="视频文件"
                                 TextWrapping="NoWrap" />
                             <ui:TextBlock
-                                Visibility="{Binding RelativeSource={RelativeSource Self}, Path=Text, Converter={StaticResource ContentEmptyVisibilityConverter}, FallbackValue=Collapsed}"
+                                Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
                                 Appearance="Secondary"
                                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                 Text="{Binding VideoFilePath}"
@@ -65,7 +66,7 @@
                                 Text="字幕文件"
                                 TextWrapping="NoWrap" />
                             <ui:TextBlock
-                                Visibility="{Binding RelativeSource={RelativeSource Self}, Path=Text, Converter={StaticResource ContentEmptyVisibilityConverter}, FallbackValue=Collapsed}"
+                                Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
                                 Appearance="Secondary"
                                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                 Text="{Binding ScriptFilePath}"
@@ -92,7 +93,7 @@
                                 Text="翻译文件"
                                 TextWrapping="NoWrap" />
                             <ui:TextBlock
-                                Visibility="{Binding RelativeSource={RelativeSource Self}, Path=Text, Converter={StaticResource ContentEmptyVisibilityConverter}, FallbackValue=Collapsed}"
+                                Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
                                 Appearance="Secondary"
                                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                 Text="{Binding TranslateFilePath}"
