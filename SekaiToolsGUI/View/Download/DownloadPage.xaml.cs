@@ -6,7 +6,6 @@ using System.Windows;
 using System.Windows.Controls;
 using SekaiDataFetch;
 using SekaiToolsGUI.View.Download.Components;
-using SekaiToolsGUI.View.Download.Tabs;
 using SekaiToolsGUI.View.Setting;
 
 namespace SekaiToolsGUI.View.Download;
@@ -16,6 +15,8 @@ public partial class DownloadPage : UserControl
     public DownloadPage()
     {
         InitializeComponent();
+        BoxStoryType.SelectedIndex = 0;
+        StoryTypeSelector_OnSelected(null!, null!);
     }
 
     public void AddTask(string tag, string url)
@@ -23,12 +24,20 @@ public partial class DownloadPage : UserControl
         Dispatcher.Invoke(() => { DownloadItemBox.Items.Add(new DownloadTask(tag, url)); });
     }
 
+    private UnitStoryTab UnitStoryTab { get; } = new();
+    private EventStoryTab EventStoryTab { get; } = new();
+
     private void StoryTypeSelector_OnSelected(object sender, RoutedEventArgs e)
     {
-        ContentCard.Content = BoxStoryType.SelectedIndex switch
+        SelectIndex(BoxStoryType.SelectedIndex);
+    }
+
+    private void SelectIndex(int index)
+    {
+        ContentCard.Content = index switch
         {
-            0 => new UnitStoryTab(),
-            1 => new EventStoryTab(),
+            0 => UnitStoryTab,
+            1 => EventStoryTab,
             _ => null
         };
     }
@@ -140,9 +149,9 @@ public partial class DownloadPage : UserControl
 
     private async void ButtonRefresh_OnClick(object sender, RoutedEventArgs e)
     {
-        if (ContentCard.Content is not IRefreshable refreshable) return;
         try
         {
+            if (ContentCard.Content is not IRefreshable refreshable) return;
             await refreshable.Refresh();
         }
         catch (Exception exception)

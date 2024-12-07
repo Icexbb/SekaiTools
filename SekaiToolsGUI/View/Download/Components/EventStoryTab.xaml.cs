@@ -3,7 +3,6 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using SekaiDataFetch;
 using SekaiDataFetch.List;
-using SekaiToolsGUI.View.Download.Tabs;
 using SekaiToolsGUI.View.Setting;
 
 namespace SekaiToolsGUI.View.Download.Components;
@@ -198,9 +197,10 @@ public class EventStoryTabModel : ViewModelBase
 }
 
 public partial class EventStoryTab : UserControl, IRefreshable
-
 {
     private int _currentDirection = -1;
+
+    public EventStoryTabModel ViewModel => (EventStoryTabModel)DataContext;
 
     public EventStoryTab()
     {
@@ -208,147 +208,38 @@ public partial class EventStoryTab : UserControl, IRefreshable
         DataContext = new EventStoryTabModel();
     }
 
-    private ListEventStory? ListEventStory { get; set; }
+    private ListEventStory? StoryData { get; set; }
 
     private EventStoryTabModel Model => (EventStoryTabModel)DataContext;
 
     public async Task Refresh()
     {
         CardUnits.IsEnabled = false;
-        if (ListEventStory == null)
+        if (StoryData == null)
         {
             var settings = new SettingPageModel();
             settings.LoadSetting();
-            ListEventStory = new ListEventStory(GetSourceType(), settings.GetProxy());
+            StoryData = new ListEventStory(GetSourceType(), settings.GetProxy());
         }
 
-        await ListEventStory.Refresh();
-        RefreshItems();
-        ChangeAllBannerSelector(true);
+        await StoryData.Refresh();
+        RefreshItems(true);
         CardUnits.IsEnabled = true;
     }
 
     private void Filter_OnSelected(object sender, SelectionChangedEventArgs e)
     {
-        RefreshItemsDisplay();
+        RefreshItems();
     }
 
-    private void RefreshItemsDisplay()
-    {
-        if (CardContents == null) return;
-        if (CardContents.Children.Count == 0) return;
-        foreach (var obj in CardContents.Children)
-        {
-            if (obj is not EventStoryEvent item) continue;
-            List<string> filterType = BoxType.SelectedIndex switch
-            {
-                0 => ["marathon", "cheerful_carnival", "world_bloom"],
-                1 => ["marathon"],
-                2 => ["cheerful_carnival"],
-                3 => ["world_bloom"],
-                _ => throw new ArgumentOutOfRangeException()
-            };
-            item.Visibility = filterType.Contains(item.EventStoryImpl.GameEvent.EventType)
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-            if (item.Visibility == Visibility.Visible)
-                item.Visibility = item.EventStoryImpl.GameEvent.EventType switch
-                {
-                    "marathon" or "cheerful_carnival" => item.EventStoryImpl.EventStory.BannerGameCharacterUnitId switch
-                    {
-                        1 => Model.CheckBoxChara01 ? Visibility.Visible : Visibility.Collapsed,
-                        2 => Model.CheckBoxChara02 ? Visibility.Visible : Visibility.Collapsed,
-                        3 => Model.CheckBoxChara03 ? Visibility.Visible : Visibility.Collapsed,
-                        4 => Model.CheckBoxChara04 ? Visibility.Visible : Visibility.Collapsed,
-                        5 => Model.CheckBoxChara05 ? Visibility.Visible : Visibility.Collapsed,
-                        6 => Model.CheckBoxChara06 ? Visibility.Visible : Visibility.Collapsed,
-                        7 => Model.CheckBoxChara07 ? Visibility.Visible : Visibility.Collapsed,
-                        8 => Model.CheckBoxChara08 ? Visibility.Visible : Visibility.Collapsed,
-                        9 => Model.CheckBoxChara09 ? Visibility.Visible : Visibility.Collapsed,
-                        10 => Model.CheckBoxChara10 ? Visibility.Visible : Visibility.Collapsed,
-                        11 => Model.CheckBoxChara11 ? Visibility.Visible : Visibility.Collapsed,
-                        12 => Model.CheckBoxChara12 ? Visibility.Visible : Visibility.Collapsed,
-                        13 => Model.CheckBoxChara13 ? Visibility.Visible : Visibility.Collapsed,
-                        14 => Model.CheckBoxChara14 ? Visibility.Visible : Visibility.Collapsed,
-                        15 => Model.CheckBoxChara15 ? Visibility.Visible : Visibility.Collapsed,
-                        16 => Model.CheckBoxChara16 ? Visibility.Visible : Visibility.Collapsed,
-                        17 => Model.CheckBoxChara17 ? Visibility.Visible : Visibility.Collapsed,
-                        18 => Model.CheckBoxChara18 ? Visibility.Visible : Visibility.Collapsed,
-                        19 => Model.CheckBoxChara19 ? Visibility.Visible : Visibility.Collapsed,
-                        20 => Model.CheckBoxChara20 ? Visibility.Visible : Visibility.Collapsed,
-                        21 => Model.CheckBoxChara21 ? Visibility.Visible : Visibility.Collapsed,
-                        22 => Model.CheckBoxChara22 ? Visibility.Visible : Visibility.Collapsed,
-                        23 => Model.CheckBoxChara23 ? Visibility.Visible : Visibility.Collapsed,
-                        24 => Model.CheckBoxChara24 ? Visibility.Visible : Visibility.Collapsed,
-                        25 => Model.CheckBoxChara25 ? Visibility.Visible : Visibility.Collapsed,
-                        26 => Model.CheckBoxChara26 ? Visibility.Visible : Visibility.Collapsed,
-                        27 => Model.CheckBoxChara27 ? Visibility.Visible : Visibility.Collapsed,
-                        28 => Model.CheckBoxChara28 ? Visibility.Visible : Visibility.Collapsed,
-                        29 => Model.CheckBoxChara29 ? Visibility.Visible : Visibility.Collapsed,
-                        30 => Model.CheckBoxChara30 ? Visibility.Visible : Visibility.Collapsed,
-                        31 => Model.CheckBoxChara31 ? Visibility.Visible : Visibility.Collapsed,
-                        _ => item.Visibility
-                    },
-                    "world_bloom" => item.EventStoryImpl.EventStory.BannerGameCharacterUnitId switch
-                    {
-                        1 or 2 or 3 or 4 => Model.CheckBoxChara01 || Model.CheckBoxChara02 || Model.CheckBoxChara03 ||
-                                            Model.CheckBoxChara04 || Model.CheckBoxChara27
-                            ? Visibility.Visible
-                            : Visibility.Collapsed,
-                        5 or 6 or 7 or 8 => Model.CheckBoxChara05 || Model.CheckBoxChara06 || Model.CheckBoxChara07 ||
-                                            Model.CheckBoxChara08 || Model.CheckBoxChara28
-                            ? Visibility.Visible
-                            : Visibility.Collapsed,
-                        9 or 10 or 11 or 12 => Model.CheckBoxChara09 || Model.CheckBoxChara10 ||
-                                               Model.CheckBoxChara11 || Model.CheckBoxChara12 || Model.CheckBoxChara29
-                            ? Visibility.Visible
-                            : Visibility.Collapsed,
-                        13 or 14 or 15 or 16 => Model.CheckBoxChara13 || Model.CheckBoxChara14 ||
-                                                Model.CheckBoxChara15 || Model.CheckBoxChara16 || Model.CheckBoxChara30
-                            ? Visibility.Visible
-                            : Visibility.Collapsed,
-                        17 or 18 or 19 or 20 => Model.CheckBoxChara17 || Model.CheckBoxChara18 ||
-                                                Model.CheckBoxChara19 || Model.CheckBoxChara20 || Model.CheckBoxChara31
-                            ? Visibility.Visible
-                            : Visibility.Collapsed,
-                        21 or 22 or 23 or 24 or 25 or 26 => Model.CheckBoxChara21 || Model.CheckBoxChara22 ||
-                                                            Model.CheckBoxChara23 || Model.CheckBoxChara24 ||
-                                                            Model.CheckBoxChara25 || Model.CheckBoxChara26
-                            ? Visibility.Visible
-                            : Visibility.Collapsed,
-                        _ => item.Visibility
-                    },
-                    _ => item.Visibility
-                };
-
-            item.Margin = new Thickness(item.Visibility == Visibility.Visible ? 5 : 0);
-        }
-    }
-
-    private void RefreshItems()
-    {
-        if (CardContents == null) return;
-        CardContents.Children.Clear();
-        if (ListEventStory == null || ListEventStory.Data.Count == 0) return;
-        ChangeAllBannerSelector(true);
-        var items = ListEventStory.Data.Select(impl => new EventStoryEvent(impl, GetSourceType()));
-        items = items.OrderBy(x => x.EventStoryImpl.EventStory.EventId);
-        if (_currentDirection == -1)
-            items = items.Reverse();
-
-        Dispatcher.BeginInvoke((Action)delegate
-        {
-            foreach (var item in items) CardContents.Children.Add(item);
-        });
-    }
 
     private void EventStoryTab_OnLoaded(object sender, RoutedEventArgs e)
     {
         var settings = new SettingPageModel();
         settings.LoadSetting();
-        ListEventStory = new ListEventStory(GetSourceType(), settings.GetProxy());
+        StoryData = new ListEventStory(GetSourceType(), settings.GetProxy());
         BoxType.SelectedIndex = 0;
-        RefreshItems();
+        RefreshItems(true);
     }
 
     private SourceList.SourceType GetSourceType()
@@ -423,14 +314,14 @@ public partial class EventStoryTab : UserControl, IRefreshable
                 break;
         }
 
-        RefreshItemsDisplay();
+        RefreshItems();
     }
 
     private void CheckBoxChara_OnClick(object sender, RoutedEventArgs e)
     {
         if (sender is not CheckBox checkBox) return;
         EnsureUnitBox();
-        RefreshItemsDisplay();
+        RefreshItems();
     }
 
     private void EnsureUnitBox()
@@ -512,7 +403,7 @@ public partial class EventStoryTab : UserControl, IRefreshable
         CheckBoxUnit25.IsChecked = to;
         CheckBoxUnitPiapro.IsChecked = to;
 
-        RefreshItemsDisplay();
+        RefreshItems();
     }
 
     private void ButtonSort_OnClick(object sender, RoutedEventArgs e)
@@ -520,5 +411,141 @@ public partial class EventStoryTab : UserControl, IRefreshable
         ButtonSort.RenderTransform = new ScaleTransform(-1, _currentDirection);
         _currentDirection *= -1;
         RefreshItems();
+    }
+}
+
+public partial class EventStoryTab : UserControl, IRefreshable
+{
+    private void RefreshItems(bool selectAll = false)
+    {
+        if (StoryData == null || StoryData.Data.Count == 0) return;
+
+        var data = StoryData.Data.Select(item => (EventStoryImpl)item.Clone()).ToList();
+        data.Sort((x, y) => _currentDirection * x.EventStory.EventId.CompareTo(y.EventStory.EventId));
+        if (selectAll) ChangeAllBannerSelector(true);
+        RefreshContains(data.Where(JudgeVisibility).ToArray());
+    }
+
+    private void RefreshContains(EventStoryImpl[] data)
+    {
+        if (CardContents == null) return;
+
+        while (CardContents.Children.Count > data.Length)
+        {
+            EventStoryEvent.RecycleItem((EventStoryEvent)CardContents.Children[^1]);
+        }
+
+        for (var i = 0; i < data.Length; i++)
+        {
+            if (i >= CardContents.Children.Count)
+            {
+                CardContents.Children.Add(EventStoryEvent.GetItem(data[i], GetSourceType()));
+            }
+            else
+            {
+                CardContents.Children[i].Visibility = Visibility.Visible;
+                ((EventStoryEvent)CardContents.Children[i]).Initialize(data[i], GetSourceType());
+            }
+        }
+    }
+
+    private bool JudgeVisibility(EventStoryImpl data)
+    {
+        List<string> filterType = BoxType.SelectedIndex switch
+        {
+            0 => ["marathon", "cheerful_carnival", "world_bloom"],
+            1 => ["marathon"],
+            2 => ["cheerful_carnival"],
+            3 => ["world_bloom"],
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        var visibility = filterType.Contains(data.GameEvent.EventType)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        if (visibility == Visibility.Visible)
+        {
+            visibility = data.GameEvent.EventType switch
+            {
+                "marathon" or "cheerful_carnival" => data.EventStory.BannerGameCharacterUnitId switch
+                {
+                    1 => Model.CheckBoxChara01 ? Visibility.Visible : Visibility.Collapsed,
+                    2 => Model.CheckBoxChara02 ? Visibility.Visible : Visibility.Collapsed,
+                    3 => Model.CheckBoxChara03 ? Visibility.Visible : Visibility.Collapsed,
+                    4 => Model.CheckBoxChara04 ? Visibility.Visible : Visibility.Collapsed,
+                    5 => Model.CheckBoxChara05 ? Visibility.Visible : Visibility.Collapsed,
+                    6 => Model.CheckBoxChara06 ? Visibility.Visible : Visibility.Collapsed,
+                    7 => Model.CheckBoxChara07 ? Visibility.Visible : Visibility.Collapsed,
+                    8 => Model.CheckBoxChara08 ? Visibility.Visible : Visibility.Collapsed,
+                    9 => Model.CheckBoxChara09 ? Visibility.Visible : Visibility.Collapsed,
+                    10 => Model.CheckBoxChara10 ? Visibility.Visible : Visibility.Collapsed,
+                    11 => Model.CheckBoxChara11 ? Visibility.Visible : Visibility.Collapsed,
+                    12 => Model.CheckBoxChara12 ? Visibility.Visible : Visibility.Collapsed,
+                    13 => Model.CheckBoxChara13 ? Visibility.Visible : Visibility.Collapsed,
+                    14 => Model.CheckBoxChara14 ? Visibility.Visible : Visibility.Collapsed,
+                    15 => Model.CheckBoxChara15 ? Visibility.Visible : Visibility.Collapsed,
+                    16 => Model.CheckBoxChara16 ? Visibility.Visible : Visibility.Collapsed,
+                    17 => Model.CheckBoxChara17 ? Visibility.Visible : Visibility.Collapsed,
+                    18 => Model.CheckBoxChara18 ? Visibility.Visible : Visibility.Collapsed,
+                    19 => Model.CheckBoxChara19 ? Visibility.Visible : Visibility.Collapsed,
+                    20 => Model.CheckBoxChara20 ? Visibility.Visible : Visibility.Collapsed,
+                    21 => Model.CheckBoxChara21 ? Visibility.Visible : Visibility.Collapsed,
+                    22 => Model.CheckBoxChara22 ? Visibility.Visible : Visibility.Collapsed,
+                    23 => Model.CheckBoxChara23 ? Visibility.Visible : Visibility.Collapsed,
+                    24 => Model.CheckBoxChara24 ? Visibility.Visible : Visibility.Collapsed,
+                    25 => Model.CheckBoxChara25 ? Visibility.Visible : Visibility.Collapsed,
+                    26 => Model.CheckBoxChara26 ? Visibility.Visible : Visibility.Collapsed,
+                    27 => Model.CheckBoxChara27 ? Visibility.Visible : Visibility.Collapsed,
+                    28 => Model.CheckBoxChara28 ? Visibility.Visible : Visibility.Collapsed,
+                    29 => Model.CheckBoxChara29 ? Visibility.Visible : Visibility.Collapsed,
+                    30 => Model.CheckBoxChara30 ? Visibility.Visible : Visibility.Collapsed,
+                    31 => Model.CheckBoxChara31 ? Visibility.Visible : Visibility.Collapsed,
+                    _ => Visibility.Visible
+                },
+                "world_bloom" => data.EventStory.BannerGameCharacterUnitId switch
+                {
+                    1 or 2 or 3 or 4 => Model.CheckBoxChara01 || Model.CheckBoxChara02 || Model.CheckBoxChara03 ||
+                                        Model.CheckBoxChara04 || Model.CheckBoxChara27
+                        ? Visibility.Visible
+                        : Visibility.Collapsed,
+                    5 or 6 or 7 or 8 => Model.CheckBoxChara05 || Model.CheckBoxChara06 || Model.CheckBoxChara07 ||
+                                        Model.CheckBoxChara08 || Model.CheckBoxChara28
+                        ? Visibility.Visible
+                        : Visibility.Collapsed,
+                    9 or 10 or 11 or 12 => Model.CheckBoxChara09 || Model.CheckBoxChara10 ||
+                                           Model.CheckBoxChara11 || Model.CheckBoxChara12 || Model.CheckBoxChara29
+                        ? Visibility.Visible
+                        : Visibility.Collapsed,
+                    13 or 14 or 15 or 16 => Model.CheckBoxChara13 || Model.CheckBoxChara14 ||
+                                            Model.CheckBoxChara15 || Model.CheckBoxChara16 || Model.CheckBoxChara30
+                        ? Visibility.Visible
+                        : Visibility.Collapsed,
+                    17 or 18 or 19 or 20 => Model.CheckBoxChara17 || Model.CheckBoxChara18 ||
+                                            Model.CheckBoxChara19 || Model.CheckBoxChara20 || Model.CheckBoxChara31
+                        ? Visibility.Visible
+                        : Visibility.Collapsed,
+                    21 or 22 or 23 or 24 or 25 or 26 => Model.CheckBoxChara21 || Model.CheckBoxChara22 ||
+                                                        Model.CheckBoxChara23 || Model.CheckBoxChara24 ||
+                                                        Model.CheckBoxChara25 || Model.CheckBoxChara26
+                        ? Visibility.Visible
+                        : Visibility.Collapsed,
+                    _ => Visibility.Visible
+                },
+                _ => Visibility.Visible
+            };
+        }
+
+        return visibility == Visibility.Visible;
+        // switch (item.Visibility)
+        // {
+        //     case Visibility.Visible:
+        //         item.Margin = new Thickness(5);
+        //         break;
+        //     case Visibility.Hidden:
+        //     case Visibility.Collapsed:
+        //     default:
+        //         EventStoryEvent.RecycleItem(item);
+        //         break;
+        // }
     }
 }

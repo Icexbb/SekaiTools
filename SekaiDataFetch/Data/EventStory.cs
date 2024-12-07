@@ -2,7 +2,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SekaiDataFetch.Data;
 
-public class EpisodeReward
+public class EpisodeReward : ICloneable
 {
     public string StoryType { get; set; } = "";
     public int ResourceBoxId { get; set; }
@@ -15,9 +15,18 @@ public class EpisodeReward
             ResourceBoxId = json.Get("resourceBoxId", 0)
         };
     }
+
+    public object Clone()
+    {
+        return new EpisodeReward
+        {
+            StoryType = StoryType,
+            ResourceBoxId = ResourceBoxId
+        };
+    }
 }
 
-public class EventEpisode
+public class EventEpisode : ICloneable
 {
     public int Id { get; set; }
     public int EventStoryId { get; set; }
@@ -42,9 +51,24 @@ public class EventEpisode
             EpisodeRewards = json.Get("episodeRewards", Array.Empty<JObject>()).Select(EpisodeReward.FromJson).ToArray()
         };
     }
+
+    public object Clone()
+    {
+        return new EventEpisode
+        {
+            Id = Id,
+            EventStoryId = EventStoryId,
+            EpisodeNo = EpisodeNo,
+            Title = Title,
+            AssetbundleName = AssetbundleName,
+            ScenarioId = ScenarioId,
+            ReleaseConditionId = ReleaseConditionId,
+            EpisodeRewards = EpisodeRewards.Select(x => (EpisodeReward)x.Clone()).ToArray()
+        };
+    }
 }
 
-public class EventStory
+public class EventStory : ICloneable
 {
     public int Id { get; set; }
     public int EventId { get; set; }
@@ -64,6 +88,19 @@ public class EventStory
             AssetbundleName = json.Get("assetbundleName", ""),
             EventStoryEpisodes = json.Get("eventStoryEpisodes", Array.Empty<JObject>()).Select(EventEpisode.FromJson)
                 .ToArray()
+        };
+    }
+
+    public object Clone()
+    {
+        return new EventStory
+        {
+            Id = Id,
+            EventId = EventId,
+            Outline = Outline,
+            BannerGameCharacterUnitId = BannerGameCharacterUnitId,
+            AssetbundleName = AssetbundleName,
+            EventStoryEpisodes = EventStoryEpisodes.Select(x => (EventEpisode)x.Clone()).ToArray()
         };
     }
 }

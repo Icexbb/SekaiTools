@@ -70,27 +70,32 @@ public class ListEventStory
         // Sort by EventId Biggest to Smallest
         Data.Sort((x, y) => y.EventStory.EventId.CompareTo(x.EventStory.EventId));
     }
+}
 
-    public class EventStoryImpl(EventStory es, GameEvent ge)
+public class EventStoryImpl(EventStory es, GameEvent ge) : ICloneable
+{
+    public readonly EventStory EventStory = es;
+    public readonly GameEvent GameEvent = ge;
+
+    public string Url(int episode, SourceList.SourceType sourceType)
     {
-        public readonly EventStory EventStory = es;
-        public readonly GameEvent GameEvent = ge;
-
-        public string Url(int episode, SourceList.SourceType sourceType)
+        if (episode < 0 || episode >= EventStory.EventStoryEpisodes.Length)
+            throw new ArgumentOutOfRangeException(nameof(episode), episode, null);
+        var abName = EventStory.AssetbundleName;
+        return sourceType switch
         {
-            if (episode < 0 || episode >= EventStory.EventStoryEpisodes.Length)
-                throw new ArgumentOutOfRangeException(nameof(episode), episode, null);
-            var abName = EventStory.AssetbundleName;
-            return sourceType switch
-            {
-                SourceList.SourceType.SiteBest => $"https://storage.sekai.best/sekai-jp-assets/event_story" +
-                                                  $"/{abName}/scenario_rip" +
-                                                  $"/{EventStory.EventStoryEpisodes[episode].ScenarioId}.asset",
-                SourceList.SourceType.SiteAi => $"https://assets.pjsek.ai/file/pjsekai-assets/ondemand" +
-                                                $"/event_story/{abName}/scenario" +
-                                                $"/{EventStory.EventStoryEpisodes[episode].ScenarioId}.json",
-                _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
-            };
-        }
+            SourceList.SourceType.SiteBest => $"https://storage.sekai.best/sekai-jp-assets/event_story" +
+                                              $"/{abName}/scenario_rip" +
+                                              $"/{EventStory.EventStoryEpisodes[episode].ScenarioId}.asset",
+            SourceList.SourceType.SiteAi => $"https://assets.pjsek.ai/file/pjsekai-assets/ondemand" +
+                                            $"/event_story/{abName}/scenario" +
+                                            $"/{EventStory.EventStoryEpisodes[episode].ScenarioId}.json",
+            _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
+        };
+    }
+
+    public object Clone()
+    {
+        return new EventStoryImpl((EventStory)EventStory.Clone(), (GameEvent)GameEvent.Clone());
     }
 }

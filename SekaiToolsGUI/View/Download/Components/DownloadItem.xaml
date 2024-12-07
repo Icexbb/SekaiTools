@@ -9,6 +9,6 @@
              d:DataContext="{d:DesignInstance local:DownloadItem}"
              HorizontalAlignment="Stretch">
     <ui:CardAction HorizontalAlignment="Stretch" Click="ButtonBase_OnClick">
-        <ui:TextBlock Text="{Binding Key }" TextWrapping="Wrap" />
+        <ui:TextBlock Name="KeyText" TextWrapping="Wrap" />
     </ui:CardAction>
 </UserControl>

@@ -3,7 +3,6 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using SekaiDataFetch;
 using SekaiDataFetch.List;
-using SekaiToolsGUI.View.Download.Tabs;
 using SekaiToolsGUI.View.Setting;
 
 namespace SekaiToolsGUI.View.Download.Components;

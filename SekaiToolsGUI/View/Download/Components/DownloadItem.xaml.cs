@@ -8,16 +8,16 @@ public partial class DownloadItem : UserControl
 {
     public DownloadItem(string url, string key)
     {
-        Url = url;
-        Key = key;
         InitializeComponent();
         DataContext = this;
+        Initialize(url, key);
+        Margin = new Thickness(10, 5, 10, 5);
     }
 
-    public string Url { get; set; }
-    public string Key { get; set; }
+    private string Url { get; set; } = "";
+    private string Key { get; set; } = "";
 
-    private void Add()
+    private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
     {
         Dispatcher.Invoke(() =>
         {
@@ -27,9 +27,33 @@ public partial class DownloadItem : UserControl
             (parent as DownloadPage)?.AddTask(Key, Url);
         });
     }
+}
 
-    private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
+public partial class DownloadItem
+{
+    public void Initialize(string url, string key)
     {
-        Add();
+        Url = url;
+        Key = key;
+        KeyText.Text = Key;
+    }
+
+    private static List<DownloadItem> RecycleContainer { get; } = [];
+
+    public static void RecycleItem(DownloadItem item)
+    {
+        item.Visibility = Visibility.Collapsed;
+        RecycleContainer.Add(item);
+        (item.Parent as Panel)?.Children.Remove(item);
+    }
+
+    public static DownloadItem GetItem(string url, string key)
+    {
+        if (RecycleContainer.Count <= 0) return new DownloadItem(url, key);
+        var item = RecycleContainer[0];
+        RecycleContainer.RemoveAt(0);
+        item.Visibility = Visibility.Visible;
+        item.Initialize(url, key);
+        return item;
     }
 }

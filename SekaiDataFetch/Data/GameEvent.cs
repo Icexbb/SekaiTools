@@ -2,7 +2,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SekaiDataFetch.Data;
 
-public class GameEvent
+public class GameEvent :ICloneable
 {
     public int Id { get; set; }
     public string EventType { get; set; } = "";
@@ -39,6 +39,28 @@ public class GameEvent
             DistributionEndAt = json.Get("distributionEndAt", 0L),
             VirtualLiveId = json.Get("virtualLiveId", 0),
             Unit = json.Get("unit", "")
+        };
+    }
+
+    public object Clone()
+    {
+        return new GameEvent
+        {
+            Id = Id,
+            EventType = EventType,
+            Name = Name,
+            AssetBundleName = AssetBundleName,
+            BgmAssetBundleName = BgmAssetBundleName,
+            EventOnlyComponentDisplayStartAt = EventOnlyComponentDisplayStartAt,
+            StartAt = StartAt,
+            AggregateAt = AggregateAt,
+            RankingAnnounceAt = RankingAnnounceAt,
+            DistributionStartAt = DistributionStartAt,
+            EventOnlyComponentDisplayEndAt = EventOnlyComponentDisplayEndAt,
+            ClosedAt = ClosedAt,
+            DistributionEndAt = DistributionEndAt,
+            VirtualLiveId = VirtualLiveId,
+            Unit = Unit
         };
     }
 }
