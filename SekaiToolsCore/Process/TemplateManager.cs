@@ -19,6 +19,11 @@ public class TemplateManager
     private readonly Size _videoResolution;
     private Mat? _menuSign;
 
+
+    private const string MenuSignBase = "menu-107px.png";
+    private const string DbFontBase = "FOT-RodinNTLGPro-DB.otf";
+    private const string EbFontBase = "FOT-RodinNTLGPro-DB.otf";
+
     public TemplateManager(Size videoResolution, IEnumerable<string> dbTexts, IEnumerable<string> ebTexts,
         bool noScale = false)
     {
@@ -32,29 +37,10 @@ public class TemplateManager
     private double VideoRatio => _videoResolution.Width / (double)_videoResolution.Height;
 
 
-    private static string ResourcePath(string fileName)
-    {
-        string[] baseDirs =
-        [
-            Environment.CurrentDirectory,
-            AppContext.BaseDirectory,
-            AppDomain.CurrentDomain.BaseDirectory,
-            AppDomain.CurrentDomain.RelativeSearchPath ?? string.Empty,
-            AppDomain.CurrentDomain.SetupInformation.ApplicationBase ?? string.Empty
-        ];
-        foreach (var baseDir in baseDirs)
-        {
-            var filename = Path.Combine(baseDir, "Resource", fileName);
-            if (File.Exists(filename)) return filename;
-        }
-
-        throw new FileNotFoundException($"{Path.Combine("Resource", fileName)} not found");
-    }
-
     public Mat GetMenuSign()
     {
         if (_menuSign != null) return _menuSign;
-        var menuTemplatePath = ResourcePath("menu-107px.png");
+        var menuTemplatePath = ResourceManager.ResourcePath(MenuSignBase);
         if (!File.Exists(menuTemplatePath)) throw new FileNotFoundException();
         var menuTemplate = CvInvoke.Imread(menuTemplatePath, ImreadModes.Unchanged)!;
         int menuSize;
@@ -122,13 +108,13 @@ public class TemplateManager
 
     private Font GetDbFont()
     {
-        var fontFilePath = ResourcePath("FOT-RodinNTLGPro-DB.otf");
+        var fontFilePath = ResourceManager.ResourcePath(DbFontBase);
         return GetFont(fontFilePath, GetFontSize());
     }
 
     private Font GetEbFont()
     {
-        var fontFilePath = ResourcePath("FOT-RodinNTLGPro-EB.otf");
+        var fontFilePath = ResourceManager.ResourcePath(EbFontBase);
         return GetFont(fontFilePath, GetFontSize());
     }
 
