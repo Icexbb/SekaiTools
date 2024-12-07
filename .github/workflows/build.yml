@@ -11,9 +11,10 @@ on:
 
 env:
   DOTNET_VERSION: '8.0.x' # The .NET SDK version to use
-  BUILD_DIR: 'Build'
+  BUILD_DIR: 'SekaiTools.Nightly'
   RESOURCE_DIR: 'resource'
   PROJECT_NAME: 'SekaiToolsGUI'
+  SEVEN_ZIP_EXE: './resource/vapourSynth/7z.exe'
 
 jobs:
   build:
@@ -27,14 +28,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=today::$(date +'%Y%m%d')"
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Dotnet Build
+        run: |
+          dotnet restore ${{ env.PROJECT_NAME }}
+          dotnet build ${{ env.PROJECT_NAME }} --configuration Release --no-restore -o ${{ env.BUILD_DIR }}
+      - name: Sort Artifacts
+        run: |
+          cp -r ${{ env.RESOURCE_DIR }} ${{ env.BUILD_DIR }}
+          rm -r ${{ env.BUILD_DIR }}/runtimes/win-x86
+          rm -r ${{ env.BUILD_DIR }}/runtimes/win-arm64
+          rm -r ${{ env.BUILD_DIR }}/*.pdb  
 
-      - run: dotnet build ${{ env.PROJECT_NAME }} --configuration Release --no-restore -o ${{ env.BUILD_DIR }}
-      - run: cp -r ${{ env.RESOURCE_DIR }} ${{ env.BUILD_DIR }}
-
-      - run: zip -r ${{ env.BUILD_DIR }}.zip ${{ env.BUILD_DIR }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.BUILD_DIR }}.zip
+          name: SekaiTools.Nightly.${{ steps.date.outputs.today }}
+          path: ${{ env.BUILD_DIR }}
