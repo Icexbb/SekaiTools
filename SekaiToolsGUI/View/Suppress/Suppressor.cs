@@ -48,6 +48,14 @@ public partial class Suppressor
 {
     public static Suppressor Instance { get; } = new();
 
+    private readonly List<Task> _subTasks = [];
+    private Process? _fProcess;
+    private Process? _vProcess;
+
+    private int FrameCount { get; set; }
+    private double Fps { get; set; }
+    private bool Running { get; set; }
+
     private static string VapourExecutable =>
         Path.GetRelativePath(".", ResourceManager.ResourcePath("vapourSynth/VSPipe.exe"));
 
@@ -64,32 +72,63 @@ public partial class Suppressor
         File.Exists(SuppressPageModel.Instance.SourceVideo) &&
         File.Exists(SuppressPageModel.Instance.SourceSubtitle);
 
-    private static string GetCommand()
+
+    private static string GetVapourArgs()
+    {
+        return $"""
+                "{VapourScript}" - -c y4m -a "source={SuppressPageModel.Instance.SourceVideo}" -a "subtitle={SuppressPageModel.Instance.SourceSubtitle}"
+                """;
+    }
+
+    private static Process GetVapourProcess()
+    {
+        var process = new Process();
+        var vapourStartInfo = new ProcessStartInfo
+        {
+            FileName = VapourExecutable,
+            Arguments = GetVapourArgs(),
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardInput = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = false
+        };
+        process.StartInfo = vapourStartInfo;
+        return process;
+    }
+
+    private static string GetFfmpegArgs()
     {
         var source = SuppressPageModel.Instance.SourceVideo;
-        var subtitle = SuppressPageModel.Instance.SourceSubtitle;
         var output = SuppressPageModel.Instance.OutputPath;
 
         var config = SuppressPageModel.Instance.UseComplexConfig
             ? X264Params.Instance.GetX264Params()
             : X264Params.Instance.GetSimpleX264Params();
-        var vapourCommand =
-            $"""
-             {VapourExecutable} "{VapourScript}" - -c y4m -a "source={source}" -a "subtitle={subtitle}"
-             """;
-        var ffmpegCommand =
-            $"""{FfmpegExecutable} -f yuv4mpegpipe -i - -i "{source}" """ +
-            $"-map 0:v -map 1:1 " +
-            $"-c:v libx264 -x264-params {config} " +
-            $"-c:a copy " +
-            $"\"{output}\" " +
-            $"-y";
+        return $"""-f yuv4mpegpipe -i - -i "{source}" """ +
+               $"-map 0:v -map 1:1 " +
+               $"-c:v libx264 -x264-params {config} " +
+               $"-c:a copy " +
+               $"\"{output}\" " +
+               $"-y";
+    }
 
-        var command = vapourCommand + " | " + ffmpegCommand;
-
-        Console.WriteLine(command);
-
-        return command;
+    private static Process GetFfmpegProcess()
+    {
+        var process = new Process();
+        var ffmpegStartInfo = new ProcessStartInfo
+        {
+            FileName = FfmpegExecutable,
+            Arguments = GetFfmpegArgs(),
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = false,
+            RedirectStandardError = true,
+            StandardErrorEncoding = Encoding.UTF8
+        };
+        process.StartInfo = ffmpegStartInfo;
+        return process;
     }
 
     private static int GetFrameCount()
@@ -104,9 +143,7 @@ public partial class Suppressor
         return SuppressPageModel.Instance.SourceFrameCount;
     }
 
-    private Process? _process;
-
-    public async Task Suppress()
+    public void Suppress()
     {
         if (!ScriptExist)
         {
@@ -120,61 +157,86 @@ public partial class Suppressor
             return;
         }
 
-        var command = GetCommand();
+        _vProcess = GetVapourProcess();
+        _fProcess = GetFfmpegProcess();
 
-        _process = new Process();
+        _vProcess.Start();
+        _fProcess.Start();
 
-        _process.StartInfo.FileName = "cmd.exe";
-        _process.StartInfo.Arguments = "/C " + command;
-        _process.StartInfo.UseShellExecute = false;
-        _process.StartInfo.CreateNoWindow = true;
+        CreateSubTasks();
+    }
 
-        _process.StartInfo.RedirectStandardInput = false; //不重定向输入
-        _process.StartInfo.RedirectStandardOutput = false; //重定向输出
-        _process.StartInfo.RedirectStandardError = true; //重定向输出
-        _process.StartInfo.StandardErrorEncoding = Encoding.UTF8;
-        _process.Start();
-
-        var updateLog = new Task(() =>
-        {
-            Running = true;
-            SuppressPageModel.Instance.ReloadStatus();
-            SuppressPageModel.Instance.HasNotStarted = false;
-
-            while (_process is { HasExited: false })
-            {
-                var log = _process.StandardError.ReadLine();
-                if (log == null) continue;
-                AnalysisLog(log);
-                UpdateProgression();
-            }
-
-            Running = false;
-            FrameCount = GetFrameCount();
-            UpdateProgression();
-        });
-
-        updateLog.Start();
-        await _process.WaitForExitAsync();
+    private void CreateSubTasks()
+    {
+        _subTasks.Clear();
+        _subTasks.Add(new Task(UpdateLog));
+        _subTasks.Add(new Task(TransferPipe));
+        _subTasks.ForEach(p => p.Start());
     }
 
     public void Clean()
     {
-        if (_process == null) return;
-        if (!_process.HasExited)
-        {
-            _process?.Kill();
-        }
+        DisposeProcess(_vProcess);
+        DisposeProcess(_fProcess);
+        _vProcess = null;
+        _fProcess = null;
 
-        _process?.Dispose();
-        _process = null;
         SuppressPageModel.Instance.ReloadStatus();
+
+        FrameCount = 0;
+        Fps = 0;
+        Running = false;
+        return;
+
+        void DisposeProcess(Process? p)
+        {
+            if (p == null) return;
+            if (!p.HasExited) p.Kill();
+            p.Dispose();
+        }
     }
 
-    private int FrameCount { get; set; } = 0;
-    private double Fps { get; set; } = 0;
-    private bool Running { get; set; } = false;
+    private void TransferPipe()
+    {
+        if (_vProcess == null || _fProcess == null) return;
+        var vapourOut = _vProcess.StandardOutput.BaseStream;
+        var ffmpegIn = _fProcess.StandardInput.BaseStream;
 
+        var buffer = new byte[512];
+        try
+        {
+            int byteRead;
+            while ((byteRead = vapourOut.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                ffmpegIn.Write(buffer, 0, byteRead);
+            }
+
+            ffmpegIn.Close();
+        }
+        catch (Exception e)
+        {
+            SuppressPageModel.Instance.Status += e.Message;
+        }
+    }
+
+    private void UpdateLog()
+    {
+        Running = true;
+        SuppressPageModel.Instance.ReloadStatus();
+        SuppressPageModel.Instance.HasNotStarted = false;
+
+        while (_fProcess is { StandardError.EndOfStream: false })
+        {
+            var log = _fProcess.StandardError.ReadLine();
+            if (log == null) continue;
+            AnalysisLog(log);
+            UpdateProgression();
+        }
+
+        Running = false;
+        FrameCount = GetFrameCount();
+        UpdateProgression();
+    }
 
     private void AnalysisLog(string log)
     {

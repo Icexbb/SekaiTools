@@ -206,7 +206,7 @@ public partial class SuppressPage : UserControl, INavigableView<SuppressPageMode
     {
         try
         {
-            await Suppressor.Instance.Suppress();
+            Suppressor.Instance.Suppress();
         }
         catch (Exception exc)
         {
