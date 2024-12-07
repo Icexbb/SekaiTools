@@ -24,11 +24,16 @@ internal class X264Params
 
     public string GetX264Params()
     {
-        return $"bframes={BFrames}:b-adapt={BAdapt}:" +
-               $"me={Me}:merange={MeRange}:" +
-               $"subme={SubMe}:aq-mode={AqMode}:" +
-               $"ref={Ref}:psy-rd={PsyRd}:" +
-               $"deblock={DeBlock}:keyint={KeyInt}:" +
+        return $"bframes={BFrames}:" +
+               $"b-adapt={BAdapt}:" +
+               $"me={Me}:" +
+               $"merange={MeRange}:" +
+               $"subme={SubMe}:" +
+               $"aq-mode={AqMode}:" +
+               $"ref={Ref}:" +
+               $"psy-rd='{PsyRd}':" +
+               $"deblock='{DeBlock}':" +
+               $"keyint={KeyInt}:" +
                $"crf={Crf}";
     }
 
@@ -56,8 +61,7 @@ public partial class Suppressor
     {
         var source = SuppressPageModel.Instance.SourceVideo;
         var subtitle = SuppressPageModel.Instance.SourceSubtitle;
-        var output = Path.Join(Path.GetDirectoryName(subtitle),
-            Path.GetFileNameWithoutExtension(subtitle) + "_h264.mp4");
+        var output = SuppressPageModel.Instance.OutputPath;
 
         var config = SuppressPageModel.Instance.UseComplexConfig
             ? X264Params.Instance.GetX264Params()
@@ -67,7 +71,7 @@ public partial class Suppressor
              {VapourExecutable} "{VapourScript}" - -c y4m -a "source={source}" -a "subtitle={subtitle}"
              """;
         var ffmpegCommand =
-            @$"{FfmpegExecutable} -f yuv4mpegpipe -i - -i ""{source}"" " +
+            $"""{FfmpegExecutable} -f yuv4mpegpipe -i - -i "{source}" """ +
             $"-map 0:v -map 1:1 " +
             $"-c:v libx264 -x264-params {config} " +
             $"-c:a copy " +
@@ -110,7 +114,7 @@ public partial class Suppressor
         var command = GetCommand();
 
         _process = new Process();
-        ;
+
         _process.StartInfo.FileName = "cmd.exe";
         _process.StartInfo.Arguments = "/C " + command;
         _process.StartInfo.UseShellExecute = false;
@@ -197,6 +201,6 @@ public partial class Suppressor
     }
 
     [GeneratedRegex(
-        @"^frame=\s+(?<FrameNumber>\d+)\s+fps=\s{0,}(?<FramesPerSecond>[\d\.]+)\s+q=(?<QuanitizerScale>[\d\.]+)\s+L?size=\s+(?<Size>\d{1,}\w*B)\s+time=(?<Time>[\d\:\.]+)\s{0,}bitrate=\s{0,}(?<Bitrate>[\d\.]+)kbits\/s\s{0,}speed=\s{0,}(?<Speed>[\d\.]+)x\s{0,}")]
+        @"^frame=\s{0,}(?<FrameNumber>\d*)\s+fps=\s{0,}(?<FramesPerSecond>[\d\.]+)\s+q=(?<QuanitizerScale>[\d\.]+)\s+L?size=\s+(?<Size>\d{1,}\w*B)\s+time=(?<Time>([\d\:\.]+)|(N\/A))\s{0,}bitrate=\s{0,}(?<Bitrate>([\d\.]+kbits\/s?)|(N\/A))\s+speed=\s{0,}(?<Speed>([\d\.]+x)|(N\/A))")]
     private static partial Regex FfmpegProgressPattern();
 }
