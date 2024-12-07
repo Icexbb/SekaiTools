@@ -30,7 +30,7 @@ jobs:
 
       - name: Get current date
         id: date
-        run: echo "::set-output name=today::$(date +'%Y%m%d')"
+        run: echo "today=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
 
       - uses: actions/setup-dotnet@v4
         with:
