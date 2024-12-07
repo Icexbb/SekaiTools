@@ -2,7 +2,7 @@ namespace SekaiToolsCore.Process;
 
 public static class ResourceManager
 {
-    private const string BasePath = "Resource";
+    private const string BasePath = "resource";
 
     public static string ResourcePath(string fileName)
     {
