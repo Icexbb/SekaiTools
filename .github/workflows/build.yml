@@ -1,0 +1,40 @@
+name: .net build
+
+on:
+  push:
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - 'README.md'
+      - 'Test'
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x' # The .NET SDK version to use
+  BUILD_DIR: 'Build'
+  RESOURCE_DIR: 'resource'
+  PROJECT_NAME: 'SekaiToolsGUI'
+
+jobs:
+  build:
+    name: build-${{matrix.os}}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ windows-latest ]
+
+    # Each job run contains these five steps
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - run: dotnet build ${{ env.PROJECT_NAME }} --configuration Release --no-restore -o ${{ env.BUILD_DIR }}
+      - run: cp -r ${{ env.RESOURCE_DIR }} ${{ env.BUILD_DIR }}
+
+      - run: zip -r ${{ env.BUILD_DIR }}.zip ${{ env.BUILD_DIR }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.BUILD_DIR }}.zip
