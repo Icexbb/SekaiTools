@@ -391,12 +391,54 @@
 
             </Grid>
         </ui:Card>
-        <ui:Card Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
-            <ScrollViewer IsDeferredScrollingEnabled="True                               ">
-                <VirtualizingStackPanel
-                    IsVirtualizing="True" VirtualizationMode="Standard" Margin="5"
-                    Name="CardContents" />
-            </ScrollViewer>
-        </ui:Card>
+        <!-- <ui:Card Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Top"> -->
+        <!--     <ScrollViewer IsDeferredScrollingEnabled="True                               "> -->
+        <!--         <VirtualizingStackPanel -->
+        <!--             IsVirtualizing="True" VirtualizationMode="Standard" Margin="5" -->
+        <!--             Name="CardContents" /> -->
+        <!--     </ScrollViewer> -->
+        <!-- </ui:Card> -->
+        <ListView Grid.Row="1" ItemsSource="{Binding EventStories}"
+                  BorderBrush="Transparent"
+                  Background="Transparent"
+                  ScrollViewer.CanContentScroll="True"
+                  VirtualizingStackPanel.ScrollUnit="Pixel">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <local:EventStoryEvent EventStoryImpl="{Binding}" HorizontalAlignment="Stretch" />
+                </DataTemplate>
+            </ListView.ItemTemplate>
+
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <!-- 禁用焦点和悬浮效果 -->
+                    <Setter Property="Focusable" Value="False" />
+                    <Setter Property="IsHitTestVisible" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="BorderBrush" Value="Transparent" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListViewItem">
+                                <Border Background="Transparent">
+                                    <ContentPresenter />
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListView.ItemContainerStyle>
+        </ListView>
+
+        <!-- <ScrollViewer Grid.Row="1"> -->
+        <!--     <ItemsControl ItemsSource="{Binding EventStories}"> -->
+        <!--         <ItemsControl.ItemTemplate> -->
+        <!--             <DataTemplate> -->
+        <!--                 <local:EventStoryEvent EventStoryImpl="{Binding}" /> -->
+        <!--             </DataTemplate> -->
+        <!--         </ItemsControl.ItemTemplate> -->
+        <!--     </ItemsControl> -->
+        <!-- </ScrollViewer> -->
     </Grid>
+
 </UserControl>

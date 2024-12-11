@@ -8,20 +8,47 @@ namespace SekaiToolsGUI.View.Download.Components;
 
 public partial class EventStoryEvent : UserControl
 {
-    public EventStoryImpl? EventStoryImpl { get; private set; }
+    public static readonly DependencyProperty EventStoryImplProperty =
+        DependencyProperty.Register(
+            nameof(EventStoryImpl),
+            typeof(EventStoryImpl),
+            typeof(EventStoryEvent),
+            new PropertyMetadata(null, OnEventStoryImplChanged));
 
-    public EventStoryEvent(EventStoryImpl eventStoryImpl, SourceList.SourceType sourceType)
+    public EventStoryImpl? EventStoryImpl
+    {
+        get => (EventStoryImpl?)GetValue(EventStoryImplProperty);
+        set => SetValue(EventStoryImplProperty, value);
+    }
+
+    private static void OnEventStoryImplChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is EventStoryEvent control && e.NewValue is EventStoryImpl eventStoryImpl)
+        {
+            control.Initialize(eventStoryImpl);
+        }
+    }
+
+    public EventStoryEvent()
+    {
+        InitializeComponent();
+        Margin = new Thickness(5);
+    }
+
+    private EventStoryEvent(EventStoryImpl eventStoryImpl, SourceList.SourceType sourceType)
     {
         InitializeComponent();
         Margin = new Thickness(5);
 
+        EventStoryImpl = eventStoryImpl;
         Initialize(eventStoryImpl, sourceType);
     }
 }
 
 public partial class EventStoryEvent
 {
-    public void Initialize(EventStoryImpl eventStoryImpl, SourceList.SourceType sourceType)
+    private void Initialize(EventStoryImpl eventStoryImpl,
+        SourceList.SourceType sourceType = SourceList.SourceType.SiteBest)
     {
         EventStoryImpl = eventStoryImpl;
         TextBlockTitle.Text = $"No.{EventStoryImpl.EventStory.EventId} {EventStoryImpl.GameEvent.Name}";
