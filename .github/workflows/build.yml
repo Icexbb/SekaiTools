@@ -28,10 +28,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get current date
-        id: date
-        run: echo "today=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
-
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -48,5 +44,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: SekaiTools.Nightly.${{ steps.date.outputs.today }}
+          name: SekaiTools.Nightly
           path: ${{ env.BUILD_DIR }}
