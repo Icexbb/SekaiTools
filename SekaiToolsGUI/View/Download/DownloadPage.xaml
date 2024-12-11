@@ -30,7 +30,7 @@
                 <ComboBox Grid.Column="0" Name="BoxSource">
                     <ComboBox.Items>
                         <ComboBoxItem Content="Sekai.Best" />
-                        <ComboBoxItem Content="PjSek.Ai" />
+                        <ComboBoxItem Content="PjSek.Ai" IsEnabled="False" />
                     </ComboBox.Items>
                 </ComboBox>
                 <ComboBox Grid.Column="1" Margin="5,0"
@@ -39,8 +39,8 @@
                     <ComboBox.Items>
                         <ComboBoxItem Content="主线剧情" />
                         <ComboBoxItem Content="活动剧情" />
+                        <ComboBoxItem Content="特殊剧情" />
                         <ComboBoxItem Content="地图对话" IsEnabled="False" />
-                        <ComboBoxItem Content="特殊剧情" IsEnabled="False" />
                     </ComboBox.Items>
                 </ComboBox>
                 <Button Grid.Column="2" Content="刷新" Click="ButtonRefresh_OnClick" />

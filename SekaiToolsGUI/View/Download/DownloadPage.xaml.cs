@@ -26,6 +26,7 @@ public partial class DownloadPage : UserControl
 
     private UnitStoryTab UnitStoryTab { get; } = new();
     private EventStoryTab EventStoryTab { get; } = new();
+    private SpecialStoryTab SpecialStoryTab { get; } = new();
 
     private void StoryTypeSelector_OnSelected(object sender, RoutedEventArgs e)
     {
@@ -38,6 +39,7 @@ public partial class DownloadPage : UserControl
         {
             0 => UnitStoryTab,
             1 => EventStoryTab,
+            2 => SpecialStoryTab,
             _ => null
         };
     }
