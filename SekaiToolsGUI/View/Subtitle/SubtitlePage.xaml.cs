@@ -135,25 +135,18 @@ public class SubtitlePageModel : ViewModelBase
 
 public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageModel>
 {
-    private BannerMatcher? _bannerMatcher;
-    private CancellationTokenSource? _cancellationTokenSource = new();
-    private ContentMatcher? _contentMatcher;
-    private DialogMatcher? _dialogMatcher;
-    private MarkerMatcher? _markerMatcher;
-    private MatcherCreator? _matcherCreator;
-
-    private Task? _task;
-
-    private VideoCapture? _videoCapture;
-
     public SubtitlePage()
     {
         DataContext = new SubtitlePageModel();
         InitializeComponent();
     }
 
-    private CancellationToken CancellationToken => _cancellationTokenSource!.Token;
+
+    private static ISnackbarService SnackService =>
+        (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
+
     public SubtitlePageModel ViewModel => (SubtitlePageModel)DataContext;
+
 
     private static string? SelectFile(object sender, RoutedEventArgs e, string filter)
     {
@@ -267,31 +260,30 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
             var vfp = ViewModel.VideoFilePath;
             var sfp = ViewModel.ScriptFilePath;
             var tfp = ViewModel.TranslateFilePath;
-            var service = (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
             if (string.IsNullOrEmpty(vfp) || string.IsNullOrEmpty(sfp) || string.IsNullOrEmpty(tfp))
             {
-                service.Show("错误", "请填写完整的文件路径", ControlAppearance.Danger,
+                SnackService.Show("错误", "请填写完整的文件路径", ControlAppearance.Danger,
                     new SymbolIcon(SymbolRegular.TextGrammarDismiss24), new TimeSpan(0, 0, 3));
                 return false;
             }
 
             if (!File.Exists(vfp))
             {
-                service.Show("错误", "视频文件不存在", ControlAppearance.Danger,
+                SnackService.Show("错误", "视频文件不存在", ControlAppearance.Danger,
                     new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
                 return false;
             }
 
             if (!File.Exists(sfp))
             {
-                service.Show("错误", "剧情脚本文件不存在", ControlAppearance.Danger,
+                SnackService.Show("错误", "剧情脚本文件不存在", ControlAppearance.Danger,
                     new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
                 return false;
             }
 
             if (!File.Exists(tfp))
             {
-                service.Show("错误", "剧情翻译文件不存在", ControlAppearance.Danger,
+                SnackService.Show("错误", "剧情翻译文件不存在", ControlAppearance.Danger,
                     new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
                 return false;
             }
@@ -300,6 +292,195 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
         }
     }
 
+
+    private void LinePanel_AddDialogLine(DialogFrameSet set)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            var needScroll = Math.Abs(LineViewer.ScrollableHeight - LineViewer.VerticalOffset) < 1;
+            var line = new DialogLine(set)
+            {
+                Margin = new Thickness(5, 5, 10, 5)
+            };
+            LinePanel.Children.Add(line);
+            if (needScroll) LineViewer.ScrollToEnd();
+        });
+    }
+
+
+    private void LinePanel_AddBannerLine(BannerFrameSet set)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            var needScroll = Math.Abs(LineViewer.ScrollableHeight - LineViewer.VerticalOffset) < 1;
+
+            var line = new BannerLine(set)
+            {
+                Margin = new Thickness(5, 5, 10, 5)
+            };
+            LinePanel.Children.Add(line);
+            if (needScroll) LineViewer.ScrollToEnd();
+        });
+    }
+
+    private void LinePanel_AddMarkerLine(MarkerFrameSet set)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            var needScroll = Math.Abs(LineViewer.ScrollableHeight - LineViewer.VerticalOffset) < 1;
+
+            var line = new MarkerLine(set)
+            {
+                Margin = new Thickness(5, 5, 10, 5)
+            };
+            LinePanel.Children.Add(line);
+            if (needScroll) LineViewer.ScrollToEnd();
+        });
+    }
+
+    private void ResetButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        StopProcess();
+        ViewModel.Reset();
+        LinePanel.Children.Clear();
+        TextBlockProgression.Text = "";
+        TextBlockFps.Text = "";
+        ProgressBarProgression.Value = 0;
+    }
+
+
+    private async void OutputButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+
+        var dialog = new SaveFileDialog(dialogService.GetDialogHost() ?? throw new InvalidOperationException(),
+            ViewModel.VideoFilePath);
+        var token = new CancellationToken();
+        var dialogResult = await dialogService.ShowAsync(dialog, token);
+        if (dialogResult != ContentDialogResult.Primary) return;
+        var fileName = dialog.ViewModel.FileName;
+
+        var subtitle = GenerateSubtitle();
+        await File.WriteAllTextAsync(fileName, subtitle.ToString(), Encoding.UTF8, token);
+
+        SnackService.Show("成功", "字幕文件已保存", ControlAppearance.Success,
+            new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
+        ShowFile(fileName);
+
+        return;
+
+        void ShowFile(string path)
+        {
+            var psi = new ProcessStartInfo("Explorer.exe")
+            {
+                Arguments = "/e,/select," + path
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
+    }
+
+
+    private async void UIElement_OnDrop(object sender, DragEventArgs e)
+    {
+        var data = e.Data.GetData(DataFormats.FileDrop)!;
+        var fileName = ((Array)data).GetValue(0)!.ToString();
+        if (!File.Exists(fileName)) return;
+
+        await GetSameBaseFile(fileName);
+    }
+
+    private async Task GetSameBaseFile(string filename)
+    {
+        var fileExt = Path.GetExtension(filename).ToLower();
+        List<string> vExt = [".mp4", ".avi", ".mkv", ".webm", ".wmv"];
+        List<string> sExt = [".json", ".asset"];
+        List<string> tExt = [".txt"];
+        if (vExt.Contains(fileExt) || sExt.Contains(fileExt) || tExt.Contains(fileExt))
+            await SelectSameNameFile(filename);
+        else
+            SnackService.Show("错误", "文件格式不支持", ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.DocumentError24),
+                new TimeSpan(0, 0, 3));
+    }
+
+    private void UIElement_OnDragEnter(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
+            ? DragDropEffects.Link
+            : DragDropEffects.None;
+    }
+
+    private void OnlyTooLongSwitch_OnClick(object sender, RoutedEventArgs e)
+    {
+        var targetVisibility = OnlyTooLongSwitch.IsChecked ?? false ? Visibility.Collapsed : Visibility.Visible;
+        foreach (var child in LinePanel.Children)
+            switch (child)
+            {
+                case DialogLine dialogLine:
+                    if (dialogLine.ViewModel.Set.NeedSetSeparator) continue;
+                    dialogLine.Visibility = targetVisibility;
+                    break;
+                case BannerLine bannerLine:
+                    bannerLine.Visibility = targetVisibility;
+                    break;
+                case MarkerLine markerLine:
+                    markerLine.Visibility = targetVisibility;
+                    break;
+            }
+    }
+}
+
+public partial class SubtitlePage
+{
+    private BannerMatcher? _bannerMatcher;
+    private CancellationTokenSource? _cancellationTokenSource = new();
+    private ContentMatcher? _contentMatcher;
+    private DialogMatcher? _dialogMatcher;
+    private MarkerMatcher? _markerMatcher;
+    private MatcherCreator? _matcherCreator;
+    private Task? _task;
+    private VideoCapture? _videoCapture;
+    private CancellationToken CancellationToken => _cancellationTokenSource!.Token;
+
+    private void StopProcess()
+    {
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource = new CancellationTokenSource();
+        _task = null;
+
+        _videoCapture?.Dispose();
+        _videoCapture = null;
+        _matcherCreator = null;
+        _dialogMatcher = null;
+        _contentMatcher = null;
+        _bannerMatcher = null;
+    }
+
+    private SekaiToolsCore.SubStationAlpha.Subtitle GenerateSubtitle()
+    {
+        List<BannerFrameSet> bannerFrameSets = [];
+        List<DialogFrameSet> dialogFrameSets = [];
+        List<MarkerFrameSet> markerFrameSets = [];
+        foreach (var child in LinePanel.Children)
+            switch (child)
+            {
+                case DialogLine dialogLine:
+                    var set = dialogLine.ViewModel.Set;
+                    set.Data.BodyTranslated = set.Data.BodyTranslated.Replace("…", "..."); // 修正省略号
+                    dialogFrameSets.Add(dialogLine.ViewModel.Set);
+                    break;
+                case BannerLine bannerLine:
+                    bannerFrameSets.Add(bannerLine.ViewModel.Set);
+                    break;
+                case MarkerLine markerLine:
+                    markerFrameSets.Add(markerLine.ViewModel.Set);
+                    break;
+            }
+
+        if (_matcherCreator == null) throw new NullReferenceException();
+        var maker = _matcherCreator.SubtitleMaker();
+        return maker.Make(dialogFrameSets, bannerFrameSets, markerFrameSets);
+    }
 
     private void StartProcess()
     {
@@ -331,21 +512,19 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
         {
             Dispatcher.Invoke(() =>
             {
-                var snackService = (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
-
                 ViewModel.IsRunning = false;
                 if (_contentMatcher == null || _dialogMatcher == null ||
                     _bannerMatcher == null || _markerMatcher == null) return;
                 if (!_contentMatcher.Finished || !_dialogMatcher.Finished ||
                     !_bannerMatcher.Finished || !_markerMatcher.Finished)
                 {
-                    snackService.Show("错误", "运行结束", ControlAppearance.Danger,
+                    SnackService.Show("错误", "运行结束", ControlAppearance.Danger,
                         new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
                 }
                 else
                 {
                     ViewModel.IsFinished = true;
-                    snackService.Show("成功", "运行结束", ControlAppearance.Success,
+                    SnackService.Show("成功", "运行结束", ControlAppearance.Success,
                         new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
                 }
 
@@ -511,189 +690,5 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                 TextBlockETA.Text = etaMs >= 1000 ? $"ETA: {eta.Remains()}" : "";
             });
         }
-    }
-
-    private void LinePanel_AddDialogLine(DialogFrameSet set)
-    {
-        Dispatcher.Invoke(() =>
-        {
-            var needScroll = Math.Abs(LineViewer.ScrollableHeight - LineViewer.VerticalOffset) < 1;
-            var line = new DialogLine(set)
-            {
-                Margin = new Thickness(5, 5, 10, 5)
-            };
-            LinePanel.Children.Add(line);
-            if (needScroll) LineViewer.ScrollToEnd();
-        });
-    }
-
-
-    private void LinePanel_AddBannerLine(BannerFrameSet set)
-    {
-        Dispatcher.Invoke(() =>
-        {
-            var needScroll = Math.Abs(LineViewer.ScrollableHeight - LineViewer.VerticalOffset) < 1;
-
-            var line = new BannerLine(set)
-            {
-                Margin = new Thickness(5, 5, 10, 5)
-            };
-            LinePanel.Children.Add(line);
-            if (needScroll) LineViewer.ScrollToEnd();
-        });
-    }
-
-    private void LinePanel_AddMarkerLine(MarkerFrameSet set)
-    {
-        Dispatcher.Invoke(() =>
-        {
-            var needScroll = Math.Abs(LineViewer.ScrollableHeight - LineViewer.VerticalOffset) < 1;
-
-            var line = new MarkerLine(set)
-            {
-                Margin = new Thickness(5, 5, 10, 5)
-            };
-            LinePanel.Children.Add(line);
-            if (needScroll) LineViewer.ScrollToEnd();
-        });
-    }
-
-    private void ResetButton_OnClick(object sender, RoutedEventArgs e)
-    {
-        StopProcess();
-        ViewModel.Reset();
-        LinePanel.Children.Clear();
-        TextBlockProgression.Text = "";
-        TextBlockFps.Text = "";
-        ProgressBarProgression.Value = 0;
-    }
-
-    private void StopProcess()
-    {
-        _cancellationTokenSource?.Cancel();
-        _cancellationTokenSource = new CancellationTokenSource();
-        _task = null;
-
-        _videoCapture?.Dispose();
-        _videoCapture = null;
-        _matcherCreator = null;
-        _dialogMatcher = null;
-        _contentMatcher = null;
-        _bannerMatcher = null;
-    }
-
-    private async void OutputButton_OnClick(object sender, RoutedEventArgs e)
-    {
-        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-
-        var dialog = new SaveFileDialog(dialogService.GetDialogHost() ?? throw new InvalidOperationException(),
-            ViewModel.VideoFilePath);
-        var token = new CancellationToken();
-        var dialogResult = await dialogService.ShowAsync(dialog, token);
-        if (dialogResult != ContentDialogResult.Primary) return;
-        var fileName = dialog.ViewModel.FileName;
-
-        var subtitle = GenerateSubtitle();
-        await File.WriteAllTextAsync(fileName, subtitle.ToString(),
-            Encoding.UTF8, token);
-
-        var snackService = (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
-        snackService.Show("成功", "字幕文件已保存", ControlAppearance.Success,
-            new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
-        ShowFile(fileName);
-
-        return;
-
-        void ShowFile(string path)
-        {
-            var psi = new ProcessStartInfo("Explorer.exe")
-            {
-                Arguments = "/e,/select," + path
-            };
-            System.Diagnostics.Process.Start(psi);
-        }
-
-        SekaiToolsCore.SubStationAlpha.Subtitle GenerateSubtitle()
-        {
-            List<BannerFrameSet> bannerFrameSets = [];
-            List<DialogFrameSet> dialogFrameSets = [];
-            List<MarkerFrameSet> markerFrameSets = [];
-            foreach (var child in LinePanel.Children)
-                switch (child)
-                {
-                    case DialogLine dialogLine:
-                        var set = dialogLine.ViewModel.Set;
-                        set.Data.BodyTranslated = set.Data.BodyTranslated.Replace("…", "..."); // 修正省略号
-                        dialogFrameSets.Add(dialogLine.ViewModel.Set);
-                        break;
-                    case BannerLine bannerLine:
-                        bannerFrameSets.Add(bannerLine.ViewModel.Set);
-                        break;
-                    case MarkerLine markerLine:
-                        markerFrameSets.Add(markerLine.ViewModel.Set);
-                        break;
-                }
-
-            if (_matcherCreator == null) throw new NullReferenceException();
-            var maker = _matcherCreator.SubtitleMaker();
-            return maker.Make(dialogFrameSets, bannerFrameSets, markerFrameSets);
-        }
-    }
-
-    private async void UIElement_OnDrop(object sender, DragEventArgs e)
-    {
-        var data = e.Data.GetData(DataFormats.FileDrop)!;
-        var fileName = ((Array)data).GetValue(0)!.ToString();
-        if (!File.Exists(fileName)) return;
-
-        await GetSameBaseFile(fileName);
-    }
-
-    private async Task GetSameBaseFile(string filename)
-    {
-        var fileExt = Path.GetExtension(filename).ToLower();
-        List<string> vExt = [".mp4", ".avi", ".mkv", ".webm", ".wmv"];
-        List<string> sExt = [".json", ".asset"];
-        List<string> tExt = [".txt"];
-        if (vExt.Contains(fileExt) || sExt.Contains(fileExt) || tExt.Contains(fileExt))
-            await SelectSameNameFile(filename);
-        else
-            ShowSnackError();
-
-        return;
-
-        void ShowSnackError()
-        {
-            var snackService = (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
-            snackService.Show("错误", "文件格式不支持", ControlAppearance.Danger,
-                new SymbolIcon(SymbolRegular.DocumentError24),
-                new TimeSpan(0, 0, 3));
-        }
-    }
-
-    private void UIElement_OnDragEnter(object sender, DragEventArgs e)
-    {
-        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
-            ? DragDropEffects.Link
-            : DragDropEffects.None;
-    }
-
-    private void OnlyTooLongSwitch_OnClick(object sender, RoutedEventArgs e)
-    {
-        var targetVisibility = OnlyTooLongSwitch.IsChecked ?? false ? Visibility.Collapsed : Visibility.Visible;
-        foreach (var child in LinePanel.Children)
-            switch (child)
-            {
-                case DialogLine dialogLine:
-                    if (dialogLine.ViewModel.Set.NeedSetSeparator) continue;
-                    dialogLine.Visibility = targetVisibility;
-                    break;
-                case BannerLine bannerLine:
-                    bannerLine.Visibility = targetVisibility;
-                    break;
-                case MarkerLine markerLine:
-                    markerLine.Visibility = targetVisibility;
-                    break;
-            }
     }
 }

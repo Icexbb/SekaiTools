@@ -1,6 +1,9 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using SekaiToolsGUI.View.Setting;
+using TextCopy;
+using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Input;
 using Button = System.Windows.Controls.Button;
@@ -15,6 +18,9 @@ public partial class TranslateFastCopy : UserControl
         InitializeComponent();
         LoadCustomButtons();
     }
+
+    private static ISnackbarService SnackService =>
+        (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
 
 
     private void AddCustomButton(string content)
@@ -58,7 +64,19 @@ public partial class TranslateFastCopy : UserControl
 
     private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
     {
-        if (sender is Button button) Clipboard.SetText(button.Content.ToString()!);
+        try
+        {
+            if (sender is not Button button) return;
+            ClipboardService.SetText(button.Content.ToString()!);
+            SnackService.Show("成功", $"已复制 {button.Content} 到剪贴板", ControlAppearance.Success,
+                new SymbolIcon(SymbolRegular.TextGrammarCheckmark24), new TimeSpan(0, 0, 2));
+        }
+        catch (Exception exception)
+        {
+            SnackService.Show("错误", "写入剪贴板失败", ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.TextGrammarDismiss24), new TimeSpan(0, 0, 2));
+            if (Debugger.IsAttached) throw;
+        }
     }
 
     private async void ButtonAdd_OnClick(object sender, RoutedEventArgs e)
