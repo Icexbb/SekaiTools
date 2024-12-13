@@ -19,13 +19,7 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
     public async Task Refresh()
     {
         SpecialStoryTypeSelector.IsEnabled = false;
-        if (ListSpecialStory == null)
-        {
-            var settings = new SettingPageModel();
-            settings.LoadSetting();
-            ListSpecialStory = new ListSpecialStory(GetSourceType(), settings.GetProxy());
-        }
-
+        ListSpecialStory ??= new ListSpecialStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
         await ListSpecialStory.Refresh();
         RefreshCombo();
         SpecialStoryTypeSelector.IsEnabled = true;
@@ -64,9 +58,7 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
 
     private void SpecialStoryTab_OnLoaded(object sender, RoutedEventArgs e)
     {
-        var settings = new SettingPageModel();
-        settings.LoadSetting();
-        ListSpecialStory = new ListSpecialStory(GetSourceType(), settings.GetProxy());
+        ListSpecialStory = new ListSpecialStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
         RefreshCombo();
     }
 

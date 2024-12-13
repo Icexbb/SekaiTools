@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
@@ -8,8 +7,7 @@ using Emgu.CV.CvEnum;
 
 namespace SekaiToolsCore.Process;
 
-[SuppressMessage("Interoperability", "CA1416")]
-public class TemplateManager
+public partial class TemplateManager
 {
     private readonly Dictionary<string, Mat> _dbTemplate = new();
     private readonly string[] _dbTexts;
@@ -121,9 +119,8 @@ public class TemplateManager
     private static Mat CreateImageWithText(Font font, string text)
     {
         var byChar = font.Name.Contains("DB");
-        if (Regex.Matches(text, "[a-zA-Z0-9]").Count > 0)
+        if (TextRegex().Matches(text).Count > 0)
             byChar = false;
-
 
         var bitmap = new Bitmap((int)(text.Length * font.Size * 2), (int)font.Size * 2);
         bitmap.MakeTransparent();
@@ -198,4 +195,7 @@ public class TemplateManager
         GenerateDbTemplates();
         GenerateEbTemplates();
     }
+
+    [GeneratedRegex("[a-zA-Z0-9]")]
+    private static partial Regex TextRegex();
 }

@@ -15,10 +15,10 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
     private readonly List<Style> _styles = [];
 
     private Point _nameTagPosition = new(0, 0);
-    private string FontName { get; } = config.FontName;
+    private StyleFontConfig StyleFontConfig { get; } = config.StyleFontConfig;
     private TypewriterSetting TypewriterSetting { get; } = config.TyperSetting;
 
-    private bool ExportComment { get; } = config.ExportComment;
+    private ExportStyleConfig ExportStyleConfig { get; } = config.ExportStyleConfig;
 
     public Subtitle Make(
         List<DialogFrameSet> dialogList,
@@ -46,7 +46,16 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             events.AddRange(MakeMarkerEvents(markerList));
         }
 
-        if (!ExportComment) events.RemoveAll(e => e.Type == "Comment");
+        // if (!ExportStyleConfig) events.RemoveAll(e => e.Type == "Comment");
+        if (!ExportStyleConfig.ExportLine1) events.RemoveAll(e => e.Style == "Line1");
+        if (!ExportStyleConfig.ExportLine2) events.RemoveAll(e => e.Style == "Line2");
+        if (!ExportStyleConfig.ExportLine3) events.RemoveAll(e => e.Style == "Line3");
+        if (!ExportStyleConfig.ExportCharacter) events.RemoveAll(e => e.Style == "Character");
+        if (!ExportStyleConfig.ExportBannerMask) events.RemoveAll(e => e.Style == "BannerMask");
+        if (!ExportStyleConfig.ExportBannerText) events.RemoveAll(e => e.Style == "BannerText");
+        if (!ExportStyleConfig.ExportMarkerMask) events.RemoveAll(e => e.Style == "MarkerMask");
+        if (!ExportStyleConfig.ExportMarkerText) events.RemoveAll(e => e.Style == "MarkerText");
+        if (!ExportStyleConfig.ExportScreenComment) events.RemoveAll(e => e.Style == "Screen");
 
         return new Subtitle(
             new ScriptInfo(videoInfo.Resolution.Width, videoInfo.Resolution.Height),
@@ -161,25 +170,25 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         var outlineColor = new AlphaColor(50, 73, 71, 102);
         var result = new List<Style>
         {
-            new("Line1", FontName, fontsize,
+            new("Line1", StyleFontConfig.DialogFontFamily, fontsize,
                 blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7, marginL: marginH, marginR: marginH, marginV: marginV),
 
-            new("Line2", FontName, fontsize,
+            new("Line2", StyleFontConfig.DialogFontFamily, fontsize,
                 blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7, marginL: marginH, marginR: marginH,
                 marginV: marginV + (int)(fontsize * 1.01)),
 
-            new("Line3", FontName, fontsize,
+            new("Line3", StyleFontConfig.DialogFontFamily, fontsize,
                 blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7, marginL: marginH, marginR: marginH,
                 marginV: marginV + (int)(fontsize * 1.01 * 2)),
 
-            new("Character", FontName, charaFontsize,
+            new("Character", StyleFontConfig.DialogFontFamily, charaFontsize,
                 blackColor, outlineColour: outlineColor,
                 outline: charaOutlineSize, shadow: 0, alignment: 7),
 
-            new("Screen", FontName, charaFontsize,
+            new("Screen", StyleFontConfig.DialogFontFamily, charaFontsize,
                 blackColor, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7)
         };
@@ -425,10 +434,10 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
         var whiteColor = new AlphaColor(0, 255, 255, 255);
         var outlineColor = new AlphaColor(30, 95, 92, 123);
-        result.Add(new Style("BannerMask", FontName, fontsize, outlineColor,
+        result.Add(new Style("BannerMask", StyleFontConfig.BannerFontFamily, fontsize, outlineColor,
             outlineColour: outlineColor,
             outline: 0, shadow: 0, alignment: 7));
-        result.Add(new Style("BannerText", FontName, fontsize, whiteColor,
+        result.Add(new Style("BannerText", StyleFontConfig.BannerFontFamily, fontsize, whiteColor,
             outlineColour: outlineColor,
             outline: 0, shadow: 0, alignment: 7));
         return result;
@@ -511,10 +520,10 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
         var whiteColor = new AlphaColor(0, 255, 255, 255);
         var outlineColor = new AlphaColor(30, 95, 92, 123);
-        result.Add(new Style("MarkerMask", FontName, fontsize, outlineColor,
+        result.Add(new Style("MarkerMask", StyleFontConfig.MarkerFontFamily, fontsize, outlineColor,
             outlineColour: outlineColor,
             outline: 0, shadow: 0, alignment: 7));
-        result.Add(new Style("MarkerText", FontName, fontsize, whiteColor,
+        result.Add(new Style("MarkerText", StyleFontConfig.MarkerFontFamily, fontsize, whiteColor,
             outlineColour: outlineColor,
             outline: 0, shadow: 0, alignment: 7));
         return result;

@@ -1,7 +1,7 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 using SekaiToolsCore.Process;
-using Wpf.Ui.Controls;
+using Wpf.Ui.Abstractions.Controls;
 
 namespace SekaiToolsGUI.View.Subtitle.Components;
 

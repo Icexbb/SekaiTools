@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Drawing.Text;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -201,6 +202,12 @@ public static partial class Utils
         mask = new Mat(mat.Size, mat.Depth, 1);
         CvInvoke.Compare(mat, nan, mask, CmpType.Equal);
         mat.SetTo(new MCvScalar(0), mask);
+    }
+
+    public static IEnumerable<string> GetFontFamilyNames()
+    {
+        var collection = new InstalledFontCollection();
+        return collection.Families.Select(family => family.Name);
     }
 }
 

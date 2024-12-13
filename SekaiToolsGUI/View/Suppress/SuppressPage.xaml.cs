@@ -2,13 +2,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Threading;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Microsoft.Win32;
-using Wpf.Ui.Controls;
+using Wpf.Ui.Abstractions.Controls;
 using MessageBox = Wpf.Ui.Controls.MessageBox;
+using TextBox = Wpf.Ui.Controls.TextBox;
 
 namespace SekaiToolsGUI.View.Suppress;
 
@@ -30,10 +29,7 @@ public class SuppressPageModel : ViewModelBase
             }
 
             var guess = Path.ChangeExtension(value, ".ass");
-            if (File.Exists(guess))
-            {
-                SourceSubtitle = guess;
-            }
+            if (File.Exists(guess)) SourceSubtitle = guess;
 
             OutputPath = Path.Join(Path.GetDirectoryName(value), Path.GetFileNameWithoutExtension(value) + "_h264.mp4");
             UpdateConfigStatus();
@@ -69,11 +65,6 @@ public class SuppressPageModel : ViewModelBase
     private bool GetCanStartSuppress => !string.IsNullOrWhiteSpace(SourceVideo) &&
                                         !string.IsNullOrWhiteSpace(SourceSubtitle) &&
                                         !string.IsNullOrWhiteSpace(OutputPath);
-
-    private void UpdateConfigStatus()
-    {
-        CanStartSuppress = GetCanStartSuppress;
-    }
 
     public bool CanStartSuppress
     {
@@ -129,6 +120,11 @@ public class SuppressPageModel : ViewModelBase
         set => SetProperty(value.Trim());
     }
 
+    private void UpdateConfigStatus()
+    {
+        CanStartSuppress = GetCanStartSuppress;
+    }
+
     public void ReloadStatus()
     {
         Status = "";
@@ -150,13 +146,13 @@ public class SuppressPageModel : ViewModelBase
 
 public partial class SuppressPage : UserControl, INavigableView<SuppressPageModel>
 {
-    public SuppressPageModel ViewModel => (SuppressPageModel)DataContext;
-
     public SuppressPage()
     {
         DataContext = SuppressPageModel.Instance;
         InitializeComponent();
     }
+
+    public SuppressPageModel ViewModel => (SuppressPageModel)DataContext;
 
     private static string? SelectFile(object sender, RoutedEventArgs e, string filter)
     {
@@ -248,13 +244,13 @@ public partial class SuppressPage : UserControl, INavigableView<SuppressPageMode
             {
                 Arguments = "/e,/select," + path
             };
-            System.Diagnostics.Process.Start(psi);
+            Process.Start(psi);
         }
     }
 
     private void StatusTextChange_OnTextChanged(object sender, TextChangedEventArgs e)
     {
-        var box = (Wpf.Ui.Controls.TextBox)sender!;
+        var box = (TextBox)sender!;
         box.ScrollToEnd();
     }
 }

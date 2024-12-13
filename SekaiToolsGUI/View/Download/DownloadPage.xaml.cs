@@ -121,7 +121,7 @@ public partial class DownloadPage : UserControl
 
         HttpMessageHandler GetHttpHandler()
         {
-            var proxy = new SettingPageModel().GetProxy();
+            var proxy = SettingPageModel.Instance.GetProxy();
             return proxy.ProxyType switch
             {
                 Proxy.Type.None => new HttpClientHandler(),

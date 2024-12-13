@@ -8,210 +8,310 @@
              d:DataContext="{d:DesignInstance local:SettingPageModel, IsDesignTimeCreatable=True}"
              mc:Ignorable="d">
 
-    <StackPanel Margin="10">
-        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Color24}">
-            <ui:CardControl.Header>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <ui:TextBlock
-                        Grid.Row="0"
-                        FontTypography="Body"
-                        Text="主题" />
-                    <ui:TextBlock
-                        Grid.Row="1"
-                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                        Text="选择应用配色主题" />
-                </Grid>
-            </ui:CardControl.Header>
-            <ComboBox
-                MinWidth="200"
-                SelectedIndex="{Binding CurrentApplicationTheme,Mode=TwoWay}">
-                <ComboBoxItem Content="亮色" />
-                <ComboBoxItem Content="暗色" />
-                <ComboBoxItem Content="高对比度" />
-                <!-- <ComboBoxItem Content="跟随系统" /> -->
-            </ComboBox>
-        </ui:CardControl>
-        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Earth24}">
-            <ui:CardControl.Header>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <ui:TextBlock
-                        Grid.Row="0"
-                        FontTypography="Body"
-                        Text="代理" />
-                    <ui:TextBlock
-                        Grid.Row="1"
-                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                        Text="下载剧本时所用的代理" />
-                </Grid>
-            </ui:CardControl.Header>
-            <ui:CardControl.Content>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <ComboBox SelectedIndex="{Binding ProxyType ,Mode=TwoWay }">
-                        <ComboBoxItem>不使用</ComboBoxItem>
-                        <ComboBoxItem>http://</ComboBoxItem>
-                        <ComboBoxItem>sock5://</ComboBoxItem>
-                    </ComboBox>
-                    <ui:TextBox Width="150" Margin="5,0"
-                                Visibility="{Binding ProxyChangeable}"
-                                Text="{Binding ProxyHost,Mode=TwoWay}"
-                                ClearButtonEnabled="False" AcceptsReturn="False" AcceptsTab="False" />
-                    <ui:NumberBox Width="150" Maximum="65536" Minimum="0"
-                                  Visibility="{Binding ProxyChangeable}"
-                                  Value="{Binding ProxyPort,Mode=TwoWay}"
+    <ScrollViewer>
+        <StackPanel Margin="10">
+            <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Color24}">
+                <ui:CardControl.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ui:TextBlock
+                            Grid.Row="0"
+                            FontTypography="Body"
+                            Text="主题" />
+                        <ui:TextBlock
+                            Grid.Row="1"
+                            Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                            Text="选择应用配色主题" />
+                    </Grid>
+                </ui:CardControl.Header>
+                <ComboBox
+                    MinWidth="200"
+                    SelectedIndex="{Binding CurrentApplicationTheme,Mode=TwoWay}">
+                    <ComboBoxItem Content="亮色" />
+                    <ComboBoxItem Content="暗色" />
+                    <ComboBoxItem Content="高对比度" />
+                    <!-- <ComboBoxItem Content="跟随系统" /> -->
+                </ComboBox>
+            </ui:CardControl>
+            <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Earth24}">
+                <ui:CardControl.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ui:TextBlock
+                            Grid.Row="0"
+                            FontTypography="Body"
+                            Text="代理" />
+                        <ui:TextBlock
+                            Grid.Row="1"
+                            Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                            Text="下载剧本时所用的代理" />
+                    </Grid>
+                </ui:CardControl.Header>
+                <ui:CardControl.Content>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <ComboBox SelectedIndex="{Binding ProxyType ,Mode=TwoWay }">
+                            <ComboBoxItem>不使用</ComboBoxItem>
+                            <ComboBoxItem>http://</ComboBoxItem>
+                            <ComboBoxItem>sock5://</ComboBoxItem>
+                        </ComboBox>
+                        <ui:TextBox Width="150" Margin="5,0"
+                                    Visibility="{Binding ProxyChangeable}"
+                                    Text="{Binding ProxyHost,Mode=TwoWay}"
+                                    ClearButtonEnabled="False" AcceptsReturn="False" AcceptsTab="False" />
+                        <ui:NumberBox Width="150" Maximum="65536" Minimum="0"
+                                      Visibility="{Binding ProxyChangeable}"
+                                      Value="{Binding ProxyPort,Mode=TwoWay}"
+                                      ClearButtonEnabled="False" />
+                    </StackPanel>
+                </ui:CardControl.Content>
+            </ui:CardControl>
+            <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon TextContinuous24}">
+                <ui:CardControl.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="打字机设置" />
+                        <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                      Text="设置打字机的渐变时间参数" />
+                    </Grid>
+                </ui:CardControl.Header>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <ui:NumberBox Width="120" Margin="5,0"
+                                  Maximum="{Binding TypewriterFadeTime}" Minimum="0"
+                                  SmallChange="1" LargeChange="10"
+                                  Value="{Binding TypewriterCharTime,Mode=TwoWay}"
+                                  ClearButtonEnabled="False" />
+                    <ui:NumberBox Width="120"
+                                  Minimum="{Binding TypewriterCharTime,Mode=TwoWay}"
+                                  SmallChange="1" LargeChange="10"
+                                  Value="{Binding TypewriterFadeTime,Mode=TwoWay}"
                                   ClearButtonEnabled="False" />
                 </StackPanel>
-            </ui:CardControl.Content>
-        </ui:CardControl>
-        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon TextContinuous24}">
-            <ui:CardControl.Header>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="打字机设置" />
-                    <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                  Text="设置打字机的渐变时间参数" />
-                </Grid>
-            </ui:CardControl.Header>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <ui:NumberBox Width="120" Margin="5,0"
-                              Maximum="{Binding TypewriterFadeTime}" Minimum="0"
-                              SmallChange="1" LargeChange="10"
-                              Value="{Binding TypewriterCharTime,Mode=TwoWay}"
-                              ClearButtonEnabled="False" />
-                <ui:NumberBox Width="120"
-                              Minimum="{Binding TypewriterCharTime,Mode=TwoWay}"
-                              SmallChange="1" LargeChange="10"
-                              Value="{Binding TypewriterFadeTime,Mode=TwoWay}"
-                              ClearButtonEnabled="False" />
-            </StackPanel>
-        </ui:CardControl>
+            </ui:CardControl>
 
-        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon TextFont24}">
-            <ui:CardControl.Header>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="字体自定义" />
-                    <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                  Text="选择字幕样式所用的字体" />
-                </Grid>
-            </ui:CardControl.Header>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <ui:TextBox Width="150" Margin="5,0"
-                            AcceptsReturn="False" AcceptsTab="False" TextWrapping="NoWrap"
-                            Text="{Binding  FontFamily,Mode=TwoWay}"
-                            ClearButtonEnabled="False" />
-                <ui:Button Content="选择" Click="ChooseFont" />
-            </StackPanel>
-        </ui:CardControl>
-
-        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon CommentNote24}">
-            <ui:CardControl.Header>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="输出注释" />
-                    <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                  Text="选择字幕是否输出注释" />
-                </Grid>
-            </ui:CardControl.Header>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <ui:ToggleSwitch IsChecked="{Binding  ExportComment}" />
-            </StackPanel>
-        </ui:CardControl>
-
-        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon MatchAppLayout24}"
-                        Visibility="Collapsed"
-                        Name="ControlThreshold">
-            <ui:CardControl.Header>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="匹配阈值" />
-                    <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                  Text="自定义图像匹配的阈值设定" />
-                </Grid>
-            </ui:CardControl.Header>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <ui:NumberBox Width="120" Margin="5,0"
-                              Maximum="1" Minimum="0" SmallChange="0.01" LargeChange="0.1"
-                              Value="{Binding  ThresholdNormal,Mode=TwoWay}"
-                              ClearButtonEnabled="False" />
-                <ui:NumberBox
-                    Width="120" Maximum="1" Minimum="0" SmallChange="0.01" LargeChange="0.1"
-                    Value="{Binding ThresholdSpecial,Mode=TwoWay}"
-                    ClearButtonEnabled="False" />
-            </StackPanel>
-        </ui:CardControl>
-
-        <ui:CardExpander ContentPadding="0"
-                         MouseDoubleClick="DevClick"
-                         Icon="{ui:ImageIcon 'pack://application:,,,/Resource/icon.png', Width=28, Height=28}">
-            <ui:CardExpander.Header>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBlock
-                        Grid.Row="0"
-                        Grid.Column="0"
-                        FontTypography="Body"
-                        Text="Sekai Tools" />
-                    <ui:TextBlock
-                        Grid.Row="1"
-                        Grid.Column="0"
-                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                        Text="© 2024 PJS字幕组 | Icexbb 以 AGPL-3.0 协议开源" />
-
-                    <ui:TextBlock
-                        Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"
-                        Margin="0,0,16,0"
-                        VerticalAlignment="Center"
-                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                        Text="{Binding AppVersion, Mode=OneWay}" />
-                </Grid>
-            </ui:CardExpander.Header>
-            <StackPanel>
-                <ui:Anchor
-                    Margin="0"
-                    Padding="16"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Stretch"
-                    Background="Transparent"
-                    BorderThickness="0,1,0,0"
-                    CornerRadius="0"
-                    NavigateUri="https://github.com/Icexbb/SekaiTools">
+            <ui:CardExpander Margin="0,0,0,8" Icon="{ui:SymbolIcon TextFont24}" ContentPadding="0">
+                <ui:CardExpander.Header>
                     <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="字体自定义" />
+                        <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                      Text="选择字幕样式所用的字体" />
+                    </Grid>
+                </ui:CardExpander.Header>
+
+                <ui:CardExpander.Content>
+                    <StackPanel Orientation="Vertical">
+                        <ui:CardControl Icon="{ui:SymbolIcon TextDescription24}">
+                            <ui:CardControl.Header>
+                                <ui:TextBlock FontTypography="Body" Text="对话字体" />
+                            </ui:CardControl.Header>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <ui:TextBox Width="150" Margin="5,0"
+                                            AcceptsReturn="False" AcceptsTab="False" TextWrapping="NoWrap"
+                                            Text="{Binding  DialogFontFamily,Mode=TwoWay}"
+                                            ClearButtonEnabled="False" />
+                                <ui:Button Content="选择" Click="ChooseDialogFont" />
+                            </StackPanel>
+                        </ui:CardControl>
+                        <ui:CardControl Icon="{ui:SymbolIcon Location24}">
+                            <ui:CardControl.Header>
+                                <ui:TextBlock FontTypography="Body" Text="横幅字体" />
+                            </ui:CardControl.Header>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <ui:TextBox Width="150" Margin="5,0"
+                                            AcceptsReturn="False" AcceptsTab="False" TextWrapping="NoWrap"
+                                            Text="{Binding  BannerFontFamily,Mode=TwoWay}"
+                                            ClearButtonEnabled="False" />
+                                <ui:Button Content="选择" Click="ChooseBannerFont" />
+                            </StackPanel>
+                        </ui:CardControl>
+                        <ui:CardControl Icon="{ui:SymbolIcon Bookmark24}">
+                            <ui:CardControl.Header>
+                                <ui:TextBlock FontTypography="Body" Text="地点角标字体" />
+                            </ui:CardControl.Header>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <ui:TextBox Width="150" Margin="5,0"
+                                            AcceptsReturn="False" AcceptsTab="False" TextWrapping="NoWrap"
+                                            Text="{Binding  MarkerFontFamily,Mode=TwoWay}"
+                                            ClearButtonEnabled="False" />
+                                <ui:Button Content="选择" Click="ChooseMarkerFont" />
+                            </StackPanel>
+                        </ui:CardControl>
+                    </StackPanel>
+
+                </ui:CardExpander.Content>
+
+            </ui:CardExpander>
+
+            <ui:CardExpander Margin="0,0,0,8" Icon="{ui:SymbolIcon CommentNote24}" ContentPadding="0">
+                <ui:CardExpander.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="输出注释" />
+                        <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                      Text="选择字幕输出的类别" />
+                    </Grid>
+                </ui:CardExpander.Header>
+                <StackPanel Orientation="Vertical">
+                    <StackPanel.Resources>
+                        <Style TargetType="{x:Type ui:TextBlock}">
+                            <Setter Property="MinWidth" Value="20" />
+                            <Setter Property="Margin" Value="10,0" />
+                        </Style>
+                    </StackPanel.Resources>
+                    <ui:CardControl Icon="{ui:SymbolIcon TextDescription24}">
+                        <ui:CardControl.Header>
+                            <ui:TextBlock FontTypography="Body" Text="对话" />
+                        </ui:CardControl.Header>
+                        <StackPanel Orientation="Vertical" HorizontalAlignment="Right">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                <StackPanel Orientation="Horizontal" Margin="5,0">
+                                    <ui:TextBlock Text="一行" /><ui:ToggleSwitch IsChecked="{Binding ExportLine1}" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5,0">
+                                    <ui:TextBlock Text="二行" /><ui:ToggleSwitch IsChecked="{Binding ExportLine2}" />
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <StackPanel Orientation="Horizontal" Margin="5,0">
+                                    <ui:TextBlock Text="三行" /><ui:ToggleSwitch IsChecked="{Binding ExportLine3}" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5,0">
+                                    <ui:TextBlock Text="姓名" /><ui:ToggleSwitch IsChecked="{Binding ExportCharacter}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </ui:CardControl>
+                    <ui:CardControl Icon="{ui:SymbolIcon Location24}">
+                        <ui:CardControl.Header>
+                            <ui:TextBlock FontTypography="Body" Text="横幅" />
+                        </ui:CardControl.Header>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <StackPanel Orientation="Horizontal" Margin="5,0">
+                                <ui:TextBlock Text="遮罩" /><ui:ToggleSwitch IsChecked="{Binding  ExportBannerMask}" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="5,0">
+                                <ui:TextBlock Text="内容" /><ui:ToggleSwitch IsChecked="{Binding  ExportBannerText}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </ui:CardControl>
+                    <ui:CardControl Icon="{ui:SymbolIcon Bookmark24}">
+                        <ui:CardControl.Header>
+                            <ui:TextBlock FontTypography="Body" Text="地点角标" />
+                        </ui:CardControl.Header>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <StackPanel Orientation="Horizontal" Margin="5,0">
+                                <ui:TextBlock Text="遮罩" /><ui:ToggleSwitch IsChecked="{Binding  ExportMarkerMask}" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="5,0">
+                                <ui:TextBlock Text="内容" /><ui:ToggleSwitch IsChecked="{Binding  ExportMarkerText}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </ui:CardControl>
+                    <ui:CardControl Icon="{ui:SymbolIcon Comment24}">
+                        <ui:CardControl.Header>
+                            <ui:TextBlock FontTypography="Body" Text="其他注释" />
+                        </ui:CardControl.Header>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="5,0">
+                            <ui:TextBlock Text="注释" />  <ui:ToggleSwitch IsChecked="{Binding  ExportScreenComment}" />
+                        </StackPanel>
+                    </ui:CardControl>
+                </StackPanel>
+            </ui:CardExpander>
+
+            <ui:CardExpander ContentPadding="0"
+                             MouseDoubleClick="DevClick"
+                             Icon="{ui:ImageIcon 'pack://application:,,,/Resource/icon.png', Width=28, Height=28}">
+                <ui:CardExpander.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="代码仓库" />
-                        <ui:SymbolIcon Grid.Column="1" Symbol="Link24" />
+                        <ui:TextBlock
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            FontTypography="Body"
+                            Text="Sekai Tools" />
+                        <ui:TextBlock
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                            Text="© 2024 PJS字幕组 | Icexbb 以 AGPL-3.0 协议开源" />
+
+                        <ui:TextBlock
+                            Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"
+                            Margin="0,0,16,0"
+                            VerticalAlignment="Center"
+                            Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{Binding AppVersion, Mode=OneWay}" />
                     </Grid>
-                </ui:Anchor>
-            </StackPanel>
-        </ui:CardExpander>
-    </StackPanel>
+                </ui:CardExpander.Header>
+                <StackPanel>
+                    <ui:Anchor
+                        Margin="0"
+                        Padding="16"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
+                        Background="Transparent"
+                        BorderThickness="0,1,0,0"
+                        CornerRadius="0"
+                        NavigateUri="https://github.com/Icexbb/SekaiTools">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="代码仓库" />
+                            <ui:SymbolIcon Grid.Column="1" Symbol="Link24" />
+                        </Grid>
+                    </ui:Anchor>
+                </StackPanel>
+            </ui:CardExpander>
+
+            <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon MatchAppLayout24}"
+                            Visibility="Collapsed"
+                            Name="ControlThreshold">
+                <ui:CardControl.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="匹配阈值" />
+                        <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                      Text="自定义图像匹配的阈值设定" />
+                    </Grid>
+                </ui:CardControl.Header>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <ui:NumberBox Width="120" Margin="5,0"
+                                  Maximum="1" Minimum="0" SmallChange="0.01" LargeChange="0.1"
+                                  Value="{Binding  ThresholdNormal,Mode=TwoWay}"
+                                  ClearButtonEnabled="False" />
+                    <ui:NumberBox
+                        Width="120" Maximum="1" Minimum="0" SmallChange="0.01" LargeChange="0.1"
+                        Value="{Binding ThresholdSpecial,Mode=TwoWay}"
+                        ClearButtonEnabled="False" />
+                </StackPanel>
+            </ui:CardControl>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

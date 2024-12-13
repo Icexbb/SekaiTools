@@ -1,10 +1,15 @@
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Unicode;
 using System.Windows;
 using System.Windows.Controls;
-using Newtonsoft.Json;
 using SekaiDataFetch;
+using SekaiToolsCore.Process;
 using SekaiToolsGUI.View.Setting.Components;
+using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
@@ -12,26 +17,38 @@ namespace SekaiToolsGUI.View.Setting;
 
 public struct Setting
 {
-    public string AppVersion { get; init; }
-    public int CurrentApplicationTheme { get; init; }
-    public string[] CustomSpecialCharacters { get; init; }
+    public Setting()
+    {
+    }
 
-    public int ProxyType { get; init; }
-    public string ProxyHost { get; init; }
+    public string AppVersion { get; init; } = "1.0.0";
+    public int CurrentApplicationTheme { get; init; } = 0;
+    public string[] CustomSpecialCharacters { get; init; } = [];
 
-    public int ProxyPort { get; init; }
+    public int ProxyType { get; init; } = 0;
+    public string ProxyHost { get; init; } = "127.0.0.1";
+    public int ProxyPort { get; init; } = 1080;
 
     // public string ProxyUsername { get; init; }
     // public string ProxyPassword { get; init; }
 
-    public int TypewriterFadeTime { get; init; }
-    public int TypewriterCharTime { get; init; }
-    public double ThresholdNormal { get; init; }
-    public double ThresholdSpecial { get; init; }
+    public int TypewriterFadeTime { get; init; } = 50;
+    public int TypewriterCharTime { get; init; } = 80;
+    public double ThresholdNormal { get; init; } = 0.7;
+    public double ThresholdSpecial { get; init; } = 0.7;
+    public string DialogFontFamily { get; init; } = "思源黑体 CN Bold";
+    public string BannerFontFamily { get; init; } = "思源黑体 Medium";
+    public string MarkerFontFamily { get; init; } = "思源黑体 Medium";
 
-    public bool ExportComment { get; init; }
-
-    public string FontFamily { get; init; }
+    public bool ExportLine1 { get; init; } = true;
+    public bool ExportLine2 { get; init; } = true;
+    public bool ExportLine3 { get; init; } = true;
+    public bool ExportCharacter { get; init; } = true;
+    public bool ExportBannerMask { get; init; } = true;
+    public bool ExportBannerText { get; init; } = true;
+    public bool ExportMarkerMask { get; init; } = true;
+    public bool ExportMarkerText { get; init; } = true;
+    public bool ExportScreenComment { get; init; } = true;
 
     public static Setting Default => new()
     {
@@ -42,8 +59,18 @@ public struct Setting
         TypewriterCharTime = 80,
         ThresholdNormal = 0.7,
         ThresholdSpecial = 0.7,
-        ExportComment = true,
-        FontFamily = "思源黑体 CN Bold"
+        DialogFontFamily = "思源黑体 CN Bold",
+        BannerFontFamily = "思源黑体 Medium",
+        MarkerFontFamily = "思源黑体 Medium",
+        ExportLine1 = true,
+        ExportLine2 = true,
+        ExportLine3 = true,
+        ExportCharacter = true,
+        ExportBannerMask = true,
+        ExportBannerText = true,
+        ExportMarkerMask = true,
+        ExportMarkerText = true,
+        ExportScreenComment = true
     };
 
     public static Setting FromModel(SettingPageModel model)
@@ -60,19 +87,37 @@ public struct Setting
             TypewriterCharTime = model.TypewriterCharTime,
             ThresholdNormal = model.ThresholdNormal,
             ThresholdSpecial = model.ThresholdSpecial,
-            FontFamily = model.FontFamily,
-            ExportComment = model.ExportComment
+
+            DialogFontFamily = model.DialogFontFamily,
+            BannerFontFamily = model.BannerFontFamily,
+            MarkerFontFamily = model.MarkerFontFamily,
+
+            ExportLine1 = model.ExportLine1,
+            ExportLine2 = model.ExportLine2,
+            ExportLine3 = model.ExportLine3,
+            ExportCharacter = model.ExportCharacter,
+            ExportBannerMask = model.ExportBannerMask,
+            ExportBannerText = model.ExportBannerText,
+            ExportMarkerMask = model.ExportMarkerMask,
+            ExportMarkerText = model.ExportMarkerText,
+            ExportScreenComment = model.ExportScreenComment,
         };
     }
 
     public string Dump()
     {
-        return JsonConvert.SerializeObject(this, Formatting.Indented);
+        return JsonSerializer.Serialize(this, new JsonSerializerOptions
+        {
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+            WriteIndented = true
+        });
     }
 
     public static Setting Load(string filepath)
     {
-        return !File.Exists(filepath) ? Default : JsonConvert.DeserializeObject<Setting>(File.ReadAllText(filepath));
+        return !File.Exists(filepath)
+            ? Default
+            : JsonSerializer.Deserialize<Setting>(File.ReadAllText(filepath));
     }
 }
 
@@ -80,18 +125,18 @@ public class SettingPageModel : ViewModelBase
 {
     public readonly List<string> CustomSpecialCharacters = [];
 
-    public SettingPageModel()
+    private SettingPageModel()
     {
         LoadSetting();
     }
+
+    public static SettingPageModel Instance { get; } = new();
 
     public int CurrentApplicationTheme
     {
         get => GetProperty(0);
         set
         {
-            SetProperty(value);
-            SaveSetting();
             if (value == 3)
             {
                 // ApplicationThemeManager.Apply(ApplicationTheme.Unknown);
@@ -113,6 +158,8 @@ public class SettingPageModel : ViewModelBase
                         break;
                 }
             }
+
+            SetProperty(value);
         }
     }
 
@@ -121,105 +168,134 @@ public class SettingPageModel : ViewModelBase
         get => GetProperty(0);
         set
         {
-            SetProperty(value);
             ProxyChangeable = value == 0 ? Visibility.Collapsed : Visibility.Visible;
-            SaveSetting();
+            SetProperty(value);
         }
     }
 
     public Visibility ProxyChangeable
     {
         get => GetProperty(Visibility.Collapsed);
-        set
-        {
-            SetProperty(value);
-            SaveSetting();
-        }
+        set => SetProperty(value);
     }
 
     public string ProxyHost
     {
         get => GetProperty("127.0.0.1");
-        set
-        {
-            SetProperty(value);
-            SaveSetting();
-        }
+        set => SetProperty(value);
     }
 
     public int ProxyPort
     {
         get => GetProperty(1080);
-        set
-        {
-            SetProperty(value);
-            SaveSetting();
-        }
+        set => SetProperty(value);
     }
 
     public int TypewriterFadeTime
     {
         get => GetProperty(50);
-        set
-        {
-            SetProperty(value);
-            SaveSetting();
-        }
+        set => SetProperty(value);
     }
 
     public int TypewriterCharTime
     {
         get => GetProperty(80);
-        set
-        {
-            SetProperty(value);
-            SaveSetting();
-        }
+        set => SetProperty(value);
     }
 
     public double ThresholdNormal
     {
         get => GetProperty(0.7d);
-        set
-        {
-            SetProperty(value);
-            SaveSetting();
-        }
+        set => SetProperty(value);
     }
 
     public double ThresholdSpecial
     {
         get => GetProperty(0.55d);
-        set
-        {
-            SetProperty(value);
-            SaveSetting();
-        }
+        set => SetProperty(value);
     }
 
-    public string FontFamily
+    public string DialogFontFamily
     {
         get => GetProperty("思源黑体 CN Bold");
-        set
-        {
-            SetProperty(value);
-            SaveSetting();
-        }
+        set => SetProperty(value);
     }
 
-    public bool ExportComment
+    public string BannerFontFamily
+    {
+        get => GetProperty("思源黑体 Medium");
+        set => SetProperty(value);
+    }
+
+    public string MarkerFontFamily
+    {
+        get => GetProperty("思源黑体 Medium");
+        set => SetProperty(value);
+    }
+
+    public bool ExportLine1
     {
         get => GetProperty(true);
-        set
-        {
-            SetProperty(value);
-            SaveSetting();
-        }
+        set => SetProperty(value);
+    }
+
+    public bool ExportLine2
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportLine3
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportCharacter
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportBannerMask
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportBannerText
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportMarkerMask
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportMarkerText
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportScreenComment
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
     }
 
     public static string AppVersion
         => (Application.ResourceAssembly.GetName().Version ??
             new Version(0, 0, 0, 0)).ToString();
+
+    private new void SetProperty<T>(T value, [CallerMemberName] string? propertyName = null)
+    {
+        base.SetProperty(value, propertyName);
+        SaveSetting();
+    }
 
     public Proxy GetProxy()
     {
@@ -230,6 +306,42 @@ public class SettingPageModel : ViewModelBase
             2 => Proxy.Type.Socks5,
             _ => throw new ArgumentOutOfRangeException()
         });
+    }
+
+    public ExportStyleConfig GetExportStyleConfig()
+    {
+        return new ExportStyleConfig
+        {
+            ExportLine1 = ExportLine1,
+            ExportLine2 = ExportLine2,
+            ExportLine3 = ExportLine3,
+            ExportCharacter = ExportCharacter,
+            ExportBannerMask = ExportBannerMask,
+            ExportBannerText = ExportBannerText,
+            ExportMarkerMask = ExportMarkerMask,
+            ExportMarkerText = ExportMarkerText,
+            ExportScreenComment = ExportScreenComment
+        };
+    }
+
+    public StyleFontConfig GetStyleFontConfig()
+    {
+        return new StyleFontConfig
+        {
+            DialogFontFamily = DialogFontFamily,
+            BannerFontFamily = BannerFontFamily,
+            MarkerFontFamily = MarkerFontFamily
+        };
+    }
+
+    public TypewriterSetting GetTypewriterSetting()
+    {
+        return new TypewriterSetting(TypewriterFadeTime, TypewriterCharTime);
+    }
+
+    public MatchingThreshold GetMatchingThreshold()
+    {
+        return new MatchingThreshold(ThresholdNormal, ThresholdSpecial);
     }
 
     private static string GetSettingPath()
@@ -261,8 +373,18 @@ public class SettingPageModel : ViewModelBase
             TypewriterCharTime = Setting.Default.TypewriterCharTime;
             ThresholdNormal = Setting.Default.ThresholdNormal;
             ThresholdSpecial = Setting.Default.ThresholdSpecial;
-            FontFamily = Setting.Default.FontFamily;
-            ExportComment = Setting.Default.ExportComment;
+            DialogFontFamily = Setting.Default.DialogFontFamily;
+            BannerFontFamily = Setting.Default.BannerFontFamily;
+            MarkerFontFamily = Setting.Default.MarkerFontFamily;
+            ExportLine1 = Setting.Default.ExportLine1;
+            ExportLine2 = Setting.Default.ExportLine2;
+            ExportLine3 = Setting.Default.ExportLine3;
+            ExportCharacter = Setting.Default.ExportCharacter;
+            ExportBannerMask = Setting.Default.ExportBannerMask;
+            ExportBannerText = Setting.Default.ExportBannerText;
+            ExportMarkerMask = Setting.Default.ExportMarkerMask;
+            ExportMarkerText = Setting.Default.ExportMarkerText;
+            ExportScreenComment = Setting.Default.ExportScreenComment;
         }
         else
         {
@@ -270,8 +392,24 @@ public class SettingPageModel : ViewModelBase
             TypewriterCharTime = setting.TypewriterCharTime;
             ThresholdNormal = setting.ThresholdNormal;
             ThresholdSpecial = setting.ThresholdSpecial;
-            FontFamily = setting.FontFamily == "" ? Setting.Default.FontFamily : setting.FontFamily;
-            ExportComment = setting.ExportComment;
+            DialogFontFamily = setting.DialogFontFamily == ""
+                ? Setting.Default.DialogFontFamily
+                : setting.DialogFontFamily;
+            BannerFontFamily = setting.BannerFontFamily == ""
+                ? Setting.Default.BannerFontFamily
+                : setting.BannerFontFamily;
+            MarkerFontFamily = setting.MarkerFontFamily == ""
+                ? Setting.Default.MarkerFontFamily
+                : setting.MarkerFontFamily;
+            ExportLine1 = setting.ExportLine1;
+            ExportLine2 = setting.ExportLine2;
+            ExportLine3 = setting.ExportLine3;
+            ExportCharacter = setting.ExportCharacter;
+            ExportBannerMask = setting.ExportBannerMask;
+            ExportBannerText = setting.ExportBannerText;
+            ExportMarkerMask = setting.ExportMarkerMask;
+            ExportMarkerText = setting.ExportMarkerText;
+            ExportScreenComment = setting.ExportScreenComment;
         }
 
         SaveSetting();
@@ -284,7 +422,7 @@ public partial class SettingPage : UserControl, INavigableView<SettingPageModel>
 
     public SettingPage()
     {
-        DataContext = ((MainWindowViewModel)Application.Current.MainWindow!.DataContext).SettingPageModel;
+        DataContext = MainWindowViewModel.SettingPageModel;
         InitializeComponent();
     }
 
@@ -296,16 +434,30 @@ public partial class SettingPage : UserControl, INavigableView<SettingPageModel>
         if (_devClickCount == 5) ControlThreshold.Visibility = Visibility.Visible;
     }
 
-    private async void ChooseFont(object sender, RoutedEventArgs e)
+    private async void ChooseDialogFont(object sender, RoutedEventArgs e)
+    {
+        var font = await OpenFontDialog();
+        if (font != "") ViewModel.DialogFontFamily = font;
+    }
+
+    private async void ChooseBannerFont(object sender, RoutedEventArgs e)
+    {
+        var font = await OpenFontDialog();
+        if (font != "") ViewModel.BannerFontFamily = font;
+    }
+
+    private async void ChooseMarkerFont(object sender, RoutedEventArgs e)
+    {
+        var font = await OpenFontDialog();
+        if (font != "") ViewModel.MarkerFontFamily = font;
+    }
+
+    private async Task<string> OpenFontDialog()
     {
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-
-        var dialog = new FontSelectDialog(ViewModel.FontFamily);
-
+        var dialog = new FontSelectDialog(ViewModel.DialogFontFamily);
         var token = new CancellationToken();
         var dialogResult = await dialogService.ShowAsync(dialog, token);
-        if (dialogResult != ContentDialogResult.Primary) return;
-
-        ViewModel.FontFamily = dialog.FontName;
+        return dialogResult != ContentDialogResult.Primary ? "" : dialog.FontName;
     }
 }

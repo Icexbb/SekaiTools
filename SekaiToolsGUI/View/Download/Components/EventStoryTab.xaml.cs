@@ -221,12 +221,7 @@ public partial class EventStoryTab : UserControl, IRefreshable
     public async Task Refresh()
     {
         CardUnits.IsEnabled = false;
-        if (StoryData == null)
-        {
-            var settings = new SettingPageModel();
-            settings.LoadSetting();
-            StoryData = new ListEventStory(GetSourceType(), settings.GetProxy());
-        }
+        StoryData ??= new ListEventStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
 
         await StoryData.Refresh();
         RefreshItems(true);
@@ -241,9 +236,7 @@ public partial class EventStoryTab : UserControl, IRefreshable
 
     private void EventStoryTab_OnLoaded(object sender, RoutedEventArgs e)
     {
-        var settings = new SettingPageModel();
-        settings.LoadSetting();
-        StoryData = new ListEventStory(GetSourceType(), settings.GetProxy());
+        StoryData = new ListEventStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
         BoxType.SelectedIndex = 0;
         RefreshItems(true);
     }

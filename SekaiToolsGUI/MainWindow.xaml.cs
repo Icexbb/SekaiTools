@@ -55,7 +55,12 @@ public class MainWindowViewModel : ViewModelBase
         }
     ];
 
-    public SettingPageModel SettingPageModel { get; } = new();
+    public static SettingPageModel SettingPageModel => SettingPageModel.Instance;
+
+    public MainWindowViewModel()
+    {
+        SettingPageModel.LoadSetting();
+    }
 }
 
 public partial class MainWindow : FluentWindow
@@ -64,10 +69,7 @@ public partial class MainWindow : FluentWindow
     {
         InitializeComponent();
         DataContext = new MainWindowViewModel();
-        Closed += (sender, args) =>
-        {
-            Suppressor.Instance.Clean();
-        };
+        Closed += (sender, args) => { Suppressor.Instance.Clean(); };
     }
 
     public ISnackbarService WindowSnackbarService { get; } = new SnackbarService

@@ -1,4 +1,3 @@
-using System.Drawing.Text;
 using System.Windows.Controls;
 using Wpf.Ui.Controls;
 
@@ -9,8 +8,7 @@ public partial class FontSelectDialog : ContentDialog
     public FontSelectDialog(string fontFamily)
     {
         InitializeComponent();
-        var collection = new InstalledFontCollection();
-        var fontList = collection.Families.Select(family => family.Name).ToList();
+        var fontList = SekaiToolsCore.Utils.GetFontFamilyNames().ToArray();
         foreach (var font in fontList) BoxFontName.Items.Add(font);
         if (fontList.Contains(fontFamily)) BoxFontName.SelectedItem = fontFamily;
         else BoxFontName.SelectedIndex = 0;

@@ -1,5 +1,5 @@
 using System.Windows.Controls;
-using Wpf.Ui.Controls;
+using Wpf.Ui.Abstractions.Controls;
 using SekaiBanner = SekaiToolsCore.Story.Event.Banner;
 using SekaiMarker = SekaiToolsCore.Story.Event.Marker;
 using SekaiEvent = SekaiToolsCore.Story.Event.Event;

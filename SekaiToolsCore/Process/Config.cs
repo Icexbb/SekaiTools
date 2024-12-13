@@ -12,14 +12,42 @@ public struct MatchingThreshold(double normal, double special)
     public readonly double Special = special;
 }
 
+public struct ExportStyleConfig
+{
+    public bool ExportLine1 { get; init; } = true;
+    public bool ExportLine2 { get; init; } = true;
+    public bool ExportLine3 { get; init; } = true;
+    public bool ExportCharacter { get; init; } = true;
+    public bool ExportBannerMask { get; init; } = true;
+    public bool ExportBannerText { get; init; } = true;
+    public bool ExportMarkerMask { get; init; } = true;
+    public bool ExportMarkerText { get; init; } = true;
+    public bool ExportScreenComment { get; init; } = true;
+
+    public ExportStyleConfig()
+    {
+    }
+}
+
+public struct StyleFontConfig
+{
+    public string DialogFontFamily { get; init; } = "思源黑体 CN Bold";
+    public string BannerFontFamily { get; init; } = "思源黑体 Medium";
+    public string MarkerFontFamily { get; init; } = "思源黑体 Medium";
+
+    public StyleFontConfig()
+    {
+    }
+}
+
 public class Config
 {
     public Config(
         string videoFilePath,
         string scriptFilePath,
         string translateFilePath,
-        string? fontName = null,
-        bool exportComment = false,
+        StyleFontConfig styleFontConfig = default,
+        ExportStyleConfig exportStyleConfig = default,
         TypewriterSetting? typerSetting = null,
         MatchingThreshold? matchingThreshold = null
     )
@@ -31,8 +59,8 @@ public class Config
 
         VideoFilePath = videoFilePath;
         ScriptFilePath = scriptFilePath;
-        FontName = fontName ?? "思源黑体 CN Bold";
-        ExportComment = exportComment;
+        StyleFontConfig = styleFontConfig;
+        ExportStyleConfig = exportStyleConfig;
 
         if (translateFilePath != "" && !Path.Exists(translateFilePath))
             throw new FileNotFoundException("Translation file not found.", translateFilePath);
@@ -46,12 +74,11 @@ public class Config
     public string ScriptFilePath { get; }
     public string TranslateFilePath { get; }
 
-
     public TypewriterSetting TyperSetting { get; }
 
     public MatchingThreshold MatchingThreshold { get; }
 
-    public string FontName { get; }
+    public StyleFontConfig StyleFontConfig { get; }
 
-    public bool ExportComment { get; }
+    public ExportStyleConfig ExportStyleConfig { get; }
 }

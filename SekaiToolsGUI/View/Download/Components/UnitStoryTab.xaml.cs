@@ -19,13 +19,7 @@ public partial class UnitStoryTab : UserControl, IRefreshable
     public async Task Refresh()
     {
         CardUnits.IsEnabled = false;
-        if (ListUnitStory == null)
-        {
-            var settings = new SettingPageModel();
-            settings.LoadSetting();
-            ListUnitStory = new ListUnitStory(GetSourceType(), settings.GetProxy());
-        }
-
+        ListUnitStory ??= new ListUnitStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
         await ListUnitStory.Refresh();
         RefreshItems();
         CardUnits.IsEnabled = true;
@@ -95,9 +89,7 @@ public partial class UnitStoryTab : UserControl, IRefreshable
 
     private void UnitStoryTab_OnLoaded(object sender, RoutedEventArgs e)
     {
-        var settings = new SettingPageModel();
-        settings.LoadSetting();
-        ListUnitStory = new ListUnitStory(GetSourceType(), settings.GetProxy());
+        ListUnitStory = new ListUnitStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
         RefreshItems();
     }
 

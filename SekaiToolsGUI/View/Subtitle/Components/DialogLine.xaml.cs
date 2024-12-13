@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using SekaiToolsCore;
 using SekaiToolsCore.Process;
+using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Controls;
 using Frame = SekaiToolsCore.Process.Frame;
 

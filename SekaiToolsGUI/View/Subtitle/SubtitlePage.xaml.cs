@@ -15,6 +15,7 @@ using SekaiToolsCore.Story.Event;
 using SekaiToolsGUI.View.Setting;
 using SekaiToolsGUI.View.Subtitle.Components;
 using Wpf.Ui;
+using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
 using MessageBox = Wpf.Ui.Controls.MessageBox;
@@ -484,18 +485,16 @@ public partial class SubtitlePage
 
     private void StartProcess()
     {
-        var settings = new SettingPageModel();
+        var settings = SettingPageModel.Instance;
         _matcherCreator =
             new MatcherCreator(new Config(
                 ViewModel.VideoFilePath,
                 ViewModel.ScriptFilePath,
                 ViewModel.TranslateFilePath,
-                settings.FontFamily,
-                settings.ExportComment,
-                new TypewriterSetting(
-                    int.Min(settings.TypewriterFadeTime, settings.TypewriterCharTime),
-                    int.Max(settings.TypewriterFadeTime, settings.TypewriterCharTime)),
-                new MatchingThreshold(settings.ThresholdNormal, settings.ThresholdSpecial)
+                settings.GetStyleFontConfig(),
+                settings.GetExportStyleConfig(),
+                settings.GetTypewriterSetting(),
+                settings.GetMatchingThreshold()
             ));
         _videoCapture = new VideoCapture(ViewModel.VideoFilePath);
         _dialogMatcher = _matcherCreator.DialogMatcher();

@@ -42,7 +42,7 @@ public partial class TranslateFastCopy : UserControl
                         Header = "删除",
                         Command = new RelayCommand<Type>(t =>
                         {
-                            var setting = new SettingPageModel();
+                            var setting = SettingPageModel.Instance;
                             setting.CustomSpecialCharacters.Remove(content);
                             setting.SaveSetting();
                             LoadCustomButtons();
@@ -58,8 +58,7 @@ public partial class TranslateFastCopy : UserControl
     private void LoadCustomButtons()
     {
         CustomSpecialCharacters.Children.Clear();
-        var setting = new SettingPageModel();
-        foreach (var character in setting.CustomSpecialCharacters) AddCustomButton(character);
+        foreach (var character in SettingPageModel.Instance.CustomSpecialCharacters) AddCustomButton(character);
     }
 
     private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
@@ -71,7 +70,7 @@ public partial class TranslateFastCopy : UserControl
             SnackService.Show("成功", $"已复制 {button.Content} 到剪贴板", ControlAppearance.Success,
                 new SymbolIcon(SymbolRegular.TextGrammarCheckmark24), new TimeSpan(0, 0, 2));
         }
-        catch (Exception exception)
+        catch (Exception)
         {
             SnackService.Show("错误", "写入剪贴板失败", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.TextGrammarDismiss24), new TimeSpan(0, 0, 2));
@@ -90,10 +89,9 @@ public partial class TranslateFastCopy : UserControl
 
         var element = dialog.ViewModel.CustomCharacter;
 
-        var setting = new SettingPageModel();
+        var setting = SettingPageModel.Instance;
         if (setting.CustomSpecialCharacters.Contains(element)) return;
         setting.CustomSpecialCharacters.Add(element);
-
         setting.SaveSetting();
         LoadCustomButtons();
     }
