@@ -8,7 +8,7 @@ public class ContentMatcher(TemplateManager templateManager, Config config)
 {
     private GaMat Template { get; } = new(templateManager.GetMenuSign(), false);
 
-    private double Threshold { get; } = config.MatchingThreshold.Normal;
+    private double Threshold { get; } = config.MatchingThreshold.DialogNormal;
 
     public bool Finished { get; private set; }
 

@@ -92,13 +92,25 @@ public class SettingPageModel : ViewModelBase
 
     public double ThresholdNormal
     {
-        get => GetProperty(0.7d);
+        get => GetProperty(0.85d);
         set => SetProperty(value);
     }
 
     public double ThresholdSpecial
     {
-        get => GetProperty(0.55d);
+        get => GetProperty(0.6d);
+        set => SetProperty(value);
+    }
+
+    public double ThresholdBanner
+    {
+        get => GetProperty(0.85d);
+        set => SetProperty(value);
+    }
+
+    public double ThresholdMarker
+    {
+        get => GetProperty(0.85d);
         set => SetProperty(value);
     }
 
@@ -234,8 +246,10 @@ public class SettingPageModel : ViewModelBase
     {
         return new MatchingThreshold()
         {
-            Normal = ThresholdNormal,
-            Special = ThresholdSpecial
+            DialogNormal = ThresholdNormal,
+            DialogSpecial = ThresholdSpecial,
+            BannerNormal = ThresholdBanner,
+            MarkerNormal = ThresholdMarker
         };
     }
 
@@ -266,11 +280,16 @@ public class SettingPageModel : ViewModelBase
         {
             TypewriterFadeTime = Setting.Default.TypewriterFadeTime;
             TypewriterCharTime = Setting.Default.TypewriterCharTime;
+
             ThresholdNormal = Setting.Default.ThresholdDialogNormal;
             ThresholdSpecial = Setting.Default.ThresholdDialogSpecial;
+            ThresholdBanner = Setting.Default.ThresholdBannerNormal;
+            ThresholdMarker = Setting.Default.ThresholdMarkerNormal;
+
             DialogFontFamily = Setting.Default.DialogFontFamily;
             BannerFontFamily = Setting.Default.BannerFontFamily;
             MarkerFontFamily = Setting.Default.MarkerFontFamily;
+
             ExportLine1 = Setting.Default.ExportLine1;
             ExportLine2 = Setting.Default.ExportLine2;
             ExportLine3 = Setting.Default.ExportLine3;
@@ -285,8 +304,11 @@ public class SettingPageModel : ViewModelBase
         {
             TypewriterFadeTime = setting.TypewriterFadeTime;
             TypewriterCharTime = setting.TypewriterCharTime;
+
             ThresholdNormal = setting.ThresholdDialogNormal;
             ThresholdSpecial = setting.ThresholdDialogSpecial;
+            ThresholdBanner = setting.ThresholdBannerNormal;
+            ThresholdMarker = setting.ThresholdMarkerNormal;
 
             DialogFontFamily = setting.DialogFontFamily == ""
                 ? Setting.Default.DialogFontFamily

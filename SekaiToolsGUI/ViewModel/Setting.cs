@@ -23,6 +23,8 @@ public struct Setting
     public int TypewriterCharTime { get; init; } = 80;
     public double ThresholdDialogNormal { get; init; } = 0.85;
     public double ThresholdDialogSpecial { get; init; } = 0.6;
+    public double ThresholdBannerNormal { get; init; } = 0.85;
+    public double ThresholdMarkerNormal { get; init; } = 0.85;
     public string DialogFontFamily { get; init; } = "思源黑体 CN Bold";
     public string BannerFontFamily { get; init; } = "思源黑体 Medium";
     public string MarkerFontFamily { get; init; } = "思源黑体 Medium";
@@ -46,8 +48,10 @@ public struct Setting
         TypewriterFadeTime = 50,
         TypewriterCharTime = 80,
 
-        ThresholdDialogNormal = 0.7,
-        ThresholdDialogSpecial = 0.7,
+        ThresholdDialogNormal = 0.85,
+        ThresholdDialogSpecial = 0.6,
+        ThresholdBannerNormal = 0.85,
+        ThresholdMarkerNormal = 0.85,
 
         DialogFontFamily = "思源黑体 CN Bold",
         BannerFontFamily = "思源黑体 Medium",
@@ -71,9 +75,11 @@ public struct Setting
             AppVersion = SettingPageModel.AppVersion,
             CurrentApplicationTheme = model.CurrentApplicationTheme,
             CustomSpecialCharacters = model.CustomSpecialCharacters.ToArray(),
+
             ProxyType = model.ProxyType,
             ProxyHost = model.ProxyHost,
             ProxyPort = model.ProxyPort,
+
             TypewriterFadeTime = model.TypewriterFadeTime,
             TypewriterCharTime = model.TypewriterCharTime,
             ThresholdDialogNormal = model.ThresholdNormal,

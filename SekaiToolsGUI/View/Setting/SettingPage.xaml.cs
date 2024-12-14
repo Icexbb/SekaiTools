@@ -19,11 +19,6 @@ namespace SekaiToolsGUI.View.Setting
 
         public SettingPageModel ViewModel => (SettingPageModel)DataContext;
 
-        private void DevClick(object sender, RoutedEventArgs e)
-        {
-            _devClickCount++;
-            if (_devClickCount == 5) ControlThreshold.Visibility = Visibility.Visible;
-        }
 
         private async void ChooseDialogFont(object sender, RoutedEventArgs e)
         {

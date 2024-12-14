@@ -7,7 +7,8 @@ namespace SekaiToolsCore;
 
 public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateManager templateManager, Config config)
 {
-    public readonly List<BannerFrameSet> Set = storyData.Banners().Select(d => new BannerFrameSet(d, videoInfo.Fps))
+    public readonly List<BannerFrameSet> Set = storyData.Banners()
+        .Select(d => new BannerFrameSet(d, videoInfo.Fps))
         .ToList();
 
     private MatchStatus _status;
@@ -53,15 +54,15 @@ public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
 
         bool LocalMatch(Mat src, GaMat tmp)
         {
-            var cropArea = Utils.FromCenter(
-                img.Size.Center(), new Size((int)(tmp.Size.Height * text.Length * 1.5), (int)(tmp.Size.Height * 1.5)));
+            var cropArea = Utils.FromCenter(img.Size.Center(),
+                new Size((int)(tmp.Size.Height * text.Length * 1.5), (int)(tmp.Size.Height * 1.5)));
             var imgCropped = new Mat(src, cropArea);
             var result = Matcher.MatchTemplate(imgCropped, tmp);
-            return !(result.MaxVal < config.MatchingThreshold.Normal) && !(result.MaxVal > 1);
+            return !(result.MaxVal < config.MatchingThreshold.BannerNormal) && !(result.MaxVal > 1);
         }
     }
 
-    private static int LastNotProcessedIndex(IReadOnlyList<BannerFrameSet> set)
+    private static int LastNotProcessedIndex(List<BannerFrameSet> set)
     {
         for (var i = 0; i < set.Count; i++)
             if (!set[i].Finished)

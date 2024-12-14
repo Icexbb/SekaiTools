@@ -8,8 +8,12 @@ public struct TypewriterSetting()
 
 public struct MatchingThreshold()
 {
-    public double Normal { get; init; } = 0.85;
-    public double Special { get; init; } = 0.6;
+    public double DialogNormal { get; init; } = 0.85;
+    public double DialogSpecial { get; init; } = 0.6;
+
+    public double BannerNormal { get; init; } = 0.85;
+
+    public double MarkerNormal { get; init; } = 0.85;
 }
 
 public struct ExportStyleConfig
