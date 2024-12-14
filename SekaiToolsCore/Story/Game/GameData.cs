@@ -1,31 +1,27 @@
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace SekaiToolsCore.Story.Game;
 
-public class GameData
+public class GameData()
 {
-    public readonly Snippet[] Snippets;
-    public readonly SpecialEffect[] SpecialEffectData;
-    public readonly Talk[] TalkData;
+    public Snippet[] Snippets { get; set; } = [];
+    public SpecialEffect[] SpecialEffectData { get; set; } = [];
+    public Talk[] TalkData { get; set; } = [];
 
-    public GameData(string jsonFilePath)
+    public GameData(string jsonFilePath) : this()
     {
         if (!File.Exists(jsonFilePath)) throw new Exception("File not found");
 
         var jsonString = File.ReadAllText(jsonFilePath);
-        var data = JsonConvert.DeserializeObject<JObject>(jsonString) ?? throw new Exception("Json parse error");
+        var data = JsonSerializer.Deserialize<GameData>(jsonString, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+        }) ?? throw new Exception("Json parse error");
 
-        TalkData = data.Get("TalkData", Array.Empty<JObject>())
-            .Select(Talk.FromJson).ToArray();
-
-        Snippets = data.Get("Snippets", Array.Empty<JObject>())
-            .Select(Snippet.FromJObject)
-            .ToArray();
-
-        SpecialEffectData = data.Get("SpecialEffectData", Array.Empty<JObject>())
-            .Select(SpecialEffect.FromJObject)
-            .ToArray();
+        TalkData = data.TalkData;
+        Snippets = data.Snippets;
+        SpecialEffectData = data.SpecialEffectData;
 
         List<int> shakeIndex = [];
         var talkDataCount = 0;

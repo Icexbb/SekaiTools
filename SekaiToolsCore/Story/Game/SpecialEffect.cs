@@ -1,5 +1,3 @@
-using Newtonsoft.Json.Linq;
-
 namespace SekaiToolsCore.Story.Game;
 
 /* EffectType
@@ -16,22 +14,20 @@ namespace SekaiToolsCore.Story.Game;
  * 25 画面震动-停止
  * 26 对话震动-停止
  */
-public struct SpecialEffect(int effectType, string stringVal, string stringValSub, double duration, double intVal)
+public struct SpecialEffect()
 {
-    public readonly int EffectType = effectType;
-    public readonly string StringVal = stringVal;
-    public readonly double Duration = duration;
-    public string StringValSub = stringValSub;
-    public double IntVal = intVal;
-
-    public static SpecialEffect FromJObject(JObject json)
+    public SpecialEffect(int effectType, string stringVal, string stringValSub, double duration, double intVal) : this()
     {
-        return new SpecialEffect(
-            json.Get("EffectType", 0),
-            json.Get("StringVal", ""),
-            json.Get("StringValSub", ""),
-            json.Get("Duration", 0.0),
-            json.Get("IntVal", 0.0)
-        );
+        EffectType = effectType;
+        StringVal = stringVal;
+        Duration = duration;
+        StringValSub = stringValSub;
+        IntVal = intVal;
     }
+
+    public int EffectType { get; set; }
+    public string StringVal { get; set; }
+    public double Duration { get; set; }
+    public string StringValSub { get; set; }
+    public double IntVal { get; set; }
 }

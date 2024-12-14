@@ -3,32 +3,12 @@ using System.Drawing.Text;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
-using Newtonsoft.Json.Linq;
 
 namespace SekaiToolsCore;
 
 public static partial class Utils
 {
-    public static TU Get<TU>(this JObject json, string key, TU defaultValue)
-    {
-        if (json.TryGetValue(key, out var value)) return value.ToObject<TU>() ?? defaultValue;
-        return defaultValue;
-    }
 
-    public static int GetInt(this JObject json, string key, int defaultValue = 0)
-    {
-        return json.Get(key, defaultValue);
-    }
-
-    public static string GetString(this JObject json, string key, string defaultValue = "")
-    {
-        return json.Get(key, defaultValue);
-    }
-
-    public static double GetDouble(this JObject json, string key, double defaultValue = 0.0)
-    {
-        return json.Get(key, defaultValue);
-    }
 
     public static int LineCount(this string str)
     {
