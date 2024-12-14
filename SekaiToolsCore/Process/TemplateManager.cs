@@ -20,7 +20,7 @@ public partial class TemplateManager
 
     private const string MenuSignBase = "menu-107px.png";
     private const string DbFontBase = "FOT-RodinNTLGPro-DB.otf";
-    private const string EbFontBase = "FOT-RodinNTLGPro-DB.otf";
+    private const string EbFontBase = "FOT-RodinNTLGPro-EB.otf";
 
     public TemplateManager(Size videoResolution, IEnumerable<string> dbTexts, IEnumerable<string> ebTexts,
         bool noScale = false)
