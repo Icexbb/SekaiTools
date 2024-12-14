@@ -6,8 +6,9 @@
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:local="clr-namespace:SekaiToolsGUI.View.Suppress"
+             xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance local:SuppressPageModel, IsDesignTimeCreatable=True}"
+             d:DataContext="{d:DesignInstance viewModel:SuppressPageModel, IsDesignTimeCreatable=True}"
              d:DesignHeight="600" d:DesignWidth="800" d:Background="White">
     <Grid Margin="10">
         <Grid.RowDefinitions>

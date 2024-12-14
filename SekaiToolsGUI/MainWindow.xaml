@@ -5,6 +5,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="clr-namespace:SekaiToolsGUI"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
     x:Class="SekaiToolsGUI.MainWindow"
     mc:Ignorable="d"
     Title="Sekai Tools"
@@ -16,7 +17,7 @@
     WindowBackdropType="Mica"
     WindowCornerPreference="Round"
     WindowStartupLocation="CenterScreen"
-    d:DataContext="{d:DesignInstance local:MainWindowViewModel,IsDesignTimeCreatable=True}"
+    d:DataContext="{d:DesignInstance viewModel:MainWindowViewModel,IsDesignTimeCreatable=True}"
     Loaded="MainWindow_OnLoaded">
     <Grid>
         <ui:NavigationView

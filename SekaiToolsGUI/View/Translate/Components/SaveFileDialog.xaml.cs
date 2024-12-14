@@ -1,17 +1,9 @@
 using System.IO;
 using System.Windows.Controls;
+using SekaiToolsGUI.ViewModel;
 using Wpf.Ui.Controls;
 
 namespace SekaiToolsGUI.View.Translate.Components;
-
-public class SaveFileDialogModel : ViewModelBase
-{
-    public string FileName
-    {
-        get => GetProperty("");
-        set => SetProperty(value);
-    }
-}
 
 public partial class SaveFileDialog : ContentDialog
 {

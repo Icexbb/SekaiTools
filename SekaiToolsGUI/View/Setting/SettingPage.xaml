@@ -5,7 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:SekaiToolsGUI.View.Setting"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             d:DataContext="{d:DesignInstance local:SettingPageModel, IsDesignTimeCreatable=True}"
+             xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
+             d:DataContext="{d:DesignInstance viewModel:SettingPageModel, IsDesignTimeCreatable=True}"
              mc:Ignorable="d">
 
     <ScrollViewer>

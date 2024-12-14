@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace SekaiToolsGUI;
+namespace SekaiToolsGUI.ViewModel;
 
 public class ViewModelBase : INotifyPropertyChanged
 {

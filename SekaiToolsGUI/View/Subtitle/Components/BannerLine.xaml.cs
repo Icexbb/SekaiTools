@@ -1,17 +1,10 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 using SekaiToolsCore.Process;
+using SekaiToolsGUI.ViewModel;
 using Wpf.Ui.Abstractions.Controls;
 
 namespace SekaiToolsGUI.View.Subtitle.Components;
-
-public class BannerLineModel(BannerFrameSet set) : ViewModelBase
-{
-    public readonly BannerFrameSet Set = set;
-
-    public string StartTime => Set.StartTime();
-    public string EndTime => Set.EndTime();
-}
 
 public partial class BannerLine : UserControl, INavigableView<BannerLineModel>
 {

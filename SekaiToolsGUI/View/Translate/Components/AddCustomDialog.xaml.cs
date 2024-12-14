@@ -1,16 +1,8 @@
 using System.Windows.Controls;
+using SekaiToolsGUI.ViewModel;
 using Wpf.Ui.Controls;
 
 namespace SekaiToolsGUI.View.Translate.Components;
-
-public class AddCustomDialogModel : ViewModelBase
-{
-    public string CustomCharacter
-    {
-        get => GetProperty("");
-        set => SetProperty(value);
-    }
-}
 
 public partial class AddCustomDialog : ContentDialog
 {

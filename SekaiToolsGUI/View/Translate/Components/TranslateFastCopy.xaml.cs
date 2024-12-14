@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using SekaiToolsGUI.View.Setting;
+using SekaiToolsGUI.ViewModel;
 using TextCopy;
 using Wpf.Ui;
 using Wpf.Ui.Controls;

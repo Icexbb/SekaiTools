@@ -5,8 +5,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:local="clr-namespace:SekaiToolsGUI.View.Download.Components"
+             xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
              mc:Ignorable="d" Loaded="EventStoryTab_OnLoaded"
-             d:DesignHeight="500" d:DesignWidth="500" d:DataContext="{d:DesignInstance local:EventStoryTabModel }">
+             d:DesignHeight="500" d:DesignWidth="500" d:DataContext="{d:DesignInstance viewModel:EventStoryTabModel }">
     <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

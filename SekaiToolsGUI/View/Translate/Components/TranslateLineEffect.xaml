@@ -5,8 +5,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:SekaiToolsGUI.View.Translate.Components"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
              mc:Ignorable="d" HorizontalAlignment="Stretch"
-             d:DataContext="{d:DesignInstance local:LineEffectModel, IsDesignTimeCreatable=False}">
+             d:DataContext="{d:DesignInstance viewModel:LineEffectModel, IsDesignTimeCreatable=False}">
     <ui:Card>
         <ui:TextBox
             HorizontalContentAlignment="Stretch"

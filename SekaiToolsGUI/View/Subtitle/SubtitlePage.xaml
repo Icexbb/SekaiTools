@@ -6,9 +6,10 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:local="clr-namespace:SekaiToolsGUI.View.Subtitle"
              xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
+             xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
              mc:Ignorable="d"
              d:Background="White"
-             d:DataContext="{d:DesignInstance local:SubtitlePageModel, IsDesignTimeCreatable=True}">
+             d:DataContext="{d:DesignInstance viewModel:SubtitlePageModel, IsDesignTimeCreatable=True}">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" MinWidth="200" />

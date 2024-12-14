@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using SekaiDataFetch;
 using SekaiToolsGUI.View.Download.Components;
 using SekaiToolsGUI.View.Setting;
+using SekaiToolsGUI.ViewModel;
 
 namespace SekaiToolsGUI.View.Download;
 
