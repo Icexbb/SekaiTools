@@ -31,14 +31,14 @@ public partial class DownloadItem : UserControl
 
 public partial class DownloadItem
 {
+    private static List<DownloadItem> RecycleContainer { get; } = [];
+
     public void Initialize(string url, string key)
     {
         Url = url;
         Key = key;
         KeyText.Text = Key;
     }
-
-    private static List<DownloadItem> RecycleContainer { get; } = [];
 
     public static void RecycleItem(DownloadItem item)
     {

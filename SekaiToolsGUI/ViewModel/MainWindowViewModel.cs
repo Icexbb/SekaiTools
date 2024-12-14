@@ -9,6 +9,11 @@ namespace SekaiToolsGUI.ViewModel;
 
 public class MainWindowViewModel : ViewModelBase
 {
+    public MainWindowViewModel()
+    {
+        SettingPageModel.LoadSetting();
+    }
+
     public object[] NavigationItems { get; set; } =
     [
         new NavigationViewItem
@@ -53,9 +58,4 @@ public class MainWindowViewModel : ViewModelBase
     ];
 
     public static SettingPageModel SettingPageModel => SettingPageModel.Instance;
-
-    public MainWindowViewModel()
-    {
-        SettingPageModel.LoadSetting();
-    }
 }

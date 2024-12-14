@@ -1,5 +1,4 @@
 ﻿using System.Windows;
-using System.Windows.Media.Imaging;
 using SekaiToolsGUI.View.Suppress;
 using SekaiToolsGUI.ViewModel;
 using Wpf.Ui;

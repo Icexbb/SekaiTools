@@ -8,8 +8,6 @@ namespace SekaiToolsCore;
 
 public static partial class Utils
 {
-
-
     public static int LineCount(this string str)
     {
         return str.Split('\n').Select(value => value.Length > 0 ? 1 : 0).Sum();

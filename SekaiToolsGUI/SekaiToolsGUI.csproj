@@ -15,8 +15,9 @@
     <ItemGroup>
         <PackageReference Include="CalcBinding" Version="2.5.2"/>
         <PackageReference Include="Emgu.CV.Wpf" Version="4.9.0.5494"/>
-        <PackageReference Include="TextCopy" Version="6.2.1" />
-        <PackageReference Include="WPF-UI" Version="4.0.0-rc.3" />
+        <PackageReference Include="System.Text.Json" Version="9.0.0"/>
+        <PackageReference Include="TextCopy" Version="6.2.1"/>
+        <PackageReference Include="WPF-UI" Version="4.0.0-rc.3"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -190,14 +191,14 @@
             <SubType>Designer</SubType>
         </Page>
         <Page Update="View\Download\Components\SpecialStoryTab.xaml">
-          <Generator>MSBuild:Compile</Generator>
-          <XamlRuntime>Wpf</XamlRuntime>
-          <SubType>Designer</SubType>
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
         </Page>
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="View\Suppress\Components\" />
-      <Folder Include="View\Utils\Componets\" />
+        <Folder Include="View\Suppress\Components\"/>
+        <Folder Include="View\Utils\Componets\"/>
     </ItemGroup>
 </Project>

@@ -9,6 +9,9 @@ namespace SekaiToolsCore.Process;
 
 public partial class TemplateManager
 {
+    private const string MenuSignBase = "menu-107px.png";
+    private const string DbFontBase = "FOT-RodinNTLGPro-DB.otf";
+    private const string EbFontBase = "FOT-RodinNTLGPro-EB.otf";
     private readonly Dictionary<string, Mat> _dbTemplate = new();
     private readonly string[] _dbTexts;
     private readonly Dictionary<string, Mat> _ebTemplate = new();
@@ -16,11 +19,6 @@ public partial class TemplateManager
     private readonly bool _noScale;
     private readonly Size _videoResolution;
     private Mat? _menuSign;
-
-
-    private const string MenuSignBase = "menu-107px.png";
-    private const string DbFontBase = "FOT-RodinNTLGPro-DB.otf";
-    private const string EbFontBase = "FOT-RodinNTLGPro-EB.otf";
 
     public TemplateManager(Size videoResolution, IEnumerable<string> dbTexts, IEnumerable<string> ebTexts,
         bool noScale = false)

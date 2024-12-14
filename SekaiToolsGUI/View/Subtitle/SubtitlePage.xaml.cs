@@ -11,7 +11,6 @@ using SekaiToolsCore;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Story;
 using SekaiToolsCore.Story.Event;
-using SekaiToolsGUI.View.Setting;
 using SekaiToolsGUI.View.Subtitle.Components;
 using SekaiToolsGUI.ViewModel;
 using Wpf.Ui;

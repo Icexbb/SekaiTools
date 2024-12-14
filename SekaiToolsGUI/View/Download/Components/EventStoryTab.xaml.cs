@@ -3,7 +3,6 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using SekaiDataFetch;
 using SekaiDataFetch.List;
-using SekaiToolsGUI.View.Setting;
 using SekaiToolsGUI.ViewModel;
 
 namespace SekaiToolsGUI.View.Download.Components;
@@ -12,13 +11,13 @@ public partial class EventStoryTab : UserControl, IRefreshable
 {
     private int _currentDirection = -1;
 
-    private EventStoryTabModel ViewModel => (EventStoryTabModel)DataContext;
-
     public EventStoryTab()
     {
         InitializeComponent();
         DataContext = new EventStoryTabModel();
     }
+
+    private EventStoryTabModel ViewModel => (EventStoryTabModel)DataContext;
 
     private ListEventStory? StoryData { get; set; }
 
@@ -270,7 +269,6 @@ public partial class EventStoryTab : UserControl, IRefreshable
             ? Visibility.Visible
             : Visibility.Collapsed;
         if (visibility == Visibility.Visible)
-        {
             visibility = data.GameEvent.EventType switch
             {
                 "marathon" or "cheerful_carnival" => data.EventStory.BannerGameCharacterUnitId switch
@@ -339,7 +337,6 @@ public partial class EventStoryTab : UserControl, IRefreshable
                 },
                 _ => Visibility.Visible
             };
-        }
 
         return visibility == Visibility.Visible;
         // switch (item.Visibility)

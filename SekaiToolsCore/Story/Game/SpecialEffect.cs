@@ -25,9 +25,9 @@ public struct SpecialEffect()
         IntVal = intVal;
     }
 
-    public int EffectType { get; set; }
-    public string StringVal { get; set; }
-    public double Duration { get; set; }
-    public string StringValSub { get; set; }
-    public double IntVal { get; set; }
+    public int EffectType { get; set; } = 0;
+    public string StringVal { get; set; } = "";
+    public double Duration { get; set; } = 0.0d;
+    public string StringValSub { get; set; } = "";
+    public double IntVal { get; set; } = 0.0d;
 }

@@ -3,7 +3,6 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using SekaiDataFetch;
 using SekaiDataFetch.List;
-using SekaiToolsGUI.View.Setting;
 using SekaiToolsGUI.ViewModel;
 
 namespace SekaiToolsGUI.View.Download.Components;
@@ -31,10 +30,7 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
     {
         CardContents.Children.Clear();
         if (ListSpecialStory == null || ListSpecialStory.Data.Count == 0) return;
-        foreach (var (key, value) in ListSpecialStory.Data)
-        {
-            SpecialStoryTypeSelector.Items.Add(key);
-        }
+        foreach (var (key, value) in ListSpecialStory.Data) SpecialStoryTypeSelector.Items.Add(key);
 
         SpecialStoryTypeSelector.SelectedIndex = 0;
     }

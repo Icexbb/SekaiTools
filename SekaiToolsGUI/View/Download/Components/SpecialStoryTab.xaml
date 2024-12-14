@@ -15,8 +15,7 @@
         <ComboBox
             Name="SpecialStoryTypeSelector" Grid.Row="0"
             Margin="0,0,0,5 " Padding="5" HorizontalContentAlignment="Stretch"
-            SelectionChanged="SpecialStoryTypeSelector_OnSelectionChanged"
-            />
+            SelectionChanged="SpecialStoryTypeSelector_OnSelectionChanged" />
 
         <ui:Card Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
             <ui:PassiveScrollViewer>

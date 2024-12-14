@@ -5,7 +5,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             xmlns:local="clr-namespace:SekaiToolsGUI.View.Suppress"
              xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance viewModel:SuppressPageModel, IsDesignTimeCreatable=True}"
@@ -125,8 +124,7 @@
                     HorizontalAlignment="Center" VerticalAlignment="Center" Content="开始压制"
                     Click="StartSuppress_OnClick"
                     IsEnabled="{c:Binding CanStartSuppress,FalseToVisibility=Collapsed}"
-                    Visibility="{c:Binding HasNotStarted,FalseToVisibility=Collapsed}">
-                </ui:Button>
+                    Visibility="{c:Binding HasNotStarted,FalseToVisibility=Collapsed}" />
             </Grid>
 
         </ui:Card>

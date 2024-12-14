@@ -6,7 +6,6 @@ using System.Windows;
 using System.Windows.Controls;
 using SekaiDataFetch;
 using SekaiToolsGUI.View.Download.Components;
-using SekaiToolsGUI.View.Setting;
 using SekaiToolsGUI.ViewModel;
 
 namespace SekaiToolsGUI.View.Download;
@@ -20,14 +19,14 @@ public partial class DownloadPage : UserControl
         StoryTypeSelector_OnSelected(null!, null!);
     }
 
+    private UnitStoryTab UnitStoryTab { get; } = new();
+    private EventStoryTab EventStoryTab { get; } = new();
+    private SpecialStoryTab SpecialStoryTab { get; } = new();
+
     public void AddTask(string tag, string url)
     {
         Dispatcher.Invoke(() => { DownloadItemBox.Items.Add(new DownloadTask(tag, url)); });
     }
-
-    private UnitStoryTab UnitStoryTab { get; } = new();
-    private EventStoryTab EventStoryTab { get; } = new();
-    private SpecialStoryTab SpecialStoryTab { get; } = new();
 
     private void StoryTypeSelector_OnSelected(object sender, RoutedEventArgs e)
     {

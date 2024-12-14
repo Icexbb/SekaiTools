@@ -97,7 +97,7 @@ public struct Setting
             ExportBannerText = model.ExportBannerText,
             ExportMarkerMask = model.ExportMarkerMask,
             ExportMarkerText = model.ExportMarkerText,
-            ExportScreenComment = model.ExportScreenComment,
+            ExportScreenComment = model.ExportScreenComment
         };
     }
 

@@ -2,7 +2,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SekaiDataFetch.Data;
 
-public class GameEvent :ICloneable
+public class GameEvent : ICloneable
 {
     public int Id { get; set; }
     public string EventType { get; set; } = "";
@@ -19,28 +19,6 @@ public class GameEvent :ICloneable
     public long DistributionEndAt { get; set; }
     public int VirtualLiveId { get; set; }
     public string Unit { get; set; } = "";
-
-    public static GameEvent FromJson(JObject json)
-    {
-        return new GameEvent
-        {
-            Id = json.Get("id", 0),
-            EventType = json.Get("eventType", ""),
-            Name = json.Get("name", ""),
-            AssetBundleName = json.Get("assetBundleName", ""),
-            BgmAssetBundleName = json.Get("bgmAssetBundleName", ""),
-            EventOnlyComponentDisplayStartAt = json.Get("eventOnlyComponentDisplayStartAt", 0L),
-            StartAt = json.Get("startAt", 0L),
-            AggregateAt = json.Get("aggregateAt", 0L),
-            RankingAnnounceAt = json.Get("rankingAnnounceAt", 0L),
-            DistributionStartAt = json.Get("distributionStartAt", 0L),
-            EventOnlyComponentDisplayEndAt = json.Get("eventOnlyComponentDisplayEndAt", 0L),
-            ClosedAt = json.Get("closedAt", 0L),
-            DistributionEndAt = json.Get("distributionEndAt", 0L),
-            VirtualLiveId = json.Get("virtualLiveId", 0),
-            Unit = json.Get("unit", "")
-        };
-    }
 
     public object Clone()
     {
@@ -61,6 +39,28 @@ public class GameEvent :ICloneable
             DistributionEndAt = DistributionEndAt,
             VirtualLiveId = VirtualLiveId,
             Unit = Unit
+        };
+    }
+
+    public static GameEvent FromJson(JObject json)
+    {
+        return new GameEvent
+        {
+            Id = json.Get("id", 0),
+            EventType = json.Get("eventType", ""),
+            Name = json.Get("name", ""),
+            AssetBundleName = json.Get("assetBundleName", ""),
+            BgmAssetBundleName = json.Get("bgmAssetBundleName", ""),
+            EventOnlyComponentDisplayStartAt = json.Get("eventOnlyComponentDisplayStartAt", 0L),
+            StartAt = json.Get("startAt", 0L),
+            AggregateAt = json.Get("aggregateAt", 0L),
+            RankingAnnounceAt = json.Get("rankingAnnounceAt", 0L),
+            DistributionStartAt = json.Get("distributionStartAt", 0L),
+            EventOnlyComponentDisplayEndAt = json.Get("eventOnlyComponentDisplayEndAt", 0L),
+            ClosedAt = json.Get("closedAt", 0L),
+            DistributionEndAt = json.Get("distributionEndAt", 0L),
+            VirtualLiveId = json.Get("virtualLiveId", 0),
+            Unit = json.Get("unit", "")
         };
     }
 }

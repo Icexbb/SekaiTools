@@ -77,6 +77,11 @@ public class EventStoryImpl(EventStory es, GameEvent ge) : ICloneable
     public readonly EventStory EventStory = es;
     public readonly GameEvent GameEvent = ge;
 
+    public object Clone()
+    {
+        return new EventStoryImpl((EventStory)EventStory.Clone(), (GameEvent)GameEvent.Clone());
+    }
+
     public string Url(int episode, SourceList.SourceType sourceType)
     {
         if (episode < 0 || episode >= EventStory.EventStoryEpisodes.Length)
@@ -92,10 +97,5 @@ public class EventStoryImpl(EventStory es, GameEvent ge) : ICloneable
                                             $"/{EventStory.EventStoryEpisodes[episode].ScenarioId}.json",
             _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
         };
-    }
-
-    public object Clone()
-    {
-        return new EventStoryImpl((EventStory)EventStory.Clone(), (GameEvent)GameEvent.Clone());
     }
 }

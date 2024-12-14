@@ -15,20 +15,6 @@ public partial class EventStoryEvent : UserControl
             typeof(EventStoryEvent),
             new PropertyMetadata(null, OnEventStoryImplChanged));
 
-    public EventStoryImpl? EventStoryImpl
-    {
-        get => (EventStoryImpl?)GetValue(EventStoryImplProperty);
-        set => SetValue(EventStoryImplProperty, value);
-    }
-
-    private static void OnEventStoryImplChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        if (d is EventStoryEvent control && e.NewValue is EventStoryImpl eventStoryImpl)
-        {
-            control.Initialize(eventStoryImpl);
-        }
-    }
-
     public EventStoryEvent()
     {
         InitializeComponent();
@@ -43,10 +29,24 @@ public partial class EventStoryEvent : UserControl
         EventStoryImpl = eventStoryImpl;
         Initialize(eventStoryImpl, sourceType);
     }
+
+    public EventStoryImpl? EventStoryImpl
+    {
+        get => (EventStoryImpl?)GetValue(EventStoryImplProperty);
+        set => SetValue(EventStoryImplProperty, value);
+    }
+
+    private static void OnEventStoryImplChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is EventStoryEvent control && e.NewValue is EventStoryImpl eventStoryImpl)
+            control.Initialize(eventStoryImpl);
+    }
 }
 
 public partial class EventStoryEvent
 {
+    private static List<EventStoryEvent> RecycleContainer { get; } = [];
+
     private void Initialize(EventStoryImpl eventStoryImpl,
         SourceList.SourceType sourceType = SourceList.SourceType.SiteBest)
     {
@@ -57,8 +57,6 @@ public partial class EventStoryEvent
                     $"chr_{EventStoryImpl.EventStory.BannerGameCharacterUnitId}.png"));
         InitDownloadItems(sourceType);
     }
-
-    private static List<EventStoryEvent> RecycleContainer { get; } = [];
 
     public static void RecycleItem(EventStoryEvent item)
     {
@@ -84,12 +82,8 @@ public partial class EventStoryEvent
     private void InitDownloadItems(SourceList.SourceType sourceType)
     {
         if (PanelItems.Children.Count > EventStoryImpl!.EventStory.EventStoryEpisodes.Length)
-        {
             for (var i = EventStoryImpl.EventStory.EventStoryEpisodes.Length; i < PanelItems.Children.Count; i++)
-            {
                 DownloadItem.RecycleItem((DownloadItem)PanelItems.Children[i]);
-            }
-        }
 
 
         for (var i = 0; i < EventStoryImpl!.EventStory.EventStoryEpisodes.Length; i++)

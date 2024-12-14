@@ -20,11 +20,11 @@ public record struct Talk()
         this.Voices = Voices ?? [];
     }
 
-    public string Body { get; set; }
-    public string WindowDisplayName { get; set; }
-    public int WhenFinishCloseWindow { get; set; }
-    public TalkCharacter[] TalkCharacters { get; set; }
-    public Voice[] Voices { get; set; }
+    public string Body { get; set; } = "";
+    public string WindowDisplayName { get; set; } = "";
+    public int WhenFinishCloseWindow { get; set; } = 0;
+    public TalkCharacter[] TalkCharacters { get; set; } = [];
+    public Voice[] Voices { get; set; } = [];
     public bool Shake { get; set; } = false;
 
     public readonly int GetCharacterId()

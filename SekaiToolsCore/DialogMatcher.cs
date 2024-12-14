@@ -104,7 +104,9 @@ public class DialogMatcher(
 
         bool matchRes;
 
-        var matchingThreshold = dialog.Data.Shake ? config.MatchingThreshold.DialogSpecial : config.MatchingThreshold.DialogNormal;
+        var matchingThreshold = dialog.Data.Shake
+            ? config.MatchingThreshold.DialogSpecial
+            : config.MatchingThreshold.DialogNormal;
 
         switch (lastStatus)
         {

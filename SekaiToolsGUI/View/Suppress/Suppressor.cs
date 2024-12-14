@@ -47,11 +47,10 @@ internal class X264Params
 
 public partial class Suppressor
 {
-    public static Suppressor Instance { get; } = new();
-
     private readonly List<Task> _subTasks = [];
     private Process? _fProcess;
     private Process? _vProcess;
+    public static Suppressor Instance { get; } = new();
 
     private int FrameCount { get; set; }
     private double Fps { get; set; }
@@ -207,10 +206,7 @@ public partial class Suppressor
         try
         {
             int byteRead;
-            while ((byteRead = vapourOut.Read(buffer, 0, buffer.Length)) > 0)
-            {
-                ffmpegIn.Write(buffer, 0, byteRead);
-            }
+            while ((byteRead = vapourOut.Read(buffer, 0, buffer.Length)) > 0) ffmpegIn.Write(buffer, 0, byteRead);
 
             ffmpegIn.Close();
         }

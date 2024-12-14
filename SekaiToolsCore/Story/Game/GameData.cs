@@ -5,10 +5,6 @@ namespace SekaiToolsCore.Story.Game;
 
 public class GameData()
 {
-    public Snippet[] Snippets { get; set; } = [];
-    public SpecialEffect[] SpecialEffectData { get; set; } = [];
-    public Talk[] TalkData { get; set; } = [];
-
     public GameData(string jsonFilePath) : this()
     {
         if (!File.Exists(jsonFilePath)) throw new Exception("File not found");
@@ -16,7 +12,7 @@ public class GameData()
         var jsonString = File.ReadAllText(jsonFilePath);
         var data = JsonSerializer.Deserialize<GameData>(jsonString, new JsonSerializerOptions
         {
-            PropertyNameCaseInsensitive = true,
+            PropertyNameCaseInsensitive = true
         }) ?? throw new Exception("Json parse error");
 
         TalkData = data.TalkData;
@@ -76,6 +72,10 @@ public class GameData()
         SpecialEffectData = SpecialEffectData
             .Where(seData => seData.EffectType is 8 or 18).ToArray();
     }
+
+    public Snippet[] Snippets { get; set; } = [];
+    public SpecialEffect[] SpecialEffectData { get; set; } = [];
+    public Talk[] TalkData { get; set; } = [];
 
     public bool Empty()
     {

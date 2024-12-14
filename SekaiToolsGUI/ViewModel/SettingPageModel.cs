@@ -235,7 +235,7 @@ public class SettingPageModel : ViewModelBase
 
     public TypewriterSetting GetTypewriterSetting()
     {
-        return new TypewriterSetting()
+        return new TypewriterSetting
         {
             FadeTime = TypewriterFadeTime,
             CharTime = TypewriterCharTime
@@ -244,7 +244,7 @@ public class SettingPageModel : ViewModelBase
 
     public MatchingThreshold GetMatchingThreshold()
     {
-        return new MatchingThreshold()
+        return new MatchingThreshold
         {
             DialogNormal = ThresholdNormal,
             DialogSpecial = ThresholdSpecial,
