@@ -32,7 +32,7 @@ public partial class TranslateLineDialog : UserControl, INavigableView<LineDialo
         if (sender is not TextBox textBox) return;
         if (e.Key != Key.Enter) return;
         var lineCount = textBox.LineCount;
-        if (lineCount >= 2) e.Handled = true; // 阻止回车键输入新行
+        if (lineCount >= 3) e.Handled = true; // 阻止回车键输入新行
     }
 
     private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -41,6 +41,6 @@ public partial class TranslateLineDialog : UserControl, INavigableView<LineDialo
         var newText = textBox.Text.Insert(textBox.CaretIndex, e.Text);
         var newLineCount = newText.Split('\n').Length;
 
-        if (newLineCount > 2) e.Handled = true; // 阻止输入导致超过三行
+        if (newLineCount > 3) e.Handled = true; // 阻止输入导致超过三行
     }
 }
