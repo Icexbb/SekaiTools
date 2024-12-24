@@ -5,7 +5,7 @@ using SekaiDataFetch;
 using SekaiDataFetch.List;
 using SekaiToolsGUI.ViewModel;
 
-namespace SekaiToolsGUI.View.Download.Components;
+namespace SekaiToolsGUI.View.Download.Components.Unit;
 
 public partial class UnitStoryTab : UserControl, IRefreshable
 {

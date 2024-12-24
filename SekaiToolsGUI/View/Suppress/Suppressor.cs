@@ -268,7 +268,7 @@ public partial class Suppressor
         SuppressPageModel.Instance.Running = Running;
     }
 
-    [GeneratedRegex(
-        @"^frame=\s{0,}(?<FrameNumber>\d*)\s+fps=\s{0,}(?<FramesPerSecond>[\d\.]+)\s+q=(?<QuanitizerScale>[\d\.]+)\s+L?size=\s+(?<Size>\d{1,}\w*B)\s+time=(?<Time>([\d\:\.]+)|(N\/A))\s{0,}bitrate=\s{0,}(?<Bitrate>([\d\.]+kbits\/s?)|(N\/A))\s+speed=\s{0,}(?<Speed>([\d\.]+x)|(N\/A))")]
+    // [GeneratedRegex(@"^frame=\s{0,}(?<FrameNumber>\d*)\s+fps=\s{0,}(?<FramesPerSecond>[\d\.]+)\s+q=(?<QuanitizerScale>[\d\.]+)\s+L?size=\s+(?<Size>\d{1,}\w*B)\s+time=(?<Time>([\d\:\.]+)|(N\/A))\s{0,}bitrate=\s{0,}(?<Bitrate>([\d\.]+kbits\/s?)|(N\/A))\s+speed=\s{0,}(?<Speed>([\d\.]+x)|(N\/A))")]
+    [GeneratedRegex(@"^frame=\s{0,}(?<FrameNumber>\d*)\s+fps=\s{0,}(?<FramesPerSecond>[\d\.]+)")]
     private static partial Regex FfmpegProgressPattern();
 }

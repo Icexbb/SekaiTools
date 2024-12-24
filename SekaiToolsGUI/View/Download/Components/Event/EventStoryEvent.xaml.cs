@@ -4,7 +4,7 @@ using System.Windows.Media.Imaging;
 using SekaiDataFetch;
 using SekaiDataFetch.List;
 
-namespace SekaiToolsGUI.View.Download.Components;
+namespace SekaiToolsGUI.View.Download.Components.Event;
 
 public partial class EventStoryEvent : UserControl
 {

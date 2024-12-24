@@ -5,7 +5,7 @@ using SekaiDataFetch;
 using SekaiDataFetch.List;
 using SekaiToolsGUI.ViewModel;
 
-namespace SekaiToolsGUI.View.Download.Components;
+namespace SekaiToolsGUI.View.Download.Components.Event;
 
 public partial class EventStoryTab : UserControl, IRefreshable
 {

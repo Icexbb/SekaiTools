@@ -9,6 +9,8 @@ using Emgu.CV.CvEnum;
 using Microsoft.Win32;
 using SekaiToolsCore;
 using SekaiToolsCore.Process;
+using SekaiToolsCore.Process.FrameSet;
+using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Story;
 using SekaiToolsCore.Story.Event;
 using SekaiToolsGUI.View.Subtitle.Components;

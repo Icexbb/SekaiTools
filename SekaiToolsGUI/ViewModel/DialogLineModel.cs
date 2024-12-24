@@ -1,6 +1,8 @@
 using System.Windows;
 using SekaiToolsCore;
 using SekaiToolsCore.Process;
+using SekaiToolsCore.Process.FrameSet;
+using SekaiToolsCore.Process.Model;
 
 namespace SekaiToolsGUI.ViewModel;
 
@@ -73,7 +75,7 @@ public class DialogLineModel : ViewModelBase
         {
             SetProperty(value);
             SetPromptWarning();
-            SeparateTime = new Frame(value, FrameRate).StartTime();
+            SeparateTime = new ProcessFrame(value, FrameRate).StartTime();
             Set.SetSeparator(SeparateFrame, SeparatorContentIndex);
         }
     }
