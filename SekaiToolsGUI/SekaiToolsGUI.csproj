@@ -198,6 +198,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Folder Include="View\Download\Components\Action\" />
         <Folder Include="View\Suppress\Components\"/>
         <Folder Include="View\Utils\Componets\"/>
     </ItemGroup>

@@ -57,7 +57,7 @@ public class ListUnitStory
             }
 
             var data = new UnitStorySet(Constants.UnitName[unit.Unit], chapterDict.ToArray());
-            Data.Add(unit.Unit, data);
+            Data.Set(unit.Unit, data);
         }
     }
 

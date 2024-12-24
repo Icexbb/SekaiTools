@@ -50,7 +50,7 @@ public class ListSpecialStory
                 new SpecialStorySet.Episode(episode.Title, episode.AssetBundleName, episode.ScenarioId)));
 
             var data = new SpecialStorySet(special.Title, episodeDict.ToArray());
-            Data.Add(special.Title, data);
+            Data.Set(special.Title, data);
         }
     }
 

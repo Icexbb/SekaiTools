@@ -157,7 +157,12 @@ public partial class DownloadPage : UserControl
         try
         {
             if (ContentCard.Content is not IRefreshable refreshable) return;
+            var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+            var dialog = new RefreshWaitDialog();
+            var source = new CancellationTokenSource();
+            _ = dialogService.ShowAsync(dialog, source.Token);
             await refreshable.Refresh();
+            await source.CancelAsync();
         }
         catch (Exception exception)
         {

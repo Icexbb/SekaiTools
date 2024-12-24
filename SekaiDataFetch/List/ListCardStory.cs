@@ -39,7 +39,7 @@ public class ListCardStory()
                 charaDict.Add(key, cardDict);
             }
 
-            Data.Add(charaName, charaDict);
+            Data.Set(charaName, charaDict);
         }
     }
 }
