@@ -48,10 +48,10 @@ public struct Setting
         TypewriterFadeTime = 50,
         TypewriterCharTime = 80,
 
-        ThresholdDialogNormal = 0.85,
+        ThresholdDialogNormal = 0.75,
         ThresholdDialogSpecial = 0.6,
-        ThresholdBannerNormal = 0.85,
-        ThresholdMarkerNormal = 0.85,
+        ThresholdBannerNormal = 0.75,
+        ThresholdMarkerNormal = 0.75,
 
         DialogFontFamily = "思源黑体 CN Bold",
         BannerFontFamily = "思源黑体 Medium",
