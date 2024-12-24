@@ -218,10 +218,10 @@ public class DialogMatcher(
     private MatchResult MatchForDialog(Mat frame, DialogFrameSet dialog)
     {
         var lastStatus = _status;
-        if (lastStatus is MatchStatus.DialogDropped && dialog.IsEmpty)
+        if (lastStatus is MatchStatus.DialogDropped && dialog.IsEmpty())
             lastStatus = MatchStatus.DialogNotMatched;
         Point point;
-        if (dialog.Data.Shake || dialog.IsEmpty)
+        if (dialog.Data.Shake || dialog.IsEmpty())
             point = DialogMatchNameTag(frame, dialog);
         else
             point = dialog.Start().Point;

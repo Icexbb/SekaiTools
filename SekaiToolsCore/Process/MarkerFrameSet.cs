@@ -3,59 +3,27 @@ using SekaiToolsCore.Story.Event;
 
 namespace SekaiToolsCore.Process;
 
-public class MarkerFrameSet(Marker data, FrameRate fps)
+public class MarkerFrameResult(int index, FrameRate fps, Point point) : Frame(index, fps)
 {
-    private const int FrameIndexOffset = -1;
-    public readonly Marker Data = data;
-    public readonly FrameRate Fps = fps;
+    public Point Point => point;
+}
 
-
-    public readonly List<DialogFrameResult> Frames = [];
-    public bool IsEmpty => Frames.Count == 0;
+public class MarkerFrameSet(Marker data, FrameRate fps) : FrameSet
+{
+    private static int FrameIndexOffset { get; } = -1;
+    public Marker Data { get; } = data;
+    public FrameRate Fps { get; } = fps;
+    public List<MarkerFrameResult> Frames { get; } = [];
     public bool Finished { get; set; }
-
-    public void Add(int index, Rectangle rect)
-    {
-        Frames.Add(new DialogFrameResult(index + FrameIndexOffset, Fps, rect.Location));
-    }
 
     public void Add(int index, Point point)
     {
-        Frames.Add(new DialogFrameResult(index + FrameIndexOffset, Fps, point));
+        Frames.Add(new MarkerFrameResult(index + FrameIndexOffset, Fps, point));
     }
 
-    public DialogFrameResult Start()
-    {
-        return Frames[0];
-    }
+    public override bool IsEmpty() => Frames.Count == 0;
 
-    public DialogFrameResult End()
-    {
-        return Frames[^1];
-    }
+    public override IProcessFrame Start() => Frames[0];
 
-    public string StartTime()
-    {
-        return Start().StartTime();
-    }
-
-    public string EndTime()
-    {
-        return End().EndTime();
-    }
-
-    public int StartIndex()
-    {
-        return Start().Index;
-    }
-
-    public int EndIndex()
-    {
-        return End().Index;
-    }
-
-    public class DialogFrameResult(int index, FrameRate fps, Point point) : Frame(index, fps)
-    {
-        public Point Point => point;
-    }
+    public override IProcessFrame End() => Frames[^1];
 }

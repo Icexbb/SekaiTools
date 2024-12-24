@@ -1,23 +1,36 @@
 namespace SekaiToolsCore.Process;
 
-public class Frame(int index, FrameRate fps)
+public interface IProcessFrame
 {
-    public int Index => index;
+    public int Index { get; }
+
+    public FrameRate Fps { get; }
+
+    public string ExactTime();
+    public string StartTime();
+    public string EndTime();
+}
+
+public class Frame(int index, FrameRate fps) : IProcessFrame
+{
+    public int Index { get; } = index;
+
+    public FrameRate Fps { get; } = fps;
 
     public static string Zero => "00:00:00.00";
 
     public string ExactTime()
     {
-        return fps.TimeAtFrame(index).GetAssFormatted();
+        return Fps.TimeAtFrame(Index).GetAssFormatted();
     }
 
     public string StartTime()
     {
-        return fps.TimeAtFrame(index, FrameType.Start).GetAssFormatted();
+        return Fps.TimeAtFrame(Index, FrameType.Start).GetAssFormatted();
     }
 
     public string EndTime()
     {
-        return fps.TimeAtFrame(index, FrameType.End).GetAssFormatted();
+        return Fps.TimeAtFrame(Index, FrameType.End).GetAssFormatted();
     }
 }
