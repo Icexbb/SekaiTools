@@ -1,9 +1,10 @@
 using System.Drawing;
+using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Story.Event;
 
-namespace SekaiToolsCore.Process;
+namespace SekaiToolsCore.Process.FrameSet;
 
-public class DialogFrameResult(int index, FrameRate fps, Point point) : Frame(index, fps)
+public class DialogFrameResult(int index, FrameRate fps, Point point) : ProcessFrame(index, fps)
 {
     public Point Point => point;
 }

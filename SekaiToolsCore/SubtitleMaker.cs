@@ -1,6 +1,8 @@
 using System.Drawing;
 using System.Text;
 using SekaiToolsCore.Process;
+using SekaiToolsCore.Process.FrameSet;
+using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Story.Event;
 using SekaiToolsCore.SubStationAlpha;
 using SekaiToolsCore.SubStationAlpha.AssDraw;

@@ -1,4 +1,6 @@
-namespace SekaiToolsCore.Process;
+using SekaiToolsCore.Process.Model;
+
+namespace SekaiToolsCore.Process.FrameSet;
 
 public abstract class FrameSet
 {

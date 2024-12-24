@@ -1,6 +1,6 @@
 using System.Drawing;
 
-namespace SekaiToolsCore.Process;
+namespace SekaiToolsCore.Process.Model;
 
 public struct MatchResult(double maxVal, double minVal, Point maxLoc, Point minLoc)
 {

@@ -1,9 +1,10 @@
 using System.Drawing;
+using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Story.Event;
 
-namespace SekaiToolsCore.Process;
+namespace SekaiToolsCore.Process.FrameSet;
 
-public class MarkerFrameResult(int index, FrameRate fps, Point point) : Frame(index, fps)
+public class MarkerFrameResult(int index, FrameRate fps, Point point) : ProcessFrame(index, fps)
 {
     public Point Point => point;
 }

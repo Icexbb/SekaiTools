@@ -1,6 +1,7 @@
 using System.Drawing;
 using Emgu.CV;
 using SekaiToolsCore.Process;
+using SekaiToolsCore.Process.Model;
 
 namespace SekaiToolsCore;
 
@@ -22,7 +23,7 @@ public class ContentMatcher(TemplateManager templateManager, Config config)
         roi.Extend(0.1);
 
         var frameCropped = new Mat(mat, roi);
-        var result = Matcher.MatchTemplate(frameCropped, Template);
+        var result = TemplateMatcher.Match(frameCropped, Template);
         return result.MaxVal > Threshold;
     }
 

@@ -4,12 +4,13 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
+using SekaiToolsCore.Process.Model;
 
 namespace SekaiToolsCore.Process;
 
-public static class Matcher
+public static class TemplateMatcher
 {
-    public static MatchResult MatchTemplate(Mat img, GaMat tmp,
+    public static MatchResult Match(Mat img, GaMat tmp,
         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
         [CallerMemberName] string memberName = "")
     {

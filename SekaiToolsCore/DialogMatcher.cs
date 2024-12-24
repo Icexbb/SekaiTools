@@ -1,6 +1,8 @@
 using System.Drawing;
 using Emgu.CV;
 using SekaiToolsCore.Process;
+using SekaiToolsCore.Process.FrameSet;
+using SekaiToolsCore.Process.Model;
 
 namespace SekaiToolsCore;
 
@@ -38,7 +40,7 @@ public class DialogMatcher(
         {
             var roi = LocalGetCropArea(tmp.Size);
             var imgCropped = new Mat(src, roi);
-            var result = Matcher.MatchTemplate(imgCropped, tmp);
+            var result = TemplateMatcher.Match(imgCropped, tmp);
             if (!(threshold < result.MaxVal) || !(result.MaxVal < 1)) return Point.Empty;
             return new Point(result.MaxLoc.X + roi.X, result.MaxLoc.Y + roi.Y);
         }
@@ -155,7 +157,7 @@ public class DialogMatcher(
             dialogStartPosition.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
 
             var imgCropped = new Mat(src, dialogStartPosition);
-            var result = Matcher.MatchTemplate(imgCropped, tmp);
+            var result = TemplateMatcher.Match(imgCropped, tmp);
             return result.MaxVal > threshold && result.MaxVal < 1;
         }
 

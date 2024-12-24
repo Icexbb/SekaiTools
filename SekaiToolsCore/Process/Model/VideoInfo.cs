@@ -2,7 +2,7 @@ using System.Drawing;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 
-namespace SekaiToolsCore.Process;
+namespace SekaiToolsCore.Process.Model;
 
 public class VideoInfo
 {

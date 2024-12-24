@@ -2,6 +2,8 @@ using System.Drawing;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using SekaiToolsCore.Process;
+using SekaiToolsCore.Process.FrameSet;
+using SekaiToolsCore.Process.Model;
 using SekaiStory = SekaiToolsCore.Story.Story;
 
 
@@ -53,7 +55,7 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
                 return Point.Empty;
 
             var imgCropped = new Mat(src, cropArea);
-            var matchResult = Matcher.MatchTemplate(imgCropped, tmp, matchingType);
+            var matchResult = TemplateMatcher.Match(imgCropped, tmp, matchingType);
             var matched = matchResult.MaxVal > config.MatchingThreshold.MarkerNormal && matchResult.MaxVal < 1;
 
             if (!matched) return Point.Empty;

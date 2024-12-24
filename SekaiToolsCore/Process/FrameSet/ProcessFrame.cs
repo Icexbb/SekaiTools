@@ -1,4 +1,6 @@
-namespace SekaiToolsCore.Process;
+using SekaiToolsCore.Process.Model;
+
+namespace SekaiToolsCore.Process.FrameSet;
 
 public interface IProcessFrame
 {
@@ -11,7 +13,7 @@ public interface IProcessFrame
     public string EndTime();
 }
 
-public class Frame(int index, FrameRate fps) : IProcessFrame
+public class ProcessFrame(int index, FrameRate fps) : IProcessFrame
 {
     public int Index { get; } = index;
 

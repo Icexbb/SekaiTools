@@ -1,4 +1,5 @@
 using SekaiToolsCore.Process;
+using SekaiToolsCore.Process.Model;
 using SekaiStory = SekaiToolsCore.Story.Story;
 
 namespace SekaiToolsCore;

@@ -1,4 +1,4 @@
-namespace SekaiToolsCore.Process;
+namespace SekaiToolsCore.Process.Model;
 
 public enum FrameType
 {
