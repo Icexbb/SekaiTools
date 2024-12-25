@@ -393,13 +393,6 @@
 
             </Grid>
         </ui:Card>
-        <!-- <ui:Card Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Top"> -->
-        <!--     <ScrollViewer IsDeferredScrollingEnabled="True                               "> -->
-        <!--         <VirtualizingStackPanel -->
-        <!--             IsVirtualizing="True" VirtualizationMode="Standard" Margin="5" -->
-        <!--             Name="CardContents" /> -->
-        <!--     </ScrollViewer> -->
-        <!-- </ui:Card> -->
         <ListView Grid.Row="1" ItemsSource="{Binding EventStories}"
                   BorderBrush="Transparent"
                   Background="Transparent"
@@ -431,16 +424,5 @@
                 </Style>
             </ListView.ItemContainerStyle>
         </ListView>
-
-        <!-- <ScrollViewer Grid.Row="1"> -->
-        <!--     <ItemsControl ItemsSource="{Binding EventStories}"> -->
-        <!--         <ItemsControl.ItemTemplate> -->
-        <!--             <DataTemplate> -->
-        <!--                 <local:EventStoryEvent EventStoryImpl="{Binding}" /> -->
-        <!--             </DataTemplate> -->
-        <!--         </ItemsControl.ItemTemplate> -->
-        <!--     </ItemsControl> -->
-        <!-- </ScrollViewer> -->
     </Grid>
-
 </UserControl>

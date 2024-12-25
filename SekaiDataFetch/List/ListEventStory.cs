@@ -15,6 +15,7 @@ public class ListEventStory
             "SekaiTools", "Data", "cache", "gameEvents.json");
 
     public readonly List<EventStoryImpl> Data = [];
+    private Fetcher Fetcher { get; }
 
     public ListEventStory(SourceList.SourceType sourceType = SourceList.SourceType.SiteBest, Proxy? proxy = null)
     {
@@ -25,7 +26,6 @@ public class ListEventStory
         Load();
     }
 
-    private Fetcher Fetcher { get; }
 
     private void Load()
     {

@@ -40,6 +40,7 @@
                         <ComboBoxItem Content="主线剧情" />
                         <ComboBoxItem Content="活动剧情" />
                         <ComboBoxItem Content="特殊剧情" />
+                        <ComboBoxItem Content="角色剧情" />
                         <ComboBoxItem Content="地图对话" IsEnabled="False" />
                     </ComboBox.Items>
                 </ComboBox>

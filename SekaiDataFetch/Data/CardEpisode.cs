@@ -2,11 +2,21 @@ using Newtonsoft.Json.Linq;
 
 namespace SekaiDataFetch.Data;
 
-public class Cost
+public class Cost : ICloneable
 {
     public int ResourceId { get; set; }
     public string ResourceType { get; set; } = "";
     public int Quantity { get; set; }
+
+    public object Clone()
+    {
+        return new Cost
+        {
+            ResourceId = ResourceId,
+            ResourceType = ResourceType,
+            Quantity = Quantity
+        };
+    }
 
     public static Cost FromJson(JObject json)
     {
@@ -19,7 +29,7 @@ public class Cost
     }
 }
 
-public class CardEpisode
+public class CardEpisode : ICloneable
 {
     public int Id { get; set; }
     public int Seq { get; set; }
@@ -34,6 +44,26 @@ public class CardEpisode
     public int[] RewardResourceBoxIds { get; set; } = [];
     public Cost[] Costs { get; set; } = [];
     public string CardEpisodePartType { get; set; } = "";
+
+    public object Clone()
+    {
+        return new CardEpisode
+        {
+            Id = Id,
+            Seq = Seq,
+            CardId = CardId,
+            Title = Title,
+            ScenarioId = ScenarioId,
+            AssetBundleName = AssetBundleName,
+            ReleaseConditionId = ReleaseConditionId,
+            Power1BonusFixed = Power1BonusFixed,
+            Power2BonusFixed = Power2BonusFixed,
+            Power3BonusFixed = Power3BonusFixed,
+            RewardResourceBoxIds = RewardResourceBoxIds,
+            Costs = Costs.Select(x => (Cost)x.Clone()).ToArray(),
+            CardEpisodePartType = CardEpisodePartType
+        };
+    }
 
     public static CardEpisode FromJson(JObject json)
     {

@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using SekaiDataFetch;
 using SekaiToolsGUI.View.Download.Components;
+using SekaiToolsGUI.View.Download.Components.Card;
 using SekaiToolsGUI.View.Download.Components.Event;
 using SekaiToolsGUI.View.Download.Components.Special;
 using SekaiToolsGUI.View.Download.Components.Unit;
@@ -25,6 +26,7 @@ public partial class DownloadPage : UserControl
     private UnitStoryTab UnitStoryTab { get; } = new();
     private EventStoryTab EventStoryTab { get; } = new();
     private SpecialStoryTab SpecialStoryTab { get; } = new();
+    private CardStoryTab CardStoryTab { get; } = new();
 
     public void AddTask(string tag, string url)
     {
@@ -43,6 +45,7 @@ public partial class DownloadPage : UserControl
             0 => UnitStoryTab,
             1 => EventStoryTab,
             2 => SpecialStoryTab,
+            3 => CardStoryTab,
             _ => null
         };
     }

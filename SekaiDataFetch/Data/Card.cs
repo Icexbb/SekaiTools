@@ -2,7 +2,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SekaiDataFetch.Data;
 
-public class Card
+public class Card : ICloneable
 {
     public int Id { get; set; }
     public int Seq { get; set; }
@@ -43,6 +43,30 @@ public class Card
             FlavorText = json.Get("flavorText", ""),
             ReleaseAt = json.Get("releaseAt", 0L),
             ArchivePublishedAt = json.Get("archivePublishedAt", 0L)
+        };
+    }
+
+    public object Clone()
+    {
+        return new Card
+        {
+            Id = Id,
+            Seq = Seq,
+            CharacterId = CharacterId,
+            CardRarityType = CardRarityType,
+            SpecialTrainingPower1BonusFixed = SpecialTrainingPower1BonusFixed,
+            SpecialTrainingPower2BonusFixed = SpecialTrainingPower2BonusFixed,
+            SpecialTrainingPower3BonusFixed = SpecialTrainingPower3BonusFixed,
+            Attr = Attr,
+            SupportUnit = SupportUnit,
+            SkillId = SkillId,
+            CardSkillName = CardSkillName,
+            Prefix = Prefix,
+            AssetbundleName = AssetbundleName,
+            GachaPhrase = GachaPhrase,
+            FlavorText = FlavorText,
+            ReleaseAt = ReleaseAt,
+            ArchivePublishedAt = ArchivePublishedAt
         };
     }
 }
