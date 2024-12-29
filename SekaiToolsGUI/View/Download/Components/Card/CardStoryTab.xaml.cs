@@ -19,7 +19,7 @@ public partial class CardStoryTab : UserControl, IRefreshable
         CharacterComboBox_Init();
     }
 
-    private SourceList.SourceType GetSourceType()
+    private SourceType GetSourceType()
     {
         var parent = Parent;
         while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);

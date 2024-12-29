@@ -21,7 +21,7 @@ public partial class EventStoryEvent : UserControl
         Margin = new Thickness(5);
     }
 
-    private EventStoryEvent(EventStoryImpl eventStoryImpl, SourceList.SourceType sourceType)
+    private EventStoryEvent(EventStoryImpl eventStoryImpl, SourceType sourceType)
     {
         InitializeComponent();
         Margin = new Thickness(5);
@@ -48,7 +48,7 @@ public partial class EventStoryEvent
     private static List<EventStoryEvent> RecycleContainer { get; } = [];
 
     private void Initialize(EventStoryImpl eventStoryImpl,
-        SourceList.SourceType sourceType = SourceList.SourceType.SiteBest)
+        SourceType sourceType = SourceType.SiteBest)
     {
         EventStoryImpl = eventStoryImpl;
         TextBlockTitle.Text = $"No.{EventStoryImpl.EventStory.EventId} {EventStoryImpl.GameEvent.Name}";
@@ -66,7 +66,7 @@ public partial class EventStoryEvent
     }
 
     public static EventStoryEvent GetItem(EventStoryImpl eventStoryImpl,
-        SourceList.SourceType sourceType)
+        SourceType sourceType)
     {
         if (RecycleContainer.Count <= 0) return new EventStoryEvent(eventStoryImpl, sourceType);
         var item = RecycleContainer[0];
@@ -79,7 +79,7 @@ public partial class EventStoryEvent
 
 public partial class EventStoryEvent
 {
-    private void InitDownloadItems(SourceList.SourceType sourceType)
+    private void InitDownloadItems(SourceType sourceType)
     {
         if (PanelItems.Children.Count > EventStoryImpl!.EventStory.EventStoryEpisodes.Length)
             for (var i = EventStoryImpl.EventStory.EventStoryEpisodes.Length; i < PanelItems.Children.Count; i++)

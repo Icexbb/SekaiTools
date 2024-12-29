@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
 using SekaiDataFetch;
-using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Model;
 using Wpf.Ui.Appearance;
 

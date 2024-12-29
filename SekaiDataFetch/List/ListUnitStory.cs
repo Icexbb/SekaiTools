@@ -1,5 +1,3 @@
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SekaiDataFetch.Data;
 
 namespace SekaiDataFetch.List;
@@ -12,7 +10,7 @@ public class ListUnitStory
 
     public readonly Dictionary<string, UnitStorySet> Data = new();
 
-    public ListUnitStory(SourceList.SourceType sourceType = SourceList.SourceType.SiteBest, Proxy? proxy = null)
+    public ListUnitStory(SourceType sourceType = SourceType.SiteBest, Proxy? proxy = null)
     {
         var fetcher = new Fetcher();
         fetcher.SetSource(sourceType);
@@ -23,25 +21,27 @@ public class ListUnitStory
 
     private Fetcher Fetcher { get; }
 
-    private void Load()
-    {
-        Directory.CreateDirectory(Path.GetDirectoryName(CachePathUnitStories)!);
-
-        if (!File.Exists(CachePathUnitStories)) return;
-        var data = File.ReadAllText(CachePathUnitStories);
-        var jObj = JsonConvert.DeserializeObject<JObject[]>(data);
-        if (jObj != null) GetData(jObj.Select(UnitStory.FromJson).ToList());
-    }
 
     public async Task Refresh()
     {
-        var json = await Fetcher.FetchSource(Fetcher.Source.UnitStories);
-        if (json == null) throw new Exception("Failed to fetch unit stories");
-        await File.WriteAllTextAsync(CachePathUnitStories, JsonConvert.SerializeObject(json));
-        GetData(json.Select(UnitStory.FromJson).ToList());
+        var stringUnitStories = await Fetcher.Fetch(Fetcher.Source.UnitStories);
+        await File.WriteAllTextAsync(CachePathUnitStories, stringUnitStories);
+
+        Load();
     }
 
-    private void GetData(IEnumerable<UnitStory> unitStory)
+    private void Load()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(CachePathUnitStories)!);
+        if (!File.Exists(CachePathUnitStories)) return;
+
+        var json = File.ReadAllText(CachePathUnitStories);
+        var unitStories = Utils.Deserialize<UnitStory[]>(json);
+        if (unitStories == null) throw new Exception("Json parse error");
+        GetData(unitStories);
+    }
+
+    private void GetData(UnitStory[] unitStory)
     {
         foreach (var unit in unitStory)
         {
@@ -83,14 +83,14 @@ public class ListUnitStory
 
                 public string Key => $"{EpisodeNoLabel} - {Title}";
 
-                public string Url(string assetBundleName, SourceList.SourceType sourceType = 0)
+                public string Url(string assetBundleName, SourceType sourceType = 0)
                 {
                     return sourceType switch
                     {
-                        SourceList.SourceType.SiteBest =>
+                        SourceType.SiteBest =>
                             $"https://storage.sekai.best/sekai-jp-assets/scenario/unitstory" +
                             $"/{assetBundleName}_rip/{ScenarioId}.asset",
-                        SourceList.SourceType.SiteAi =>
+                        SourceType.SiteAi =>
                             $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/scenario/unitstory" +
                             $"/{assetBundleName}/{ScenarioId}.json",
                         _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)

@@ -1,7 +1,5 @@
+using System.Diagnostics;
 using System.Net;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using SekaiDataFetch.Data;
 
 namespace SekaiDataFetch;
 
@@ -10,7 +8,7 @@ public class Fetcher
     public SourceList Source { get; } = new();
     private Proxy UserProxy { get; set; } = Proxy.None;
 
-    public void SetSource(SourceList.SourceType sourceType)
+    public void SetSource(SourceType sourceType)
     {
         Source.SetSource(sourceType);
     }
@@ -38,39 +36,9 @@ public class Fetcher
         };
     }
 
-    private static T? JsonDeserialize<T>(string json) where T : class
+    public async Task<string> Fetch(string url, string defaultResult = "{}")
     {
-        try
-        {
-            var result = JsonConvert.DeserializeObject<T>(json);
-            return result;
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-    }
-
-
-    public async Task<JObject[]?> FetchSource(string url)
-    {
-        var responseContent = await TryGet();
-        switch (Source.Source)
-        {
-            case SourceList.SourceType.SiteBest: // obj is jArray.
-                var jObjects = JsonConvert.DeserializeObject<JObject[]>(responseContent);
-                if (jObjects == null) throw new JsonSerializationException();
-                return jObjects;
-            case SourceList.SourceType.SiteAi:
-                var data = JsonConvert.DeserializeObject<PjSekaiResponse>(responseContent);
-                if (data == null) throw new JsonSerializationException();
-                return data.Total > data.Limit
-                    ? await FetchSource(url.Insert(url.IndexOf('?') + 1, $"$limit={data.Total}&"))
-                    : data.Data;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
-
+        return await TryGet();
 
         async Task<string> TryGet(int time = 5)
         {
@@ -83,7 +51,8 @@ public class Fetcher
             {
                 Console.WriteLine($"GET {url} Error: " + (e.InnerException?.Message ?? e.Message));
                 if (time > 0) return await TryGet(time - 1);
-                throw;
+                if (Debugger.IsAttached) throw;
+                return defaultResult;
             }
         }
 
@@ -94,62 +63,5 @@ public class Fetcher
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsStringAsync();
         }
-    }
-
-
-    public async Task<List<GameEvent>> GetGameEvents()
-    {
-        var json = await FetchSource(Source.Events);
-        return json == null ? [] : json.Select(GameEvent.FromJson).ToList();
-    }
-
-    private async Task<List<Card>> GetCards()
-    {
-        var json = await FetchSource(Source.Cards);
-        return json == null ? [] : json.Select(Card.FromJson).ToList();
-    }
-
-    private async Task<List<Character2d>> GetCharacter2ds()
-    {
-        var json = await FetchSource(Source.Character2ds);
-        return json == null ? [] : json.Select(Character2d.FromJson).ToList();
-    }
-
-    public async Task<List<UnitStory>> GetUnitStories()
-    {
-        var json = await FetchSource(Source.UnitStories);
-        return json == null ? [] : json.Select(UnitStory.FromJson).ToList();
-    }
-
-    public async Task<List<EventStory>> GetEventStories()
-    {
-        var json = await FetchSource(Source.EventStories);
-        return json == null ? [] : json.Select(EventStory.FromJson).ToList();
-    }
-
-    private async Task<List<CardEpisode>> GetCardEpisodes()
-    {
-        var json = await FetchSource(Source.CardEpisodes);
-        return json == null ? [] : json.Select(CardEpisode.FromJson).ToList();
-    }
-
-    private async Task<List<ActionSet>> GetAction()
-    {
-        var json = await FetchSource(Source.ActionSets);
-        return json == null ? [] : json.Select(ActionSet.FromJson).ToList();
-    }
-
-    private async Task<List<SpecialStory>> GetSpecialStories()
-    {
-        var json = await FetchSource(Source.SpecialStories);
-        return json == null ? [] : json.Select(SpecialStory.FromJson).ToList();
-    }
-
-
-    private record PjSekaiResponse
-    {
-        public int Total { get; } = 0;
-        public int Limit { get; } = 0;
-        public JObject[] Data { get; } = [];
     }
 }

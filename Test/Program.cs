@@ -1,6 +1,5 @@
-﻿using System.Text.Json;
-using System.Text.Json.Nodes;
-using SekaiToolsCore.Story.Game;
+﻿using SekaiDataFetch;
+using SekaiDataFetch.List;
 
 
 namespace Test
@@ -9,11 +8,13 @@ namespace Test
     {
         public static void Main()
         {
-            const string source = @"F:\ProjectSekai\test\1963_areatalk_ev_street_16_003.asset";
-            var data = new GameData(source);
-            Console.WriteLine(data.TalkData.Length);
-            Console.WriteLine(data.SpecialEffectData.Length);
-            Console.WriteLine(data.Snippets.Length);
+            FetchSource().Wait();
+        }
+
+        private static async Task FetchSource()
+        {
+            var e = new ListEventStory(proxy: new Proxy("127.0.0.1", 7897, Proxy.Type.Socks5));
+            await e.Refresh();
         }
     }
 }

@@ -1,6 +1,5 @@
 using System.Windows;
 using SekaiToolsCore;
-using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
 

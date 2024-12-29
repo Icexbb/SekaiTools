@@ -93,7 +93,7 @@ public partial class UnitStoryTab : UserControl, IRefreshable
         RefreshItems();
     }
 
-    private SourceList.SourceType GetSourceType()
+    private SourceType GetSourceType()
     {
         var parent = Parent;
         while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);

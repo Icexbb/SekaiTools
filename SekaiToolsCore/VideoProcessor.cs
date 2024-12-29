@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Story.Event;

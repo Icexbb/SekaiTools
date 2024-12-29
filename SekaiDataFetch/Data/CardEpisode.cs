@@ -1,5 +1,3 @@
-using Newtonsoft.Json.Linq;
-
 namespace SekaiDataFetch.Data;
 
 public class Cost : ICloneable
@@ -15,16 +13,6 @@ public class Cost : ICloneable
             ResourceId = ResourceId,
             ResourceType = ResourceType,
             Quantity = Quantity
-        };
-    }
-
-    public static Cost FromJson(JObject json)
-    {
-        return new Cost
-        {
-            ResourceId = json.Get("resourceId", 0),
-            ResourceType = json.Get("resourceType", ""),
-            Quantity = json.Get("quantity", 0)
         };
     }
 }
@@ -62,26 +50,6 @@ public class CardEpisode : ICloneable
             RewardResourceBoxIds = RewardResourceBoxIds,
             Costs = Costs.Select(x => (Cost)x.Clone()).ToArray(),
             CardEpisodePartType = CardEpisodePartType
-        };
-    }
-
-    public static CardEpisode FromJson(JObject json)
-    {
-        return new CardEpisode
-        {
-            Id = json.Get("id", 0),
-            Seq = json.Get("seq", 0),
-            CardId = json.Get("cardId", 0),
-            Title = json.Get("title", ""),
-            ScenarioId = json.Get("scenarioId", ""),
-            AssetBundleName = json.Get("assetbundleName", ""),
-            ReleaseConditionId = json.Get("releaseConditionId", 0),
-            Power1BonusFixed = json.Get("power1BonusFixed", 0),
-            Power2BonusFixed = json.Get("power2BonusFixed", 0),
-            Power3BonusFixed = json.Get("power3BonusFixed", 0),
-            RewardResourceBoxIds = json.Get("rewardResourceBoxIds", Array.Empty<int>()),
-            Costs = json.Get("costs", Array.Empty<JObject>()).Select(Cost.FromJson).ToArray(),
-            CardEpisodePartType = json.Get("cardEpisodePartType", "")
         };
     }
 }

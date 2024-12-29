@@ -1,8 +1,6 @@
-using Newtonsoft.Json.Linq;
-
 namespace SekaiDataFetch.Data;
 
-public class UnitEpisode
+public class UnitEpisode : ICloneable
 {
     public int Id { get; set; }
     public int UnitStoryEpisodeGroupId { get; set; }
@@ -15,25 +13,25 @@ public class UnitEpisode
     public int ReleaseConditionId { get; set; }
     public int[] RewardResourceBoxIds { get; set; } = [];
 
-    public static UnitEpisode FromJson(JObject json)
+    public object Clone()
     {
         return new UnitEpisode
         {
-            Id = json.Get("id", 0),
-            UnitStoryEpisodeGroupId = json.Get("unitStoryEpisodeGroupId", 0),
-            ChapterNo = json.Get("chapterNo", 0),
-            EpisodeNo = json.Get("episodeNo", 0),
-            EpisodeNoLabel = json.Get("episodeNoLabel", ""),
-            Title = json.Get("title", ""),
-            AssetbundleName = json.Get("assetbundleName", ""),
-            ScenarioId = json.Get("scenarioId", ""),
-            ReleaseConditionId = json.Get("releaseConditionId", 0),
-            RewardResourceBoxIds = json.Get("rewardResourceBoxIds", Array.Empty<int>())
+            Id = Id,
+            UnitStoryEpisodeGroupId = UnitStoryEpisodeGroupId,
+            ChapterNo = ChapterNo,
+            EpisodeNo = EpisodeNo,
+            EpisodeNoLabel = EpisodeNoLabel,
+            Title = Title,
+            AssetbundleName = AssetbundleName,
+            ScenarioId = ScenarioId,
+            ReleaseConditionId = ReleaseConditionId,
+            RewardResourceBoxIds = RewardResourceBoxIds
         };
     }
 }
 
-public struct UnitChapter
+public struct UnitChapter : ICloneable
 {
     public int Id { set; get; }
     public string Unit { set; get; }
@@ -42,33 +40,34 @@ public struct UnitChapter
     public string AssetBundleName { set; get; }
     public UnitEpisode[] Episodes { set; get; }
 
-    public static UnitChapter FromJson(JObject json)
+    public object Clone()
     {
         return new UnitChapter
         {
-            Id = json.Get("id", 0),
-            Unit = json.Get("unit", ""),
-            ChapterNo = json.Get("chapterNo", 0),
-            Title = json.Get("title", ""),
-            AssetBundleName = json.Get("assetbundleName", ""),
-            Episodes = json.Get("episodes", Array.Empty<JObject>()).Select(UnitEpisode.FromJson).ToArray()
+            Id = Id,
+            Unit = Unit,
+            ChapterNo = ChapterNo,
+            Title = Title,
+            AssetBundleName = AssetBundleName,
+            Episodes = Episodes.Select(x => (UnitEpisode)x.Clone()).ToArray()
         };
     }
 }
 
-public struct UnitStory
+public struct UnitStory : ICloneable
 {
     public string Unit { get; set; }
     public int Seq { get; set; }
     public UnitChapter[] Chapters { get; set; }
 
-    public static UnitStory FromJson(JObject json)
+
+    public object Clone()
     {
         return new UnitStory
         {
-            Unit = json.Get("unit", ""),
-            Seq = json.Get("seq", 0),
-            Chapters = json.Get("chapters", Array.Empty<JObject>()).Select(UnitChapter.FromJson).ToArray()
+            Unit = Unit,
+            Seq = Seq,
+            Chapters = Chapters.Select(x => (UnitChapter)x.Clone()).ToArray()
         };
     }
 }

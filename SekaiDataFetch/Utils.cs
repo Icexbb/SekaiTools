@@ -1,12 +1,22 @@
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
 
 namespace SekaiDataFetch;
 
 public static class Utils
 {
-    public static TU Get<TU>(this JObject json, string key, TU defaultValue)
+    public static void Set<TKey, TValue>(this Dictionary<TKey, TValue> data, TKey key, TValue value)
+        where TKey : notnull
     {
-        if (json.TryGetValue(key, out var value)) return value.ToObject<TU>() ?? defaultValue;
-        return defaultValue;
+        data[key] = value;
+    }
+
+    private static JsonSerializerOptions Options { get; } = new JsonSerializerOptions
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    public static T? Deserialize<T>(string json)
+    {
+        return JsonSerializer.Deserialize<T>(json, Options);
     }
 }

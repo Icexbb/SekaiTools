@@ -1,5 +1,3 @@
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SekaiDataFetch.Data;
 
 namespace SekaiDataFetch.List;
@@ -11,8 +9,9 @@ public class ListSpecialStory
             "SekaiTools", "Data", "cache", "specialStories.json");
 
     public readonly Dictionary<string, SpecialStorySet> Data = new();
+    private Fetcher Fetcher { get; }
 
-    public ListSpecialStory(SourceList.SourceType sourceType = SourceList.SourceType.SiteBest, Proxy? proxy = null)
+    public ListSpecialStory(SourceType sourceType = SourceType.SiteBest, Proxy? proxy = null)
     {
         var fetcher = new Fetcher();
         fetcher.SetSource(sourceType);
@@ -21,27 +20,28 @@ public class ListSpecialStory
         Load();
     }
 
-    private Fetcher Fetcher { get; }
+
+    public async Task Refresh()
+    {
+        var stringSpecialStories = await Fetcher.Fetch(Fetcher.Source.SpecialStories);
+        await File.WriteAllTextAsync(CachePathSpecialStories, stringSpecialStories);
+
+        Load();
+    }
 
     private void Load()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathSpecialStories)!);
-
         if (!File.Exists(CachePathSpecialStories)) return;
-        var data = File.ReadAllText(CachePathSpecialStories);
-        var jObj = JsonConvert.DeserializeObject<JObject[]>(data);
-        if (jObj != null) GetData(jObj.Select(SpecialStory.FromJson).ToList());
+
+        var stringSpecialStories = File.ReadAllText(CachePathSpecialStories);
+
+        var specialStories = Utils.Deserialize<SpecialStory[]>(stringSpecialStories);
+        if (specialStories == null) throw new Exception("Json parse error");
+        GetData(specialStories);
     }
 
-    public async Task Refresh()
-    {
-        var json = await Fetcher.FetchSource(Fetcher.Source.SpecialStories);
-        if (json == null) throw new Exception("Failed to fetch special stories");
-        await File.WriteAllTextAsync(CachePathSpecialStories, JsonConvert.SerializeObject(json));
-        GetData(json.Select(SpecialStory.FromJson).ToList());
-    }
-
-    private void GetData(IEnumerable<SpecialStory> specialStory)
+    private void GetData(ICollection<SpecialStory> specialStory)
     {
         foreach (var special in specialStory)
         {
@@ -53,31 +53,31 @@ public class ListSpecialStory
             Data.Set(special.Title, data);
         }
     }
+}
 
-    public class SpecialStorySet(string title, SpecialStorySet.Episode[]? episodes = null)
+public class SpecialStorySet(string title, SpecialStorySet.Episode[]? episodes = null)
+{
+    public string Title { get; } = title;
+    public Episode[] Episodes { get; } = episodes ?? [];
+
+    public class Episode(string title, string assetBundleName, string scenarioId)
     {
         public string Title { get; } = title;
-        public Episode[] Episodes { get; } = episodes ?? [];
+        public string ScenarioId { get; } = scenarioId;
+        public string AssetBundleName { get; } = assetBundleName;
 
-        public class Episode(string title, string assetBundleName, string scenarioId)
+        public string Url(SourceType sourceType = 0)
         {
-            public string Title { get; } = title;
-            public string ScenarioId { get; } = scenarioId;
-            public string AssetBundleName { get; } = assetBundleName;
-
-            public string Url(SourceList.SourceType sourceType = 0)
+            return sourceType switch
             {
-                return sourceType switch
-                {
-                    SourceList.SourceType.SiteBest =>
-                        $"https://storage.sekai.best/sekai-jp-assets/scenario/special" +
-                        $"/{AssetBundleName}_rip/{ScenarioId}.asset",
-                    SourceList.SourceType.SiteAi =>
-                        $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/scenario/special" +
-                        $"/{AssetBundleName}/{ScenarioId}.json",
-                    _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
-                };
-            }
+                SourceType.SiteBest =>
+                    $"https://storage.sekai.best/sekai-jp-assets/scenario/special" +
+                    $"/{AssetBundleName}_rip/{ScenarioId}.asset",
+                SourceType.SiteAi =>
+                    $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/scenario/special" +
+                    $"/{AssetBundleName}/{ScenarioId}.json",
+                _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
+            };
         }
     }
 }

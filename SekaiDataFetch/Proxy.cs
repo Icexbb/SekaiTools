@@ -15,21 +15,22 @@ public class Proxy(
         None
     }
 
-    public string Host { get; set; } = host;
-    public int Port { get; set; } = port;
-    public string Username { get; set; } = username;
-    public string Password { get; set; } = password;
-    public Type ProxyType { get; set; } = proxyType;
+    public string Host { get; private set; } = host;
+    public int Port { get; private set; } = port;
+    private string Username { get; set; } = username;
+    private string Password { get; set; } = password;
+    public Type ProxyType { get; private set; } = proxyType;
 
     public static Proxy None => new("", 0);
 
     public string GetProxyString()
     {
-        if (ProxyType == Type.None)
-            return "";
-        if (ProxyType == Type.System)
-            return "System";
-        return $"{ProxyType.ToString().ToLower()}://{Username}:{Password}@{Host}:{Port}";
+        return ProxyType switch
+        {
+            Type.None => "",
+            Type.System => "System",
+            _ => $"{ProxyType.ToString().ToLower()}://{Username}:{Password}@{Host}:{Port}"
+        };
     }
 
     public void SetProxy(string host, int port, Type proxyType = Type.None, string username = "",

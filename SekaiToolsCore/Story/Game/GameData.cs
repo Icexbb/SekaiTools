@@ -1,5 +1,4 @@
 using System.Text.Json;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace SekaiToolsCore.Story.Game;
 

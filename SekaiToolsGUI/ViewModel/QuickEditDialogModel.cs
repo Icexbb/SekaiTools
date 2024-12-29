@@ -1,5 +1,4 @@
 using SekaiToolsCore;
-using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.FrameSet;
 
 namespace SekaiToolsGUI.ViewModel;

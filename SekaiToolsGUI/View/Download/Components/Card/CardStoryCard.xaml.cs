@@ -20,7 +20,7 @@ public partial class CardStoryCard : UserControl
         Margin = new Thickness(5);
     }
 
-    public CardStoryCard(CardStoryImpl cardStoryImpl, SourceList.SourceType sourceType = SourceList.SourceType.SiteBest)
+    public CardStoryCard(CardStoryImpl cardStoryImpl, SourceType sourceType = SourceType.SiteBest)
     {
         InitializeComponent();
         Margin = new Thickness(5);
@@ -45,7 +45,7 @@ public partial class CardStoryCard : UserControl
 public partial class CardStoryCard
 {
     private void Initialize(CardStoryImpl cardStoryImpl,
-        SourceList.SourceType sourceType = SourceList.SourceType.SiteBest)
+        SourceType sourceType = SourceType.SiteBest)
     {
         CardStoryImpl = cardStoryImpl;
         var rarity = CardStoryImpl.Card.CardRarityType.Replace("rarity_", "") switch
@@ -64,7 +64,7 @@ public partial class CardStoryCard
         InitDownloadItems();
     }
 
-    private void InitDownloadItems(SourceList.SourceType sourceType = SourceList.SourceType.SiteBest)
+    private void InitDownloadItems(SourceType sourceType = SourceType.SiteBest)
     {
         if (CardStoryImpl == null) return;
         var urlFirst = CardStoryImpl.Url(CardEpisodeType.FirstPart, sourceType);

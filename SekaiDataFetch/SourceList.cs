@@ -2,21 +2,12 @@ namespace SekaiDataFetch;
 
 public class SourceList
 {
-    public enum SourceType
-    {
-        SiteBest,
-
-        SiteAi
-        // UniPjsk
-    }
-
     private SourceType _source;
 
     public SourceList(SourceType sourceType = 0)
     {
         SetSource(sourceType);
     }
-
 
     public SourceType Source
     {
@@ -37,17 +28,26 @@ public class SourceList
                     CardEpisodes = root + "cardEpisodes.json";
                     ActionSets = root + "actionSets.json";
                     SpecialStories = root + "specialStories.json";
+                    Areas = root + "areas.json";
+                    GameCharacters = root + "gameCharacters.json";
+                    CharacterProfiles = root + "characterProfiles.json";
+                    UnitProfiles = root + "unitProfiles.json";
                     break;
                 case SourceType.SiteAi:
                     root = "https://api.pjsek.ai/database/master/";
-                    Events = root + "events?$limit=2000";
-                    Cards = root + "cards?$limit=2000";
-                    Character2ds = root + "character2ds?$limit=2000";
-                    UnitStories = root + "unitStories?$limit=2000";
-                    EventStories = root + "eventStories?$limit=2000";
-                    CardEpisodes = root + "cardEpisodes?$limit=2000";
-                    ActionSets = root + "actionSets?$limit=2000";
-                    SpecialStories = root + "specialStories?$limit=2000";
+                    const string limit = "?$limit=2000";
+                    Events = root + "events" + limit;
+                    Cards = root + "cards" + limit;
+                    Character2ds = root + "character2ds" + limit;
+                    UnitStories = root + "unitStories" + limit;
+                    EventStories = root + "eventStories" + limit;
+                    CardEpisodes = root + "cardEpisodes" + limit;
+                    ActionSets = root + "actionSets" + limit;
+                    SpecialStories = root + "specialStories" + limit;
+                    Areas = root + "areas" + limit;
+                    GameCharacters = root + "gameCharacters" + limit;
+                    CharacterProfiles = root + "characterProfiles" + limit;
+                    UnitProfiles = root + "unitProfiles" + limit;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -55,17 +55,31 @@ public class SourceList
         }
     }
 
-    public string Events { get; private set; } = "";
-    public string Cards { get; private set; } = "";
-    public string Character2ds { get; private set; } = "";
-    public string UnitStories { get; private set; } = "";
-    public string EventStories { get; private set; } = "";
-    public string CardEpisodes { get; private set; } = "";
+
     public string ActionSets { get; private set; } = "";
+    public string Events { get; private set; } = "";
+    public string EventStories { get; private set; } = "";
+    public string Character2ds { get; private set; } = "";
+    public string Cards { get; private set; } = "";
+    public string CardEpisodes { get; private set; } = "";
+    public string UnitStories { get; private set; } = "";
     public string SpecialStories { get; private set; } = "";
+
+    public string Areas { get; private set; } = "";
+    public string GameCharacters { get; private set; } = "";
+    public string CharacterProfiles { get; private set; } = "";
+    public string UnitProfiles { get; private set; } = "";
 
     public void SetSource(SourceType sourceType)
     {
         Source = sourceType;
     }
+}
+
+public enum SourceType
+{
+    SiteBest,
+
+    SiteAi
+    // UniPjsk
 }

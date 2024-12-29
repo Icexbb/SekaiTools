@@ -145,12 +145,12 @@ public partial class DownloadPage : UserControl
         }
     }
 
-    public SourceList.SourceType GetSourceType()
+    public SourceType GetSourceType()
     {
         return BoxSource.SelectedIndex switch
         {
-            0 => SourceList.SourceType.SiteBest,
-            1 => SourceList.SourceType.SiteAi,
+            0 => SourceType.SiteBest,
+            1 => SourceType.SiteAi,
             _ => throw new ArgumentOutOfRangeException()
         };
     }

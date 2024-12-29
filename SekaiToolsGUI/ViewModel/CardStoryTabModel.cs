@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices.JavaScript;
 using SekaiDataFetch.List;
 
 namespace SekaiToolsGUI.ViewModel;

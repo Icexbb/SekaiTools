@@ -1,8 +1,6 @@
-using Newtonsoft.Json.Linq;
-
 namespace SekaiDataFetch.Data;
 
-public class SpecialStoryEpisode
+public class SpecialStoryEpisode : ICloneable
 {
     public int Id { get; set; }
     public int SpecialStoryId { get; set; }
@@ -16,26 +14,26 @@ public class SpecialStoryEpisode
     public bool IsActionSetRefresh { get; set; }
     public int[] RewardResourceBoxIds { get; set; } = [];
 
-    public static SpecialStoryEpisode FromJson(JObject json)
+    public object Clone()
     {
         return new SpecialStoryEpisode
         {
-            Id = json.Get("id", 0),
-            SpecialStoryId = json.Get("specialStoryId", 0),
-            EpisodeNo = json.Get("episodeNo", 0),
-            Title = json.Get("title", ""),
-            SpecialStoryEpisodeType = json.Get("specialStoryEpisodeType", ""),
-            AssetBundleName = json.Get("assetbundleName", ""),
-            ScenarioId = json.Get("scenarioId", ""),
-            ReleaseConditionId = json.Get("releaseConditionId", 0),
-            IsAbleSkip = json.Get("isAbleSkip", false),
-            IsActionSetRefresh = json.Get("isActionSetRefresh", false),
-            RewardResourceBoxIds = json.Get("rewardResourceBoxIds", Array.Empty<int>())
+            Id = Id,
+            SpecialStoryId = SpecialStoryId,
+            EpisodeNo = EpisodeNo,
+            Title = Title,
+            SpecialStoryEpisodeType = SpecialStoryEpisodeType,
+            AssetBundleName = AssetBundleName,
+            ScenarioId = ScenarioId,
+            ReleaseConditionId = ReleaseConditionId,
+            IsAbleSkip = IsAbleSkip,
+            IsActionSetRefresh = IsActionSetRefresh,
+            RewardResourceBoxIds = RewardResourceBoxIds
         };
     }
 }
 
-public struct SpecialStory
+public struct SpecialStory : ICloneable
 {
     public int Id { get; set; }
     public int Seq { get; set; }
@@ -45,17 +43,18 @@ public struct SpecialStory
     public long EndAt { get; set; }
     public SpecialStoryEpisode[] Episodes { get; set; }
 
-    public static SpecialStory FromJson(JObject json)
+
+    public object Clone()
     {
         return new SpecialStory
         {
-            Id = json.Get("id", 0),
-            Seq = json.Get("seq", 0),
-            Title = json.Get("title", ""),
-            AssetBundleName = json.Get("assetbundleName", ""),
-            StartAt = json.Get("startAt", 0L),
-            EndAt = json.Get("endAt", 0L),
-            Episodes = json.Get("episodes", Array.Empty<JObject>()).Select(SpecialStoryEpisode.FromJson).ToArray()
+            Id = Id,
+            Seq = Seq,
+            Title = Title,
+            AssetBundleName = AssetBundleName,
+            StartAt = StartAt,
+            EndAt = EndAt,
+            Episodes = Episodes.Select(x => (SpecialStoryEpisode)x.Clone()).ToArray()
         };
     }
 }

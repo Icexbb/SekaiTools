@@ -1,5 +1,3 @@
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SekaiDataFetch.Data;
 
 namespace SekaiDataFetch.List;
@@ -17,7 +15,7 @@ public class ListEventStory
     public readonly List<EventStoryImpl> Data = [];
     private Fetcher Fetcher { get; }
 
-    public ListEventStory(SourceList.SourceType sourceType = SourceList.SourceType.SiteBest, Proxy? proxy = null)
+    public ListEventStory(SourceType sourceType = SourceType.SiteBest, Proxy? proxy = null)
     {
         var fetcher = new Fetcher();
         fetcher.SetSource(sourceType);
@@ -27,33 +25,30 @@ public class ListEventStory
     }
 
 
+    public async Task Refresh()
+    {
+        var stringEventStories = await Fetcher.Fetch(Fetcher.Source.EventStories);
+        var stringGameEvents = await Fetcher.Fetch(Fetcher.Source.Events);
+        await File.WriteAllTextAsync(CachePathEventStories, stringEventStories);
+        await File.WriteAllTextAsync(CachePathGameEvents, stringGameEvents);
+
+        Load();
+    }
+
     private void Load()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathEventStories)!);
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathGameEvents)!);
-
         if (!File.Exists(CachePathEventStories) || !File.Exists(CachePathGameEvents)) return;
-        var dataEventStories = File.ReadAllText(CachePathEventStories);
-        var dataGameEvents = File.ReadAllText(CachePathGameEvents);
-        var jObjEventStories = JsonConvert.DeserializeObject<JObject[]>(dataEventStories);
-        var jObjGameEvents = JsonConvert.DeserializeObject<JObject[]>(dataGameEvents);
-        if (jObjEventStories != null && jObjGameEvents != null)
-            GetData(jObjEventStories.Select(EventStory.FromJson).ToList(),
-                jObjGameEvents.Select(GameEvent.FromJson).ToList());
-    }
 
-    public async Task Refresh()
-    {
-        var jsonEventStories = await Fetcher.FetchSource(Fetcher.Source.EventStories);
-        var jsonGameEvents = await Fetcher.FetchSource(Fetcher.Source.Events);
-        if (jsonEventStories == null || jsonGameEvents == null)
-            throw new Exception("Failed to fetch event stories or game events");
-        await File.WriteAllTextAsync(CachePathEventStories, JsonConvert.SerializeObject(jsonEventStories));
-        await File.WriteAllTextAsync(CachePathGameEvents, JsonConvert.SerializeObject(jsonGameEvents));
-        GetData(jsonEventStories.Select(EventStory.FromJson).ToList(),
-            jsonGameEvents.Select(GameEvent.FromJson).ToList());
-    }
+        var stringEventStories = File.ReadAllText(CachePathEventStories);
+        var stringGameEvents = File.ReadAllText(CachePathGameEvents);
 
+        var eventStories = Utils.Deserialize<EventStory[]>(stringEventStories);
+        var gameEvents = Utils.Deserialize<GameEvent[]>(stringGameEvents);
+        if (eventStories == null || gameEvents == null) throw new Exception("Json parse error");
+        GetData(eventStories, gameEvents);
+    }
 
     private void GetData(ICollection<EventStory> evStories, ICollection<GameEvent> events)
     {
@@ -82,19 +77,19 @@ public class EventStoryImpl(EventStory es, GameEvent ge) : ICloneable
         return new EventStoryImpl((EventStory)EventStory.Clone(), (GameEvent)GameEvent.Clone());
     }
 
-    public string Url(int episode, SourceList.SourceType sourceType)
+    public string Url(int episode, SourceType sourceType)
     {
         if (episode < 0 || episode >= EventStory.EventStoryEpisodes.Length)
             throw new ArgumentOutOfRangeException(nameof(episode), episode, null);
-        var abName = EventStory.AssetbundleName;
+        var abName = EventStory.AssetBundleName;
         return sourceType switch
         {
-            SourceList.SourceType.SiteBest => $"https://storage.sekai.best/sekai-jp-assets/event_story" +
-                                              $"/{abName}/scenario_rip" +
-                                              $"/{EventStory.EventStoryEpisodes[episode].ScenarioId}.asset",
-            SourceList.SourceType.SiteAi => $"https://assets.pjsek.ai/file/pjsekai-assets/ondemand" +
-                                            $"/event_story/{abName}/scenario" +
-                                            $"/{EventStory.EventStoryEpisodes[episode].ScenarioId}.json",
+            SourceType.SiteBest => $"https://storage.sekai.best/sekai-jp-assets/event_story" +
+                                   $"/{abName}/scenario_rip" +
+                                   $"/{EventStory.EventStoryEpisodes[episode].ScenarioId}.asset",
+            SourceType.SiteAi => $"https://assets.pjsek.ai/file/pjsekai-assets/ondemand" +
+                                 $"/event_story/{abName}/scenario" +
+                                 $"/{EventStory.EventStoryEpisodes[episode].ScenarioId}.json",
             _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
         };
     }

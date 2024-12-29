@@ -1,5 +1,3 @@
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SekaiDataFetch.Data;
 
 namespace SekaiDataFetch.List;
@@ -15,14 +13,24 @@ public class ListCardStory
             "SekaiTools", "Data", "cache", "cards.json");
 
     private Fetcher Fetcher { get; }
-    public List<CardStoryImpl> Data = [];
+    public readonly List<CardStoryImpl> Data = [];
 
-    public ListCardStory(SourceList.SourceType sourceType = SourceList.SourceType.SiteBest, Proxy? proxy = null)
+    public ListCardStory(SourceType sourceType = SourceType.SiteBest, Proxy? proxy = null)
     {
         var fetcher = new Fetcher();
         fetcher.SetSource(sourceType);
         fetcher.SetProxy(proxy ?? Proxy.None);
         Fetcher = fetcher;
+        Load();
+    }
+
+    public async Task Refresh()
+    {
+        var stringCardEpisodes = await Fetcher.Fetch(Fetcher.Source.CardEpisodes);
+        var stringCards = await Fetcher.Fetch(Fetcher.Source.Cards);
+        await File.WriteAllTextAsync(CachePathCardEpisodes, stringCardEpisodes);
+        await File.WriteAllTextAsync(CachePathCards, stringCards);
+
         Load();
     }
 
@@ -32,28 +40,17 @@ public class ListCardStory
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathCards)!);
 
         if (!File.Exists(CachePathCardEpisodes) || !File.Exists(CachePathCards)) return;
-        var dataCardEpisodes = File.ReadAllText(CachePathCardEpisodes);
-        var dataCards = File.ReadAllText(CachePathCards);
+        var stringCardEpisodes = File.ReadAllText(CachePathCardEpisodes);
+        var stringCards = File.ReadAllText(CachePathCards);
 
-        var jObjCardEpisodes = JsonConvert.DeserializeObject<JObject[]>(dataCardEpisodes);
-        var jObjCards = JsonConvert.DeserializeObject<JObject[]>(dataCards);
+        var cardEpisodes = Utils.Deserialize<CardEpisode[]>(stringCardEpisodes);
+        var cards = Utils.Deserialize<Card[]>(stringCards);
 
-        if (jObjCardEpisodes != null && jObjCards != null)
-            GetData(jObjCardEpisodes.Select(CardEpisode.FromJson).ToList(), jObjCards.Select(Card.FromJson).ToList());
+        if (cardEpisodes == null || cards == null) throw new Exception("Json parse error");
+        GetData(cardEpisodes, cards);
     }
 
-    public async Task Refresh()
-    {
-        var jsonCardEpisodes = await Fetcher.FetchSource(Fetcher.Source.CardEpisodes);
-        var jsonCards = await Fetcher.FetchSource(Fetcher.Source.Cards);
-        if (jsonCardEpisodes == null || jsonCards == null)
-            throw new Exception("Failed to fetch event stories or game events");
-        await File.WriteAllTextAsync(CachePathCardEpisodes, JsonConvert.SerializeObject(jsonCardEpisodes));
-        await File.WriteAllTextAsync(CachePathCards, JsonConvert.SerializeObject(jsonCards));
-        GetData(jsonCardEpisodes.Select(CardEpisode.FromJson).ToList(), jsonCards.Select(Card.FromJson).ToList());
-    }
-
-    private void GetData(List<CardEpisode> cardEpisodes, List<Card> cards)
+    private void GetData(ICollection<CardEpisode> cardEpisodes, ICollection<Card> cards)
     {
         foreach (var card in cards)
         {
@@ -87,7 +84,7 @@ public class CardStoryImpl(Card card, CardEpisode firstPart, CardEpisode secondP
         return new CardStoryImpl((Card)Card.Clone(), (CardEpisode)FirstPart.Clone(), (CardEpisode)SecondPart.Clone());
     }
 
-    public string Url(CardEpisodeType type, SourceList.SourceType sourceType)
+    public string Url(CardEpisodeType type, SourceType sourceType)
     {
         var episode = type switch
         {
@@ -97,12 +94,12 @@ public class CardStoryImpl(Card card, CardEpisode firstPart, CardEpisode secondP
         };
         return sourceType switch
         {
-            SourceList.SourceType.SiteBest => $"https://storage.sekai.best/sekai-jp-assets/character" +
-                                              $"/member/{episode.AssetBundleName}_rip" +
-                                              $"/{episode.ScenarioId}.asset",
-            SourceList.SourceType.SiteAi => $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/character" +
-                                            $"/member/{episode.AssetBundleName}/" +
-                                            $"{episode.ScenarioId}.json",
+            SourceType.SiteBest => $"https://storage.sekai.best/sekai-jp-assets/character" +
+                                   $"/member/{episode.AssetBundleName}_rip" +
+                                   $"/{episode.ScenarioId}.asset",
+            SourceType.SiteAi => $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/character" +
+                                 $"/member/{episode.AssetBundleName}/" +
+                                 $"{episode.ScenarioId}.json",
             _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
         };
     }
