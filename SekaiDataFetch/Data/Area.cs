@@ -11,7 +11,14 @@ public class Area : ICloneable
     public string DisplayTimelineType { get; set; } = "";
     public string AdditionalAreaType { get; set; } = "";
     public string Name { get; set; } = "";
+    public string SubName { get; set; } = "";
     public int ReleaseConditionId { get; set; }
+
+    public string AreaName
+    {
+        get => Name + (SubName == "" ? "" : " " + SubName);
+        set => Name = value;
+    }
 
     public object Clone()
     {
@@ -26,6 +33,7 @@ public class Area : ICloneable
             DisplayTimelineType = DisplayTimelineType,
             AdditionalAreaType = AdditionalAreaType,
             Name = Name,
+            SubName = SubName,
             ReleaseConditionId = ReleaseConditionId
         };
     }

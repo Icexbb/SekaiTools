@@ -15,6 +15,12 @@ public partial class EventStoryEvent : UserControl
             typeof(EventStoryEvent),
             new PropertyMetadata(null, OnEventStoryImplChanged));
 
+    private static void OnEventStoryImplChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is EventStoryEvent control && e.NewValue is EventStoryImpl eventStoryImpl)
+            control.Initialize(eventStoryImpl);
+    }
+
     public EventStoryEvent()
     {
         InitializeComponent();
@@ -34,12 +40,6 @@ public partial class EventStoryEvent : UserControl
     {
         get => (EventStoryImpl?)GetValue(EventStoryImplProperty);
         set => SetValue(EventStoryImplProperty, value);
-    }
-
-    private static void OnEventStoryImplChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        if (d is EventStoryEvent control && e.NewValue is EventStoryImpl eventStoryImpl)
-            control.Initialize(eventStoryImpl);
     }
 }
 

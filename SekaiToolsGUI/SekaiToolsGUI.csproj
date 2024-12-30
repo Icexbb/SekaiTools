@@ -10,6 +10,9 @@
         <Configurations>Debug;Release</Configurations>
         <Platforms>AnyCPU;x64</Platforms>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <LangVersion>default</LangVersion>
+        <PackageProjectUrl>https://github.com/icexbb/sekaiTools</PackageProjectUrl>
+        <PackageIcon>Resource\icon.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
@@ -102,6 +105,8 @@
         <Resource Include="Resource\Unit\logo_street.png"/>
         <None Remove="Resource\Unit\logo_theme_park.png"/>
         <Resource Include="Resource\Unit\logo_theme_park.png"/>
+        <None Remove="Resource\Characters\chr_0.png" />
+        <Resource Include="Resource\Characters\chr_0.png" />
     </ItemGroup>
 
     <ItemGroup>
@@ -176,29 +181,28 @@
             <SubType>Designer</SubType>
         </Page>
         <Page Update="View\Download\Components\Event\EventStoryTab.xaml">
-          <Generator>MSBuild:Compile</Generator>
-          <XamlRuntime>Wpf</XamlRuntime>
-          <SubType>Designer</SubType>
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
         </Page>
         <Page Update="View\Download\Components\Event\EventStoryEvent.xaml">
-          <Generator>MSBuild:Compile</Generator>
-          <XamlRuntime>Wpf</XamlRuntime>
-          <SubType>Designer</SubType>
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
         </Page>
         <Page Update="View\Download\Components\Special\SpecialStoryTab.xaml">
-          <Generator>MSBuild:Compile</Generator>
-          <XamlRuntime>Wpf</XamlRuntime>
-          <SubType>Designer</SubType>
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
         </Page>
         <Page Update="View\Download\Components\Unit\UnitStoryTab.xaml">
-          <Generator>MSBuild:Compile</Generator>
-          <XamlRuntime>Wpf</XamlRuntime>
-          <SubType>Designer</SubType>
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
         </Page>
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="View\Download\Components\Action\" />
         <Folder Include="View\Suppress\Components\"/>
         <Folder Include="View\Utils\Componets\"/>
     </ItemGroup>

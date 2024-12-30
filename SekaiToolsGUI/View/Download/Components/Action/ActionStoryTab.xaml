@@ -1,0 +1,419 @@
+<UserControl x:Class="SekaiToolsGUI.View.Download.Components.Action.ActionStoryTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:local="clr-namespace:SekaiToolsGUI.View.Download.Components.Action"
+             xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
+             mc:Ignorable="d" Loaded="ActionStoryTab_OnLoaded"
+             d:DesignHeight="500" d:DesignWidth="500"
+             d:DataContext="{d:DesignInstance viewModel:ActionStoryTabModel }">
+    <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <ui:Card Name="CardUnits"
+                 Grid.Row="0" Padding="5" HorizontalContentAlignment="Stretch" Margin="0,0,0,5">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0">
+                    <Expander>
+                        <Expander.Header>
+                            <ui:TextBlock>角色筛选</ui:TextBlock>
+                        </Expander.Header>
+                        <Expander.Content>
+                            <StackPanel>
+                                <Grid HorizontalAlignment="Stretch" Margin="5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <ui:Button Grid.Column="0" MinWidth="80" HorizontalAlignment="Center"
+                                               Click="ButtonSelectAll_OnClick" Content="全选" />
+                                    <ui:Button Grid.Column="1" MinWidth="80" HorizontalAlignment="Center"
+                                               Click="ButtonUnSelectAll_OnClick" Content="清除" />
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox Grid.Column="0" Name="CheckBoxUnitLn"
+                                              Click="CheckBoxUnit_OnClick">
+                                        <Image Source="pack://application:,,,/Resource/Unit/logo_light_sound.png"
+                                               Height="18" />
+                                    </CheckBox>
+                                    <Grid Grid.Column="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox Grid.Column="0" Name="CheckBoxChara1"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara01 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_1.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="1" Name="CheckBoxChara2"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara02 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_2.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="2" Name="CheckBoxChara3"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara03}">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_3.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="3" Name="CheckBoxChara4"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara04 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_4.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="4" Name="CheckBoxChara27"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara27 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_27.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                    </Grid>
+                                </Grid>
+                                <Separator />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox Grid.Column="0" Name="CheckBoxUnitMmj"
+                                              Click="CheckBoxUnit_OnClick">
+                                        <Image Source="pack://application:,,,/Resource/Unit/logo_idol.png"
+                                               Height="18" />
+                                    </CheckBox>
+                                    <Grid Grid.Column="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox Grid.Column="0" Name="CheckBoxChara5"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara05 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_5.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="1" Name="CheckBoxChara6"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara06 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_6.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="2" Name="CheckBoxChara7"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara07 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_7.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="3" Name="CheckBoxChara8"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara08 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_8.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="4" Name="CheckBoxChara28"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara28 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_28.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                    </Grid>
+                                </Grid>
+                                <Separator />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox Grid.Column="0" Name="CheckBoxUnitVbs"
+                                              Click="CheckBoxUnit_OnClick">
+                                        <Image Source="pack://application:,,,/Resource/Unit/logo_street.png"
+                                               Height="18" />
+                                    </CheckBox>
+                                    <Grid Grid.Column="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox Grid.Column="0" Name="CheckBoxChara9"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara09 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_9.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="1" Name="CheckBoxChara10"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara10 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_10.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="2" Name="CheckBoxChara11"
+                                                  Click="CheckBoxChara_OnClick"
+
+                                                  IsChecked="{Binding CheckBoxChara11}">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_11.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="3" Name="CheckBoxChara12"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara12 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_12.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="4" Name="CheckBoxChara29"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara29 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_29.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                    </Grid>
+                                </Grid>
+                                <Separator />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox Grid.Column="0" Name="CheckBoxUnitWs"
+                                              Click="CheckBoxUnit_OnClick">
+                                        <Image Source="pack://application:,,,/Resource/Unit/logo_theme_park.png"
+                                               Height="18" />
+                                    </CheckBox>
+                                    <Grid Grid.Column="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox Grid.Column="0" Name="CheckBoxChara13"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara13 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_13.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="1" Name="CheckBoxChara14"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara14 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_14.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="2" Name="CheckBoxChara15"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara15 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_15.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="3" Name="CheckBoxChara16"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara16 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_16.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="4" Name="CheckBoxChara30"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara30 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_30.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                    </Grid>
+                                </Grid>
+                                <Separator />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox Grid.Column="0" Name="CheckBoxUnit25"
+                                              Click="CheckBoxUnit_OnClick">
+                                        <Image Source="pack://application:,,,/Resource/Unit/logo_school_refusal.png"
+                                               Height="18" />
+                                    </CheckBox>
+                                    <Grid Grid.Column="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox Grid.Column="0" Name="CheckBoxChara17"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara17 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_17.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="1" Name="CheckBoxChara18"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara18 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_18.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="2" Name="CheckBoxChara19"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara19 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_19.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="3" Name="CheckBoxChara20"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara20 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_20.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Column="4" Name="CheckBoxChara31"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara31 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_31.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                    </Grid>
+                                </Grid>
+                                <Separator />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox Grid.Column="0" Name="CheckBoxUnitPiapro"
+                                              Click="CheckBoxUnit_OnClick">
+                                        <Image Source="pack://application:,,,/Resource/Unit/logo_piapro.png"
+                                               Height="18" />
+                                    </CheckBox>
+                                    <Grid Grid.Column="1">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition />
+                                            <RowDefinition />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox Grid.Row="0" Grid.Column="0" Name="CheckBoxChara21"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara21 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_21.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Row="0" Grid.Column="1" Name="CheckBoxChara22"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara22}">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_22.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Row="0" Grid.Column="2" Name="CheckBoxChara23"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara23 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_23.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Row="0" Grid.Column="3" Name="CheckBoxChara24"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara24 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_24.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Row="0" Grid.Column="4" Name="CheckBoxChara25"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara25 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_25.png"
+                                                   Height="24" />
+                                        </CheckBox>
+                                        <CheckBox Grid.Row="1" Grid.Column="0" Name="CheckBoxChara26"
+                                                  Click="CheckBoxChara_OnClick"
+                                                  IsChecked="{Binding CheckBoxChara26 }">
+                                            <Image Source="pack://application:,,,/Resource/Characters/chr_26.png"
+                                                   Height="24" />
+                                        </CheckBox>
+
+
+                                    </Grid>
+                                </Grid>
+                            </StackPanel>
+                        </Expander.Content>
+                    </Expander>
+                </Grid>
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ComboBox Grid.Column="0" Margin="5" Name="BoxType" ItemsSource="{Binding Areas}"
+                              SelectedIndex="0" SelectionChanged="Filter_OnSelected">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding  AreaName }" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <ui:Button Grid.Column="1" Margin="5" Name="ButtonSort"
+                               Click="ButtonSort_OnClick" RenderTransformOrigin="0.5,0.5">
+                        <ui:SymbolIcon Symbol="ArrowSortDownLines24" />
+                    </ui:Button>
+                </Grid>
+
+            </Grid>
+        </ui:Card>
+        <ListView Grid.Row="1" ItemsSource="{Binding EventStories}"
+                  BorderBrush="Transparent"
+                  Background="Transparent"
+                  ScrollViewer.CanContentScroll="True"
+                  VirtualizingStackPanel.ScrollUnit="Pixel">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <local:ActionStoryItem AreaStory="{Binding }" HorizontalAlignment="Stretch" />
+                </DataTemplate>
+            </ListView.ItemTemplate>
+
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <!-- 禁用焦点和悬浮效果 -->
+                    <Setter Property="Focusable" Value="False" />
+                    <Setter Property="IsHitTestVisible" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="BorderBrush" Value="Transparent" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListViewItem">
+                                <Border Background="Transparent">
+                                    <ContentPresenter />
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListView.ItemContainerStyle>
+        </ListView>
+    </Grid>
+</UserControl>

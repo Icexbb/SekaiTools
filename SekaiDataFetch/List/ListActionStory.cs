@@ -12,8 +12,15 @@ public class ListActionStory
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "cache", "actionSets.json");
 
+    private static readonly string CachePathCharacter2ds =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "SekaiTools", "Data", "cache", "character2ds.json");
+
     private Fetcher Fetcher { get; }
-    public readonly List<AreaStory> Data = [];
+    public List<AreaStory> Data { get; set; } = [];
+    public List<Area> Areas { get; private set; } = [];
+
+    public List<Character2d> Character2ds { get; private set; } = [];
 
     public ListActionStory(SourceType sourceType = SourceType.SiteBest, Proxy? proxy = null)
     {
@@ -28,8 +35,10 @@ public class ListActionStory
     {
         var stringActionSets = await Fetcher.Fetch(Fetcher.Source.ActionSets);
         var stringAreas = await Fetcher.Fetch(Fetcher.Source.Areas);
+        var stringCharacter2ds = await Fetcher.Fetch(Fetcher.Source.Character2ds);
         await File.WriteAllTextAsync(CachePathActionSets, stringActionSets);
         await File.WriteAllTextAsync(CachePathAreas, stringAreas);
+        await File.WriteAllTextAsync(CachePathCharacter2ds, stringCharacter2ds);
 
         Load();
     }
@@ -38,36 +47,61 @@ public class ListActionStory
     {
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathActionSets)!);
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathAreas)!);
-        if (!File.Exists(CachePathActionSets) || !File.Exists(CachePathAreas)) return;
+        Directory.CreateDirectory(Path.GetDirectoryName(CachePathCharacter2ds)!);
+        if (!File.Exists(CachePathActionSets) ||
+            !File.Exists(CachePathAreas) ||
+            !File.Exists(CachePathCharacter2ds)) return;
 
         var stringActionSets = File.ReadAllText(CachePathActionSets);
         var stringAreas = File.ReadAllText(CachePathAreas);
+        var stringCharacter2ds = File.ReadAllText(CachePathCharacter2ds);
 
         var areas = Utils.Deserialize<Area[]>(stringAreas);
         var actionSets = Utils.Deserialize<ActionSet[]>(stringActionSets);
+        var character2ds = Utils.Deserialize<Character2d[]>(stringCharacter2ds);
 
-        if (actionSets == null || areas == null) throw new Exception("Json parse error");
-        GetData(actionSets, areas);
+        if (actionSets == null || areas == null || character2ds == null) throw new Exception("Json parse error");
+        GetData(actionSets, areas, character2ds);
     }
 
-    private void GetData(ActionSet[] actionSets, Area[] areas)
+    private void GetData(ActionSet[] actionSets, Area[] areas, Character2d[] character2ds)
     {
         foreach (var actionSet in actionSets)
         {
             var area = areas.FirstOrDefault(area => area.Id == actionSet.AreaId);
             if (area == null) continue;
             if (actionSet.ScenarioId == "") continue;
-            var data = new AreaStory(actionSet);
+            var data = new AreaStory(actionSet)
+            {
+                CharacterIds = actionSet.CharacterIds
+                    .Select(id => character2ds.First(c2d => c2d.Id == id).CharacterId)
+                    .ToArray()
+            };
 
             Data.Add(data);
         }
+
+        Areas = areas.Select(area => (Area)area.Clone()).ToList();
+        Character2ds = character2ds.Select(character2d => (Character2d)character2d.Clone()).ToList();
     }
 }
 
-public class AreaStory(ActionSet actionSet)
+public class AreaStory(ActionSet actionSet) : ICloneable
 {
+    public ActionSet ActionSet { get; } = actionSet;
     public string ScenarioId { get; } = actionSet.ScenarioId;
     public int Group { get; } = actionSet.Id / 100;
+
+    public int[] CharacterIds { get; set; } = [];
+
+
+    public object Clone()
+    {
+        return new AreaStory(ActionSet)
+        {
+            CharacterIds = CharacterIds
+        };
+    }
 
     public string Url(SourceType sourceType = SourceType.SiteBest)
     {
