@@ -11,7 +11,7 @@ namespace SekaiToolsGUI.View.Download.Components.Action;
 public partial class ActionStoryTab : UserControl, IRefreshable
 {
     private ActionStoryTabModel ViewModel => (ActionStoryTabModel)DataContext;
-    private ListActionStory? ActionStory { get; set; }
+    private ListActionStory ActionStory { get; } = new();
 
     public ActionStoryTab()
     {
@@ -27,10 +27,12 @@ public partial class ActionStoryTab : UserControl, IRefreshable
         return (parent as DownloadPage)?.GetSourceType() ?? throw new NullReferenceException();
     }
 
+
     public async Task Refresh()
     {
         CardUnits.IsEnabled = false;
-        ActionStory ??= new ListActionStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
+        ActionStory.SetSource(GetSourceType());
+        ActionStory.SetProxy(SettingPageModel.Instance.GetProxy());
         await ActionStory.Refresh();
         InitializeAreas();
         RefreshItems(true);
@@ -40,7 +42,6 @@ public partial class ActionStoryTab : UserControl, IRefreshable
 
     private void ActionStoryTab_OnLoaded(object sender, RoutedEventArgs e)
     {
-        ActionStory ??= new ListActionStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
         InitializeAreas();
         RefreshItems(true);
     }

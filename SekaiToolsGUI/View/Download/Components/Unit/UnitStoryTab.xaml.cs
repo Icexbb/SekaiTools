@@ -14,12 +14,13 @@ public partial class UnitStoryTab : UserControl, IRefreshable
         InitializeComponent();
     }
 
-    private ListUnitStory? ListUnitStory { get; set; }
+    private ListUnitStory ListUnitStory { get; } = new();
 
     public async Task Refresh()
     {
         CardUnits.IsEnabled = false;
-        ListUnitStory ??= new ListUnitStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
+        ListUnitStory.SetSource(GetSourceType());
+        ListUnitStory.SetProxy(SettingPageModel.Instance.GetProxy());
         await ListUnitStory.Refresh();
         RefreshItems();
         CardUnits.IsEnabled = true;
@@ -39,7 +40,7 @@ public partial class UnitStoryTab : UserControl, IRefreshable
             _ => throw new ArgumentOutOfRangeException()
         };
         CardContents.Children.Clear();
-        if (ListUnitStory == null || ListUnitStory.Data.Count == 0) return;
+        if (ListUnitStory.Data.Count == 0) return;
         foreach (var chapter in ListUnitStory.Data[selectedUnit].Chapters)
         foreach (var episode in chapter.Episodes)
         {
@@ -55,7 +56,7 @@ public partial class UnitStoryTab : UserControl, IRefreshable
 
     private void RefreshItems()
     {
-        if (ListUnitStory == null || ListUnitStory.Data.Count == 0) return;
+        if (ListUnitStory.Data.Count == 0) return;
         if (RadioLightSound.IsChecked == true)
         {
             RadioButton_OnChecked(RadioLightSound, null!);
@@ -89,7 +90,6 @@ public partial class UnitStoryTab : UserControl, IRefreshable
 
     private void UnitStoryTab_OnLoaded(object sender, RoutedEventArgs e)
     {
-        ListUnitStory = new ListUnitStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
         RefreshItems();
     }
 

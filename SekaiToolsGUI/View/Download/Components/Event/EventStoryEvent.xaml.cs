@@ -47,8 +47,7 @@ public partial class EventStoryEvent
 {
     private static List<EventStoryEvent> RecycleContainer { get; } = [];
 
-    private void Initialize(EventStoryImpl eventStoryImpl,
-        SourceType sourceType = SourceType.SiteBest)
+    private void Initialize(EventStoryImpl eventStoryImpl, SourceType sourceType = SourceType.SiteBest)
     {
         EventStoryImpl = eventStoryImpl;
         TextBlockTitle.Text = $"No.{EventStoryImpl.EventStory.EventId} {EventStoryImpl.GameEvent.Name}";

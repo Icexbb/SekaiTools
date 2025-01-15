@@ -13,21 +13,21 @@ public partial class EventStoryTab : UserControl, IRefreshable
 
     public EventStoryTab()
     {
+        DataContext ??= new EventStoryTabModel();
         InitializeComponent();
-        DataContext = new EventStoryTabModel();
     }
 
     private EventStoryTabModel ViewModel => (EventStoryTabModel)DataContext;
 
-    private ListEventStory? StoryData { get; set; }
+    private ListEventStory StoryData { get; } = new();
 
     private EventStoryTabModel Model => (EventStoryTabModel)DataContext;
 
     public async Task Refresh()
     {
         CardUnits.IsEnabled = false;
-        StoryData ??= new ListEventStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
-
+        StoryData.SetSource(GetSourceType());
+        StoryData.SetProxy(SettingPageModel.Instance.GetProxy());
         await StoryData.Refresh();
         RefreshItems(true);
         CardUnits.IsEnabled = true;
@@ -41,7 +41,6 @@ public partial class EventStoryTab : UserControl, IRefreshable
 
     private void EventStoryTab_OnLoaded(object sender, RoutedEventArgs e)
     {
-        StoryData = new ListEventStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
         BoxType.SelectedIndex = 0;
         RefreshItems(true);
     }
@@ -222,37 +221,14 @@ public partial class EventStoryTab : UserControl, IRefreshable
 {
     private void RefreshItems(bool selectAll = false)
     {
-        if (StoryData == null || StoryData.Data.Count == 0) return;
+        if ( StoryData.Data.Count == 0) return;
 
         var data = StoryData.Data.Select(item => (EventStoryImpl)item.Clone()).ToList();
         data.Sort((x, y) => _currentDirection * x.EventStory.EventId.CompareTo(y.EventStory.EventId));
         if (selectAll) ChangeAllBannerSelector(true);
         ViewModel.EventStories = data.Where(JudgeVisibility).ToArray();
-        // RefreshContains(data.Where(JudgeVisibility).ToArray());
     }
 
-    // private void RefreshContains(EventStoryImpl[] data)
-    // {
-    //     // if (CardContents == null) return;
-    //     //
-    //     // while (CardContents.Children.Count > data.Length)
-    //     // {
-    //     //     EventStoryEvent.RecycleItem((EventStoryEvent)CardContents.Children[^1]);
-    //     // }
-    //     //
-    //     // for (var i = 0; i < data.Length; i++)
-    //     // {
-    //     //     if (i >= CardContents.Children.Count)
-    //     //     {
-    //     //         CardContents.Children.Add(EventStoryEvent.GetItem(data[i], GetSourceType()));
-    //     //     }
-    //     //     else
-    //     //     {
-    //     //         CardContents.Children[i].Visibility = Visibility.Visible;
-    //     //         ((EventStoryEvent)CardContents.Children[i]).Initialize(data[i], GetSourceType());
-    //     //     }
-    //     // }
-    // }
 
     private bool JudgeVisibility(EventStoryImpl data)
     {

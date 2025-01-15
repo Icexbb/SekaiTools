@@ -2,7 +2,7 @@ using SekaiDataFetch.Data;
 
 namespace SekaiDataFetch.List;
 
-public class ListCardStory
+public class ListCardStory : BaseListStory
 {
     private static readonly string CachePathCardEpisodes =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
@@ -12,15 +12,12 @@ public class ListCardStory
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "cache", "cards.json");
 
-    private Fetcher Fetcher { get; }
     public readonly List<CardStoryImpl> Data = [];
 
     public ListCardStory(SourceType sourceType = SourceType.SiteBest, Proxy? proxy = null)
     {
-        var fetcher = new Fetcher();
-        fetcher.SetSource(sourceType);
-        fetcher.SetProxy(proxy ?? Proxy.None);
-        Fetcher = fetcher;
+        SetSource(sourceType);
+        SetProxy(proxy ?? Proxy.None);
         Load();
     }
 
@@ -30,7 +27,6 @@ public class ListCardStory
         var stringCards = await Fetcher.Fetch(Fetcher.Source.Cards);
         await File.WriteAllTextAsync(CachePathCardEpisodes, stringCardEpisodes);
         await File.WriteAllTextAsync(CachePathCards, stringCards);
-
         Load();
     }
 
@@ -94,12 +90,15 @@ public class CardStoryImpl(Card card, CardEpisode firstPart, CardEpisode secondP
         };
         return sourceType switch
         {
-            SourceType.SiteBest => $"https://storage.sekai.best/sekai-jp-assets/character" +
-                                   $"/member/{episode.AssetBundleName}_rip" +
-                                   $"/{episode.ScenarioId}.asset",
-            SourceType.SiteAi => $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/character" +
-                                 $"/member/{episode.AssetBundleName}/" +
-                                 $"{episode.ScenarioId}.json",
+            SourceType.SiteBest =>
+                $"https://storage.sekai.best/sekai-jp-assets/character/member/" +
+                $"{episode.AssetBundleName}_rip/{episode.ScenarioId}.asset",
+            SourceType.SiteAi =>
+                $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/character/member/" +
+                $"{episode.AssetBundleName}/{episode.ScenarioId}.json",
+            SourceType.SiteHaruki =>
+                $"https://storage.haruki.wacca.cn/assets/startapp/character/member/" +
+                $"{episode.AssetBundleName}/{episode.ScenarioId}.json",
             _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
         };
     }

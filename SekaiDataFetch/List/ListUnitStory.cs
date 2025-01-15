@@ -2,7 +2,7 @@ using SekaiDataFetch.Data;
 
 namespace SekaiDataFetch.List;
 
-public class ListUnitStory
+public class ListUnitStory : BaseListStory
 {
     private static readonly string CachePathUnitStories =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
@@ -12,21 +12,16 @@ public class ListUnitStory
 
     public ListUnitStory(SourceType sourceType = SourceType.SiteBest, Proxy? proxy = null)
     {
-        var fetcher = new Fetcher();
-        fetcher.SetSource(sourceType);
-        fetcher.SetProxy(proxy ?? Proxy.None);
-        Fetcher = fetcher;
+        SetSource(sourceType);
+        SetProxy(proxy ?? Proxy.None);
         Load();
     }
-
-    private Fetcher Fetcher { get; }
 
 
     public async Task Refresh()
     {
         var stringUnitStories = await Fetcher.Fetch(Fetcher.Source.UnitStories);
         await File.WriteAllTextAsync(CachePathUnitStories, stringUnitStories);
-
         Load();
     }
 
@@ -88,11 +83,14 @@ public class ListUnitStory
                     return sourceType switch
                     {
                         SourceType.SiteBest =>
-                            $"https://storage.sekai.best/sekai-jp-assets/scenario/unitstory" +
-                            $"/{assetBundleName}_rip/{ScenarioId}.asset",
+                            $"https://storage.sekai.best/sekai-jp-assets/scenario/unitstory/" +
+                            $"{assetBundleName}_rip/{ScenarioId}.asset",
                         SourceType.SiteAi =>
-                            $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/scenario/unitstory" +
-                            $"/{assetBundleName}/{ScenarioId}.json",
+                            $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/scenario/unitstory/" +
+                            $"{assetBundleName}/{ScenarioId}.json",
+                        SourceType.SiteHaruki =>
+                            $"https://storage.haruki.wacca.cn/assets/startapp/scenario/unitstory/" +
+                            $"{assetBundleName}/{ScenarioId}.json",
                         _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
                     };
                 }

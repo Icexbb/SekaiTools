@@ -153,7 +153,8 @@ public partial class DownloadPage : UserControl
         return BoxSource.SelectedIndex switch
         {
             0 => SourceType.SiteBest,
-            1 => SourceType.SiteAi,
+            1 => SourceType.SiteHaruki,
+            2 => SourceType.SiteAi,
             _ => throw new ArgumentOutOfRangeException()
         };
     }

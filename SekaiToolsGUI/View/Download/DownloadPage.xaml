@@ -30,7 +30,8 @@
                 <ComboBox Grid.Column="0" Name="BoxSource">
                     <ComboBox.Items>
                         <ComboBoxItem Content="Sekai.Best" />
-                        <ComboBoxItem Content="PjSek.Ai" IsEnabled="False" />
+                        <ComboBoxItem Content="Haruki" />
+                        <ComboBoxItem Content="PjSek.Ai" IsEnabled="False" Visibility="Collapsed" />
                     </ComboBox.Items>
                 </ComboBox>
                 <ComboBox Grid.Column="1" Margin="5,0"

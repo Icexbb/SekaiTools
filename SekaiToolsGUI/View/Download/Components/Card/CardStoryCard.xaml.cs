@@ -44,8 +44,7 @@ public partial class CardStoryCard : UserControl
 
 public partial class CardStoryCard
 {
-    private void Initialize(CardStoryImpl cardStoryImpl,
-        SourceType sourceType = SourceType.SiteBest)
+    private void Initialize(CardStoryImpl cardStoryImpl, SourceType sourceType = SourceType.SiteBest)
     {
         CardStoryImpl = cardStoryImpl;
         var rarity = CardStoryImpl.Card.CardRarityType.Replace("rarity_", "") switch
@@ -61,7 +60,7 @@ public partial class CardStoryCard
 
         TextBlockTitle.Text = $"No.{CardStoryImpl.Card.Id} {rarity} {CardStoryImpl.Card.Prefix}";
 
-        InitDownloadItems();
+        InitDownloadItems(sourceType);
     }
 
     private void InitDownloadItems(SourceType sourceType = SourceType.SiteBest)

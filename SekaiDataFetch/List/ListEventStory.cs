@@ -2,7 +2,7 @@ using SekaiDataFetch.Data;
 
 namespace SekaiDataFetch.List;
 
-public class ListEventStory
+public class ListEventStory : BaseListStory
 {
     private static readonly string CachePathEventStories =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
@@ -13,14 +13,11 @@ public class ListEventStory
             "SekaiTools", "Data", "cache", "gameEvents.json");
 
     public readonly List<EventStoryImpl> Data = [];
-    private Fetcher Fetcher { get; }
 
     public ListEventStory(SourceType sourceType = SourceType.SiteBest, Proxy? proxy = null)
     {
-        var fetcher = new Fetcher();
-        fetcher.SetSource(sourceType);
-        fetcher.SetProxy(proxy ?? Proxy.None);
-        Fetcher = fetcher;
+        SetSource(sourceType);
+        SetProxy(proxy ?? Proxy.None);
         Load();
     }
 
@@ -31,7 +28,6 @@ public class ListEventStory
         var stringGameEvents = await Fetcher.Fetch(Fetcher.Source.Events);
         await File.WriteAllTextAsync(CachePathEventStories, stringEventStories);
         await File.WriteAllTextAsync(CachePathGameEvents, stringGameEvents);
-
         Load();
     }
 
@@ -82,14 +78,18 @@ public class EventStoryImpl(EventStory es, GameEvent ge) : ICloneable
         if (episode < 0 || episode >= EventStory.EventStoryEpisodes.Length)
             throw new ArgumentOutOfRangeException(nameof(episode), episode, null);
         var abName = EventStory.AssetBundleName;
+        var scenarioId = EventStory.EventStoryEpisodes[episode].ScenarioId;
         return sourceType switch
         {
-            SourceType.SiteBest => $"https://storage.sekai.best/sekai-jp-assets/event_story" +
-                                   $"/{abName}/scenario_rip" +
-                                   $"/{EventStory.EventStoryEpisodes[episode].ScenarioId}.asset",
-            SourceType.SiteAi => $"https://assets.pjsek.ai/file/pjsekai-assets/ondemand" +
-                                 $"/event_story/{abName}/scenario" +
-                                 $"/{EventStory.EventStoryEpisodes[episode].ScenarioId}.json",
+            SourceType.SiteBest =>
+                $"https://storage.sekai.best/sekai-jp-assets/event_story/" +
+                $"{abName}/scenario_rip/{scenarioId}.asset",
+            SourceType.SiteAi =>
+                $"https://assets.pjsek.ai/file/pjsekai-assets/ondemand/event_story/" +
+                $"{abName}/scenario/{scenarioId}.json",
+            SourceType.SiteHaruki =>
+                "https://storage.haruki.wacca.cn/assets/ondemand/event_story/" +
+                $"{abName}/scenario/{scenarioId}.json",
             _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
         };
     }

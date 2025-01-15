@@ -10,7 +10,7 @@ namespace SekaiToolsGUI.View.Download.Components.Card;
 public partial class CardStoryTab : UserControl, IRefreshable
 {
     private CardStoryTabModel ViewModel => (CardStoryTabModel)DataContext;
-    private ListCardStory? CardStory { get; set; }
+    private ListCardStory CardStory { get; } = new();
 
     public CardStoryTab()
     {
@@ -29,7 +29,8 @@ public partial class CardStoryTab : UserControl, IRefreshable
 
     public async Task Refresh()
     {
-        CardStory ??= new ListCardStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
+        CardStory.SetSource(GetSourceType());
+        CardStory.SetProxy(SettingPageModel.Instance.GetProxy());
         await CardStory.Refresh();
         CharacterComboBox_OnSelectionChanged(null!, null!);
     }
@@ -60,7 +61,6 @@ public partial class CardStoryTab : UserControl, IRefreshable
 
     private void CardStoryTab_OnLoaded(object sender, RoutedEventArgs e)
     {
-        CardStory ??= new ListCardStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
         CharacterComboBox.SelectedIndex = 0;
         CharacterComboBox_OnSelectionChanged(null!, null!);
     }

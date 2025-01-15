@@ -14,12 +14,13 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
         InitializeComponent();
     }
 
-    private ListSpecialStory? ListSpecialStory { get; set; }
+    private ListSpecialStory ListSpecialStory { get; } = new();
 
     public async Task Refresh()
     {
         SpecialStoryTypeSelector.IsEnabled = false;
-        ListSpecialStory ??= new ListSpecialStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
+        ListSpecialStory.SetSource(GetSourceType());
+        ListSpecialStory.SetProxy(SettingPageModel.Instance.GetProxy());
         await ListSpecialStory.Refresh();
         RefreshCombo();
         SpecialStoryTypeSelector.IsEnabled = true;
@@ -29,15 +30,16 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
     private void RefreshCombo()
     {
         CardContents.Children.Clear();
-        if (ListSpecialStory == null || ListSpecialStory.Data.Count == 0) return;
-        foreach (var (key, value) in ListSpecialStory.Data) SpecialStoryTypeSelector.Items.Add(key);
+        if (ListSpecialStory.Data.Count == 0) return;
+        foreach (var (key, _) in ListSpecialStory.Data)
+            SpecialStoryTypeSelector.Items.Add(key);
 
         SpecialStoryTypeSelector.SelectedIndex = 0;
     }
 
     private void RefreshSelection()
     {
-        if (ListSpecialStory == null || ListSpecialStory.Data.Count == 0) return;
+        if (ListSpecialStory.Data.Count == 0) return;
         if (SpecialStoryTypeSelector.SelectedIndex == -1) return;
         var selectedUnit = SpecialStoryTypeSelector.SelectedItem.ToString()!;
         CardContents.Children.Clear();
@@ -55,7 +57,6 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
 
     private void SpecialStoryTab_OnLoaded(object sender, RoutedEventArgs e)
     {
-        ListSpecialStory = new ListSpecialStory(GetSourceType(), SettingPageModel.Instance.GetProxy());
         RefreshCombo();
     }
 

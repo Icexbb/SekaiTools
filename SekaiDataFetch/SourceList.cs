@@ -33,6 +33,21 @@ public class SourceList
                     CharacterProfiles = root + "characterProfiles.json";
                     UnitProfiles = root + "unitProfiles.json";
                     break;
+                case SourceType.SiteHaruki:
+                    root = "https://storage.haruki.wacca.cn/master-jp/";
+                    Events = root + "events.json";
+                    Cards = root + "cards.json";
+                    Character2ds = root + "character2ds.json";
+                    UnitStories = root + "unitStories.json";
+                    EventStories = root + "eventStories.json";
+                    CardEpisodes = root + "cardEpisodes.json";
+                    ActionSets = root + "actionSets.json";
+                    SpecialStories = root + "specialStories.json";
+                    Areas = root + "areas.json";
+                    GameCharacters = root + "gameCharacters.json";
+                    CharacterProfiles = root + "characterProfiles.json";
+                    UnitProfiles = root + "unitProfiles.json";
+                    break;
                 case SourceType.SiteAi:
                     root = "https://api.pjsek.ai/database/master/";
                     const string limit = "?$limit=2000";
@@ -78,8 +93,7 @@ public class SourceList
 
 public enum SourceType
 {
-    SiteBest,
-
-    SiteAi
-    // UniPjsk
+    SiteBest = 0,
+    SiteHaruki = 1,
+    SiteAi = 2,
 }

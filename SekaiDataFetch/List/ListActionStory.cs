@@ -2,7 +2,7 @@ using SekaiDataFetch.Data;
 
 namespace SekaiDataFetch.List;
 
-public class ListActionStory
+public class ListActionStory : BaseListStory
 {
     private static readonly string CachePathAreas =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
@@ -16,7 +16,6 @@ public class ListActionStory
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "cache", "character2ds.json");
 
-    private Fetcher Fetcher { get; }
     public List<AreaStory> Data { get; set; } = [];
     public List<Area> Areas { get; private set; } = [];
 
@@ -24,10 +23,8 @@ public class ListActionStory
 
     public ListActionStory(SourceType sourceType = SourceType.SiteBest, Proxy? proxy = null)
     {
-        var fetcher = new Fetcher();
-        fetcher.SetSource(sourceType);
-        fetcher.SetProxy(proxy ?? Proxy.None);
-        Fetcher = fetcher;
+        SetSource(sourceType);
+        SetProxy(proxy?? Proxy.None);
         Load();
     }
 
@@ -113,6 +110,9 @@ public class AreaStory(ActionSet actionSet) : ICloneable
             SourceType.SiteAi =>
                 $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/scenario/actionset" +
                 $"/group{Group}/{ScenarioId}.json",
+            SourceType.SiteHaruki =>
+                $"https://storage.haruki.wacca.cn/assets/startapp/scenario/actionset/" +
+                $"group{Group}/{ScenarioId}.json",
             _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
         };
     }
