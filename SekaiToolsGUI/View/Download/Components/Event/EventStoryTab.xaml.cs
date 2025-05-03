@@ -2,7 +2,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using SekaiDataFetch;
+using SekaiDataFetch.Item;
 using SekaiDataFetch.List;
+using SekaiDataFetch.Source;
 using SekaiToolsGUI.ViewModel;
 
 namespace SekaiToolsGUI.View.Download.Components.Event;

@@ -1,4 +1,6 @@
 using SekaiDataFetch.Data;
+using SekaiDataFetch.Item;
+using SekaiDataFetch.Source;
 
 namespace SekaiDataFetch.List;
 
@@ -47,36 +49,6 @@ public class ListSpecialStory : BaseListStory
 
             var data = new SpecialStorySet(special.Title, episodeDict.ToArray());
             Data.Set(special.Title, data);
-        }
-    }
-}
-
-public class SpecialStorySet(string title, SpecialStorySet.Episode[]? episodes = null)
-{
-    public string Title { get; } = title;
-    public Episode[] Episodes { get; } = episodes ?? [];
-
-    public class Episode(string title, string assetBundleName, string scenarioId)
-    {
-        public string Title { get; } = title;
-        public string ScenarioId { get; } = scenarioId;
-        public string AssetBundleName { get; } = assetBundleName;
-
-        public string Url(SourceType sourceType = 0)
-        {
-            return sourceType switch
-            {
-                SourceType.SiteBest =>
-                    $"https://storage.sekai.best/sekai-jp-assets/scenario/special/" +
-                    $"{AssetBundleName}_rip/{ScenarioId}.asset",
-                SourceType.SiteAi =>
-                    $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/scenario/special/" +
-                    $"{AssetBundleName}/{ScenarioId}.json",
-                SourceType.SiteHaruki =>
-                    $"https://storage.haruki.wacca.cn/assets/startapp/scenario/special/" +
-                    $"{AssetBundleName}/{ScenarioId}.json",
-                _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
-            };
         }
     }
 }

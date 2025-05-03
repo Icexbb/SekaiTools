@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
 using SekaiDataFetch;
+using SekaiDataFetch.Source;
 using SekaiToolsGUI.View.Download.Components;
 using SekaiToolsGUI.View.Download.Components.Action;
 using SekaiToolsGUI.View.Download.Components.Card;
@@ -154,7 +155,6 @@ public partial class DownloadPage : UserControl
         {
             0 => SourceType.SiteBest,
             1 => SourceType.SiteHaruki,
-            2 => SourceType.SiteAi,
             _ => throw new ArgumentOutOfRangeException()
         };
     }

@@ -8,13 +8,11 @@ namespace Test
     {
         public static void Main()
         {
-            FetchSource().Wait();
-        }
-
-        private static async Task FetchSource()
-        {
-            var e = new ListEventStory(proxy: new Proxy("127.0.0.1", 7897, Proxy.Type.Socks5));
-            await e.Refresh();
+            var name = "1";
+            var age = 24;
+            var template = "My name is {name} and I am {age} years old.";
+            var result = string.Format(template, new {name, age});
+            Console.WriteLine(result);
         }
     }
 }

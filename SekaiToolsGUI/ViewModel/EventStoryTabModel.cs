@@ -1,3 +1,4 @@
+using SekaiDataFetch.Item;
 using SekaiDataFetch.List;
 
 namespace SekaiToolsGUI.ViewModel;

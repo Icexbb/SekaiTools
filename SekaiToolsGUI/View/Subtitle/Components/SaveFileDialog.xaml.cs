@@ -1,4 +1,5 @@
 using System.IO;
+using System.Windows;
 using System.Windows.Controls;
 using SekaiToolsGUI.ViewModel;
 using Wpf.Ui.Controls;
@@ -51,5 +52,10 @@ public partial class SaveFileDialog : ContentDialog
         };
         var result = openFileDialog.ShowDialog();
         return result == true ? openFileDialog.FileName : null;
+    }
+
+    private void ButtonSelectFile_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.FileName = SelectFile() ?? ViewModel.FileName;
     }
 }

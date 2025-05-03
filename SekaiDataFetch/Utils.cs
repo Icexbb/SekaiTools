@@ -10,7 +10,7 @@ public static class Utils
         data[key] = value;
     }
 
-    private static JsonSerializerOptions Options { get; } = new JsonSerializerOptions
+    private static JsonSerializerOptions Options { get; } = new()
     {
         PropertyNameCaseInsensitive = true
     };

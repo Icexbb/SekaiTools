@@ -1,7 +1,9 @@
 using System.Windows;
 using System.Windows.Controls;
 using SekaiDataFetch;
+using SekaiDataFetch.Item;
 using SekaiDataFetch.List;
+using SekaiDataFetch.Source;
 
 namespace SekaiToolsGUI.View.Download.Components.Card;
 

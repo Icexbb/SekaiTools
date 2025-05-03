@@ -31,7 +31,6 @@
                     <ComboBox.Items>
                         <ComboBoxItem Content="Sekai.Best" />
                         <ComboBoxItem Content="Haruki" />
-                        <ComboBoxItem Content="PjSek.Ai" IsEnabled="False" Visibility="Collapsed" />
                     </ComboBox.Items>
                 </ComboBox>
                 <ComboBox Grid.Column="1" Margin="5,0"

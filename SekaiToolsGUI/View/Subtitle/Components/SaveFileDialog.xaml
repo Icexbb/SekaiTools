@@ -7,23 +7,138 @@
     xmlns:local="clr-namespace:SekaiToolsGUI.View.Subtitle.Components"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
+    xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
     mc:Ignorable="d"
     ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
     ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     d:DataContext="{d:DesignInstance viewModel:SaveFileDialogModel, IsDesignTimeCreatable=True}"
-    IsPrimaryButtonEnabled="True" IsSecondaryButtonEnabled="True"
+    IsPrimaryButtonEnabled="True"
     Title="保存选项" DefaultButton="Primary"
-    PrimaryButtonText="保存" SecondaryButtonText="浏览" CloseButtonText="取消">
+    PrimaryButtonText="保存" CloseButtonText="取消"
+    MinWidth="600">
     <ui:ContentDialog.Resources>
         <!-- ReSharper disable once Xaml.StaticResourceNotResolved -->
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"
                TargetType="{x:Type local:SaveFileDialog}" />
     </ui:ContentDialog.Resources>
     <ui:ContentDialog.Content>
-        <StackPanel>
-            <TextBlock Text="文件将保存到：" HorizontalAlignment="Left" VerticalAlignment="Center" />
-            <TextBox IsReadOnly="True" Margin="5,15,5,5"
-                     Text="{Binding Path=FileName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-        </StackPanel>
+        <ScrollViewer>
+            <StackPanel>
+                <ui:CardControl Icon="{ui:SymbolIcon SaveSearch20}">
+                    <ui:CardControl.Header>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <ui:TextBlock
+                                Grid.Row="0"
+                                FontTypography="Body"
+                                Text="文件将保存到 " />
+                            <ui:TextBlock
+                                Grid.Row="1"
+                                Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                Text="{Binding FileName}"
+                                Visibility="{calcBinding:Binding 'FileName.Length>0', FalseToVisibility=Collapsed}" />
+                            <ui:TextBlock
+                                Grid.Row="1"
+                                Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                Text="请选择文件路径"
+                                Visibility="{calcBinding:Binding 'FileName.Length==0', FalseToVisibility=Collapsed}" />
+                        </Grid>
+                    </ui:CardControl.Header>
+                    <ui:Button Click="ButtonSelectFile_OnClick">浏览</ui:Button>
+                </ui:CardControl>
+                <ui:CardExpander Icon="{ui:SymbolIcon People24}" IsExpanded="True" ContentPadding="0">
+                    <ui:CardExpander.Header>
+                        <ui:TextBlock
+                            Grid.Row="0"
+                            FontTypography="Body"
+                            Text="Staff信息" />
+                    </ui:CardExpander.Header>
+                    <StackPanel Orientation="Vertical">
+                        <ui:CardControl>
+                            <ui:CardControl.Header>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <ui:TextBlock
+                                        Grid.Row="0"
+                                        FontTypography="Body"
+                                        Text="Staff行时长" />
+                                    <ui:TextBlock
+                                        Grid.Row="1"
+                                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="设为0以不使用Staff行" />
+                                </Grid>
+                            </ui:CardControl.Header>
+                            <ui:NumberBox Width="150" Maximum="15" Minimum="0" SmallChange="0.1"
+                                          Value="{Binding StaffLineTime,Mode=TwoWay}" />
+                        </ui:CardControl>
+                        <Grid Visibility="{calcBinding:Binding 'StaffLineTime>0',FalseToVisibility=Collapsed}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <ui:CardControl Grid.Column="0" Grid.Row="0">
+                                <ui:CardControl.Header>
+                                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="录制" />
+                                </ui:CardControl.Header>
+                                <ui:TextBox Width="100" Text="{Binding StaffLineRecord}" />
+                            </ui:CardControl>
+                            <ui:CardControl Grid.Column="1" Grid.Row="0">
+                                <ui:CardControl.Header>
+                                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="翻译" />
+                                </ui:CardControl.Header>
+                                <ui:TextBox Width="100" Text="{Binding StaffLineTranslator}" />
+                            </ui:CardControl>
+                            <ui:CardControl Grid.Column="2" Grid.Row="0">
+                                <ui:CardControl.Header>
+                                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="校对" />
+                                </ui:CardControl.Header>
+                                <ui:TextBox Width="100" Text="{Binding StaffLineTranslatorSenior}" />
+                            </ui:CardControl>
+                            <ui:CardControl Grid.Column="0" Grid.Row="1">
+                                <ui:CardControl.Header>
+                                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="时轴" />
+                                </ui:CardControl.Header>
+                                <ui:TextBox Width="100" Text="{Binding StaffLineTimeline}" />
+                            </ui:CardControl>
+                            <ui:CardControl Grid.Column="1" Grid.Row="1">
+                                <ui:CardControl.Header>
+                                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="轴校" />
+                                </ui:CardControl.Header>
+                                <ui:TextBox Width="100" Text="{Binding StaffLineTimelineSenior}" />
+                            </ui:CardControl>
+                            <ui:CardControl Grid.Column="2" Grid.Row="1">
+                                <ui:CardControl.Header>
+                                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="压制" />
+                                </ui:CardControl.Header>
+                                <ui:TextBox Width="100" Text="{Binding StaffLineCompression}" />
+                            </ui:CardControl>
+                            <ui:CardControl Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="3">
+                                <ui:CardControl.Header>
+                                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="位置" />
+                                </ui:CardControl.Header>
+                                <ComboBox Width="100" SelectedIndex="{Binding StaffLinePositionIndex,Mode=TwoWay}">
+                                    <ComboBoxItem>左下</ComboBoxItem>
+                                    <ComboBoxItem>左上</ComboBoxItem>
+                                    <ComboBoxItem>右下</ComboBoxItem>
+                                    <ComboBoxItem>右上</ComboBoxItem>
+                                </ComboBox>
+                            </ui:CardControl>
+                        </Grid>
+                    </StackPanel>
+                </ui:CardExpander>
+            </StackPanel>
+        </ScrollViewer>
     </ui:ContentDialog.Content>
 </ui:ContentDialog>

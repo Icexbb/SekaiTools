@@ -1,3 +1,5 @@
+using SekaiDataFetch.Source;
+
 namespace SekaiDataFetch.List;
 
 public class BaseListStory

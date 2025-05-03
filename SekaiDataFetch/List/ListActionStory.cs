@@ -1,4 +1,6 @@
 using SekaiDataFetch.Data;
+using SekaiDataFetch.Item;
+using SekaiDataFetch.Source;
 
 namespace SekaiDataFetch.List;
 
@@ -80,40 +82,5 @@ public class ListActionStory : BaseListStory
 
         Areas = areas.Select(area => (Area)area.Clone()).ToList();
         Character2ds = character2ds.Select(character2d => (Character2d)character2d.Clone()).ToList();
-    }
-}
-
-public class AreaStory(ActionSet actionSet) : ICloneable
-{
-    public ActionSet ActionSet { get; } = actionSet;
-    public string ScenarioId { get; } = actionSet.ScenarioId;
-    public int Group { get; } = actionSet.Id / 100;
-
-    public int[] CharacterIds { get; set; } = [];
-
-
-    public object Clone()
-    {
-        return new AreaStory(ActionSet)
-        {
-            CharacterIds = CharacterIds
-        };
-    }
-
-    public string Url(SourceType sourceType = SourceType.SiteBest)
-    {
-        return sourceType switch
-        {
-            SourceType.SiteBest =>
-                $"https://storage.sekai.best/sekai-jp-assets/scenario/actionset" +
-                $"/group{Group}_rip/{ScenarioId}.asset",
-            SourceType.SiteAi =>
-                $"https://assets.pjsek.ai/file/pjsekai-assets/startapp/scenario/actionset" +
-                $"/group{Group}/{ScenarioId}.json",
-            SourceType.SiteHaruki =>
-                $"https://storage.haruki.wacca.cn/assets/startapp/scenario/actionset/" +
-                $"group{Group}/{ScenarioId}.json",
-            _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
-        };
     }
 }

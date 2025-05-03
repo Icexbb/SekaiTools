@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using SekaiDataFetch.Item;
 using SekaiDataFetch.List;
 
 namespace SekaiToolsGUI.View.Download.Components.Action;
