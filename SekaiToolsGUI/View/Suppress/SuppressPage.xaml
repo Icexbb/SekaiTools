@@ -58,7 +58,7 @@
 
             <ui:CardControl Height="70" VerticalAlignment="Stretch" Icon="{ui:SymbolIcon StreamOutput20}"
                             Margin="0,0,0,5" HorizontalAlignment="Stretch"
-                            Visibility="{c:Binding 'SourceSubtitle.Length!=0', FalseToVisibility=Collapsed}">
+                            Visibility="{c:Binding 'SourceVideo.Length!=0', FalseToVisibility=Collapsed}">
                 <ui:CardControl.Header>
                     <Grid>
                         <Grid.RowDefinitions>
@@ -84,7 +84,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="固定帧率因数" />
+                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="固定码率因子" />
                         <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                       Text="压制时使用的Crf" />
                     </Grid>

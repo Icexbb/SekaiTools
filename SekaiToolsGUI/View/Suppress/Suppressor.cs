@@ -41,7 +41,7 @@ internal class X264Params
 
     public string GetSimpleX264Params()
     {
-        return $"psy-rd={PsyRd}:crf={Crf}";
+        return $"psy-rd='{PsyRd}':crf={Crf}";
     }
 }
 
@@ -69,8 +69,7 @@ public partial class Suppressor
         File.Exists(VapourScript) && File.Exists(VapourExecutable) && File.Exists(FfmpegExecutable);
 
     private static bool SourceExist =>
-        File.Exists(SuppressPageModel.Instance.SourceVideo) &&
-        File.Exists(SuppressPageModel.Instance.SourceSubtitle);
+        File.Exists(SuppressPageModel.Instance.SourceVideo);
 
 
     private static string GetVapourArgs()

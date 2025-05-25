@@ -57,7 +57,7 @@ public class SuppressPageModel : ViewModelBase
     }
 
     private bool GetCanStartSuppress => !string.IsNullOrWhiteSpace(SourceVideo) &&
-                                        !string.IsNullOrWhiteSpace(SourceSubtitle) &&
+                                        // !string.IsNullOrWhiteSpace(SourceSubtitle) &&
                                         !string.IsNullOrWhiteSpace(OutputPath);
 
     public bool CanStartSuppress
