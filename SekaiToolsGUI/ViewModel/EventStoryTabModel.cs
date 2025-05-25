@@ -1,5 +1,4 @@
 using SekaiDataFetch.Item;
-using SekaiDataFetch.List;
 
 namespace SekaiToolsGUI.ViewModel;
 
@@ -191,9 +190,9 @@ public class EventStoryTabModel : ViewModelBase
         set => SetProperty(value);
     }
 
-    public EventStoryImpl[] EventStories
+    public EventStorySet[] EventStories
     {
-        get => GetProperty<EventStoryImpl[]>([]);
+        get => GetProperty<EventStorySet[]>([]);
         set => SetProperty(value);
     }
 }

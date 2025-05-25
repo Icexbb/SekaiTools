@@ -1,6 +1,5 @@
 using SekaiDataFetch.Data;
 using SekaiDataFetch.Item;
-using SekaiDataFetch.Source;
 
 namespace SekaiDataFetch.List;
 
@@ -14,19 +13,20 @@ public class ListCardStory : BaseListStory
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "cache", "cards.json");
 
-    public readonly List<CardStoryImpl> Data = [];
+    public readonly List<CardStorySet> Data = [];
 
-    public ListCardStory(SourceType sourceType = SourceType.SiteBest, Proxy? proxy = null)
+    private ListCardStory(Proxy? proxy = null)
     {
-        SetSource(sourceType);
         SetProxy(proxy ?? Proxy.None);
         Load();
     }
 
+    public static ListCardStory Instance { get; } = new();
+
     public async Task Refresh()
     {
-        var stringCardEpisodes = await Fetcher.Fetch(Fetcher.Source.CardEpisodes);
-        var stringCards = await Fetcher.Fetch(Fetcher.Source.Cards);
+        var stringCardEpisodes = await Fetcher.Fetch(Fetcher.SourceList.CardEpisodes);
+        var stringCards = await Fetcher.Fetch(Fetcher.SourceList.Cards);
         await File.WriteAllTextAsync(CachePathCardEpisodes, stringCardEpisodes);
         await File.WriteAllTextAsync(CachePathCards, stringCards);
         Load();
@@ -58,10 +58,9 @@ public class ListCardStory : BaseListStory
                 episode.CardId == card.Id && episode.CardEpisodePartType == "second_part");
 
             if (firstPart == null || secondPart == null) continue;
-            Data.Add(new CardStoryImpl(card, firstPart, secondPart));
+            Data.Add(new CardStorySet(card, firstPart, secondPart));
         }
 
         Data.Sort((a, b) => a.Card.Id.CompareTo(b.Card.Id));
     }
 }
-

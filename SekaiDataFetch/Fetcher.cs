@@ -6,12 +6,14 @@ namespace SekaiDataFetch;
 
 public class Fetcher
 {
-    public SourceList Source { get; } = new();
+    public SourceList SourceList => SourceList.Instance;
     private Proxy UserProxy { get; set; } = Proxy.None;
 
-    public void SetSource(SourceType sourceType)
+    public static Fetcher Instance { get; } = new();
+
+    public void SetSource(SourceData sourceData)
     {
-        Source.SetSource(sourceType);
+        SourceList.SourceData = sourceData;
     }
 
     public void SetProxy(Proxy proxy)

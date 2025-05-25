@@ -1,5 +1,4 @@
 using SekaiDataFetch.Item;
-using SekaiDataFetch.List;
 
 namespace SekaiToolsGUI.ViewModel;
 
@@ -18,9 +17,9 @@ public class CardStoryTabModel : ViewModelBase
         set => SetProperty(value);
     }
 
-    public CardStoryImpl[] CardStories
+    public CardStorySet[] CardStories
     {
-        get => GetProperty<CardStoryImpl[]>([]);
+        get => GetProperty<CardStorySet[]>([]);
         set => SetProperty(value);
     }
 }

@@ -26,6 +26,7 @@
             MenuItemsSource="{Binding NavigationItems}"
             FooterMenuItemsSource="{Binding NavigationFooterItems}"
             Loaded="NavigationView_OnLoaded" HorizontalContentAlignment="Stretch"
+            Navigated="NavigationView_OnNavigated"
             VerticalContentAlignment="Stretch"
             OpenPaneLength="150"
             Transition="FadeInWithSlide"

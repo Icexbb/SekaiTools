@@ -1,6 +1,5 @@
 using SekaiDataFetch.Data;
 using SekaiDataFetch.Item;
-using SekaiDataFetch.Source;
 
 namespace SekaiDataFetch.List;
 
@@ -14,20 +13,21 @@ public class ListEventStory : BaseListStory
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "cache", "gameEvents.json");
 
-    public readonly List<EventStoryImpl> Data = [];
+    public readonly List<EventStorySet> Data = [];
 
-    public ListEventStory(SourceType sourceType = SourceType.SiteBest, Proxy? proxy = null)
+    private ListEventStory(Proxy? proxy = null)
     {
-        SetSource(sourceType);
         SetProxy(proxy ?? Proxy.None);
         Load();
     }
 
+    public static ListEventStory Instance { get; } = new();
+
 
     public async Task Refresh()
     {
-        var stringEventStories = await Fetcher.Fetch(Fetcher.Source.EventStories);
-        var stringGameEvents = await Fetcher.Fetch(Fetcher.Source.Events);
+        var stringEventStories = await Fetcher.Fetch(Fetcher.SourceList.EventStories);
+        var stringGameEvents = await Fetcher.Fetch(Fetcher.SourceList.Events);
         await File.WriteAllTextAsync(CachePathEventStories, stringEventStories);
         await File.WriteAllTextAsync(CachePathGameEvents, stringGameEvents);
         Load();
@@ -50,14 +50,15 @@ public class ListEventStory : BaseListStory
 
     private void GetData(ICollection<EventStory> evStories, ICollection<GameEvent> events)
     {
-        if (evStories.Count != events.Count)
-            throw new ArgumentException("EventStory and GameEvent count mismatch", nameof(evStories));
+        // evStories may not be the same as events
+        // if (evStories.Count != events.Count)
+        // throw new ArgumentException("EventStory and GameEvent count mismatch", nameof(evStories));
         foreach (var eventStory in evStories)
         {
             var @event = events.FirstOrDefault(x => x.Id == eventStory.EventId);
             if (@event == null)
                 throw new ArgumentException("EventStory and GameEvent mismatch", nameof(evStories));
-            Data.Add(new EventStoryImpl(eventStory, @event));
+            Data.Add(new EventStorySet(eventStory, @event));
         }
 
         // Sort by EventId Biggest to Smallest

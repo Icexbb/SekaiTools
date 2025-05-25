@@ -3,21 +3,22 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using SekaiDataFetch.Item;
-using SekaiDataFetch.List;
+using SekaiDataFetch.Source;
+using SekaiToolsGUI.ViewModel;
 
 namespace SekaiToolsGUI.View.Download.Components.Action;
 
 public partial class ActionStoryItem : UserControl
 {
     public static readonly DependencyProperty AreaStoryProperty = DependencyProperty.Register(
-        nameof(AreaStory), typeof(AreaStory), typeof(ActionStoryItem),
+        nameof(AreaStorySet), typeof(AreaStorySet), typeof(ActionStoryItem),
         new PropertyMetadata(null, OnAreaStoryChanged));
 
-    public AreaStory AreaStory { get; set; } = null!;
+    public AreaStorySet AreaStorySet { get; set; } = null!;
 
     private static void OnAreaStoryChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is ActionStoryItem control && e.NewValue is AreaStory areaStory) control.Initialize(areaStory);
+        if (d is ActionStoryItem control && e.NewValue is AreaStorySet areaStory) control.Initialize(areaStory);
     }
 
 
@@ -32,16 +33,18 @@ public partial class ActionStoryItem : UserControl
         {
             DependencyObject? parent = this;
             while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
-            (parent as DownloadPage)?.AddTask(AreaStory.ActionSet.ScriptId, AreaStory.Url());
+            SourceList.Instance.SourceData = DownloadPageModel.Instance.CurrentSource.Data;
+            var url = SourceList.Instance.ActionSet(AreaStorySet);
+            (parent as DownloadPage)?.AddTask(AreaStorySet.ActionSet.ScriptId, url);
         });
     }
 
 
-    private void Initialize(AreaStory areaStory)
+    private void Initialize(AreaStorySet areaStorySet)
     {
-        AreaStory = areaStory;
+        AreaStorySet = areaStorySet;
         Icons.Children.Clear();
-        var cIds = areaStory.CharacterIds.ToList();
+        var cIds = areaStorySet.CharacterIds.ToList();
         cIds.Sort();
         foreach (var id in cIds)
         {
@@ -69,6 +72,6 @@ public partial class ActionStoryItem : UserControl
             }
         }
 
-        KeyText.Text = $"{areaStory.ActionSet.Id} {areaStory.ActionSet.ScenarioId}";
+        KeyText.Text = $"{areaStorySet.ActionSet.Id} {areaStorySet.ActionSet.ScenarioId}";
     }
 }

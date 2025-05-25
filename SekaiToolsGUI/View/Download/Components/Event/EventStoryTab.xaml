@@ -4,7 +4,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             xmlns:local="clr-namespace:SekaiToolsGUI.View.Download.Components"
              xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
              xmlns:event="clr-namespace:SekaiToolsGUI.View.Download.Components.Event"
              mc:Ignorable="d" Loaded="EventStoryTab_OnLoaded"
@@ -400,7 +399,7 @@
                   VirtualizingStackPanel.ScrollUnit="Pixel">
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <event:EventStoryEvent EventStoryImpl="{Binding}" HorizontalAlignment="Stretch" />
+                    <event:EventStoryEvent EventStorySet="{Binding}" HorizontalAlignment="Stretch" />
                 </DataTemplate>
             </ListView.ItemTemplate>
 

@@ -391,7 +391,7 @@
                   VirtualizingStackPanel.ScrollUnit="Pixel">
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <local:ActionStoryItem AreaStory="{Binding }" HorizontalAlignment="Stretch" />
+                    <local:ActionStoryItem AreaStorySet="{Binding }" HorizontalAlignment="Stretch" />
                 </DataTemplate>
             </ListView.ItemTemplate>
 

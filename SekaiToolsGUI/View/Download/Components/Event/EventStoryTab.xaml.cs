@@ -1,7 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using SekaiDataFetch;
 using SekaiDataFetch.Item;
 using SekaiDataFetch.List;
 using SekaiDataFetch.Source;
@@ -21,16 +20,16 @@ public partial class EventStoryTab : UserControl, IRefreshable
 
     private EventStoryTabModel ViewModel => (EventStoryTabModel)DataContext;
 
-    private ListEventStory StoryData { get; } = new();
+    private ListEventStory ListEventStory => ListEventStory.Instance;
 
     private EventStoryTabModel Model => (EventStoryTabModel)DataContext;
 
     public async Task Refresh()
     {
         CardUnits.IsEnabled = false;
-        StoryData.SetSource(GetSourceType());
-        StoryData.SetProxy(SettingPageModel.Instance.GetProxy());
-        await StoryData.Refresh();
+        ListEventStory.SetSource(GetSourceType());
+        ListEventStory.SetProxy(SettingPageModel.Instance.GetProxy());
+        await ListEventStory.Refresh();
         RefreshItems(true);
         CardUnits.IsEnabled = true;
     }
@@ -47,7 +46,7 @@ public partial class EventStoryTab : UserControl, IRefreshable
         RefreshItems(true);
     }
 
-    private SourceType GetSourceType()
+    private SourceData GetSourceType()
     {
         var parent = Parent;
         while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
@@ -223,16 +222,16 @@ public partial class EventStoryTab : UserControl, IRefreshable
 {
     private void RefreshItems(bool selectAll = false)
     {
-        if ( StoryData.Data.Count == 0) return;
+        if (ListEventStory.Data.Count == 0) return;
 
-        var data = StoryData.Data.Select(item => (EventStoryImpl)item.Clone()).ToList();
+        var data = ListEventStory.Data.Select(item => (EventStorySet)item.Clone()).ToList();
         data.Sort((x, y) => _currentDirection * x.EventStory.EventId.CompareTo(y.EventStory.EventId));
         if (selectAll) ChangeAllBannerSelector(true);
         ViewModel.EventStories = data.Where(JudgeVisibility).ToArray();
     }
 
 
-    private bool JudgeVisibility(EventStoryImpl data)
+    private bool JudgeVisibility(EventStorySet data)
     {
         List<string> filterType = BoxType.SelectedIndex switch
         {

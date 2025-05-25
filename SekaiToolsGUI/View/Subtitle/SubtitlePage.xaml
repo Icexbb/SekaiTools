@@ -117,8 +117,7 @@
                         <TextBlock
                             Text="{Binding RunningStatus}"
                             VerticalAlignment="Center" />
-                        <TextBlock VerticalAlignment="Center" Name="TextBlockETA" Margin="5,0" />
-
+                        <TextBlock VerticalAlignment="Center" Name="TextBlockEta" Margin="5,0" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">

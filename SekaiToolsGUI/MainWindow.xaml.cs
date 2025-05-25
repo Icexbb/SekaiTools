@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using SekaiToolsGUI.View.Download;
 using SekaiToolsGUI.View.Suppress;
 using SekaiToolsGUI.ViewModel;
 using Wpf.Ui;
@@ -34,5 +35,15 @@ public partial class MainWindow : FluentWindow
         NavigationView.IsPaneOpen = false;
         if (NavigationView.MenuItems.Count != 0)
             NavigationView.Navigate((NavigationView.MenuItems[0] as NavigationViewItem)?.TargetPageType!);
+    }
+
+    private void NavigationView_OnNavigated(NavigationView sender, NavigatedEventArgs args)
+    {
+        switch (args.Page)
+        {
+            case DownloadPage downloadPage:
+                downloadPage.OnNavigated();
+                break;
+        }
     }
 }

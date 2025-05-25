@@ -1,42 +1,42 @@
-using SekaiDataFetch.Source;
+using SekaiDataFetch.Data;
 
 namespace SekaiDataFetch.Item;
 
-public class UnitStorySet(string name, UnitStorySet.Chapter[]? chapters = null)
+public class UnitStorySet
 {
-    public string Name { get; init; } = name;
-
-    public Chapter[] Chapters { get; init; } = chapters ?? [];
-
-    public class Chapter(string name = "", string assetBundleName = "", Chapter.Episode[]? episodes = null)
+    public UnitStorySet(UnitStory unitStory)
     {
-        public string Name { get; init; } = name;
+        UnitStory = unitStory;
+        Chapters = unitStory.Chapters.Select(chapter => new Chapter(chapter)).ToArray();
+    }
 
-        public string AssetBundleName { get; init; } = assetBundleName;
+    public UnitStory UnitStory { get; set; }
+    public string Name => Constants.UnitName[UnitStory.Unit];
 
-        public Episode[] Episodes { get; init; } = episodes ?? [];
+    public Chapter[] Chapters { get; init; }
 
-        public class Episode(string episodeNoLabel, string title, string scenarioId)
+    public class Chapter
+    {
+        public Chapter(UnitChapter chapter)
         {
-            private string EpisodeNoLabel { get; } = episodeNoLabel;
-            private string Title { get; } = title;
-            private string ScenarioId { get; } = scenarioId;
+            Name = chapter.Title;
+            AssetBundleName = chapter.AssetBundleName;
+            Episodes = chapter.Episodes.Select(episode => new Episode(episode)).ToArray();
+        }
+
+        public string Name { get; }
+
+        public string AssetBundleName { get; }
+
+        public Episode[] Episodes { get; }
+
+        public class Episode(UnitEpisode episode)
+        {
+            private string EpisodeNoLabel { get; } = episode.EpisodeNoLabel;
+            private string Title { get; } = episode.Title;
+            public string ScenarioId { get; } = episode.ScenarioId;
 
             public string Key => $"{EpisodeNoLabel} - {Title}";
-
-            public string Url(string assetBundleName, SourceType sourceType = 0)
-            {
-                return sourceType switch
-                {
-                    SourceType.SiteBest =>
-                        $"https://storage.sekai.best/sekai-jp-assets/scenario/unitstory/" +
-                        $"{assetBundleName}_rip/{ScenarioId}.asset",
-                    SourceType.SiteHaruki =>
-                        $"https://storage.haruki.wacca.cn/assets/startapp/scenario/unitstory/" +
-                        $"{assetBundleName}/{ScenarioId}.json",
-                    _ => throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null)
-                };
-            }
         }
     }
 }

@@ -1,6 +1,5 @@
 using SekaiDataFetch.Data;
 using SekaiDataFetch.Item;
-using SekaiDataFetch.Source;
 
 namespace SekaiDataFetch.List;
 
@@ -12,17 +11,18 @@ public class ListUnitStory : BaseListStory
 
     public readonly Dictionary<string, UnitStorySet> Data = new();
 
-    public ListUnitStory(SourceType sourceType = SourceType.SiteBest, Proxy? proxy = null)
+    private ListUnitStory(Proxy? proxy = null)
     {
-        SetSource(sourceType);
         SetProxy(proxy ?? Proxy.None);
         Load();
     }
 
+    public static ListUnitStory Instance { get; } = new();
+
 
     public async Task Refresh()
     {
-        var stringUnitStories = await Fetcher.Fetch(Fetcher.Source.UnitStories);
+        var stringUnitStories = await Fetcher.Fetch(Fetcher.SourceList.UnitStories);
         await File.WriteAllTextAsync(CachePathUnitStories, stringUnitStories);
         Load();
     }
@@ -42,18 +42,7 @@ public class ListUnitStory : BaseListStory
     {
         foreach (var unit in unitStory)
         {
-            var chapterDict = new List<UnitStorySet.Chapter>();
-            foreach (var chapter in unit.Chapters)
-            {
-                var episodeDict = new List<UnitStorySet.Chapter.Episode>();
-                episodeDict.AddRange(chapter.Episodes.Select(episode =>
-                    new UnitStorySet.Chapter.Episode(episode.EpisodeNoLabel, episode.Title, episode.ScenarioId)));
-
-                chapterDict.Add(new UnitStorySet.Chapter(chapter.Title, chapter.AssetBundleName,
-                    episodeDict.ToArray()));
-            }
-
-            var data = new UnitStorySet(Constants.UnitName[unit.Unit], chapterDict.ToArray());
+            var data = new UnitStorySet(unit);
             Data.Set(unit.Unit, data);
         }
     }

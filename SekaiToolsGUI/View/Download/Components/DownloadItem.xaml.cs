@@ -1,12 +1,14 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using SekaiDataFetch.Source;
+using SekaiToolsGUI.ViewModel;
 
 namespace SekaiToolsGUI.View.Download.Components;
 
 public partial class DownloadItem : UserControl
 {
-    public DownloadItem(string url, string key)
+    private DownloadItem(Func<string> url, string key)
     {
         InitializeComponent();
         DataContext = this;
@@ -14,7 +16,8 @@ public partial class DownloadItem : UserControl
         Margin = new Thickness(10, 5, 10, 5);
     }
 
-    private string Url { get; set; } = "";
+    public Func<string> Url { get; set; } = () => "";
+
     private string Key { get; set; } = "";
 
     private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
@@ -23,37 +26,42 @@ public partial class DownloadItem : UserControl
         {
             var parent = Parent;
             while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
+            SourceList.Instance.SourceData = DownloadPageModel.Instance.CurrentSource.Data;
 
-            (parent as DownloadPage)?.AddTask(Key, Url);
+            var key = DownloadPageModel.Instance.CurrentSource.Data.SourceName + " - " + Key;
+            var url = Url();
+            (parent as DownloadPage)?.AddTask(key, url);
         });
     }
 }
-
 
 public partial class DownloadItem
 {
     private static List<DownloadItem> RecycleContainer { get; } = [];
 
-    public void Initialize(string url, string key)
+    private void Initialize(Func<string> url, string key)
     {
+        Visibility = Visibility.Visible;
         Url = url;
         Key = key;
         KeyText.Text = Key;
     }
 
-    public static void RecycleItem(DownloadItem item)
+    public void Recycle()
     {
-        item.Visibility = Visibility.Collapsed;
-        RecycleContainer.Add(item);
-        (item.Parent as Panel)?.Children.Remove(item);
+        Visibility = Visibility.Collapsed;
+        RecycleContainer.Add(this);
+        if (Parent is Panel parent)
+        {
+            parent.Children.Remove(this);
+        }
     }
 
-    public static DownloadItem GetItem(string url, string key)
+    public static DownloadItem GetItem(Func<string> url, string key)
     {
         if (RecycleContainer.Count <= 0) return new DownloadItem(url, key);
         var item = RecycleContainer[0];
         RecycleContainer.RemoveAt(0);
-        item.Visibility = Visibility.Visible;
         item.Initialize(url, key);
         return item;
     }

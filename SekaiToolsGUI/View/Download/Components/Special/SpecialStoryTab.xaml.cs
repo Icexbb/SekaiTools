@@ -1,7 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using SekaiDataFetch;
 using SekaiDataFetch.List;
 using SekaiDataFetch.Source;
 using SekaiToolsGUI.ViewModel;
@@ -15,7 +14,7 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
         InitializeComponent();
     }
 
-    private ListSpecialStory ListSpecialStory { get; } = new();
+    private ListSpecialStory ListSpecialStory => ListSpecialStory.Instance;
 
     public async Task Refresh()
     {
@@ -44,14 +43,11 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
         if (SpecialStoryTypeSelector.SelectedIndex == -1) return;
         var selectedUnit = SpecialStoryTypeSelector.SelectedItem.ToString()!;
         CardContents.Children.Clear();
-        foreach (var episode in ListSpecialStory.Data[selectedUnit].Episodes)
+        var set = ListSpecialStory.Data[selectedUnit];
+        foreach (var episode in set.Episodes)
         {
-            var item = new DownloadItem(
-                episode.Url(GetSourceType()),
-                episode.Title)
-            {
-                Margin = new Thickness(10, 5, 10, 5)
-            };
+            var item = DownloadItem.GetItem(() => SourceList.Instance.SpecialStory(episode), episode.Title);
+            item.Margin = new Thickness(10, 5, 10, 5);
             CardContents.Children.Add(item);
         }
     }
@@ -61,7 +57,7 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
         RefreshCombo();
     }
 
-    private SourceType GetSourceType()
+    private SourceData GetSourceType()
     {
         var parent = Parent;
         while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);

@@ -1,7 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using SekaiDataFetch;
 using SekaiDataFetch.List;
 using SekaiDataFetch.Source;
 using SekaiToolsGUI.ViewModel;
@@ -15,7 +14,7 @@ public partial class UnitStoryTab : UserControl, IRefreshable
         InitializeComponent();
     }
 
-    private ListUnitStory ListUnitStory { get; } = new();
+    private ListUnitStory ListUnitStory => ListUnitStory.Instance;
 
     public async Task Refresh()
     {
@@ -43,15 +42,15 @@ public partial class UnitStoryTab : UserControl, IRefreshable
         CardContents.Children.Clear();
         if (ListUnitStory.Data.Count == 0) return;
         foreach (var chapter in ListUnitStory.Data[selectedUnit].Chapters)
-        foreach (var episode in chapter.Episodes)
         {
-            var item = new DownloadItem(
-                episode.Url(chapter.AssetBundleName, GetSourceType()),
-                chapter.Name + "\n" + episode.Key)
+            foreach (var episode in chapter.Episodes)
             {
-                Margin = new Thickness(10, 5, 10, 5)
-            };
-            CardContents.Children.Add(item);
+                var item = DownloadItem.GetItem(
+                    () => SourceList.Instance.UnitStory(episode.ScenarioId, chapter.AssetBundleName),
+                    chapter.Name + "\n" + episode.Key);
+                item.Margin = new Thickness(10, 5, 10, 5);
+                CardContents.Children.Add(item);
+            }
         }
     }
 
@@ -94,7 +93,7 @@ public partial class UnitStoryTab : UserControl, IRefreshable
         RefreshItems();
     }
 
-    private SourceType GetSourceType()
+    private SourceData GetSourceType()
     {
         var parent = Parent;
         while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);

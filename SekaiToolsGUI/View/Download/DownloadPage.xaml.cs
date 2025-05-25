@@ -13,14 +13,18 @@ using SekaiToolsGUI.View.Download.Components.Event;
 using SekaiToolsGUI.View.Download.Components.Special;
 using SekaiToolsGUI.View.Download.Components.Unit;
 using SekaiToolsGUI.ViewModel;
+using Wpf.Ui.Abstractions.Controls;
 
 namespace SekaiToolsGUI.View.Download;
 
-public partial class DownloadPage : UserControl
+public partial class DownloadPage : UserControl, INavigableView<DownloadPageModel>
 {
+    public DownloadPageModel ViewModel => DownloadPageModel.Instance;
+
     public DownloadPage()
     {
         InitializeComponent();
+        DataContext = ViewModel;
         BoxStoryType.SelectedIndex = 0;
         StoryTypeSelector_OnSelected(null!, null!);
     }
@@ -30,6 +34,7 @@ public partial class DownloadPage : UserControl
     private SpecialStoryTab SpecialStoryTab { get; } = new();
     private CardStoryTab CardStoryTab { get; } = new();
     private ActionStoryTab ActionStoryTab { get; } = new();
+
 
     public void AddTask(string tag, string url)
     {
@@ -149,15 +154,7 @@ public partial class DownloadPage : UserControl
         }
     }
 
-    public SourceType GetSourceType()
-    {
-        return BoxSource.SelectedIndex switch
-        {
-            0 => SourceType.SiteBest,
-            1 => SourceType.SiteHaruki,
-            _ => throw new ArgumentOutOfRangeException()
-        };
-    }
+    public SourceData GetSourceType() => ViewModel.CurrentSource.Data;
 
     private async void ButtonRefresh_OnClick(object sender, RoutedEventArgs e)
     {
@@ -176,5 +173,10 @@ public partial class DownloadPage : UserControl
             MessageBox.Show("刷新失败: " + exception.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             if (Debugger.IsAttached) throw;
         }
+    }
+
+    public void OnNavigated()
+    {
+        ViewModel.SourceData = SettingPageModel.Instance.Source;
     }
 }

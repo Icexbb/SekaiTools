@@ -4,11 +4,12 @@ using System.Text;
 using System.Windows;
 using SekaiDataFetch;
 using SekaiToolsCore.Process.Model;
+using SekaiToolsGUI.Model;
 using Wpf.Ui.Appearance;
 
 namespace SekaiToolsGUI.ViewModel;
 
-public class SettingPageModel : ViewModelBase
+public partial class SettingPageModel : ViewModelBase
 {
     public readonly List<string> CustomSpecialCharacters = [];
 
@@ -253,10 +254,36 @@ public class SettingPageModel : ViewModelBase
         };
     }
 
+    private DownloadSourceEditorModel[]? _source;
+
+    public DownloadSourceEditorModel[] Source
+    {
+        get
+        {
+            if (_source != null) return _source;
+            LoadSource();
+            return Source;
+        }
+        private set
+        {
+            _source = value;
+            OnPropertyChanged();
+        }
+    }
+}
+
+partial class SettingPageModel
+{
     private static string GetSettingPath()
     {
         return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "setting.json");
+    }
+
+    private static string GetSourcePath()
+    {
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "SekaiTools", "Data", "source.json");
     }
 
     public void SaveSetting()
@@ -332,5 +359,92 @@ public class SettingPageModel : ViewModelBase
         }
 
         SaveSetting();
+    }
+
+    public void LoadSource()
+    {
+        var source = SekaiDataFetch.Source.SourceData.Load(GetSourcePath());
+        Source = new DownloadSourceEditorModel[source.Length];
+        for (var i = 0; i < source.Length; i++)
+        {
+            Source[i] = new DownloadSourceEditorModel(this, source[i]);
+        }
+    }
+
+    public void SaveSource()
+    {
+        var source = new SekaiDataFetch.Source.SourceData[Source.Length];
+        for (var i = 0; i < Source.Length; i++)
+        {
+            source[i] = new SekaiDataFetch.Source.SourceData
+            {
+                SourceName = Source[i].SourceName,
+                StorageBaseUrl = Source[i].StorageBaseUrl,
+                SourceTemplate = Source[i].SourceTemplate,
+                ActionSetTemplate = Source[i].ActionSetTemplate,
+                MemberStoryTemplate = Source[i].MemberStoryTemplate,
+                EventStoryTemplate = Source[i].EventStoryTemplate,
+                SpecialStoryTemplate = Source[i].SpecialStoryTemplate,
+                UnitStoryTemplate = Source[i].UnitStoryTemplate,
+                Deletable = Source[i].Deletable
+            };
+        }
+
+        File.WriteAllText(GetSourcePath(), SekaiDataFetch.Source.SourceData.Dump(source), Encoding.UTF8);
+    }
+
+    public void NewSource()
+    {
+        var source = new SekaiDataFetch.Source.SourceData
+        {
+            SourceName = "New Source",
+            SourceTemplate = "https://example.com/{type}.json",
+            StorageBaseUrl = "https://example.com/",
+            ActionSetTemplate = "actionset/{abName}/{scenarioId}.json",
+            MemberStoryTemplate = "member/{abName}/{scenarioId}.json",
+            EventStoryTemplate = "event/{abName}/{scenarioId}.json",
+            SpecialStoryTemplate = "special/{abName}/{scenarioId}.json",
+            UnitStoryTemplate = "unit/{abName}/{scenarioId}.json",
+            Deletable = true
+        };
+        Array.Resize(ref _source, Source.Length + 1);
+        Source[^1] = new DownloadSourceEditorModel(this, source);
+        OnPropertyChanged(nameof(Source));
+        SaveSource();
+    }
+
+    public void ResetSource()
+    {
+        var sourceData = SekaiDataFetch.Source.SourceData.Default;
+        var source = new DownloadSourceEditorModel[sourceData.Length];
+        for (var i = 0; i < sourceData.Length; i++)
+        {
+            source[i] = new DownloadSourceEditorModel(this, sourceData[i]);
+        }
+
+        Source = source;
+        OnPropertyChanged(nameof(Source));
+        SaveSource();
+    }
+
+    public void DeleteSource(DownloadSourceEditorModel source)
+    {
+        var index = Array.IndexOf(Source, source);
+        if (index == -1) return;
+        DeleteSource(index);
+    }
+
+    public void DeleteSource(int index)
+    {
+        var newSource = new DownloadSourceEditorModel[Source.Length - 1];
+        for (var i = 0; i < Source.Length; i++)
+        {
+            if (i == index) continue;
+            newSource[i > index ? i - 1 : i] = Source[i];
+        }
+
+        Source = newSource;
+        OnPropertyChanged(nameof(Source));
+        SaveSource();
     }
 }

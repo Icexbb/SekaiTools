@@ -4,11 +4,11 @@ namespace SekaiDataFetch.List;
 
 public class BaseListStory
 {
-    protected Fetcher Fetcher { get; } = new();
+    protected readonly Fetcher Fetcher = Fetcher.Instance;
 
-    public void SetSource(SourceType sourceType)
+    public void SetSource(SourceData sourceData)
     {
-        Fetcher.SetSource(sourceType);
+        Fetcher.SetSource(sourceData);
     }
 
     public void SetProxy(Proxy proxy)

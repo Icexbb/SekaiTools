@@ -4,7 +4,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             xmlns:local="clr-namespace:SekaiToolsGUI.View.Download.Components"
              xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
              xmlns:card="clr-namespace:SekaiToolsGUI.View.Download.Components.Card"
              mc:Ignorable="d" Loaded="CardStoryTab_OnLoaded"
@@ -37,7 +36,7 @@
                   VirtualizingStackPanel.ScrollUnit="Pixel">
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <card:CardStoryCard CardStoryImpl="{Binding}" HorizontalAlignment="Stretch" />
+                    <card:CardStoryCard CardStorySet="{Binding}" HorizontalAlignment="Stretch" />
                 </DataTemplate>
             </ListView.ItemTemplate>
 

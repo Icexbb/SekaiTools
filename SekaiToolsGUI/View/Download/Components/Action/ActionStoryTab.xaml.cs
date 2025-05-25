@@ -1,7 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using SekaiDataFetch;
 using SekaiDataFetch.Data;
 using SekaiDataFetch.Item;
 using SekaiDataFetch.List;
@@ -13,7 +12,7 @@ namespace SekaiToolsGUI.View.Download.Components.Action;
 public partial class ActionStoryTab : UserControl, IRefreshable
 {
     private ActionStoryTabModel ViewModel => (ActionStoryTabModel)DataContext;
-    private ListActionStory ActionStory { get; } = new();
+    private ListActionStory ActionStory => ListActionStory.Instance;
 
     public ActionStoryTab()
     {
@@ -21,7 +20,7 @@ public partial class ActionStoryTab : UserControl, IRefreshable
         InitializeComponent();
     }
 
-    private SourceType GetSourceType()
+    private SourceData GetSourceType()
     {
         var parent = Parent;
         while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
@@ -50,7 +49,7 @@ public partial class ActionStoryTab : UserControl, IRefreshable
 
     public void InitializeAreas()
     {
-        ViewModel.Areas = ActionStory?.Areas.ToArray() ?? [];
+        ViewModel.Areas = ActionStory.Areas.ToArray();
         BoxType.SelectedIndex = 0;
         RefreshItems(true);
     }
@@ -230,15 +229,15 @@ partial class ActionStoryTab
 {
     private void RefreshItems(bool selectAll = false)
     {
-        if (ActionStory == null || ActionStory.Data.Count == 0) return;
+        if (ActionStory.Data.Count == 0) return;
 
-        var data = ActionStory.Data.Select(item => (AreaStory)item.Clone()).ToList();
+        var data = ActionStory.Data.Select(item => (AreaStorySet)item.Clone()).ToList();
         data.Sort((x, y) => _currentDirection * x.ActionSet.Id.CompareTo(y.ActionSet.Id));
         if (selectAll) ChangeAllBannerSelector(true);
         ViewModel.EventStories = data.Where(JudgeVisibility).ToArray();
     }
 
-    private bool JudgeVisibility(AreaStory data)
+    private bool JudgeVisibility(AreaStorySet data)
     {
         var visibility = ((Area)BoxType.SelectedItem).Id == data.ActionSet.AreaId;
         if (!visibility) return visibility;

@@ -1,18 +1,12 @@
-﻿using SekaiDataFetch;
-using SekaiDataFetch.List;
+﻿using SekaiToolsGUI;
 
+namespace Test;
 
-namespace Test
+public static class Program
 {
-    public static class Program
+    public static void Main()
     {
-        public static void Main()
-        {
-            var name = "1";
-            var age = 24;
-            var template = "My name is {name} and I am {age} years old.";
-            var result = string.Format(template, new {name, age});
-            Console.WriteLine(result);
-        }
+        var path = @"C:\Users\icexb\SekaiTools\Data\source.json";
+        ExplorerHelper.OpenFolderAndFocus(path);
     }
 }

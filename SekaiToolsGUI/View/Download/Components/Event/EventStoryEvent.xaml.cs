@@ -1,9 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
-using SekaiDataFetch;
 using SekaiDataFetch.Item;
-using SekaiDataFetch.List;
 using SekaiDataFetch.Source;
 
 namespace SekaiToolsGUI.View.Download.Components.Event;
@@ -12,14 +10,14 @@ public partial class EventStoryEvent : UserControl
 {
     public static readonly DependencyProperty EventStoryImplProperty =
         DependencyProperty.Register(
-            nameof(EventStoryImpl),
-            typeof(EventStoryImpl),
+            nameof(EventStorySet),
+            typeof(EventStorySet),
             typeof(EventStoryEvent),
             new PropertyMetadata(null, OnEventStoryImplChanged));
 
     private static void OnEventStoryImplChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is EventStoryEvent control && e.NewValue is EventStoryImpl eventStoryImpl)
+        if (d is EventStoryEvent control && e.NewValue is EventStorySet eventStoryImpl)
             control.Initialize(eventStoryImpl);
     }
 
@@ -29,18 +27,18 @@ public partial class EventStoryEvent : UserControl
         Margin = new Thickness(5);
     }
 
-    private EventStoryEvent(EventStoryImpl eventStoryImpl, SourceType sourceType)
+    private EventStoryEvent(EventStorySet eventStorySet)
     {
         InitializeComponent();
         Margin = new Thickness(5);
 
-        EventStoryImpl = eventStoryImpl;
-        Initialize(eventStoryImpl, sourceType);
+        EventStorySet = eventStorySet;
+        Initialize(eventStorySet);
     }
 
-    public EventStoryImpl? EventStoryImpl
+    public EventStorySet? EventStorySet
     {
-        get => (EventStoryImpl?)GetValue(EventStoryImplProperty);
+        get => (EventStorySet?)GetValue(EventStoryImplProperty);
         set => SetValue(EventStoryImplProperty, value);
     }
 }
@@ -49,14 +47,14 @@ public partial class EventStoryEvent
 {
     private static List<EventStoryEvent> RecycleContainer { get; } = [];
 
-    private void Initialize(EventStoryImpl eventStoryImpl, SourceType sourceType = SourceType.SiteBest)
+    private void Initialize(EventStorySet eventStorySet)
     {
-        EventStoryImpl = eventStoryImpl;
-        TextBlockTitle.Text = $"No.{EventStoryImpl.EventStory.EventId} {EventStoryImpl.GameEvent.Name}";
+        EventStorySet = eventStorySet;
+        TextBlockTitle.Text = $"No.{EventStorySet.EventStory.EventId} {EventStorySet.GameEvent.Name}";
         ImageBannerIcon.Source = new BitmapImage(
             new Uri($"pack://application:,,,/Resource/Characters/" +
-                    $"chr_{EventStoryImpl.EventStory.BannerGameCharacterUnitId}.png"));
-        InitDownloadItems(sourceType);
+                    $"chr_{EventStorySet.EventStory.BannerGameCharacterUnitId}.png"));
+        InitDownloadItems();
     }
 
     public static void RecycleItem(EventStoryEvent item)
@@ -66,42 +64,33 @@ public partial class EventStoryEvent
         (item.Parent as Panel)?.Children.Remove(item);
     }
 
-    public static EventStoryEvent GetItem(EventStoryImpl eventStoryImpl,
-        SourceType sourceType)
+    public static EventStoryEvent GetItem(EventStorySet eventStorySet)
     {
-        if (RecycleContainer.Count <= 0) return new EventStoryEvent(eventStoryImpl, sourceType);
+        if (RecycleContainer.Count <= 0) return new EventStoryEvent(eventStorySet);
         var item = RecycleContainer[0];
         RecycleContainer.RemoveAt(0);
         item.Visibility = Visibility.Visible;
-        item.Initialize(eventStoryImpl, sourceType);
+        item.Initialize(eventStorySet);
         return item;
     }
 }
 
 public partial class EventStoryEvent
 {
-    private void InitDownloadItems(SourceType sourceType)
+    private void InitDownloadItems()
     {
-        if (PanelItems.Children.Count > EventStoryImpl!.EventStory.EventStoryEpisodes.Length)
-            for (var i = EventStoryImpl.EventStory.EventStoryEpisodes.Length; i < PanelItems.Children.Count; i++)
-                DownloadItem.RecycleItem((DownloadItem)PanelItems.Children[i]);
-
-
-        for (var i = 0; i < EventStoryImpl!.EventStory.EventStoryEpisodes.Length; i++)
+        foreach (UIElement panelItemsChild in PanelItems.Children)
         {
-            var episode = EventStoryImpl.EventStory.EventStoryEpisodes[i];
-            var url = EventStoryImpl.Url(i, sourceType);
-            var key = $"{EventStoryImpl.EventStory.EventId} - {episode.EpisodeNo} : {episode.Title}";
+            if (panelItemsChild is DownloadItem downloadItem) downloadItem.Recycle();
+        }
 
-            if (PanelItems.Children.Count <= i)
-            {
-                PanelItems.Children.Add(DownloadItem.GetItem(url, key));
-            }
-            else
-            {
-                var item = (DownloadItem)PanelItems.Children[i];
-                item.Initialize(url, key);
-            }
+        for (var i = 0; i < EventStorySet!.EventStory.EventStoryEpisodes.Length; i++)
+        {
+            var episode = EventStorySet.EventStory.EventStoryEpisodes[i];
+            var key = $"{EventStorySet.EventStory.EventId} - {episode.EpisodeNo} : {episode.Title}";
+
+            PanelItems.Children.Add(DownloadItem.GetItem(() => SourceList.Instance.EventStory(episode.ScenarioId,
+                EventStorySet.EventStory.AssetBundleName), key));
         }
     }
 }

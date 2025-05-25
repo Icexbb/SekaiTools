@@ -251,18 +251,7 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
 
         SnackService.Show("成功", "字幕文件已保存", ControlAppearance.Success,
             new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
-        ShowFile(fileName);
-
-        return;
-
-        void ShowFile(string path)
-        {
-            var psi = new ProcessStartInfo("Explorer.exe")
-            {
-                Arguments = "/e,/select," + path
-            };
-            System.Diagnostics.Process.Start(psi);
-        }
+        ExplorerHelper.OpenFolderAndFocus(fileName);
     }
 
 
@@ -384,7 +373,7 @@ public partial class SubtitlePage
                                 new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
                         }
 
-                        TextBlockETA.Text = "";
+                        TextBlockEta.Text = "";
                     });
                 },
                 OnTaskStarted = () =>
@@ -430,7 +419,7 @@ public partial class SubtitlePage
                     Dispatcher.Invoke(() =>
                     {
                         TextBlockFps.Text = $"FPS: {fps}";
-                        TextBlockETA.Text = eta.TotalMilliseconds > 1000 ? $"ETA: {eta.Remains()}" : "";
+                        TextBlockEta.Text = eta.TotalMilliseconds > 1000 ? $"ETA: {eta.Remains()}" : "";
                     });
                 },
             }

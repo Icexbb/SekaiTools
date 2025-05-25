@@ -1,86 +1,83 @@
+using SekaiDataFetch.Data;
+using SekaiDataFetch.Item;
+
 namespace SekaiDataFetch.Source;
 
-public class SourceList
+public partial class SourceList(SourceData data)
 {
-    public SourceList(SourceType sourceType = 0)
-    {
-        SetSource(sourceType);
-    }
+    public static SourceList Instance { get; } = new(SourceData.Default[0]);
+    public SourceData SourceData { private get; set; } = data;
 
-    private Source Source { get; set; } = null!;
-
-    private SourceType _sourceType;
-
-    public SourceType SourceType
-    {
-        get => _sourceType;
-        private set
-        {
-            _sourceType = value;
-            Source = _sourceType switch
-            {
-                SourceType.SiteBest => new Source(new SourceData
-                {
-                    SourceTemplate = "https://sekai-world.github.io/sekai-master-db-diff/{type}.json",
-                    ActionSetTemplate =
-                        "https://storage.sekai.best/sekai-jp-assets/scenario/actionset/" +
-                        "{abName}_rip/{scenarioId}.asset",
-                    MemberStoryTemplate =
-                        "https://storage.sekai.best/sekai-jp-assets/character/member/" +
-                        "{abName}_rip/{scenarioId}.asset",
-                    EventStoryTemplate =
-                        "https://storage.sekai.best/sekai-jp-assets/event_story/" +
-                        "{abName}/scenario_rip/{scenarioId}.asset",
-                    SpecialStoryTemplate =
-                        "https://storage.sekai.best/sekai-jp-assets/scenario/special/" +
-                        "{abName}_rip/{scenarioId}.asset",
-                    UnitStoryTemplate = "https://storage.sekai.best/sekai-jp-assets/scenario/unitstory/" +
-                                        "{abName}_rip/{scenarioId}.asset"
-                }),
-                SourceType.SiteHaruki => new Source(new SourceData
-                {
-                    SourceTemplate = "https://api.pjsek.ai/database/master/{type}.json",
-                    ActionSetTemplate =
-                        "https://storage.haruki.wacca.cn/assets/startapp/scenario/actionset/" +
-                        "{abName}/{scenarioId}.json",
-                    MemberStoryTemplate =
-                        "https://storage.haruki.wacca.cn/assets/startapp/character/member/" +
-                        "{abName}/{scenarioId}.json",
-                    EventStoryTemplate =
-                        "https://storage.haruki.wacca.cn/assets/ondemand/event_story/" +
-                        "{abName}/{scenarioId}.json",
-                    SpecialStoryTemplate =
-                        "https://storage.haruki.wacca.cn/assets/startapp/scenario/special/" +
-                        "{abName}/{scenarioId}.json",
-                    UnitStoryTemplate = "https://storage.haruki.wacca.cn/assets/startapp/scenario/unitstory/" +
-                                        "{abName}/{scenarioId}.json",
-                }),
-                _ => throw new ArgumentOutOfRangeException()
-            };
-        }
-    }
-
-    public string ActionSets => Source.ActionSets;
-    public string Events => Source.Events;
-    public string EventStories => Source.EventStories;
-    public string Character2ds => Source.Character2ds;
-    public string Cards => Source.Cards;
-    public string CardEpisodes => Source.CardEpisodes;
-    public string UnitStories => Source.UnitStories;
-    public string SpecialStories => Source.SpecialStories;
-    public string Areas => Source.Areas;
-    public string GameCharacters => Source.GameCharacters;
-    public string CharacterProfiles => Source.CharacterProfiles;
-    public string UnitProfiles => Source.UnitProfiles;
-
-    public void SetSource(SourceType sourceType)
-    {
-        SourceType = sourceType;
-    }
+    public string ActionSets => SourceData.SourceTemplate.Replace("{type}", "actionSets");
+    public string Events => SourceData.SourceTemplate.Replace("{type}", "events");
+    public string EventStories => SourceData.SourceTemplate.Replace("{type}", "eventStories");
+    public string Character2ds => SourceData.SourceTemplate.Replace("{type}", "character2ds");
+    public string Cards => SourceData.SourceTemplate.Replace("{type}", "cards");
+    public string CardEpisodes => SourceData.SourceTemplate.Replace("{type}", "cardEpisodes");
+    public string UnitStories => SourceData.SourceTemplate.Replace("{type}", "unitStories");
+    public string SpecialStories => SourceData.SourceTemplate.Replace("{type}", "specialStories");
+    public string Areas => SourceData.SourceTemplate.Replace("{type}", "areas");
+    public string GameCharacters => SourceData.SourceTemplate.Replace("{type}", "gameCharacters");
+    public string CharacterProfiles => SourceData.SourceTemplate.Replace("{type}", "characterProfiles");
+    public string UnitProfiles => SourceData.SourceTemplate.Replace("{type}", "unitProfiles");
 }
 
-public enum SourceType
+partial class SourceList
 {
-    SiteBest = 0,
-    SiteHaruki = 1,
+    public string ActionSet(string scenarioId, string abName)
+    {
+        return SourceData.StorageBaseUrl + SourceData.ActionSetTemplate
+            .Replace("{scenarioId}", scenarioId)
+            .Replace("{abName}", abName);
+    }
+
+    public string MemberStory(string scenarioId, string abName)
+    {
+        return SourceData.StorageBaseUrl + SourceData.MemberStoryTemplate
+            .Replace("{scenarioId}", scenarioId)
+            .Replace("{abName}", abName);
+    }
+
+
+    public string SpecialStory(string scenarioId, string abName)
+    {
+        return SourceData.StorageBaseUrl + SourceData.SpecialStoryTemplate
+            .Replace("{scenarioId}", scenarioId)
+            .Replace("{abName}", abName);
+    }
+
+    public string EventStory(string scenarioId, string abName)
+    {
+        return SourceData.StorageBaseUrl + SourceData.EventStoryTemplate
+            .Replace("{scenarioId}", scenarioId)
+            .Replace("{abName}", abName);
+    }
+
+
+    public string UnitStory(string scenarioId, string abName)
+    {
+        return SourceData.StorageBaseUrl + SourceData.UnitStoryTemplate
+            .Replace("{scenarioId}", scenarioId)
+            .Replace("{abName}", abName);
+    }
+
+    public string SpecialStory(SpecialStorySet.Episode episode)
+    {
+        if (SourceData.StorageBaseUrl.Contains("sekai.best", StringComparison.CurrentCultureIgnoreCase))
+        {
+            return SpecialStory(episode.ScenarioId, episode.Parent.AssetBundleName);
+        }
+
+        return SpecialStory(episode.ScenarioId, episode.AssetBundleName);
+    }
+
+    public string MemberStory(CardEpisode episode)
+    {
+        return MemberStory(episode.ScenarioId, episode.AssetBundleName);
+    }
+
+    public string ActionSet(AreaStorySet actionSet)
+    {
+        return ActionSet(actionSet.ScenarioId, $"group{actionSet.Group}");
+    }
 }

@@ -1,6 +1,5 @@
 using SekaiDataFetch.Data;
 using SekaiDataFetch.Item;
-using SekaiDataFetch.Source;
 
 namespace SekaiDataFetch.List;
 
@@ -18,23 +17,24 @@ public class ListActionStory : BaseListStory
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "cache", "character2ds.json");
 
-    public List<AreaStory> Data { get; set; } = [];
-    public List<Area> Areas { get; private set; } = [];
-
-    public List<Character2d> Character2ds { get; private set; } = [];
-
-    public ListActionStory(SourceType sourceType = SourceType.SiteBest, Proxy? proxy = null)
+    private ListActionStory(Proxy? proxy = null)
     {
-        SetSource(sourceType);
-        SetProxy(proxy?? Proxy.None);
+        SetProxy(proxy ?? Proxy.None);
         Load();
     }
 
+    public List<AreaStorySet> Data { get; set; } = [];
+    public List<Area> Areas { get; private set; } = [];
+
+    public List<Character2d> Character2ds { get; private set; } = [];
+    public static ListActionStory Instance { get; } = new();
+
+
     public async Task Refresh()
     {
-        var stringActionSets = await Fetcher.Fetch(Fetcher.Source.ActionSets);
-        var stringAreas = await Fetcher.Fetch(Fetcher.Source.Areas);
-        var stringCharacter2ds = await Fetcher.Fetch(Fetcher.Source.Character2ds);
+        var stringActionSets = await Fetcher.Fetch(Fetcher.SourceList.ActionSets);
+        var stringAreas = await Fetcher.Fetch(Fetcher.SourceList.Areas);
+        var stringCharacter2ds = await Fetcher.Fetch(Fetcher.SourceList.Character2ds);
         await File.WriteAllTextAsync(CachePathActionSets, stringActionSets);
         await File.WriteAllTextAsync(CachePathAreas, stringAreas);
         await File.WriteAllTextAsync(CachePathCharacter2ds, stringCharacter2ds);
@@ -70,7 +70,7 @@ public class ListActionStory : BaseListStory
             var area = areas.FirstOrDefault(area => area.Id == actionSet.AreaId);
             if (area == null) continue;
             if (actionSet.ScenarioId == "") continue;
-            var data = new AreaStory(actionSet)
+            var data = new AreaStorySet(actionSet)
             {
                 CharacterIds = actionSet.CharacterIds
                     .Select(id => character2ds.First(c2d => c2d.Id == id).CharacterId)

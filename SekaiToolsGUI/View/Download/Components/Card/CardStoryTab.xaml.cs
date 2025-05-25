@@ -11,7 +11,7 @@ namespace SekaiToolsGUI.View.Download.Components.Card;
 public partial class CardStoryTab : UserControl, IRefreshable
 {
     private CardStoryTabModel ViewModel => (CardStoryTabModel)DataContext;
-    private ListCardStory CardStory { get; } = new();
+    private ListCardStory CardStory => ListCardStory.Instance;
 
     public CardStoryTab()
     {
@@ -20,7 +20,7 @@ public partial class CardStoryTab : UserControl, IRefreshable
         CharacterComboBox_Init();
     }
 
-    private SourceType GetSourceType()
+    private SourceData GetSourceType()
     {
         var parent = Parent;
         while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
@@ -57,7 +57,7 @@ public partial class CardStoryTab : UserControl, IRefreshable
     private void CharacterComboBox_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (CharacterComboBox.SelectedItem is not CharacterComboBoxItem item) return;
-        ViewModel.CardStories = CardStory?.Data.Where(x => x.Card.CharacterId == item.Value).ToArray() ?? [];
+        ViewModel.CardStories = CardStory.Data.Where(x => x.Card.CharacterId == item.Value).ToArray() ?? [];
     }
 
     private void CardStoryTab_OnLoaded(object sender, RoutedEventArgs e)

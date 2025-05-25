@@ -1,6 +1,5 @@
 using SekaiDataFetch.Data;
 using SekaiDataFetch.Item;
-using SekaiDataFetch.Source;
 
 namespace SekaiDataFetch.List;
 
@@ -12,17 +11,18 @@ public class ListSpecialStory : BaseListStory
 
     public readonly Dictionary<string, SpecialStorySet> Data = new();
 
-    public ListSpecialStory(SourceType sourceType = SourceType.SiteBest, Proxy? proxy = null)
+    private ListSpecialStory(Proxy? proxy = null)
     {
-        SetSource(sourceType);
         SetProxy(proxy ?? Proxy.None);
         Load();
     }
 
+    public static ListSpecialStory Instance { get; } = new();
+
 
     public async Task Refresh()
     {
-        var stringSpecialStories = await Fetcher.Fetch(Fetcher.Source.SpecialStories);
+        var stringSpecialStories = await Fetcher.Fetch(Fetcher.SourceList.SpecialStories);
         await File.WriteAllTextAsync(CachePathSpecialStories, stringSpecialStories);
         Load();
     }
@@ -43,11 +43,7 @@ public class ListSpecialStory : BaseListStory
     {
         foreach (var special in specialStory)
         {
-            var episodeDict = new List<SpecialStorySet.Episode>();
-            episodeDict.AddRange(special.Episodes.Select(episode =>
-                new SpecialStorySet.Episode(episode.Title, episode.AssetBundleName, episode.ScenarioId)));
-
-            var data = new SpecialStorySet(special.Title, episodeDict.ToArray());
+            var data = new SpecialStorySet(special);
             Data.Set(special.Title, data);
         }
     }

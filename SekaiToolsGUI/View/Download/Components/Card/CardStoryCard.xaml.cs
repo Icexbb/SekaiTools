@@ -1,9 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
-using SekaiDataFetch;
 using SekaiDataFetch.Item;
-using SekaiDataFetch.List;
 using SekaiDataFetch.Source;
+using SekaiToolsGUI.ViewModel;
 
 namespace SekaiToolsGUI.View.Download.Components.Card;
 
@@ -11,8 +10,8 @@ public partial class CardStoryCard : UserControl
 {
     public static readonly DependencyProperty CardStoryImplProperty =
         DependencyProperty.Register(
-            nameof(CardStoryImpl),
-            typeof(CardStoryImpl),
+            nameof(CardStorySet),
+            typeof(CardStorySet),
             typeof(CardStoryCard),
             new PropertyMetadata(null, OnCardStoryImplChanged));
 
@@ -22,62 +21,66 @@ public partial class CardStoryCard : UserControl
         Margin = new Thickness(5);
     }
 
-    public CardStoryCard(CardStoryImpl cardStoryImpl, SourceType sourceType = SourceType.SiteBest)
+    public CardStoryCard(CardStorySet cardStorySet)
     {
         InitializeComponent();
         Margin = new Thickness(5);
 
-        CardStoryImpl = cardStoryImpl;
-        Initialize(cardStoryImpl, sourceType);
+        CardStorySet = cardStorySet;
+        Initialize(cardStorySet);
     }
 
-    public CardStoryImpl? CardStoryImpl
+    public CardStorySet? CardStorySet
     {
-        get => (CardStoryImpl?)GetValue(CardStoryImplProperty);
+        get => (CardStorySet?)GetValue(CardStoryImplProperty);
         set => SetValue(CardStoryImplProperty, value);
     }
 
     private static void OnCardStoryImplChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is CardStoryCard control && e.NewValue is CardStoryImpl cardStoryImpl)
+        if (d is CardStoryCard control && e.NewValue is CardStorySet cardStoryImpl)
             control.Initialize(cardStoryImpl);
     }
 }
 
 public partial class CardStoryCard
 {
-    private void Initialize(CardStoryImpl cardStoryImpl, SourceType sourceType = SourceType.SiteBest)
+    private string CardName { get; set; } = "";
+
+    private void Initialize(CardStorySet cardStorySet)
     {
-        CardStoryImpl = cardStoryImpl;
-        var rarity = CardStoryImpl.Card.CardRarityType.Replace("rarity_", "") switch
+        CardStorySet = cardStorySet;
+        var rarity = CardStorySet.Card.CardRarityType.Replace("rarity_", "") switch
         {
             "1" => "★ 1",
             "2" => "★ 2",
             "3" => "★ 3",
             "4" => "★ 4",
             "birthday" => "生日",
-            _ => CardStoryImpl.Card.CardRarityType
+            _ => CardStorySet.Card.CardRarityType
         };
 
+        CardName = $"No.{CardStorySet.Card.Id} {rarity} {CardStorySet.Card.Prefix}";
+        TextBlockTitle.Text = CardName;
 
-        TextBlockTitle.Text = $"No.{CardStoryImpl.Card.Id} {rarity} {CardStoryImpl.Card.Prefix}";
-
-        InitDownloadItems(sourceType);
+        InitDownloadItems();
     }
 
-    private void InitDownloadItems(SourceType sourceType = SourceType.SiteBest)
+    private void InitDownloadItems()
     {
-        if (CardStoryImpl == null) return;
-        var urlFirst = CardStoryImpl.Url(CardEpisodeType.FirstPart, sourceType);
-        var urlSecond = CardStoryImpl.Url(CardEpisodeType.SecondPart, sourceType);
+        if (CardStorySet == null) return;
+
+        SourceList.Instance.SourceData = DownloadPageModel.Instance.CurrentSource.Data;
 
         foreach (var panelItemsChild in PanelItems.Children)
         {
-            DownloadItem.RecycleItem((DownloadItem)panelItemsChild);
+            if (panelItemsChild is DownloadItem downloadItem) downloadItem.Recycle();
         }
 
-        var itemFirst = DownloadItem.GetItem(urlFirst, "前篇");
-        var itemSecond = DownloadItem.GetItem(urlSecond, "后篇");
+        var itemFirst = DownloadItem.GetItem(() => SourceList.Instance.MemberStory(CardStorySet.FirstPart),
+            CardName + " 前篇");
+        var itemSecond = DownloadItem.GetItem(() => SourceList.Instance.MemberStory(CardStorySet.SecondPart),
+            CardName + " 后篇");
 
         itemFirst.HorizontalAlignment = HorizontalAlignment.Stretch;
         itemSecond.HorizontalAlignment = HorizontalAlignment.Stretch;
