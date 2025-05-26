@@ -395,7 +395,7 @@ public partial class SubtitlePage
                 },
                 OnFramePreviewImage = frame =>
                 {
-                    Dispatcher.Invoke(() => { ViewModel.FramePreviewImage = frame.Clone().ToBitmapSource(); });
+                    Dispatcher.Invoke(() => { ViewModel.FramePreviewImage = frame.ToBitmapSource(); });
                 },
                 OnNewDialog = LinePanel_AddDialogLine,
                 OnNewBanner = LinePanel_AddBannerLine,

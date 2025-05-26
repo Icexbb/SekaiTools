@@ -132,12 +132,9 @@ public partial class TemplateManager
                 var pos = new Point((int)(10 + font.Size * 1.01 * i), 10);
                 using GraphicsPath path = new();
                 path.AddString(text[i].ToString(), font.FontFamily, (int)font.Style, font.Size, pos, sf);
-                using Pen pen = new(Color.FromArgb(255, 64, 64, 64), font.Size / 4.5f);
-                pen.LineJoin = LineJoin.Round;
-                graphics.DrawPath(pen, path);
+                DrawStroke(path);
                 // 填充
-                using Brush brush = new SolidBrush(Color.White);
-                graphics.FillPath(brush, path);
+                DrawText(path);
             }
         }
         else
@@ -146,15 +143,26 @@ public partial class TemplateManager
 
             path.AddString(text, font.FontFamily, (int)font.Style, font.Size, new Point(10, 10),
                 new StringFormat());
-            using Pen pen = new(Color.FromArgb(255, 64, 64, 64), font.Size / 4.5f);
-            pen.LineJoin = LineJoin.Round;
-            graphics.DrawPath(pen, path);
-            // 填充
-            using Brush brush = new SolidBrush(Color.White);
-            graphics.FillPath(brush, path);
+            DrawStroke(path);
+            DrawText(path);
         }
 
         return CropZero(bitmap.ToMat());
+
+        void DrawStroke(GraphicsPath path)
+        {
+            // var width = font.Size / 4.5f;
+            var width = font.Size / 6f;
+            using Pen pen = new(Color.FromArgb(255, 64, 64, 64), width);
+            pen.LineJoin = LineJoin.Round;
+            graphics.DrawPath(pen, path);
+        }
+
+        void DrawText(GraphicsPath path)
+        {
+            using Brush brush = new SolidBrush(Color.White);
+            graphics.FillPath(brush, path);
+        }
     }
 
     public Mat GetDbTemplate(string text)

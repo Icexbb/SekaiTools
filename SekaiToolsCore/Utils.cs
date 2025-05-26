@@ -252,3 +252,15 @@ public partial class Utils
         }
     }
 }
+
+public static partial class FrameProcess
+{
+    public static void Process(Mat frame)
+    {
+        if (frame.IsEmpty)
+            return;
+
+        // 转换为灰度图
+        CvInvoke.CvtColor(frame, frame, ColorConversion.Bgr2Gray);
+    }
+}

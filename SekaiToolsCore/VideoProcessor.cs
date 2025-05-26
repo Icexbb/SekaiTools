@@ -118,13 +118,15 @@ public class VideoProcessor
                 if (!Capture.Read(frame)) break;
 
                 frameIndex = (int)Capture.Get(CapProp.PosFrames);
-                if (frameIndex % ((int)frameRate / 10) == 0)
+                Callbacks.OnProgress(frameIndex / frameCount);
+
+                if (frameIndex % ((int)frameRate / 5) == 0)
                 {
-                    Callbacks.OnProgress(frameIndex / frameCount);
-                    Callbacks.OnFramePreviewImage(frame.Clone());
+                    var previewFrame = frame.Clone();
+                    Task.Run(() => { Callbacks.OnFramePreviewImage(previewFrame); }, Token);
                 }
 
-                CvInvoke.CvtColor(frame, frame, ColorConversion.Bgr2Gray);
+                FrameProcess.Process(frame);
 
                 if (!ContentMatcher.Finished)
                 {
