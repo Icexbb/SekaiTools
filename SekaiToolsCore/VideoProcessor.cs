@@ -5,6 +5,7 @@ using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Story.Event;
 using SekaiToolsCore.SubStationAlpha;
+using SekaiToolsCore.Utils;
 using Event = SekaiToolsCore.Story.Event.Event;
 
 namespace SekaiToolsCore;
@@ -88,11 +89,11 @@ public class VideoProcessor
 
         Capture?.Dispose();
         Capture = null;
-        Creator = null;
-        DialogMatcher = null;
-        ContentMatcher = null;
-        BannerMatcher = null;
-        MarkerMatcher = null;
+        // Creator = null;
+        // DialogMatcher = null;
+        // ContentMatcher = null;
+        // BannerMatcher = null;
+        // MarkerMatcher = null;
     }
 
     private void Process()
@@ -128,14 +129,14 @@ public class VideoProcessor
 
                 FrameProcess.Process(frame);
 
-                if (!ContentMatcher.Finished)
+                if (ContentMatcher is { Finished: false })
                 {
                     ContentMatcher.Process(frame);
                     continue;
                 }
 
                 var matchBannerNow = true;
-                if (!DialogMatcher.Finished)
+                if (DialogMatcher is { Finished: false })
                 {
                     var dialogIndex = DialogMatcher.LastNotProcessedIndex();
                     var r = DialogMatcher.Process(frame, frameIndex);
@@ -146,14 +147,14 @@ public class VideoProcessor
                     }
                 }
 
-                if (!BannerMatcher.Finished && matchBannerNow)
+                if (BannerMatcher is { Finished: false } && matchBannerNow)
                 {
                     var bannerIndex = BannerMatcher.LastNotProcessedIndex();
                     BannerMatcher.Process(frame, frameIndex);
                     if (BannerMatcher.Set[bannerIndex].Finished) Callbacks.OnNewBanner(BannerMatcher.Set[bannerIndex]);
                 }
 
-                if (!MarkerMatcher.Finished && MatchMarkerNow())
+                if (MarkerMatcher is { Finished: false } && MatchMarkerNow())
                 {
                     var markerIndex = MarkerMatcher.LastNotProcessedIndex();
                     MarkerMatcher.Process(frame, frameIndex);

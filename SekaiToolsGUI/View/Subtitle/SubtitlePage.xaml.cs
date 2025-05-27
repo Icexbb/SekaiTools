@@ -3,11 +3,13 @@ using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Emgu.CV;
 using Microsoft.Win32;
 using SekaiToolsCore;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
+using SekaiToolsCore.Utils;
 using SekaiToolsGUI.View.Subtitle.Components;
 using SekaiToolsGUI.ViewModel;
 using Wpf.Ui;
@@ -135,8 +137,24 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
         await SelectSameNameFile(result);
     }
 
+    private void ResetButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        StopProcess();
+        ViewModel.Reset();
+        LinePanel.Children.Clear();
+        TextBlockProgression.Text = "";
+        TextBlockFps.Text = "";
+        ProgressBarProgression.Value = 0;
+    }
 
-    private void ControlButton_OnClick(object sender, EventArgs arg)
+    private void StopButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        StopProcess();
+        ViewModel.IsRunning = false;
+        ViewModel.IsFinished = true;
+    }
+
+    private void StartButton_OnClick(object sender, EventArgs arg)
     {
         if (CheckConfig()) StartProcess();
         return;
@@ -222,16 +240,6 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
             LinePanel.Children.Add(line);
             if (needScroll) LineViewer.ScrollToEnd();
         });
-    }
-
-    private void ResetButton_OnClick(object sender, RoutedEventArgs e)
-    {
-        StopProcess();
-        ViewModel.Reset();
-        LinePanel.Children.Clear();
-        TextBlockProgression.Text = "";
-        TextBlockFps.Text = "";
-        ProgressBarProgression.Value = 0;
     }
 
 
@@ -395,7 +403,11 @@ public partial class SubtitlePage
                 },
                 OnFramePreviewImage = frame =>
                 {
-                    Dispatcher.Invoke(() => { ViewModel.FramePreviewImage = frame.ToBitmapSource(); });
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (ViewModel.ShowPreview)
+                            ViewModel.FramePreviewImage = frame.ToBitmapSource();
+                    });
                 },
                 OnNewDialog = LinePanel_AddDialogLine,
                 OnNewBanner = LinePanel_AddBannerLine,
@@ -425,5 +437,16 @@ public partial class SubtitlePage
             }
         );
         VideoProcessor.StartProcess();
+    }
+
+
+    private void Control_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        ViewModel.ShowPreview = false;
+    }
+
+    private void ShowPreviewButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowPreview = true;
     }
 }

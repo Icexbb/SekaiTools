@@ -8,6 +8,7 @@ using SekaiToolsCore.SubStationAlpha;
 using SekaiToolsCore.SubStationAlpha.AssDraw;
 using SekaiToolsCore.SubStationAlpha.Tag;
 using SekaiToolsCore.SubStationAlpha.Tag.Modded;
+using SekaiToolsCore.Utils;
 using SubtitleEvent = SekaiToolsCore.SubStationAlpha.Event;
 
 namespace SekaiToolsCore;
@@ -394,9 +395,9 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
             var contentItem = SubtitleEvent.Dialog(body, startTime, endTime, "BannerText");
 
-            var cRec = Utils.FromCenter(center,
+            var cRec = UtilFunc.FromCenter(center,
                 new Size(offset * 12 / 20 * 20, (int)(offset * 1.4) / 20 * 20));
-            var mRec = Utils.FromCenter(center,
+            var mRec = UtilFunc.FromCenter(center,
                 new Size(offset * 12 / 20 * 20, (int)(offset * 2.0) / 20 * 20));
             var mask = AssDraw.Rectangle(mRec).ToString();
             var clipLeft = (

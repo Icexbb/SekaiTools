@@ -3,6 +3,7 @@ using Emgu.CV;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
+using SekaiToolsCore.Utils;
 using SekaiStory = SekaiToolsCore.Story.Story;
 
 namespace SekaiToolsCore;
@@ -56,7 +57,7 @@ public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
 
         bool LocalMatch(Mat src, GaMat tmp)
         {
-            var cropArea = Utils.FromCenter(img.Size.Center(),
+            var cropArea = UtilFunc.FromCenter(img.Size.Center(),
                 new Size((int)(tmp.Size.Height * text.Length * 1.5), (int)(tmp.Size.Height * 1.5)));
             var imgCropped = new Mat(src, cropArea);
             var result = TemplateMatcher.Match(imgCropped, tmp);

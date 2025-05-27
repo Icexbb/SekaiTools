@@ -84,6 +84,12 @@ public class SubtitlePageModel : ViewModelBase
         set => SetProperty(value);
     }
 
+    public bool ShowPreview
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
 
     private void SetRunningStatus()
     {

@@ -2,6 +2,7 @@ using System.Windows;
 using SekaiToolsCore;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
+using SekaiToolsCore.Utils;
 
 namespace SekaiToolsGUI.ViewModel;
 

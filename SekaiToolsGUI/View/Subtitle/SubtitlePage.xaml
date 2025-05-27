@@ -122,9 +122,12 @@
 
                     <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
                         <ui:Button Click="ResetButton_OnClick"
-                                   Margin="5,0" Visibility="{Binding ResetEnabled}"
+                                   Margin="5,0" Visibility="{calcBinding:Binding '!HasNotStarted and IsFinished'}"
                                    HorizontalAlignment="Center" Content="重置" />
-                        <ui:Button Click="ControlButton_OnClick"
+                        <ui:Button Click="StopButton_OnClick" Margin="5,0"
+                                   Visibility="{calcBinding:Binding '!HasNotStarted and !IsFinished'}"
+                                   HorizontalAlignment="Center" Content="停止" />
+                        <ui:Button Click="StartButton_OnClick"
                                    Margin="5,0" IsEnabled="{Binding HasNotStarted}"
                                    HorizontalAlignment="Center" Content="开始" />
                     </StackPanel>
@@ -137,8 +140,14 @@
                      VerticalContentAlignment="Bottom">
                 <StackPanel>
                     <ui:Image MaxHeight="180" MaxWidth="320" VerticalContentAlignment="Stretch"
-                              HorizontalContentAlignment="Stretch"
+                              HorizontalContentAlignment="Stretch" MouseDoubleClick="Control_OnMouseDoubleClick"
+                              Visibility="{calcBinding:Binding ShowPreview,FalseToVisibility=Collapsed}"
+                              ToolTip="双击隐藏预览"
                               Source="{Binding FramePreviewImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" />
+                    <Button VerticalAlignment="Center" HorizontalAlignment="Center" Click="ShowPreviewButton_OnClick"
+                            Visibility="{calcBinding:Binding !ShowPreview,FalseToVisibility=Collapsed}">
+                        显示预览
+                    </Button>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />

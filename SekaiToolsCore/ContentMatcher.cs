@@ -2,6 +2,7 @@ using System.Drawing;
 using Emgu.CV;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Model;
+using SekaiToolsCore.Utils;
 
 namespace SekaiToolsCore;
 

@@ -1,6 +1,7 @@
 using System.Drawing;
 using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Story.Event;
+using SekaiToolsCore.Utils;
 
 namespace SekaiToolsCore.Process.FrameSet;
 
@@ -62,7 +63,7 @@ public partial class DialogFrameSet : FrameSet
 
     public void InitSeparator()
     {
-        Separate.SeparateFrame = Utils.Middle(StartIndex() + 1, EndIndex() - 1,
+        Separate.SeparateFrame = UtilFunc.Middle(StartIndex() + 1, EndIndex() - 1,
             StartIndex() + Frames.Count / 2);
     }
 

@@ -4,9 +4,9 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 
-namespace SekaiToolsCore;
+namespace SekaiToolsCore.Utils;
 
-public static partial class Utils
+public static class UtilFunc
 {
     public static int LineCount(this string str)
     {
@@ -186,81 +186,5 @@ public static partial class Utils
     {
         var collection = new InstalledFontCollection();
         return collection.Families.Select(family => family.Name);
-    }
-}
-
-public partial class Utils
-{
-    public static class TimerHelper
-    {
-        public static Timer SetTimeout(Action fn, long interval)
-        {
-            Timer? timer1 = null;
-            var timer2 = timer1;
-            var callback = new TimerCallback(_ =>
-            {
-                if (timer2 == null) fn.Invoke();
-                else timer2.Dispose();
-            });
-            timer1 = new Timer(callback, null, interval, -1);
-            return timer1;
-        }
-
-        public static Timer SetInterval(Action fn, long interval, ulong times = 0)
-        {
-            Timer? timer1 = null;
-            var times2 = times;
-
-            var timer2 = timer1;
-            var callback = times > 0
-                ? new TimerCallback(_ =>
-                {
-                    if (--times == 0)
-                    {
-                        try
-                        {
-                            timer2!.Dispose();
-                        }
-                        catch (Exception)
-                        {
-                            // ignore
-                        }
-                    }
-                    else if (times2 <= times)
-                    {
-                        try
-                        {
-                            timer2!.Dispose();
-                        }
-                        catch (Exception)
-                        {
-                            // ignore
-                        }
-
-                        return;
-                    }
-
-                    if (times < times2) times2 = times;
-
-                    fn.Invoke();
-                })
-                : _ => { fn.Invoke(); };
-
-            timer1 = new Timer(callback, null, interval, interval);
-
-            return timer1;
-        }
-    }
-}
-
-public static partial class FrameProcess
-{
-    public static void Process(Mat frame)
-    {
-        if (frame.IsEmpty)
-            return;
-
-        // 转换为灰度图
-        CvInvoke.CvtColor(frame, frame, ColorConversion.Bgr2Gray);
     }
 }

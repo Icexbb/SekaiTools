@@ -1,3 +1,5 @@
+using SekaiToolsCore.Utils;
+
 namespace SekaiToolsCore.Process.Model;
 
 public enum FrameType
@@ -332,10 +334,10 @@ public class SubtitleTime(int ms = 0)
 
         if (afterDecimal < 0) Milliseconds = (Milliseconds * 60 + current) * 1000;
 
-        Milliseconds = Utils.Middle(0, Milliseconds, 10 * 60 * 60 * 1000 - 6);
+        Milliseconds = UtilFunc.Middle(0, Milliseconds, 10 * 60 * 60 * 1000 - 6);
     }
 
-    public int Milliseconds { get; } = Utils.Middle(MinTime, ms, MaxTime);
+    public int Milliseconds { get; } = UtilFunc.Middle(MinTime, ms, MaxTime);
 
     private int ToInt()
     {

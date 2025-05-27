@@ -5,6 +5,7 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using SekaiToolsCore.Process.Model;
+using SekaiToolsCore.Utils;
 
 namespace SekaiToolsCore.Process;
 

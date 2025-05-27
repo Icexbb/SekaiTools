@@ -1,5 +1,6 @@
 using SekaiToolsCore;
 using SekaiToolsCore.Story.Event;
+using SekaiToolsCore.Utils;
 
 namespace SekaiToolsGUI.ViewModel;
 
