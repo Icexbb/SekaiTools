@@ -11,4 +11,4 @@ using System.Windows;
     // app, or any theme specific resource dictionaries)
 )]
 [assembly: SupportedOSPlatform("windows")]
-[assembly: AssemblyVersion("1.3.0.1230")]
+[assembly: AssemblyVersion("1.3.2.0529")]

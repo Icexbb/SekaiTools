@@ -1,0 +1,67 @@
+name: .NET Core Release
+
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - "*.*.*" # Push events to matching v*, i.e. v1.0, v20.15.10
+env:
+  DOTNET_VERSION: '8.0.x' # The .NET SDK version to use
+  BUILD_DIR: 'SekaiTools.Nightly'
+  RESOURCE_DIR: 'resource'
+  PROJECT_NAME: 'SekaiToolsGUI'
+  SEVEN_ZIP_EXE: './resource/vapourSynth/7z.exe'
+
+jobs:
+  build:
+    name: build-${{matrix.os}}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ windows-latest ]
+
+    steps:
+      - name: Get version
+        id: get_version
+        run: |
+          $version = $env:GITHUB_REF -replace 'refs/tags/', ''
+          echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
+
+      - name: Echo Version
+        run: |
+          echo $env:GITHUB_REF
+          echo ${{ env.VERSION }}
+
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Dotnet Build
+        run: |
+          dotnet restore ${{ env.PROJECT_NAME }}
+          dotnet build ${{ env.PROJECT_NAME }} --configuration Release --no-restore -o ${{ env.BUILD_DIR }}
+      - name: Sort Artifacts
+        run: |
+          cp -r ${{ env.RESOURCE_DIR }} ${{ env.BUILD_DIR }}
+          rm -r ${{ env.BUILD_DIR }}/runtimes/win-x86
+          rm -r ${{ env.BUILD_DIR }}/runtimes/win-arm64
+          rm -r ${{ env.BUILD_DIR }}/*.pdb  
+
+      - name: Zip the Build
+        run: ${{ env.SEVEN_ZIP_EXE }} a -tzip SekaiTools-${{ env.VERSION }}.7z ${{ env.BUILD_DIR }}
+
+      - name: Create Release and Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          tag_name: ${{ github.ref }}
+          name: Release ${{ env.VERSION }}
+          body: Release ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          files: |
+            SekaiTools-${{ env.VERSION }}.7z
