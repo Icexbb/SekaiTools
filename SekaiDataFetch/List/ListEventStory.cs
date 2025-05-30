@@ -53,15 +53,16 @@ public class ListEventStory : BaseListStory
         // evStories may not be the same as events
         // if (evStories.Count != events.Count)
         // throw new ArgumentException("EventStory and GameEvent count mismatch", nameof(evStories));
-        foreach (var eventStory in evStories)
+
+        var stories = evStories.ToList();
+        stories.Sort((x, y) => x.Id.CompareTo(y.Id));
+        for (var i = 0; i < stories.Count; i++)
         {
-            var @event = events.FirstOrDefault(x => x.Id == eventStory.EventId);
+            var story = stories[i];
+            var @event = events.FirstOrDefault(x => x.Id == story.EventId);
             if (@event == null)
                 throw new ArgumentException("EventStory and GameEvent mismatch", nameof(evStories));
-            Data.Add(new EventStorySet(eventStory, @event));
+            Data.Add(new EventStorySet(story, @event, i + 1));
         }
-
-        // Sort by EventId Biggest to Smallest
-        Data.Sort((x, y) => y.EventStory.EventId.CompareTo(x.EventStory.EventId));
     }
 }

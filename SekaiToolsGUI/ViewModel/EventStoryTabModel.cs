@@ -190,6 +190,12 @@ public class EventStoryTabModel : ViewModelBase
         set => SetProperty(value);
     }
 
+    public bool UseStoryIndex
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
     public EventStorySet[] EventStories
     {
         get => GetProperty<EventStorySet[]>([]);

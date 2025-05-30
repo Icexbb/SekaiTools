@@ -6,6 +6,7 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
              xmlns:event="clr-namespace:SekaiToolsGUI.View.Download.Components.Event"
+             xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
              mc:Ignorable="d" Loaded="EventStoryTab_OnLoaded"
              d:DesignHeight="500" d:DesignWidth="500" d:DataContext="{d:DesignInstance viewModel:EventStoryTabModel }">
     <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
@@ -367,6 +368,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <ComboBox Grid.Column="0" Margin="5" Name="BoxType"
                               SelectedIndex="0" SelectionChanged="Filter_OnSelected">
@@ -384,10 +386,16 @@
                         </ComboBoxItem>
                     </ComboBox>
 
-                    <ui:Button Grid.Column="1" Margin="5" Name="ButtonSort" ToolTip="不建议使用，重新排序会造成界面阻塞"
+                    <ui:Button Grid.Column="1" Margin="5" Name="ButtonSort"
                                Click="ButtonSort_OnClick" RenderTransformOrigin="0.5,0.5">
                         <ui:SymbolIcon Symbol="ArrowSortDownLines24" />
                     </ui:Button>
+                    <ui:ToggleSwitch Grid.Column="2" Margin="5"
+                                     IsChecked="{Binding UseStoryIndex}"
+                                     Content="{calcBinding:Binding 'UseStoryIndex?\'使用故事序号\':\'使用故事编号\''}"
+                                     RenderTransformOrigin="0.5,0.5">
+
+                    </ui:ToggleSwitch>
                 </Grid>
 
             </Grid>
@@ -399,7 +407,9 @@
                   VirtualizingStackPanel.ScrollUnit="Pixel">
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <event:EventStoryEvent EventStorySet="{Binding}" HorizontalAlignment="Stretch" />
+                    <event:EventStoryEvent EventStorySet="{Binding}"
+                                           UseStoryIndex="{Binding DataContext.UseStoryIndex, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
+                                           HorizontalAlignment="Stretch" />
                 </DataTemplate>
             </ListView.ItemTemplate>
 

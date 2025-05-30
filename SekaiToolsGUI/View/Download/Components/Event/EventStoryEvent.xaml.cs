@@ -17,23 +17,9 @@ public partial class EventStoryEvent : UserControl
 
     private static void OnEventStoryImplChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is EventStoryEvent control && e.NewValue is EventStorySet eventStoryImpl)
-            control.Initialize(eventStoryImpl);
-    }
-
-    public EventStoryEvent()
-    {
-        InitializeComponent();
-        Margin = new Thickness(5);
-    }
-
-    private EventStoryEvent(EventStorySet eventStorySet)
-    {
-        InitializeComponent();
-        Margin = new Thickness(5);
-
-        EventStorySet = eventStorySet;
-        Initialize(eventStorySet);
+        if (d is not EventStoryEvent control || e.NewValue is not EventStorySet eventStorySet) return;
+        control.EventStorySet = eventStorySet;
+        control.RefreshControl();
     }
 
     public EventStorySet? EventStorySet
@@ -45,49 +31,62 @@ public partial class EventStoryEvent : UserControl
 
 public partial class EventStoryEvent
 {
-    private static List<EventStoryEvent> RecycleContainer { get; } = [];
+    public static readonly DependencyProperty UseStoryIndexProperty =
+        DependencyProperty.Register(
+            nameof(UseStoryIndex),
+            typeof(bool),
+            typeof(EventStoryEvent),
+            new PropertyMetadata(false, OnUseStoryIndexChanged));
 
-    private void Initialize(EventStorySet eventStorySet)
+    private static void OnUseStoryIndexChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        EventStorySet = eventStorySet;
-        TextBlockTitle.Text = $"No.{EventStorySet.EventStory.EventId} {EventStorySet.GameEvent.Name}";
-        ImageBannerIcon.Source = new BitmapImage(
-            new Uri($"pack://application:,,,/Resource/Characters/" +
-                    $"chr_{EventStorySet.EventStory.BannerGameCharacterUnitId}.png"));
-        InitDownloadItems();
+        if (d is not EventStoryEvent control || e.NewValue is not bool useStoryIndex) return;
+        control.UseStoryIndex = useStoryIndex;
+        control.RefreshControl();
     }
 
-    public static void RecycleItem(EventStoryEvent item)
+    public bool UseStoryIndex
     {
-        item.Visibility = Visibility.Collapsed;
-        RecycleContainer.Add(item);
-        (item.Parent as Panel)?.Children.Remove(item);
-    }
-
-    public static EventStoryEvent GetItem(EventStorySet eventStorySet)
-    {
-        if (RecycleContainer.Count <= 0) return new EventStoryEvent(eventStorySet);
-        var item = RecycleContainer[0];
-        RecycleContainer.RemoveAt(0);
-        item.Visibility = Visibility.Visible;
-        item.Initialize(eventStorySet);
-        return item;
+        get => (bool)GetValue(UseStoryIndexProperty);
+        set => SetValue(UseStoryIndexProperty, value);
     }
 }
 
 public partial class EventStoryEvent
 {
+    public EventStoryEvent()
+    {
+        InitializeComponent();
+        Margin = new Thickness(5);
+    }
+
+
+    private void RefreshControl()
+    {
+        if (EventStorySet == null) return;
+        var storyIndex = UseStoryIndex ? EventStorySet.EventStory.EventId : EventStorySet.Index;
+        TextBlockTitle.Text = $"No.{storyIndex} {EventStorySet.GameEvent.Name}";
+
+        ImageBannerIcon.Source = new BitmapImage(
+            new Uri($"pack://application:,,,/Resource/Characters/" +
+                    $"chr_{EventStorySet.EventStory.BannerGameCharacterUnitId}.png"));
+
+        InitDownloadItems();
+    }
+
     private void InitDownloadItems()
     {
-        foreach (UIElement panelItemsChild in PanelItems.Children)
+        var children = PanelItems.Children.OfType<UIElement>().ToList();
+        foreach (var panelItemsChild in children)
         {
             if (panelItemsChild is DownloadItem downloadItem) downloadItem.Recycle();
         }
 
         for (var i = 0; i < EventStorySet!.EventStory.EventStoryEpisodes.Length; i++)
         {
+            var storyIndex = UseStoryIndex ? EventStorySet.EventStory.EventId : EventStorySet.Index;
             var episode = EventStorySet.EventStory.EventStoryEpisodes[i];
-            var key = $"{EventStorySet.EventStory.EventId} - {episode.EpisodeNo} : {episode.Title}";
+            var key = $"{storyIndex} - {episode.EpisodeNo} : {episode.Title}";
 
             PanelItems.Children.Add(DownloadItem.GetItem(() => SourceList.Instance.EventStory(episode.ScenarioId,
                 EventStorySet.EventStory.AssetBundleName), key));
