@@ -45,6 +45,8 @@ public class VideoProcessor
 
     private VideoProcessCallbacks Callbacks { get; set; }
 
+    private bool _debugIgnoreBannerMarker;
+
 
     public bool Finished => ContentMatcher is { Finished: true } &&
                             DialogMatcher is { Finished: true } &&
@@ -127,6 +129,8 @@ public class VideoProcessor
             Capture.Set(CapProp.PosFrames, debugFrameID);
         }
 
+        _debugIgnoreBannerMarker = Environment.GetEnvironmentVariable("DebugIgnoreBannerMarker") == "true";
+
         var avgDuration = 0d;
         var frameIndex = 0;
         while (true)
@@ -165,6 +169,10 @@ public class VideoProcessor
                     {
                         Callbacks.OnNewDialog(DialogMatcher.Set[dialogIndex]);
                     }
+                }
+                else if(_debugIgnoreBannerMarker)
+                {
+                    break;
                 }
 
                 if (BannerMatcher is { Finished: false } && matchBannerNow)
