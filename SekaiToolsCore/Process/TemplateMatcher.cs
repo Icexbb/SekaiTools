@@ -12,8 +12,27 @@ namespace SekaiToolsCore.Process;
 public static class TemplateMatcher
 {
     public static MatchResult Match(Mat img, GaMat tmp,
+        TemplateMatchCachePool.MatchUsage usage = TemplateMatchCachePool.MatchUsage.Misc,
         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
         [CallerMemberName] string memberName = "")
+    {
+        // return MatchNoCache(img, tmp, matchingType, memberName);
+        
+        var pool = TemplateMatchCachePool.GetPool(usage);
+        if (pool.Query(img))
+        {
+            return pool.prevResult;
+        }
+
+        MatchResult res = MatchNoCache(img, tmp, matchingType, memberName);
+        pool.RegisterResult(img, res);
+
+        return res;
+    }
+    
+    public static MatchResult MatchNoCache(Mat img, GaMat tmp,
+        TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
+        string memberName = "")
     {
         var matchResult = new Mat();
         CvInvoke.MatchTemplate(img, tmp.Gray, matchResult, matchingType, tmp.Alpha);

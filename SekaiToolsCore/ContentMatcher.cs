@@ -24,7 +24,7 @@ public class ContentMatcher(TemplateManager templateManager, Config config)
         roi.Extend(0.1);
 
         var frameCropped = new Mat(mat, roi);
-        var result = TemplateMatcher.Match(frameCropped, Template);
+        var result = TemplateMatcher.Match(frameCropped, Template, TemplateMatchCachePool.MatchUsage.ContentStartSign);
         return result.MaxVal > Threshold;
     }
 
