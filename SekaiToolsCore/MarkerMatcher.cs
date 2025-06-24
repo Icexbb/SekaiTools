@@ -55,7 +55,7 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
                 return Point.Empty;
 
             var imgCropped = new Mat(src, cropArea);
-            var matchResult = TemplateMatcher.Match(imgCropped, tmp, matchingType);
+            var matchResult = TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.Marker, matchingType);
             var matched = matchResult.MaxVal > config.MatchingThreshold.MarkerNormal && matchResult.MaxVal < 1;
 
             if (!matched) return Point.Empty;

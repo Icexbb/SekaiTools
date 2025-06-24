@@ -60,7 +60,7 @@ public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
             var cropArea = UtilFunc.FromCenter(img.Size.Center(),
                 new Size((int)(tmp.Size.Height * text.Length * 1.5), (int)(tmp.Size.Height * 1.5)));
             var imgCropped = new Mat(src, cropArea);
-            var result = TemplateMatcher.Match(imgCropped, tmp);
+            var result = TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.Banner);
             return !(result.MaxVal < config.MatchingThreshold.BannerNormal) && !(result.MaxVal > 1);
         }
     }

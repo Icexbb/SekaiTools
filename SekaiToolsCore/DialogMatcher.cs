@@ -41,7 +41,7 @@ public class DialogMatcher(
         {
             var roi = LocalGetCropArea(tmp.Size);
             var imgCropped = new Mat(src, roi);
-            var result = TemplateMatcher.Match(imgCropped, tmp);
+            var result = TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.DialogNameTag);
             if (!(threshold < result.MaxVal) || !(result.MaxVal < 1)) return Point.Empty;
             return new Point(result.MaxLoc.X + roi.X, result.MaxLoc.Y + roi.Y);
         }
@@ -115,26 +115,26 @@ public class DialogMatcher(
         {
             case MatchStatus.DialogNotMatched:
             {
-                matchRes = LocalMatch(img, template1, matchingThreshold);
+                matchRes = LocalMatch(img, template1, matchingThreshold, TemplateMatchCachePool.MatchUsage.DialogContent1);
                 return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogNotMatched;
             }
             case MatchStatus.DialogMatched1:
             {
-                matchRes = LocalMatch(img, template2, matchingThreshold);
+                matchRes = LocalMatch(img, template2, matchingThreshold, TemplateMatchCachePool.MatchUsage.DialogContent2);
                 if (matchRes) return MatchStatus.DialogMatched2;
-                matchRes = LocalMatch(img, template1, matchingThreshold);
+                matchRes = LocalMatch(img, template1, matchingThreshold, TemplateMatchCachePool.MatchUsage.DialogContent1);
                 return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogDropped;
             }
             case MatchStatus.DialogMatched2:
             {
-                matchRes = LocalMatch(img, template3, matchingThreshold);
+                matchRes = LocalMatch(img, template3, matchingThreshold, TemplateMatchCachePool.MatchUsage.DialogContent3);
                 if (matchRes) return MatchStatus.DialogMatched3;
-                matchRes = LocalMatch(img, template2, matchingThreshold);
+                matchRes = LocalMatch(img, template2, matchingThreshold, TemplateMatchCachePool.MatchUsage.DialogContent2);
                 return matchRes ? MatchStatus.DialogMatched2 : MatchStatus.DialogDropped;
             }
             case MatchStatus.DialogMatched3:
             {
-                matchRes = LocalMatch(img, template3, matchingThreshold);
+                matchRes = LocalMatch(img, template3, matchingThreshold, TemplateMatchCachePool.MatchUsage.DialogContent3);
                 return matchRes ? MatchStatus.DialogMatched3 : MatchStatus.DialogDropped;
             }
             case MatchStatus.NameTagNotMatched:
@@ -144,7 +144,7 @@ public class DialogMatcher(
         }
 
 
-        bool LocalMatch(Mat src, GaMat tmp, double threshold = 0.65)
+        bool LocalMatch(Mat src, GaMat tmp, double threshold = 0.65, TemplateMatchCachePool.MatchUsage usage = TemplateMatchCachePool.MatchUsage.DialogContent1)
         {
             var offset = templateManager.DbTemplateMaxSize().Height;
             Rectangle dialogStartPosition = new(
@@ -158,7 +158,7 @@ public class DialogMatcher(
             dialogStartPosition.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
 
             var imgCropped = new Mat(src, dialogStartPosition);
-            var result = TemplateMatcher.Match(imgCropped, tmp);
+            var result = TemplateMatcher.Match(imgCropped, tmp, usage);
             return result.MaxVal > threshold && result.MaxVal < 1;
         }
 
@@ -199,6 +199,7 @@ public class DialogMatcher(
         {
             case MatchStatus.DialogDropped:
                 Set[dIndex].Finished = true;
+                TemplateMatchCachePool.NextDialog();
                 if (!Finished) Process(frame, frameIndex);
                 break;
             case MatchStatus.DialogNotMatched or MatchStatus.NameTagNotMatched:
