@@ -186,6 +186,33 @@ public class DialogMatcher(
     {
         return LastNotProcessedIndex(Set);
     }
+    
+    public int DebugSetFinishedUntilContains(string targetString, string speaker = null) =>
+        DebugSetFinishedUntilContains(Set, targetString, speaker);
+    
+    private static int DebugSetFinishedUntilContains(IList<DialogFrameSet> set, string targetString, string speaker)
+    {
+        for (var i = 0; i < set.Count; i++)
+        {
+            if (set[i].Data.BodyOriginal.Contains(targetString) && 
+                (speaker == null || set[i].Data.CharacterOriginal.Contains(speaker)))
+                return i;
+            set[i].Finished = true;
+        }
+        
+        return -1;
+    }
+
+    public void DebugSetFinishedAfter(int index)
+        => DebugSetFinishedAfter(Set, index);
+    
+    private static void DebugSetFinishedAfter(IList<DialogFrameSet> set, int index)
+    {
+        for (var i = index; i < set.Count; i++)
+        {
+            set[i].Finished = true;
+        }
+    }
 
     public bool Process(Mat frame, int frameIndex)
     {
