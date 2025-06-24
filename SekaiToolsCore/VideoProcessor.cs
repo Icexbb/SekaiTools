@@ -106,6 +106,26 @@ public class VideoProcessor
         if (Creator == null) throw new NullReferenceException();
         var frameCount = Capture.Get(CapProp.FrameCount);
         var markerIndexInDialog = MarkerIndexOfDialog();
+        
+        // Debug usage
+        int _debugEarlyTerminate = -1;
+        if (Int32.TryParse(Environment.GetEnvironmentVariable("DebugFrameID"), out int debugFrameID))
+        {
+            string targetString = Environment.GetEnvironmentVariable("DebugTargetString");
+            string speakerString = Environment.GetEnvironmentVariable("DebugTargetSpeaker");
+            if (targetString != null)
+            {
+                _debugEarlyTerminate = DialogMatcher.DebugSetFinishedUntilContains(targetString, speakerString);
+                
+                if (Int32.TryParse(Environment.GetEnvironmentVariable("DebugEarlyTermination"), out int ETlength))
+                {
+                    _debugEarlyTerminate += ETlength;
+                    DialogMatcher.DebugSetFinishedAfter(_debugEarlyTerminate);
+                }
+            }
+            
+            Capture.Set(CapProp.PosFrames, debugFrameID);
+        }
 
         var avgDuration = 0d;
         var frameIndex = 0;
