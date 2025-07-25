@@ -54,7 +54,7 @@ public class DialogMatcher(
                 X = (videoInfo.Resolution.Width - dialogAreaSize.Width) / 2,
                 Y = (videoInfo.Resolution.Height - dialogAreaSize.Height - (int)(ntt.Height * 1.1)) / 1,
                 Height = (int)(ntt.Height * 1.8),
-                Width = (int)(ntt.Width + ntt.Height * 0.8)
+                Width = (int)(ntt.Width + ntt.Height * 1.8)
             };
             if (dialog.Data.Shake)
                 rect.Extend(0.6);
