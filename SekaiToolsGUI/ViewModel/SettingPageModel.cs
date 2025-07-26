@@ -91,29 +91,6 @@ public partial class SettingPageModel : ViewModelBase
         set => SetProperty(value);
     }
 
-    public double ThresholdNormal
-    {
-        get => GetProperty(0.85d);
-        set => SetProperty(value);
-    }
-
-    public double ThresholdSpecial
-    {
-        get => GetProperty(0.6d);
-        set => SetProperty(value);
-    }
-
-    public double ThresholdBanner
-    {
-        get => GetProperty(0.85d);
-        set => SetProperty(value);
-    }
-
-    public double ThresholdMarker
-    {
-        get => GetProperty(0.85d);
-        set => SetProperty(value);
-    }
 
     public string DialogFontFamily
     {
@@ -243,16 +220,6 @@ public partial class SettingPageModel : ViewModelBase
         };
     }
 
-    public MatchingThreshold GetMatchingThreshold()
-    {
-        return new MatchingThreshold
-        {
-            DialogNormal = ThresholdNormal,
-            DialogSpecial = ThresholdSpecial,
-            BannerNormal = ThresholdBanner,
-            MarkerNormal = ThresholdMarker
-        };
-    }
 
     private DownloadSourceEditorModel[]? _source;
 
@@ -308,11 +275,6 @@ partial class SettingPageModel
             TypewriterFadeTime = Setting.Default.TypewriterFadeTime;
             TypewriterCharTime = Setting.Default.TypewriterCharTime;
 
-            ThresholdNormal = Setting.Default.ThresholdDialogNormal;
-            ThresholdSpecial = Setting.Default.ThresholdDialogSpecial;
-            ThresholdBanner = Setting.Default.ThresholdBannerNormal;
-            ThresholdMarker = Setting.Default.ThresholdMarkerNormal;
-
             DialogFontFamily = Setting.Default.DialogFontFamily;
             BannerFontFamily = Setting.Default.BannerFontFamily;
             MarkerFontFamily = Setting.Default.MarkerFontFamily;
@@ -331,11 +293,6 @@ partial class SettingPageModel
         {
             TypewriterFadeTime = setting.TypewriterFadeTime;
             TypewriterCharTime = setting.TypewriterCharTime;
-
-            ThresholdNormal = setting.ThresholdDialogNormal;
-            ThresholdSpecial = setting.ThresholdDialogSpecial;
-            ThresholdBanner = setting.ThresholdBannerNormal;
-            ThresholdMarker = setting.ThresholdMarkerNormal;
 
             DialogFontFamily = setting.DialogFontFamily == ""
                 ? Setting.Default.DialogFontFamily
@@ -434,7 +391,7 @@ partial class SettingPageModel
         DeleteSource(index);
     }
 
-    public void DeleteSource(int index)
+    private void DeleteSource(int index)
     {
         var newSource = new DownloadSourceEditorModel[Source.Length - 1];
         for (var i = 0; i < Source.Length; i++)

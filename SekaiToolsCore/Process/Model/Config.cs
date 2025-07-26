@@ -9,11 +9,11 @@ public struct TypewriterSetting()
 public struct MatchingThreshold()
 {
     public double DialogNormal { get; init; } = 0.85;
-    public double DialogSpecial { get; init; } = 0.6;
+    public double DialogSpecial { get; init; } = 0.75;
 
-    public double BannerNormal { get; init; } = 0.85;
+    public double BannerNormal { get; init; } = 0.75;
 
-    public double MarkerNormal { get; init; } = 0.85;
+    public double MarkerNormal { get; init; } = 0.75;
 }
 
 public struct ExportStyleConfig

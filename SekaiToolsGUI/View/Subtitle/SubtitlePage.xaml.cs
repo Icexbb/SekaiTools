@@ -207,6 +207,8 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                 Margin = new Thickness(5, 5, 10, 5)
             };
             LinePanel.Children.Add(line);
+            ViewModel.DialogCurrent++;
+            RefreshContentVisibility();
             if (needScroll) LineViewer.ScrollToEnd();
         });
     }
@@ -223,6 +225,8 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                 Margin = new Thickness(5, 5, 10, 5)
             };
             LinePanel.Children.Add(line);
+            ViewModel.BannerCurrent++;
+            RefreshContentVisibility();
             if (needScroll) LineViewer.ScrollToEnd();
         });
     }
@@ -238,6 +242,8 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
                 Margin = new Thickness(5, 5, 10, 5)
             };
             LinePanel.Children.Add(line);
+            ViewModel.MarkerCurrent++;
+            RefreshContentVisibility();
             if (needScroll) LineViewer.ScrollToEnd();
         });
     }
@@ -293,23 +299,38 @@ public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageMode
             : DragDropEffects.None;
     }
 
-    private void OnlyTooLongSwitch_OnClick(object sender, RoutedEventArgs e)
+    private void FilterSwitch_OnClick(object sender, RoutedEventArgs e)
     {
-        var targetVisibility = OnlyTooLongSwitch.IsChecked ?? false ? Visibility.Collapsed : Visibility.Visible;
+        RefreshContentVisibility();
+    }
+
+    private void RefreshContentVisibility()
+    {
         foreach (var child in LinePanel.Children)
+        {
             switch (child)
             {
                 case DialogLine dialogLine:
-                    if (dialogLine.ViewModel.Set.NeedSetSeparator) continue;
-                    dialogLine.Visibility = targetVisibility;
+                    if (dialogLine.ViewModel.Set.NeedSetSeparator)
+                    {
+                        dialogLine.Visibility = ViewModel.ShowDialog ? Visibility.Visible : Visibility.Collapsed;
+                    }
+                    else
+                    {
+                        dialogLine.Visibility = ViewModel is { ShowDialog: true, ShowTooLongOnly: false }
+                            ? Visibility.Visible
+                            : Visibility.Collapsed;
+                    }
+
                     break;
                 case BannerLine bannerLine:
-                    bannerLine.Visibility = targetVisibility;
+                    bannerLine.Visibility = ViewModel.ShowBanner ? Visibility.Visible : Visibility.Collapsed;
                     break;
                 case MarkerLine markerLine:
-                    markerLine.Visibility = targetVisibility;
+                    markerLine.Visibility = ViewModel.ShowMarker ? Visibility.Visible : Visibility.Collapsed;
                     break;
             }
+        }
     }
 }
 
@@ -350,6 +371,17 @@ public partial class SubtitlePage
         return VideoProcessor.GenerateSubtitle(bannerFrameSets, dialogFrameSets, markerFrameSets);
     }
 
+    private MatchingThreshold GetMatchingThreshold()
+    {
+        return new MatchingThreshold
+        {
+            DialogNormal = 0.80,
+            DialogSpecial = 0.80,
+            BannerNormal = 0.80,
+            MarkerNormal = 0.80
+        };
+    }
+
     private void StartProcess()
     {
         var settings = SettingPageModel.Instance;
@@ -361,7 +393,7 @@ public partial class SubtitlePage
                 settings.GetStyleFontConfig(),
                 settings.GetExportStyleConfig(),
                 settings.GetTypewriterSetting(),
-                settings.GetMatchingThreshold()
+                GetMatchingThreshold()
             ), new VideoProcessCallbacks
             {
                 OnTaskFinished = () =>
@@ -390,6 +422,22 @@ public partial class SubtitlePage
                     {
                         ViewModel.IsRunning = true;
                         ViewModel.HasNotStarted = false;
+                        var contentLength = VideoProcessor?.ContentLength;
+                        if (contentLength != null)
+                        {
+                            ViewModel.DialogTotal = contentLength.Dialog;
+                            ViewModel.DialogCurrent = 0;
+                            ViewModel.BannerTotal = contentLength.Banner;
+                            ViewModel.BannerCurrent = 0;
+                            ViewModel.MarkerTotal = contentLength.Marker;
+                            ViewModel.MarkerCurrent = 0;
+                        }
+                        else
+                        {
+                            ViewModel.DialogTotal = 0;
+                            ViewModel.BannerTotal = 0;
+                            ViewModel.MarkerTotal = 0;
+                        }
                     });
                 },
                 OnProgress = progression =>

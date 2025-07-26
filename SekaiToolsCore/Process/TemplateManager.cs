@@ -120,10 +120,16 @@ public partial class TemplateManager
         if (TextRegex().Matches(text).Count > 0)
             byChar = false;
 
+        var strokeColor = Color.FromArgb(255, 64, 64, 64);
+        if (font.Name.Contains("DB"))
+        {
+            strokeColor = Color.FromArgb(0, 128, 128, 128);
+        }
+
         var bitmap = new Bitmap((int)(text.Length * font.Size * 2), (int)font.Size * 2);
         bitmap.MakeTransparent();
         var graphics = Graphics.FromImage(bitmap);
-        graphics.SmoothingMode = SmoothingMode.HighQuality;
+        graphics.SmoothingMode = SmoothingMode.AntiAlias;
         if (byChar)
         {
             for (var i = 0; i < text.Length; i++)
@@ -151,9 +157,8 @@ public partial class TemplateManager
 
         void DrawStroke(GraphicsPath path)
         {
-            // var width = font.Size / 4.5f;
-            var width = font.Size / 6f;
-            using Pen pen = new(Color.FromArgb(255, 64, 64, 64), width);
+            var width = font.Size / 5f;
+            using Pen pen = new(strokeColor, width);
             pen.LineJoin = LineJoin.Round;
             graphics.DrawPath(pen, path);
         }

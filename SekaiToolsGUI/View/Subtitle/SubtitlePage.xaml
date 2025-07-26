@@ -117,7 +117,7 @@
                         <TextBlock
                             Text="{Binding RunningStatus}"
                             VerticalAlignment="Center" />
-                        <TextBlock VerticalAlignment="Center" Name="TextBlockEta" Margin="5,0" MinWidth="50"/>
+                        <TextBlock VerticalAlignment="Center" Name="TextBlockEta" Margin="5,0" MinWidth="50" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
@@ -159,6 +159,38 @@
                                      Margin="5" />
                         <TextBlock Grid.Column="2" Name="TextBlockProgression" Margin="5" />
                     </Grid>
+                    <Grid HorizontalAlignment="Stretch"
+                          Visibility="{calcBinding:Binding !HasNotStarted,FalseToVisibility=Collapsed}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" TextAlignment="Center">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="{}对话 {0}/{1}">
+                                    <Binding Path="DialogCurrent" Mode="OneWay" />
+                                    <Binding Path="DialogTotal" Mode="OneWay" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <TextBlock Grid.Column="1" TextAlignment="Center">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="{}横幅 {0}/{1}">
+                                    <Binding Path="BannerCurrent" Mode="OneWay" />
+                                    <Binding Path="BannerTotal" Mode="OneWay" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <TextBlock Grid.Column="2" TextAlignment="Center">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="{}标签 {0}/{1}">
+                                    <Binding Path="MarkerCurrent" Mode="OneWay" />
+                                    <Binding Path="MarkerTotal" Mode="OneWay" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </Grid>
                 </StackPanel>
             </ui:Card>
         </Grid>
@@ -167,21 +199,36 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
+
             <ui:Card Grid.Row="0" Padding="5" Margin="0,0,0,5">
                 <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
                     </Grid.ColumnDefinitions>
+                    <ui:ToggleSwitch Grid.Row="0" Grid.Column="0" Margin="5" IsChecked="{Binding ShowDialog}"
+                                     Click="FilterSwitch_OnClick">
+                        显示对话
+                    </ui:ToggleSwitch>
+                    <ui:ToggleSwitch Grid.Row="0" Grid.Column="1" Margin="5" IsChecked="{Binding ShowTooLongOnly}"
+                                     Click="FilterSwitch_OnClick"
+                                     OnContent="仅显示过长行" OffContent="显示所有行"
+                                     Visibility="{calcBinding:Binding ShowDialog,FalseToVisibility=Collapsed}" />
 
-                    <ui:ToggleSwitch Grid.Column="0" HorizontalAlignment="Left"
-                                     Name="OnlyTooLongSwitch" Margin="5" Click="OnlyTooLongSwitch_OnClick"
-                                     OnContent="仅显示过长行" OffContent="显示所有行" />
-                    <ui:Button Grid.Column="2" HorizontalAlignment="Right"
-                               Content="输出" Margin="5" Click="OutputButton_OnClick"
-                               IsEnabled="{Binding Path=IsFinished}" />
+                    <ui:ToggleSwitch Grid.Row="1" Grid.Column="0" Margin="5" IsChecked="{Binding ShowBanner}"
+                                     Click="FilterSwitch_OnClick">
+                        显示横幅
+                    </ui:ToggleSwitch>
+                    <ui:ToggleSwitch Grid.Row="1" Grid.Column="1" Margin="5" IsChecked="{Binding ShowMarker}"
+                                     Click="FilterSwitch_OnClick">
+                        显示标签
+                    </ui:ToggleSwitch>
                 </Grid>
             </ui:Card>
             <ui:Card Grid.Row="1" MinWidth="300" VerticalAlignment="Stretch"
@@ -192,6 +239,9 @@
                     <StackPanel Name="LinePanel" Margin="5,5,5,15" />
                 </ui:PassiveScrollViewer>
             </ui:Card>
+            <ui:Button Grid.Row="2" HorizontalAlignment="Stretch"
+                       Content="输出" Margin="0,5,0,0" Click="OutputButton_OnClick"
+                       IsEnabled="{Binding Path=IsFinished}" />
         </Grid>
     </Grid>
 </UserControl>

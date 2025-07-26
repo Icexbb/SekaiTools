@@ -25,20 +25,20 @@ public static class TemplateMatcher
         {
             img = img_original;
         }
-        
+
         var pool = TemplateMatchCachePool.GetPool(usage);
         if (pool.Query(img))
         {
             return pool.prevResult;
         }
 
-        MatchResult res = MatchNoCache(img, tmp, matchingType, memberName);
+        var res = MatchNoCache(img, tmp, matchingType, memberName);
         pool.RegisterResult(img, res);
 
         return res;
     }
-    
-    public static MatchResult MatchNoCache(Mat img, GaMat tmp,
+
+    private static MatchResult MatchNoCache(Mat img, GaMat tmp,
         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
         string memberName = "")
     {

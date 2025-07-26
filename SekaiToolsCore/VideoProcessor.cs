@@ -29,6 +29,8 @@ public class VideoProcessCallbacks
     public Action<int, TimeSpan> OnFps { get; set; } = (fps, eta) => { };
 }
 
+public record ContentLength(int Dialog, int Banner, int Marker);
+
 public class VideoProcessor
 {
     private CancellationTokenSource? TokenSource { get; set; } = new();
@@ -52,6 +54,12 @@ public class VideoProcessor
                             DialogMatcher is { Finished: true } &&
                             BannerMatcher is { Finished: true } &&
                             MarkerMatcher is { Finished: true };
+
+    public ContentLength ContentLength => new(
+        DialogMatcher?.Set.Count ?? 0,
+        BannerMatcher?.Set.Count ?? 0,
+        MarkerMatcher?.Set.Count ?? 0
+    );
 
     public Subtitle GenerateSubtitle(List<BannerFrameSet> bannerFrameSets, List<DialogFrameSet> dialogFrameSets,
         List<MarkerFrameSet> markerFrameSets)
@@ -108,7 +116,7 @@ public class VideoProcessor
         if (Creator == null) throw new NullReferenceException();
         var frameCount = Capture.Get(CapProp.FrameCount);
         var markerIndexInDialog = MarkerIndexOfDialog();
-        
+
         // Debug usage
         int _debugEarlyTerminate = -1;
         if (Int32.TryParse(Environment.GetEnvironmentVariable("DebugFrameID"), out int debugFrameID))
@@ -118,14 +126,14 @@ public class VideoProcessor
             if (targetString != null)
             {
                 _debugEarlyTerminate = DialogMatcher.DebugSetFinishedUntilContains(targetString, speakerString);
-                
+
                 if (Int32.TryParse(Environment.GetEnvironmentVariable("DebugEarlyTermination"), out int ETlength))
                 {
                     _debugEarlyTerminate += ETlength;
                     DialogMatcher.DebugSetFinishedAfter(_debugEarlyTerminate);
                 }
             }
-            
+
             Capture.Set(CapProp.PosFrames, debugFrameID);
         }
 
@@ -170,7 +178,7 @@ public class VideoProcessor
                         Callbacks.OnNewDialog(DialogMatcher.Set[dialogIndex]);
                     }
                 }
-                else if(_debugIgnoreBannerMarker)
+                else if (_debugIgnoreBannerMarker)
                 {
                     break;
                 }

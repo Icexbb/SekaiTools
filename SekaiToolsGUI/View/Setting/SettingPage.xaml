@@ -233,64 +233,6 @@
                     </ui:CardControl>
                 </StackPanel>
             </ui:CardExpander>
-
-            <ui:CardExpander Margin="0,0,0,8" Icon="{ui:SymbolIcon MatchAppLayout24}" ContentPadding="0">
-                <ui:CardExpander.Header>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="匹配阈值" />
-                        <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="自定义图像匹配的阈值设定" />
-                    </Grid>
-                </ui:CardExpander.Header>
-                <StackPanel Orientation="Vertical">
-                    <ui:CardControl>
-                        <ui:CardControl.Header>
-                            <ui:TextBlock FontTypography="Body" Text="对话识别阈值" />
-                        </ui:CardControl.Header>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
-                                <ui:TextBlock FontTypography="Body" Text="一般" VerticalAlignment="Center"
-                                              Margin="0,0,10,0" />
-                                <ui:NumberBox Width="120" Maximum="1" Minimum="0" SmallChange="0.01" LargeChange="0.1"
-                                              Value="{Binding  ThresholdNormal,Mode=TwoWay}"
-                                              ClearButtonEnabled="False" />
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <ui:TextBlock FontTypography="Body" Text="抖动" VerticalAlignment="Center"
-                                              Margin="0,0,10,0" />
-                                <ui:NumberBox Width="120" Maximum="1" Minimum="0" SmallChange="0.01" LargeChange="0.1"
-                                              Value="{Binding ThresholdSpecial,Mode=TwoWay}"
-                                              ClearButtonEnabled="False" />
-                            </StackPanel>
-                        </StackPanel>
-                    </ui:CardControl>
-                    <ui:CardControl>
-                        <ui:CardControl.Header>
-                            <ui:TextBlock FontTypography="Body" Text="地点识别阈值" />
-                        </ui:CardControl.Header>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
-                                <ui:TextBlock FontTypography="Body" Text="横幅" VerticalAlignment="Center"
-                                              Margin="0,0,10,0" />
-                                <ui:NumberBox Width="120" Maximum="1" Minimum="0" SmallChange="0.01" LargeChange="0.1"
-                                              Value="{Binding  ThresholdBanner,Mode=TwoWay}"
-                                              ClearButtonEnabled="False" />
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <ui:TextBlock FontTypography="Body" Text="角标" VerticalAlignment="Center"
-                                              Margin="0,0,10,0" />
-                                <ui:NumberBox Width="120" Maximum="1" Minimum="0" SmallChange="0.01" LargeChange="0.1"
-                                              Value="{Binding ThresholdMarker,Mode=TwoWay}"
-                                              ClearButtonEnabled="False" />
-                            </StackPanel>
-                        </StackPanel>
-                    </ui:CardControl>
-                </StackPanel>
-            </ui:CardExpander>
             <ui:CardExpander Margin="0,0,0,8" Icon="{ui:SymbolIcon SoundSource24}" ContentPadding="5">
                 <ui:CardExpander.Header>
                     <Grid>
