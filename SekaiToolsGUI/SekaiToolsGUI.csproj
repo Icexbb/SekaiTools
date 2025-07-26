@@ -17,10 +17,10 @@
 
     <ItemGroup>
         <PackageReference Include="CalcBinding" Version="2.5.2"/>
-        <PackageReference Include="Emgu.CV.Wpf" Version="4.9.0.5494"/>
-        <PackageReference Include="System.Text.Json" Version="9.0.0"/>
+        <PackageReference Include="Emgu.CV.Wpf" Version="4.11.0.5746" />
+        <PackageReference Include="System.Text.Json" Version="10.0.0-preview.6.25358.103" />
         <PackageReference Include="TextCopy" Version="6.2.1"/>
-        <PackageReference Include="WPF-UI" Version="4.0.0-rc.3"/>
+        <PackageReference Include="WPF-UI" Version="4.0.3" />
     </ItemGroup>
 
     <ItemGroup>

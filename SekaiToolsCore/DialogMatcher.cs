@@ -1,5 +1,6 @@
 using System.Drawing;
 using Emgu.CV;
+using Microsoft.Extensions.Logging;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
@@ -28,7 +29,7 @@ public class DialogMatcher(
         return new GaMat(templateManager.GetEbTemplate(name));
     }
 
-    private Point DialogMatchNameTag(Mat img, DialogFrameSet dialog)
+    private Point DialogMatchNameTag(Mat img, DialogFrameSet dialog, int frameIndex = -1)
     {
         var content = dialog.Data.CharacterOriginal;
         var template = GetNameTag(TrimTemplateContent(content));
@@ -42,6 +43,14 @@ public class DialogMatcher(
             var roi = LocalGetCropArea(tmp.Size);
             var imgCropped = new Mat(src, roi);
             var result = TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.DialogNameTag);
+
+            if (frameIndex != -1)
+            {
+                Log.Logger.LogInformation("{TypeName} Frame {FrameIndex} Match Name Tag {DialogIndex} Result: {MaxVal}",
+                    nameof(DialogMatcher), frameIndex, LastNotProcessedIndex(), result.MaxVal);
+            }
+
+
             if (!(threshold < result.MaxVal) || !(result.MaxVal < 1)) return Point.Empty;
             return new Point(result.MaxLoc.X + roi.X, result.MaxLoc.Y + roi.Y);
         }
@@ -96,7 +105,8 @@ public class DialogMatcher(
         }
     }
 
-    private MatchStatus DialogMatchContent(Mat img, DialogFrameSet dialog, Point point, MatchStatus lastStatus = 0)
+    private MatchStatus DialogMatchContent(Mat img, DialogFrameSet dialog, Point point, MatchStatus lastStatus = 0,
+        int frameIndex = -1)
     {
         var content = dialog.Data.BodyOriginal;
         if (point.X == 0) return 0;
@@ -115,26 +125,32 @@ public class DialogMatcher(
         {
             case MatchStatus.DialogNotMatched:
             {
-                matchRes = LocalMatch(img, template1, matchingThreshold, TemplateMatchCachePool.MatchUsage.DialogContent1);
+                matchRes = LocalMatch(img, template1, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent1);
                 return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogNotMatched;
             }
             case MatchStatus.DialogMatched1:
             {
-                matchRes = LocalMatch(img, template2, matchingThreshold, TemplateMatchCachePool.MatchUsage.DialogContent2);
+                matchRes = LocalMatch(img, template2, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent2);
                 if (matchRes) return MatchStatus.DialogMatched2;
-                matchRes = LocalMatch(img, template1, matchingThreshold, TemplateMatchCachePool.MatchUsage.DialogContent1);
+                matchRes = LocalMatch(img, template1, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent1);
                 return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogDropped;
             }
             case MatchStatus.DialogMatched2:
             {
-                matchRes = LocalMatch(img, template3, matchingThreshold, TemplateMatchCachePool.MatchUsage.DialogContent3);
+                matchRes = LocalMatch(img, template3, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent3);
                 if (matchRes) return MatchStatus.DialogMatched3;
-                matchRes = LocalMatch(img, template2, matchingThreshold, TemplateMatchCachePool.MatchUsage.DialogContent2);
+                matchRes = LocalMatch(img, template2, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent2);
                 return matchRes ? MatchStatus.DialogMatched2 : MatchStatus.DialogDropped;
             }
             case MatchStatus.DialogMatched3:
             {
-                matchRes = LocalMatch(img, template3, matchingThreshold, TemplateMatchCachePool.MatchUsage.DialogContent3);
+                matchRes = LocalMatch(img, template3, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent3);
                 return matchRes ? MatchStatus.DialogMatched3 : MatchStatus.DialogDropped;
             }
             case MatchStatus.NameTagNotMatched:
@@ -144,7 +160,7 @@ public class DialogMatcher(
         }
 
 
-        bool LocalMatch(Mat src, GaMat tmp, double threshold = 0.65, TemplateMatchCachePool.MatchUsage usage = TemplateMatchCachePool.MatchUsage.DialogContent1)
+        bool LocalMatch(Mat src, GaMat tmp, double threshold, TemplateMatchCachePool.MatchUsage usage)
         {
             var offset = templateManager.DbTemplateMaxSize().Height;
             Rectangle dialogStartPosition = new(
@@ -159,6 +175,14 @@ public class DialogMatcher(
 
             var imgCropped = new Mat(src, dialogStartPosition);
             var result = TemplateMatcher.Match(imgCropped, tmp, usage);
+
+            if (frameIndex != -1)
+            {
+                Log.Logger.LogDebug(
+                    "{TypeName} Frame {FrameIndex} Match Dialog Content {DialogIndex} Result: {MaxVal}",
+                    nameof(DialogMatcher), frameIndex, LastNotProcessedIndex(), result.MaxVal);
+            }
+
             return result.MaxVal > threshold && result.MaxVal < 1;
         }
 
@@ -186,26 +210,26 @@ public class DialogMatcher(
     {
         return LastNotProcessedIndex(Set);
     }
-    
+
     public int DebugSetFinishedUntilContains(string targetString, string speaker = null) =>
         DebugSetFinishedUntilContains(Set, targetString, speaker);
-    
+
     private static int DebugSetFinishedUntilContains(IList<DialogFrameSet> set, string targetString, string speaker)
     {
         for (var i = 0; i < set.Count; i++)
         {
-            if (set[i].Data.BodyOriginal.Contains(targetString) && 
+            if (set[i].Data.BodyOriginal.Contains(targetString) &&
                 (speaker == null || set[i].Data.CharacterOriginal.Contains(speaker)))
                 return i;
             set[i].Finished = true;
         }
-        
+
         return -1;
     }
 
     public void DebugSetFinishedAfter(int index)
         => DebugSetFinishedAfter(Set, index);
-    
+
     private static void DebugSetFinishedAfter(IList<DialogFrameSet> set, int index)
     {
         for (var i = index; i < set.Count; i++)
@@ -219,7 +243,7 @@ public class DialogMatcher(
         var dIndex = LastNotProcessedIndex(Set);
         var dialogRefers = Set[dIndex];
 
-        var matchResult = MatchForDialog(frame, dialogRefers);
+        var matchResult = MatchForDialog(frame, dialogRefers, frameIndex);
 
         _status = matchResult.Status;
         switch (_status)
@@ -246,14 +270,14 @@ public class DialogMatcher(
             or MatchStatus.DialogMatched3;
     }
 
-    private MatchResult MatchForDialog(Mat frame, DialogFrameSet dialog)
+    private MatchResult MatchForDialog(Mat frame, DialogFrameSet dialog, int frameIndex)
     {
         var lastStatus = _status;
         if (lastStatus is MatchStatus.DialogDropped && dialog.IsEmpty())
             lastStatus = MatchStatus.DialogNotMatched;
         Point point;
         if (dialog.Data.Shake || dialog.IsEmpty())
-            point = DialogMatchNameTag(frame, dialog);
+            point = DialogMatchNameTag(frame, dialog, frameIndex);
         else
             point = dialog.Start().Point;
 
@@ -262,7 +286,7 @@ public class DialogMatcher(
                 ? MatchStatus.DialogDropped
                 : MatchStatus.NameTagNotMatched);
 
-        return new MatchResult(point, DialogMatchContent(frame, dialog, point, lastStatus));
+        return new MatchResult(point, DialogMatchContent(frame, dialog, point, lastStatus, frameIndex));
     }
 
     private enum MatchStatus

@@ -1,5 +1,6 @@
 using System.Drawing;
 using Emgu.CV;
+using Microsoft.Extensions.Logging;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Utils;
@@ -14,7 +15,7 @@ public class ContentMatcher(TemplateManager templateManager, Config config)
 
     public bool Finished { get; private set; }
 
-    private bool MatchContentStartSign(Mat mat)
+    private bool MatchContentStartSign(Mat mat, int frameIndex = -1)
     {
         var roi = new Rectangle(
             mat.Width - Template.Size.Width * 3, 0,
@@ -25,6 +26,13 @@ public class ContentMatcher(TemplateManager templateManager, Config config)
 
         var frameCropped = new Mat(mat, roi);
         var result = TemplateMatcher.Match(frameCropped, Template, TemplateMatchCachePool.MatchUsage.ContentStartSign);
+
+        if (frameIndex != -1)
+        {
+            Log.Logger.LogDebug("{TypeName} Frame {FrameIndex} Match Content Start Sign Result: {MaxVal}",
+                nameof(ContentMatcher), frameIndex, result.MaxVal);
+        }
+
         return result.MaxVal > Threshold;
     }
 

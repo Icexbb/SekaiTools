@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Extensions.Logging;
 using SekaiDataFetch;
 using SekaiDataFetch.Source;
 using SekaiToolsGUI.View.Download.Components;
@@ -123,8 +124,10 @@ public partial class DownloadPage : UserControl, INavigableView<DownloadPageMode
 
     private static async Task Download(string url, string filepath)
     {
+        Log.Logger.LogInformation("{TypeName} Downloading from {Url} to {FilePath}", nameof(DownloadPage), url,
+            filepath);
+
         var client = new HttpClient(GetHttpHandler());
-        Console.WriteLine($"GET {url}");
         var response = await client.GetAsync(url);
         response.EnsureSuccessStatusCode();
         var responseContent = await response.Content.ReadAsStringAsync();

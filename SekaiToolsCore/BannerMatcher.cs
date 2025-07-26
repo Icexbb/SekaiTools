@@ -1,5 +1,6 @@
 using System.Drawing;
 using Emgu.CV;
+using Microsoft.Extensions.Logging;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
@@ -42,7 +43,7 @@ public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
         return trimmed;
     }
 
-    private MatchStatus BannerMatch(Mat img, string text)
+    private MatchStatus BannerMatch(Mat img, string text, int frameIndex = -1)
     {
         var sText = TrimContent(text);
         var template = GetTemplate(sText);
@@ -61,6 +62,14 @@ public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
                 new Size((int)(tmp.Size.Height * text.Length * 1.5), (int)(tmp.Size.Height * 1.5)));
             var imgCropped = new Mat(src, cropArea);
             var result = TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.Banner);
+
+            if (frameIndex != -1)
+            {
+                Log.Logger.LogDebug(
+                    "{TypeName} Frame {FrameIndex} Match Banner {BannerIndex} Result: {MaxVal}",
+                    nameof(BannerMatcher), frameIndex, LastNotProcessedIndex(), result.MaxVal);
+            }
+
             return !(result.MaxVal < config.MatchingThreshold.BannerNormal) && !(result.MaxVal > 1);
         }
     }
@@ -81,7 +90,7 @@ public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
     public void Process(Mat frame, int frameIndex)
     {
         var index = LastNotProcessedIndex();
-        var matchResult = BannerMatch(frame, Set[index].Data.BodyOriginal);
+        var matchResult = BannerMatch(frame, Set[index].Data.BodyOriginal, frameIndex);
         _status = matchResult;
         switch (matchResult)
         {

@@ -1,6 +1,7 @@
 using System.Drawing;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
+using Microsoft.Extensions.Logging;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
@@ -32,7 +33,7 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
         return _templates[content];
     }
 
-    private MatchResult MarkerMatch(Mat img, string text)
+    private MatchResult MarkerMatch(Mat img, string text, int frameIndex = -1)
     {
         var templateAll = GetTemplate(text);
         var sText = text[^1].ToString();
@@ -55,7 +56,16 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
                 return Point.Empty;
 
             var imgCropped = new Mat(src, cropArea);
-            var matchResult = TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.Marker, matchingType);
+            var matchResult =
+                TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.Marker, matchingType);
+
+            if (frameIndex != -1)
+            {
+                Log.Logger.LogDebug(
+                    "{TypeName} Frame {FrameIndex} Match Marker {MarkerIndex} Result: {MaxVal}",
+                    nameof(DialogMatcher), frameIndex, LastNotProcessedIndex(), matchResult.MaxVal);
+            }
+
             var matched = matchResult.MaxVal > config.MatchingThreshold.MarkerNormal && matchResult.MaxVal < 1;
 
             if (!matched) return Point.Empty;
@@ -100,7 +110,7 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
     public void Process(Mat frame, int frameIndex)
     {
         var index = LastNotProcessedIndex();
-        var matchResult = MarkerMatch(frame, Set[index].Data.BodyOriginal);
+        var matchResult = MarkerMatch(frame, Set[index].Data.BodyOriginal, frameIndex);
         _status = matchResult.Status;
 
         switch (matchResult.Status)

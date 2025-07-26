@@ -2,6 +2,7 @@ using System.Windows.Automation;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Windows;
 
 
 namespace SekaiToolsGUI;
@@ -15,7 +16,7 @@ public static class ExplorerHelper
     {
         if (!File.Exists(filePath))
         {
-            Console.WriteLine("文件不存在");
+            MessageBox.Show("文件不存在或路径错误", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
 
