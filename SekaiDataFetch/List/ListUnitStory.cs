@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using SekaiDataFetch.Data;
 using SekaiDataFetch.Item;
 
@@ -5,9 +6,12 @@ namespace SekaiDataFetch.List;
 
 public class ListUnitStory : BaseListStory
 {
-    private static readonly string CachePathUnitStories =
+    [CachePath("unitStories")]
+    private static string CachePathUnitStories =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "cache", "unitStories.json");
+
+    [SourcePath("unitStories")] private static string SourceUnitStories => Fetcher.SourceList.UnitStories;
 
     public readonly Dictionary<string, UnitStorySet> Data = new();
 
@@ -20,22 +24,26 @@ public class ListUnitStory : BaseListStory
     public static ListUnitStory Instance { get; } = new();
 
 
-    public async Task Refresh()
-    {
-        var stringUnitStories = await Fetcher.Fetch(Fetcher.SourceList.UnitStories);
-        await File.WriteAllTextAsync(CachePathUnitStories, stringUnitStories);
-        Load();
-    }
-
-    private void Load()
+    protected sealed override void Load()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathUnitStories)!);
         if (!File.Exists(CachePathUnitStories)) return;
 
         var json = File.ReadAllText(CachePathUnitStories);
-        var unitStories = Utils.Deserialize<UnitStory[]>(json);
-        if (unitStories == null) throw new Exception("Json parse error");
-        GetData(unitStories);
+
+        try
+        {
+            var unitStories = Utils.Deserialize<UnitStory[]>(json);
+            if (unitStories == null) throw new Exception("Json parse error");
+            GetData(unitStories);
+        }
+        catch (Exception e)
+        {
+            Log.Logger.LogError(e,
+                "{TypeName} Failed to load data. Clearing cache and retrying. Error: {Message}",
+                GetType().Name, e.Message);
+            ClearCache();
+        }
     }
 
     private void GetData(UnitStory[] unitStory)

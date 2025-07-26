@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net;
+using Microsoft.Extensions.Logging;
 using SekaiDataFetch.Source;
 
 namespace SekaiDataFetch;
@@ -45,14 +46,16 @@ public class Fetcher
 
         async Task<string> TryGet(int time = 5)
         {
-            Console.WriteLine($"GET {url}");
+            Log.Logger.LogInformation("{TypeName} Fetching data from {Url}", GetType().Name, url);
             try
             {
                 return await Get();
             }
             catch (HttpRequestException e)
             {
-                Console.WriteLine($"GET {url} Error: " + (e.InnerException?.Message ?? e.Message));
+                Log.Logger.LogError(e,
+                    "{TypeName} Failed to fetch data from {Url}. Retrying {Time} times. Error: {Message}",
+                    GetType().Name, url, time, e.Message);
                 if (time > 0) return await TryGet(time - 1);
                 if (Debugger.IsAttached) throw;
                 return defaultResult;

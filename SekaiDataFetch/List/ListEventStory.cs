@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using SekaiDataFetch.Data;
 using SekaiDataFetch.Item;
 
@@ -5,13 +6,18 @@ namespace SekaiDataFetch.List;
 
 public class ListEventStory : BaseListStory
 {
-    private static readonly string CachePathEventStories =
+    [CachePath("eventStories")]
+    private static string CachePathEventStories =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "cache", "eventStories.json");
 
-    private static readonly string CachePathGameEvents =
+    [CachePath("gameEvents")]
+    private static string CachePathGameEvents =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "cache", "gameEvents.json");
+
+    [SourcePath("eventStories")] private static string SourceEventStories => Fetcher.SourceList.EventStories;
+    [SourcePath("gameEvents")] private static string SourceGameEvents => Fetcher.SourceList.Events;
 
     public readonly List<EventStorySet> Data = [];
 
@@ -24,16 +30,7 @@ public class ListEventStory : BaseListStory
     public static ListEventStory Instance { get; } = new();
 
 
-    public async Task Refresh()
-    {
-        var stringEventStories = await Fetcher.Fetch(Fetcher.SourceList.EventStories);
-        var stringGameEvents = await Fetcher.Fetch(Fetcher.SourceList.Events);
-        await File.WriteAllTextAsync(CachePathEventStories, stringEventStories);
-        await File.WriteAllTextAsync(CachePathGameEvents, stringGameEvents);
-        Load();
-    }
-
-    private void Load()
+    protected sealed override void Load()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathEventStories)!);
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathGameEvents)!);
@@ -42,10 +39,20 @@ public class ListEventStory : BaseListStory
         var stringEventStories = File.ReadAllText(CachePathEventStories);
         var stringGameEvents = File.ReadAllText(CachePathGameEvents);
 
-        var eventStories = Utils.Deserialize<EventStory[]>(stringEventStories);
-        var gameEvents = Utils.Deserialize<GameEvent[]>(stringGameEvents);
-        if (eventStories == null || gameEvents == null) throw new Exception("Json parse error");
-        GetData(eventStories, gameEvents);
+        try
+        {
+            var eventStories = Utils.Deserialize<EventStory[]>(stringEventStories);
+            var gameEvents = Utils.Deserialize<GameEvent[]>(stringGameEvents);
+            if (eventStories == null || gameEvents == null) throw new Exception("Json parse error");
+            GetData(eventStories, gameEvents);
+        }
+        catch (Exception e)
+        {
+            Log.Logger.LogError(e,
+                "{TypeName} Failed to load data. Clearing cache and retrying. Error: {Message}",
+                GetType().Name, e.Message);
+            ClearCache();
+        }
     }
 
     private void GetData(ICollection<EventStory> evStories, ICollection<GameEvent> events)

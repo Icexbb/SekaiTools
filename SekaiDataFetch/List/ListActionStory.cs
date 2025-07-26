@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using SekaiDataFetch.Data;
 using SekaiDataFetch.Item;
 
@@ -5,17 +6,24 @@ namespace SekaiDataFetch.List;
 
 public class ListActionStory : BaseListStory
 {
-    private static readonly string CachePathAreas =
+    [CachePath("areas")]
+    private static string CachePathAreas =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "cache", "areas.json");
 
-    private static readonly string CachePathActionSets =
+    [CachePath("actionSets")]
+    private static string CachePathActionSets =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "cache", "actionSets.json");
 
-    private static readonly string CachePathCharacter2ds =
+    [CachePath("character2ds")]
+    private static string CachePathCharacter2ds =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "cache", "character2ds.json");
+
+    [SourcePath("areas")] private static string SourceAreas => Fetcher.SourceList.Areas;
+    [SourcePath("actionSets")] private static string SourceActionSets => Fetcher.SourceList.ActionSets;
+    [SourcePath("character2ds")] private static string SourceCharacter2ds => Fetcher.SourceList.Character2ds;
 
     private ListActionStory(Proxy? proxy = null)
     {
@@ -30,19 +38,7 @@ public class ListActionStory : BaseListStory
     public static ListActionStory Instance { get; } = new();
 
 
-    public async Task Refresh()
-    {
-        var stringActionSets = await Fetcher.Fetch(Fetcher.SourceList.ActionSets);
-        var stringAreas = await Fetcher.Fetch(Fetcher.SourceList.Areas);
-        var stringCharacter2ds = await Fetcher.Fetch(Fetcher.SourceList.Character2ds);
-        await File.WriteAllTextAsync(CachePathActionSets, stringActionSets);
-        await File.WriteAllTextAsync(CachePathAreas, stringAreas);
-        await File.WriteAllTextAsync(CachePathCharacter2ds, stringCharacter2ds);
-
-        Load();
-    }
-
-    private void Load()
+    protected sealed override void Load()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathActionSets)!);
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathAreas)!);
@@ -55,12 +51,22 @@ public class ListActionStory : BaseListStory
         var stringAreas = File.ReadAllText(CachePathAreas);
         var stringCharacter2ds = File.ReadAllText(CachePathCharacter2ds);
 
-        var areas = Utils.Deserialize<Area[]>(stringAreas);
-        var actionSets = Utils.Deserialize<ActionSet[]>(stringActionSets);
-        var character2ds = Utils.Deserialize<Character2d[]>(stringCharacter2ds);
+        try
+        {
+            var areas = Utils.Deserialize<Area[]>(stringAreas);
+            var actionSets = Utils.Deserialize<ActionSet[]>(stringActionSets);
+            var character2ds = Utils.Deserialize<Character2d[]>(stringCharacter2ds);
 
-        if (actionSets == null || areas == null || character2ds == null) throw new Exception("Json parse error");
-        GetData(actionSets, areas, character2ds);
+            if (actionSets == null || areas == null || character2ds == null) throw new Exception("Json parse error");
+            GetData(actionSets, areas, character2ds);
+        }
+        catch (Exception e)
+        {
+            Log.Logger.LogError(e,
+                "{TypeName} Failed to load data. Clearing cache and retrying. Error: {Message}",
+                GetType().Name, e.Message);
+            ClearCache();
+        }
     }
 
     private void GetData(ActionSet[] actionSets, Area[] areas, Character2d[] character2ds)
