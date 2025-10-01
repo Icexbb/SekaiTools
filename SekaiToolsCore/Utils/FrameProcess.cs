@@ -7,6 +7,9 @@ public static class FrameProcess
 {
     public static void Process(Mat frame)
     {
+        // Insert further operations here
+        return;
+        
         if (frame.IsEmpty)
             return;
 
