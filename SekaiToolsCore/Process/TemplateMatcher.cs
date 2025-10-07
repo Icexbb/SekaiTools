@@ -11,19 +11,19 @@ namespace SekaiToolsCore.Process;
 
 public static class TemplateMatcher
 {
-    public static MatchResult Match(Mat img_original, GaMat tmp,
+    public static MatchResult Match(Mat imgOriginal, GaMat tmp,
         TemplateMatchCachePool.MatchUsage usage = TemplateMatchCachePool.MatchUsage.Misc,
         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
         [CallerMemberName] string memberName = "")
     {
         var img = new Mat();
-        if (img_original.NumberOfChannels == 3)
+        if (imgOriginal.NumberOfChannels == 3)
         {
-            CvInvoke.CvtColor(img_original, img, ColorConversion.Bgr2Gray);
+            CvInvoke.CvtColor(imgOriginal, img, ColorConversion.Bgr2Gray);
         }
         else
         {
-            img = img_original;
+            img = imgOriginal;
         }
 
         var pool = TemplateMatchCachePool.GetPool(usage);
@@ -60,16 +60,39 @@ public static class TemplateMatcher
             return;
 
         var show = img.Clone()!;
-        var temp = tmp.Gray.Clone();
-        var emptyMat = new Mat(show.Rows - temp.Rows, temp.Cols, temp.Depth, temp.NumberOfChannels);
-        emptyMat.SetTo(new MCvScalar(0));
-        CvInvoke.VConcat(new VectorOfMat(emptyMat, temp), temp);
-        CvInvoke.HConcat(new VectorOfMat(show, temp), show);
-        temp.Dispose();
-
         CvInvoke.PutText(show, $"MaxVal: {maxVal:0.00}", maxLoc with { Y = maxLoc.Y - 5 },
             FontFace.HersheySimplex, 0.4, new MCvScalar(255));
         CvInvoke.Rectangle(show, new Rectangle(maxLoc, tmp.Size), new MCvScalar(255), 2);
+
+
+        var tempGray = tmp.Gray.Clone();
+        var tempAlpha = tmp.Alpha.Clone();
+        var temp = new Mat(tempAlpha.Rows + tempGray.Rows, tempGray.Cols, tempGray.Depth, tempGray.NumberOfChannels);
+        CvInvoke.VConcat(new VectorOfMat(tempGray, tempAlpha), temp);
+        if (temp.Height > show.Height)
+        {
+            var emptyMat = new Mat(temp.Rows - show.Rows, show.Cols, show.Depth, show.NumberOfChannels);
+            emptyMat.SetTo(new MCvScalar(0));
+            CvInvoke.VConcat(new VectorOfMat(emptyMat, show), show);
+        }
+        else if (temp.Height < show.Height)
+        {
+            var emptyMat = new Mat(show.Rows - temp.Rows, temp.Cols, temp.Depth, temp.NumberOfChannels);
+            emptyMat.SetTo(new MCvScalar(0));
+            CvInvoke.VConcat(new VectorOfMat(emptyMat, temp), temp);
+        }
+
+        CvInvoke.HConcat(new VectorOfMat(show, temp), show);
+        tempGray.Dispose();
+        tempAlpha.Dispose();
+        temp.Dispose();
+
+        // var emptyMat = new Mat(show.Rows - tempGray.Rows, tempGray.Cols, tempGray.Depth, tempGray.NumberOfChannels);
+        // emptyMat.SetTo(new MCvScalar(0));
+        // CvInvoke.VConcat(new VectorOfMat(emptyMat, tempGray), tempGray);
+        // CvInvoke.HConcat(new VectorOfMat(show, tempGray), show);
+        // tempGray.Dispose();
+
 
         CvInvoke.Imshow(memberName, show);
         CvInvoke.WaitKey(Environment.GetEnvironmentVariable("DebugImgWait") == "true" ? 0 : 1);

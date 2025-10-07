@@ -26,7 +26,7 @@ public class DialogMatcher(
 
     private GaMat GetNameTag(string name)
     {
-        return new GaMat(templateManager.GetEbTemplate(name));
+        return new GaMat(templateManager.GetTemplate(TemplateUsage.DialogNameTag, name));
     }
 
     private Point DialogMatchNameTag(Mat img, DialogFrameSet dialog, int frameIndex = -1)
@@ -162,12 +162,12 @@ public class DialogMatcher(
 
         bool LocalMatch(Mat src, GaMat tmp, double threshold, TemplateMatchCachePool.MatchUsage usage)
         {
-            var offset = templateManager.DbTemplateMaxSize().Height;
+            var offset = templateManager.TemplateMaxSize(TemplateUsage.DialogContent).Height;
             Rectangle dialogStartPosition = new(
                 point.X + (int)(0.1 * offset),
-                point.Y + (int)(1.0 * offset),
-                (int)(3.5 * offset),
-                (int)(1.8 * offset)
+                point.Y + (int)(1.1 * offset),
+                (int)(4.0 * offset),
+                (int)(2.0 * offset)
             );
             if (dialog.Data.Shake)
                 dialogStartPosition.Extend(0.6);
@@ -191,9 +191,9 @@ public class DialogMatcher(
             var dialogBody1 = content[..1];
             var dialogBody2 = content[..2];
             var dialogBody3 = content.Length >= 3 ? content[..3] : content[..2];
-            var mat1 = templateManager.GetDbTemplate(dialogBody1);
-            var mat2 = templateManager.GetDbTemplate(dialogBody2);
-            var mat3 = templateManager.GetDbTemplate(dialogBody3);
+            var mat1 = templateManager.GetTemplate(TemplateUsage.DialogContent, dialogBody1);
+            var mat2 = templateManager.GetTemplate(TemplateUsage.DialogContent, dialogBody2);
+            var mat3 = templateManager.GetTemplate(TemplateUsage.DialogContent, dialogBody3);
             return [new GaMat(mat1), new GaMat(mat2), new GaMat(mat3)];
         }
     }
@@ -211,10 +211,10 @@ public class DialogMatcher(
         return LastNotProcessedIndex(Set);
     }
 
-    public int DebugSetFinishedUntilContains(string targetString, string speaker = null) =>
+    public int DebugSetFinishedUntilContains(string targetString, string? speaker = null) =>
         DebugSetFinishedUntilContains(Set, targetString, speaker);
 
-    private static int DebugSetFinishedUntilContains(IList<DialogFrameSet> set, string targetString, string speaker)
+    private static int DebugSetFinishedUntilContains(IList<DialogFrameSet> set, string targetString, string? speaker)
     {
         for (var i = 0; i < set.Count; i++)
         {

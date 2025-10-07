@@ -72,7 +72,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
     private GaMat GetNameTag(string name)
     {
-        return new GaMat(templateManager.GetEbTemplate(name));
+        return new GaMat(templateManager.GetTemplate(TemplateUsage.DialogNameTag,name));
     }
 
     private static Queue<char> FormatDialogBodyArr(string body)
@@ -379,7 +379,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
         IEnumerable<SubtitleEvent> GenerateBannerEvent(BannerFrameSet set)
         {
-            var offset = templateManager.DbTemplateMaxSize().Height;
+            var offset = templateManager.TemplateMaxSize(TemplateUsage.BannerContent).Height;
             var center = videoInfo.Resolution.Center();
             center.Y += (int)(offset * 2.5);
             center.Y = center.Y / 20 * 20;

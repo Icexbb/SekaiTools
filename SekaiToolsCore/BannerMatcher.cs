@@ -21,7 +21,7 @@ public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
 
     private GaMat GetTemplate(string content)
     {
-        return new GaMat(templateManager.GetDbTemplate(content));
+        return new GaMat(templateManager.GetTemplate(TemplateUsage.BannerContent, content));
     }
 
 
@@ -59,7 +59,7 @@ public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
         bool LocalMatch(Mat src, GaMat tmp)
         {
             var cropArea = UtilFunc.FromCenter(img.Size.Center(),
-                new Size((int)(tmp.Size.Height * text.Length * 1.4), (int)(tmp.Size.Height * 1.4)));
+                new Size((int)(tmp.Size.Height * text.Length * 1.5), (int)(tmp.Size.Height * 1.5)));
             var imgCropped = new Mat(src, cropArea);
             MatProcessor.LaplaceSharpen(imgCropped);
             // imgCropped

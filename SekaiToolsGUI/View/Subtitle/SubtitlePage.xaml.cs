@@ -373,13 +373,7 @@ public partial class SubtitlePage
 
     private MatchingThreshold GetMatchingThreshold()
     {
-        return new MatchingThreshold
-        {
-            DialogNormal = 0.80,
-            DialogSpecial = 0.80,
-            BannerNormal = 0.80,
-            MarkerNormal = 0.80
-        };
+        return new MatchingThreshold();
     }
 
     private void StartProcess()

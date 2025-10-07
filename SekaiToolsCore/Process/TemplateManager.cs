@@ -4,33 +4,29 @@ using System.Drawing.Text;
 using System.Text.RegularExpressions;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
+using Emgu.CV.Structure;
 
 namespace SekaiToolsCore.Process;
 
-public partial class TemplateManager
+public enum TemplateUsage
+{
+    DialogNameTag,
+    DialogContent,
+    BannerContent,
+    MarkerContent,
+}
+
+public partial class TemplateManager(Size videoResolution, bool noScale = false)
 {
     private const string MenuSignBase = "menu-107px.png";
     private const string DbFontBase = "FOT-RodinNTLGPro-DB.otf";
     private const string EbFontBase = "FOT-RodinNTLGPro-EB.otf";
-    private readonly Dictionary<string, Mat> _dbTemplate = new();
-    private readonly string[] _dbTexts;
-    private readonly Dictionary<string, Mat> _ebTemplate = new();
-    private readonly string[] _ebTexts;
-    private readonly bool _noScale;
-    private readonly Size _videoResolution;
+
+    private readonly Dictionary<TemplateUsage, Dictionary<string, Mat>?> _template = new();
+
     private Mat? _menuSign;
 
-    public TemplateManager(Size videoResolution, IEnumerable<string> dbTexts, IEnumerable<string> ebTexts,
-        bool noScale = false)
-    {
-        _videoResolution = videoResolution;
-        _dbTexts = dbTexts.GroupBy(p => p).Select(p => p.Key).ToArray();
-        _ebTexts = ebTexts.GroupBy(p => p).Select(p => p.Key).ToArray();
-        _noScale = noScale;
-        GenerateTemplates();
-    }
-
-    private double VideoRatio => _videoResolution.Width / (double)_videoResolution.Height;
+    private double VideoRatio => videoResolution.Width / (double)videoResolution.Height;
 
 
     public Mat GetMenuSign()
@@ -40,10 +36,10 @@ public partial class TemplateManager
         if (!File.Exists(menuTemplatePath)) throw new FileNotFoundException();
         var menuTemplate = CvInvoke.Imread(menuTemplatePath, ImreadModes.Unchanged)!;
         int menuSize;
-        if (_videoResolution.Height / (double)_videoResolution.Width > 16.0 / 9)
-            menuSize = (int)(_videoResolution.Height * 0.0741);
+        if (videoResolution.Height / (double)videoResolution.Width > 16.0 / 9)
+            menuSize = (int)(videoResolution.Height * 0.0741);
         else
-            menuSize = (int)(_videoResolution.Width * 0.0417);
+            menuSize = (int)(videoResolution.Width * 0.0417);
 
         CvInvoke.Resize(menuTemplate, menuTemplate, new Size(menuSize, menuSize));
         // var result = new TemplateGrayAlpha(menuTemplate, false);
@@ -62,25 +58,21 @@ public partial class TemplateManager
         }
 
         return real ? new Size(maxWidth, maxHeight) :
-            _noScale ? new Size(maxWidth, maxHeight) : new Size(maxWidth / 5, maxHeight / 5);
+            noScale ? new Size(maxWidth, maxHeight) : new Size(maxWidth / 5, maxHeight / 5);
     }
 
-    public Size EbTemplateMaxSize(bool real = false)
+    public Size TemplateMaxSize(TemplateUsage usage, bool real = false)
     {
-        return MaxSize(_ebTemplate.Values, real);
-    }
-
-    public Size DbTemplateMaxSize(bool real = false)
-    {
-        return MaxSize(_dbTemplate.Values, real);
+        var valueCollection = _template[usage]?.Values;
+        return valueCollection != null ? MaxSize(valueCollection, real) : new Size(0, 0);
     }
 
     private int GetFontSize()
     {
-        var scale = (_noScale ? 1 : 5) * 0.95;
+        var scale = (noScale ? 1 : 5) * 0.95;
         var size = VideoRatio > 16 / 9.0
-            ? _videoResolution.Height * 0.043
-            : _videoResolution.Width * 0.024;
+            ? videoResolution.Height * 0.043
+            : videoResolution.Width * 0.024;
         var result = (int)(size * scale);
         return result;
     }
@@ -114,97 +106,135 @@ public partial class TemplateManager
         return GetFont(fontFilePath, GetFontSize());
     }
 
-    private static Mat CreateImageWithText(Font font, string text)
+    private Mat CreateImageWithText(TemplateUsage usage, string text)
     {
-        var byChar = font.Name.Contains("DB");
-        if (TextRegex().Matches(text).Count > 0)
-            byChar = false;
-
-        var strokeColor = Color.FromArgb(255, 64, 64, 64);
-        if (font.Name.Contains("DB"))
+        var font = usage switch
         {
-            strokeColor = Color.FromArgb(0, 128, 128, 128);
-        }
+            TemplateUsage.DialogNameTag => GetEbFont(),
+            TemplateUsage.DialogContent or TemplateUsage.BannerContent or TemplateUsage.MarkerContent => GetDbFont(),
+            _ => throw new ArgumentOutOfRangeException(nameof(usage), usage, null)
+        };
+
+        var byChar = false;
+        // var byChar = font.Name.Contains("DB");
+        // if (TextRegex().Matches(text).Count > 0)
+        //     byChar = false;
+
 
         var bitmap = new Bitmap((int)(text.Length * font.Size * 2), (int)font.Size * 2);
         bitmap.MakeTransparent();
         var graphics = Graphics.FromImage(bitmap);
-        graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        if (byChar)
-        {
-            for (var i = 0; i < text.Length; i++)
-            {
-                var sf = new StringFormat();
-                var pos = new Point((int)(10 + font.Size * 1.01 * i), 10);
-                using GraphicsPath path = new();
-                path.AddString(text[i].ToString(), font.FontFamily, (int)font.Style, font.Size, pos, sf);
-                DrawStroke(path);
-                // 填充
-                DrawText(path);
-            }
-        }
-        else
-        {
-            using GraphicsPath path = new();
+        graphics.SmoothingMode = SmoothingMode.HighQuality;
 
-            path.AddString(text, font.FontFamily, (int)font.Style, font.Size, new Point(10, 10),
-                new StringFormat());
-            DrawStroke(path);
-            DrawText(path);
-        }
+        Action<GraphicsPath> drawStroke;
+        Action<GraphicsPath> drawText;
 
-        return CropZero(bitmap.ToMat());
-
-        void DrawStroke(GraphicsPath path)
+        const int fillScale = 235;
+        var fillColor = Color.FromArgb(255, fillScale, fillScale, fillScale);
+        const int grayScale = 64;
+        var strokeColor = Color.FromArgb(255, grayScale, grayScale, grayScale);
+        switch (usage)
         {
-            var width = font.Size / 5f;
-            using Pen pen = new(strokeColor, width);
-            pen.LineJoin = LineJoin.Round;
-            graphics.DrawPath(pen, path);
-        }
+            case TemplateUsage.BannerContent:
+                drawStroke = path =>
+                {
+                    var width = font.Size / 4f;
+                    using Pen pen = new(strokeColor, width);
+                    pen.LineJoin = LineJoin.Round;
+                    graphics.DrawPath(pen, path);
+                };
 
-        void DrawText(GraphicsPath path)
-        {
-            using Brush brush = new SolidBrush(Color.White);
-            graphics.FillPath(brush, path);
+                drawText = path =>
+                {
+                    using Brush brush = new SolidBrush(fillColor);
+                    graphics.FillPath(brush, path);
+                };
+                if (byChar)
+                {
+                    for (var i = 0; i < text.Length; i++)
+                    {
+                        var sf = new StringFormat();
+                        var pos = new Point((int)(10 + font.Size * 1.01 * i) + 1, 10);
+                        using GraphicsPath path = new();
+                        path.AddString(text[i].ToString(), font.FontFamily, (int)font.Style, font.Size, pos, sf);
+                        // drawStroke(path);
+                        drawText(path);
+                    }
+                }
+                else
+                {
+                    using GraphicsPath path = new();
+
+                    path.AddString(text, font.FontFamily, (int)font.Style, font.Size, new Point(10, 10),
+                        new StringFormat(StringFormatFlags.FitBlackBox)
+                    );
+                    // drawStroke(path);
+                    drawText(path);
+                }
+
+                var mat = CropZero(bitmap.ToMat());
+
+                var extendPixel = (int)(font.Size / 16f);
+                var extendSize = new Size(mat.Width + extendPixel * 2, mat.Height + extendPixel * 2);
+                var expandedMat = new Mat(extendSize, mat.Depth, mat.NumberOfChannels);
+                const int bannerGrayScale = 100;
+                mat.CopyTo(new Mat(expandedMat, new Rectangle(extendPixel, extendPixel, mat.Width, mat.Height)));
+
+                var bgMat = new Mat(expandedMat.Size, expandedMat.Depth, expandedMat.NumberOfChannels);
+                bgMat.SetTo(new MCvScalar(bannerGrayScale, bannerGrayScale, bannerGrayScale, 255));
+                CvInvoke.BitwiseOr(bgMat, expandedMat, expandedMat);
+                return expandedMat;
+            default:
+                drawStroke = path =>
+                {
+                    var width = font.Size / 5f;
+                    using Pen pen = new(strokeColor, width);
+                    pen.LineJoin = LineJoin.Round;
+                    graphics.DrawPath(pen, path);
+                };
+
+                drawText = path =>
+                {
+                    using Brush brush = new SolidBrush(fillColor);
+                    graphics.FillPath(brush, path);
+                };
+                if (byChar)
+                {
+                    for (var i = 0; i < text.Length; i++)
+                    {
+                        var sf = new StringFormat();
+                        var pos = new Point((int)(10 + font.Size * 1.01 * i) + 1, 10);
+                        using GraphicsPath path = new();
+                        path.AddString(text[i].ToString(), font.FontFamily, (int)font.Style, font.Size, pos, sf);
+                        drawStroke(path);
+                        drawText(path);
+                    }
+                }
+                else
+                {
+                    using GraphicsPath path = new();
+
+                    path.AddString(text, font.FontFamily, (int)font.Style, font.Size, new Point(10, 10),
+                        new StringFormat());
+                    drawStroke(path);
+                    drawText(path);
+                }
+
+                return CropZero(bitmap.ToMat());
         }
     }
 
-    public Mat GetDbTemplate(string text)
-    {
-        if (_dbTemplate.TryGetValue(text, out var template)) return template;
 
-        var font = GetDbFont();
-        var mat = CreateImageWithText(font, text);
-        _dbTemplate[text] = mat;
+    public Mat GetTemplate(TemplateUsage usage, string text)
+    {
+        var usageDict = _template.GetValueOrDefault(usage);
+        if (usageDict == null) _template[usage] = usageDict = new Dictionary<string, Mat>();
+
+        if (usageDict.TryGetValue(text, out var template)) return template;
+
+        var mat = CreateImageWithText(usage, text);
+        usageDict[text] = mat;
         return mat;
-    }
-
-    public Mat GetEbTemplate(string text)
-    {
-        if (_ebTemplate.TryGetValue(text, out var template)) return template;
-
-        var font = GetEbFont();
-        var mat = CreateImageWithText(font, text);
-        _ebTemplate[text] = mat;
-        return mat;
-    }
-
-    private void GenerateDbTemplates()
-    {
-        foreach (var s in _dbTexts) GetDbTemplate(s);
-    }
-
-
-    private void GenerateEbTemplates()
-    {
-        foreach (var s in _ebTexts) GetEbTemplate(s);
-    }
-
-    private void GenerateTemplates()
-    {
-        GenerateDbTemplates();
-        GenerateEbTemplates();
     }
 
     [GeneratedRegex("[a-zA-Z0-9]")]

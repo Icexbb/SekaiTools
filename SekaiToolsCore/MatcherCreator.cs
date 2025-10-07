@@ -12,16 +12,7 @@ public class MatcherCreator
         VInfo = new VideoInfo(Config.VideoFilePath);
         Story = SekaiStory.FromFile(Config.ScriptFilePath, Config.TranslateFilePath);
 
-        var names = Story.Dialogs().Select(dialog => dialog.CharacterOriginal).ToList();
-        var dbs = new List<string>();
-        foreach (var dialog in Story.Dialogs())
-        {
-            dbs.Add(dialog.BodyOriginal[..1]);
-            dbs.Add(dialog.BodyOriginal[..2]);
-            if (dialog.BodyOriginal.Length >= 3) dbs.Add(dialog.BodyOriginal[..3]);
-        }
-
-        Manager = new TemplateManager(VInfo.Resolution, dbs, names);
+        Manager = new TemplateManager(VInfo.Resolution);
     }
 
     private Config Config { get; }

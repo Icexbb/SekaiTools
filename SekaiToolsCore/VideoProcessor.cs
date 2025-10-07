@@ -199,8 +199,8 @@ public class VideoProcessor
             }
             catch (Exception e)
             {
-                Callbacks.OnException(e);
                 if (Debugger.IsAttached) throw;
+                else Callbacks.OnException(e);
             }
             finally
             {

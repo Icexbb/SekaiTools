@@ -26,7 +26,7 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
         if (_templates.TryGetValue(content, out var template))
             return template;
 
-        var mat = templateManager.GetDbTemplate(content);
+        var mat = templateManager.GetTemplate(TemplateUsage.MarkerContent,content);
         const double resizeRatio = 0.90;
         CvInvoke.Resize(mat, mat, new Size((int)(mat.Width * resizeRatio), (int)(mat.Height * resizeRatio)));
         _templates.Add(content, new GaMat(mat));

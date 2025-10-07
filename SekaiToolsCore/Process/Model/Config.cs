@@ -8,11 +8,9 @@ public struct TypewriterSetting()
 
 public struct MatchingThreshold()
 {
-    public double DialogNormal { get; init; } = 0.85;
-    public double DialogSpecial { get; init; } = 0.75;
-
+    public double DialogNormal { get; init; } = 0.80;
+    public double DialogSpecial { get; init; } = 0.80;
     public double BannerNormal { get; init; } = 0.75;
-
     public double MarkerNormal { get; init; } = 0.75;
 }
 
