@@ -1,3 +1,5 @@
+using SekaiDataFetch.Source;
+
 namespace SekaiToolsGUI.ViewModel;
 
 public class DownloadPageModel : ViewModelBase
@@ -10,11 +12,11 @@ public class DownloadPageModel : ViewModelBase
         set => SetProperty(value);
     }
 
-    public DownloadSourceEditorModel CurrentSource => SourceData[CurrentSourceIndex];
+    public SourceData CurrentSource => SourceData[CurrentSourceIndex];
 
-    public DownloadSourceEditorModel[] SourceData
+    public SourceData[] SourceData
     {
-        get => GetProperty(Array.Empty<DownloadSourceEditorModel>());
+        get => GetProperty(Array.Empty<SourceData>());
         set => SetProperty(value);
     }
 }

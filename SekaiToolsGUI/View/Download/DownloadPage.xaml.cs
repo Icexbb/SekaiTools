@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.Logging;
@@ -122,28 +123,22 @@ public partial class DownloadPage : UserControl, INavigableView<DownloadPageMode
         DownloadItemBox.Items.Clear();
     }
 
-    private static async Task Download(string url, string filepath)
+    private static async Task<string> FetchString(string url)
     {
-        Log.Logger.LogInformation("{TypeName} Downloading from {Url} to {FilePath}", nameof(DownloadPage), url,
-            filepath);
-
+        Log.Logger.LogInformation("GET {Url}", url);
         var client = new HttpClient(GetHttpHandler());
         var response = await client.GetAsync(url);
         response.EnsureSuccessStatusCode();
         var responseContent = await response.Content.ReadAsStringAsync();
-        var saveDir = Path.GetDirectoryName(filepath);
-        if (saveDir != null && !Directory.Exists(saveDir))
-            Directory.CreateDirectory(saveDir);
-        await File.WriteAllTextAsync(filepath, responseContent);
-        return;
+
+        return responseContent;
 
         HttpMessageHandler GetHttpHandler()
         {
             var proxy = SettingPageModel.Instance.GetProxy();
             return proxy.ProxyType switch
             {
-                Proxy.Type.None => new HttpClientHandler(),
-                Proxy.Type.System => new HttpClientHandler(),
+                Proxy.Type.None or Proxy.Type.System => new HttpClientHandler(),
                 Proxy.Type.Http => new HttpClientHandler
                 {
                     Proxy = new WebProxy(proxy.Host, proxy.Port), UseProxy = true
@@ -157,7 +152,39 @@ public partial class DownloadPage : UserControl, INavigableView<DownloadPageMode
         }
     }
 
-    public SourceData GetSourceType() => ViewModel.CurrentSource.Data;
+    private static async Task Download(string url, string filepath)
+    {
+        Log.Logger.LogInformation("{TypeName} Downloading from {Url} to {FilePath}", nameof(DownloadPage), url,
+            filepath);
+        var responseContent = await FetchString(url);
+
+        var saveDir = Path.GetDirectoryName(filepath);
+        if (saveDir != null && !Directory.Exists(saveDir))
+            Directory.CreateDirectory(saveDir);
+        await File.WriteAllTextAsync(filepath, responseContent);
+    }
+
+    public SourceData GetSourceType() => ViewModel.CurrentSource;
+
+    private async void InitDownloadSource()
+    {
+        const string sourceListUrl = "http://v.xbb.moe:8080/data/source";
+        try
+        {
+            // structure : {data:SourceData[],keyword:string}
+            var sourceListJson = await FetchString(sourceListUrl);
+            var sourceListDoc = JsonDocument.Parse(sourceListJson);
+            var sourceList = sourceListDoc.RootElement.GetProperty("data").Deserialize<SourceData[]>()!;
+            ViewModel.SourceData = sourceList;
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show("数据源获取失败: " + e.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            Log.Logger.LogError(e, "{TypeName} InitDownloadSource Error", nameof(DownloadPage));
+            ViewModel.SourceData = SourceData.Default;
+            if (Debugger.IsAttached) throw;
+        }
+    }
 
     private async void ButtonRefresh_OnClick(object sender, RoutedEventArgs e)
     {
@@ -180,6 +207,6 @@ public partial class DownloadPage : UserControl, INavigableView<DownloadPageMode
 
     public void OnNavigated()
     {
-        ViewModel.SourceData = SettingPageModel.Instance.Source;
+        InitDownloadSource();
     }
 }

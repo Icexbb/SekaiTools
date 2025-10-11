@@ -33,7 +33,7 @@ public partial class ActionStoryItem : UserControl
         {
             DependencyObject? parent = this;
             while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
-            SourceList.Instance.SourceData = DownloadPageModel.Instance.CurrentSource.Data;
+            SourceList.Instance.SourceData = DownloadPageModel.Instance.CurrentSource;
             var url = SourceList.Instance.ActionSet(AreaStorySet);
             (parent as DownloadPage)?.AddTask(AreaStorySet.ActionSet.ScriptId, url);
         });

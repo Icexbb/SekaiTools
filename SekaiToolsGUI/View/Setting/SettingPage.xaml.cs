@@ -44,14 +44,5 @@ public partial class SettingPage : UserControl, INavigableView<SettingPageModel>
         var dialogResult = await dialogService.ShowAsync(dialog, token);
         return dialogResult != ContentDialogResult.Primary ? "" : dialog.FontName;
     }
-
-    private void NewSourceButton_OnClick(object sender, RoutedEventArgs e)
-    {
-        ViewModel.NewSource();
-    }
-
-    private void SourceResetButton_OnClick(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ResetSource();
-    }
+    
 }

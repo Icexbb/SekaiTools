@@ -16,7 +16,6 @@ public class SourceData
     public required string SpecialStoryTemplate { get; init; }
     public required string UnitStoryTemplate { get; init; }
 
-    public required bool Deletable { get; init; } = true;
 
     public static SourceData[] Default =>
     [
@@ -36,7 +35,6 @@ public class SourceData
                 "scenario/special/{abName}/{scenarioId}.asset",
             UnitStoryTemplate =
                 "scenario/unitstory/{abName}/{scenarioId}.asset",
-            Deletable = false
         },
         new()
         {
@@ -53,7 +51,6 @@ public class SourceData
                 "startapp/scenario/special/{abName}/{scenarioId}.json",
             UnitStoryTemplate =
                 "startapp/scenario/unitstory/{abName}/{scenarioId}.json",
-            Deletable = false
         },
         new()
         {
@@ -70,7 +67,6 @@ public class SourceData
                 "startapp/scenario/special/{abName}/{scenarioId}.json",
             UnitStoryTemplate =
                 "startapp/scenario/unitstory/{abName}/{scenarioId}.json",
-            Deletable = false
         },
     ];
 
@@ -79,6 +75,12 @@ public class SourceData
         if (!File.Exists(filepath)) return Default;
         var readItem = JsonSerializer.Deserialize<SourceData[]>(File.ReadAllText(filepath));
         return readItem == null || readItem.Length == 0 ? Default : readItem;
+    }
+    
+    public static SourceData FromJson(string json)
+    {
+        var readItem = JsonSerializer.Deserialize<SourceData>(json);
+        return readItem ?? throw new Exception("Failed to parse source data from json");
     }
 
     public static string Dump(SourceData[] data)

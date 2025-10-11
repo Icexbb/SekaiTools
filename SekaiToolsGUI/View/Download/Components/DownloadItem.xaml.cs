@@ -26,9 +26,9 @@ public partial class DownloadItem : UserControl
         {
             var parent = Parent;
             while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
-            SourceList.Instance.SourceData = DownloadPageModel.Instance.CurrentSource.Data;
+            SourceList.Instance.SourceData = DownloadPageModel.Instance.CurrentSource;
 
-            var key = DownloadPageModel.Instance.CurrentSource.Data.SourceName + " - " + Key;
+            var key = DownloadPageModel.Instance.CurrentSource.SourceName + " - " + Key;
             var url = Url();
             (parent as DownloadPage)?.AddTask(key, url);
         });

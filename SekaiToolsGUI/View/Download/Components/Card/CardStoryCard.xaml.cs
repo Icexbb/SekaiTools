@@ -70,7 +70,7 @@ public partial class CardStoryCard
     {
         if (CardStorySet == null) return;
 
-        SourceList.Instance.SourceData = DownloadPageModel.Instance.CurrentSource.Data;
+        SourceList.Instance.SourceData = DownloadPageModel.Instance.CurrentSource;
 
         foreach (var panelItemsChild in PanelItems.Children)
         {

@@ -233,40 +233,6 @@
                     </ui:CardControl>
                 </StackPanel>
             </ui:CardExpander>
-            <ui:CardExpander Margin="0,0,0,8" Icon="{ui:SymbolIcon SoundSource24}" ContentPadding="5">
-                <ui:CardExpander.Header>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="下载源" />
-                        <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="设置获取下载的服务源" />
-                    </Grid>
-                </ui:CardExpander.Header>
-                <ui:CardExpander.Content>
-                    <StackPanel>
-                        <StackPanel>
-                            <ItemsControl ItemsSource="{Binding Source}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <components:DownloadSourceEditor />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Button HorizontalAlignment="Stretch" Click="NewSourceButton_OnClick">+</Button>
-                            <Button Grid.Column="1" HorizontalAlignment="Stretch" Click="SourceResetButton_OnClick">重置</Button>
-                        </Grid>
-                    </StackPanel>
-                </ui:CardExpander.Content>
-            </ui:CardExpander>
             <ui:CardExpander ContentPadding="0"
                              Icon="{ui:ImageIcon 'pack://application:,,,/Resource/icon.png', Width=28, Height=28}">
                 <ui:CardExpander.Header>
