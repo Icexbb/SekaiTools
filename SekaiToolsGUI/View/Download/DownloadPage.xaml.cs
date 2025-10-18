@@ -168,13 +168,13 @@ public partial class DownloadPage : UserControl, INavigableView<DownloadPageMode
 
     private async void InitDownloadSource()
     {
-        const string sourceListUrl = "http://v.xbb.moe:8080/data/source";
+        const string sourceListUrl = "https://config.g.xbb.moe/source.json";
         try
         {
             // structure : {data:SourceData[],keyword:string}
             var sourceListJson = await FetchString(sourceListUrl);
             var sourceListDoc = JsonDocument.Parse(sourceListJson);
-            var sourceList = sourceListDoc.RootElement.GetProperty("data").Deserialize<SourceData[]>()!;
+            var sourceList = sourceListDoc.RootElement.Deserialize<SourceData[]>()!;
             ViewModel.SourceData = sourceList;
         }
         catch (Exception e)
