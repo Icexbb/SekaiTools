@@ -10,11 +10,9 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '8.0.x' # The .NET SDK version to use
-  BUILD_DIR: 'SekaiTools.Nightly'
-  RESOURCE_DIR: 'resource'
+  DOTNET_VERSION: '9.0.x' # The .NET SDK version to use
+  BUILD_DIR: 'SekaiTools'
   PROJECT_NAME: 'SekaiToolsGUI'
-  SEVEN_ZIP_EXE: './resource/vapourSynth/7z.exe'
 
 jobs:
   build:
@@ -24,13 +22,14 @@ jobs:
       matrix:
         os: [ windows-latest ]
 
-    # Each job run contains these five steps
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+          
       - name: Dotnet Build
         run: |
           dotnet restore ${{ env.PROJECT_NAME }}
@@ -41,7 +40,11 @@ jobs:
           rm -r ${{ env.BUILD_DIR }}/runtimes/win-arm64
           rm -r ${{ env.BUILD_DIR }}/*.pdb  
 
+      - name: Zip the Build
+        run: 7z a SekaiTools-${{ env.VERSION }}.7z ${{ env.BUILD_DIR }}/
+
+      - name: Create Release and Upload Release Asset
       - uses: actions/upload-artifact@v4
         with:
-          name: SekaiTools.Nightly
-          path: ${{ env.BUILD_DIR }}
+          name: SekaiTools-${{ env.VERSION }}.7z
+          path: SekaiTools-${{ env.VERSION }}.7z

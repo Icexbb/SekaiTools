@@ -2,13 +2,11 @@ name: .NET Core Release
 
 on:
   push:
-    # Sequence of patterns matched against refs/tags
     tags:
-      - "*.*.*" # Push events to matching v*, i.e. v1.0, v20.15.10
+      - "*.*.*"
 env:
   DOTNET_VERSION: '9.0.x' # The .NET SDK version to use
   BUILD_DIR: 'SekaiTools.Nightly'
-  RESOURCE_DIR: 'resource'
   PROJECT_NAME: 'SekaiToolsGUI'
 
 jobs:
@@ -34,8 +32,7 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Setup .NET Core
-        uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -50,7 +47,7 @@ jobs:
           rm -r ${{ env.BUILD_DIR }}/*.pdb  
 
       - name: Zip the Build
-        run: 7z a SekaiTools-${{ env.VERSION }}.7z ${{ env.BUILD_DIR }}
+        run: 7z a SekaiTools-${{ env.VERSION }}.7z ${{ env.BUILD_DIR }}/
 
       - name: Create Release and Upload Release Asset
         uses: softprops/action-gh-release@v2

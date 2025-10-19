@@ -13,6 +13,7 @@
         <LangVersion>default</LangVersion>
         <PackageProjectUrl>https://github.com/icexbb/sekaiTools</PackageProjectUrl>
         <PackageIcon>Resource\icon.png</PackageIcon>
+        <RuntimeIdentifiers>win-x64;</RuntimeIdentifiers>
     </PropertyGroup>
 
     <ItemGroup>
@@ -207,10 +208,30 @@
         </Page>
     </ItemGroup>
 
-    <Target Name="MoveDependenciesToLibs" AfterTargets="Build">
+    <!-- 在主项目打包时，自动构建 Updater 并复制 -->
+    <Target Name="BuildUpdater" AfterTargets="Build">
+        <!-- 构建 Updater 项目 -->
+        <MSBuild Projects="..\Updater\Updater.csproj"
+                 Targets="Publish"
+                 Properties="Configuration=$(Configuration);PublishDir=..\Updater\build\;"/>
+    </Target>
+
+    <Target Name="CopyUpdaterToPublish" AfterTargets="BuildUpdater">
+        <!-- 将 Updater.exe 复制到主程序的发布目录 -->
+        <ItemGroup>
+            <UpdaterFiles Include="..\Updater\build\**\*"/>
+        </ItemGroup>
+
+        <Copy SourceFiles="@(UpdaterFiles)"
+              DestinationFolder="$(OutputPath)%(RecursiveDir)"/>
+    </Target>
+
+    <Target Name="MoveDependenciesToLibs" AfterTargets="CopyUpdaterToPublish">
         <!-- 匹配所有 dll，排除主程序自己的 -->
         <ItemGroup>
-            <BuildDlls Include="$(OutputPath)*.dll" Exclude="$(OutputPath)$(AssemblyName).dll"/>
+            <BuildDlls Include="$(OutputPath)*.dll"/>
+            <BuildDlls Remove="$(OutputPath)Updater.dll"/>
+            <BuildDlls Remove="$(OutputPath)$(AssemblyName).dll"/>
         </ItemGroup>
 
         <!-- 创建 libs 目录 -->
@@ -223,11 +244,26 @@
                 Condition="Exists('%(BuildDlls.FullPath)')"/>
     </Target>
     
+
     <Target Name="CleanExtraFiles" AfterTargets="MoveDependenciesToLibs">
         <ItemGroup>
             <DeleteFiles Include="$(OutputPath)**\*.pdb"/>
+            <DeleteFiles Include="$(OutputPath)runtimes\win-x86\**\*"/>
+            <DeleteFiles Include="$(OutputPath)runtimes\win-arm64\**\*"/>
+            <DeleteFiles Include="$(OutputPath)runtimes\win\**\*"/>
+            <DeleteFiles Include="$(OutputPath)runtimes\browser\**\*"/>
+            <DeleteDirs Include="$(OutputPath)runtimes\win-x86"/>
+            <DeleteDirs Include="$(OutputPath)runtimes\win-arm64"/>
+            <DeleteDirs Include="$(OutputPath)runtimes\win"/>
+            <DeleteDirs Include="$(OutputPath)runtimes\browser"/>
         </ItemGroup>
 
         <Delete Files="@(DeleteFiles)"/>
+        <RemoveDir Directories="@(DeleteDirs)"/>
     </Target>
+
+    <Target Name="CopyExtraTools" AfterTargets="CleanExtraFiles">
+        <Copy SourceFiles="..\Updater\7zr.exe" DestinationFolder="$(OutputPath)"/>
+    </Target>
+
 </Project>
