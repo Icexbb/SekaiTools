@@ -6,11 +6,10 @@ on:
     tags:
       - "*.*.*" # Push events to matching v*, i.e. v1.0, v20.15.10
 env:
-  DOTNET_VERSION: '8.0.x' # The .NET SDK version to use
+  DOTNET_VERSION: '9.0.x' # The .NET SDK version to use
   BUILD_DIR: 'SekaiTools.Nightly'
   RESOURCE_DIR: 'resource'
   PROJECT_NAME: 'SekaiToolsGUI'
-  SEVEN_ZIP_EXE: './resource/vapourSynth/7z.exe'
 
 jobs:
   build:
@@ -46,13 +45,12 @@ jobs:
           dotnet build ${{ env.PROJECT_NAME }} --configuration Release --no-restore -o ${{ env.BUILD_DIR }}
       - name: Sort Artifacts
         run: |
-          cp -r ${{ env.RESOURCE_DIR }} ${{ env.BUILD_DIR }}
           rm -r ${{ env.BUILD_DIR }}/runtimes/win-x86
           rm -r ${{ env.BUILD_DIR }}/runtimes/win-arm64
           rm -r ${{ env.BUILD_DIR }}/*.pdb  
 
       - name: Zip the Build
-        run: ${{ env.SEVEN_ZIP_EXE }} a -tzip SekaiTools-${{ env.VERSION }}.7z ${{ env.BUILD_DIR }}
+        run: 7z a SekaiTools-${{ env.VERSION }}.7z ${{ env.BUILD_DIR }}
 
       - name: Create Release and Upload Release Asset
         uses: softprops/action-gh-release@v2

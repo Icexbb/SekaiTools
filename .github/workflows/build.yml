@@ -37,7 +37,6 @@ jobs:
           dotnet build ${{ env.PROJECT_NAME }} --configuration Release --no-restore -o ${{ env.BUILD_DIR }}
       - name: Sort Artifacts
         run: |
-          cp -r ${{ env.RESOURCE_DIR }} ${{ env.BUILD_DIR }}
           rm -r ${{ env.BUILD_DIR }}/runtimes/win-x86
           rm -r ${{ env.BUILD_DIR }}/runtimes/win-arm64
           rm -r ${{ env.BUILD_DIR }}/*.pdb  
