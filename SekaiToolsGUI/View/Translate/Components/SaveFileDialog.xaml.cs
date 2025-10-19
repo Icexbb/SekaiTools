@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows.Controls;
 using SekaiToolsGUI.ViewModel;
+using SekaiToolsGUI.ViewModel.Subtitle;
 using Wpf.Ui.Controls;
 
 namespace SekaiToolsGUI.View.Translate.Components;

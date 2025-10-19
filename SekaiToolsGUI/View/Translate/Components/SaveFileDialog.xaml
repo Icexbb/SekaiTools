@@ -7,10 +7,11 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:components="clr-namespace:SekaiToolsGUI.View.Translate.Components"
     xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
+    xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
     mc:Ignorable="d"
     ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
     ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-    d:DataContext="{d:DesignInstance viewModel:SaveFileDialogModel, IsDesignTimeCreatable=True}"
+    d:DataContext="{d:DesignInstance subtitle:SaveFileDialogModel, IsDesignTimeCreatable=True}"
     IsPrimaryButtonEnabled="True" IsSecondaryButtonEnabled="True"
     Title="保存选项" DefaultButton="Primary"
     PrimaryButtonText="保存" SecondaryButtonText="浏览" CloseButtonText="取消">

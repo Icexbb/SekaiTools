@@ -1,4 +1,4 @@
-namespace SekaiToolsGUI.ViewModel;
+namespace SekaiToolsGUI.ViewModel.Subtitle;
 
 public class SaveFileDialogModel : ViewModelBase
 {
