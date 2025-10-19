@@ -27,6 +27,7 @@
     <ItemGroup>
         <ProjectReference Include="..\SekaiDataFetch\SekaiDataFetch.csproj"/>
         <ProjectReference Include="..\SekaiToolsCore\SekaiToolsCore.csproj"/>
+        <ProjectReference Include="..\Updater\Updater.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
