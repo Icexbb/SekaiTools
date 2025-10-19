@@ -28,10 +28,8 @@ public class ContentMatcher(TemplateManager templateManager, Config config)
         var result = TemplateMatcher.Match(frameCropped, Template, TemplateMatchCachePool.MatchUsage.ContentStartSign);
 
         if (frameIndex != -1)
-        {
             Log.Logger.LogDebug("{TypeName} Frame {FrameIndex} Match Content Start Sign Result: {MaxVal}",
                 nameof(ContentMatcher), frameIndex, result.MaxVal);
-        }
 
         return result.MaxVal > Threshold;
     }

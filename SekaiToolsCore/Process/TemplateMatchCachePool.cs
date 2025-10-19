@@ -17,8 +17,17 @@ public class TemplateMatchCachePool
         Marker = 6,
         Misc = 7
     }
-    
+
     private static List<TemplateMatchCachePool>? _globalPool;
+    public Mat diffMat;
+
+    public Mat? prevImg;
+    public MatchResult prevResult;
+
+    public TemplateMatchCachePool()
+    {
+        diffMat = new Mat();
+    }
 
     private static List<TemplateMatchCachePool> GlobalPool
     {
@@ -28,16 +37,16 @@ public class TemplateMatchCachePool
             const int len = (int)MatchUsage.Misc + 1;
             _globalPool = new List<TemplateMatchCachePool>(len);
 
-            for (var i = 0; i < len; i++)
-            {
-                _globalPool.Add(new TemplateMatchCachePool());
-            }
+            for (var i = 0; i < len; i++) _globalPool.Add(new TemplateMatchCachePool());
 
             return _globalPool;
         }
     }
 
-    public static TemplateMatchCachePool GetPool(MatchUsage usage) => GlobalPool[(int)usage];
+    public static TemplateMatchCachePool GetPool(MatchUsage usage)
+    {
+        return GlobalPool[(int)usage];
+    }
 
     public static void NextDialog()
     {
@@ -47,15 +56,6 @@ public class TemplateMatchCachePool
         GlobalPool[(int)MatchUsage.DialogContent3].Reset();
     }
 
-    public Mat? prevImg;
-    public Mat diffMat;
-    public MatchResult prevResult;
-
-    public TemplateMatchCachePool()
-    {
-        diffMat = new Mat();
-    }
-    
     public void RegisterResult(Mat img, MatchResult result)
     {
         prevImg = img;
@@ -64,28 +64,18 @@ public class TemplateMatchCachePool
 
     public bool Query(Mat img)
     {
-        if (img == null || prevImg == null)
-        {
-            return false;
-        }
-        
-        // treat two empty mat as identical as well
-        if (img.IsEmpty && prevImg.IsEmpty) {
-            return true;
-        }
-        // if dimensionality of two mat is not identical, these two mat is not identical
-        if (img.Cols != prevImg.Cols || img.Rows != prevImg.Rows || img.Dims != prevImg.Dims) {
-            return false;
-        }
-        
-        CvInvoke.Compare(img, prevImg, diffMat, CmpType.NotEqual);
-        int diffPx = CvInvoke.CountNonZero(diffMat);
+        if (img == null || prevImg == null) return false;
 
-        if (diffPx > 0)
-        {
-            return false;
-        }
-        
+        // treat two empty mat as identical as well
+        if (img.IsEmpty && prevImg.IsEmpty) return true;
+        // if dimensionality of two mat is not identical, these two mat is not identical
+        if (img.Cols != prevImg.Cols || img.Rows != prevImg.Rows || img.Dims != prevImg.Dims) return false;
+
+        CvInvoke.Compare(img, prevImg, diffMat, CmpType.NotEqual);
+        var diffPx = CvInvoke.CountNonZero(diffMat);
+
+        if (diffPx > 0) return false;
+
         return true;
     }
 

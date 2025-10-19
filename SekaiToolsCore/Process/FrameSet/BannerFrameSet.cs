@@ -5,9 +5,9 @@ namespace SekaiToolsCore.Process.FrameSet;
 
 public class BannerFrameSet(Banner data, FrameRate fps) : FrameSet
 {
+    private int _start = int.MaxValue, _end = int.MinValue;
     public Banner Data { get; } = data;
     private FrameRate Fps { get; } = fps;
-    private int _start = int.MaxValue, _end = int.MinValue;
 
     public bool Finished { get; set; }
 
@@ -17,9 +17,18 @@ public class BannerFrameSet(Banner data, FrameRate fps) : FrameSet
         if (_end < index) _end = index;
     }
 
-    public override bool IsEmpty() => _start == int.MaxValue && _end == int.MinValue;
+    public override bool IsEmpty()
+    {
+        return _start == int.MaxValue && _end == int.MinValue;
+    }
 
-    public override IProcessFrame Start() => new ProcessFrame(_start, Fps);
+    public override IProcessFrame Start()
+    {
+        return new ProcessFrame(_start, Fps);
+    }
 
-    public override IProcessFrame End() => new ProcessFrame(_end, Fps);
+    public override IProcessFrame End()
+    {
+        return new ProcessFrame(_end, Fps);
+    }
 }

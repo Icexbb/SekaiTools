@@ -4,7 +4,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using SekaiDataFetch.Item;
 using SekaiDataFetch.Source;
-using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Download;
 
 namespace SekaiToolsGUI.View.Download.Components.Action;
@@ -15,17 +14,17 @@ public partial class ActionStoryItem : UserControl
         nameof(AreaStorySet), typeof(AreaStorySet), typeof(ActionStoryItem),
         new PropertyMetadata(null, OnAreaStoryChanged));
 
+
+    public ActionStoryItem()
+    {
+        InitializeComponent();
+    }
+
     public AreaStorySet AreaStorySet { get; set; } = null!;
 
     private static void OnAreaStoryChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is ActionStoryItem control && e.NewValue is AreaStorySet areaStory) control.Initialize(areaStory);
-    }
-
-
-    public ActionStoryItem()
-    {
-        InitializeComponent();
     }
 
     private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
@@ -48,7 +47,6 @@ public partial class ActionStoryItem : UserControl
         var cIds = areaStorySet.CharacterIds.ToList();
         cIds.Sort();
         foreach (var id in cIds)
-        {
             if (id is < 1 or > 31)
             {
                 var text = new TextBlock
@@ -71,7 +69,6 @@ public partial class ActionStoryItem : UserControl
                 };
                 Icons.Children.Add(icon);
             }
-        }
 
         KeyText.Text = $"{areaStorySet.ActionSet.Id} {areaStorySet.ActionSet.ScenarioId}";
     }

@@ -22,9 +22,18 @@ public class MarkerFrameSet(Marker data, FrameRate fps) : FrameSet
         Frames.Add(new MarkerFrameResult(index + FrameIndexOffset, Fps, point));
     }
 
-    public override bool IsEmpty() => Frames.Count == 0;
+    public override bool IsEmpty()
+    {
+        return Frames.Count == 0;
+    }
 
-    public override IProcessFrame Start() => Frames[0];
+    public override IProcessFrame Start()
+    {
+        return Frames[0];
+    }
 
-    public override IProcessFrame End() => Frames[^1];
+    public override IProcessFrame End()
+    {
+        return Frames[^1];
+    }
 }

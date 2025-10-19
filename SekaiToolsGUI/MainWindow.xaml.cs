@@ -1,9 +1,5 @@
 ﻿using System.Windows;
 using SekaiToolsGUI.Interface;
-using SekaiToolsGUI.View;
-using SekaiToolsGUI.View.Download;
-using SekaiToolsGUI.View.Subtitle;
-using SekaiToolsGUI.View.Suppress;
 using SekaiToolsGUI.ViewModel;
 using Wpf.Ui;
 using Wpf.Ui.Controls;

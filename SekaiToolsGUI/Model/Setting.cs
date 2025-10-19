@@ -2,7 +2,6 @@ using System.IO;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
-using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Setting;
 
 namespace SekaiToolsGUI.Model;

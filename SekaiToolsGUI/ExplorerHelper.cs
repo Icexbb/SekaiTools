@@ -1,9 +1,8 @@
-using System.Windows.Automation;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
-
+using System.Windows.Automation;
 
 namespace SekaiToolsGUI;
 
@@ -46,9 +45,7 @@ public static class ExplorerHelper
         }
 
         if (!found)
-        {
             // 没找到，就打开并选中
             Process.Start("explorer.exe", $"/select,\"{filePath}\"");
-        }
     }
 }

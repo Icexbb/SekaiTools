@@ -5,12 +5,13 @@ namespace SekaiToolsGUI.View.General;
 
 public partial class RefreshWaitDialog : ContentDialog
 {
-    private RefreshWaitDialogModel ViewModel => (RefreshWaitDialogModel)DataContext;
-    public RefreshWaitDialog(string message = "") : base()
+    public RefreshWaitDialog(string message = "")
     {
         InitializeComponent();
         DataContext = new RefreshWaitDialogModel();
         ViewModel.Message = message;
         UpdateLayout();
     }
+
+    private RefreshWaitDialogModel ViewModel => (RefreshWaitDialogModel)DataContext;
 }

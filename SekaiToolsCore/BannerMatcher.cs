@@ -66,11 +66,9 @@ public class BannerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
             var result = TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.Banner);
 
             if (frameIndex != -1)
-            {
                 Log.Logger.LogDebug(
                     "{TypeName} Frame {FrameIndex} Match Banner {BannerIndex} Result: {MaxVal}",
                     nameof(BannerMatcher), frameIndex, LastNotProcessedIndex(), result.MaxVal);
-            }
 
             return !(result.MaxVal < config.MatchingThreshold.BannerNormal) && !(result.MaxVal > 1);
         }

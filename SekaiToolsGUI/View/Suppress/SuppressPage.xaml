@@ -5,7 +5,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
              xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance suppress:SuppressPageModel, IsDesignTimeCreatable=True}"

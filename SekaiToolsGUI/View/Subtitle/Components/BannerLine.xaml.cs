@@ -1,7 +1,6 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 using SekaiToolsCore.Process.FrameSet;
-using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Subtitle;
 using Wpf.Ui.Abstractions.Controls;
 

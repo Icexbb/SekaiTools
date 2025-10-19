@@ -18,19 +18,12 @@ public static class TemplateMatcher
     {
         var img = new Mat();
         if (imgOriginal.NumberOfChannels == 3)
-        {
             CvInvoke.CvtColor(imgOriginal, img, ColorConversion.Bgr2Gray);
-        }
         else
-        {
             img = imgOriginal;
-        }
 
         var pool = TemplateMatchCachePool.GetPool(usage);
-        if (pool.Query(img))
-        {
-            return pool.prevResult;
-        }
+        if (pool.Query(img)) return pool.prevResult;
 
         var res = MatchNoCache(img, tmp, matchingType, memberName);
         pool.RegisterResult(img, res);

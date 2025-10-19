@@ -2,7 +2,6 @@ using System.Windows;
 using System.Windows.Controls;
 using SekaiDataFetch.Item;
 using SekaiDataFetch.Source;
-using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Download;
 
 namespace SekaiToolsGUI.View.Download.Components.Card;
@@ -74,9 +73,8 @@ public partial class CardStoryCard
         SourceList.Instance.SourceData = DownloadPageModel.Instance.CurrentSource;
 
         foreach (var panelItemsChild in PanelItems.Children)
-        {
-            if (panelItemsChild is DownloadItem downloadItem) downloadItem.Recycle();
-        }
+            if (panelItemsChild is DownloadItem downloadItem)
+                downloadItem.Recycle();
 
         var itemFirst = DownloadItem.GetItem(() => SourceList.Instance.MemberStory(CardStorySet.FirstPart),
             CardName + " 前篇");

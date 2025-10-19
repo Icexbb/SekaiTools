@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using SekaiToolsCore;
-using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Suppress;
 
 namespace SekaiToolsGUI.Suppress;

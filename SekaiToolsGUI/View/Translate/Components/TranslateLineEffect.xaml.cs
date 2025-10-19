@@ -1,6 +1,5 @@
 using System.Windows.Controls;
 using SekaiToolsGUI.Interface;
-using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Translate;
 using Wpf.Ui.Abstractions.Controls;
 using SekaiEvent = SekaiToolsCore.Story.Event.Event;

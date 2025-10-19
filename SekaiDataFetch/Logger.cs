@@ -1,6 +1,6 @@
-namespace SekaiDataFetch;
-
 using Microsoft.Extensions.Logging;
+
+namespace SekaiDataFetch;
 
 internal static class Log
 {

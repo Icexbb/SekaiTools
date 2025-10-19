@@ -16,17 +16,13 @@ using SekaiToolsGUI.View.Download.Components.Event;
 using SekaiToolsGUI.View.Download.Components.Special;
 using SekaiToolsGUI.View.Download.Components.Unit;
 using SekaiToolsGUI.View.General;
-using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Download;
 using SekaiToolsGUI.ViewModel.Setting;
-using Wpf.Ui.Abstractions.Controls;
 
 namespace SekaiToolsGUI.View.Download;
 
 public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 {
-    public DownloadPageModel ViewModel => DownloadPageModel.Instance;
-
     public DownloadPage()
     {
         InitializeComponent();
@@ -40,6 +36,13 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     private SpecialStoryTab SpecialStoryTab { get; } = new();
     private CardStoryTab CardStoryTab { get; } = new();
     private ActionStoryTab ActionStoryTab { get; } = new();
+    public DownloadPageModel ViewModel => DownloadPageModel.Instance;
+
+
+    public void OnNavigatedTo()
+    {
+        InitDownloadSource();
+    }
 
 
     public void AddTask(string tag, string url)
@@ -168,7 +171,10 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         await File.WriteAllTextAsync(filepath, responseContent);
     }
 
-    public SourceData GetSourceType() => ViewModel.CurrentSource;
+    public SourceData GetSourceType()
+    {
+        return ViewModel.CurrentSource;
+    }
 
     private async void InitDownloadSource()
     {
@@ -207,11 +213,5 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
             MessageBox.Show("刷新失败: " + exception.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             if (Debugger.IsAttached) throw;
         }
-    }
-
-
-    public void OnNavigatedTo()
-    {
-        InitDownloadSource();
     }
 }

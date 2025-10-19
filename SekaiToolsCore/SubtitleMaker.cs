@@ -72,7 +72,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
     private GaMat GetNameTag(string name)
     {
-        return new GaMat(templateManager.GetTemplate(TemplateUsage.DialogNameTag,name));
+        return new GaMat(templateManager.GetTemplate(TemplateUsage.DialogNameTag, name));
     }
 
     private static Queue<char> FormatDialogBodyArr(string body)

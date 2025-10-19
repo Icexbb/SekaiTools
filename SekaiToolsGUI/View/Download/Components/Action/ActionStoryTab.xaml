@@ -5,7 +5,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:local="clr-namespace:SekaiToolsGUI.View.Download.Components.Action"
-             xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
              xmlns:download="clr-namespace:SekaiToolsGUI.ViewModel.Download"
              mc:Ignorable="d" Loaded="ActionStoryTab_OnLoaded"
              d:DesignHeight="500" d:DesignWidth="500"

@@ -34,7 +34,7 @@ public class SourceData
             SpecialStoryTemplate =
                 "scenario/special/{abName}/{scenarioId}.asset",
             UnitStoryTemplate =
-                "scenario/unitstory/{abName}/{scenarioId}.asset",
+                "scenario/unitstory/{abName}/{scenarioId}.asset"
         },
         new()
         {
@@ -50,7 +50,7 @@ public class SourceData
             SpecialStoryTemplate =
                 "startapp/scenario/special/{abName}/{scenarioId}.json",
             UnitStoryTemplate =
-                "startapp/scenario/unitstory/{abName}/{scenarioId}.json",
+                "startapp/scenario/unitstory/{abName}/{scenarioId}.json"
         },
         new()
         {
@@ -66,8 +66,8 @@ public class SourceData
             SpecialStoryTemplate =
                 "startapp/scenario/special/{abName}/{scenarioId}.json",
             UnitStoryTemplate =
-                "startapp/scenario/unitstory/{abName}/{scenarioId}.json",
-        },
+                "startapp/scenario/unitstory/{abName}/{scenarioId}.json"
+        }
     ];
 
     public static SourceData[] Load(string filepath)
@@ -76,7 +76,7 @@ public class SourceData
         var readItem = JsonSerializer.Deserialize<SourceData[]>(File.ReadAllText(filepath));
         return readItem == null || readItem.Length == 0 ? Default : readItem;
     }
-    
+
     public static SourceData FromJson(string json)
     {
         var readItem = JsonSerializer.Deserialize<SourceData>(json);

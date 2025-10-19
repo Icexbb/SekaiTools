@@ -6,12 +6,6 @@ namespace SekaiDataFetch.List;
 
 public class ListUnitStory : BaseListStory
 {
-    [CachePath("unitStories")]
-    private static string CachePathUnitStories =>
-        Path.Combine(DataBaseDir, "Data", "cache", "unitStories.json");
-
-    [SourcePath("unitStories")] private static string SourceUnitStories => Fetcher.SourceList.UnitStories;
-
     public readonly Dictionary<string, UnitStorySet> Data = new();
 
     private ListUnitStory(Proxy? proxy = null)
@@ -19,6 +13,12 @@ public class ListUnitStory : BaseListStory
         SetProxy(proxy ?? Proxy.None);
         Load();
     }
+
+    [CachePath("unitStories")]
+    private static string CachePathUnitStories =>
+        Path.Combine(DataBaseDir, "Data", "cache", "unitStories.json");
+
+    [SourcePath("unitStories")] private static string SourceUnitStories => Fetcher.SourceList.UnitStories;
 
     public static ListUnitStory Instance { get; } = new();
 

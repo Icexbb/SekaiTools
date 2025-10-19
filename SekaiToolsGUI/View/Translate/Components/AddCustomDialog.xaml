@@ -6,7 +6,6 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:components="clr-namespace:SekaiToolsGUI.View.Translate.Components"
-    xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
     xmlns:translate="clr-namespace:SekaiToolsGUI.ViewModel.Translate"
     mc:Ignorable="d"
     ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"

@@ -1,8 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using Emgu.CV;
-using Microsoft.Extensions.Logging;
 
 namespace SekaiToolsCore;
 
@@ -40,6 +38,10 @@ public static class ResourceManager
         { ResourceType.VapourSynth, "vapourSynth" },
         { ResourceType.VideoProcess, "videoProcess" }
     };
+
+    private static readonly Dictionary<ResourceType, Resource[]> ResourceFileList = new();
+
+    private static HttpClient Client { get; } = new();
 
     public static string ResourcePath(ResourceType type, string fileName)
     {
@@ -89,10 +91,7 @@ public static class ResourceManager
         var fileList = GetFileList(type);
 
         var tasks = fileList.Select<Resource, Task>(file => EnsureResourceFile(type, file)).ToArray();
-        foreach (var task in tasks)
-        {
-            await task;
-        }
+        foreach (var task in tasks) await task;
 
         // delete files do not exist in the resource list
         // foreach (var file in Directory.GetFiles(Path.Combine(BasePath, typeDir)))
@@ -102,8 +101,6 @@ public static class ResourceManager
         //             NormalizePath(Path.GetFileName(file)))) continue;
         //     File.Delete(file);
         // }
-
-        return;
     }
 
     private static async Task EnsureResourceFile(ResourceType type, Resource resource)
@@ -124,8 +121,6 @@ public static class ResourceManager
         Console.WriteLine($"Download completed: {filename}");
     }
 
-    private static HttpClient Client { get; } = new();
-
     private static string NormalizePath(string path)
     {
         return Path.GetFullPath(path.Trim())
@@ -134,10 +129,7 @@ public static class ResourceManager
 
     private static Resource[] GetFileList(ResourceType type)
     {
-        if (ResourceFileList.TryGetValue(type, out var resources))
-        {
-            return resources;
-        }
+        if (ResourceFileList.TryGetValue(type, out var resources)) return resources;
 
         if (!ResourceTypePathMap.TryGetValue(type, out var typeDir))
             throw new ArgumentException($"ResourceType {type} not mapped");
@@ -156,6 +148,4 @@ public static class ResourceManager
         ResourceFileList[type] = fileList;
         return fileList;
     }
-
-    private static readonly Dictionary<ResourceType, Resource[]> ResourceFileList = new();
 }

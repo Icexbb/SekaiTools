@@ -4,7 +4,6 @@ using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.Setting.Components;
 using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Setting;
-using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Controls;
 
 namespace SekaiToolsGUI.View.Setting;
@@ -46,5 +45,4 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
         var dialogResult = await dialogService.ShowAsync(dialog, token);
         return dialogResult != ContentDialogResult.Primary ? "" : dialog.FontName;
     }
-    
 }

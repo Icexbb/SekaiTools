@@ -2,7 +2,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using SekaiDataFetch.Source;
-using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Download;
 
 namespace SekaiToolsGUI.View.Download.Components;
@@ -52,10 +51,7 @@ public partial class DownloadItem
     {
         Visibility = Visibility.Collapsed;
         RecycleContainer.Add(this);
-        if (Parent is Panel parent)
-        {
-            parent.Children.Remove(this);
-        }
+        if (Parent is Panel parent) parent.Children.Remove(this);
     }
 
     public static DownloadItem GetItem(Func<string> url, string key)

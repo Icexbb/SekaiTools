@@ -4,7 +4,6 @@ using System.Windows.Media;
 using SekaiDataFetch.List;
 using SekaiDataFetch.Source;
 using SekaiToolsGUI.Interface;
-using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Setting;
 
 namespace SekaiToolsGUI.View.Download.Components.Unit;
@@ -44,15 +43,13 @@ public partial class UnitStoryTab : UserControl, IRefreshable
         CardContents.Children.Clear();
         if (ListUnitStory.Data.Count == 0) return;
         foreach (var chapter in ListUnitStory.Data[selectedUnit].Chapters)
+        foreach (var episode in chapter.Episodes)
         {
-            foreach (var episode in chapter.Episodes)
-            {
-                var item = DownloadItem.GetItem(
-                    () => SourceList.Instance.UnitStory(episode.ScenarioId, chapter.AssetBundleName),
-                    chapter.Name + "\n" + episode.Key);
-                item.Margin = new Thickness(10, 5, 10, 5);
-                CardContents.Children.Add(item);
-            }
+            var item = DownloadItem.GetItem(
+                () => SourceList.Instance.UnitStory(episode.ScenarioId, chapter.AssetBundleName),
+                chapter.Name + "\n" + episode.Key);
+            item.Margin = new Thickness(10, 5, 10, 5);
+            CardContents.Children.Add(item);
         }
     }
 

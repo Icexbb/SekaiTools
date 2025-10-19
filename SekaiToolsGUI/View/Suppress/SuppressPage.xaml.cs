@@ -5,10 +5,9 @@ using System.Windows.Controls;
 using Microsoft.Win32;
 using SekaiToolsCore;
 using SekaiToolsGUI.Interface;
+using SekaiToolsGUI.Suppress;
 using SekaiToolsGUI.View.General;
-using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Suppress;
-using Wpf.Ui.Abstractions.Controls;
 using MessageBox = Wpf.Ui.Controls.MessageBox;
 using TextBox = Wpf.Ui.Controls.TextBox;
 
@@ -23,6 +22,18 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     }
 
     public SuppressPageModel ViewModel => (SuppressPageModel)DataContext;
+
+    public async void OnNavigatedTo()
+    {
+        if (ResourceManager.CheckResource(ResourceType.VapourSynth)) return;
+
+        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+        var dialog = new RefreshWaitDialog("正在准备 VapourSynth 运行环境，请稍候……");
+        var source = new CancellationTokenSource();
+        _ = dialogService.ShowAsync(dialog, source.Token);
+        await ResourceManager.EnsureResource(ResourceType.VapourSynth);
+        await source.CancelAsync();
+    }
 
     private static string? SelectFile(object sender, RoutedEventArgs e, string filter)
     {
@@ -72,7 +83,7 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     {
         try
         {
-            SekaiToolsGUI.Suppress.Suppressor.Instance.Suppress();
+            Suppressor.Instance.Suppress();
         }
         catch (Exception exc)
         {
@@ -94,12 +105,12 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 
     private void DisposeButton_OnClick(object sender, RoutedEventArgs e)
     {
-        SekaiToolsGUI.Suppress.Suppressor.Instance.Clean();
+        Suppressor.Instance.Clean();
     }
 
     private void ClearButton_OnClick(object sender, RoutedEventArgs e)
     {
-        SekaiToolsGUI.Suppress.Suppressor.Instance.Clean();
+        Suppressor.Instance.Clean();
         ViewModel.Reset();
     }
 
@@ -122,20 +133,5 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     {
         var box = (TextBox)sender!;
         box.ScrollToEnd();
-    }
-
-    public async void OnNavigatedTo()
-    {
-        if (ResourceManager.CheckResource(ResourceType.VapourSynth))
-        {
-            return;
-        }
-
-        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-        var dialog = new RefreshWaitDialog("正在准备 VapourSynth 运行环境，请稍候……");
-        var source = new CancellationTokenSource();
-        _ = dialogService.ShowAsync(dialog, source.Token);
-        await ResourceManager.EnsureResource(ResourceType.VapourSynth);
-        await source.CancelAsync();
     }
 }

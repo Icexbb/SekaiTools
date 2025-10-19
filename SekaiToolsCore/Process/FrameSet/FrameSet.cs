@@ -5,10 +5,24 @@ public abstract class FrameSet
     public abstract bool IsEmpty();
     public abstract IProcessFrame Start();
     public abstract IProcessFrame End();
-    public string StartTime() => Start().StartTime();
-    public string EndTime() => End().EndTime();
 
-    public int StartIndex() => Start().Index;
+    public string StartTime()
+    {
+        return Start().StartTime();
+    }
 
-    public int EndIndex() => End().Index;
+    public string EndTime()
+    {
+        return End().EndTime();
+    }
+
+    public int StartIndex()
+    {
+        return Start().Index;
+    }
+
+    public int EndIndex()
+    {
+        return End().Index;
+    }
 }

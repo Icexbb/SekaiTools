@@ -4,7 +4,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
              xmlns:event="clr-namespace:SekaiToolsGUI.View.Download.Components.Event"
              xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:download="clr-namespace:SekaiToolsGUI.ViewModel.Download"
@@ -394,9 +393,7 @@
                     <ui:ToggleSwitch Grid.Column="2" Margin="5"
                                      IsChecked="{Binding UseStoryIndex}"
                                      Content="{calcBinding:Binding 'UseStoryIndex?\'使用故事序号\':\'使用故事编号\''}"
-                                     RenderTransformOrigin="0.5,0.5">
-
-                    </ui:ToggleSwitch>
+                                     RenderTransformOrigin="0.5,0.5" />
                 </Grid>
 
             </Grid>

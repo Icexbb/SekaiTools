@@ -5,7 +5,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
-             xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
              xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
              mc:Ignorable="d"
              d:Background="White"

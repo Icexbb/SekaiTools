@@ -1,6 +1,6 @@
-namespace SekaiToolsGUI;
-
 using Microsoft.Extensions.Logging;
+
+namespace SekaiToolsGUI;
 
 internal static class Log
 {

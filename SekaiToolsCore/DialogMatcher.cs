@@ -45,10 +45,8 @@ public class DialogMatcher(
             var result = TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.DialogNameTag);
 
             if (frameIndex != -1)
-            {
                 Log.Logger.LogInformation("{TypeName} Frame {FrameIndex} Match Name Tag {DialogIndex} Result: {MaxVal}",
                     nameof(DialogMatcher), frameIndex, LastNotProcessedIndex(), result.MaxVal);
-            }
 
 
             if (!(threshold < result.MaxVal) || !(result.MaxVal < 1)) return Point.Empty;
@@ -177,11 +175,9 @@ public class DialogMatcher(
             var result = TemplateMatcher.Match(imgCropped, tmp, usage);
 
             if (frameIndex != -1)
-            {
                 Log.Logger.LogDebug(
                     "{TypeName} Frame {FrameIndex} Match Dialog Content {DialogIndex} Result: {MaxVal}",
                     nameof(DialogMatcher), frameIndex, LastNotProcessedIndex(), result.MaxVal);
-            }
 
             return result.MaxVal > threshold && result.MaxVal < 1;
         }
@@ -211,8 +207,10 @@ public class DialogMatcher(
         return LastNotProcessedIndex(Set);
     }
 
-    public int DebugSetFinishedUntilContains(string targetString, string? speaker = null) =>
-        DebugSetFinishedUntilContains(Set, targetString, speaker);
+    public int DebugSetFinishedUntilContains(string targetString, string? speaker = null)
+    {
+        return DebugSetFinishedUntilContains(Set, targetString, speaker);
+    }
 
     private static int DebugSetFinishedUntilContains(IList<DialogFrameSet> set, string targetString, string? speaker)
     {
@@ -228,14 +226,13 @@ public class DialogMatcher(
     }
 
     public void DebugSetFinishedAfter(int index)
-        => DebugSetFinishedAfter(Set, index);
+    {
+        DebugSetFinishedAfter(Set, index);
+    }
 
     private static void DebugSetFinishedAfter(IList<DialogFrameSet> set, int index)
     {
-        for (var i = index; i < set.Count; i++)
-        {
-            set[i].Finished = true;
-        }
+        for (var i = index; i < set.Count; i++) set[i].Finished = true;
     }
 
     public bool Process(Mat frame, int frameIndex)

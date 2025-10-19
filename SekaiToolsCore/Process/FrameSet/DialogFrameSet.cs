@@ -19,9 +19,6 @@ public struct Separator
 public partial class DialogFrameSet : FrameSet
 {
     private const int FrameIndexOffset = -1;
-    public Dialog Data { get; }
-    public FrameRate Fps { get; }
-    public List<DialogFrameResult> Frames { get; } = [];
 
     public Separator Separate;
 
@@ -50,6 +47,10 @@ public partial class DialogFrameSet : FrameSet
         #endregion
     }
 
+    public Dialog Data { get; }
+    public FrameRate Fps { get; }
+    public List<DialogFrameResult> Frames { get; } = [];
+
 
     public bool IsJitter => Data.Shake;
 
@@ -76,11 +77,20 @@ public partial class DialogFrameSet : FrameSet
 
 public partial class DialogFrameSet
 {
-    public override bool IsEmpty() => Frames.Count == 0;
+    public override bool IsEmpty()
+    {
+        return Frames.Count == 0;
+    }
 
-    public override DialogFrameResult Start() => Frames[0];
+    public override DialogFrameResult Start()
+    {
+        return Frames[0];
+    }
 
-    public override DialogFrameResult End() => Frames[^1];
+    public override DialogFrameResult End()
+    {
+        return Frames[^1];
+    }
 
     public void Add(int index, Point point)
     {

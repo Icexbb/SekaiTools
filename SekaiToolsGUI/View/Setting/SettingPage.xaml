@@ -4,8 +4,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
-             xmlns:components="clr-namespace:SekaiToolsGUI.View.Setting.Components"
              xmlns:setting="clr-namespace:SekaiToolsGUI.ViewModel.Setting"
              d:DataContext="{d:DesignInstance setting:SettingPageModel, IsDesignTimeCreatable=True}"
              mc:Ignorable="d">

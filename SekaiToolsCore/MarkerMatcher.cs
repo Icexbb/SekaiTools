@@ -26,7 +26,7 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
         if (_templates.TryGetValue(content, out var template))
             return template;
 
-        var mat = templateManager.GetTemplate(TemplateUsage.MarkerContent,content);
+        var mat = templateManager.GetTemplate(TemplateUsage.MarkerContent, content);
         const double resizeRatio = 0.90;
         CvInvoke.Resize(mat, mat, new Size((int)(mat.Width * resizeRatio), (int)(mat.Height * resizeRatio)));
         _templates.Add(content, new GaMat(mat));
@@ -60,11 +60,9 @@ public class MarkerMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateMa
                 TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.Marker, matchingType);
 
             if (frameIndex != -1)
-            {
                 Log.Logger.LogDebug(
                     "{TypeName} Frame {FrameIndex} Match Marker {MarkerIndex} Result: {MaxVal}",
                     nameof(DialogMatcher), frameIndex, LastNotProcessedIndex(), matchResult.MaxVal);
-            }
 
             var matched = matchResult.MaxVal > config.MatchingThreshold.MarkerNormal && matchResult.MaxVal < 1;
 

@@ -12,7 +12,7 @@
     <ItemGroup>
         <ProjectReference Include="..\SekaiDataFetch\SekaiDataFetch.csproj"/>
         <ProjectReference Include="..\SekaiToolsCore\SekaiToolsCore.csproj"/>
-        <ProjectReference Include="..\SekaiToolsGUI\SekaiToolsGUI.csproj" />
+        <ProjectReference Include="..\SekaiToolsGUI\SekaiToolsGUI.csproj"/>
     </ItemGroup>
 
 </Project>

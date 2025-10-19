@@ -5,7 +5,6 @@ using SekaiDataFetch;
 using SekaiDataFetch.List;
 using SekaiDataFetch.Source;
 using SekaiToolsGUI.Interface;
-using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Download;
 using SekaiToolsGUI.ViewModel.Setting;
 
@@ -13,14 +12,22 @@ namespace SekaiToolsGUI.View.Download.Components.Card;
 
 public partial class CardStoryTab : UserControl, IRefreshable
 {
-    private CardStoryTabModel ViewModel => (CardStoryTabModel)DataContext;
-    private ListCardStory CardStory => ListCardStory.Instance;
-
     public CardStoryTab()
     {
         DataContext ??= new CardStoryTabModel();
         InitializeComponent();
         CharacterComboBox_Init();
+    }
+
+    private CardStoryTabModel ViewModel => (CardStoryTabModel)DataContext;
+    private ListCardStory CardStory => ListCardStory.Instance;
+
+    public async Task Refresh()
+    {
+        CardStory.SetSource(GetSourceType());
+        CardStory.SetProxy(SettingPageModel.Instance.GetProxy());
+        await CardStory.Refresh();
+        CharacterComboBox_OnSelectionChanged(null!, null!);
     }
 
     private SourceData GetSourceType()
@@ -29,14 +36,6 @@ public partial class CardStoryTab : UserControl, IRefreshable
         while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
 
         return (parent as DownloadPage)?.GetSourceType() ?? throw new NullReferenceException();
-    }
-
-    public async Task Refresh()
-    {
-        CardStory.SetSource(GetSourceType());
-        CardStory.SetProxy(SettingPageModel.Instance.GetProxy());
-        await CardStory.Refresh();
-        CharacterComboBox_OnSelectionChanged(null!, null!);
     }
 
     private void CharacterComboBox_Init()

@@ -8,13 +8,13 @@ namespace SekaiDataFetch.List;
 public class CachePathAttribute(string key) : Attribute
 {
     public string Key { get; } = key;
-};
+}
 
 [AttributeUsage(AttributeTargets.Property)]
 public class SourcePathAttribute(string key) : Attribute
 {
     public string Key { get; } = key;
-};
+}
 
 public abstract class BaseListStory
 {
@@ -51,12 +51,8 @@ public abstract class BaseListStory
     public void ClearCache()
     {
         foreach (var path in CachePaths)
-        {
             if (File.Exists(path))
-            {
                 File.Delete(path);
-            }
-        }
 
         Log.Logger.LogInformation("{TypeName} cache cleared", GetType().Name);
     }

@@ -15,17 +15,17 @@ public partial class EventStoryEvent : UserControl
             typeof(EventStoryEvent),
             new PropertyMetadata(null, OnEventStoryImplChanged));
 
+    public EventStorySet? EventStorySet
+    {
+        get => (EventStorySet?)GetValue(EventStoryImplProperty);
+        set => SetValue(EventStoryImplProperty, value);
+    }
+
     private static void OnEventStoryImplChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not EventStoryEvent control || e.NewValue is not EventStorySet eventStorySet) return;
         control.EventStorySet = eventStorySet;
         control.RefreshControl();
-    }
-
-    public EventStorySet? EventStorySet
-    {
-        get => (EventStorySet?)GetValue(EventStoryImplProperty);
-        set => SetValue(EventStoryImplProperty, value);
     }
 }
 
@@ -38,17 +38,17 @@ public partial class EventStoryEvent
             typeof(EventStoryEvent),
             new PropertyMetadata(false, OnUseStoryIndexChanged));
 
+    public bool UseStoryIndex
+    {
+        get => (bool)GetValue(UseStoryIndexProperty);
+        set => SetValue(UseStoryIndexProperty, value);
+    }
+
     private static void OnUseStoryIndexChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not EventStoryEvent control || e.NewValue is not bool useStoryIndex) return;
         control.UseStoryIndex = useStoryIndex;
         control.RefreshControl();
-    }
-
-    public bool UseStoryIndex
-    {
-        get => (bool)GetValue(UseStoryIndexProperty);
-        set => SetValue(UseStoryIndexProperty, value);
     }
 }
 
@@ -78,9 +78,8 @@ public partial class EventStoryEvent
     {
         var children = PanelItems.Children.OfType<UIElement>().ToList();
         foreach (var panelItemsChild in children)
-        {
-            if (panelItemsChild is DownloadItem downloadItem) downloadItem.Recycle();
-        }
+            if (panelItemsChild is DownloadItem downloadItem)
+                downloadItem.Recycle();
 
         for (var i = 0; i < EventStorySet!.EventStory.EventStoryEpisodes.Length; i++)
         {

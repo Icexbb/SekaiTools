@@ -6,7 +6,6 @@ using SekaiDataFetch.Item;
 using SekaiDataFetch.List;
 using SekaiDataFetch.Source;
 using SekaiToolsGUI.Interface;
-using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Download;
 using SekaiToolsGUI.ViewModel.Setting;
 
@@ -14,8 +13,7 @@ namespace SekaiToolsGUI.View.Download.Components.Action;
 
 public partial class ActionStoryTab : UserControl, IRefreshable
 {
-    private ActionStoryTabModel ViewModel => (ActionStoryTabModel)DataContext;
-    private ListActionStory ActionStory => ListActionStory.Instance;
+    private int _currentDirection = 1;
 
     public ActionStoryTab()
     {
@@ -23,13 +21,8 @@ public partial class ActionStoryTab : UserControl, IRefreshable
         InitializeComponent();
     }
 
-    private SourceData GetSourceType()
-    {
-        var parent = Parent;
-        while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
-
-        return (parent as DownloadPage)?.GetSourceType() ?? throw new NullReferenceException();
-    }
+    private ActionStoryTabModel ViewModel => (ActionStoryTabModel)DataContext;
+    private ListActionStory ActionStory => ListActionStory.Instance;
 
 
     public async Task Refresh()
@@ -41,6 +34,14 @@ public partial class ActionStoryTab : UserControl, IRefreshable
         InitializeAreas();
         RefreshItems(true);
         CardUnits.IsEnabled = true;
+    }
+
+    private SourceData GetSourceType()
+    {
+        var parent = Parent;
+        while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
+
+        return (parent as DownloadPage)?.GetSourceType() ?? throw new NullReferenceException();
     }
 
 
@@ -212,8 +213,6 @@ public partial class ActionStoryTab : UserControl, IRefreshable
 
         RefreshItems();
     }
-
-    private int _currentDirection = 1;
 
     private void Filter_OnSelected(object sender, SelectionChangedEventArgs e)
     {

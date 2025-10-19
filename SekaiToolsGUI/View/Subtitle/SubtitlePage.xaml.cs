@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -13,11 +12,9 @@ using SekaiToolsCore.Utils;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.View.Subtitle.Components;
-using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Setting;
 using SekaiToolsGUI.ViewModel.Subtitle;
 using Wpf.Ui;
-using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
 using MessageBox = Wpf.Ui.Controls.MessageBox;
@@ -311,20 +308,15 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     private void RefreshContentVisibility()
     {
         foreach (var child in LinePanel.Children)
-        {
             switch (child)
             {
                 case DialogLine dialogLine:
                     if (dialogLine.ViewModel.Set.NeedSetSeparator)
-                    {
                         dialogLine.Visibility = ViewModel.ShowDialog ? Visibility.Visible : Visibility.Collapsed;
-                    }
                     else
-                    {
                         dialogLine.Visibility = ViewModel is { ShowDialog: true, ShowTooLongOnly: false }
                             ? Visibility.Visible
                             : Visibility.Collapsed;
-                    }
 
                     break;
                 case BannerLine bannerLine:
@@ -334,7 +326,6 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
                     markerLine.Visibility = ViewModel.ShowMarker ? Visibility.Visible : Visibility.Collapsed;
                     break;
             }
-        }
     }
 }
 
@@ -343,7 +334,19 @@ public partial class SubtitlePage
     private CancellationTokenSource? TokenSource { get; } = new();
     private CancellationToken CancellationToken => TokenSource!.Token;
 
-    private VideoProcessor? VideoProcessor { get; set; } = null;
+    private VideoProcessor? VideoProcessor { get; set; }
+
+    public async void OnNavigatedTo()
+    {
+        if (ResourceManager.CheckResource(ResourceType.VideoProcess)) return;
+
+        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+        var dialog = new RefreshWaitDialog("正在刷新下载源数据");
+        var source = new CancellationTokenSource();
+        _ = dialogService.ShowAsync(dialog, source.Token);
+        await ResourceManager.EnsureResource(ResourceType.VideoProcess);
+        await source.CancelAsync();
+    }
 
     private void StopProcess()
     {
@@ -479,7 +482,7 @@ public partial class SubtitlePage
                         TextBlockFps.Text = $"FPS: {fps}";
                         TextBlockEta.Text = eta.TotalMilliseconds > 1000 ? $"ETA: {eta.Remains()}" : "";
                     });
-                },
+                }
             }
         );
         VideoProcessor.StartProcess();
@@ -494,20 +497,5 @@ public partial class SubtitlePage
     private void ShowPreviewButton_OnClick(object sender, RoutedEventArgs e)
     {
         ViewModel.ShowPreview = true;
-    }
-
-    public async void OnNavigatedTo()
-    {
-        if (ResourceManager.CheckResource(ResourceType.VideoProcess))
-        {
-            return;
-        }
-
-        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-        var dialog = new RefreshWaitDialog("正在刷新下载源数据");
-        var source = new CancellationTokenSource();
-        _ = dialogService.ShowAsync(dialog, source.Token);
-        await ResourceManager.EnsureResource(ResourceType.VideoProcess);
-        await source.CancelAsync();
     }
 }

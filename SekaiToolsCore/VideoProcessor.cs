@@ -33,21 +33,32 @@ public record ContentLength(int Dialog, int Banner, int Marker);
 
 public class VideoProcessor
 {
+    private bool _debugIgnoreBannerMarker;
+
+    public VideoProcessor(Config config, VideoProcessCallbacks callbacks)
+    {
+        Creator = new MatcherCreator(config);
+        Capture = new VideoCapture(config.VideoFilePath);
+        DialogMatcher = Creator.DialogMatcher();
+        ContentMatcher = Creator.ContentMatcher();
+        BannerMatcher = Creator.BannerMatcher();
+        MarkerMatcher = Creator.MarkerMatcher();
+        Callbacks = callbacks;
+    }
+
     private CancellationTokenSource? TokenSource { get; set; } = new();
     private CancellationToken Token => TokenSource!.Token;
-    private ContentMatcher? ContentMatcher { get; set; }
+    private ContentMatcher? ContentMatcher { get; }
 
-    private DialogMatcher? DialogMatcher { get; set; }
-    private MarkerMatcher? MarkerMatcher { get; set; }
-    private BannerMatcher? BannerMatcher { get; set; }
+    private DialogMatcher? DialogMatcher { get; }
+    private MarkerMatcher? MarkerMatcher { get; }
+    private BannerMatcher? BannerMatcher { get; }
 
-    private MatcherCreator? Creator { get; set; }
+    private MatcherCreator? Creator { get; }
     private Task? Task { get; set; }
     private VideoCapture? Capture { get; set; }
 
-    private VideoProcessCallbacks Callbacks { get; set; }
-
-    private bool _debugIgnoreBannerMarker;
+    private VideoProcessCallbacks Callbacks { get; }
 
 
     public bool Finished => ContentMatcher is { Finished: true } &&
@@ -67,17 +78,6 @@ public class VideoProcessor
         if (Creator == null) throw new NullReferenceException();
         var maker = Creator.SubtitleMaker();
         return maker.Make(dialogFrameSets, bannerFrameSets, markerFrameSets);
-    }
-
-    public VideoProcessor(Config config, VideoProcessCallbacks callbacks)
-    {
-        Creator = new MatcherCreator(config);
-        Capture = new VideoCapture(config.VideoFilePath);
-        DialogMatcher = Creator.DialogMatcher();
-        ContentMatcher = Creator.ContentMatcher();
-        BannerMatcher = Creator.BannerMatcher();
-        MarkerMatcher = Creator.MarkerMatcher();
-        Callbacks = callbacks;
     }
 
     public void StartProcess()
@@ -172,10 +172,7 @@ public class VideoProcessor
                     var dialogIndex = DialogMatcher.LastNotProcessedIndex();
                     var r = DialogMatcher.Process(frame, frameIndex);
                     matchBannerNow = !r;
-                    if (DialogMatcher.Set[dialogIndex].Finished)
-                    {
-                        Callbacks.OnNewDialog(DialogMatcher.Set[dialogIndex]);
-                    }
+                    if (DialogMatcher.Set[dialogIndex].Finished) Callbacks.OnNewDialog(DialogMatcher.Set[dialogIndex]);
                 }
                 else if (_debugIgnoreBannerMarker)
                 {

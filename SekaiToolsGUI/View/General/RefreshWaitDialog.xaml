@@ -4,7 +4,6 @@
                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                   xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-                  xmlns:local="clr-namespace:SekaiToolsGUI.View.Download.Components"
                   xmlns:general="clr-namespace:SekaiToolsGUI.View.General"
                   xmlns:vmg="clr-namespace:SekaiToolsGUI.ViewModel.General"
                   mc:Ignorable="d"
@@ -17,7 +16,7 @@
                TargetType="{x:Type general:RefreshWaitDialog}" />
     </ui:ContentDialog.Resources>
     <StackPanel HorizontalAlignment="Center">
-        <TextBlock HorizontalAlignment="Stretch" Margin="10" Text="{Binding Message }"></TextBlock>
+        <TextBlock HorizontalAlignment="Stretch" Margin="10" Text="{Binding Message }" />
         <ui:ProgressRing IsIndeterminate="True" />
     </StackPanel>
 </ui:ContentDialog>

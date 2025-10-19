@@ -1,6 +1,6 @@
-namespace SekaiToolsCore;
-
 using Microsoft.Extensions.Logging;
+
+namespace SekaiToolsCore;
 
 internal static class Log
 {

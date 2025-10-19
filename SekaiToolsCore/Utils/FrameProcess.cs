@@ -1,5 +1,4 @@
 using Emgu.CV;
-using Emgu.CV.CvEnum;
 
 namespace SekaiToolsCore.Utils;
 

@@ -64,9 +64,7 @@ partial class SourceList
     public string SpecialStory(SpecialStorySet.Episode episode)
     {
         if (SourceData.StorageBaseUrl.Contains("sekai.best", StringComparison.CurrentCultureIgnoreCase))
-        {
             return SpecialStory(episode.ScenarioId, episode.Parent.AssetBundleName);
-        }
 
         return SpecialStory(episode.ScenarioId, episode.AssetBundleName);
     }

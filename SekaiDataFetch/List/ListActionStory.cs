@@ -6,6 +6,12 @@ namespace SekaiDataFetch.List;
 
 public class ListActionStory : BaseListStory
 {
+    private ListActionStory(Proxy? proxy = null)
+    {
+        SetProxy(proxy ?? Proxy.None);
+        Load();
+    }
+
     [CachePath("areas")]
     private static string CachePathAreas =>
         Path.Combine(DataBaseDir, "Data", "cache", "areas.json");
@@ -21,12 +27,6 @@ public class ListActionStory : BaseListStory
     [SourcePath("areas")] private static string SourceAreas => Fetcher.SourceList.Areas;
     [SourcePath("actionSets")] private static string SourceActionSets => Fetcher.SourceList.ActionSets;
     [SourcePath("character2ds")] private static string SourceCharacter2ds => Fetcher.SourceList.Character2ds;
-
-    private ListActionStory(Proxy? proxy = null)
-    {
-        SetProxy(proxy ?? Proxy.None);
-        Load();
-    }
 
     public List<AreaStorySet> Data { get; set; } = [];
     public List<Area> Areas { get; private set; } = [];

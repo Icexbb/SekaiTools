@@ -17,10 +17,10 @@
 
     <ItemGroup>
         <PackageReference Include="CalcBinding" Version="2.5.2"/>
-        <PackageReference Include="Emgu.CV.Wpf" Version="4.12.0.5764" />
-        <PackageReference Include="System.Text.Json" Version="10.0.0-rc.1.25451.107" />
+        <PackageReference Include="Emgu.CV.Wpf" Version="4.12.0.5764"/>
+        <PackageReference Include="System.Text.Json" Version="10.0.0-rc.1.25451.107"/>
         <PackageReference Include="TextCopy" Version="6.2.1"/>
-        <PackageReference Include="WPF-UI" Version="4.0.3" />
+        <PackageReference Include="WPF-UI" Version="4.0.3"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -105,8 +105,8 @@
         <Resource Include="Resource\Unit\logo_street.png"/>
         <None Remove="Resource\Unit\logo_theme_park.png"/>
         <Resource Include="Resource\Unit\logo_theme_park.png"/>
-        <None Remove="Resource\Characters\chr_0.png" />
-        <Resource Include="Resource\Characters\chr_0.png" />
+        <None Remove="Resource\Characters\chr_0.png"/>
+        <Resource Include="Resource\Characters\chr_0.png"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -201,9 +201,9 @@
             <SubType>Designer</SubType>
         </Page>
         <Page Update="View\General\RefreshWaitDialog.xaml">
-          <Generator>MSBuild:Compile</Generator>
-          <XamlRuntime>Wpf</XamlRuntime>
-          <SubType>Designer</SubType>
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
         </Page>
     </ItemGroup>
 </Project>

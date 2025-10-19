@@ -6,6 +6,14 @@ namespace SekaiDataFetch.List;
 
 public class ListEventStory : BaseListStory
 {
+    public readonly List<EventStorySet> Data = [];
+
+    private ListEventStory(Proxy? proxy = null)
+    {
+        SetProxy(proxy ?? Proxy.None);
+        Load();
+    }
+
     [CachePath("eventStories")]
     private static string CachePathEventStories =>
         Path.Combine(DataBaseDir, "Data", "cache", "eventStories.json");
@@ -16,14 +24,6 @@ public class ListEventStory : BaseListStory
 
     [SourcePath("eventStories")] private static string SourceEventStories => Fetcher.SourceList.EventStories;
     [SourcePath("gameEvents")] private static string SourceGameEvents => Fetcher.SourceList.Events;
-
-    public readonly List<EventStorySet> Data = [];
-
-    private ListEventStory(Proxy? proxy = null)
-    {
-        SetProxy(proxy ?? Proxy.None);
-        Load();
-    }
 
     public static ListEventStory Instance { get; } = new();
 
