@@ -91,7 +91,6 @@ partial class MainWindow
 
     private async Task<bool> CheckForUpdateAsync()
     {
-                return true;
         try
         {
             // 1. 获取本地版本

@@ -210,61 +210,87 @@
     </ItemGroup>
 
     <!-- 在主项目打包时，自动构建 Updater 并复制 -->
-    <Target Name="BuildUpdater" AfterTargets="Build">
+    <Target Name="BuildUpdater" AfterTargets="Publish">
+        <PropertyGroup>
+            <OutputDir Condition="'$(PublishDir)' != ''">$(PublishDir)</OutputDir>
+            <OutputDir Condition="'$(PublishDir)' == ''">$(OutputPath)</OutputDir>
+        </PropertyGroup>
+
         <!-- 构建 Updater 项目 -->
+        <Message Text="========================================" Importance="high"/>
+        <Message Text="开始构建 Updater 项目" Importance="high"/>
+        <Message Text="输出目录: $(OutputDir)" Importance="high"/>
+        <Message Text="========================================" Importance="high"/>
+
         <MSBuild Projects="..\Updater\Updater.csproj"
                  Targets="Publish"
                  Properties="Configuration=$(Configuration);PublishDir=..\Updater\build\;"/>
-    </Target>
 
-    <Target Name="CopyUpdaterToPublish" AfterTargets="BuildUpdater">
         <!-- 将 Updater.exe 复制到主程序的发布目录 -->
         <ItemGroup>
             <UpdaterFiles Include="..\Updater\build\**\*"/>
+            <UpdaterFiles Include="..\Updater\7zr.exe"/>
         </ItemGroup>
-
         <Copy SourceFiles="@(UpdaterFiles)"
-              DestinationFolder="$(OutputPath)%(RecursiveDir)"/>
+              DestinationFolder="$(OutputDir)%(RecursiveDir)"/>
+
+        <Message Text="Updater 构建完成" Importance="high"/>
     </Target>
 
-    <Target Name="MoveDependenciesToLibs" AfterTargets="CopyUpdaterToPublish">
-        <!-- 匹配所有 dll，排除主程序自己的 -->
+    <!-- 在构建后整理输出文件 -->
+    <Target Name="OrganizeOutput" AfterTargets="BuildUpdater">
+        <PropertyGroup>
+            <OutputDir Condition="'$(PublishDir)' != ''">$(PublishDir)</OutputDir>
+            <OutputDir Condition="'$(PublishDir)' == ''">$(OutputPath)</OutputDir>
+            <LibsFolder>$(OutputDir)libs</LibsFolder>
+        </PropertyGroup>
+
+        <Message Text="========================================" Importance="high"/>
+        <Message Text="开始整理输出文件" Importance="high"/>
+        <Message Text="输出目录: $(OutputDir)" Importance="high"/>
+        <Message Text="========================================" Importance="high"/>
+
+        <!-- 创建 libs 文件夹 -->
+        <MakeDir Directories="$(LibsFolder)"/>
+        <Message Text="已创建 libs 文件夹" Importance="high"/>
+
+        <!-- 收集需要移动的 DLL（排除主程序、Updater 和 WPF 运行时） -->
         <ItemGroup>
-            <BuildDlls Include="$(OutputPath)*.dll"/>
-            <BuildDlls Remove="$(OutputPath)Updater.dll"/>
-            <BuildDlls Remove="$(OutputPath)$(AssemblyName).dll"/>
+            <AllDlls Include="$(OutputDir)*.dll"/>
+            <!-- 排除不需要移动的 DLL -->
+            <KeepDlls Include="$(OutputDir)SekaiToolsGUI.dll"/>
+            <KeepDlls Include="$(OutputDir)Updater.dll"/>
+            <!--            <KeepDlls Include="$(OutputDir)*_cor3.dll"/>-->
+            <BuildDlls Include="@(AllDlls)" Exclude="@(KeepDlls)"/>
         </ItemGroup>
 
-        <!-- 创建 libs 目录 -->
-        <MakeDir Directories="$(OutputPath)libs"/>
+        <Message Text="找到 %(BuildDlls.Filename)%(BuildDlls.Extension)" Importance="high"/>
+        <Message Text="共 @(BuildDlls->Count()) 个 DLL 需要移动" Importance="high"/>
 
-        <!-- 移动 dll -->
-        <Move
-                SourceFiles="@(BuildDlls)"
-                DestinationFolder="$(OutputPath)libs"
-                Condition="Exists('%(BuildDlls.FullPath)')"/>
-    </Target>
-    
+        <!-- 移动 DLL 到 libs 文件夹 -->
+        <Copy SourceFiles="@(BuildDlls)" DestinationFolder="$(LibsFolder)" SkipUnchangedFiles="false"/>
+        <Delete Files="@(BuildDlls)"/>
 
-    <Target Name="CleanExtraFiles" AfterTargets="MoveDependenciesToLibs">
+        <Message Text="DLL 已移动到 libs 文件夹" Importance="high"/>
+
+        <!-- 删除多余的 runtime -->
+        <Message Text="正在删除多余的 runtime..." Importance="high"/>
+        <RemoveDir Directories="$(OutputDir)runtimes\win-x86" Condition="Exists('$(OutputDir)runtimes\win-x86')"/>
+        <RemoveDir Directories="$(OutputDir)runtimes\win-arm64" Condition="Exists('$(OutputDir)runtimes\win-arm64')"/>
+        <RemoveDir Directories="$(OutputDir)runtimes\win" Condition="Exists('$(OutputDir)runtimes\win')"/>
+        <RemoveDir Directories="$(OutputDir)runtimes\browser" Condition="Exists('$(OutputDir)runtimes\browser')"/>
+
+        <!-- 删除所有 PDB 文件 -->
+        <Message Text="正在删除 PDB 文件..." Importance="high"/>
         <ItemGroup>
-            <DeleteFiles Include="$(OutputPath)**\*.pdb"/>
-            <DeleteFiles Include="$(OutputPath)runtimes\win-x86\**\*"/>
-            <DeleteFiles Include="$(OutputPath)runtimes\win-arm64\**\*"/>
-            <DeleteFiles Include="$(OutputPath)runtimes\win\**\*"/>
-            <DeleteFiles Include="$(OutputPath)runtimes\browser\**\*"/>
-            <DeleteDirs Include="$(OutputPath)runtimes\win-x86"/>
-            <DeleteDirs Include="$(OutputPath)runtimes\win-arm64"/>
-            <DeleteDirs Include="$(OutputPath)runtimes\win"/>
-            <DeleteDirs Include="$(OutputPath)runtimes\browser"/>
+            <AllPdbFiles Include="$(OutputDir)**\*.pdb"/>
         </ItemGroup>
+        <Delete Files="@(AllPdbFiles)"/>
+        <Message Text="已删除 @(AllPdbFiles->Count()) 个 PDB 文件" Importance="high"/>
 
-        <Delete Files="@(DeleteFiles)"/>
-        <RemoveDir Directories="@(DeleteDirs)"/>
-    </Target>
-
-    <Target Name="CopyExtraTools" AfterTargets="CleanExtraFiles">
-        <Copy SourceFiles="..\Updater\7zr.exe" DestinationFolder="$(OutputPath)"/>
+        <Message Text="========================================" Importance="high"/>
+        <Message Text="文件整理完成！" Importance="high"/>
+        <Message Text="========================================" Importance="high"/>
     </Target>
 
 </Project>

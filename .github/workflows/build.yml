@@ -29,22 +29,17 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-          
+
       - name: Dotnet Build
         run: |
           dotnet restore ${{ env.PROJECT_NAME }}
-          dotnet build ${{ env.PROJECT_NAME }} --configuration Release --no-restore -o ${{ env.BUILD_DIR }}
-      - name: Sort Artifacts
-        run: |
-          rm -r ${{ env.BUILD_DIR }}/runtimes/win-x86
-          rm -r ${{ env.BUILD_DIR }}/runtimes/win-arm64
-          rm -r ${{ env.BUILD_DIR }}/*.pdb  
+          dotnet publish ${{ env.PROJECT_NAME }} -c Release --no-restore  -o ${{ env.BUILD_DIR }} -v detailed
 
       - name: Zip the Build
-        run: 7z a SekaiTools-${{ env.VERSION }}.7z ${{ env.BUILD_DIR }}/
+        run: 7z a SekaiTools-Nightly.7z ${{ env.BUILD_DIR }}/*
 
       - name: Create Release and Upload Release Asset
         uses: actions/upload-artifact@v4
         with:
-          name: SekaiTools-${{ env.VERSION }}.7z
-          path: SekaiTools-${{ env.VERSION }}.7z
+          name: SekaiTools-Nightly
+          path: SekaiTools-Nightly.7z

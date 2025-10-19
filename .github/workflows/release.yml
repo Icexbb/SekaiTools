@@ -6,7 +6,7 @@ on:
       - "*.*.*"
 env:
   DOTNET_VERSION: '9.0.x' # The .NET SDK version to use
-  BUILD_DIR: 'SekaiTools.Nightly'
+  BUILD_DIR: 'SekaiTools'
   PROJECT_NAME: 'SekaiToolsGUI'
 
 jobs:
@@ -39,15 +39,10 @@ jobs:
       - name: Dotnet Build
         run: |
           dotnet restore ${{ env.PROJECT_NAME }}
-          dotnet build ${{ env.PROJECT_NAME }} --configuration Release --no-restore -o ${{ env.BUILD_DIR }}
-      - name: Sort Artifacts
-        run: |
-          rm -r ${{ env.BUILD_DIR }}/runtimes/win-x86
-          rm -r ${{ env.BUILD_DIR }}/runtimes/win-arm64
-          rm -r ${{ env.BUILD_DIR }}/*.pdb  
+          dotnet publish ${{ env.PROJECT_NAME }} -c Release --no-restore -o ${{ env.BUILD_DIR }}
 
       - name: Zip the Build
-        run: 7z a SekaiTools-${{ env.VERSION }}.7z ${{ env.BUILD_DIR }}/
+        run: 7z a SekaiTools-${{ env.VERSION }}.7z ${{ env.BUILD_DIR }}/*
 
       - name: Create Release and Upload Release Asset
         uses: softprops/action-gh-release@v2
