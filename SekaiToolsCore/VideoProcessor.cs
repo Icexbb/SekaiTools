@@ -118,23 +118,22 @@ public class VideoProcessor
         var markerIndexInDialog = MarkerIndexOfDialog();
 
         // Debug usage
-        int _debugEarlyTerminate = -1;
-        if (Int32.TryParse(Environment.GetEnvironmentVariable("DebugFrameID"), out int debugFrameID))
+        if (int.TryParse(Environment.GetEnvironmentVariable("DebugFrameID"), out var debugFrameId))
         {
-            string targetString = Environment.GetEnvironmentVariable("DebugTargetString");
-            string speakerString = Environment.GetEnvironmentVariable("DebugTargetSpeaker");
+            var targetString = Environment.GetEnvironmentVariable("DebugTargetString");
+            var speakerString = Environment.GetEnvironmentVariable("DebugTargetSpeaker");
             if (targetString != null)
             {
-                _debugEarlyTerminate = DialogMatcher.DebugSetFinishedUntilContains(targetString, speakerString);
+                var debugEarlyTerminate = DialogMatcher.DebugSetFinishedUntilContains(targetString, speakerString);
 
-                if (Int32.TryParse(Environment.GetEnvironmentVariable("DebugEarlyTermination"), out int ETlength))
+                if (int.TryParse(Environment.GetEnvironmentVariable("DebugEarlyTermination"), out var etLength))
                 {
-                    _debugEarlyTerminate += ETlength;
-                    DialogMatcher.DebugSetFinishedAfter(_debugEarlyTerminate);
+                    debugEarlyTerminate += etLength;
+                    DialogMatcher.DebugSetFinishedAfter(debugEarlyTerminate);
                 }
             }
 
-            Capture.Set(CapProp.PosFrames, debugFrameID);
+            Capture.Set(CapProp.PosFrames, debugFrameId);
         }
 
         _debugIgnoreBannerMarker = Environment.GetEnvironmentVariable("DebugIgnoreBannerMarker") == "true";

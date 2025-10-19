@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using SekaiToolsGUI.Interface;
 
 namespace SekaiToolsGUI.View.Translate.Components;
 

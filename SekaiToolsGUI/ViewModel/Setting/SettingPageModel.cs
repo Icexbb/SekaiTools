@@ -3,11 +3,11 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
 using SekaiDataFetch;
+using SekaiToolsCore;
 using SekaiToolsCore.Process.Model;
-using SekaiToolsGUI.Model;
 using Wpf.Ui.Appearance;
 
-namespace SekaiToolsGUI.ViewModel;
+namespace SekaiToolsGUI.ViewModel.Setting;
 
 public partial class SettingPageModel : ViewModelBase
 {
@@ -225,26 +225,19 @@ partial class SettingPageModel
 {
     private static string GetSettingPath()
     {
-        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "SekaiTools", "Data", "setting.json");
-    }
-
-    private static string GetSourcePath()
-    {
-        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "SekaiTools", "Data", "source.json");
+        return Path.Combine(ResourceManager.DataBaseDir, "Data", "setting.json");
     }
 
     public void SaveSetting()
     {
-        var setting = Setting.FromModel(this);
+        var setting = Model.Setting.FromModel(this);
         Directory.CreateDirectory(Path.GetDirectoryName(GetSettingPath())!);
         File.WriteAllText(GetSettingPath(), setting.Dump(), Encoding.UTF8);
     }
 
     public void LoadSetting()
     {
-        var setting = Setting.Load(GetSettingPath());
+        var setting = Model.Setting.Load(GetSettingPath());
 
         CurrentApplicationTheme = setting.CurrentApplicationTheme;
         CustomSpecialCharacters.AddRange(setting.CustomSpecialCharacters);
@@ -254,22 +247,22 @@ partial class SettingPageModel
 
         if (AppVersion != setting.AppVersion)
         {
-            TypewriterFadeTime = Setting.Default.TypewriterFadeTime;
-            TypewriterCharTime = Setting.Default.TypewriterCharTime;
+            TypewriterFadeTime = Model.Setting.Default.TypewriterFadeTime;
+            TypewriterCharTime = Model.Setting.Default.TypewriterCharTime;
 
-            DialogFontFamily = Setting.Default.DialogFontFamily;
-            BannerFontFamily = Setting.Default.BannerFontFamily;
-            MarkerFontFamily = Setting.Default.MarkerFontFamily;
+            DialogFontFamily = Model.Setting.Default.DialogFontFamily;
+            BannerFontFamily = Model.Setting.Default.BannerFontFamily;
+            MarkerFontFamily = Model.Setting.Default.MarkerFontFamily;
 
-            ExportLine1 = Setting.Default.ExportLine1;
-            ExportLine2 = Setting.Default.ExportLine2;
-            ExportLine3 = Setting.Default.ExportLine3;
-            ExportCharacter = Setting.Default.ExportCharacter;
-            ExportBannerMask = Setting.Default.ExportBannerMask;
-            ExportBannerText = Setting.Default.ExportBannerText;
-            ExportMarkerMask = Setting.Default.ExportMarkerMask;
-            ExportMarkerText = Setting.Default.ExportMarkerText;
-            ExportScreenComment = Setting.Default.ExportScreenComment;
+            ExportLine1 = Model.Setting.Default.ExportLine1;
+            ExportLine2 = Model.Setting.Default.ExportLine2;
+            ExportLine3 = Model.Setting.Default.ExportLine3;
+            ExportCharacter = Model.Setting.Default.ExportCharacter;
+            ExportBannerMask = Model.Setting.Default.ExportBannerMask;
+            ExportBannerText = Model.Setting.Default.ExportBannerText;
+            ExportMarkerMask = Model.Setting.Default.ExportMarkerMask;
+            ExportMarkerText = Model.Setting.Default.ExportMarkerText;
+            ExportScreenComment = Model.Setting.Default.ExportScreenComment;
         }
         else
         {
@@ -277,13 +270,13 @@ partial class SettingPageModel
             TypewriterCharTime = setting.TypewriterCharTime;
 
             DialogFontFamily = setting.DialogFontFamily == ""
-                ? Setting.Default.DialogFontFamily
+                ? Model.Setting.Default.DialogFontFamily
                 : setting.DialogFontFamily;
             BannerFontFamily = setting.BannerFontFamily == ""
-                ? Setting.Default.BannerFontFamily
+                ? Model.Setting.Default.BannerFontFamily
                 : setting.BannerFontFamily;
             MarkerFontFamily = setting.MarkerFontFamily == ""
-                ? Setting.Default.MarkerFontFamily
+                ? Model.Setting.Default.MarkerFontFamily
                 : setting.MarkerFontFamily;
 
             ExportLine1 = setting.ExportLine1;
@@ -299,9 +292,4 @@ partial class SettingPageModel
 
         SaveSetting();
     }
-
-
-
-
-
 }

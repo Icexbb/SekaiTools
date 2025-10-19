@@ -1,7 +1,7 @@
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
 
-namespace SekaiToolsGUI.ViewModel;
+namespace SekaiToolsGUI.ViewModel.Subtitle;
 
 public class MarkerLineModel(MarkerFrameSet set) : ViewModelBase
 {

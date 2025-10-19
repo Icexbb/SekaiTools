@@ -1,9 +1,9 @@
 using System.IO;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using SekaiToolsGUI.View.Suppress;
+using SekaiToolsGUI.Suppress;
 
-namespace SekaiToolsGUI.ViewModel;
+namespace SekaiToolsGUI.ViewModel.Suppress;
 
 public class SuppressPageModel : ViewModelBase
 {

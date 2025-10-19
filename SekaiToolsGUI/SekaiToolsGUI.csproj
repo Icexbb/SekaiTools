@@ -200,10 +200,10 @@
             <XamlRuntime>Wpf</XamlRuntime>
             <SubType>Designer</SubType>
         </Page>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="View\Suppress\Components\"/>
-        <Folder Include="View\Utils\Componets\"/>
+        <Page Update="View\General\RefreshWaitDialog.xaml">
+          <Generator>MSBuild:Compile</Generator>
+          <XamlRuntime>Wpf</XamlRuntime>
+          <SubType>Designer</SubType>
+        </Page>
     </ItemGroup>
 </Project>

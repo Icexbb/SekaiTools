@@ -6,8 +6,9 @@
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
+             xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
              mc:Ignorable="d" d:DesignWidth="500"
-             d:DataContext="{d:DesignInstance viewModel:DialogLineModel, IsDesignTimeCreatable=False}"
+             d:DataContext="{d:DesignInstance subtitle:DialogLineModel, IsDesignTimeCreatable=False}"
              HorizontalAlignment="Stretch">
     <ui:Card>
         <StackPanel>

@@ -3,6 +3,7 @@ using SekaiToolsGUI.View.Setting;
 using SekaiToolsGUI.View.Subtitle;
 using SekaiToolsGUI.View.Suppress;
 using SekaiToolsGUI.View.Translate;
+using SekaiToolsGUI.ViewModel.Setting;
 using Wpf.Ui.Controls;
 
 namespace SekaiToolsGUI.ViewModel;

@@ -1,8 +1,7 @@
-using SekaiToolsCore;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Utils;
 
-namespace SekaiToolsGUI.ViewModel;
+namespace SekaiToolsGUI.ViewModel.Subtitle;
 
 public class QuickEditDialogModel : ViewModelBase
 {

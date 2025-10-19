@@ -8,18 +8,15 @@ public class ListActionStory : BaseListStory
 {
     [CachePath("areas")]
     private static string CachePathAreas =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "SekaiTools", "Data", "cache", "areas.json");
+        Path.Combine(DataBaseDir, "Data", "cache", "areas.json");
 
     [CachePath("actionSets")]
     private static string CachePathActionSets =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "SekaiTools", "Data", "cache", "actionSets.json");
+        Path.Combine(DataBaseDir, "Data", "cache", "actionSets.json");
 
     [CachePath("character2ds")]
     private static string CachePathCharacter2ds =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "SekaiTools", "Data", "cache", "character2ds.json");
+        Path.Combine(DataBaseDir, "Data", "cache", "character2ds.json");
 
     [SourcePath("areas")] private static string SourceAreas => Fetcher.SourceList.Areas;
     [SourcePath("actionSets")] private static string SourceActionSets => Fetcher.SourceList.ActionSets;

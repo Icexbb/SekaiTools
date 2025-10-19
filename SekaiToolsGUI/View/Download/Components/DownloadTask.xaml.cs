@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using SekaiToolsCore;
 
 namespace SekaiToolsGUI.View.Download.Components;
 
@@ -13,8 +14,7 @@ public partial class DownloadTask : UserControl
         Url = url;
         ScriptTag = scriptTag;
         var filename = Path.GetFileName(url);
-        SavePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "SekaiTools",
-            "Scripts", filename);
+        SavePath = Path.Combine(ResourceManager.DataBaseDir, "Scripts", filename);
         DataContext = this;
     }
 

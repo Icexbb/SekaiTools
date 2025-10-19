@@ -1,4 +1,4 @@
-namespace SekaiToolsGUI.ViewModel;
+namespace SekaiToolsGUI.ViewModel.Translate;
 
 public class AddCustomDialogModel : ViewModelBase
 {

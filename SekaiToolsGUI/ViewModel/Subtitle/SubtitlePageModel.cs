@@ -3,7 +3,7 @@ using System.Windows.Media;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 
-namespace SekaiToolsGUI.ViewModel;
+namespace SekaiToolsGUI.ViewModel.Subtitle;
 
 public class SubtitlePageModel : ViewModelBase
 {

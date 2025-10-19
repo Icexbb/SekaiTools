@@ -7,8 +7,9 @@
              xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
              xmlns:event="clr-namespace:SekaiToolsGUI.View.Download.Components.Event"
              xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
+             xmlns:download="clr-namespace:SekaiToolsGUI.ViewModel.Download"
              mc:Ignorable="d" Loaded="EventStoryTab_OnLoaded"
-             d:DesignHeight="500" d:DesignWidth="500" d:DataContext="{d:DesignInstance viewModel:EventStoryTabModel }">
+             d:DesignHeight="500" d:DesignWidth="500" d:DataContext="{d:DesignInstance download:EventStoryTabModel }">
     <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

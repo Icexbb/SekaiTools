@@ -1,6 +1,6 @@
 using SekaiDataFetch.Source;
 
-namespace SekaiToolsGUI.ViewModel;
+namespace SekaiToolsGUI.ViewModel.Download;
 
 public class DownloadPageModel : ViewModelBase
 {

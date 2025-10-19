@@ -1,9 +1,13 @@
 ﻿using System.Windows;
+using SekaiToolsGUI.Interface;
+using SekaiToolsGUI.View;
 using SekaiToolsGUI.View.Download;
+using SekaiToolsGUI.View.Subtitle;
 using SekaiToolsGUI.View.Suppress;
 using SekaiToolsGUI.ViewModel;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
+using Suppressor = SekaiToolsGUI.Suppress.Suppressor;
 
 namespace SekaiToolsGUI;
 
@@ -41,8 +45,8 @@ public partial class MainWindow : FluentWindow
     {
         switch (args.Page)
         {
-            case DownloadPage downloadPage:
-                downloadPage.OnNavigated();
+            case IAppPage<object> appPage:
+                appPage.OnNavigatedTo();
                 break;
         }
     }

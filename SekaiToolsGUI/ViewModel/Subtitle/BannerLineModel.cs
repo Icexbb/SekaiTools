@@ -1,6 +1,6 @@
 using SekaiToolsCore.Process.FrameSet;
 
-namespace SekaiToolsGUI.ViewModel;
+namespace SekaiToolsGUI.ViewModel.Subtitle;
 
 public class BannerLineModel(BannerFrameSet set) : ViewModelBase
 {

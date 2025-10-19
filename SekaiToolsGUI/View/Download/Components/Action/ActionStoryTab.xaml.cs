@@ -5,7 +5,10 @@ using SekaiDataFetch.Data;
 using SekaiDataFetch.Item;
 using SekaiDataFetch.List;
 using SekaiDataFetch.Source;
+using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.ViewModel;
+using SekaiToolsGUI.ViewModel.Download;
+using SekaiToolsGUI.ViewModel.Setting;
 
 namespace SekaiToolsGUI.View.Download.Components.Action;
 

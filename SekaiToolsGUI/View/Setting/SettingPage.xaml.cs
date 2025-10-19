@@ -1,13 +1,15 @@
 using System.Windows;
 using System.Windows.Controls;
+using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.Setting.Components;
 using SekaiToolsGUI.ViewModel;
+using SekaiToolsGUI.ViewModel.Setting;
 using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Controls;
 
 namespace SekaiToolsGUI.View.Setting;
 
-public partial class SettingPage : UserControl, INavigableView<SettingPageModel>
+public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
 {
     public SettingPage()
     {

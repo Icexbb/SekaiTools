@@ -1,4 +1,4 @@
-namespace SekaiToolsGUI.View.Download;
+namespace SekaiToolsGUI.Interface;
 
 public interface IRefreshable
 {

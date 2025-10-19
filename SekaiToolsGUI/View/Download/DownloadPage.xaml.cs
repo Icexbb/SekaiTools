@@ -8,18 +8,22 @@ using System.Windows.Controls;
 using Microsoft.Extensions.Logging;
 using SekaiDataFetch;
 using SekaiDataFetch.Source;
+using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.Download.Components;
 using SekaiToolsGUI.View.Download.Components.Action;
 using SekaiToolsGUI.View.Download.Components.Card;
 using SekaiToolsGUI.View.Download.Components.Event;
 using SekaiToolsGUI.View.Download.Components.Special;
 using SekaiToolsGUI.View.Download.Components.Unit;
+using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.ViewModel;
+using SekaiToolsGUI.ViewModel.Download;
+using SekaiToolsGUI.ViewModel.Setting;
 using Wpf.Ui.Abstractions.Controls;
 
 namespace SekaiToolsGUI.View.Download;
 
-public partial class DownloadPage : UserControl, INavigableView<DownloadPageModel>
+public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 {
     public DownloadPageModel ViewModel => DownloadPageModel.Instance;
 
@@ -192,7 +196,7 @@ public partial class DownloadPage : UserControl, INavigableView<DownloadPageMode
         {
             if (ContentCard.Content is not IRefreshable refreshable) return;
             var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-            var dialog = new RefreshWaitDialog();
+            var dialog = new RefreshWaitDialog("正在刷新下载源数据");
             var source = new CancellationTokenSource();
             _ = dialogService.ShowAsync(dialog, source.Token);
             await refreshable.Refresh();
@@ -205,7 +209,8 @@ public partial class DownloadPage : UserControl, INavigableView<DownloadPageMode
         }
     }
 
-    public void OnNavigated()
+
+    public void OnNavigatedTo()
     {
         InitDownloadSource();
     }

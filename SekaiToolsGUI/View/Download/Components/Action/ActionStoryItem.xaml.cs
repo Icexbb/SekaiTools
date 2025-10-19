@@ -5,6 +5,7 @@ using System.Windows.Media.Imaging;
 using SekaiDataFetch.Item;
 using SekaiDataFetch.Source;
 using SekaiToolsGUI.ViewModel;
+using SekaiToolsGUI.ViewModel.Download;
 
 namespace SekaiToolsGUI.View.Download.Components.Action;
 

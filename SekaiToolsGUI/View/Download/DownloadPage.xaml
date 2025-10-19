@@ -6,12 +6,13 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:download="clr-namespace:SekaiToolsGUI.View.Download"
              xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
+             xmlns:download1="clr-namespace:SekaiToolsGUI.ViewModel.Download"
              ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
              ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
              Foreground="{DynamicResource TextFillColorPrimaryBrush}"
              Loaded="DownloadPage_OnLoaded"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance viewModel:DownloadPageModel, IsDesignTimeCreatable=True}"
+             d:DataContext="{d:DesignInstance download1:DownloadPageModel, IsDesignTimeCreatable=True}"
              d:DesignHeight="400" d:DesignWidth="600">
     <Grid Margin="10">
         <Grid.RowDefinitions>

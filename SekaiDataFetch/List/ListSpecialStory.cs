@@ -8,8 +8,7 @@ public class ListSpecialStory : BaseListStory
 {
     [CachePath("specialStories")]
     private static string CachePathSpecialStories =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "SekaiTools", "Data", "cache", "specialStories.json");
+        Path.Combine(DataBaseDir, "Data", "cache", "specialStories.json");
 
     [SourcePath("specialStories")] private static string SourceSpecialStories => Fetcher.SourceList.SpecialStories;
 

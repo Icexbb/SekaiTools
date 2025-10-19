@@ -8,13 +8,11 @@ public class ListEventStory : BaseListStory
 {
     [CachePath("eventStories")]
     private static string CachePathEventStories =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "SekaiTools", "Data", "cache", "eventStories.json");
+        Path.Combine(DataBaseDir, "Data", "cache", "eventStories.json");
 
     [CachePath("gameEvents")]
     private static string CachePathGameEvents =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "SekaiTools", "Data", "cache", "gameEvents.json");
+        Path.Combine(DataBaseDir, "Data", "cache", "gameEvents.json");
 
     [SourcePath("eventStories")] private static string SourceEventStories => Fetcher.SourceList.EventStories;
     [SourcePath("gameEvents")] private static string SourceGameEvents => Fetcher.SourceList.Events;

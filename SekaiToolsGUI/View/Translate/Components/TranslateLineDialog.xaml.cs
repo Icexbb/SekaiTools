@@ -1,6 +1,7 @@
 using System.Windows.Controls;
 using System.Windows.Input;
-using SekaiToolsGUI.ViewModel;
+using SekaiToolsGUI.Interface;
+using SekaiToolsGUI.ViewModel.Translate;
 using Wpf.Ui.Abstractions.Controls;
 using SekaiDialog = SekaiToolsCore.Story.Event.Dialog;
 using TextBox = Wpf.Ui.Controls.TextBox;

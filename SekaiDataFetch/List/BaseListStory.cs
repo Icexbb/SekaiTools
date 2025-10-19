@@ -20,13 +20,16 @@ public abstract class BaseListStory
 {
     protected static readonly Fetcher Fetcher = Fetcher.Instance;
 
-    protected string[] CachePaths
+    public static readonly string DataBaseDir = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "SekaiTools");
+
+    private string[] CachePaths
     {
         get
         {
-            var fields = GetType().GetFields(System.Reflection.BindingFlags.NonPublic |
-                                             System.Reflection.BindingFlags.Static |
-                                             System.Reflection.BindingFlags.Instance);
+            var fields = GetType().GetFields(BindingFlags.NonPublic |
+                                             BindingFlags.Static |
+                                             BindingFlags.Instance);
             return fields
                 .Where(f => f.GetCustomAttributes(typeof(CachePathAttribute), false).Length != 0)
                 .Select(f => f.GetValue(this) as string)

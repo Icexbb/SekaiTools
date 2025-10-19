@@ -6,8 +6,9 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
              xmlns:card="clr-namespace:SekaiToolsGUI.View.Download.Components.Card"
+             xmlns:download="clr-namespace:SekaiToolsGUI.ViewModel.Download"
              mc:Ignorable="d" Loaded="CardStoryTab_OnLoaded"
-             d:DesignHeight="500" d:DesignWidth="500" d:DataContext="{d:DesignInstance viewModel:CardStoryTabModel }">
+             d:DesignHeight="500" d:DesignWidth="500" d:DataContext="{d:DesignInstance download:CardStoryTabModel }">
     <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

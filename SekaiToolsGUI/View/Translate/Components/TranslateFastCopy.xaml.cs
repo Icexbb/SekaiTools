@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
-using SekaiToolsGUI.ViewModel;
+using SekaiToolsGUI.ViewModel.Setting;
 using TextCopy;
 using Wpf.Ui;
 using Wpf.Ui.Controls;

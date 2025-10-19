@@ -6,9 +6,10 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:local="clr-namespace:SekaiToolsGUI.View.Download.Components.Action"
              xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
+             xmlns:download="clr-namespace:SekaiToolsGUI.ViewModel.Download"
              mc:Ignorable="d" Loaded="ActionStoryTab_OnLoaded"
              d:DesignHeight="500" d:DesignWidth="500"
-             d:DataContext="{d:DesignInstance viewModel:ActionStoryTabModel }">
+             d:DataContext="{d:DesignInstance download:ActionStoryTabModel }">
     <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

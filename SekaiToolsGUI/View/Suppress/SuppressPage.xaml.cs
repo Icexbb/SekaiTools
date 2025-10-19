@@ -3,14 +3,18 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
+using SekaiToolsCore;
+using SekaiToolsGUI.Interface;
+using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.ViewModel;
+using SekaiToolsGUI.ViewModel.Suppress;
 using Wpf.Ui.Abstractions.Controls;
 using MessageBox = Wpf.Ui.Controls.MessageBox;
 using TextBox = Wpf.Ui.Controls.TextBox;
 
 namespace SekaiToolsGUI.View.Suppress;
 
-public partial class SuppressPage : UserControl, INavigableView<SuppressPageModel>
+public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 {
     public SuppressPage()
     {
@@ -68,7 +72,7 @@ public partial class SuppressPage : UserControl, INavigableView<SuppressPageMode
     {
         try
         {
-            Suppressor.Instance.Suppress();
+            SekaiToolsGUI.Suppress.Suppressor.Instance.Suppress();
         }
         catch (Exception exc)
         {
@@ -90,12 +94,12 @@ public partial class SuppressPage : UserControl, INavigableView<SuppressPageMode
 
     private void DisposeButton_OnClick(object sender, RoutedEventArgs e)
     {
-        Suppressor.Instance.Clean();
+        SekaiToolsGUI.Suppress.Suppressor.Instance.Clean();
     }
 
     private void ClearButton_OnClick(object sender, RoutedEventArgs e)
     {
-        Suppressor.Instance.Clean();
+        SekaiToolsGUI.Suppress.Suppressor.Instance.Clean();
         ViewModel.Reset();
     }
 
@@ -118,5 +122,20 @@ public partial class SuppressPage : UserControl, INavigableView<SuppressPageMode
     {
         var box = (TextBox)sender!;
         box.ScrollToEnd();
+    }
+
+    public async void OnNavigatedTo()
+    {
+        if (ResourceManager.CheckResource(ResourceType.VapourSynth))
+        {
+            return;
+        }
+
+        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+        var dialog = new RefreshWaitDialog("正在准备 VapourSynth 运行环境，请稍候……");
+        var source = new CancellationTokenSource();
+        _ = dialogService.ShowAsync(dialog, source.Token);
+        await ResourceManager.EnsureResource(ResourceType.VapourSynth);
+        await source.CancelAsync();
     }
 }

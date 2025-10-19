@@ -1,8 +1,7 @@
-using SekaiToolsCore;
 using SekaiToolsCore.Story.Event;
 using SekaiToolsCore.Utils;
 
-namespace SekaiToolsGUI.ViewModel;
+namespace SekaiToolsGUI.ViewModel.Translate;
 
 public class LineDialogModel : ViewModelBase
 {

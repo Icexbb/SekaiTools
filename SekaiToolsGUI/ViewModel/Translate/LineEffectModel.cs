@@ -1,6 +1,6 @@
 using SekaiToolsCore.Story.Event;
 
-namespace SekaiToolsGUI.ViewModel;
+namespace SekaiToolsGUI.ViewModel.Translate;
 
 public class LineEffectModel : ViewModelBase
 {

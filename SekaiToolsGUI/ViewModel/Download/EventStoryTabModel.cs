@@ -1,6 +1,6 @@
 using SekaiDataFetch.Item;
 
-namespace SekaiToolsGUI.ViewModel;
+namespace SekaiToolsGUI.ViewModel.Download;
 
 public class EventStoryTabModel : ViewModelBase
 {

@@ -1,4 +1,4 @@
-namespace SekaiToolsGUI.View.Translate;
+namespace SekaiToolsGUI.Interface;
 
 public interface IExportable
 {

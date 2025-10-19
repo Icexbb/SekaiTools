@@ -32,7 +32,7 @@ public partial class TemplateManager(Size videoResolution, bool noScale = false)
     public Mat GetMenuSign()
     {
         if (_menuSign != null) return _menuSign;
-        var menuTemplatePath = ResourceManager.ResourcePath(MenuSignBase);
+        var menuTemplatePath = ResourceManager.ResourcePath(ResourceType.VideoProcess,MenuSignBase);
         if (!File.Exists(menuTemplatePath)) throw new FileNotFoundException();
         var menuTemplate = CvInvoke.Imread(menuTemplatePath, ImreadModes.Unchanged)!;
         int menuSize;
@@ -96,13 +96,13 @@ public partial class TemplateManager(Size videoResolution, bool noScale = false)
 
     private Font GetDbFont()
     {
-        var fontFilePath = ResourceManager.ResourcePath(DbFontBase);
+        var fontFilePath = ResourceManager.ResourcePath(ResourceType.VideoProcess,DbFontBase);
         return GetFont(fontFilePath, GetFontSize());
     }
 
     private Font GetEbFont()
     {
-        var fontFilePath = ResourceManager.ResourcePath(EbFontBase);
+        var fontFilePath = ResourceManager.ResourcePath(ResourceType.VideoProcess,EbFontBase);
         return GetFont(fontFilePath, GetFontSize());
     }
 

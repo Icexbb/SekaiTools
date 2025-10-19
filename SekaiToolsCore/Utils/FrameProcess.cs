@@ -8,12 +8,11 @@ public static class FrameProcess
     public static void Process(Mat frame)
     {
         // Insert further operations here
-        return;
-        
-        if (frame.IsEmpty)
-            return;
 
-        // 转换为灰度图
-        CvInvoke.CvtColor(frame, frame, ColorConversion.Bgr2Gray);
+        // if (frame.IsEmpty)
+        //     return;
+        //
+        // // 转换为灰度图
+        // CvInvoke.CvtColor(frame, frame, ColorConversion.Bgr2Gray);
     }
 }

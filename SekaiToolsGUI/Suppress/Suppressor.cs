@@ -4,46 +4,11 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using SekaiToolsCore.Process;
+using SekaiToolsCore;
 using SekaiToolsGUI.ViewModel;
+using SekaiToolsGUI.ViewModel.Suppress;
 
-namespace SekaiToolsGUI.View.Suppress;
-
-internal class X264Params
-{
-    public static X264Params Instance { get; } = new();
-    public int BFrames { get; set; } = 16;
-    public int BAdapt { get; set; } = 2;
-    public string Me { get; set; } = "umh";
-    public int MeRange { get; set; } = 24;
-    public int SubMe { get; set; } = 11;
-    public int AqMode { get; set; } = 3;
-    public int Ref { get; set; } = 10;
-    public string PsyRd { get; set; } = "0.2:0.0";
-    public string DeBlock { get; set; } = "1:2";
-    public int KeyInt { get; set; } = 600;
-    public int Crf { get; set; } = 21;
-
-    public string GetX264Params()
-    {
-        return $"bframes={BFrames}:" +
-               $"b-adapt={BAdapt}:" +
-               $"me={Me}:" +
-               $"merange={MeRange}:" +
-               $"subme={SubMe}:" +
-               $"aq-mode={AqMode}:" +
-               $"ref={Ref}:" +
-               $"psy-rd='{PsyRd}':" +
-               $"deblock='{DeBlock}':" +
-               $"keyint={KeyInt}:" +
-               $"crf={Crf}";
-    }
-
-    public string GetSimpleX264Params()
-    {
-        return $"psy-rd='{PsyRd}':crf={Crf}";
-    }
-}
+namespace SekaiToolsGUI.Suppress;
 
 public partial class Suppressor
 {
@@ -57,13 +22,13 @@ public partial class Suppressor
     private bool Running { get; set; }
 
     private static string VapourExecutable =>
-        Path.GetRelativePath(".", ResourceManager.ResourcePath("vapourSynth/VSPipe.exe"));
+        Path.GetRelativePath(".", ResourceManager.ResourcePath(ResourceType.VapourSynth, "vapourSynth/VSPipe.exe"));
 
     private static string VapourScript =>
-        Path.GetRelativePath(".", ResourceManager.ResourcePath("vapourSynth/lim5994.vpy"));
+        Path.GetRelativePath(".", ResourceManager.ResourcePath(ResourceType.VapourSynth, "vapourSynth/lim5994.vpy"));
 
     private static string FfmpegExecutable =>
-        Path.GetRelativePath(".", ResourceManager.ResourcePath("vapourSynth/ffmpeg.exe"));
+        Path.GetRelativePath(".", ResourceManager.ResourcePath(ResourceType.VapourSynth, "vapourSynth/ffmpeg.exe"));
 
     private static bool ScriptExist =>
         File.Exists(VapourScript) && File.Exists(VapourExecutable) && File.Exists(FfmpegExecutable);

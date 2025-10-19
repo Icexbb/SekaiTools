@@ -6,20 +6,6 @@ namespace SekaiDataFetch.List;
 
 public class ListCardStory : BaseListStory
 {
-    [CachePath("cardEpisodes")]
-    private static string CachePathCardEpisodes =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "SekaiTools", "Data", "cache", "cardEpisodes.json");
-
-    [CachePath("cards")]
-    private static string CachePathCards =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "SekaiTools", "Data", "cache", "cards.json");
-
-    [SourcePath("cardEpisodes")] private static string SourceCardEpisodes => Fetcher.SourceList.CardEpisodes;
-    [SourcePath("cards")] private static string SourceCards => Fetcher.SourceList.Cards;
-
-
     public readonly List<CardStorySet> Data = [];
 
     private ListCardStory(Proxy? proxy = null)
@@ -27,6 +13,17 @@ public class ListCardStory : BaseListStory
         SetProxy(proxy ?? Proxy.None);
         Load();
     }
+
+    [CachePath("cardEpisodes")]
+    private static string CachePathCardEpisodes =>
+        Path.Combine(DataBaseDir, "Data", "cache", "cardEpisodes.json");
+
+    [CachePath("cards")]
+    private static string CachePathCards =>
+        Path.Combine(DataBaseDir, "Data", "cache", "cards.json");
+
+    [SourcePath("cardEpisodes")] private static string SourceCardEpisodes => Fetcher.SourceList.CardEpisodes;
+    [SourcePath("cards")] private static string SourceCards => Fetcher.SourceList.Cards;
 
     public static ListCardStory Instance { get; } = new();
 

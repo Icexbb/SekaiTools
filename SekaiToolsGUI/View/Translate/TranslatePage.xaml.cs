@@ -8,6 +8,7 @@ using SekaiToolsCore.Story;
 using SekaiToolsCore.Story.Event;
 using SekaiToolsCore.Story.Game;
 using SekaiToolsCore.Story.Translation;
+using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.Translate.Components;
 using Wpf.Ui;
 using Wpf.Ui.Controls;

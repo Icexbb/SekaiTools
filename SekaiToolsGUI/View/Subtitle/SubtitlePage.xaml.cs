@@ -10,8 +10,12 @@ using SekaiToolsCore;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Utils;
+using SekaiToolsGUI.Interface;
+using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.View.Subtitle.Components;
 using SekaiToolsGUI.ViewModel;
+using SekaiToolsGUI.ViewModel.Setting;
+using SekaiToolsGUI.ViewModel.Subtitle;
 using Wpf.Ui;
 using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Controls;
@@ -21,7 +25,7 @@ using SaveFileDialog = SekaiToolsGUI.View.Subtitle.Components.SaveFileDialog;
 
 namespace SekaiToolsGUI.View.Subtitle;
 
-public partial class SubtitlePage : UserControl, INavigableView<SubtitlePageModel>
+public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
 {
     public SubtitlePage()
     {
@@ -490,5 +494,20 @@ public partial class SubtitlePage
     private void ShowPreviewButton_OnClick(object sender, RoutedEventArgs e)
     {
         ViewModel.ShowPreview = true;
+    }
+
+    public async void OnNavigatedTo()
+    {
+        if (ResourceManager.CheckResource(ResourceType.VideoProcess))
+        {
+            return;
+        }
+
+        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+        var dialog = new RefreshWaitDialog("正在刷新下载源数据");
+        var source = new CancellationTokenSource();
+        _ = dialogService.ShowAsync(dialog, source.Token);
+        await ResourceManager.EnsureResource(ResourceType.VideoProcess);
+        await source.CancelAsync();
     }
 }

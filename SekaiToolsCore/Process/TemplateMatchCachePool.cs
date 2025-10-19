@@ -18,24 +18,22 @@ public class TemplateMatchCachePool
         Misc = 7
     }
     
-    private static List<TemplateMatchCachePool> _GlobalPool;
+    private static List<TemplateMatchCachePool>? _globalPool;
 
-    public static List<TemplateMatchCachePool> GlobalPool
+    private static List<TemplateMatchCachePool> GlobalPool
     {
         get
         {
-            if (_GlobalPool == null)
-            {
-                int len = (int)MatchUsage.Misc + 1;
-                _GlobalPool = new List<TemplateMatchCachePool>(len);
+            if (_globalPool != null) return _globalPool;
+            const int len = (int)MatchUsage.Misc + 1;
+            _globalPool = new List<TemplateMatchCachePool>(len);
 
-                for (int i = 0; i < len; i++)
-                {
-                    _GlobalPool.Add(new TemplateMatchCachePool());
-                }
+            for (var i = 0; i < len; i++)
+            {
+                _globalPool.Add(new TemplateMatchCachePool());
             }
 
-            return _GlobalPool;
+            return _globalPool;
         }
     }
 
@@ -49,7 +47,8 @@ public class TemplateMatchCachePool
         GlobalPool[(int)MatchUsage.DialogContent3].Reset();
     }
 
-    public Mat prevImg, diffMat;
+    public Mat? prevImg;
+    public Mat diffMat;
     public MatchResult prevResult;
 
     public TemplateMatchCachePool()
@@ -90,7 +89,7 @@ public class TemplateMatchCachePool
         return true;
     }
 
-    public void Reset()
+    private void Reset()
     {
         prevImg = null;
     }
