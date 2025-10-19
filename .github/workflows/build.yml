@@ -44,7 +44,7 @@ jobs:
         run: 7z a SekaiTools-${{ env.VERSION }}.7z ${{ env.BUILD_DIR }}/
 
       - name: Create Release and Upload Release Asset
-      - uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: SekaiTools-${{ env.VERSION }}.7z
           path: SekaiTools-${{ env.VERSION }}.7z
