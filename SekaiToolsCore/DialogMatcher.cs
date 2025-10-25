@@ -34,7 +34,9 @@ public class DialogMatcher(
         var content = dialog.Data.CharacterOriginal;
         var template = GetNameTag(TrimTemplateContent(content));
         var res = LocalMatch(img, template,
-            dialog.Data.Shake ? config.MatchingThreshold.DialogSpecial : config.MatchingThreshold.DialogNormal);
+            dialog.Data.Shake
+                ? config.MatchingThreshold.DialogNametagSpecial
+                : config.MatchingThreshold.DialogNametagNormal);
         if (!res.IsEmpty && _nameTagPosition.IsEmpty) _nameTagPosition = res;
         return res;
 
@@ -116,8 +118,8 @@ public class DialogMatcher(
         bool matchRes;
 
         var matchingThreshold = dialog.Data.Shake
-            ? config.MatchingThreshold.DialogSpecial
-            : config.MatchingThreshold.DialogNormal;
+            ? config.MatchingThreshold.DialogContentSpecial
+            : config.MatchingThreshold.DialogContentNormal;
 
         switch (lastStatus)
         {

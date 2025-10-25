@@ -63,8 +63,11 @@ public partial class MainWindow : FluentWindow
 
 partial class MainWindow
 {
+    private const bool UseCheckUpdate = false;
+
     private async void CheckUpdate()
     {
+        if (!UseCheckUpdate) return;
         var needUpdate = await CheckForUpdateAsync();
         if (!needUpdate) return;
         if (!await ShowJudgeDialog()) return;

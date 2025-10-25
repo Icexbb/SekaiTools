@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -380,7 +381,10 @@ public partial class SubtitlePage
 
     private MatchingThreshold GetMatchingThreshold()
     {
-        return new MatchingThreshold();
+        var thresholdData = ResourceManager.ResourcePath(ResourceType.VideoProcess, "thresholds.json");
+        if (!File.Exists(thresholdData)) return new MatchingThreshold();
+        var json = File.ReadAllText(thresholdData);
+        return JsonSerializer.Deserialize<MatchingThreshold>(json);
     }
 
     private void StartProcess()

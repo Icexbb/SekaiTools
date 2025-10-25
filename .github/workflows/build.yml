@@ -42,4 +42,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: SekaiTools-Nightly
-          path: SekaiTools-Nightly.7z
+          path: ${{ env.BUILD_DIR }}

@@ -34,7 +34,7 @@ public partial class MainWindow : Window
         return version?.TrimStart('v') ?? "0.0.0";
     }
 
-    private async Task DownloadFileAsync(string url, string destFile,string version = "")
+    private async Task DownloadFileAsync(string url, string destFile, string version = "")
     {
         using var client = new HttpClient();
         using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
@@ -69,6 +69,7 @@ public partial class MainWindow : Window
             p.Kill();
         }
 
+
         var psi = new ProcessStartInfo
         {
             FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "7zr.exe"),
@@ -76,7 +77,6 @@ public partial class MainWindow : Window
             CreateNoWindow = true,
             UseShellExecute = false
         };
-
         var p2 = Process.Start(psi);
         p2?.WaitForExit();
     }
@@ -106,8 +106,15 @@ public partial class MainWindow : Window
             await DownloadFileAsync(url, zipFile);
 
             StatusText.Text = "正在解压更新包...";
-            Extract7Z(zipFile, AppDomain.CurrentDomain.BaseDirectory);
+            var targetDir = AppDomain.CurrentDomain.BaseDirectory;
+            var tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp");
+
+            Extract7Z(zipFile, tempDir);
             File.Delete(zipFile);
+
+            Directory.GetFiles(targetDir).Where(file => file.StartsWith("Updater")).ToList().ForEach(File.Delete);
+            Directory.Move(tempDir, targetDir);
+            Directory.Delete(tempDir, true);
 
             StatusText.Text = "更新完成，正在启动主程序...";
             await Task.Delay(1000);

@@ -1,6 +1,10 @@
-from res_ls import list_resource_types, list_types_resources,dirPath
+from res_ls import list_resource_types, list_types_resources, dirPath
 from garage import put_file, bucket_name
+from dotenv import load_dotenv
 import os
+env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+load_dotenv(dotenv_path=env_path, verbose=True)
+
 
 def threaded_upload(resources, max_threads=4):
     import threading
@@ -34,17 +38,22 @@ def threaded_upload(resources, max_threads=4):
     for t in threads:
         t.join()
 
+
+EXCLUDE_RESOURCE_TYPE = os.getenv("EXCLUDE_RESOURCE_TYPE", "").split(",")
+
 if __name__ == "__main__":
     resource_types = list_resource_types()
     for resource_type in resource_types:
+        if resource_type in EXCLUDE_RESOURCE_TYPE:
+            print(f"Skipping excluded resource type: {resource_type}")
+            continue
         resources = list_types_resources(resource_type)
         file_list_name = resource_type + ".json"
-        file_list_path = os.path.join(dirPath ,file_list_name)
+        file_list_path = os.path.join(dirPath, file_list_name)
 
         put_file(bucket_name, file_list_path, file_list_name)
-        
+
         threaded_upload(resources, max_threads=20)
 
         # for res in resources:
-            # put_file(bucket_name, os.path.join(dirPath, res["path"]), res["path"])
-        
+        # put_file(bucket_name, os.path.join(dirPath, res["path"]), res["path"])

@@ -115,12 +115,6 @@ public partial class TemplateManager(Size videoResolution, bool noScale = false)
             _ => throw new ArgumentOutOfRangeException(nameof(usage), usage, null)
         };
 
-        var byChar = false;
-        // var byChar = font.Name.Contains("DB");
-        // if (TextRegex().Matches(text).Count > 0)
-        //     byChar = false;
-
-
         var bitmap = new Bitmap((int)(text.Length * font.Size * 2), (int)font.Size * 2);
         bitmap.MakeTransparent();
         var graphics = Graphics.FromImage(bitmap);
@@ -129,62 +123,44 @@ public partial class TemplateManager(Size videoResolution, bool noScale = false)
         Action<GraphicsPath> drawStroke;
         Action<GraphicsPath> drawText;
 
-        const int fillScale = 235;
-        var fillColor = Color.FromArgb(255, fillScale, fillScale, fillScale);
-        const int grayScale = 64;
-        var strokeColor = Color.FromArgb(255, grayScale, grayScale, grayScale);
+
         switch (usage)
         {
             case TemplateUsage.BannerContent:
-                drawStroke = path =>
-                {
-                    var width = font.Size / 4f;
-                    using Pen pen = new(strokeColor, width);
-                    pen.LineJoin = LineJoin.Round;
-                    graphics.DrawPath(pen, path);
-                };
-
+            {
+                const int fillScale = 235;
+                var fillColor = Color.FromArgb(255, fillScale, fillScale, fillScale);
                 drawText = path =>
                 {
                     using Brush brush = new SolidBrush(fillColor);
                     graphics.FillPath(brush, path);
                 };
-                if (byChar)
-                {
-                    for (var i = 0; i < text.Length; i++)
-                    {
-                        var sf = new StringFormat();
-                        var pos = new Point((int)(10 + font.Size * 1.01 * i) + 1, 10);
-                        using GraphicsPath path = new();
-                        path.AddString(text[i].ToString(), font.FontFamily, (int)font.Style, font.Size, pos, sf);
-                        // drawStroke(path);
-                        drawText(path);
-                    }
-                }
-                else
-                {
-                    using GraphicsPath path = new();
 
-                    path.AddString(text, font.FontFamily, (int)font.Style, font.Size, new Point(10, 10),
-                        new StringFormat(StringFormatFlags.FitBlackBox)
-                    );
-                    // drawStroke(path);
-                    drawText(path);
-                }
+                using GraphicsPath path = new();
 
+                path.AddString(text, font.FontFamily, (int)font.Style, font.Size, new Point(10, 10),
+                    new StringFormat(StringFormatFlags.FitBlackBox)
+                );
+                drawText(path);
                 var mat = CropZero(bitmap.ToMat());
 
                 var extendPixel = (int)(font.Size / 16f);
                 var extendSize = new Size(mat.Width + extendPixel * 2, mat.Height + extendPixel * 2);
                 var expandedMat = new Mat(extendSize, mat.Depth, mat.NumberOfChannels);
-                const int bannerGrayScale = 100;
+                const int bannerGrayScale = 80;
                 mat.CopyTo(new Mat(expandedMat, new Rectangle(extendPixel, extendPixel, mat.Width, mat.Height)));
 
                 var bgMat = new Mat(expandedMat.Size, expandedMat.Depth, expandedMat.NumberOfChannels);
                 bgMat.SetTo(new MCvScalar(bannerGrayScale, bannerGrayScale, bannerGrayScale, 255));
                 CvInvoke.BitwiseOr(bgMat, expandedMat, expandedMat);
                 return expandedMat;
-            default:
+            }
+            case TemplateUsage.DialogNameTag:
+            {
+                const int fillScale = 235;
+                var fillColor = Color.FromArgb(255, fillScale, fillScale, fillScale);
+                const int grayScale = 64;
+                var strokeColor = Color.FromArgb(255, grayScale, grayScale, grayScale);
                 drawStroke = path =>
                 {
                     var width = font.Size / 5f;
@@ -198,29 +174,40 @@ public partial class TemplateManager(Size videoResolution, bool noScale = false)
                     using Brush brush = new SolidBrush(fillColor);
                     graphics.FillPath(brush, path);
                 };
-                if (byChar)
-                {
-                    for (var i = 0; i < text.Length; i++)
-                    {
-                        var sf = new StringFormat();
-                        var pos = new Point((int)(10 + font.Size * 1.01 * i) + 1, 10);
-                        using GraphicsPath path = new();
-                        path.AddString(text[i].ToString(), font.FontFamily, (int)font.Style, font.Size, pos, sf);
-                        drawStroke(path);
-                        drawText(path);
-                    }
-                }
-                else
-                {
-                    using GraphicsPath path = new();
-
-                    path.AddString(text, font.FontFamily, (int)font.Style, font.Size, new Point(10, 10),
-                        new StringFormat());
-                    drawStroke(path);
-                    drawText(path);
-                }
-
+                using GraphicsPath path = new();
+                path.AddString(text, font.FontFamily, (int)font.Style, font.Size, new Point(10, 10),
+                    new StringFormat());
+                drawStroke(path);
+                drawText(path);
                 return CropZero(bitmap.ToMat());
+            }
+            default:
+            {
+                const int fillScale = 235;
+                var fillColor = Color.FromArgb(255, fillScale, fillScale, fillScale);
+                const int grayScale = 64;
+                var strokeColor = Color.FromArgb(255, grayScale, grayScale, grayScale);
+                drawStroke = path =>
+                {
+                    var width = font.Size / 5f;
+                    using Pen pen = new(strokeColor, width);
+                    pen.LineJoin = LineJoin.Round;
+                    graphics.DrawPath(pen, path);
+                };
+
+                drawText = path =>
+                {
+                    using Brush brush = new SolidBrush(fillColor);
+                    graphics.FillPath(brush, path);
+                };
+
+                using GraphicsPath path = new();
+                path.AddString(text, font.FontFamily, (int)font.Style, font.Size, new Point(10, 10),
+                    new StringFormat());
+                drawStroke(path);
+                drawText(path);
+                return CropZero(bitmap.ToMat());
+            }
         }
     }
 
@@ -236,7 +223,4 @@ public partial class TemplateManager(Size videoResolution, bool noScale = false)
         usageDict[text] = mat;
         return mat;
     }
-
-    [GeneratedRegex("[a-zA-Z0-9]")]
-    private static partial Regex TextRegex();
 }
