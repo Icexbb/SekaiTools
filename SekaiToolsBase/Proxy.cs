@@ -1,4 +1,4 @@
-namespace SekaiDataFetch;
+namespace SekaiToolsBase;
 
 public class Proxy(
     string host,

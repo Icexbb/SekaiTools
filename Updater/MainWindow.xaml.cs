@@ -8,7 +8,7 @@ using System.Windows;
 namespace Updater;
 
 /// <summary>
-/// Interaction logic for MainWindow.xaml
+///     Interaction logic for MainWindow.xaml
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -19,8 +19,8 @@ public partial class MainWindow : Window
     }
 
 
-    string MainAppName => "SekaiToolsGUI";
-    string MainAppPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{MainAppName}.exe");
+    private string MainAppName => "SekaiToolsGUI";
+    private string MainAppPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{MainAppName}.exe");
 
 
     private async Task<string> GetLatestVersionAsync()
@@ -64,10 +64,7 @@ public partial class MainWindow : Window
     private void Extract7Z(string filePath, string targetDir)
     {
         // 确保先关闭主程序
-        foreach (var p in Process.GetProcessesByName(MainAppName))
-        {
-            p.Kill();
-        }
+        foreach (var p in Process.GetProcessesByName(MainAppName)) p.Kill();
 
 
         var psi = new ProcessStartInfo
@@ -83,10 +80,7 @@ public partial class MainWindow : Window
 
     private void StartMainApp()
     {
-        if (File.Exists(MainAppPath))
-        {
-            Process.Start(new ProcessStartInfo(MainAppPath) { UseShellExecute = true });
-        }
+        if (File.Exists(MainAppPath)) Process.Start(new ProcessStartInfo(MainAppPath) { UseShellExecute = true });
 
         Application.Current.Shutdown();
     }

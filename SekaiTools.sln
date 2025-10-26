@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SekaiDataFetch", "SekaiData
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Updater", "Updater\Updater.csproj", "{0AFDC7F5-995B-488B-B0B3-D541C71B6E6A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SekaiToolsBase", "SekaiToolsBase\SekaiToolsBase.csproj", "{2E4D04C1-2291-4391-B9E2-C942ED74A52A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,6 +55,14 @@ Global
 		{0AFDC7F5-995B-488B-B0B3-D541C71B6E6A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0AFDC7F5-995B-488B-B0B3-D541C71B6E6A}.Release|x64.ActiveCfg = Release|Any CPU
 		{0AFDC7F5-995B-488B-B0B3-D541C71B6E6A}.Release|x64.Build.0 = Release|Any CPU
+		{2E4D04C1-2291-4391-B9E2-C942ED74A52A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E4D04C1-2291-4391-B9E2-C942ED74A52A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E4D04C1-2291-4391-B9E2-C942ED74A52A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2E4D04C1-2291-4391-B9E2-C942ED74A52A}.Debug|x64.Build.0 = Debug|Any CPU
+		{2E4D04C1-2291-4391-B9E2-C942ED74A52A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E4D04C1-2291-4391-B9E2-C942ED74A52A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E4D04C1-2291-4391-B9E2-C942ED74A52A}.Release|x64.ActiveCfg = Release|Any CPU
+		{2E4D04C1-2291-4391-B9E2-C942ED74A52A}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

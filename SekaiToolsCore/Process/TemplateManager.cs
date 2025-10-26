@@ -1,7 +1,6 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
-using System.Text.RegularExpressions;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -16,7 +15,7 @@ public enum TemplateUsage
     MarkerContent
 }
 
-public partial class TemplateManager(Size videoResolution, bool noScale = false)
+public class TemplateManager(Size videoResolution, bool noScale = false)
 {
     private const string MenuSignBase = "menu-107px.png";
     private const string DbFontBase = "FOT-RodinNTLGPro-DB.otf";
@@ -32,7 +31,7 @@ public partial class TemplateManager(Size videoResolution, bool noScale = false)
     public Mat GetMenuSign()
     {
         if (_menuSign != null) return _menuSign;
-        var menuTemplatePath = ResourceManager.ResourcePath(ResourceType.VideoProcess, MenuSignBase);
+        var menuTemplatePath = ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, MenuSignBase);
         if (!File.Exists(menuTemplatePath)) throw new FileNotFoundException();
         var menuTemplate = CvInvoke.Imread(menuTemplatePath, ImreadModes.Unchanged)!;
         int menuSize;
@@ -96,13 +95,13 @@ public partial class TemplateManager(Size videoResolution, bool noScale = false)
 
     private Font GetDbFont()
     {
-        var fontFilePath = ResourceManager.ResourcePath(ResourceType.VideoProcess, DbFontBase);
+        var fontFilePath = ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, DbFontBase);
         return GetFont(fontFilePath, GetFontSize());
     }
 
     private Font GetEbFont()
     {
-        var fontFilePath = ResourceManager.ResourcePath(ResourceType.VideoProcess, EbFontBase);
+        var fontFilePath = ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, EbFontBase);
         return GetFont(fontFilePath, GetFontSize());
     }
 

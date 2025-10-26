@@ -2,7 +2,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
-using SekaiDataFetch;
+using SekaiToolsBase;
 using SekaiToolsCore;
 using SekaiToolsCore.Process.Model;
 using Wpf.Ui.Appearance;
@@ -235,6 +235,32 @@ partial class SettingPageModel
         File.WriteAllText(GetSettingPath(), setting.Dump(), Encoding.UTF8);
     }
 
+    public void ResetSetting()
+    {
+        ProxyType = Model.Setting.Default.ProxyType;
+        ProxyHost = Model.Setting.Default.ProxyHost;
+        ProxyPort = Model.Setting.Default.ProxyPort;
+
+        TypewriterFadeTime = Model.Setting.Default.TypewriterFadeTime;
+        TypewriterCharTime = Model.Setting.Default.TypewriterCharTime;
+
+        DialogFontFamily = Model.Setting.Default.DialogFontFamily;
+        BannerFontFamily = Model.Setting.Default.BannerFontFamily;
+        MarkerFontFamily = Model.Setting.Default.MarkerFontFamily;
+
+        ExportLine1 = Model.Setting.Default.ExportLine1;
+        ExportLine2 = Model.Setting.Default.ExportLine2;
+        ExportLine3 = Model.Setting.Default.ExportLine3;
+        ExportCharacter = Model.Setting.Default.ExportCharacter;
+        ExportBannerMask = Model.Setting.Default.ExportBannerMask;
+        ExportBannerText = Model.Setting.Default.ExportBannerText;
+        ExportMarkerMask = Model.Setting.Default.ExportMarkerMask;
+        ExportMarkerText = Model.Setting.Default.ExportMarkerText;
+        ExportScreenComment = Model.Setting.Default.ExportScreenComment;
+
+        SaveSetting();
+    }
+
     public void LoadSetting()
     {
         var setting = Model.Setting.Load(GetSettingPath());
@@ -245,51 +271,27 @@ partial class SettingPageModel
         ProxyHost = setting.ProxyHost;
         ProxyPort = setting.ProxyPort;
 
-        if (AppVersion != setting.AppVersion)
-        {
-            TypewriterFadeTime = Model.Setting.Default.TypewriterFadeTime;
-            TypewriterCharTime = Model.Setting.Default.TypewriterCharTime;
+        TypewriterFadeTime = setting.TypewriterFadeTime;
+        TypewriterCharTime = setting.TypewriterCharTime;
 
-            DialogFontFamily = Model.Setting.Default.DialogFontFamily;
-            BannerFontFamily = Model.Setting.Default.BannerFontFamily;
-            MarkerFontFamily = Model.Setting.Default.MarkerFontFamily;
+        DialogFontFamily = setting.DialogFontFamily == ""
+            ? Model.Setting.Default.DialogFontFamily
+            : setting.DialogFontFamily;
+        BannerFontFamily = setting.BannerFontFamily == ""
+            ? Model.Setting.Default.BannerFontFamily
+            : setting.BannerFontFamily;
+        MarkerFontFamily = setting.MarkerFontFamily == ""
+            ? Model.Setting.Default.MarkerFontFamily
+            : setting.MarkerFontFamily;
 
-            ExportLine1 = Model.Setting.Default.ExportLine1;
-            ExportLine2 = Model.Setting.Default.ExportLine2;
-            ExportLine3 = Model.Setting.Default.ExportLine3;
-            ExportCharacter = Model.Setting.Default.ExportCharacter;
-            ExportBannerMask = Model.Setting.Default.ExportBannerMask;
-            ExportBannerText = Model.Setting.Default.ExportBannerText;
-            ExportMarkerMask = Model.Setting.Default.ExportMarkerMask;
-            ExportMarkerText = Model.Setting.Default.ExportMarkerText;
-            ExportScreenComment = Model.Setting.Default.ExportScreenComment;
-        }
-        else
-        {
-            TypewriterFadeTime = setting.TypewriterFadeTime;
-            TypewriterCharTime = setting.TypewriterCharTime;
-
-            DialogFontFamily = setting.DialogFontFamily == ""
-                ? Model.Setting.Default.DialogFontFamily
-                : setting.DialogFontFamily;
-            BannerFontFamily = setting.BannerFontFamily == ""
-                ? Model.Setting.Default.BannerFontFamily
-                : setting.BannerFontFamily;
-            MarkerFontFamily = setting.MarkerFontFamily == ""
-                ? Model.Setting.Default.MarkerFontFamily
-                : setting.MarkerFontFamily;
-
-            ExportLine1 = setting.ExportLine1;
-            ExportLine2 = setting.ExportLine2;
-            ExportLine3 = setting.ExportLine3;
-            ExportCharacter = setting.ExportCharacter;
-            ExportBannerMask = setting.ExportBannerMask;
-            ExportBannerText = setting.ExportBannerText;
-            ExportMarkerMask = setting.ExportMarkerMask;
-            ExportMarkerText = setting.ExportMarkerText;
-            ExportScreenComment = setting.ExportScreenComment;
-        }
-
-        SaveSetting();
+        ExportLine1 = setting.ExportLine1;
+        ExportLine2 = setting.ExportLine2;
+        ExportLine3 = setting.ExportLine3;
+        ExportCharacter = setting.ExportCharacter;
+        ExportBannerMask = setting.ExportBannerMask;
+        ExportBannerText = setting.ExportBannerText;
+        ExportMarkerMask = setting.ExportMarkerMask;
+        ExportMarkerText = setting.ExportMarkerText;
+        ExportScreenComment = setting.ExportScreenComment;
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
-using SekaiDataFetch.Data;
 using SekaiDataFetch.Item;
+using SekaiToolsBase;
+using SekaiToolsBase.Data;
 
 namespace SekaiDataFetch.List;
 
@@ -38,9 +39,9 @@ public class ListUnitStory : BaseListStory
         }
         catch (Exception e)
         {
-            Log.Logger.LogError(e,
-                "{TypeName} Failed to load data. Clearing cache and retrying. Error: {Message}",
-                GetType().Name, e.Message);
+            Logger.Log(
+                $"{GetType().Name} Failed to load data. Clearing cache and retrying. Error: {e.Message}", LogLevel.Error
+            );
             ClearCache();
         }
     }

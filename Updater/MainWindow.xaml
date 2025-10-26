@@ -6,7 +6,8 @@
 
     <Grid Margin="20">
         <StackPanel VerticalAlignment="Center">
-            <TextBlock x:Name="StatusText" Text="正在检查更新..." TextWrapping="WrapWithOverflow" Margin="0,0,0,10" HorizontalAlignment="Center" />
+            <TextBlock x:Name="StatusText" Text="正在检查更新..." TextWrapping="WrapWithOverflow" Margin="0,0,0,10"
+                       HorizontalAlignment="Center" />
             <ProgressBar x:Name="Progress" Height="20" Minimum="0" Maximum="100" />
         </StackPanel>
     </Grid>

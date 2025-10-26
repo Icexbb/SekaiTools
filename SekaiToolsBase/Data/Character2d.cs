@@ -1,4 +1,4 @@
-namespace SekaiDataFetch.Data;
+namespace SekaiToolsBase.Data;
 
 public class Character2d : ICloneable
 {

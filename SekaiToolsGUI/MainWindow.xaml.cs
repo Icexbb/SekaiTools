@@ -6,8 +6,10 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.Json;
 using System.Windows;
-using SekaiDataFetch;
+using SekaiToolsBase;
+using SekaiToolsCore;
 using SekaiToolsGUI.Interface;
+using SekaiToolsGUI.View.Setting;
 using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Setting;
 using Wpf.Ui;
@@ -52,6 +54,7 @@ public partial class MainWindow : FluentWindow
 
     private void NavigationView_OnNavigated(NavigationView sender, NavigatedEventArgs args)
     {
+        ResourceManager.Instance.SetProxy(SettingPageModel.Instance.GetProxy());
         switch (args.Page)
         {
             case IAppPage<object> appPage:
@@ -59,15 +62,53 @@ public partial class MainWindow : FluentWindow
                 break;
         }
     }
+
+    private void NavigateToSetting()
+    {
+        NavigationView.Navigate(typeof(SettingPage));
+    }
+
+    public async void OnCheckResourceFailed(Exception e, Action retryAction, string content = "检查资源错误，是否重试或检查设置？")
+    {
+        var result = await ShowRetryDialog();
+        switch (result)
+        {
+            case ContentDialogResult.Primary:
+                retryAction();
+                break;
+            case ContentDialogResult.Secondary:
+                NavigateToSetting();
+                break;
+            case ContentDialogResult.None:
+            default:
+                Application.Current.Shutdown();
+                break;
+        }
+
+        async Task<ContentDialogResult> ShowRetryDialog()
+        {
+            var token = CancellationToken.None;
+            var dialogResult = await WindowContentDialogService.ShowSimpleDialogAsync(
+                new SimpleContentDialogCreateOptions
+                {
+                    Title = "错误",
+                    Content = content + "\n" + e.StackTrace,
+                    PrimaryButtonText = "重试",
+                    CloseButtonText = "退出",
+                    SecondaryButtonText = "检查设置"
+                }, token);
+            return dialogResult;
+        }
+    }
 }
 
 partial class MainWindow
 {
-    private const bool UseCheckUpdate = false;
+    private readonly bool _useCheckUpdate = true;
 
     private async void CheckUpdate()
     {
-        if (!UseCheckUpdate) return;
+        if (!_useCheckUpdate) return;
         var needUpdate = await CheckForUpdateAsync();
         if (!needUpdate) return;
         if (!await ShowJudgeDialog()) return;
@@ -102,10 +143,7 @@ partial class MainWindow
             var remoteVersion = await GetLatestVersionAsync();
 
             // 3. 比较
-            if (new Version(remoteVersion) > new Version(localVersion))
-            {
-                return true;
-            }
+            if (new Version(remoteVersion) > new Version(localVersion)) return true;
         }
         catch (Exception ex)
         {
@@ -161,16 +199,12 @@ partial class MainWindow
     {
         var updaterPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Updater.exe");
         if (File.Exists(updaterPath))
-        {
             Process.Start(new ProcessStartInfo
             {
                 FileName = updaterPath,
                 UseShellExecute = true
             });
-        }
         else
-        {
             MessageBox.Show("检测到新版本，但 Updater.exe 不存在！", "更新失败", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
     }
 }

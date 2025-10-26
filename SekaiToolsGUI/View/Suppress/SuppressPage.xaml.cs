@@ -25,14 +25,21 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 
     public async void OnNavigatedTo()
     {
-        if (ResourceManager.CheckResource(ResourceType.VapourSynth)) return;
+        try
+        {
+            if (await ResourceManager.Instance.CheckResource(ResourceType.VapourSynth)) return;
 
-        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-        var dialog = new RefreshWaitDialog("正在准备 VapourSynth 运行环境，请稍候……");
-        var source = new CancellationTokenSource();
-        _ = dialogService.ShowAsync(dialog, source.Token);
-        await ResourceManager.EnsureResource(ResourceType.VapourSynth);
-        await source.CancelAsync();
+            var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+            var dialog = new RefreshWaitDialog("正在准备 VapourSynth 运行环境，请稍候……");
+            var source = new CancellationTokenSource();
+            _ = dialogService.ShowAsync(dialog, source.Token);
+            await ResourceManager.Instance.EnsureResource(ResourceType.VapourSynth);
+            await source.CancelAsync();
+        }
+        catch (Exception e)
+        {
+            (Application.Current.MainWindow as MainWindow)?.OnCheckResourceFailed(e, OnNavigatedTo);
+        }
     }
 
     private static string? SelectFile(object sender, RoutedEventArgs e, string filter)

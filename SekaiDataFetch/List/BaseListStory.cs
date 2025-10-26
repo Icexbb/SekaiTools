@@ -1,6 +1,6 @@
 using System.Reflection;
-using Microsoft.Extensions.Logging;
 using SekaiDataFetch.Source;
+using SekaiToolsBase;
 
 namespace SekaiDataFetch.List;
 
@@ -54,7 +54,7 @@ public abstract class BaseListStory
             if (File.Exists(path))
                 File.Delete(path);
 
-        Log.Logger.LogInformation("{TypeName} cache cleared", GetType().Name);
+        Logger.Log($"{GetType().Name} cache cleared");
     }
 
     protected abstract void Load();
@@ -95,8 +95,7 @@ public abstract class BaseListStory
 
         await Task.WhenAll(tasks);
 
-        Log.Logger.LogInformation("{TypeName} data refreshed from sources: {Sources}", type.Name,
-            string.Join(", ", sourceProps.Keys));
+        Logger.Log($"{type.Name} data refreshed from sources: {string.Join(", ", sourceProps.Keys)}");
 
         Load();
     }

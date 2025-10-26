@@ -21,13 +21,16 @@ public partial class Suppressor
     private bool Running { get; set; }
 
     private static string VapourExecutable =>
-        Path.GetRelativePath(".", ResourceManager.ResourcePath(ResourceType.VapourSynth, "vapourSynth/VSPipe.exe"));
+        Path.GetRelativePath(".",
+            ResourceManager.Instance.ResourcePath(ResourceType.VapourSynth, "vapourSynth/VSPipe.exe"));
 
     private static string VapourScript =>
-        Path.GetRelativePath(".", ResourceManager.ResourcePath(ResourceType.VapourSynth, "vapourSynth/lim5994.vpy"));
+        Path.GetRelativePath(".",
+            ResourceManager.Instance.ResourcePath(ResourceType.VapourSynth, "vapourSynth/lim5994.vpy"));
 
     private static string FfmpegExecutable =>
-        Path.GetRelativePath(".", ResourceManager.ResourcePath(ResourceType.VapourSynth, "vapourSynth/ffmpeg.exe"));
+        Path.GetRelativePath(".",
+            ResourceManager.Instance.ResourcePath(ResourceType.VapourSynth, "vapourSynth/ffmpeg.exe"));
 
     private static bool ScriptExist =>
         File.Exists(VapourScript) && File.Exists(VapourExecutable) && File.Exists(FfmpegExecutable);

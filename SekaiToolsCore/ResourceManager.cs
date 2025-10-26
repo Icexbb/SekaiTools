@@ -1,6 +1,8 @@
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using SekaiToolsBase;
 
 namespace SekaiToolsCore;
 
@@ -24,7 +26,7 @@ public struct Resource
     public long Size { get; set; }
 }
 
-public static class ResourceManager
+public class ResourceManager
 {
     private const string ResourceServerUrl = "https://resource.g.xbb.moe/";
 
@@ -41,22 +43,56 @@ public static class ResourceManager
 
     private static readonly Dictionary<ResourceType, Resource[]> ResourceFileList = new();
 
-    private static HttpClient Client { get; } = new();
+    public static ResourceManager Instance { get; } = new();
 
-    public static string ResourcePath(ResourceType type, string fileName)
+    private HttpClient Client { get; } = new();
+
+    private Proxy UserProxy { get; set; } = Proxy.None;
+
+    public void SetProxy(Proxy proxy)
+    {
+        UserProxy = proxy;
+    }
+
+    private HttpMessageHandler GetHttpHandler()
+    {
+        return UserProxy.ProxyType switch
+        {
+            Proxy.Type.None => new HttpClientHandler(),
+            Proxy.Type.System => new HttpClientHandler(),
+            Proxy.Type.Http => new HttpClientHandler
+            {
+                Proxy = new WebProxy(UserProxy.Host, UserProxy.Port), UseProxy = true
+            },
+            Proxy.Type.Socks5 => new SocketsHttpHandler
+            {
+                Proxy = new WebProxy(UserProxy.Host, UserProxy.Port), UseProxy = true
+            },
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+
+    private async Task<HttpResponseMessage> Download(string url)
+    {
+        using var client = new HttpClient(GetHttpHandler());
+        var response = await Client.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        return response;
+    }
+
+    public string ResourcePath(ResourceType type, string fileName)
     {
         if (!ResourceTypePathMap.TryGetValue(type, out var typeDir))
             throw new ArgumentException($"ResourceType {type} not mapped");
 
         var filename = Path.Combine(BasePath, typeDir, fileName);
         if (File.Exists(filename)) return filename;
-
         throw new FileNotFoundException($"{Path.Combine(BasePath, fileName)} not found");
     }
 
-    public static bool CheckResource(ResourceType type)
+    public async Task<bool> CheckResource(ResourceType type)
     {
-        var fileList = GetFileList(type);
+        var fileList = await GetFileList(type);
         return fileList.All(file => CheckResourceFile(type, file));
     }
 
@@ -83,12 +119,12 @@ public static class ResourceManager
         return sb.ToString();
     }
 
-    public static async Task EnsureResource(ResourceType type)
+    public async Task EnsureResource(ResourceType type)
     {
         if (!ResourceTypePathMap.TryGetValue(type, out var typeDir))
             throw new ArgumentException($"ResourceType {type} not mapped");
 
-        var fileList = GetFileList(type);
+        var fileList = await GetFileList(type);
 
         var tasks = fileList.Select<Resource, Task>(file => EnsureResourceFile(type, file)).ToArray();
         foreach (var task in tasks) await task;
@@ -103,7 +139,7 @@ public static class ResourceManager
         // }
     }
 
-    private static async Task EnsureResourceFile(ResourceType type, Resource resource)
+    private async Task EnsureResourceFile(ResourceType type, Resource resource)
     {
         var filename = NormalizePath(Path.Combine(BasePath, resource.Path));
         var fileDir = Path.GetDirectoryName(filename);
@@ -114,8 +150,7 @@ public static class ResourceManager
         var fileUrl = ResourceServerUrl + resource.Path;
 
         Console.WriteLine($"Downloading {fileUrl}");
-        var response = await Client.GetAsync(fileUrl);
-        response.EnsureSuccessStatusCode();
+        var response = await Download(fileUrl);
         var fileBytes = await response.Content.ReadAsByteArrayAsync();
         await File.WriteAllBytesAsync(filename, fileBytes);
         Console.WriteLine($"Download completed: {filename}");
@@ -127,7 +162,7 @@ public static class ResourceManager
             .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
     }
 
-    private static Resource[] GetFileList(ResourceType type)
+    private async Task<Resource[]> GetFileList(ResourceType type)
     {
         if (ResourceFileList.TryGetValue(type, out var resources)) return resources;
 
@@ -137,8 +172,8 @@ public static class ResourceManager
         var fileListUrl = ResourceServerUrl + $"{typeDir}.json";
 
         Console.WriteLine($"Downloading {fileListUrl}");
-        var response = Client.GetAsync(fileListUrl).Result;
-        response.EnsureSuccessStatusCode();
+
+        var response = await Download(fileListUrl);
         var fileListJson = response.Content.ReadAsStringAsync().Result;
 
         var fileList = JsonSerializer.Deserialize<Resource[]>(fileListJson, new JsonSerializerOptions

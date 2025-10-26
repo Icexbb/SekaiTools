@@ -339,14 +339,20 @@ public partial class SubtitlePage
 
     public async void OnNavigatedTo()
     {
-        if (ResourceManager.CheckResource(ResourceType.VideoProcess)) return;
-
-        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-        var dialog = new RefreshWaitDialog("正在刷新下载源数据");
-        var source = new CancellationTokenSource();
-        _ = dialogService.ShowAsync(dialog, source.Token);
-        await ResourceManager.EnsureResource(ResourceType.VideoProcess);
-        await source.CancelAsync();
+        try
+        {
+            if (await ResourceManager.Instance.CheckResource(ResourceType.VideoProcess)) return;
+            var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+            var dialog = new RefreshWaitDialog("正在刷新下载源数据");
+            var source = new CancellationTokenSource();
+            _ = dialogService.ShowAsync(dialog, source.Token);
+            await ResourceManager.Instance.EnsureResource(ResourceType.VideoProcess);
+            await source.CancelAsync();
+        }
+        catch (Exception e)
+        {
+            (Application.Current.MainWindow as MainWindow)?.OnCheckResourceFailed(e, OnNavigatedTo);
+        }
     }
 
     private void StopProcess()
@@ -381,7 +387,7 @@ public partial class SubtitlePage
 
     private MatchingThreshold GetMatchingThreshold()
     {
-        var thresholdData = ResourceManager.ResourcePath(ResourceType.VideoProcess, "thresholds.json");
+        var thresholdData = ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, "thresholds.json");
         if (!File.Exists(thresholdData)) return new MatchingThreshold();
         var json = File.ReadAllText(thresholdData);
         return JsonSerializer.Deserialize<MatchingThreshold>(json);
