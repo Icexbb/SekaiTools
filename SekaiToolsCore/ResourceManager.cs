@@ -86,8 +86,7 @@ public class ResourceManager
             throw new ArgumentException($"ResourceType {type} not mapped");
 
         var filename = Path.Combine(BasePath, typeDir, fileName);
-        if (File.Exists(filename)) return filename;
-        throw new FileNotFoundException($"{Path.Combine(BasePath, fileName)} not found");
+        return File.Exists(filename) ? filename : throw new FileNotFoundException($"{filename} not found");
     }
 
     public async Task<bool> CheckResource(ResourceType type)
