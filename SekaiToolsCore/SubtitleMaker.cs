@@ -379,7 +379,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
         IEnumerable<SubtitleEvent> GenerateBannerEvent(BannerFrameSet set)
         {
-            var offset = templateManager.TemplateMaxSize(TemplateUsage.BannerContent).Height;
+            var offset = templateManager.GetFontSize(videoInfo.Resolution);
             var center = videoInfo.Resolution.Center();
             center.Y += (int)(offset * 2.5);
             center.Y = center.Y / 20 * 20;

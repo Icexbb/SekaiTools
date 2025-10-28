@@ -25,9 +25,6 @@ public class TemplateManager(Size videoResolution, bool noScale = false)
 
     private Mat? _menuSign;
 
-    private double VideoRatio => videoResolution.Width / (double)videoResolution.Height;
-
-
     public Mat GetMenuSign()
     {
         if (_menuSign != null) return _menuSign;
@@ -46,32 +43,20 @@ public class TemplateManager(Size videoResolution, bool noScale = false)
         return menuTemplate;
     }
 
-    private Size MaxSize(IEnumerable<Mat> mats, bool real = false)
+    public int GetFontSize()
     {
-        var maxWidth = 0;
-        var maxHeight = 0;
-        foreach (var template in mats)
-        {
-            maxWidth = Math.Max(maxWidth, template.Width);
-            maxHeight = Math.Max(maxHeight, template.Height);
-        }
-
-        return real ? new Size(maxWidth, maxHeight) :
-            noScale ? new Size(maxWidth, maxHeight) : new Size(maxWidth / 5, maxHeight / 5);
+        var scale = noScale ? 1 : 5;
+        var size = GetFontSize(videoResolution);
+        var result = size * scale;
+        return result;
     }
 
-    public Size TemplateMaxSize(TemplateUsage usage, bool real = false)
+    public int GetFontSize(Size videoSize)
     {
-        var valueCollection = _template[usage]?.Values;
-        return valueCollection != null ? MaxSize(valueCollection, real) : new Size(0, 0);
-    }
-
-    private int GetFontSize()
-    {
-        var scale = (noScale ? 1 : 5) * 0.95;
-        var size = VideoRatio > 16 / 9.0
-            ? videoResolution.Height * 0.043
-            : videoResolution.Width * 0.024;
+        var scale = 0.95;
+        var size = videoSize.Height / (double)videoSize.Height > 16 / 9.0
+            ? videoSize.Height * 0.043
+            : videoSize.Width * 0.024;
         var result = (int)(size * scale);
         return result;
     }
