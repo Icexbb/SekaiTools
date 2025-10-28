@@ -112,9 +112,11 @@ partial class MainWindow
         var needUpdate = await CheckForUpdateAsync();
         if (!needUpdate) return;
         if (!await ShowJudgeDialog()) return;
+        const string url = "https://github.com/Icexbb/SekaiTools/releases/latest";
+        Process.Start("explorer.exe", url);
 
-        LaunchUpdater();
-        Application.Current.Shutdown(); // 关闭主程序，交给 Updater 更新
+        // LaunchUpdater();
+        // Application.Current.Shutdown(); // 关闭主程序，交给 Updater 更新
         return;
 
         async Task<bool> ShowJudgeDialog()
@@ -125,7 +127,7 @@ partial class MainWindow
                 new SimpleContentDialogCreateOptions
                 {
                     Title = "提示",
-                    Content = "检测到新版本，是否自动升级",
+                    Content = "检测到新版本，是否前往下载？",
                     PrimaryButtonText = "是",
                     CloseButtonText = "否"
                 }, token);

@@ -55,7 +55,7 @@ public partial class MainWindow : Window
             Dispatcher.Invoke(() =>
             {
                 Progress.Value = (double)read1 / total * 100;
-                StatusText.Text = $"新版本{version}\n" +
+                StatusText.Text = $"新版本 {version}\n" +
                                   $"正在下载更新包... {Progress.Value:F0}%";
             });
         }
@@ -97,7 +97,7 @@ public partial class MainWindow : Window
             var zipFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update.7z");
             if (File.Exists(zipFile)) File.Delete(zipFile);
 
-            await DownloadFileAsync(url, zipFile);
+            await DownloadFileAsync(url, zipFile, remoteVersion);
 
             StatusText.Text = "正在解压更新包...";
             var targetDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -105,9 +105,10 @@ public partial class MainWindow : Window
 
             Extract7Z(zipFile, tempDir);
             File.Delete(zipFile);
-
+            StatusText.Text = "正在更新文件...";
+            
             Directory.GetFiles(targetDir).Where(file => file.StartsWith("Updater")).ToList().ForEach(File.Delete);
-            Directory.Move(tempDir, targetDir);
+            Directory.Move(Path.Combine(tempDir, "SekaiTools"), targetDir);
             Directory.Delete(tempDir, true);
 
             StatusText.Text = "更新完成，正在启动主程序...";
@@ -116,7 +117,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            StatusText.Text = "更新失败：" + ex.Message;
+            StatusText.Text = "更新失败：" + "\n" + ex.Message + "\n" + ex.StackTrace;
         }
     }
 }
