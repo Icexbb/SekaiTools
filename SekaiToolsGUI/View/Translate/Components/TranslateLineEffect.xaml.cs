@@ -1,16 +1,16 @@
 using System.Windows.Controls;
+using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.ViewModel.Translate;
 using Wpf.Ui.Abstractions.Controls;
-using SekaiEvent = SekaiToolsCore.Story.Event.Event;
 
 namespace SekaiToolsGUI.View.Translate.Components;
 
 public partial class TranslateLineEffect : UserControl, INavigableView<LineEffectModel>, IExportable
 {
-    public TranslateLineEffect(SekaiEvent eEvent)
+    public TranslateLineEffect(BaseStoryEvent eBaseStoryEvent)
     {
-        DataContext = new LineEffectModel(eEvent);
+        DataContext = new LineEffectModel(eBaseStoryEvent);
         InitializeComponent();
     }
 

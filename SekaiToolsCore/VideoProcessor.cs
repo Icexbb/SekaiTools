@@ -1,12 +1,14 @@
 using System.Diagnostics;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
+using SekaiToolsBase.Story;
+using SekaiToolsBase.Story.StoryEvent;
+using SekaiToolsBase.SubStationAlpha;
+using SekaiToolsCore.Match.TemplateMatcher;
+using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
-using SekaiToolsCore.Story.Event;
-using SekaiToolsCore.SubStationAlpha;
 using SekaiToolsCore.Utils;
-using Event = SekaiToolsCore.Story.Event.Event;
 
 namespace SekaiToolsCore;
 
@@ -16,11 +18,11 @@ public class VideoProcessCallbacks
     public Action OnTaskFinished { get; set; } = () => { };
     public Action<Mat> OnFramePreviewImage { get; set; } = mat => { };
 
-    public Action<DialogFrameSet> OnNewDialog { get; set; } = dialog => { };
+    public Action<DialogBaseFrameSet> OnNewDialog { get; set; } = dialog => { };
 
-    public Action<BannerFrameSet> OnNewBanner { get; set; } = banner => { };
+    public Action<BannerBaseFrameSet> OnNewBanner { get; set; } = banner => { };
 
-    public Action<MarkerFrameSet> OnNewMarker { get; set; } = marker => { };
+    public Action<MarkerBaseFrameSet> OnNewMarker { get; set; } = marker => { };
 
     public Action<Exception> OnException { get; set; } = e => { };
 
@@ -37,7 +39,7 @@ public class VideoProcessor
 
     public VideoProcessor(Config config, VideoProcessCallbacks callbacks)
     {
-        Creator = new MatcherCreator(config);
+        Creator = new TemplateMatcherCreator(config);
         Capture = new VideoCapture(config.VideoFilePath);
         DialogMatcher = Creator.DialogMatcher();
         ContentMatcher = Creator.ContentMatcher();
@@ -48,13 +50,13 @@ public class VideoProcessor
 
     private CancellationTokenSource? TokenSource { get; set; } = new();
     private CancellationToken Token => TokenSource!.Token;
-    private ContentMatcher? ContentMatcher { get; }
+    private ContentTemplateMatcher? ContentMatcher { get; }
 
-    private DialogMatcher? DialogMatcher { get; }
-    private MarkerMatcher? MarkerMatcher { get; }
-    private BannerMatcher? BannerMatcher { get; }
+    private DialogTemplateMatcher? DialogMatcher { get; }
+    private MarkerTemplateMatcher? MarkerMatcher { get; }
+    private BannerTemplateMatcher? BannerMatcher { get; }
 
-    private MatcherCreator? Creator { get; }
+    private TemplateMatcherCreator? Creator { get; }
     private Task? Task { get; set; }
     private VideoCapture? Capture { get; set; }
 
@@ -72,8 +74,8 @@ public class VideoProcessor
         MarkerMatcher?.Set.Count ?? 0
     );
 
-    public Subtitle GenerateSubtitle(List<BannerFrameSet> bannerFrameSets, List<DialogFrameSet> dialogFrameSets,
-        List<MarkerFrameSet> markerFrameSets)
+    public Subtitle GenerateSubtitle(List<BannerBaseFrameSet> bannerFrameSets, List<DialogBaseFrameSet> dialogFrameSets,
+        List<MarkerBaseFrameSet> markerFrameSets)
     {
         if (Creator == null) throw new NullReferenceException();
         var maker = Creator.SubtitleMaker();
@@ -223,16 +225,16 @@ public class VideoProcessor
         {
             var dialogCount = -1;
             var markerIndex = new List<int>();
-            var events = new Queue<Event>(
-                Creator!.Story.GetTypes(Story.Story.StoryEventType.Dialog | Story.Story.StoryEventType.Marker)
+            var events = new Queue<BaseStoryEvent>(
+                Creator!.Story.GetTypes(Story.StoryEventType.Dialog | Story.StoryEventType.Marker)
             );
             while (events.TryDequeue(out var ev))
                 switch (ev)
                 {
-                    case Dialog:
+                    case DialogStoryEvent:
                         dialogCount += 1;
                         break;
-                    case Marker:
+                    case MarkerStoryEvent:
                         markerIndex.Add(dialogCount);
                         break;
                 }

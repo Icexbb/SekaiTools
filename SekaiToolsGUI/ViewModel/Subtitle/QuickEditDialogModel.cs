@@ -5,11 +5,11 @@ namespace SekaiToolsGUI.ViewModel.Subtitle;
 
 public class QuickEditDialogModel : ViewModelBase
 {
-    public QuickEditDialogModel(DialogFrameSet dialog)
+    public QuickEditDialogModel(DialogBaseFrameSet dialogBase)
     {
         // Dialog = dialog;
-        ContentOriginal = dialog.Data.BodyOriginal;
-        ContentTranslated = dialog.Data.BodyTranslated;
+        ContentOriginal = dialogBase.Data.BodyOriginal;
+        ContentTranslated = dialogBase.Data.BodyTranslated;
         if (ContentTranslated.Contains("\\R"))
             ContentTranslated = ContentTranslated.Replace("\n", "")
                 .Replace("\\N", "").Replace("\\R", "\n");
@@ -19,8 +19,8 @@ public class QuickEditDialogModel : ViewModelBase
         if (ContentTranslated.LineCount() == 3)
             ContentTranslated = ContentTranslated.Replace("\n", "");
 
-        CanReturn = dialog.Data.BodyOriginal.LineCount() == 3;
-        UseReturn = CanReturn && dialog.UseSeparator;
+        CanReturn = dialogBase.Data.BodyOriginal.LineCount() == 3;
+        UseReturn = CanReturn && dialogBase.UseSeparator;
     }
 
     public string ContentOriginal

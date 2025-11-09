@@ -4,10 +4,10 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
-using SekaiToolsCore.Story;
-using SekaiToolsCore.Story.Event;
-using SekaiToolsCore.Story.Game;
-using SekaiToolsCore.Story.Translation;
+using SekaiToolsBase.GameScript;
+using SekaiToolsBase.Story;
+using SekaiToolsBase.Story.StoryEvent;
+using SekaiToolsBase.Story.Translation;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.Translate.Components;
 using Wpf.Ui;
@@ -40,11 +40,11 @@ public partial class TranslatePage : UserControl
                 AddLine(@event);
             return;
 
-            void AddLine(Event @event)
+            void AddLine(BaseStoryEvent baseStoryEvent)
             {
                 Dispatcher.Invoke(() =>
                 {
-                    if (@event is Dialog dialog)
+                    if (baseStoryEvent is DialogStoryEvent dialog)
                     {
                         TranslatePanel.Children.Add(new TranslateLineDialog(dialog)
                         {
@@ -58,7 +58,7 @@ public partial class TranslatePage : UserControl
                     }
                     else
                     {
-                        TranslatePanel.Children.Add(new TranslateLineEffect(@event)
+                        TranslatePanel.Children.Add(new TranslateLineEffect(baseStoryEvent)
                         {
                             Margin = new Thickness(5)
                         });
@@ -118,7 +118,7 @@ public partial class TranslatePage : UserControl
         var tData = new TranslationData(filePath);
         foreach (var t in tData.Translations) t.Body = t.Body.Replace("\\N", "\n");
 
-        var gData = new GameData(_scriptPath);
+        var gData = new GameScript(_scriptPath);
 
         if (tData.IsApplicable(gData))
         {

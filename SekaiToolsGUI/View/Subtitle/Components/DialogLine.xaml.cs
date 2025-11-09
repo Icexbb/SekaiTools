@@ -10,7 +10,7 @@ namespace SekaiToolsGUI.View.Subtitle.Components;
 
 public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
 {
-    public DialogLine(DialogFrameSet set)
+    public DialogLine(DialogBaseFrameSet set)
     {
         set.InitSeparator();
         DataContext = new DialogLineModel(set);

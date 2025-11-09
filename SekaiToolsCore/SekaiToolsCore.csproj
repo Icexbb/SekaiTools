@@ -22,4 +22,8 @@
         <ProjectReference Include="..\SekaiToolsBase\SekaiToolsBase.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Match\" />
+    </ItemGroup>
+
 </Project>

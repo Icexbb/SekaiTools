@@ -7,6 +7,7 @@ using System.Windows.Input;
 using Emgu.CV;
 using Microsoft.Win32;
 using SekaiToolsCore;
+using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Utils;
@@ -199,7 +200,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     }
 
 
-    private void LinePanel_AddDialogLine(DialogFrameSet set)
+    private void LinePanel_AddDialogLine(DialogBaseFrameSet set)
     {
         Dispatcher.Invoke(() =>
         {
@@ -216,7 +217,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     }
 
 
-    private void LinePanel_AddBannerLine(BannerFrameSet set)
+    private void LinePanel_AddBannerLine(BannerBaseFrameSet set)
     {
         Dispatcher.Invoke(() =>
         {
@@ -233,7 +234,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
         });
     }
 
-    private void LinePanel_AddMarkerLine(MarkerFrameSet set)
+    private void LinePanel_AddMarkerLine(MarkerBaseFrameSet set)
     {
         Dispatcher.Invoke(() =>
         {
@@ -360,11 +361,11 @@ public partial class SubtitlePage
         VideoProcessor?.StopProcess();
     }
 
-    private SekaiToolsCore.SubStationAlpha.Subtitle GenerateSubtitle()
+    private SekaiToolsBase.SubStationAlpha.Subtitle GenerateSubtitle()
     {
-        List<BannerFrameSet> bannerFrameSets = [];
-        List<DialogFrameSet> dialogFrameSets = [];
-        List<MarkerFrameSet> markerFrameSets = [];
+        List<BannerBaseFrameSet> bannerFrameSets = [];
+        List<DialogBaseFrameSet> dialogFrameSets = [];
+        List<MarkerBaseFrameSet> markerFrameSets = [];
         foreach (var child in LinePanel.Children)
             switch (child)
             {

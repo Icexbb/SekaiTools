@@ -1,18 +1,18 @@
 using System.Windows.Controls;
 using System.Windows.Input;
+using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.ViewModel.Translate;
 using Wpf.Ui.Abstractions.Controls;
-using SekaiDialog = SekaiToolsCore.Story.Event.Dialog;
 using TextBox = Wpf.Ui.Controls.TextBox;
 
 namespace SekaiToolsGUI.View.Translate.Components;
 
 public partial class TranslateLineDialog : UserControl, INavigableView<LineDialogModel>, IExportable
 {
-    public TranslateLineDialog(SekaiDialog dialog)
+    public TranslateLineDialog(DialogStoryEvent dialogStoryEvent)
     {
-        DataContext = new LineDialogModel(dialog);
+        DataContext = new LineDialogModel(dialogStoryEvent);
         InitializeComponent();
     }
 

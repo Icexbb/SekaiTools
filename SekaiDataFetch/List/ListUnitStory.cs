@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using SekaiDataFetch.Item;
 using SekaiToolsBase;
-using SekaiToolsBase.Data;
+using SekaiToolsBase.DataList;
 
 namespace SekaiDataFetch.List;
 

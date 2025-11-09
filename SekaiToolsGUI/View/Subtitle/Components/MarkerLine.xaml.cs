@@ -8,7 +8,7 @@ namespace SekaiToolsGUI.View.Subtitle.Components;
 
 public partial class MarkerLine : UserControl, INavigableView<MarkerLineModel>
 {
-    public MarkerLine(MarkerFrameSet set)
+    public MarkerLine(MarkerBaseFrameSet set)
     {
         DataContext = new MarkerLineModel(set);
         InitializeComponent();

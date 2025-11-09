@@ -3,10 +3,10 @@ using SekaiToolsCore.Process.Model;
 
 namespace SekaiToolsGUI.ViewModel.Subtitle;
 
-public class MarkerLineModel(MarkerFrameSet set) : ViewModelBase
+public class MarkerLineModel(MarkerBaseFrameSet set) : ViewModelBase
 {
     private readonly FrameRate _frameRate = set.Fps;
-    public readonly MarkerFrameSet Set = set;
+    public readonly MarkerBaseFrameSet Set = set;
 
     public int Index => Set.Data.Index;
     public string Content => Set.Data.BodyOriginal;

@@ -1,5 +1,5 @@
 using SekaiDataFetch.Item;
-using SekaiToolsBase.Data;
+using SekaiToolsBase.DataList;
 
 namespace SekaiToolsGUI.ViewModel.Download;
 

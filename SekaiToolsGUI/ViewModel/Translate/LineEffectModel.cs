@@ -1,16 +1,16 @@
-using SekaiToolsCore.Story.Event;
+using SekaiToolsBase.Story.StoryEvent;
 
 namespace SekaiToolsGUI.ViewModel.Translate;
 
 public class LineEffectModel : ViewModelBase
 {
-    private readonly Event _event;
+    private readonly BaseStoryEvent _baseStoryEvent;
 
-    public LineEffectModel(Event eEvent)
+    public LineEffectModel(BaseStoryEvent eBaseStoryEvent)
     {
-        _event = eEvent;
-        OriginalContent = _event.BodyOriginal;
-        TranslatedContent = _event.BodyTranslated;
+        _baseStoryEvent = eBaseStoryEvent;
+        OriginalContent = _baseStoryEvent.BodyOriginal;
+        TranslatedContent = _baseStoryEvent.BodyTranslated;
     }
 
 
@@ -26,31 +26,31 @@ public class LineEffectModel : ViewModelBase
         set => SetProperty(value);
     }
 
-    public Event Export()
+    public BaseStoryEvent Export()
     {
-        switch (_event)
+        switch (_baseStoryEvent)
         {
-            case Banner:
+            case BannerStoryEvent:
                 return ExportBanner();
-            case Marker:
+            case MarkerStoryEvent:
                 return ExportMarker();
             default:
-                var e = (Event)_event.Clone();
+                var e = (BaseStoryEvent)_baseStoryEvent.Clone();
                 e.BodyTranslated = TranslatedContent;
                 return e;
         }
     }
 
-    private Banner ExportBanner()
+    private BannerStoryEvent ExportBanner()
     {
-        var banner = (Banner)_event.Clone();
+        var banner = (BannerStoryEvent)_baseStoryEvent.Clone();
         banner.BodyTranslated = TranslatedContent;
         return banner;
     }
 
-    private Marker ExportMarker()
+    private MarkerStoryEvent ExportMarker()
     {
-        var marker = (Marker)_event.Clone();
+        var marker = (MarkerStoryEvent)_baseStoryEvent.Clone();
         marker.BodyTranslated = TranslatedContent;
         return marker;
     }

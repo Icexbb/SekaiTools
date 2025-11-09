@@ -8,7 +8,7 @@ namespace SekaiToolsGUI.View.Subtitle.Components;
 
 public partial class BannerLine : UserControl, INavigableView<BannerLineModel>
 {
-    public BannerLine(BannerFrameSet set)
+    public BannerLine(BannerBaseFrameSet set)
     {
         DataContext = new BannerLineModel(set);
         InitializeComponent();

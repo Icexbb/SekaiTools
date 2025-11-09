@@ -8,9 +8,9 @@ namespace SekaiToolsGUI.ViewModel.Subtitle;
 public class DialogLineModel : ViewModelBase
 {
     private const int CharTime = 80;
-    public readonly DialogFrameSet Set;
+    public readonly DialogBaseFrameSet Set;
 
-    public DialogLineModel(DialogFrameSet set)
+    public DialogLineModel(DialogBaseFrameSet set)
     {
         // set.Data.BodyTranslated = set.Data.BodyTranslated.Replace("...", "…");
         Set = set;

@@ -1,23 +1,23 @@
-using SekaiToolsCore.Story.Event;
+using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsCore.Utils;
 
 namespace SekaiToolsGUI.ViewModel.Translate;
 
 public class LineDialogModel : ViewModelBase
 {
-    public LineDialogModel(Dialog dialog)
+    public LineDialogModel(DialogStoryEvent dialogStoryEvent)
     {
-        Dialog = dialog;
-        OriginalCharacter = dialog.CharacterOriginal;
-        OriginalContent = dialog.BodyOriginal;
-        if (dialog.CharacterTranslated != string.Empty) TranslatedCharacter = dialog.CharacterTranslated;
-        TranslatedContent = dialog.BodyTranslated;
+        DialogStoryEvent = dialogStoryEvent;
+        OriginalCharacter = dialogStoryEvent.CharacterOriginal;
+        OriginalContent = dialogStoryEvent.BodyOriginal;
+        if (dialogStoryEvent.CharacterTranslated != string.Empty) TranslatedCharacter = dialogStoryEvent.CharacterTranslated;
+        TranslatedContent = dialogStoryEvent.BodyTranslated;
     }
 
-    private Dialog Dialog { get; }
+    private DialogStoryEvent DialogStoryEvent { get; }
 
-    public string Icon => Dialog.CharacterId is > 0 and <= 31
-        ? $"pack://application:,,,/Resource/Characters/chr_{Dialog.CharacterId}.png"
+    public string Icon => DialogStoryEvent.CharacterId is > 0 and <= 31
+        ? $"pack://application:,,,/Resource/Characters/chr_{DialogStoryEvent.CharacterId}.png"
         // ? ""
         : string.Empty;
 
@@ -83,15 +83,15 @@ public class LineDialogModel : ViewModelBase
         set => SetProperty(value);
     }
 
-    public Dialog Export()
+    public DialogStoryEvent Export()
     {
-        var dialog = new Dialog(
-            Dialog.Index,
+        var dialog = new DialogStoryEvent(
+            DialogStoryEvent.Index,
             OriginalContent,
-            Dialog.CharacterId,
+            DialogStoryEvent.CharacterId,
             OriginalCharacter,
-            Dialog.CloseWindow,
-            Dialog.Shake
+            DialogStoryEvent.CloseWindow,
+            DialogStoryEvent.Shake
         );
         dialog.SetTranslation(TranslatedCharacter, TranslatedContent);
         return dialog;

@@ -1,4 +1,4 @@
-using SekaiToolsBase.Data;
+using SekaiToolsBase.DataList;
 
 namespace SekaiDataFetch.Item;
 

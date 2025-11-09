@@ -1,15 +1,17 @@
 using System.Drawing;
 using System.Text;
+using SekaiToolsBase.Story.StoryEvent;
+using SekaiToolsBase.SubStationAlpha;
+using SekaiToolsBase.SubStationAlpha.AssDraw;
+using SekaiToolsBase.SubStationAlpha.Tag;
+using SekaiToolsBase.SubStationAlpha.Tag.Modded;
+using SekaiToolsCore.Match.TemplateMatcher;
 using SekaiToolsCore.Process;
+using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
-using SekaiToolsCore.Story.Event;
-using SekaiToolsCore.SubStationAlpha;
-using SekaiToolsCore.SubStationAlpha.AssDraw;
-using SekaiToolsCore.SubStationAlpha.Tag;
-using SekaiToolsCore.SubStationAlpha.Tag.Modded;
 using SekaiToolsCore.Utils;
-using SubtitleEvent = SekaiToolsCore.SubStationAlpha.Event;
+using SubtitleEvent = SekaiToolsBase.SubStationAlpha.Event;
 
 namespace SekaiToolsCore;
 
@@ -24,9 +26,9 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
     private ExportStyleConfig ExportStyleConfig { get; } = config.ExportStyleConfig;
 
     public Subtitle Make(
-        List<DialogFrameSet> dialogList,
-        List<BannerFrameSet> bannerList,
-        List<MarkerFrameSet> markerList)
+        List<DialogBaseFrameSet> dialogList,
+        List<BannerBaseFrameSet> bannerList,
+        List<MarkerBaseFrameSet> markerList)
     {
         var events = new List<SubtitleEvent>();
 
@@ -199,7 +201,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         return result;
     }
 
-    private List<SubtitleEvent> MakeDialogEvents(List<DialogFrameSet> dialogList)
+    private List<SubtitleEvent> MakeDialogEvents(List<DialogBaseFrameSet> dialogList)
     {
         var result = new List<SubtitleEvent>();
 
@@ -250,24 +252,24 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         return result;
 
 
-        List<DialogFrameSet> SeparateDialogSet(DialogFrameSet dialogFrameSet)
+        List<DialogBaseFrameSet> SeparateDialogSet(DialogBaseFrameSet dialogBaseFrameSet)
         {
-            var sepCount = dialogFrameSet.Separate.SeparateFrame - dialogFrameSet.StartIndex();
+            var sepCount = dialogBaseFrameSet.Separate.SeparateFrame - dialogBaseFrameSet.StartIndex();
 
-            var sepSet1 = new DialogFrameSet((Dialog)dialogFrameSet.Data.Clone(), videoInfo.Fps);
-            var sepSet2 = new DialogFrameSet((Dialog)dialogFrameSet.Data.Clone(), videoInfo.Fps);
+            var sepSet1 = new DialogBaseFrameSet((DialogStoryEvent)dialogBaseFrameSet.Data.Clone(), videoInfo.Fps);
+            var sepSet2 = new DialogBaseFrameSet((DialogStoryEvent)dialogBaseFrameSet.Data.Clone(), videoInfo.Fps);
 
-            sepSet1.Frames.AddRange(dialogFrameSet.Frames[..sepCount]);
-            sepSet2.Frames.AddRange(dialogFrameSet.Frames[sepCount..]);
+            sepSet1.Frames.AddRange(dialogBaseFrameSet.Frames[..sepCount]);
+            sepSet2.Frames.AddRange(dialogBaseFrameSet.Frames[sepCount..]);
 
-            var content = dialogFrameSet.Data.FinalContent.TrimAll();
-            sepSet1.Data.BodyTranslated = content[..dialogFrameSet.Separate.SeparatorContentIndex];
-            sepSet2.Data.BodyTranslated = content[dialogFrameSet.Separate.SeparatorContentIndex..];
+            var content = dialogBaseFrameSet.Data.FinalContent.TrimAll();
+            sepSet1.Data.BodyTranslated = content[..dialogBaseFrameSet.Separate.SeparatorContentIndex];
+            sepSet2.Data.BodyTranslated = content[dialogBaseFrameSet.Separate.SeparatorContentIndex..];
 
             return [sepSet1, sepSet2];
         }
 
-        IEnumerable<SubtitleEvent> GenerateDialogEvent(DialogFrameSet set)
+        IEnumerable<SubtitleEvent> GenerateDialogEvent(DialogBaseFrameSet set)
         {
             var subtitleEventItems = new List<SubtitleEvent>();
             subtitleEventItems.AddRange(set.IsJitter
@@ -276,23 +278,23 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             return subtitleEventItems;
         }
 
-        IEnumerable<SubtitleEvent> GenerateNoneJitterDialogEvents(DialogFrameSet dialogFrameSet)
+        IEnumerable<SubtitleEvent> GenerateNoneJitterDialogEvents(DialogBaseFrameSet dialogBaseFrameSet)
         {
-            var content = dialogFrameSet.Data.FinalContent;
-            var characterName = dialogFrameSet.Data.FinalCharacter;
-            var originLineCount = dialogFrameSet.Data.BodyOriginal.Split("\n").Length;
+            var content = dialogBaseFrameSet.Data.FinalContent;
+            var characterName = dialogBaseFrameSet.Data.FinalCharacter;
+            var originLineCount = dialogBaseFrameSet.Data.BodyOriginal.Split("\n").Length;
             var styleName = "Line" + originLineCount;
 
-            var startTime = dialogFrameSet.StartTime();
-            var endTime = dialogFrameSet.EndTime();
+            var startTime = dialogBaseFrameSet.StartTime();
+            var endTime = dialogBaseFrameSet.EndTime();
 
             var body = MakeDialogTypewriter(content);
 
             var dialogItem = SubtitleEvent.Dialog(body, startTime, endTime, styleName);
 
             var characterItemPosition =
-                dialogFrameSet.Start().Point +
-                new Size(GetNameTag(dialogFrameSet.Data.CharacterOriginal).Size.Width + 10, 0);
+                dialogBaseFrameSet.Start().Point +
+                new Size(GetNameTag(dialogBaseFrameSet.Data.CharacterOriginal).Size.Width + 10, 0);
             var characterItemPositionTag = $@"{{\pos({characterItemPosition.X},{characterItemPosition.Y})}}";
             var characterItem = SubtitleEvent.Dialog(
                 characterItemPositionTag + characterName, startTime, endTime, "Character");
@@ -301,28 +303,28 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             return [characterItem, dialogItem];
         }
 
-        IEnumerable<SubtitleEvent> GenerateJitterDialogEvents(DialogFrameSet dialogFrameSet)
+        IEnumerable<SubtitleEvent> GenerateJitterDialogEvents(DialogBaseFrameSet dialogBaseFrameSet)
         {
-            var content = dialogFrameSet.Data.FinalContent;
-            var characterName = dialogFrameSet.Data.FinalCharacter;
-            var originLineCount = dialogFrameSet.Data.BodyOriginal.Split("\n").Length;
+            var content = dialogBaseFrameSet.Data.FinalContent;
+            var characterName = dialogBaseFrameSet.Data.FinalCharacter;
+            var originLineCount = dialogBaseFrameSet.Data.BodyOriginal.Split("\n").Length;
 
             var styleName = "Line" + originLineCount;
             var styles = MakeDialogStyles();
             var style = styles.Find(s => s.Name == styleName)!;
 
-            var constPosition = dialogFrameSet.Start().Point;
+            var constPosition = dialogBaseFrameSet.Start().Point;
             var lastPosition = new Point(0, 0);
             var dialogEvents = new List<SubtitleEvent>();
             var characterEvents = new List<SubtitleEvent>();
-            foreach (var frame in dialogFrameSet.Frames)
+            foreach (var frame in dialogBaseFrameSet.Frames)
             {
                 var x = style.MarginL;
                 var y = style.MarginV;
                 x += frame.Point.X - constPosition.X;
                 y += frame.Point.Y - constPosition.Y;
                 var body = @$"{{\pos({x},{y})}}"
-                           + MakeDialogTypewriter(content, frame.Index - dialogFrameSet.StartIndex());
+                           + MakeDialogTypewriter(content, frame.Index - dialogBaseFrameSet.StartIndex());
 
                 if (lastPosition.X == x && lastPosition.Y == y && body == dialogEvents[^1].Text)
                     dialogEvents[^1].End = frame.EndTime();
@@ -335,7 +337,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
                 }
                 else
                 {
-                    var offset = GetNameTag(dialogFrameSet.Data.CharacterOriginal).Size.Width;
+                    var offset = GetNameTag(dialogBaseFrameSet.Data.CharacterOriginal).Size.Width;
                     var position = frame.Point + new Size(offset + 10, 0);
                     var tag = $@"{{\pos({position.X},{position.Y})}}";
 
@@ -359,7 +361,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
     #region Banner
 
-    private List<SubtitleEvent> MakeBannerEvents(List<BannerFrameSet> bannerList)
+    private List<SubtitleEvent> MakeBannerEvents(List<BannerBaseFrameSet> bannerList)
     {
         var result = new List<SubtitleEvent>();
         var count = 0;
@@ -377,7 +379,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
         return result;
 
-        IEnumerable<SubtitleEvent> GenerateBannerEvent(BannerFrameSet set)
+        IEnumerable<SubtitleEvent> GenerateBannerEvent(BannerBaseFrameSet set)
         {
             var offset = templateManager.GetFontSize(videoInfo.Resolution);
             var center = videoInfo.Resolution.Center();
@@ -450,7 +452,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
     #region Marker
 
-    private List<SubtitleEvent> MakeMarkerEvents(List<MarkerFrameSet> markerList)
+    private List<SubtitleEvent> MakeMarkerEvents(List<MarkerBaseFrameSet> markerList)
     {
         List<SubtitleEvent> result = [];
         var count = 0;
@@ -468,14 +470,14 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
         return result;
 
-        List<SubtitleEvent> GenerateMarkerEvent(MarkerFrameSet frameSet)
+        List<SubtitleEvent> GenerateMarkerEvent(MarkerBaseFrameSet baseFrameSet)
         {
             List<SubtitleEvent> markerEventText = [];
             List<SubtitleEvent> markerEventMask = [];
-            var content = frameSet.Data.FinalContent;
+            var content = baseFrameSet.Data.FinalContent;
             var contentLength = (content.Length + content.Count(c => c > 127)) / 2;
 
-            foreach (var frame in frameSet.Frames)
+            foreach (var frame in baseFrameSet.Frames)
             {
                 var startTime = frame.StartTime();
                 var endTime = frame.EndTime();

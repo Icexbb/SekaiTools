@@ -2,9 +2,9 @@ using SekaiToolsCore.Process.FrameSet;
 
 namespace SekaiToolsGUI.ViewModel.Subtitle;
 
-public class BannerLineModel(BannerFrameSet set) : ViewModelBase
+public class BannerLineModel(BannerBaseFrameSet set) : ViewModelBase
 {
-    public readonly BannerFrameSet Set = set;
+    public readonly BannerBaseFrameSet Set = set;
 
     public string StartTime => Set.StartTime();
     public string EndTime => Set.EndTime();

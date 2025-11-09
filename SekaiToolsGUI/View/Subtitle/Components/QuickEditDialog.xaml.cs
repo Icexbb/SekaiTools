@@ -9,9 +9,9 @@ namespace SekaiToolsGUI.View.Subtitle.Components;
 
 public partial class QuickEditDialog : ContentDialog
 {
-    public QuickEditDialog(DialogFrameSet dialog)
+    public QuickEditDialog(DialogBaseFrameSet dialogBase)
     {
-        DataContext = new QuickEditDialogModel(dialog);
+        DataContext = new QuickEditDialogModel(dialogBase);
         InitializeComponent();
         SwitchCanReturn.Visibility = ViewModel.CanReturn ? Visibility.Visible : Visibility.Collapsed;
     }
