@@ -77,10 +77,10 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     {
         var openFileDialog = new SaveFileDialog
         {
-            Filter = "Mp4 文件|*.mp4;",
+            Filter = "Mp4 文件|*.mp4",
             DefaultDirectory = Path.GetDirectoryName(ViewModel.SourceVideo),
             DefaultExt = ".mp4",
-            FileName = Path.ChangeExtension(Path.GetFileName(ViewModel.SourceVideo), ".txt")
+            FileName = Path.ChangeExtension("[STVS]" + Path.GetFileName(ViewModel.SourceVideo), ".mp4")
         };
         var result = openFileDialog.ShowDialog();
         return result == true ? openFileDialog.FileName : null;

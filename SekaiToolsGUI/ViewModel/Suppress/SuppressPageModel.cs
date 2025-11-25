@@ -25,7 +25,8 @@ public class SuppressPageModel : ViewModelBase
             var guess = Path.ChangeExtension(value, ".ass");
             if (File.Exists(guess)) SourceSubtitle = guess;
 
-            OutputPath = Path.Join(Path.GetDirectoryName(value), Path.GetFileNameWithoutExtension(value) + "_h264.mp4");
+            OutputPath = Path.Join(Path.GetDirectoryName(value),
+                "[STVS]" + Path.GetFileNameWithoutExtension(value) + ".mp4");
             UpdateConfigStatus();
         }
     }
