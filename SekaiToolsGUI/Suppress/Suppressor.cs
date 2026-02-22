@@ -72,7 +72,7 @@ public partial class Suppressor
             ? X264Params.Instance.GetX264Params()
             : X264Params.Instance.GetSimpleX264Params();
         return $"""-f yuv4mpegpipe -i - -i "{source}" """ +
-               $"-map 0:v -map 1:1 " +
+               $"-map 0:v:0 -map 1:a:0 " +
                $"-c:v libx264 -x264-params {config} " +
                $"-c:a copy " +
                $"\"{output}\" " +
