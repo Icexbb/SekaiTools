@@ -22,9 +22,9 @@ public struct Setting
 
     public int TypewriterFadeTime { get; init; } = 50;
     public int TypewriterCharTime { get; init; } = 80;
-    public string DialogFontFamily { get; init; } = "思源黑体 CN Bold";
-    public string BannerFontFamily { get; init; } = "思源黑体 Medium";
-    public string MarkerFontFamily { get; init; } = "思源黑体 Medium";
+    public string DialogFontFamily { get; init; } = "思源黑体 CN Medium";
+    public string BannerFontFamily { get; init; } = "思源黑体 CN Bold";
+    public string MarkerFontFamily { get; init; } = "思源黑体 CN Bold";
 
     public bool ExportLine1 { get; init; } = true;
     public bool ExportLine2 { get; init; } = true;
