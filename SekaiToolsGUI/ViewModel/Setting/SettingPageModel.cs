@@ -5,7 +5,6 @@ using System.Windows;
 using SekaiToolsBase;
 using SekaiToolsCore;
 using SekaiToolsCore.Process.Config;
-using SekaiToolsCore.Process.Model;
 using Wpf.Ui.Appearance;
 
 namespace SekaiToolsGUI.ViewModel.Setting;

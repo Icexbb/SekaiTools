@@ -1,5 +1,6 @@
 using System.Drawing;
 using SekaiToolsBase.Story.StoryEvent;
+using SekaiToolsBase.Utils;
 using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Utils;
 

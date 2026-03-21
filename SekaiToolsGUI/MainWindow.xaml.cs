@@ -10,6 +10,7 @@ using SekaiToolsBase;
 using SekaiToolsCore;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.Setting;
+using SekaiToolsGUI.View.Translate;
 using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Setting;
 using Wpf.Ui;
@@ -48,6 +49,8 @@ public partial class MainWindow : FluentWindow
     private void NavigationView_OnLoaded(object sender, RoutedEventArgs e)
     {
         NavigationView.IsPaneOpen = false;
+        NavigationView.Navigate(typeof(TranslatePage));
+        return;
         if (NavigationView.MenuItems.Count != 0)
             NavigationView.Navigate((NavigationView.MenuItems[0] as NavigationViewItem)?.TargetPageType!);
     }

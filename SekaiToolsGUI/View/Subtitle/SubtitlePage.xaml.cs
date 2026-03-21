@@ -9,7 +9,6 @@ using Microsoft.Win32;
 using SekaiToolsCore;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
-using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Utils;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.General;

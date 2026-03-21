@@ -15,6 +15,11 @@ public class Story
 
     public readonly BaseStoryEvent[] Events;
 
+    public Story()
+    {
+        Events = [];
+    }
+
     public Story(GameScript.GameScript gameScript, TranslationData translationData)
     {
         List<BaseStoryEvent> events = [];
@@ -171,5 +176,10 @@ public class Story
             }
 
         return result.ToArray();
+    }
+
+    public static Story Empty()
+    {
+        return new Story();
     }
 }

@@ -2,7 +2,6 @@ using System.Drawing;
 using Emgu.CV;
 using SekaiToolsBase;
 using SekaiToolsBase.Story;
-using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
@@ -107,7 +106,8 @@ public class DialogTemplateMatcher(
         }
     }
 
-    private MatchStatus DialogMatchContent(Mat img, DialogBaseFrameSet dialogBase, Point point, MatchStatus lastStatus = 0,
+    private MatchStatus DialogMatchContent(Mat img, DialogBaseFrameSet dialogBase, Point point,
+        MatchStatus lastStatus = 0,
         int frameIndex = -1)
     {
         var content = dialogBase.Data.BodyOriginal;
@@ -215,7 +215,8 @@ public class DialogTemplateMatcher(
         return DebugSetFinishedUntilContains(Set, targetString, speaker);
     }
 
-    private static int DebugSetFinishedUntilContains(IList<DialogBaseFrameSet> set, string targetString, string? speaker)
+    private static int DebugSetFinishedUntilContains(IList<DialogBaseFrameSet> set, string targetString,
+        string? speaker)
     {
         for (var i = 0; i < set.Count; i++)
         {

@@ -2,7 +2,6 @@ using System.Drawing;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using SekaiToolsBase;
-using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
@@ -11,11 +10,16 @@ using SekaiStory = SekaiToolsBase.Story.Story;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
-public class MarkerTemplateMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateManager templateManager, Config config)
+public class MarkerTemplateMatcher(
+    VideoInfo videoInfo,
+    SekaiStory storyData,
+    TemplateManager templateManager,
+    Config config)
 {
     private readonly Dictionary<string, GaMat> _templates = new();
 
-    public readonly List<MarkerBaseFrameSet> Set = storyData.Markers().Select(d => new MarkerBaseFrameSet(d, videoInfo.Fps))
+    public readonly List<MarkerBaseFrameSet> Set = storyData.Markers()
+        .Select(d => new MarkerBaseFrameSet(d, videoInfo.Fps))
         .ToList();
 
     private MatchStatus _status;

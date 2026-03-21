@@ -8,37 +8,6 @@ namespace SekaiToolsCore.Utils;
 
 public static class UtilFunc
 {
-    public static int LineCount(this string str)
-    {
-        return str.Split('\n').Select(value => value.Length > 0 ? 1 : 0).Sum();
-    }
-
-    public static int Count(this string str, string part)
-    {
-        var count = 0;
-        var i = 0;
-        while ((i = str.IndexOf(part, i, StringComparison.Ordinal)) != -1)
-        {
-            i += part.Length;
-            count++;
-        }
-
-        return count;
-    }
-
-    public static string TrimAll(this string str)
-    {
-        return str.Trim().Replace("\n", "")
-            .Replace("\\R", "")
-            .Replace("\\N", "");
-    }
-
-    public static string EscapedReturn(this string str)
-    {
-        return str.Replace("\\N", "\n")
-            .Replace("\\R", "\n");
-    }
-
     public static string Remains(this TimeSpan timeSpan)
     {
         if (timeSpan.TotalDays >= 1)
@@ -51,13 +20,6 @@ public static class UtilFunc
             return $"{timeSpan.Seconds}s";
         return $"{timeSpan.Milliseconds}ms";
     }
-
-
-    public static int MaxLineLength(this string str)
-    {
-        return str.Split('\n').Max(x => x.Trim().Length);
-    }
-
 
     public static IEnumerable<T> Contact<T>(params IEnumerable<T>[] arrays)
     {
@@ -99,38 +61,6 @@ public static class UtilFunc
         if (a.CompareTo(c) < 0)
             return a;
         return b.CompareTo(c) < 0 ? c : b;
-    }
-
-    public static void Extend(this Rectangle rect, int x, int y)
-    {
-        rect.X -= x;
-        rect.Y -= y;
-        rect.Width += x * 2;
-        rect.Height += y * 2;
-    }
-
-    public static void Extend(this Rectangle rect, double ratio)
-    {
-        switch (ratio)
-        {
-            case < 0:
-                return;
-            case < 1:
-                ratio = 1 + ratio;
-                break;
-        }
-
-        var x = (int)(rect.Width * ratio);
-        var y = (int)(rect.Height * ratio);
-        rect.Extend(x, y);
-    }
-
-    public static void Limit(this Rectangle rect, Rectangle limit)
-    {
-        if (rect.X < limit.X) rect.X = limit.X;
-        if (rect.Y < limit.Y) rect.Y = limit.Y;
-        if (rect.Right > limit.Right) rect.X = limit.Right - rect.Width;
-        if (rect.Bottom > limit.Bottom) rect.Y = limit.Bottom - rect.Height;
     }
 
     public static Rectangle FromCenter(Point center, Size size)
@@ -186,5 +116,40 @@ public static class UtilFunc
     {
         var collection = new InstalledFontCollection();
         return collection.Families.Select(family => family.Name);
+    }
+
+    extension(Rectangle rect)
+    {
+        public void Extend(int x, int y)
+        {
+            rect.X -= x;
+            rect.Y -= y;
+            rect.Width += x * 2;
+            rect.Height += y * 2;
+        }
+
+        public void Extend(double ratio)
+        {
+            switch (ratio)
+            {
+                case < 0:
+                    return;
+                case < 1:
+                    ratio = 1 + ratio;
+                    break;
+            }
+
+            var x = (int)(rect.Width * ratio);
+            var y = (int)(rect.Height * ratio);
+            rect.Extend(x, y);
+        }
+
+        public void Limit(Rectangle limit)
+        {
+            if (rect.X < limit.X) rect.X = limit.X;
+            if (rect.Y < limit.Y) rect.Y = limit.Y;
+            if (rect.Right > limit.Right) rect.X = limit.Right - rect.Width;
+            if (rect.Bottom > limit.Bottom) rect.Y = limit.Bottom - rect.Height;
+        }
     }
 }

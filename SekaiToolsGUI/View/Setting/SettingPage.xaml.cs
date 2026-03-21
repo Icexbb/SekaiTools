@@ -17,10 +17,10 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
         InitializeComponent();
     }
 
-    public SettingPageModel ViewModel => (SettingPageModel)DataContext;
-
     private static ISnackbarService SnackService =>
         (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
+
+    public SettingPageModel ViewModel => (SettingPageModel)DataContext;
 
     private async void ChooseDialogFont(object sender, RoutedEventArgs e)
     {

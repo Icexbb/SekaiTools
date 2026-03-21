@@ -6,14 +6,47 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:translate="clr-namespace:SekaiToolsGUI.ViewModel.Translate"
              mc:Ignorable="d" HorizontalAlignment="Stretch"
+             d:DesignWidth="800"
              d:DataContext="{d:DesignInstance translate:LineEffectModel, IsDesignTimeCreatable=False}">
-    <ui:Card>
-        <ui:TextBox
-            HorizontalContentAlignment="Stretch"
-            HorizontalAlignment="Stretch" PlaceholderEnabled="True"
-            TextAlignment="Center" Margin="5" IconPlacement="Left"
-            PlaceholderText="{Binding Path= OriginalContent}"
-            Text="{Binding Path= TranslatedContent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-            Icon="{ui:SymbolIcon Location28}" />
-    </ui:Card>
+    <Grid Height="32">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <ui:Card Grid.Column="0" Margin="0" Padding="0">
+            <ui:SymbolIcon Symbol="Location28" Margin="5"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+        </ui:Card>
+        <ui:Card Grid.Column="1" Margin="0" Padding="0">
+            <Grid>
+                <Grid.Resources>
+                    <Style TargetType="ui:SymbolIcon">
+                        <Setter Property="Margin" Value="5" />
+                    </Style>
+                </Grid.Resources>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Padding="5,2"
+                           Background="Transparent"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Stretch"
+                           TextAlignment="Center"
+                           Text="{Binding Path= Content.Original}" />
+                <ui:SymbolIcon Grid.Column="1" Symbol="ArrowRight28" />
+                <ui:TextBox Grid.Column="2"
+                            Padding="5,2"
+                            BorderBrush="Transparent"
+                            Background="Transparent"
+                            HorizontalContentAlignment="Stretch"
+                            HorizontalAlignment="Stretch"
+                            TextAlignment="Center"
+                            Text="{Binding Path= Content.Translated, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            </Grid>
+        </ui:Card>
+    </Grid>
 </UserControl>

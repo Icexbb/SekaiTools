@@ -1,5 +1,5 @@
+using SekaiToolsBase.Utils;
 using SekaiToolsCore.Process.FrameSet;
-using SekaiToolsCore.Utils;
 
 namespace SekaiToolsGUI.ViewModel.Subtitle;
 

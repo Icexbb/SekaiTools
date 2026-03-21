@@ -1,57 +1,33 @@
+using System.ComponentModel;
 using SekaiToolsBase.Story.StoryEvent;
 
 namespace SekaiToolsGUI.ViewModel.Translate;
 
-public class LineEffectModel : ViewModelBase
+public class LineEffectModel : LineModel
 {
-    private readonly BaseStoryEvent _baseStoryEvent;
-
     public LineEffectModel(BaseStoryEvent eBaseStoryEvent)
     {
-        _baseStoryEvent = eBaseStoryEvent;
-        OriginalContent = _baseStoryEvent.BodyOriginal;
-        TranslatedContent = _baseStoryEvent.BodyTranslated;
+        Content.Original = eBaseStoryEvent.BodyOriginal;
+        Content.Translated = eBaseStoryEvent.BodyTranslated;
+        Content.PropertyChanged += OnContentPropertyChanged;
     }
 
-
-    public string OriginalContent
+    public TranslateItemModel Content
     {
-        get => GetProperty(string.Empty);
+        get => GetProperty(new TranslateItemModel());
         set => SetProperty(value);
     }
 
-    public string TranslatedContent
+    public override string Result => Content.Result;
+    public bool ContentTranslateChangedEnabled { get; set; } = true;
+
+    private void OnContentPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        get => GetProperty(string.Empty);
-        set => SetProperty(value);
+        // 只有当 Translated 变化时才触发
+        if (e.PropertyName != nameof(TranslateItemModel.Translated)) return;
+        // 更新父级的 Check, LineCount 等
+        if (ContentTranslateChangedEnabled) ContentTranslateChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public BaseStoryEvent Export()
-    {
-        switch (_baseStoryEvent)
-        {
-            case BannerStoryEvent:
-                return ExportBanner();
-            case MarkerStoryEvent:
-                return ExportMarker();
-            default:
-                var e = (BaseStoryEvent)_baseStoryEvent.Clone();
-                e.BodyTranslated = TranslatedContent;
-                return e;
-        }
-    }
-
-    private BannerStoryEvent ExportBanner()
-    {
-        var banner = (BannerStoryEvent)_baseStoryEvent.Clone();
-        banner.BodyTranslated = TranslatedContent;
-        return banner;
-    }
-
-    private MarkerStoryEvent ExportMarker()
-    {
-        var marker = (MarkerStoryEvent)_baseStoryEvent.Clone();
-        marker.BodyTranslated = TranslatedContent;
-        return marker;
-    }
+    public event EventHandler? ContentTranslateChanged;
 }

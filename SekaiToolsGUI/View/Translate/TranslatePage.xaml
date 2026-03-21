@@ -5,8 +5,11 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:components="clr-namespace:SekaiToolsGUI.View.Translate.Components"
+             xmlns:translate="clr-namespace:SekaiToolsGUI.ViewModel.Translate"
+             xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="800" d:Background="White">
+             d:DesignHeight="600" d:DesignWidth="800" d:Background="White"
+             d:DataContext="{d:DesignInstance translate:TranslatePageModel, IsDesignTimeCreatable=True}">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -19,20 +22,63 @@
         <ui:Card Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,5">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <ui:Button Margin="5,0" Click="LoadFileButton_OnClick" Name="LoadScriptButton">载入剧本</ui:Button>
-                <ui:Button Margin="5,0" Click="LoadTranslationButton_OnClick" Name="LoadTranslationButton">打开翻译</ui:Button>
+                <ui:Button Margin="5,0" Click="LoadTranslationButton_OnClick"
+                           Visibility="{c:Binding Path='Events.Length!=0',FalseToVisibility=Collapsed}">
+                    打开翻译
+                </ui:Button>
+                <ui:Button Margin="5,0" Click="LoadReviewButton_OnClick"
+                           Visibility="{c:Binding Path='Events.Length!=0',FalseToVisibility=Collapsed}">
+                    打开对照翻译
+                </ui:Button>
                 <ui:Button Margin="5,0" Click="ResetButton_OnClick" Name="ResetButton">重置</ui:Button>
                 <ui:Button Margin="5,0" Click="SaveButton_OnClick" Name="SaveButton">保存</ui:Button>
             </StackPanel>
         </ui:Card>
         <components:TranslateFastCopy Grid.Row="1" Grid.Column="0" Width="160" />
-        <ui:Card Grid.Column="1" Margin="5,0,0,0"
-                 Grid.Row="1" Name="TranslateContainer"
-                 VerticalContentAlignment="Top" VerticalAlignment="Stretch" Padding="5">
-            <ui:PassiveScrollViewer
-                VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
-                MaxHeight="{Binding ElementName=TranslateContainer, Path=ActualHeight}">
-                <StackPanel Name="TranslatePanel" Margin="5,5,5,15" />
-            </ui:PassiveScrollViewer>
-        </ui:Card>
+        <!-- <ui:Card Grid.Column="1" Margin="5,0,0,0"  -->
+        <!--          Grid.Row="1" Name="TranslateContainer" -->
+        <!--          VerticalContentAlignment="Top" VerticalAlignment="Stretch" Padding="2"> -->
+        <!--     <ui:PassiveScrollViewer Padding="0" -->
+        <!--         VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" -->
+        <!--         MaxHeight="{Binding ElementName=TranslateContainer, Path=ActualHeight}"> -->
+        <!--         <StackPanel Orientation="Vertical" Name="TranslatePanel" Margin="5,5,5,15"  /> -->
+        <!--     </ui:PassiveScrollViewer> -->
+        <!-- </ui:Card> -->
+
+        <ListView Grid.Column="1" Grid.Row="1" ItemsSource="{c:Binding Events }"
+                  BorderBrush="Transparent"
+                  Background="Transparent"
+                  ScrollViewer.CanContentScroll="True"
+                  Name="TranslatePanel"
+                  VirtualizingStackPanel.ScrollUnit="Pixel">
+            <ListView.Resources>
+                <DataTemplate DataType="{x:Type translate:LineDialogModel}">
+                    <components:TranslateLineDialog LineDialogModel="{Binding }" HorizontalAlignment="Stretch" />
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type translate:LineEffectModel}">
+                    <components:TranslateLineEffect LineEffectModel="{Binding }" HorizontalAlignment="Stretch" />
+                </DataTemplate>
+            </ListView.Resources>
+
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <!-- 禁用焦点和悬浮效果 -->
+                    <Setter Property="Focusable" Value="False" />
+                    <Setter Property="IsHitTestVisible" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="BorderBrush" Value="Transparent" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListViewItem">
+                                <Border Background="Transparent">
+                                    <ContentPresenter />
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListView.ItemContainerStyle>
+        </ListView>
     </Grid>
 </UserControl>

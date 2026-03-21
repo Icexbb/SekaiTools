@@ -1,15 +1,12 @@
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
 using SekaiToolsBase.GameScript;
 using SekaiToolsBase.Story;
-using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsBase.Story.Translation;
-using SekaiToolsGUI.Interface;
-using SekaiToolsGUI.View.Translate.Components;
+using SekaiToolsGUI.ViewModel.Translate;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using SaveFileDialog = SekaiToolsGUI.View.Translate.Components.SaveFileDialog;
@@ -20,56 +17,26 @@ public partial class TranslatePage : UserControl
 {
     private string _scriptPath = "";
 
-    private Story? _story;
     private string _translationPath = "";
 
     public TranslatePage()
     {
         InitializeComponent();
+        DataContext = new TranslatePageModel();
+        TestLoad();
     }
 
-    private Story? Story
-    {
-        get => _story;
-        set
-        {
-            _story = value;
-            Dispatcher.Invoke(TranslatePanel.Children.Clear);
-            if (_story is null) return;
-            foreach (var @event in _story.Events)
-                AddLine(@event);
-            return;
+    public TranslatePageModel ViewModel => (TranslatePageModel)DataContext;
 
-            void AddLine(BaseStoryEvent baseStoryEvent)
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    if (baseStoryEvent is DialogStoryEvent dialog)
-                    {
-                        TranslatePanel.Children.Add(new TranslateLineDialog(dialog)
-                        {
-                            Margin = new Thickness(5)
-                        });
-                        if (dialog.CloseWindow)
-                            TranslatePanel.Children.Add(new TranslateLineEmpty
-                            {
-                                Margin = new Thickness(5)
-                            });
-                    }
-                    else
-                    {
-                        TranslatePanel.Children.Add(new TranslateLineEffect(baseStoryEvent)
-                        {
-                            Margin = new Thickness(5)
-                        });
-                    }
-                });
-            }
-        }
-    }
 
     private static ISnackbarService SnackbarService =>
         ((MainWindow)Application.Current.MainWindow!).WindowSnackbarService;
+
+    private void TestLoad()
+    {
+        _scriptPath = @"E:\ProjectSekai\test\aprilfool_2024_01.json";
+        ViewModel.Story = Story.FromFile(_scriptPath);
+    }
 
     private void LoadFileButton_OnClick(object sender, RoutedEventArgs e)
     {
@@ -93,14 +60,14 @@ public partial class TranslatePage : UserControl
             return;
         }
 
-        Story = story;
+        ViewModel.Story = story;
         SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
             new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
     }
 
     private void LoadTranslationButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (Story is null)
+        if (ViewModel.IsEmpty)
         {
             SnackbarService.Show("错误", "请先载入剧本", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
@@ -123,7 +90,43 @@ public partial class TranslatePage : UserControl
         if (tData.IsApplicable(gData))
         {
             _translationPath = filePath;
-            Story = new Story(gData, tData);
+            ViewModel.Story = new Story(gData, tData);
+            SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
+                new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
+        }
+        else
+        {
+            SnackbarService.Show("错误", "翻译数据不适用于此剧本", ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
+        }
+    }
+
+    private void LoadReviewButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.IsEmpty)
+        {
+            SnackbarService.Show("错误", "请先载入剧本", ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
+            return;
+        }
+
+        var openFileDialog = new OpenFileDialog
+        {
+            Filter = "Text files (*.txt)|*.txt"
+        };
+
+        if (openFileDialog.ShowDialog() != true) return;
+        var filePath = openFileDialog.FileName;
+
+        var tData = new TranslationData(filePath);
+        foreach (var t in tData.Translations) t.Body = t.Body.Replace("\\N", "\n");
+
+        var gData = new GameScript(_scriptPath);
+
+        if (tData.IsApplicable(gData))
+        {
+            _translationPath = filePath;
+            ViewModel.ApplyReference(new Story(gData, tData));
             SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
                 new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
         }
@@ -137,14 +140,14 @@ public partial class TranslatePage : UserControl
 
     private void ResetButton_OnClick(object sender, RoutedEventArgs e)
     {
-        Story = null;
+        ViewModel.Clear();
         _scriptPath = "";
         _translationPath = "";
     }
 
     private async void SaveButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (Story is null)
+        if (ViewModel.IsEmpty)
         {
             SnackbarService.Show("错误", "请先载入剧本", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
@@ -183,12 +186,7 @@ public partial class TranslatePage : UserControl
 
         string ExportTranslation()
         {
-            var translation = new StringBuilder();
-            foreach (UIElement child in TranslatePanel.Children)
-                if (child is IExportable exportable)
-                    translation.AppendLine(exportable.Export());
-
-            return translation.ToString();
+            return ViewModel.Result;
         }
     }
 }

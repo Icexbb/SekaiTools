@@ -106,7 +106,7 @@ public partial class MainWindow : Window
             Extract7Z(zipFile, tempDir);
             File.Delete(zipFile);
             StatusText.Text = "正在更新文件...";
-            
+
             Directory.GetFiles(targetDir).Where(file => file.StartsWith("Updater")).ToList().ForEach(File.Delete);
             Directory.Move(Path.Combine(tempDir, "SekaiTools"), targetDir);
             Directory.Delete(tempDir, true);

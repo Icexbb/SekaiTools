@@ -7,7 +7,6 @@ using SekaiToolsBase.SubStationAlpha;
 using SekaiToolsCore.Match.TemplateMatcher;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
-using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Utils;
 
 namespace SekaiToolsCore;

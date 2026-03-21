@@ -1,6 +1,5 @@
 ﻿using Emgu.CV;
 using Emgu.CV.CvEnum;
-using SekaiToolsCore.Process.Model;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
 

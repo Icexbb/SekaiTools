@@ -10,7 +10,11 @@ using SekaiStory = SekaiToolsBase.Story.Story;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
-public class BannerTemplateMatcher(VideoInfo videoInfo, SekaiStory storyData, TemplateManager templateManager, Config config)
+public class BannerTemplateMatcher(
+    VideoInfo videoInfo,
+    SekaiStory storyData,
+    TemplateManager templateManager,
+    Config config)
 {
     public readonly List<BannerBaseFrameSet> Set = storyData.Banners()
         .Select(d => new BannerBaseFrameSet(d, videoInfo.Fps))
@@ -67,10 +71,8 @@ public class BannerTemplateMatcher(VideoInfo videoInfo, SekaiStory storyData, Te
             var result = TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.Banner);
 
             if (frameIndex != -1)
-            {
                 Logger.Log(
                     $"{nameof(BannerTemplateMatcher)} Frame {frameIndex} Match Banner {LastNotProcessedIndex()} Result: {result.MaxVal}");
-            }
 
             return !(result.MaxVal < config.MatchingThreshold.BannerNormal) && !(result.MaxVal > 1);
         }

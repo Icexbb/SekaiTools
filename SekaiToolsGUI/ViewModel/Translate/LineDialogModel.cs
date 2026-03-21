@@ -1,74 +1,54 @@
+using System.ComponentModel;
 using SekaiToolsBase.Story.StoryEvent;
-using SekaiToolsCore.Utils;
+using SekaiToolsBase.Utils;
 
 namespace SekaiToolsGUI.ViewModel.Translate;
 
-public class LineDialogModel : ViewModelBase
+public partial class LineDialogModel : LineModel
 {
     public LineDialogModel(DialogStoryEvent dialogStoryEvent)
     {
-        DialogStoryEvent = dialogStoryEvent;
-        OriginalCharacter = dialogStoryEvent.CharacterOriginal;
-        OriginalContent = dialogStoryEvent.BodyOriginal;
-        if (dialogStoryEvent.CharacterTranslated != string.Empty) TranslatedCharacter = dialogStoryEvent.CharacterTranslated;
-        TranslatedContent = dialogStoryEvent.BodyTranslated;
+        EndLine = dialogStoryEvent.CloseWindow;
+
+        CharacterId = dialogStoryEvent.CharacterId;
+
+        Character.Original = dialogStoryEvent.CharacterOriginal;
+        Character.Translated = string.IsNullOrWhiteSpace(dialogStoryEvent.CharacterTranslated)
+            ? dialogStoryEvent.CharacterOriginal
+            : dialogStoryEvent.CharacterTranslated;
+
+
+        Content.Original = dialogStoryEvent.BodyOriginal;
+        Content.Translated = dialogStoryEvent.BodyTranslated;
+
+        Content.PropertyChanged += OnContentPropertyChanged;
+        Character.PropertyChanged += OnCharacterPropertyChanged;
+        UpdateMetrics();
     }
 
-    private DialogStoryEvent DialogStoryEvent { get; }
-
-    public string Icon => DialogStoryEvent.CharacterId is > 0 and <= 31
-        ? $"pack://application:,,,/Resource/Characters/chr_{DialogStoryEvent.CharacterId}.png"
-        // ? ""
-        : string.Empty;
-
-    public string OriginalCharacter
+    public bool EndLine
     {
-        get => GetProperty(string.Empty);
+        get => GetProperty(false);
         set => SetProperty(value);
     }
 
-
-    public string TranslatedCharacter
+    public TranslateItemModel Character
     {
-        get => GetProperty(string.Empty);
+        get => GetProperty(new TranslateItemModel());
         set => SetProperty(value);
     }
 
-
-    public string OriginalContent
+    public TranslateItemModel Content
     {
-        get => GetProperty(string.Empty);
+        get => GetProperty(new TranslateItemModel());
         set => SetProperty(value);
     }
 
-    public string TranslatedContent
-    {
-        get => GetProperty(string.Empty);
-        set
-        {
-            var v = FormatContent(value);
-
-            Check = CheckContent(v);
-            SetProperty(v);
-            LineCount = (v + "\n").LineCount();
-            MaxLineLength = (v + "\n").MaxLineLength();
-        }
-    }
-
-    public int LineCount
-    {
-        get => GetProperty(0);
-        set => SetProperty(value);
-    }
 
     public int MaxLineLength
     {
         get => GetProperty(0);
-        set
-        {
-            SetProperty(value);
-            TooLong = OriginalContent.LineCount() == 3 ? value > 45 : value > 37;
-        }
+        set => SetProperty(value);
     }
 
     public bool TooLong
@@ -79,23 +59,61 @@ public class LineDialogModel : ViewModelBase
 
     public string Check
     {
-        get => GetProperty("");
+        get => GetProperty(string.Empty);
         set => SetProperty(value);
     }
 
-    public DialogStoryEvent Export()
+    public bool CharacterTranslateChangedEnabled { get; set; } = true;
+    public bool ContentTranslateChangedEnabled { get; set; } = true;
+
+    private void OnContentPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        var dialog = new DialogStoryEvent(
-            DialogStoryEvent.Index,
-            OriginalContent,
-            DialogStoryEvent.CharacterId,
-            OriginalCharacter,
-            DialogStoryEvent.CloseWindow,
-            DialogStoryEvent.Shake
-        );
-        dialog.SetTranslation(TranslatedCharacter, TranslatedContent);
-        return dialog;
+        // 只有当 Translated 变化时才触发
+        if (e.PropertyName != nameof(TranslateItemModel.Translated)) return;
+        // 更新父级的 Check, LineCount 等
+        UpdateMetrics();
+        if (ContentTranslateChangedEnabled) ContentTranslateChanged?.Invoke(this, EventArgs.Empty);
     }
+
+    private void OnCharacterPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // 只有当 Translated 变化时才触发
+        if (e.PropertyName != nameof(TranslateItemModel.Translated)) return;
+        // 更新父级的 Check, LineCount 等
+        UpdateMetrics();
+        if (CharacterTranslateChangedEnabled) CharacterTranslateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+
+    public event EventHandler? ContentTranslateChanged;
+    public event EventHandler? CharacterTranslateChanged;
+
+    private void UpdateMetrics()
+    {
+        var formatted = FormatContent(Content.Translated);
+        if (formatted != Content.Translated)
+        {
+            Content.Translated = formatted;
+            return;
+        }
+
+        // 这里的逻辑就是你原本在父级写的逻辑
+        Check = CheckContent(Content.Translated);
+        MaxLineLength = (Content.Translated + "\n").MaxLineLength();
+        TooLong = Content.Original.LineCount() == 3 ? MaxLineLength > 45 : MaxLineLength > 37;
+    }
+}
+
+public partial class LineDialogModel
+{
+    public override string Result =>
+        $"{Character.Result}：{Content.Result.Replace("\n", "\\N")}" + (EndLine ? "\n" : "");
+
+    private int CharacterId { get; }
+
+    public string Icon => CharacterId is > 0 and <= 31
+        ? $"pack://application:,,,/Resource/Characters/chr_{CharacterId}.png"
+        : string.Empty;
 
     private static string FormatContent(string content)
     {

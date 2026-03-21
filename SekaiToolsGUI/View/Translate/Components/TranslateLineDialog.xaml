@@ -4,102 +4,188 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:c='clr-namespace:CalcBinding;assembly=CalcBinding'
              xmlns:translate="clr-namespace:SekaiToolsGUI.ViewModel.Translate"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance translate:LineDialogModel, IsDesignTimeCreatable=False}"
+             d:DesignWidth="800"
              HorizontalAlignment="Stretch">
-    <ui:Card Padding="10">
-        <StackPanel>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" MinWidth="200" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <ui:TextBox Grid.Column="0" Grid.ColumnSpan="3"
-                            HorizontalContentAlignment="Stretch"
-                            HorizontalAlignment="Stretch" PlaceholderEnabled="True"
-                            TextAlignment="Center" Margin="5" IconPlacement="Left"
-                            PlaceholderText="{Binding Path= OriginalCharacter}"
-                            Text="{Binding Path= TranslatedCharacter}" />
-                <ui:SymbolIcon Grid.Column="0" Margin="13,0,0,0"
-                               Width="28" Height="28" Symbol="Comment28" />
-                <ui:ImageIcon Grid.Column="2"
-                              Source="{Binding Path= Icon}"
-                              Margin="0,0,13,0" Width="28" Height="28"
-                              VerticalAlignment="Center" />
-            </Grid>
-
-            <Grid Margin="5" Height="75">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <ui:TextBox Name="OriginalContentTextBox" TextWrapping="NoWrap" IsTabStop="False"
-                            Grid.Column="0" IsReadOnly="True" IsReadOnlyCaretVisible="False"
-                            Text="{Binding OriginalContent}" />
-                <ui:SymbolIcon Grid.Column="1" Symbol="ArrowRight28" Margin="5" />
-                <Grid Grid.Column="2">
+    <StackPanel Orientation="Vertical">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="150" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <ui:Card Grid.Column="0" Margin="0" Padding="5,0" VerticalAlignment="Stretch">
+                <Grid VerticalAlignment="Stretch">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="30" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="100" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                        <ui:ImageIcon
+                            Visibility="{c:Binding 'Icon.Length>0',FalseToVisibility=Collapsed}"
+                            Source="{Binding Path= Icon}"
+                            Width="28" Height="28" />
+                        <ui:SymbolIcon Symbol="Comment28"
+                                       Visibility="{c:Binding 'Icon.Length==0',FalseToVisibility=Collapsed}" />
+                    </StackPanel>
+                    <Grid Grid.Column="2" Margin="0" VerticalAlignment="Stretch">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Padding="0"
+                                   VerticalAlignment="Top" HorizontalAlignment="Center"
+                                   Text="{Binding Path= Character.Original}"
+                                   ToolTipService.ToolTip="{Binding Path= Character.Original}"
+                                   ToolTipService.InitialShowDelay="0"
+                                   ToolTipService.BetweenShowDelay="0" />
+                        <Grid Grid.Row="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <ui:SymbolIcon Grid.Row="1" Symbol="ArrowDown28" />
+                        </Grid>
+                        <ui:TextBox Grid.Row="2"
+                                    Padding="0"
+                                    KeyboardNavigation.TabNavigation="Continue"
+                                    BorderBrush="Transparent"
+                                    Background="Transparent"
+                                    AcceptsReturn="False"
+                                    ClearButtonEnabled="False"
+                                    VerticalAlignment="Bottom"
+                                    HorizontalContentAlignment="Center"
+                                    HorizontalAlignment="Stretch"
+                                    PlaceholderEnabled="True"
+                                    PlaceholderText="{Binding Path= Character.Original}"
+                                    TextAlignment="Center"
+                                    Text="{Binding Path= Character.Translated}"
+                                    TextChanged="NameEditBoxChanged" />
+                    </Grid>
+                </Grid>
+            </ui:Card>
+            <ui:Card Grid.Column="1" Margin="0" Padding="0" VerticalAlignment="Stretch">
+                <Grid VerticalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <ui:TextBox
-                        Grid.RowSpan="2" Grid.ColumnSpan="3" Name="TranslatedContentTextBox"
-                        Width="{Binding ElementName=OriginalContentTextBox,Path=ActualWidth}"
-                        PreviewKeyDown="TextBox_PreviewKeyDown"
-                        PreviewTextInput="TextBox_PreviewTextInput"
-                        AcceptsReturn="True" TextWrapping="NoWrap"
-                        Text="{Binding TranslatedContent,UpdateSourceTrigger=PropertyChanged}" />
-                    <ui:TextBlock Grid.Column="2" Grid.Row="1" Margin="0,0,10,4">
-                        <ui:TextBlock.Style>
-                            <Style TargetType="ui:TextBlock">
-                                <Style.Triggers>
-                                    <DataTrigger
-                                        Binding="{Binding TranslatedContent.Length,Mode=OneWay}" Value="0">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ui:TextBlock.Style>
-                        <Run>
-                            <Run.Style>
-                                <Style TargetType="{x:Type Run}">
+
+                    <TextBox Grid.Column="0" Name="OriginalContentTextBox"
+                             KeyboardNavigation.TabNavigation="Continue"
+                             MinLines="2"
+                             Margin="0"
+                             IsTabStop="False"
+                             TextWrapping="NoWrap"
+                             VerticalAlignment="Stretch"
+                             IsReadOnly="True"
+                             IsReadOnlyCaretVisible="False"
+                             Background="Transparent"
+                             BorderBrush="Transparent"
+                             Text="{Binding Content.Original}" />
+                    <Grid Grid.Column="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <ui:SymbolIcon Grid.Row="0" Grid.RowSpan="3" Symbol="ArrowRight28" Margin="5" />
+                        <ui:SymbolIcon Grid.Row="2" Foreground="Red"
+                                       Symbol="Warning28" ToolTip="{Binding Check}">
+                            <ui:SymbolIcon.Style>
+                                <Style TargetType="ui:SymbolIcon">
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding TooLong}" Value="True">
-                                            <Setter Property="Foreground" Value="Red" />
+                                        <DataTrigger
+                                            Binding="{Binding Check.Length,Mode=OneWay}" Value="0">
+                                            <Setter Property="Visibility" Value="Collapsed" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Run.Style>
-                            <Run.Text>
-                                <Binding Path="MaxLineLength" Mode="OneWay" />
-                            </Run.Text>
-                        </Run>
-                        <Run Text="/" />
-                        <Run Text="{Binding TranslatedContent.Length,Mode=OneWay}" />
-                    </ui:TextBlock>
-                    <ui:SymbolIcon Grid.Column="0" Grid.Row="1" Foreground="Red" Margin="10,0,0,4"
-                                   Symbol="Warning28" ToolTip="{Binding Check}">
-                        <ui:SymbolIcon.Style>
-                            <Style TargetType="ui:SymbolIcon">
-                                <Style.Triggers>
-                                    <DataTrigger
-                                        Binding="{Binding Check.Length,Mode=OneWay}" Value="0">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-
-                        </ui:SymbolIcon.Style>
-                    </ui:SymbolIcon>
+                            </ui:SymbolIcon.Style>
+                        </ui:SymbolIcon>
+                    </Grid>
+                    <Grid Grid.Column="2" VerticalAlignment="Stretch">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBox Grid.Row="0"
+                                 VerticalAlignment="Stretch"
+                                 KeyboardNavigation.TabNavigation="Continue"
+                                 Margin="0"
+                                 IsTabStop="False"
+                                 TextWrapping="NoWrap"
+                                 IsReadOnly="True"
+                                 IsReadOnlyCaretVisible="False"
+                                 Background="Transparent"
+                                 BorderBrush="Transparent"
+                                 Text="{Binding Content.Reference}"
+                                 Visibility="{c:Binding 'Content.Reference.Length>0', FalseToVisibility=Collapsed}" />
+                        <Grid Grid.Row="1" VerticalAlignment="Stretch">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBox Grid.Row="0" Grid.Column="0"
+                                     Grid.RowSpan="2" Grid.ColumnSpan="3"
+                                     VerticalAlignment="Stretch"
+                                     MinLines="2"
+                                     Background="Transparent"
+                                     BorderBrush="Transparent"
+                                     Width="{Binding ElementName=OriginalContentTextBox,Path=ActualWidth}"
+                                     PreviewKeyDown="TextBox_PreviewKeyDown"
+                                     PreviewTextInput="TextBox_PreviewTextInput"
+                                     AcceptsReturn="True" TextWrapping="NoWrap"
+                                     Text="{Binding Content.Translated,UpdateSourceTrigger=PropertyChanged}" />
+                            <ui:TextBlock Grid.Column="2" Grid.Row="1" Margin="0,0,10,4">
+                                <ui:TextBlock.Style>
+                                    <Style TargetType="ui:TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger
+                                                Binding="{Binding Content.Translated.Length,Mode=OneWay}" Value="0">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:TextBlock.Style>
+                                <Run>
+                                    <Run.Style>
+                                        <Style TargetType="{x:Type Run}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding TooLong}" Value="True">
+                                                    <Setter Property="Foreground" Value="Red" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Run.Style>
+                                    <Run.Text>
+                                        <Binding Path="MaxLineLength" Mode="OneWay" />
+                                    </Run.Text>
+                                </Run>
+                                <Run Text="/" />
+                                <Run Text="{Binding Content.Translated.Length,Mode=OneWay}" />
+                            </ui:TextBlock>
+                        </Grid>
+                    </Grid>
                 </Grid>
-            </Grid>
-        </StackPanel>
-    </ui:Card>
+            </ui:Card>
+        </Grid>
+        <ui:Card Margin="0,5,0,0" Padding="5,5" Visibility="{c:Binding EndLine,FalseToVisibility=Collapsed}">
+            <TextBlock TextAlignment="Center">
+                <Run Text="----- ----- -----" />
+            </TextBlock>
+        </ui:Card>
+    </StackPanel>
+
 </UserControl>
