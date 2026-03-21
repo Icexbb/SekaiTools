@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Updater", "Updater\Updater.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SekaiToolsBase", "SekaiToolsBase\SekaiToolsBase.csproj", "{2E4D04C1-2291-4391-B9E2-C942ED74A52A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SekaiToolsMauiText", "SekaiToolsMauiText\SekaiToolsMauiText.csproj", "{7700ECD4-4181-4A63-B3CC-90B69D02557F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +65,14 @@ Global
 		{2E4D04C1-2291-4391-B9E2-C942ED74A52A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2E4D04C1-2291-4391-B9E2-C942ED74A52A}.Release|x64.ActiveCfg = Release|Any CPU
 		{2E4D04C1-2291-4391-B9E2-C942ED74A52A}.Release|x64.Build.0 = Release|Any CPU
+		{7700ECD4-4181-4A63-B3CC-90B69D02557F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7700ECD4-4181-4A63-B3CC-90B69D02557F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7700ECD4-4181-4A63-B3CC-90B69D02557F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7700ECD4-4181-4A63-B3CC-90B69D02557F}.Debug|x64.Build.0 = Debug|Any CPU
+		{7700ECD4-4181-4A63-B3CC-90B69D02557F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7700ECD4-4181-4A63-B3CC-90B69D02557F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7700ECD4-4181-4A63-B3CC-90B69D02557F}.Release|x64.ActiveCfg = Release|Any CPU
+		{7700ECD4-4181-4A63-B3CC-90B69D02557F}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

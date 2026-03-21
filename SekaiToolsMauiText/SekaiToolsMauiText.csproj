@@ -1,0 +1,104 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
+
+        <!-- Note for MacCatalyst:
+        The default runtime is maccatalyst-x64, except in Release config, in which case the default is maccatalyst-x64;maccatalyst-arm64.
+        When specifying both architectures, use the plural <RuntimeIdentifiers> instead of the singular <RuntimeIdentifier>.
+        The Mac App Store will NOT accept apps with ONLY maccatalyst-arm64 indicated;
+        either BOTH runtimes must be indicated or ONLY macatalyst-x64. -->
+        <!-- For example: <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers> -->
+
+        <OutputType>Exe</OutputType>
+        <RootNamespace>SekaiToolsMauiText</RootNamespace>
+        <UseMaui>true</UseMaui>
+        <SingleProject>true</SingleProject>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+
+        <!-- Display name -->
+        <ApplicationTitle>SekaiToolsMauiText</ApplicationTitle>
+
+        <!-- App Identifier -->
+        <ApplicationId>com.companyname.sekaitoolsmauitext</ApplicationId>
+
+        <!-- Versions -->
+        <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+        <ApplicationVersion>1</ApplicationVersion>
+
+        <!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
+        <WindowsPackageType>None</WindowsPackageType>
+
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+        <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- App Icon -->
+        <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4"/>
+
+        <!-- Splash Screen -->
+        <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128"/>
+
+        <!-- Images -->
+        <MauiImage Include="Resources\Images\*"/>
+        <MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185"/>
+
+        <!-- Custom Fonts -->
+        <MauiFont Include="Resources\Fonts\*"/>
+
+        <!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
+        <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.20" />
+        <PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.20" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Resource Include="Resources\Images\chr_0.png" />
+      <Resource Include="Resources\Images\chr_1.png" />
+      <Resource Include="Resources\Images\chr_10.png" />
+      <Resource Include="Resources\Images\chr_11.png" />
+      <Resource Include="Resources\Images\chr_12.png" />
+      <Resource Include="Resources\Images\chr_13.png" />
+      <Resource Include="Resources\Images\chr_14.png" />
+      <Resource Include="Resources\Images\chr_15.png" />
+      <Resource Include="Resources\Images\chr_16.png" />
+      <Resource Include="Resources\Images\chr_17.png" />
+      <Resource Include="Resources\Images\chr_18.png" />
+      <Resource Include="Resources\Images\chr_19.png" />
+      <Resource Include="Resources\Images\chr_2.png" />
+      <Resource Include="Resources\Images\chr_20.png" />
+      <Resource Include="Resources\Images\chr_21.png" />
+      <Resource Include="Resources\Images\chr_22.png" />
+      <Resource Include="Resources\Images\chr_23.png" />
+      <Resource Include="Resources\Images\chr_24.png" />
+      <Resource Include="Resources\Images\chr_25.png" />
+      <Resource Include="Resources\Images\chr_26.png" />
+      <Resource Include="Resources\Images\chr_27.png" />
+      <Resource Include="Resources\Images\chr_28.png" />
+      <Resource Include="Resources\Images\chr_29.png" />
+      <Resource Include="Resources\Images\chr_3.png" />
+      <Resource Include="Resources\Images\chr_30.png" />
+      <Resource Include="Resources\Images\chr_31.png" />
+      <Resource Include="Resources\Images\chr_4.png" />
+      <Resource Include="Resources\Images\chr_5.png" />
+      <Resource Include="Resources\Images\chr_6.png" />
+      <Resource Include="Resources\Images\chr_7.png" />
+      <Resource Include="Resources\Images\chr_8.png" />
+      <Resource Include="Resources\Images\chr_9.png" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\SekaiToolsBase\SekaiToolsBase.csproj" />
+    </ItemGroup>
+
+</Project>
