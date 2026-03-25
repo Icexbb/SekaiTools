@@ -23,7 +23,7 @@ public partial class TranslatePage : UserControl
     {
         InitializeComponent();
         DataContext = new TranslatePageModel();
-        TestLoad();
+        // TestLoad();
     }
 
     public TranslatePageModel ViewModel => (TranslatePageModel)DataContext;
