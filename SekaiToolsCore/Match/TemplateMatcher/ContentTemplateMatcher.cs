@@ -17,11 +17,9 @@ public class ContentTemplateMatcher(TemplateManager templateManager, Config conf
 
     private bool MatchContentStartSign(Mat mat, int frameIndex = -1)
     {
-        var roi = new Rectangle(
-            mat.Width - Template.Size.Width * 3, 0,
-            Template.Size.Width * 3,
-            Template.Size.Height * 2
-        );
+        var width = Template.Size.Width * 3;
+        var height = Template.Size.Height * 2;
+        var roi = new Rectangle(mat.Width - width, 0, width, height);
         roi.Extend(0.1);
 
         var frameCropped = new Mat(mat, roi);
