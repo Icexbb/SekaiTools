@@ -20,6 +20,8 @@ using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
 using MessageBox = Wpf.Ui.Controls.MessageBox;
 using SaveFileDialog = SekaiToolsGUI.View.Subtitle.Components.SaveFileDialog;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 
 namespace SekaiToolsGUI.View.Subtitle;
 
@@ -29,6 +31,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     {
         DataContext = new SubtitlePageModel();
         InitializeComponent();
+        SubscribeFpsChange();
     }
 
 
@@ -336,6 +339,8 @@ public partial class SubtitlePage
     private CancellationToken CancellationToken => TokenSource!.Token;
 
     private VideoProcessor? VideoProcessor { get; set; }
+    private Subject<(int Fps, TimeSpan Eta)>? _fpsChangedSubject;
+    private IDisposable? _fpsChangedSubscription;
 
     public async void OnNavigatedTo()
     {
@@ -485,17 +490,33 @@ public partial class SubtitlePage
                         ViewModel.IsRunning = false;
                     });
                 },
-                OnFps = (fps, eta) =>
-                {
-                    Dispatcher.Invoke(() =>
-                    {
-                        TextBlockFps.Text = $"FPS: {fps}";
-                        TextBlockEta.Text = eta.TotalMilliseconds > 1000 ? $"ETA: {eta.Remains()}" : "";
-                    });
-                }
+                OnFps = OnFpsChanged
             }
         );
         VideoProcessor.StartProcess();
+    }
+
+    private void OnFpsChanged(int fps, TimeSpan eta)
+    {
+        _fpsChangedSubject.OnNext((fps, eta));
+    }
+
+    private void SubscribeFpsChange()
+    {
+        _fpsChangedSubscription?.Dispose();
+        _fpsChangedSubject?.OnCompleted();
+        _fpsChangedSubject?.Dispose();
+        _fpsChangedSubject = new Subject<(int Fps, TimeSpan Eta)>();
+        _fpsChangedSubscription = _fpsChangedSubject
+            ?.Sample(TimeSpan.FromMilliseconds(200))
+            .Subscribe(x =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    TextBlockFps.Text = $"FPS: {x.Fps}";
+                    TextBlockEta.Text = x.Eta.TotalMilliseconds > 1000 ? $"ETA: {x.Eta.Remains()}" : "";
+                });
+            });
     }
 
 
