@@ -31,11 +31,7 @@ public class TemplateManager(Size videoResolution, bool noScale = false)
         var menuTemplatePath = ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, MenuSignBase);
         if (!File.Exists(menuTemplatePath)) throw new FileNotFoundException();
         var menuTemplate = CvInvoke.Imread(menuTemplatePath, ImreadModes.Unchanged)!;
-        int menuSize;
-        if (videoResolution.Height / (double)videoResolution.Width > 16.0 / 9)
-            menuSize = (int)(videoResolution.Height * 0.0741);
-        else
-            menuSize = (int)(videoResolution.Width * 0.0417);
+        var menuSize = GetMenuSignSize(videoResolution);
 
         CvInvoke.Resize(menuTemplate, menuTemplate, new Size(menuSize, menuSize));
         // var result = new TemplateGrayAlpha(menuTemplate, false);
@@ -43,21 +39,37 @@ public class TemplateManager(Size videoResolution, bool noScale = false)
         return menuTemplate;
     }
 
-    public int GetFontSize()
+    public static int GetMenuSignSize(Size videoSize)
     {
-        var scale = noScale ? 1 : 5;
-        var size = GetFontSize(videoResolution);
-        var result = size * scale;
+        const double standardRatio = 16.0 / 9.0;
+        var ratio = videoSize.Width / (double)videoSize.Height;
+        var menuSize = ratio switch
+        {
+            < standardRatio => (int)(videoSize.Width * 0.0417),
+            _ => (int)(videoSize.Height * 0.0741)
+        };
+
+        return menuSize;
+    }
+
+    public static int GetFontSize(Size videoSize, double scale = 0.95)
+    {
+        const double standardRatio = 16.0 / 9.0;
+        var ratio = videoSize.Width / (double)videoSize.Height;
+        var size = ratio switch
+        {
+            < standardRatio => (int)(videoSize.Width * 0.024),
+            _ => (int)(videoSize.Height * 0.043)
+        };
+        var result = (int)(size * scale);
         return result;
     }
 
-    public int GetFontSize(Size videoSize)
+    public int GetFontSize(double fontScale = 0.95)
     {
-        var scale = 0.95;
-        var size = videoSize.Height / (double)videoSize.Height > 16 / 9.0
-            ? videoSize.Height * 0.043
-            : videoSize.Width * 0.024;
-        var result = (int)(size * scale);
+        var size = GetFontSize(videoResolution, fontScale);
+        var scale = noScale ? 1 : 5;
+        var result = size * scale;
         return result;
     }
 
@@ -81,13 +93,13 @@ public class TemplateManager(Size videoResolution, bool noScale = false)
     private Font GetDbFont()
     {
         var fontFilePath = ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, DbFontBase);
-        return GetFont(fontFilePath, GetFontSize());
+        return GetFont(fontFilePath, GetFontSize(0.925));
     }
 
     private Font GetEbFont()
     {
         var fontFilePath = ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, EbFontBase);
-        return GetFont(fontFilePath, GetFontSize());
+        return GetFont(fontFilePath, GetFontSize(0.95));
     }
 
     private Mat CreateImageWithText(TemplateUsage usage, string text)

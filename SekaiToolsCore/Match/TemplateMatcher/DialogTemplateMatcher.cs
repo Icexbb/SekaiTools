@@ -164,7 +164,7 @@ public class DialogTemplateMatcher(
 
         bool LocalMatch(Mat src, GaMat tmp, double threshold, TemplateMatchCachePool.MatchUsage usage)
         {
-            var offset = templateManager.GetFontSize(src.Size);
+            var offset = TemplateManager.GetFontSize(src.Size);
             Rectangle dialogStartPosition = new(
                 point.X + (int)(0.1 * offset),
                 point.Y + (int)(1.1 * offset),
