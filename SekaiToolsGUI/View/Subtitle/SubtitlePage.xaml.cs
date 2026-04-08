@@ -260,7 +260,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
 
         var dialog = new SaveFileDialog(dialogService.GetDialogHost() ?? throw new InvalidOperationException(),
             ViewModel.VideoFilePath);
-        var token = new CancellationToken();
+        var token = CancellationToken.None;
         var dialogResult = await dialogService.ShowAsync(dialog, token);
         if (dialogResult != ContentDialogResult.Primary) return;
         var fileName = dialog.ViewModel.FileName;
