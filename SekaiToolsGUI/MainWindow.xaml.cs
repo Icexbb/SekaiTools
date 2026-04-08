@@ -49,8 +49,6 @@ public partial class MainWindow : FluentWindow
     private void NavigationView_OnLoaded(object sender, RoutedEventArgs e)
     {
         NavigationView.IsPaneOpen = false;
-        NavigationView.Navigate(typeof(TranslatePage));
-        return;
         if (NavigationView.MenuItems.Count != 0)
             NavigationView.Navigate((NavigationView.MenuItems[0] as NavigationViewItem)?.TargetPageType!);
     }
