@@ -23,6 +23,14 @@ public partial class MainWindow : Window
     private string MainAppPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{MainAppName}.exe");
 
 
+    private string GetLocalVersion()
+    {
+        var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{MainAppName}.exe");
+        if (!File.Exists(path)) return "0.0.0";
+        var vi = FileVersionInfo.GetVersionInfo(path);
+        return vi.FileVersion ?? "0.0.0";
+    }
+
     private async Task<string> GetLatestVersionAsync()
     {
         using var client = new HttpClient();
@@ -78,9 +86,54 @@ public partial class MainWindow : Window
         p2?.WaitForExit();
     }
 
-    private void StartMainApp()
+    private static void CopyDirectoryRecursive(string source, string dest)
     {
-        if (File.Exists(MainAppPath)) Process.Start(new ProcessStartInfo(MainAppPath) { UseShellExecute = true });
+        Directory.CreateDirectory(dest);
+        foreach (var file in Directory.GetFiles(source))
+        {
+            var destFile = Path.Combine(dest, Path.GetFileName(file));
+            try
+            {
+                File.Copy(file, destFile, overwrite: true);
+            }
+            catch (IOException)
+            {
+                // 被当前进程锁定的文件（Updater.dll 等）稍后由批处理脚本替换
+            }
+        }
+        foreach (var dir in Directory.GetDirectories(source))
+        {
+            var dirName = Path.GetFileName(dir);
+            CopyDirectoryRecursive(dir, Path.Combine(dest, dirName));
+        }
+    }
+
+    private void StartMainApp(string tempDir)
+    {
+        // 为被锁定的 Updater 文件创建一个后续替换脚本
+        var scriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "post_update.cmd");
+        var pid = Environment.ProcessId;
+        var script =
+            $"@echo off\r\n" +
+            $":wait\r\n" +
+            $"tasklist /FI \"PID eq {pid}\" | findstr \"{pid}\" > nul\r\n" +
+            $"if not errorlevel 1 (\r\n" +
+            $"    timeout /t 1 /nobreak > nul\r\n" +
+            $"    goto wait\r\n" +
+ $")\r\n" +
+            $"xcopy /y /e /q \"{tempDir}\\SekaiTools\\*\" \"{AppDomain.CurrentDomain.BaseDirectory}\" > nul\r\n" +
+            $"rmdir /s /q \"{tempDir}\"\r\n" +
+            $"start \"\" \"{MainAppPath}\"\r\n" +
+            $"del \"{scriptPath}\"\r\n";
+        File.WriteAllText(scriptPath, script);
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = scriptPath,
+            UseShellExecute = true,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden
+        });
 
         Application.Current.Shutdown();
     }
@@ -92,6 +145,16 @@ public partial class MainWindow : Window
             StatusText.Text = "正在检查版本...";
 
             var remoteVersion = await GetLatestVersionAsync();
+            var localVersion = GetLocalVersion();
+
+            if (Version.TryParse(localVersion, out var local) &&
+                Version.TryParse(remoteVersion, out var remote) &&
+                local >= remote)
+            {
+                StatusText.Text = "已是最新版本";
+                return;
+            }
+
             var url = $"https://github.com/Icexbb/SekaiTools/releases/download/" +
                       $"{remoteVersion}/SekaiTools-{remoteVersion}.7z";
             var zipFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update.7z");
@@ -107,13 +170,12 @@ public partial class MainWindow : Window
             File.Delete(zipFile);
             StatusText.Text = "正在更新文件...";
 
-            Directory.GetFiles(targetDir).Where(file => file.StartsWith("Updater")).ToList().ForEach(File.Delete);
-            Directory.Move(Path.Combine(tempDir, "SekaiTools"), targetDir);
-            Directory.Delete(tempDir, true);
+            var sourceDir = Path.Combine(tempDir, "SekaiTools");
+            CopyDirectoryRecursive(sourceDir, targetDir);
 
             StatusText.Text = "更新完成，正在启动主程序...";
             await Task.Delay(1000);
-            StartMainApp();
+            StartMainApp(tempDir);
         }
         catch (Exception ex)
         {
