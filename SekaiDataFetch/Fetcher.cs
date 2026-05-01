@@ -66,6 +66,7 @@ public class Fetcher
         async Task<string> Get()
         {
             using var client = new HttpClient(GetHttpHandler());
+            client.Timeout = TimeSpan.FromSeconds(10);
             var response = await client.GetAsync(url);
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsStringAsync();
