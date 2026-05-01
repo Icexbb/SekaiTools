@@ -1,9 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="SekaiToolsMauiText.View.Translate.TranslatePage">
-    <ContentPage.Content>
-        
-    </ContentPage.Content>
+             xmlns:vm="clr-namespace:SekaiToolsMauiText.ViewModel"
+             xmlns:views="clr-namespace:SekaiToolsMauiText.View.Translate"
+             xmlns:components="clr-namespace:SekaiToolsMauiText.View.Translate.Components"
+             x:Class="SekaiToolsMauiText.View.Translate.TranslatePage"
+             Title="翻译">
+
+    <ContentPage.Resources>
+        <DataTemplate x:Key="DialogTemplate">
+            <components:TranslateLineDialog />
+        </DataTemplate>
+        <DataTemplate x:Key="EffectTemplate">
+            <components:TranslateLineEffect />
+        </DataTemplate>
+        <views:LineModelTemplateSelector x:Key="LineModelSelector"
+                                         DialogTemplate="{StaticResource DialogTemplate}"
+                                         EffectTemplate="{StaticResource EffectTemplate}" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*" Margin="8">
+
+        <!-- Toolbar -->
+        <Border Grid.Row="0"
+                Stroke="{AppThemeBinding Light=#CCCCCC, Dark=#555555}"
+                StrokeThickness="1" StrokeShape="RoundRectangle 6"
+                Padding="8,6" Margin="0,0,0,6">
+            <HorizontalStackLayout Spacing="6" HorizontalOptions="End">
+                <Button x:Name="LoadScriptButton" Text="载入剧本"
+                        Clicked="LoadScriptButton_OnClick" />
+                <Button x:Name="LoadTranslationButton" Text="打开翻译"
+                        Clicked="LoadTranslationButton_OnClick"
+                        IsVisible="False" />
+                <Button x:Name="LoadReviewButton" Text="打开对照翻译"
+                        Clicked="LoadReviewButton_OnClick"
+                        IsVisible="False" />
+                <Button x:Name="ResetButton" Text="重置"
+                        Clicked="ResetButton_OnClick" />
+                <Button x:Name="SaveButton" Text="保存"
+                        Clicked="SaveButton_OnClick" />
+            </HorizontalStackLayout>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" ColumnDefinitions="150,*">
+
+            <!-- Fast Copy Panel -->
+            <components:FastCopyView Grid.Column="0" Margin="0,0,6,0" />
+
+            <!-- Translation List -->
+            <CollectionView Grid.Column="1"
+                            x:Name="TranslatePanel"
+                            ItemsSource="{Binding Events}"
+                            ItemTemplate="{StaticResource LineModelSelector}"
+                            ItemsUpdatingScrollMode="KeepScrollOffset">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="12">
+                        <Label Text="📄" FontSize="48" HorizontalOptions="Center" />
+                        <Label Text="请点击「载入剧本」开始翻译" FontSize="16"
+                               HorizontalOptions="Center"
+                               TextColor="{AppThemeBinding Light=#888888, Dark=#AAAAAA}" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+            </CollectionView>
+        </Grid>
+    </Grid>
 </ContentPage>

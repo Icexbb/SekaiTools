@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SekaiToolsMauiText.View.Translate.Components.TranslateLineDialog">
+    <VerticalStackLayout Spacing="0" Margin="0,2,0,0">
+        <Grid ColumnDefinitions="140,*" MinimumHeightRequest="80" Margin="2,0">
+
+            <!-- Character Panel -->
+            <Border Grid.Column="0"
+                    Stroke="{AppThemeBinding Light=#CCCCCC, Dark=#555555}"
+                    StrokeThickness="1" StrokeShape="RoundRectangle 6"
+                    Margin="0,0,3,0" Padding="6,4">
+                <Grid ColumnDefinitions="32,*" RowDefinitions="Auto,Auto,Auto">
+
+                    <!-- Character Icon -->
+                    <Image Grid.Column="0" Grid.Row="0" Grid.RowSpan="3"
+                           Source="{Binding Icon}"
+                           WidthRequest="28" HeightRequest="28"
+                           VerticalOptions="Center"
+                           IsVisible="{Binding HasIcon}" />
+                    <Label Grid.Column="0" Grid.Row="0" Grid.RowSpan="3"
+                           Text="💬" FontSize="18"
+                           HorizontalOptions="Center" VerticalOptions="Center"
+                           IsVisible="{Binding HasNoIcon}" />
+
+                    <!-- Original Character Name -->
+                    <Label Grid.Column="1" Grid.Row="0"
+                           Text="{Binding OriginalCharacter}"
+                           HorizontalOptions="Center" FontSize="12"
+                           LineBreakMode="TailTruncation" />
+
+                    <!-- Arrow -->
+                    <Label Grid.Column="1" Grid.Row="1"
+                           Text="↓" HorizontalOptions="Center" FontSize="11" />
+
+                    <!-- Translated Character Entry -->
+                    <Entry Grid.Column="1" Grid.Row="2"
+                           Text="{Binding TranslatedCharacter, Mode=TwoWay}"
+                           Placeholder="{Binding OriginalCharacter}"
+                           HorizontalOptions="Fill" FontSize="12"
+                           HorizontalTextAlignment="Center"
+                           ClearButtonVisibility="Never" />
+                </Grid>
+            </Border>
+
+            <!-- Content Panel -->
+            <Border Grid.Column="1"
+                    Stroke="{AppThemeBinding Light=#CCCCCC, Dark=#555555}"
+                    StrokeThickness="1" StrokeShape="RoundRectangle 6"
+                    Padding="6,4">
+                <Grid ColumnDefinitions="*,32,*">
+
+                    <!-- Original Content -->
+                    <Label Grid.Column="0"
+                           Text="{Binding OriginalContent}"
+                           VerticalOptions="Center" FontSize="13"
+                           LineBreakMode="WordWrap" />
+
+                    <!-- Arrow + Warning -->
+                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                        <Label Text="→" HorizontalOptions="Center" FontSize="14" />
+                        <Label Text="⚠" TextColor="Red"
+                               HorizontalOptions="Center" FontSize="14"
+                               IsVisible="{Binding HasCheck}"
+                               ToolTipProperties.Text="{Binding Check}" />
+                    </VerticalStackLayout>
+
+                    <!-- Translation Column -->
+                    <Grid Grid.Column="2" RowDefinitions="Auto,*,Auto">
+
+                        <!-- Reference (if loaded) -->
+                        <Label Grid.Row="0"
+                               Text="{Binding ContentReference}"
+                               TextColor="{AppThemeBinding Light=#888888, Dark=#AAAAAA}"
+                               FontSize="11" IsVisible="{Binding HasContentReference}" />
+
+                        <!-- Translated Content Editor -->
+                        <Editor Grid.Row="1"
+                                Text="{Binding TranslatedContent, Mode=TwoWay}"
+                                AutoSize="TextChanges"
+                                FontSize="13"
+                                MinimumHeightRequest="44" />
+
+                        <!-- Length Counter -->
+                        <HorizontalStackLayout Grid.Row="2"
+                                               HorizontalOptions="End"
+                                               IsVisible="{Binding HasTranslatedContent}">
+                            <Label FontSize="11" TextColor="{Binding LengthColor}"
+                                   Text="{Binding MaxLineLength}" />
+                            <Label FontSize="11" Text="/" />
+                            <Label FontSize="11"
+                                   Text="{Binding TranslatedContent.Length}" />
+                        </HorizontalStackLayout>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- End-of-paragraph Separator -->
+        <Border IsVisible="{Binding EndLine}"
+                Margin="2,4,2,0"
+                BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#303030}"
+                Padding="5,3" StrokeShape="RoundRectangle 4"
+                Stroke="{AppThemeBinding Light=#DDDDDD, Dark=#444444}" StrokeThickness="1">
+            <Label Text="----- ----- -----"
+                   HorizontalOptions="Center" FontSize="11" />
+        </Border>
+    </VerticalStackLayout>
+</ContentView>
+

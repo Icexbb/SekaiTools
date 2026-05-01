@@ -1,7 +1,8 @@
 using SekaiToolsBase.Story.StoryEvent;
-using SekaiToolsMauiText.ViewModel;
+
 namespace SekaiToolsMauiText.ViewModel;
-public class LineEffectModel : ViewModelBase
+
+public class LineEffectModel : LineModel
 {
     private readonly BaseStoryEvent _baseStoryEvent;
 
@@ -12,7 +13,6 @@ public class LineEffectModel : ViewModelBase
         TranslatedContent = _baseStoryEvent.BodyTranslated;
     }
 
-
     public string OriginalContent
     {
         get => GetProperty(string.Empty);
@@ -22,8 +22,30 @@ public class LineEffectModel : ViewModelBase
     public string TranslatedContent
     {
         get => GetProperty(string.Empty);
-        set => SetProperty(value);
+        set
+        {
+            SetProperty(value);
+            if (ContentTranslateChangedEnabled)
+                ContentTranslateChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
+
+    public string ContentReference
+    {
+        get => GetProperty(string.Empty);
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(HasContentReference));
+        }
+    }
+
+    public bool HasContentReference => !string.IsNullOrEmpty(ContentReference);
+    public bool ContentTranslateChangedEnabled { get; set; } = true;
+    public event EventHandler? ContentTranslateChanged;
+
+    public override string Result =>
+        string.IsNullOrWhiteSpace(TranslatedContent) ? OriginalContent : TranslatedContent;
 
     public BaseStoryEvent Export()
     {

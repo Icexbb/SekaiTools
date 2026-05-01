@@ -1,26 +1,37 @@
+using Microsoft.Maui.Graphics;
 using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsBase.Utils;
 
 namespace SekaiToolsMauiText.ViewModel;
 
-public class LineDialogModel : ViewModelBase
+public class LineDialogModel : LineModel
 {
+    private readonly DialogStoryEvent _storyEvent;
+
     public LineDialogModel(DialogStoryEvent dialogStoryEvent)
     {
-        DialogStoryEvent = dialogStoryEvent;
+        _storyEvent = dialogStoryEvent;
+        EndLine = dialogStoryEvent.CloseWindow;
         OriginalCharacter = dialogStoryEvent.CharacterOriginal;
+        TranslatedCharacter = string.IsNullOrWhiteSpace(dialogStoryEvent.CharacterTranslated)
+            ? dialogStoryEvent.CharacterOriginal
+            : dialogStoryEvent.CharacterTranslated;
         OriginalContent = dialogStoryEvent.BodyOriginal;
-        if (dialogStoryEvent.CharacterTranslated != string.Empty)
-            TranslatedCharacter = dialogStoryEvent.CharacterTranslated;
         TranslatedContent = dialogStoryEvent.BodyTranslated;
     }
 
-    private DialogStoryEvent DialogStoryEvent { get; }
-
-    public string Icon => DialogStoryEvent.CharacterId is > 0 and <= 31
-        ? $"pack://application:,,,/Resource/Images/chr_{DialogStoryEvent.CharacterId}.png"
-        // ? ""
+    public string Icon => _storyEvent.CharacterId is > 0 and <= 31
+        ? $"chr_{_storyEvent.CharacterId}.png"
         : string.Empty;
+
+    public bool HasIcon => !string.IsNullOrEmpty(Icon);
+    public bool HasNoIcon => string.IsNullOrEmpty(Icon);
+
+    public bool EndLine
+    {
+        get => GetProperty(false);
+        set => SetProperty(value);
+    }
 
     public string OriginalCharacter
     {
@@ -28,13 +39,28 @@ public class LineDialogModel : ViewModelBase
         set => SetProperty(value);
     }
 
-
     public string TranslatedCharacter
     {
         get => GetProperty(string.Empty);
-        set => SetProperty(value);
+        set
+        {
+            SetProperty(value);
+            if (CharacterTranslateChangedEnabled)
+                CharacterTranslateChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
+    public string CharacterReference
+    {
+        get => GetProperty(string.Empty);
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(HasCharacterReference));
+        }
+    }
+
+    public bool HasCharacterReference => !string.IsNullOrEmpty(CharacterReference);
 
     public string OriginalContent
     {
@@ -48,14 +74,31 @@ public class LineDialogModel : ViewModelBase
         set
         {
             var v = FormatContent(value);
-
-
             Check = CheckContent(v);
             SetProperty(v);
             LineCount = (v + "\n").LineCount();
             MaxLineLength = (v + "\n").MaxLineLength();
+            OnPropertyChanged(nameof(HasCheck));
+            OnPropertyChanged(nameof(HasTranslatedContent));
+            OnPropertyChanged(nameof(LengthColor));
+            if (ContentTranslateChangedEnabled)
+                ContentTranslateChanged?.Invoke(this, EventArgs.Empty);
         }
     }
+
+    public string ContentReference
+    {
+        get => GetProperty(string.Empty);
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(HasContentReference));
+        }
+    }
+
+    public bool HasContentReference => !string.IsNullOrEmpty(ContentReference);
+    public bool HasTranslatedContent => !string.IsNullOrEmpty(TranslatedContent);
+    public bool HasCheck => !string.IsNullOrEmpty(Check);
 
     public int LineCount
     {
@@ -76,8 +119,14 @@ public class LineDialogModel : ViewModelBase
     public bool TooLong
     {
         get => GetProperty(false);
-        set => SetProperty(value);
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(LengthColor));
+        }
     }
+
+    public Color LengthColor => TooLong ? Colors.Red : Colors.Gray;
 
     public string Check
     {
@@ -85,16 +134,28 @@ public class LineDialogModel : ViewModelBase
         set => SetProperty(value);
     }
 
+    public bool CharacterTranslateChangedEnabled { get; set; } = true;
+    public bool ContentTranslateChangedEnabled { get; set; } = true;
+
+    public event EventHandler? CharacterTranslateChanged;
+    public event EventHandler? ContentTranslateChanged;
+
+    public override string Result
+    {
+        get
+        {
+            var charResult = string.IsNullOrWhiteSpace(TranslatedCharacter) ? OriginalCharacter : TranslatedCharacter;
+            var contentResult = string.IsNullOrWhiteSpace(TranslatedContent) ? OriginalContent : TranslatedContent;
+            return $"{charResult}：{contentResult.Replace("\n", "\\N")}" + (EndLine ? "\n" : "");
+        }
+    }
+
     public DialogStoryEvent Export()
     {
         var dialog = new DialogStoryEvent(
-            DialogStoryEvent.Index,
-            OriginalContent,
-            DialogStoryEvent.CharacterId,
-            OriginalCharacter,
-            DialogStoryEvent.CloseWindow,
-            DialogStoryEvent.Shake
-        );
+            _storyEvent.Index, OriginalContent,
+            _storyEvent.CharacterId, OriginalCharacter,
+            _storyEvent.CloseWindow, _storyEvent.Shake);
         dialog.SetTranslation(TranslatedCharacter, TranslatedContent);
         return dialog;
     }
