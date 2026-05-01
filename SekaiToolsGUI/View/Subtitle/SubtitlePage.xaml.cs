@@ -32,6 +32,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
         DataContext = new SubtitlePageModel();
         InitializeComponent();
         SubscribeFpsChange();
+        SubscribeProgressChange();
     }
 
 
@@ -341,6 +342,8 @@ public partial class SubtitlePage
     private VideoProcessor? VideoProcessor { get; set; }
     private Subject<(int Fps, TimeSpan Eta)>? _fpsChangedSubject;
     private IDisposable? _fpsChangedSubscription;
+    private Subject<double>? _progressChangedSubject;
+    private IDisposable? _progressChangedSubscription;
 
     public async void OnNavigatedTo()
     {
@@ -458,12 +461,7 @@ public partial class SubtitlePage
                 },
                 OnProgress = progression =>
                 {
-                    Dispatcher.Invoke(() =>
-                    {
-                        ProgressBarProgression.Value = progression;
-                        ProgressBarProgression.Maximum = 1;
-                        TextBlockProgression.Text = $"{progression:P}";
-                    });
+                    OnProgressChanged(progression);
                 },
                 OnFramePreviewImage = frame =>
                 {
@@ -498,7 +496,12 @@ public partial class SubtitlePage
 
     private void OnFpsChanged(int fps, TimeSpan eta)
     {
-        _fpsChangedSubject.OnNext((fps, eta));
+        _fpsChangedSubject?.OnNext((fps, eta));
+    }
+
+    private void OnProgressChanged(double progression)
+    {
+        _progressChangedSubject?.OnNext(progression);
     }
 
     private void SubscribeFpsChange()
@@ -515,6 +518,25 @@ public partial class SubtitlePage
                 {
                     TextBlockFps.Text = $"FPS: {x.Fps}";
                     TextBlockEta.Text = x.Eta.TotalMilliseconds > 1000 ? $"ETA: {x.Eta.Remains()}" : "";
+                });
+            });
+    }
+
+    private void SubscribeProgressChange()
+    {
+        _progressChangedSubscription?.Dispose();
+        _progressChangedSubject?.OnCompleted();
+        _progressChangedSubject?.Dispose();
+        _progressChangedSubject = new Subject<double>();
+        _progressChangedSubscription = _progressChangedSubject
+            .Sample(TimeSpan.FromMilliseconds(200))
+            .Subscribe(value =>
+            {
+                Dispatcher.BeginInvoke(() =>
+                {
+                    ProgressBarProgression.Value = value;
+                    ProgressBarProgression.Maximum = 1;
+                    TextBlockProgression.Text = $"{value:P}";
                 });
             });
     }
