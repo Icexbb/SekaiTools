@@ -114,7 +114,7 @@ public class VideoProcessor
         // MarkerMatcher = null;
     }
 
-    private void Process()
+    private void Process(CancellationToken token)
     {
         if (Capture == null || Capture.Ptr == IntPtr.Zero) return;
         if (DialogMatcher == null || ContentMatcher == null ||
@@ -122,7 +122,7 @@ public class VideoProcessor
         var frameRate = Capture.Get(CapProp.Fps);
         var frame = new Mat();
         if (Creator == null) throw new NullReferenceException();
-        var frameCount = Capture.Get(CapProp.FrameCount);
+        var frameCount = capture.Get(CapProp.FrameCount);
         var markerIndexInDialog = MarkerIndexOfDialog();
 
         // Debug usage
@@ -141,7 +141,7 @@ public class VideoProcessor
                 }
             }
 
-            Capture.Set(CapProp.PosFrames, debugFrameId);
+            capture.Set(CapProp.PosFrames, debugFrameId);
         }
 
         _debugIgnoreBannerMarker = Environment.GetEnvironmentVariable("DebugIgnoreBannerMarker") == "true";
@@ -153,9 +153,9 @@ public class VideoProcessor
             var tic = Environment.TickCount;
             try
             {
-                if (Token.IsCancellationRequested) break;
-                if (Capture is not { IsOpened: true }) break;
-                if (!Capture.Read(frame)) break;
+                if (token.IsCancellationRequested) break;
+                if (capture is not { IsOpened: true }) break;
+                if (!capture.Read(frame)) break;
 
                 frameIndex = (int)Capture.Get(CapProp.PosFrames);
                 Callbacks.OnProgress(frameIndex / frameCount);
@@ -163,7 +163,17 @@ public class VideoProcessor
                 if (frameIndex % ((int)frameRate / 5) == 0)
                 {
                     var previewFrame = frame.Clone();
-                    Task.Run(() => { Callbacks.OnFramePreviewImage(previewFrame); }, Token);
+                    Task.Run(() =>
+                    {
+                        try
+                        {
+                            Callbacks.OnFramePreviewImage(previewFrame);
+                        }
+                        finally
+                        {
+                            previewFrame.Dispose();
+                        }
+                    }, token);
                 }
 
                 FrameProcess.Process(frame);
@@ -201,6 +211,10 @@ public class VideoProcessor
                     if (MarkerMatcher.Set[markerIndex].Finished) Callbacks.OnNewMarker(MarkerMatcher.Set[markerIndex]);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
             catch (Exception e)
             {
                 if (Debugger.IsAttached) throw;
@@ -214,6 +228,10 @@ public class VideoProcessor
         }
 
         Callbacks.OnProgress(1);
+        frame.Dispose();
+        capture.Dispose();
+        if (ReferenceEquals(Capture, capture))
+            Capture = null;
 
         return;
 
