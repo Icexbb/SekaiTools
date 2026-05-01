@@ -82,8 +82,8 @@ public partial class TranslateFastCopy : UserControl
     {
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
 
-        var dialog = new AddCustomDialog(dialogService.GetDialogHost() ?? throw new InvalidOperationException());
-        var token = new CancellationToken();
+        var dialog = new AddCustomDialog(dialogService.GetDialogHostEx() ?? throw new InvalidOperationException());
+        var token = CancellationToken.None;
         var dialogResult = await dialogService.ShowAsync(dialog, token);
         if (dialogResult != ContentDialogResult.Primary) return;
 

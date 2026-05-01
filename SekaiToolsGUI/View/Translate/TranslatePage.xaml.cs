@@ -157,9 +157,9 @@ public partial class TranslatePage : UserControl
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
 
         var dialog = new SaveFileDialog(
-            dialogService.GetDialogHost() ?? throw new InvalidOperationException(),
+            dialogService.GetDialogHostEx() ?? throw new InvalidOperationException(),
             _scriptPath, _translationPath);
-        var token = new CancellationToken();
+        var token = CancellationToken.None;
         var dialogResult = await dialogService.ShowAsync(dialog, token);
         if (dialogResult != ContentDialogResult.Primary) return;
         var fileName = dialog.ViewModel.FileName;
