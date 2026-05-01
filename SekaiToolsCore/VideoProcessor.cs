@@ -83,23 +83,30 @@ public class VideoProcessor
 
     public void StartProcess()
     {
-        Task = new Task(() =>
+        if (ProcessingTask is { IsCompleted: false }) return;
+
+        TokenSource?.Dispose();
+        TokenSource = new CancellationTokenSource();
+        var token = TokenSource.Token;
+
+        ProcessingTask = Task.Run(() =>
         {
             Callbacks.OnTaskStarted();
-            Process();
-            Callbacks.OnTaskFinished();
-        }, Token);
-        Task.Start();
+            try
+            {
+                Process(token);
+            }
+            finally
+            {
+                Callbacks.OnTaskFinished();
+            }
+        }, token);
     }
 
     public void StopProcess()
     {
         TokenSource?.Cancel();
-        TokenSource = new CancellationTokenSource();
-        Task = null;
-
-        Capture?.Dispose();
-        Capture = null;
+        ProcessingTask = null;
         // Creator = null;
         // DialogMatcher = null;
         // ContentMatcher = null;
