@@ -7,7 +7,7 @@ namespace SekaiToolsGUI.View.Translate.Components;
 
 public partial class SaveFileDialog : ContentDialog
 {
-    public SaveFileDialog(ContentPresenter contentPresenter, string scriptFile, string translationFile = "") : base(
+    public SaveFileDialog(ContentDialogHost contentPresenter, string scriptFile, string translationFile = "") : base(
         contentPresenter)
     {
         ScriptFile = scriptFile;
