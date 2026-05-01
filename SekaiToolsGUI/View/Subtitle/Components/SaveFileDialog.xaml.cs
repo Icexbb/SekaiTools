@@ -8,7 +8,7 @@ namespace SekaiToolsGUI.View.Subtitle.Components;
 
 public partial class SaveFileDialog : ContentDialog
 {
-    public SaveFileDialog(ContentPresenter contentPresenter, string videoFile) : base(contentPresenter)
+    public SaveFileDialog(ContentDialogHost contentPresenter, string videoFile) : base(contentPresenter)
     {
         VideoFile = videoFile;
         DataContext = new SaveFileDialogModel();
