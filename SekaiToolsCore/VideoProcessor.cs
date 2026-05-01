@@ -118,7 +118,9 @@ public class VideoProcessor
         if (Capture == null || Capture.Ptr == IntPtr.Zero) return;
         if (DialogMatcher == null || ContentMatcher == null ||
             BannerMatcher == null || MarkerMatcher == null) return;
-        var frameRate = Capture.Get(CapProp.Fps);
+        var capture = Capture;
+        var frameRate = capture.Get(CapProp.Fps);
+        var previewInterval = Math.Max(1, (int)Math.Round(frameRate / 5d));
         var frame = new Mat();
         if (Creator == null) throw new NullReferenceException();
         var frameCount = capture.Get(CapProp.FrameCount);
@@ -156,10 +158,11 @@ public class VideoProcessor
                 if (capture is not { IsOpened: true }) break;
                 if (!capture.Read(frame)) break;
 
-                frameIndex = (int)Capture.Get(CapProp.PosFrames);
-                Callbacks.OnProgress(frameIndex / frameCount);
+                frameIndex = (int)capture.Get(CapProp.PosFrames);
+                var progress = frameCount > 0 ? frameIndex / frameCount : 0;
+                Callbacks.OnProgress(progress);
 
-                if (frameIndex % ((int)frameRate / 5) == 0)
+                if (frameIndex % previewInterval == 0)
                 {
                     var previewFrame = frame.Clone();
                     Task.Run(() =>
@@ -270,13 +273,13 @@ public class VideoProcessor
         {
             const double alpha = 1d / 100d; // 采样数设置为100
 
-            avgDuration = Math.Abs(frameCount - 1) < double.MinValue
+            avgDuration = avgDuration <= double.Epsilon
                 ? deltaTime
                 : avgDuration * (1 - alpha) + deltaTime * alpha;
 
 
-            var fps = (int)(1d / avgDuration * 1000);
-            var etaMs = (frameCount - frameIndex) * avgDuration;
+            var fps = avgDuration > double.Epsilon ? (int)(1000d / avgDuration) : 0;
+            var etaMs = Math.Max(0, (frameCount - frameIndex) * avgDuration);
             var eta = new TimeSpan(0, 0, 0, 0, (int)etaMs);
             Callbacks.OnFps(fps, eta);
         }
