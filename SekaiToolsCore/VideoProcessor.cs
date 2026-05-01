@@ -48,7 +48,6 @@ public class VideoProcessor
     }
 
     private CancellationTokenSource? TokenSource { get; set; } = new();
-    private CancellationToken Token => TokenSource!.Token;
     private ContentTemplateMatcher? ContentMatcher { get; }
 
     private DialogTemplateMatcher? DialogMatcher { get; }
@@ -56,7 +55,7 @@ public class VideoProcessor
     private BannerTemplateMatcher? BannerMatcher { get; }
 
     private TemplateMatcherCreator? Creator { get; }
-    private Task? Task { get; set; }
+    private Task? ProcessingTask { get; set; }
     private VideoCapture? Capture { get; set; }
 
     private VideoProcessCallbacks Callbacks { get; }
