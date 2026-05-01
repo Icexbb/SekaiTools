@@ -241,27 +241,33 @@ public class DialogTemplateMatcher(
 
     public bool Process(Mat frame, int frameIndex)
     {
-        var dIndex = LastNotProcessedIndex(Set);
-        var dialogRefers = Set[dIndex];
+        MatchStatus? firstStatus = null;
 
-        var matchResult = MatchForDialog(frame, dialogRefers, frameIndex);
-
-        _status = matchResult.Status;
-        switch (_status)
+        while (!Finished)
         {
-            case MatchStatus.DialogDropped:
-                Set[dIndex].Finished = true;
-                TemplateMatchCachePool.NextDialog();
-                if (!Finished) Process(frame, frameIndex);
-                break;
-            case MatchStatus.DialogNotMatched or MatchStatus.NameTagNotMatched:
-                break;
-            default:
-                Set[dIndex].Add(frameIndex, matchResult.Point);
-                break;
+            var dIndex = LastNotProcessedIndex(Set);
+            if (dIndex < 0) break;
+
+            var dialogRefers = Set[dIndex];
+            var matchResult = MatchForDialog(frame, dialogRefers, frameIndex);
+            _status = matchResult.Status;
+            firstStatus ??= matchResult.Status;
+
+            switch (_status)
+            {
+                case MatchStatus.DialogDropped:
+                    Set[dIndex].Finished = true;
+                    TemplateMatchCachePool.NextDialog();
+                    continue;
+                case MatchStatus.DialogNotMatched or MatchStatus.NameTagNotMatched:
+                    return IsStatusMatched(firstStatus.Value);
+                default:
+                    Set[dIndex].Add(frameIndex, matchResult.Point);
+                    return IsStatusMatched(firstStatus.Value);
+            }
         }
 
-        return IsStatusMatched(matchResult.Status);
+        return IsStatusMatched(firstStatus ?? MatchStatus.DialogNotMatched);
     }
 
     private static bool IsStatusMatched(MatchStatus status)

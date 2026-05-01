@@ -93,21 +93,25 @@ public class BannerTemplateMatcher(
 
     public void Process(Mat frame, int frameIndex)
     {
-        var index = LastNotProcessedIndex();
-        var matchResult = BannerMatch(frame, Set[index].Data.BodyOriginal, frameIndex);
-        _status = matchResult;
-        switch (matchResult)
+        while (!Finished)
         {
-            case MatchStatus.Dropped:
-                Set[index].Finished = true;
-                if (!Finished) Process(frame, frameIndex);
-                break;
-            case MatchStatus.NotMatched:
-                break;
-            case MatchStatus.Matched:
-            default:
-                Set[index].Add(frameIndex);
-                break;
+            var index = LastNotProcessedIndex();
+            if (index < 0) return;
+
+            var matchResult = BannerMatch(frame, Set[index].Data.BodyOriginal, frameIndex);
+            _status = matchResult;
+            switch (matchResult)
+            {
+                case MatchStatus.Dropped:
+                    Set[index].Finished = true;
+                    continue;
+                case MatchStatus.NotMatched:
+                    return;
+                case MatchStatus.Matched:
+                default:
+                    Set[index].Add(frameIndex);
+                    return;
+            }
         }
     }
 

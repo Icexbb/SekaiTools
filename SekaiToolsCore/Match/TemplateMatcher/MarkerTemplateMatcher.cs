@@ -111,22 +111,26 @@ public class MarkerTemplateMatcher(
 
     public void Process(Mat frame, int frameIndex)
     {
-        var index = LastNotProcessedIndex();
-        var matchResult = MarkerMatch(frame, Set[index].Data.BodyOriginal, frameIndex);
-        _status = matchResult.Status;
-
-        switch (matchResult.Status)
+        while (!Finished)
         {
-            case MatchStatus.Dropped:
-                Set[index].Finished = true;
-                if (!Finished) Process(frame, frameIndex);
-                break;
-            case MatchStatus.NotMatched:
-                break;
-            case MatchStatus.Matched:
-            default:
-                Set[index].Add(frameIndex, matchResult.Point);
-                break;
+            var index = LastNotProcessedIndex();
+            if (index < 0) return;
+
+            var matchResult = MarkerMatch(frame, Set[index].Data.BodyOriginal, frameIndex);
+            _status = matchResult.Status;
+
+            switch (matchResult.Status)
+            {
+                case MatchStatus.Dropped:
+                    Set[index].Finished = true;
+                    continue;
+                case MatchStatus.NotMatched:
+                    return;
+                case MatchStatus.Matched:
+                default:
+                    Set[index].Add(frameIndex, matchResult.Point);
+                    return;
+            }
         }
     }
 
