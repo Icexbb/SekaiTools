@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Threading.Channels;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using SekaiToolsBase.Story;
@@ -32,9 +33,37 @@ public class VideoProcessCallbacks
 
 public record ContentLength(int Dialog, int Banner, int Marker);
 
+/// <summary>
+/// 视频处理停止原因
+/// </summary>
+public enum ProcessStopReason
+{
+    None, // 未停止或初始状态
+    Completed, // 正常完成
+    Canceled, // 用户取消
+    ReadFailed, // 读帧失败
+    ExceptionThreshold, // 异常计数超过阈值
+    CaptureError // 捕获设备错误
+}
+
 public class VideoProcessor
 {
     private bool _debugIgnoreBannerMarker;
+    private volatile bool _isProcessing;
+    private int _consecutiveExceptionCount;
+    private const int ExceptionThreshold = 10;
+
+    // 预览图像有界队列（长度 1，只保留最新帧）
+    private Channel<Mat>? _previewChannel;
+    private Task? _previewConsumerTask;
+
+    // 回调节流
+    private long _lastProgressCallbackTime;
+    private long _lastFpsCallbackTime;
+    private const long CallbackThrottleMs = 200;
+
+    // 处理结果
+    public ProcessStopReason StopReason { get; private set; } = ProcessStopReason.None;
 
     public VideoProcessor(Config config, VideoProcessCallbacks callbacks)
     {
@@ -84,9 +113,18 @@ public class VideoProcessor
     {
         if (ProcessingTask is { IsCompleted: false }) return;
 
+        // 防止并发启动
+        if (_isProcessing) return;
+
         TokenSource?.Dispose();
         TokenSource = new CancellationTokenSource();
         var token = TokenSource.Token;
+
+        _isProcessing = true;
+        StopReason = ProcessStopReason.None;
+        _consecutiveExceptionCount = 0;
+        _lastProgressCallbackTime = 0;
+        _lastFpsCallbackTime = 0;
 
         ProcessingTask = Task.Run(() =>
         {
@@ -97,6 +135,7 @@ public class VideoProcessor
             }
             finally
             {
+                _isProcessing = false;
                 Callbacks.OnTaskFinished();
             }
         }, token);
@@ -105,19 +144,18 @@ public class VideoProcessor
     public void StopProcess()
     {
         TokenSource?.Cancel();
-        ProcessingTask = null;
-        // Creator = null;
-        // DialogMatcher = null;
-        // ContentMatcher = null;
-        // BannerMatcher = null;
-        // MarkerMatcher = null;
     }
 
     private void Process(CancellationToken token)
     {
-        if (Capture == null || Capture.Ptr == IntPtr.Zero) return;
-        if (DialogMatcher == null || ContentMatcher == null ||
-            BannerMatcher == null || MarkerMatcher == null) return;
+        if (Capture == null || Capture.Ptr == IntPtr.Zero ||
+            DialogMatcher == null || ContentMatcher == null ||
+            BannerMatcher == null || MarkerMatcher == null)
+        {
+            StopReason = ProcessStopReason.CaptureError;
+            return;
+        }
+
         var capture = Capture;
         var frameRate = capture.Get(CapProp.Fps);
         var previewInterval = Math.Max(1, (int)Math.Round(frameRate / 5d));
@@ -125,6 +163,15 @@ public class VideoProcessor
         if (Creator == null) throw new NullReferenceException();
         var frameCount = capture.Get(CapProp.FrameCount);
         var markerIndexInDialog = MarkerIndexOfDialog();
+
+        // 初始化预览通道（有界队列，容量 1）
+        _previewChannel = Channel.CreateBounded<Mat>(new BoundedChannelOptions(1)
+        {
+            FullMode = BoundedChannelFullMode.DropOldest
+        });
+
+        // 启动预览消费任务
+        _previewConsumerTask = StartPreviewConsumer(_previewChannel, token);
 
         // Debug usage
         if (int.TryParse(Environment.GetEnvironmentVariable("DebugFrameID"), out var debugFrameId))
@@ -154,28 +201,35 @@ public class VideoProcessor
             var tic = Environment.TickCount;
             try
             {
-                if (token.IsCancellationRequested) break;
-                if (capture is not { IsOpened: true }) break;
-                if (!capture.Read(frame)) break;
+                if (token.IsCancellationRequested)
+                {
+                    StopReason = ProcessStopReason.Canceled;
+                    break;
+                }
+
+                if (capture is not { IsOpened: true })
+                {
+                    StopReason = ProcessStopReason.CaptureError;
+                    break;
+                }
+
+                if (!capture.Read(frame))
+                {
+                    StopReason = ProcessStopReason.ReadFailed;
+                    break;
+                }
 
                 frameIndex = (int)capture.Get(CapProp.PosFrames);
                 var progress = frameCount > 0 ? frameIndex / frameCount : 0;
-                Callbacks.OnProgress(progress);
+
+                // 节流进度回调（200ms）
+                EmitProgressIfNeeded(progress);
 
                 if (frameIndex % previewInterval == 0)
                 {
                     var previewFrame = frame.Clone();
-                    Task.Run(() =>
-                    {
-                        try
-                        {
-                            Callbacks.OnFramePreviewImage(previewFrame);
-                        }
-                        finally
-                        {
-                            previewFrame.Dispose();
-                        }
-                    }, token);
+                    // 发送预览帧到有界队列（丢旧帧）
+                    _ = _previewChannel?.Writer.TryWrite(previewFrame);
                 }
 
                 FrameProcess.Process(frame);
@@ -212,13 +266,27 @@ public class VideoProcessor
                     MarkerMatcher.Process(frame, frameIndex);
                     if (MarkerMatcher.Set[markerIndex].Finished) Callbacks.OnNewMarker(MarkerMatcher.Set[markerIndex]);
                 }
+
+                // 清空异常计数（处理成功）
+                _consecutiveExceptionCount = 0;
             }
             catch (OperationCanceledException)
             {
+                StopReason = ProcessStopReason.Canceled;
                 break;
             }
             catch (Exception e)
             {
+                // 异常熔断：连续异常超过阈值则退出
+                _consecutiveExceptionCount++;
+                if (_consecutiveExceptionCount >= ExceptionThreshold)
+                {
+                    StopReason = ProcessStopReason.ExceptionThreshold;
+                    if (Debugger.IsAttached) throw;
+                    else Callbacks.OnException(new AggregateException($"连续异常 {ExceptionThreshold} 次，已中止处理", e));
+                    break;
+                }
+
                 if (Debugger.IsAttached) throw;
                 else Callbacks.OnException(e);
             }
@@ -229,11 +297,27 @@ public class VideoProcessor
             }
         }
 
-        Callbacks.OnProgress(1);
+        EmitProgressIfNeeded(1); // 最终完成信号
+
+        // 关闭预览通道并等待消费任务结束
+        _previewChannel?.Writer.Complete();
+        try
+        {
+            _previewConsumerTask?.Wait(TimeSpan.FromSeconds(2));
+        }
+        catch
+        {
+            // 超时或异常忽略
+        }
+
         frame.Dispose();
         capture.Dispose();
         if (ReferenceEquals(Capture, capture))
             Capture = null;
+
+        // 如果还未设置停止原因，则标记为完成
+        if (StopReason == ProcessStopReason.None)
+            StopReason = ProcessStopReason.Completed;
 
         return;
 
@@ -268,6 +352,13 @@ public class VideoProcessor
             return markerIndex.Select(x => x < 0 ? 0 : x).ToList();
         }
 
+        void EmitProgressIfNeeded(double progress)
+        {
+            var now = Environment.TickCount64;
+            if (now - _lastProgressCallbackTime < CallbackThrottleMs) return;
+            Callbacks.OnProgress(progress);
+            _lastProgressCallbackTime = now;
+        }
 
         void Fps(int deltaTime)
         {
@@ -277,11 +368,40 @@ public class VideoProcessor
                 ? deltaTime
                 : avgDuration * (1 - alpha) + deltaTime * alpha;
 
+            var now = Environment.TickCount64;
+            if (now - _lastFpsCallbackTime >= CallbackThrottleMs)
+            {
+                var fps = avgDuration > double.Epsilon ? (int)(1000d / avgDuration) : 0;
+                var etaMs = Math.Max(0, (frameCount - frameIndex) * avgDuration);
+                var eta = new TimeSpan(0, 0, 0, 0, (int)etaMs);
+                Callbacks.OnFps(fps, eta);
+                _lastFpsCallbackTime = now;
+            }
+        }
+    }
 
-            var fps = avgDuration > double.Epsilon ? (int)(1000d / avgDuration) : 0;
-            var etaMs = Math.Max(0, (frameCount - frameIndex) * avgDuration);
-            var eta = new TimeSpan(0, 0, 0, 0, (int)etaMs);
-            Callbacks.OnFps(fps, eta);
+    /// <summary>
+    /// 启动预览帧消费任务，确保 Mat 资源正确释放
+    /// </summary>
+    private async Task StartPreviewConsumer(Channel<Mat> previewChannel, CancellationToken token)
+    {
+        try
+        {
+            await foreach (var frame in previewChannel.Reader.ReadAllAsync(token))
+            {
+                try
+                {
+                    Callbacks.OnFramePreviewImage(frame);
+                }
+                finally
+                {
+                    frame.Dispose();
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // 预期的取消
         }
     }
 }

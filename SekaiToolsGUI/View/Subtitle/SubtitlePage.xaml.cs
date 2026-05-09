@@ -422,7 +422,16 @@ public partial class SubtitlePage
                         ViewModel.IsRunning = false;
                         if (!VideoProcessor?.Finished ?? false)
                         {
-                            SnackService.Show("错误", "运行结束", ControlAppearance.Danger,
+                            var stopReason = VideoProcessor?.StopReason;
+                            var errorMsg = stopReason switch
+                            {
+                                SekaiToolsCore.ProcessStopReason.Canceled => "用户中止处理",
+                                SekaiToolsCore.ProcessStopReason.ReadFailed => "视频读帧失败",
+                                SekaiToolsCore.ProcessStopReason.ExceptionThreshold => "异常过多，自动中止",
+                                SekaiToolsCore.ProcessStopReason.CaptureError => "视频捕获设备出错",
+                                _ => "未知错误"
+                            };
+                            SnackService.Show("错误", errorMsg, ControlAppearance.Danger,
                                 new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
                         }
                         else
