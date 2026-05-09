@@ -11,7 +11,8 @@ public class TranslationData
 
         var fileStrings = File.ReadAllLines(filePath).ToList();
 
-        fileStrings = fileStrings.Where(l => l.Trim().Length > 0).Select(l => l.Trim()).ToList();
+        fileStrings = fileStrings.Where(l => l.Trim().Length > 0).Where(l => !l.StartsWith('#')).Select(l => l.Trim())
+            .ToList();
         fileStrings.ForEach(line =>
         {
             Translations.Add(line.Contains('：')
