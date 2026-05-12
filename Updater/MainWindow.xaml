@@ -15,5 +15,7 @@
                        HorizontalAlignment="Stretch" TextAlignment="Center" VerticalAlignment="Center"/>
         </ScrollViewer>
         <ProgressBar x:Name="Progress" Grid.Row="1" Height="20" Minimum="0" Maximum="100"/>
+        <Button x:Name="CopyButton" Grid.Row="1" Content="复制错误信息" Height="26"
+                Visibility="Collapsed" Click="CopyButton_Click"/>
     </Grid>
 </Window>

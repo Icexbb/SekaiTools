@@ -12,6 +12,8 @@ namespace Updater;
 /// </summary>
 public partial class MainWindow : Window
 {
+    private string? _errorText;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -182,8 +184,26 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             StatusText.TextAlignment = TextAlignment.Left;
-            StatusText.Text = "更新失败：" + "\n" + ex.Message + "\n" + ex.StackTrace;
+            _errorText = "更新失败：" + "\n" + ex.Message + "\n" + ex.StackTrace;
+            StatusText.Text = _errorText;
             Progress.Visibility = Visibility.Collapsed;
+            CopyButton.Visibility = Visibility.Visible;
+            MaxHeight = SystemParameters.WorkArea.Height * 0.8;
+            MaxWidth = SystemParameters.WorkArea.Width * 0.8;
+            SizeToContent = SizeToContent.WidthAndHeight;
+        }
+    }
+
+    private void CopyButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            TextCopy.ClipboardService.SetText(_errorText ?? StatusText.Text);
+            CopyButton.Content = "已复制";
+        }
+        catch
+        {
+            CopyButton.Content = "复制失败";
         }
     }
 }
