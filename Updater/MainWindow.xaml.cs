@@ -142,6 +142,7 @@ public partial class MainWindow : Window
     {
         try
         {
+            StatusText.TextAlignment = TextAlignment.Center;
             StatusText.Text = "正在检查版本...";
 
             var remoteVersion = await GetLatestVersionAsync();
@@ -152,6 +153,7 @@ public partial class MainWindow : Window
                 local >= remote)
             {
                 StatusText.Text = "已是最新版本";
+                Progress.Visibility = Visibility.Collapsed;
                 return;
             }
 
@@ -179,7 +181,9 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            StatusText.TextAlignment = TextAlignment.Left;
             StatusText.Text = "更新失败：" + "\n" + ex.Message + "\n" + ex.StackTrace;
+            Progress.Visibility = Visibility.Collapsed;
         }
     }
 }
