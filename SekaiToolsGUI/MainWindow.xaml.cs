@@ -113,11 +113,9 @@ partial class MainWindow
         var needUpdate = await CheckForUpdateAsync();
         if (!needUpdate) return;
         if (!await ShowJudgeDialog()) return;
-        const string url = "https://github.com/Icexbb/SekaiTools/releases/latest";
-        Process.Start("explorer.exe", url);
 
-        // LaunchUpdater();
-        // Application.Current.Shutdown(); // 关闭主程序，交给 Updater 更新
+        LaunchUpdater();
+        Application.Current.Shutdown();
         return;
 
         async Task<bool> ShowJudgeDialog()
@@ -128,7 +126,7 @@ partial class MainWindow
                 new SimpleContentDialogCreateOptions
                 {
                     Title = "提示",
-                    Content = "检测到新版本，是否前往下载？",
+                    Content = "检测到新版本，是否立即更新？",
                     PrimaryButtonText = "是",
                     CloseButtonText = "否"
                 }, token);
@@ -153,7 +151,11 @@ partial class MainWindow
             // 这里可以写日志，但不要影响启动
             Debug.WriteLine("检查更新失败: " + ex.Message);
 
-            WindowSnackbarService.Show("错误", "运行结束", ControlAppearance.Danger,
+            var message = ex is TaskCanceledException
+                ? "检查更新超时，请检查网络连接"
+                : "检查更新失败，请检查网络连接";
+
+            WindowSnackbarService.Show("错误", message, ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
         }
 
@@ -162,8 +164,10 @@ partial class MainWindow
 
     private static string GetLocalVersion()
     {
-        var version = Assembly.GetExecutingAssembly().GetName().Version;
-        return version?.ToString() ?? "0.0.0";
+        var path = Assembly.GetEntryAssembly()?.Location;
+        if (path == null || !File.Exists(path)) return "0.0.0";
+        var vi = FileVersionInfo.GetVersionInfo(path);
+        return vi.FileVersion ?? "0.0.0";
     }
 
     private static async Task<string> GetLatestVersionAsync()
@@ -171,7 +175,10 @@ partial class MainWindow
         const string url = "https://api.github.com/repos/Icexbb/SekaiTools/releases/latest";
         var proxy = SettingPageModel.Instance.GetProxy();
 
-        using var client = new HttpClient(GetHttpHandler(proxy));
+        using var client = new HttpClient(GetHttpHandler(proxy))
+        {
+            Timeout = TimeSpan.FromMinutes(1)
+        };
 
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("SekaiToolsGUI", "1.0"));
         var json = await client.GetStringAsync(url);

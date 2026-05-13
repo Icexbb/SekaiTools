@@ -85,7 +85,7 @@ public partial class MainWindow : Window
     {
         using var client = CreateHttpClient();
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Updater", "1.0"));
-        client.Timeout = TimeSpan.FromSeconds(30);
+        client.Timeout = TimeSpan.FromMinutes(1);
         var json = await client.GetStringAsync("https://api.github.com/repos/Icexbb/SekaiTools/releases/latest");
 
         using var doc = JsonDocument.Parse(json);
@@ -234,7 +234,9 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             StatusText.TextAlignment = TextAlignment.Left;
-            _errorText = "更新失败：" + "\n" + ex.Message + "\n" + ex.StackTrace;
+            _errorText = ex is TaskCanceledException
+                ? "更新失败：检查更新超时，请检查网络连接"
+                : "更新失败：" + ex.Message;
             StatusText.Text = _errorText;
             Progress.Visibility = Visibility.Collapsed;
             CopyButton.Visibility = Visibility.Visible;
