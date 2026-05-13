@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -24,6 +25,53 @@ public partial class MainWindow : Window
     private string MainAppName => "SekaiToolsGUI";
     private string MainAppPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{MainAppName}.exe");
 
+    private static string SettingFilePath =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "SekaiTools", "Data", "setting.json");
+
+    private readonly ProxyConfig _proxyConfig = LoadProxySettings();
+
+    private sealed record ProxyConfig(int Type, string Host, int Port);
+
+    private static ProxyConfig LoadProxySettings()
+    {
+        try
+        {
+            var json = File.ReadAllText(SettingFilePath);
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            return new ProxyConfig(
+                Type: root.TryGetProperty("ProxyType", out var t) ? t.GetInt32() : 0,
+                Host: root.TryGetProperty("ProxyHost", out var h) ? h.GetString() ?? "127.0.0.1" : "127.0.0.1",
+                Port: root.TryGetProperty("ProxyPort", out var p) ? p.GetInt32() : 1080
+            );
+        }
+        catch
+        {
+            return new ProxyConfig(0, "127.0.0.1", 1080);
+        }
+    }
+
+    private HttpClient CreateHttpClient()
+    {
+        HttpMessageHandler handler = _proxyConfig.Type switch
+        {
+            0 => new HttpClientHandler(),                         // None
+            1 => new HttpClientHandler                            // HTTP
+            {
+                Proxy = new WebProxy(_proxyConfig.Host, _proxyConfig.Port),
+                UseProxy = true
+            },
+            2 => new SocketsHttpHandler                           // SOCKS5
+            {
+                Proxy = new WebProxy(_proxyConfig.Host, _proxyConfig.Port),
+                UseProxy = true
+            },
+            _ => new HttpClientHandler()
+        };
+        return new HttpClient(handler);
+    }
+
 
     private string GetLocalVersion()
     {
@@ -35,8 +83,9 @@ public partial class MainWindow : Window
 
     private async Task<string> GetLatestVersionAsync()
     {
-        using var client = new HttpClient();
+        using var client = CreateHttpClient();
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Updater", "1.0"));
+        client.Timeout = TimeSpan.FromSeconds(30);
         var json = await client.GetStringAsync("https://api.github.com/repos/Icexbb/SekaiTools/releases/latest");
 
         using var doc = JsonDocument.Parse(json);
@@ -46,7 +95,8 @@ public partial class MainWindow : Window
 
     private async Task DownloadFileAsync(string url, string destFile, string version = "")
     {
-        using var client = new HttpClient();
+        using var client = CreateHttpClient();
+        client.Timeout = TimeSpan.FromMinutes(10);
         using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
         response.EnsureSuccessStatusCode();
 
