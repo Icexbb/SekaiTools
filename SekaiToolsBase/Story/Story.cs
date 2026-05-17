@@ -86,8 +86,9 @@ public class Story
             else
             {
                 var dialog = (DialogStoryEvent)Events[i];
-                dialog.SetTranslation(((DialogTranslate)translationData.Translations[i]).Chara,
-                    ((DialogTranslate)translationData.Translations[i]).Body);
+                var dt = translationData.Translations[i] as DialogTranslate;
+                if (dt != null)
+                    dialog.SetTranslation(dt.Chara, dt.Body);
             }
     }
 
