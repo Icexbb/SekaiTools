@@ -5,7 +5,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Emgu.CV;
+using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
+using SekaiToolsBase;
 using SekaiToolsCore;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
@@ -422,6 +424,7 @@ public partial class SubtitlePage
     {
         var settings = SettingPageModel.Instance;
 
+        Logger.Log($"开始处理: 视频={ViewModel.VideoFilePath}, 剧本={ViewModel.ScriptFilePath}, 翻译={ViewModel.TranslateFilePath}", LogLevel.Information);
         try
         {
             VideoProcessor = new VideoProcessor(new Config(
@@ -450,12 +453,14 @@ public partial class SubtitlePage
                                 SekaiToolsCore.ProcessStopReason.CaptureError => "视频捕获设备出错",
                                 _ => "未知错误"
                             };
+                            Logger.Log($"处理异常结束: {stopReason}", LogLevel.Warning);
                             SnackService.Show("错误", errorMsg, ControlAppearance.Danger,
                                 new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
                         }
                         else
                         {
                             ViewModel.IsFinished = true;
+                            Logger.Log("处理成功完成", LogLevel.Information);
                             SnackService.Show("成功", "运行结束", ControlAppearance.Success,
                                 new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
                         }
@@ -504,6 +509,7 @@ public partial class SubtitlePage
                 OnNewMarker = LinePanel_AddMarkerLine,
                 OnException = e =>
                 {
+                    Logger.Log($"视频处理异常: {e.Message}\n{e.StackTrace}", LogLevel.Error);
                     Dispatcher.Invoke(async () =>
                     {
                         var uiMessageBox = new MessageBox
@@ -523,6 +529,7 @@ public partial class SubtitlePage
         }
         catch (Exception ex)
         {
+            Logger.Log($"初始化视频处理器失败: {ex.Message}", LogLevel.Error);
             SnackService.Show("错误", $"初始化视频处理器失败: {ex.Message}", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 5));
         }

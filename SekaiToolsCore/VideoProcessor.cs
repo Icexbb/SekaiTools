@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.Threading.Channels;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
+using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
+using SekaiToolsBase;
 using SekaiToolsBase.Story;
 using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsBase.SubStationAlpha;
@@ -126,6 +128,9 @@ public class VideoProcessor
         _lastProgressCallbackTime = 0;
         _lastFpsCallbackTime = 0;
 
+        var cap = Capture;
+        if (cap != null)
+            Logger.Log($"开始视频处理: {(int)cap.Get(CapProp.FrameWidth)}x{(int)cap.Get(CapProp.FrameHeight)}, {(int)cap.Get(CapProp.FrameCount)}帧, {cap.Get(CapProp.Fps):F2}fps", ExtLogLevel.Information);
         ProcessingTask = Task.Run(() =>
         {
             Callbacks.OnTaskStarted();
@@ -320,6 +325,7 @@ public class VideoProcessor
         if (StopReason == ProcessStopReason.None)
             StopReason = ProcessStopReason.Completed;
 
+        Logger.Log($"视频处理结束: {StopReason}, 当前帧={frameIndex}, 总帧={frameCount}", ExtLogLevel.Information);
         return;
 
         bool MatchMarkerNow()

@@ -2,7 +2,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
+using SekaiToolsBase;
 using SekaiToolsBase.GameScript;
 using SekaiToolsBase.Story;
 using SekaiToolsBase.Story.Translation;
@@ -93,17 +95,20 @@ public partial class TranslatePage : UserControl
             {
                 _translationPath = filePath;
                 ViewModel.Story = new Story(gData, tData);
+                Logger.Log($"翻译载入成功: 剧本={_scriptPath}, 翻译={filePath}, 对话={tData.Translations.Count}", LogLevel.Information);
                 SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
                     new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
             }
             else
             {
+                Logger.Log($"翻译不适用于剧本: 翻译={filePath}", LogLevel.Warning);
                 SnackbarService.Show("错误", "翻译数据不适用于此剧本", ControlAppearance.Danger,
                     new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
             }
         }
         catch (Exception ex)
         {
+            Logger.Log($"翻译载入失败: {ex.Message}", LogLevel.Error);
             SnackbarService.Show("错误", $"载入失败: {ex.Message}", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(5));
         }

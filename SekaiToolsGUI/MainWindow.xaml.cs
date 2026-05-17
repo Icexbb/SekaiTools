@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.Json;
 using System.Windows;
+using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 using SekaiToolsCore;
 using SekaiToolsGUI.Interface;
@@ -148,8 +149,7 @@ partial class MainWindow
         }
         catch (Exception ex)
         {
-            // 这里可以写日志，但不要影响启动
-            Debug.WriteLine("检查更新失败: " + ex.Message);
+            Logger.Log($"检查更新失败: {ex.Message}", LogLevel.Warning);
 
             var message = ex is TaskCanceledException
                 ? "检查更新超时，请检查网络连接"
