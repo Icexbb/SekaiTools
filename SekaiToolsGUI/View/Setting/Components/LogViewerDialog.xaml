@@ -13,37 +13,34 @@
                TargetType="{x:Type components:LogViewerDialog}" />
     </ui:ContentDialog.Resources>
     <ui:ContentDialog.Content>
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+        <DockPanel>
+            <Border DockPanel.Dock="Top" Margin="0,0,0,8">
+                <DockPanel>
+                    <ui:Button DockPanel.Dock="Right" Content="清空日志" Click="ClearLog_Click" />
+                    <ui:TextBlock Text="等级:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <ComboBox x:Name="LevelFilter" Width="100" SelectedIndex="0"
+                              SelectionChanged="LevelFilter_SelectionChanged">
+                        <ComboBoxItem>全部</ComboBoxItem>
+                        <ComboBoxItem>INFO+</ComboBoxItem>
+                        <ComboBoxItem>WARN+</ComboBoxItem>
+                        <ComboBoxItem>ERROR+</ComboBoxItem>
+                    </ComboBox>
+                </DockPanel>
+            </Border>
 
-            <DockPanel Grid.Row="0" Margin="0,0,0,8">
-                <ui:TextBlock Text="等级:" VerticalAlignment="Center" Margin="0,0,8,0" />
-                <ComboBox x:Name="LevelFilter" Width="100" SelectedIndex="0"
-                          SelectionChanged="LevelFilter_SelectionChanged">
-                    <ComboBoxItem>全部</ComboBoxItem>
-                    <ComboBoxItem>INFO+</ComboBoxItem>
-                    <ComboBoxItem>WARN+</ComboBoxItem>
-                    <ComboBoxItem>ERROR+</ComboBoxItem>
-                </ComboBox>
-                <ui:Button DockPanel.Dock="Right" Content="清空日志" Click="ClearLog_Click" />
-            </DockPanel>
-
-            <ListBox x:Name="LogListBox" Grid.Row="1"
+            <ListBox x:Name="LogListBox"
                      Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                      BorderThickness="0"
                      FontFamily="Consolas" FontSize="11"
                      HorizontalContentAlignment="Stretch"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding}" TextWrapping="Wrap" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-        </Grid>
+        </DockPanel>
     </ui:ContentDialog.Content>
 </ui:ContentDialog>
