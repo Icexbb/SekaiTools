@@ -1,8 +1,5 @@
-using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using SekaiToolsBase;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.Setting.Components;
 using SekaiToolsGUI.ViewModel;
@@ -18,12 +15,6 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
     {
         DataContext = MainWindowViewModel.SettingPageModel;
         InitializeComponent();
-        BindingOperations.EnableCollectionSynchronization(InMemoryLogSink.Entries, InMemoryLogSink.Entries);
-        ((INotifyCollectionChanged)LogListBox.Items).CollectionChanged += (_, _) =>
-        {
-            if (LogListBox.Items.Count > 0)
-                LogListBox.ScrollIntoView(LogListBox.Items[^1]);
-        };
     }
 
     private static ISnackbarService SnackService =>
@@ -31,9 +22,11 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
 
     public SettingPageModel ViewModel => (SettingPageModel)DataContext;
 
-    private void ClearLog_Click(object sender, RoutedEventArgs e)
+    private async void ViewLog_Click(object sender, RoutedEventArgs e)
     {
-        InMemoryLogSink.Clear();
+        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+        var dialog = new Components.LogViewerDialog();
+        await dialogService.ShowAsync(dialog, CancellationToken.None);
     }
 
     private async void ChooseDialogFont(object sender, RoutedEventArgs e)
