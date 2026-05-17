@@ -230,9 +230,16 @@ partial class SettingPageModel
 
     public void SaveSetting()
     {
-        var setting = Model.Setting.FromModel(this);
-        Directory.CreateDirectory(Path.GetDirectoryName(GetSettingPath())!);
-        File.WriteAllText(GetSettingPath(), setting.Dump(), Encoding.UTF8);
+        try
+        {
+            var setting = Model.Setting.FromModel(this);
+            Directory.CreateDirectory(Path.GetDirectoryName(GetSettingPath())!);
+            File.WriteAllText(GetSettingPath(), setting.Dump(), Encoding.UTF8);
+        }
+        catch (Exception)
+        {
+            // 设置保存失败不应中断用户操作
+        }
     }
 
     public void ResetSetting()
@@ -263,7 +270,15 @@ partial class SettingPageModel
 
     public void LoadSetting()
     {
-        var setting = Model.Setting.Load(GetSettingPath());
+        Model.Setting setting;
+        try
+        {
+            setting = Model.Setting.Load(GetSettingPath());
+        }
+        catch (Exception)
+        {
+            setting = new Model.Setting();
+        }
 
         CurrentApplicationTheme = setting.CurrentApplicationTheme;
         CustomSpecialCharacters.AddRange(setting.CustomSpecialCharacters);

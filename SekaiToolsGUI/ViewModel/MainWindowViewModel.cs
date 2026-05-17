@@ -12,7 +12,14 @@ public class MainWindowViewModel : ViewModelBase
 {
     public MainWindowViewModel()
     {
-        SettingPageModel.LoadSetting();
+        try
+        {
+            SettingPageModel.LoadSetting();
+        }
+        catch (Exception)
+        {
+            // 设置加载失败，使用默认值继续运行
+        }
     }
 
     public object[] NavigationItems { get; set; } =

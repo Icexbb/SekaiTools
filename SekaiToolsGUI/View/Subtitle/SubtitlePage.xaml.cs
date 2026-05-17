@@ -162,7 +162,16 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
 
     private void StartButton_OnClick(object sender, EventArgs arg)
     {
-        if (CheckConfig()) StartProcess();
+        try
+        {
+            if (CheckConfig()) StartProcess();
+        }
+        catch (Exception ex)
+        {
+            SnackService.Show("错误", $"启动处理失败: {ex.Message}", ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 5));
+        }
+
         return;
 
         bool CheckConfig()
@@ -266,12 +275,20 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
         if (dialogResult != ContentDialogResult.Primary) return;
         var fileName = dialog.ViewModel.FileName;
 
-        var subtitle = GenerateSubtitle();
-        await File.WriteAllTextAsync(fileName, subtitle.ToString(), Encoding.UTF8, token);
+        try
+        {
+            var subtitle = GenerateSubtitle();
+            await File.WriteAllTextAsync(fileName, subtitle.ToString(), Encoding.UTF8, token);
 
-        SnackService.Show("成功", "字幕文件已保存", ControlAppearance.Success,
-            new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
-        ExplorerHelper.OpenFolderAndFocus(fileName);
+            SnackService.Show("成功", "字幕文件已保存", ControlAppearance.Success,
+                new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
+            ExplorerHelper.OpenFolderAndFocus(fileName);
+        }
+        catch (Exception ex)
+        {
+            SnackService.Show("错误", $"保存字幕文件失败: {ex.Message}", ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 5));
+        }
     }
 
 
@@ -405,7 +422,9 @@ public partial class SubtitlePage
     {
         var settings = SettingPageModel.Instance;
 
-        VideoProcessor = new VideoProcessor(new Config(
+        try
+        {
+            VideoProcessor = new VideoProcessor(new Config(
                 ViewModel.VideoFilePath,
                 ViewModel.ScriptFilePath,
                 ViewModel.TranslateFilePath,
@@ -500,7 +519,13 @@ public partial class SubtitlePage
                 OnFps = OnFpsChanged
             }
         );
-        VideoProcessor.StartProcess();
+            VideoProcessor.StartProcess();
+        }
+        catch (Exception ex)
+        {
+            SnackService.Show("错误", $"初始化视频处理器失败: {ex.Message}", ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 5));
+        }
     }
 
     private void OnFpsChanged(int fps, TimeSpan eta)
