@@ -37,7 +37,7 @@ public static class TemplateMatcher
 
         var res = MatchNoCache(img, tmp, matchingType, memberName);
         pool.RegisterResult(img, res);
-        // img is now owned by the cache pool (stored as prevImg), do not dispose
+        if (tempImg) img.Dispose();
 
         return res;
     }

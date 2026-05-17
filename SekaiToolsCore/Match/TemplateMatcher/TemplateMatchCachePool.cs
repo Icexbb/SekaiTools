@@ -62,17 +62,15 @@ public class TemplateMatchCachePool
 
     public void RegisterResult(Mat img, TemplateMatchResult result)
     {
-        prevImg = img;
+        prevImg?.Dispose();
+        prevImg = img.Clone();
         prevResult = result;
     }
 
     public bool Query(Mat img)
     {
         if (img == null || prevImg == null) return false;
-
-        // treat two empty mat as identical as well
         if (img.IsEmpty && prevImg.IsEmpty) return true;
-        // if dimensionality of two mat is not identical, these two mat is not identical
         if (img.Cols != prevImg.Cols || img.Rows != prevImg.Rows || img.Dims != prevImg.Dims) return false;
 
         CvInvoke.Compare(img, prevImg, diffMat, CmpType.NotEqual);
@@ -85,6 +83,7 @@ public class TemplateMatchCachePool
 
     private void Reset()
     {
+        prevImg?.Dispose();
         prevImg = null;
     }
 }
