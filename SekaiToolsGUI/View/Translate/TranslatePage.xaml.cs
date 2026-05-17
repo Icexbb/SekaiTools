@@ -82,22 +82,30 @@ public partial class TranslatePage : UserControl
         if (openFileDialog.ShowDialog() != true) return;
         var filePath = openFileDialog.FileName;
 
-        var tData = new TranslationData(filePath);
-        foreach (var t in tData.Translations) t.Body = t.Body.Replace("\\N", "\n");
-
-        var gData = new GameScript(_scriptPath);
-
-        if (tData.IsApplicable(gData))
+        try
         {
-            _translationPath = filePath;
-            ViewModel.Story = new Story(gData, tData);
-            SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
-                new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
+            var tData = new TranslationData(filePath);
+            foreach (var t in tData.Translations) t.Body = t.Body.Replace("\\N", "\n");
+
+            var gData = new GameScript(_scriptPath);
+
+            if (tData.IsApplicable(gData))
+            {
+                _translationPath = filePath;
+                ViewModel.Story = new Story(gData, tData);
+                SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
+                    new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
+            }
+            else
+            {
+                SnackbarService.Show("错误", "翻译数据不适用于此剧本", ControlAppearance.Danger,
+                    new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
+            }
         }
-        else
+        catch (Exception ex)
         {
-            SnackbarService.Show("错误", "翻译数据不适用于此剧本", ControlAppearance.Danger,
-                new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
+            SnackbarService.Show("错误", $"载入失败: {ex.Message}", ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(5));
         }
     }
 
