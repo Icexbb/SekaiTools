@@ -4,7 +4,7 @@ using Emgu.CV.CvEnum;
 
 namespace SekaiToolsCore.Process.Model;
 
-public class GaMat // Gray and Alpha Mat
+public class GaMat : IDisposable // Gray and Alpha Mat
 {
     public readonly Mat Alpha;
     public readonly Mat Gray;
@@ -28,4 +28,10 @@ public class GaMat // Gray and Alpha Mat
     }
 
     public Size Size => Gray.Size;
+
+    public void Dispose()
+    {
+        Gray.Dispose();
+        Alpha.Dispose();
+    }
 }

@@ -16,5 +16,6 @@ public static class MatProcessor
 
         // Sharpen the image
         CvInvoke.AddWeighted(mat, alpha, laplacian, beta, 0, mat);
+        laplacian.Dispose();
     }
 }
