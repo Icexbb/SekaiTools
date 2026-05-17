@@ -220,7 +220,7 @@ public class VideoProcessor
                 }
 
                 frameIndex = (int)capture.Get(CapProp.PosFrames);
-                var progress = frameCount > 0 ? frameIndex / frameCount : 0;
+                var progress = frameCount > 0 ? (double)frameIndex / frameCount : 0;
 
                 // 节流进度回调（200ms）
                 EmitProgressIfNeeded(progress);
