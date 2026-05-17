@@ -10,6 +10,7 @@ public static class Logger
         builder.SetMinimumLevel(LogLevel.Information);
         builder.AddConsole();
         builder.AddDebug();
+        builder.AddProvider(new InMemoryLogSink());
     });
 
     private static Dictionary<string, ILogger> LoggerDictionary { get; } = new();

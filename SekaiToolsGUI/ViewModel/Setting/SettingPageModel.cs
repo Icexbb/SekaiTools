@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -167,6 +168,8 @@ public partial class SettingPageModel : ViewModelBase
     public static string AppVersion
         => (Application.ResourceAssembly.GetName().Version ??
             new Version(0, 0, 0, 0)).ToString();
+
+    public ObservableCollection<LogEntry> LogEntries => InMemoryLogSink.Entries;
 
     private new void SetProperty<T>(T value, [CallerMemberName] string? propertyName = null)
     {
