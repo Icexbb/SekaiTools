@@ -43,7 +43,9 @@ public partial class DialogBaseFrameSet : BaseFrameSet
         else
             separatorContentIndex = Data.BodyTranslated.TrimAll().Length / 2;
 
-        Separate.SeparatorContentIndex = separatorContentIndex;
+        Separate.SeparatorContentIndex = separatorContentIndex >= 0
+            ? separatorContentIndex
+            : Data.BodyTranslated.TrimAll().Length / 2;
 
         #endregion
     }
