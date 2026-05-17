@@ -15,6 +15,7 @@ public class Subtitle(
 
     public void Save(string path)
     {
-        File.OpenWrite(path).Write(Encoding.UTF8.GetBytes(ToString()));
+        using var stream = File.Create(path);
+        stream.Write(Encoding.UTF8.GetBytes(ToString()));
     }
 }
