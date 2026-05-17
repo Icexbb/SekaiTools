@@ -73,8 +73,13 @@ public class Story
         Events = events.ToArray();
         if (translationData.IsEmpty()) return;
         if (!translationData.IsApplicable(gameScript)) throw new Exception("Translation data is not applicable");
+        var translationCount = translationData.Translations.Count;
         for (var i = 0; i < Events.Length; i++)
-            if (Events[i] is not DialogStoryEvent)
+            if (i >= translationCount)
+            {
+                // Translations exhausted, leave remaining events untranslated
+            }
+            else if (Events[i] is not DialogStoryEvent)
             {
                 Events[i].BodyTranslated = translationData.Translations[i].Body;
             }
