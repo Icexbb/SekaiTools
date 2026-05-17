@@ -319,7 +319,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
             var styleName = "Line" + originLineCount;
             var styles = MakeDialogStyles();
-            var style = styles.Find(s => s.Name == styleName)!;
+            var style = styles.Find(s => s.Name == styleName) ?? styles[0];
 
             var constPosition = dialogBaseFrameSet.Start().Point;
             var lastPosition = new Point(0, 0);
