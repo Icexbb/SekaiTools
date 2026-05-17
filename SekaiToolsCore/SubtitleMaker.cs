@@ -95,6 +95,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         var queue = FormatDialogBodyArr(body);
         var fadeTime = TypewriterSetting.FadeTime;
         var charTime = TypewriterSetting.CharTime;
+        if (queue.Count == 0) return string.Empty;
         if (fadeTime <= 0 && charTime <= 0)
             return string.Join("", queue);
 
@@ -122,6 +123,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         var queue = FormatDialogBodyArr(body);
         var fadeTime = TypewriterSetting.FadeTime;
         var charTime = TypewriterSetting.CharTime;
+        if (queue.Count == 0) return string.Empty;
         if (fadeTime <= 0 && charTime <= 0)
             return string.Join("", queue);
 
@@ -141,7 +143,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             int alphaPercent;
             if (nowTime <= charTimeEnd - ft)
                 alphaPercent = 100;
-            else if (nowTime < charTimeEnd)
+            else if (nowTime < charTimeEnd && ft > 0)
                 alphaPercent = (charTimeEnd - nowTime) * 100 / ft;
             else
                 alphaPercent = 0;
@@ -254,7 +256,10 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
         List<DialogBaseFrameSet> SeparateDialogSet(DialogBaseFrameSet dialogBaseFrameSet)
         {
+            var frameCount = dialogBaseFrameSet.Frames.Count;
             var sepCount = dialogBaseFrameSet.Separate.SeparateFrame - dialogBaseFrameSet.StartIndex();
+            if (sepCount <= 0 || sepCount >= frameCount)
+                sepCount = frameCount / 2;
 
             var sepSet1 = new DialogBaseFrameSet((DialogStoryEvent)dialogBaseFrameSet.Data.Clone(), videoInfo.Fps);
             var sepSet2 = new DialogBaseFrameSet((DialogStoryEvent)dialogBaseFrameSet.Data.Clone(), videoInfo.Fps);
@@ -263,8 +268,11 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             sepSet2.Frames.AddRange(dialogBaseFrameSet.Frames[sepCount..]);
 
             var content = dialogBaseFrameSet.Data.FinalContent.TrimAll();
-            sepSet1.Data.BodyTranslated = content[..dialogBaseFrameSet.Separate.SeparatorContentIndex];
-            sepSet2.Data.BodyTranslated = content[dialogBaseFrameSet.Separate.SeparatorContentIndex..];
+            var contentIdx = dialogBaseFrameSet.Separate.SeparatorContentIndex;
+            if (contentIdx <= 0 || contentIdx >= content.Length)
+                contentIdx = content.Length / 2;
+            sepSet1.Data.BodyTranslated = content[..contentIdx];
+            sepSet2.Data.BodyTranslated = content[contentIdx..];
 
             return [sepSet1, sepSet2];
         }
