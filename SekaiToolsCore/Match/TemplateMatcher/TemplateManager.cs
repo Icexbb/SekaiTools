@@ -111,9 +111,9 @@ public class TemplateManager(Size videoResolution, bool noScale = false)
             _ => throw new ArgumentOutOfRangeException(nameof(usage), usage, null)
         };
 
-        var bitmap = new Bitmap((int)(text.Length * font.Size * 2), (int)font.Size * 2);
+        using var bitmap = new Bitmap((int)(text.Length * font.Size * 2), (int)font.Size * 2);
         bitmap.MakeTransparent();
-        var graphics = Graphics.FromImage(bitmap);
+        using var graphics = Graphics.FromImage(bitmap);
         graphics.SmoothingMode = SmoothingMode.HighQuality;
 
         Action<GraphicsPath> drawStroke;
@@ -146,9 +146,10 @@ public class TemplateManager(Size videoResolution, bool noScale = false)
                 const int bannerGrayScale = 80;
                 mat.CopyTo(new Mat(expandedMat, new Rectangle(extendPixel, extendPixel, mat.Width, mat.Height)));
 
-                var bgMat = new Mat(expandedMat.Size, expandedMat.Depth, expandedMat.NumberOfChannels);
+                using var bgMat = new Mat(expandedMat.Size, expandedMat.Depth, expandedMat.NumberOfChannels);
                 bgMat.SetTo(new MCvScalar(bannerGrayScale, bannerGrayScale, bannerGrayScale, 255));
                 CvInvoke.BitwiseOr(bgMat, expandedMat, expandedMat);
+                mat.Dispose();
                 return expandedMat;
             }
             case TemplateUsage.DialogNameTag:
