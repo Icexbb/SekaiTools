@@ -124,7 +124,11 @@ public partial class MainWindow : Window
     private void Extract7Z(string filePath, string targetDir)
     {
         // 确保先关闭主程序
-        foreach (var p in Process.GetProcessesByName(MainAppName)) p.Kill();
+        foreach (var p in Process.GetProcessesByName(MainAppName))
+        {
+            p.Kill();
+            p.WaitForExit(5000);
+        }
 
 
         var psi = new ProcessStartInfo
