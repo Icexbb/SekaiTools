@@ -157,7 +157,9 @@ public partial class Suppressor
         void DisposeProcess(Process? p)
         {
             if (p == null) return;
-            if (!p.HasExited) p.Kill();
+            try { p.Kill(); }
+            catch (InvalidOperationException) { /* already exited */ }
+            catch (System.ComponentModel.Win32Exception) { /* already exited */ }
             p.Dispose();
         }
     }
