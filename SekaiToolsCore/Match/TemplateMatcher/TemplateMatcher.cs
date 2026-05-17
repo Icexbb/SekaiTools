@@ -37,8 +37,7 @@ public static class TemplateMatcher
 
         var res = MatchNoCache(img, tmp, matchingType, memberName);
         pool.RegisterResult(img, res);
-
-        if (tempImg) img.Dispose();
+        // img is now owned by the cache pool (stored as prevImg), do not dispose
 
         return res;
     }
@@ -76,13 +75,13 @@ public static class TemplateMatcher
         CvInvoke.VConcat(new VectorOfMat(tempGray, tempAlpha), temp);
         if (temp.Height > show.Height)
         {
-            var emptyMat = new Mat(temp.Rows - show.Rows, show.Cols, show.Depth, show.NumberOfChannels);
+            using var emptyMat = new Mat(temp.Rows - show.Rows, show.Cols, show.Depth, show.NumberOfChannels);
             emptyMat.SetTo(new MCvScalar(0));
             CvInvoke.VConcat(new VectorOfMat(emptyMat, show), show);
         }
         else if (temp.Height < show.Height)
         {
-            var emptyMat = new Mat(show.Rows - temp.Rows, temp.Cols, temp.Depth, temp.NumberOfChannels);
+            using var emptyMat = new Mat(show.Rows - temp.Rows, temp.Cols, temp.Depth, temp.NumberOfChannels);
             emptyMat.SetTo(new MCvScalar(0));
             CvInvoke.VConcat(new VectorOfMat(emptyMat, temp), temp);
         }
@@ -91,6 +90,7 @@ public static class TemplateMatcher
         tempGray.Dispose();
         tempAlpha.Dispose();
         temp.Dispose();
+        show.Dispose();
 
         // var emptyMat = new Mat(show.Rows - tempGray.Rows, tempGray.Cols, tempGray.Depth, tempGray.NumberOfChannels);
         // emptyMat.SetTo(new MCvScalar(0));
