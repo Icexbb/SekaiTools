@@ -229,7 +229,8 @@ public class VideoProcessor
                 {
                     var previewFrame = frame.Clone();
                     // 发送预览帧到有界队列（丢旧帧）
-                    _ = _previewChannel?.Writer.TryWrite(previewFrame);
+                    if (!(_previewChannel?.Writer.TryWrite(previewFrame) ?? true))
+                        previewFrame.Dispose();
                 }
 
                 FrameProcess.Process(frame);
