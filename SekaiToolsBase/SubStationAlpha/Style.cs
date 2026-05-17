@@ -62,7 +62,7 @@ public class Style
         if (sourcePart.Length != 23) throw new Exception("Source Parameter not Enough");
         Name = sourcePart[0];
         _fontName = sourcePart[1];
-        if (int.TryParse(sourcePart[2], out Fontsize)) Fontsize = 50;
+        Fontsize = int.TryParse(sourcePart[2], out var fs) ? fs : 50;
         _primaryColour = AlphaColor.FromString(sourcePart[3]);
         _secondaryColour = AlphaColor.FromString(sourcePart[4]);
         _outlineColour = AlphaColor.FromString(sourcePart[5]);
