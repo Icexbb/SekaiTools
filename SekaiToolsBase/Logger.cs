@@ -8,6 +8,8 @@ public static class Logger
     private static ILoggerFactory Factory { get; } = LoggerFactory.Create(builder =>
     {
         builder.SetMinimumLevel(LogLevel.Information);
+        builder.AddConsole();
+        builder.AddDebug();
     });
 
     private static Dictionary<string, ILogger> LoggerDictionary { get; } = new();
