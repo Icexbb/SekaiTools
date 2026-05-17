@@ -6,13 +6,17 @@ namespace SekaiToolsGUI.ViewModel;
 public class ViewModelBase : INotifyPropertyChanged
 {
     private readonly Dictionary<string, object> _properties = new();
+    private readonly object _lock = new();
     public event PropertyChangedEventHandler? PropertyChanged;
 
     protected T GetProperty<T>(T defaultValue = default!, [CallerMemberName] string? propertyName = null)
     {
         ArgumentNullException.ThrowIfNull(propertyName);
-        if (_properties.TryGetValue(propertyName, out var value))
-            return (T)value;
+        lock (_lock)
+        {
+            if (_properties.TryGetValue(propertyName, out var value))
+                return (T)value;
+        }
 
         SetProperty(defaultValue, propertyName);
         return defaultValue;
@@ -21,10 +25,14 @@ public class ViewModelBase : INotifyPropertyChanged
     protected void SetProperty<T>(T value, [CallerMemberName] string? propertyName = null)
     {
         ArgumentNullException.ThrowIfNull(propertyName);
-        if (_properties.TryGetValue(propertyName, out var oldValue) &&
-            EqualityComparer<T>.Default.Equals((T)oldValue, value))
-            return;
-        if (value != null) _properties[propertyName] = value;
+        lock (_lock)
+        {
+            if (_properties.TryGetValue(propertyName, out var oldValue) &&
+                EqualityComparer<T>.Default.Equals((T)oldValue, value))
+                return;
+            if (value != null) _properties[propertyName] = value;
+        }
+
         OnPropertyChanged(propertyName);
     }
 
