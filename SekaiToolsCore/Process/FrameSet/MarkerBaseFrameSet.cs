@@ -29,11 +29,11 @@ public class MarkerBaseFrameSet(MarkerStoryEvent data, FrameRate fps) : BaseFram
 
     public override IProcessFrame Start()
     {
-        return Frames[0];
+        return Frames.Count > 0 ? Frames[0] : new MarkerFrameResult(0, Fps, Point.Empty);
     }
 
     public override IProcessFrame End()
     {
-        return Frames[^1];
+        return Frames.Count > 0 ? Frames[^1] : new MarkerFrameResult(0, Fps, Point.Empty);
     }
 }

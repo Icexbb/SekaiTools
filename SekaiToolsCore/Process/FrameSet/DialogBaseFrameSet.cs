@@ -85,12 +85,12 @@ public partial class DialogBaseFrameSet
 
     public override DialogFrameResult Start()
     {
-        return Frames[0];
+        return Frames.Count > 0 ? Frames[0] : new DialogFrameResult(0, Fps, Point.Empty);
     }
 
     public override DialogFrameResult End()
     {
-        return Frames[^1];
+        return Frames.Count > 0 ? Frames[^1] : new DialogFrameResult(0, Fps, Point.Empty);
     }
 
     public void Add(int index, Point point)
