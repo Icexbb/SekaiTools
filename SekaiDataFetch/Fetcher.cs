@@ -59,6 +59,18 @@ public class Fetcher
                     LogLevel.Error);
                 if (time > 0) return await TryGet(time - 1);
                 if (Debugger.IsAttached) throw;
+                Logger.Log($"{GetType().Name} All retries exhausted for {url}, returning default result",
+                    LogLevel.Error);
+                return defaultResult;
+            }
+            catch (TaskCanceledException)
+            {
+                Logger.Log(
+                    $"{GetType().Name} Request timed out for {url}. Retrying {time} times.",
+                    LogLevel.Error);
+                if (time > 0) return await TryGet(time - 1);
+                Logger.Log($"{GetType().Name} All retries exhausted for {url} due to timeout",
+                    LogLevel.Error);
                 return defaultResult;
             }
         }
