@@ -29,42 +29,48 @@ public partial class MainWindow : Window
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "setting.json");
 
-    private readonly ProxyConfig _proxyConfig = LoadProxySettings();
+    private ProxyConfig? _proxyConfig;
 
     private sealed record ProxyConfig(int Type, string Host, int Port);
 
-    private static ProxyConfig LoadProxySettings()
+    private ProxyConfig GetProxyConfig()
     {
+        if (_proxyConfig != null) return _proxyConfig;
         try
         {
-            var json = File.ReadAllText(SettingFilePath);
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-            return new ProxyConfig(
-                Type: root.TryGetProperty("ProxyType", out var t) ? t.GetInt32() : 0,
-                Host: root.TryGetProperty("ProxyHost", out var h) ? h.GetString() ?? "127.0.0.1" : "127.0.0.1",
-                Port: root.TryGetProperty("ProxyPort", out var p) ? p.GetInt32() : 1080
-            );
+            _proxyConfig = LoadProxySettings();
         }
-        catch
-        {
-            return new ProxyConfig(0, "127.0.0.1", 1080);
-        }
+        catch (FileNotFoundException) { }
+        catch (DirectoryNotFoundException) { }
+        return _proxyConfig ??= new ProxyConfig(0, "127.0.0.1", 1080);
+    }
+
+    private static ProxyConfig LoadProxySettings()
+    {
+        var json = File.ReadAllText(SettingFilePath);
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        return new ProxyConfig(
+            Type: root.TryGetProperty("ProxyType", out var t) ? t.GetInt32() : 0,
+            Host: root.TryGetProperty("ProxyHost", out var h) ? h.GetString() ?? "127.0.0.1" : "127.0.0.1",
+            Port: root.TryGetProperty("ProxyPort", out var p) ? p.GetInt32() : 1080
+        );
     }
 
     private HttpClient CreateHttpClient()
     {
-        HttpMessageHandler handler = _proxyConfig.Type switch
+        var config = GetProxyConfig();
+        HttpMessageHandler handler = config.Type switch
         {
             0 => new HttpClientHandler(),                         // None
             1 => new HttpClientHandler                            // HTTP
             {
-                Proxy = new WebProxy(new Uri($"http://{_proxyConfig.Host}:{_proxyConfig.Port}")),
+                Proxy = new WebProxy(new Uri($"http://{config.Host}:{config.Port}")),
                 UseProxy = true
             },
             2 => new SocketsHttpHandler                           // Socks5 → HTTP CONNECT (WebProxy 不支持真正的 SOCKS5)
             {
-                Proxy = new WebProxy(new Uri($"http://{_proxyConfig.Host}:{_proxyConfig.Port}")),
+                Proxy = new WebProxy(new Uri($"http://{config.Host}:{config.Port}")),
                 UseProxy = true
             },
             _ => new HttpClientHandler()
