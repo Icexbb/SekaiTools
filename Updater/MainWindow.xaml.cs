@@ -90,7 +90,7 @@ public partial class MainWindow : Window
 
         using var doc = JsonDocument.Parse(json);
         var version = doc.RootElement.GetProperty("tag_name").GetString();
-        return version?.TrimStart('v') ?? "0.0.0";
+        return version?.TrimStart('v')?.Split('-')[0] ?? "0.0.0";
     }
 
     private async Task DownloadFileAsync(string url, string destFile, string version = "")
