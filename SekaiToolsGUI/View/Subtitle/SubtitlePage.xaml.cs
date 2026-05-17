@@ -548,7 +548,7 @@ public partial class SubtitlePage
             ?.Sample(TimeSpan.FromMilliseconds(200))
             .Subscribe(x =>
             {
-                Dispatcher.Invoke(() =>
+                Dispatcher.BeginInvoke(() =>
                 {
                     TextBlockFps.Text = $"FPS: {x.Fps}";
                     TextBlockEta.Text = x.Eta.TotalMilliseconds > 1000 ? $"ETA: {x.Eta.Remains()}" : "";
