@@ -175,6 +175,10 @@ public partial class MainWindow : Window
             {
                 // 被当前进程锁定的文件（Updater.dll 等）稍后由批处理脚本替换
             }
+            catch (UnauthorizedAccessException)
+            {
+                // 防病毒软件等锁定的文件，同样由批处理脚本替换
+            }
         }
         foreach (var dir in Directory.GetDirectories(source))
         {
