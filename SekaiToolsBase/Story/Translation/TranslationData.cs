@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace SekaiToolsBase.Story.Translation;
 
 public class TranslationData
@@ -9,15 +11,20 @@ public class TranslationData
         if (filePath is null) return;
         if (!File.Exists(filePath)) throw new Exception("File not found");
 
-        var fileStrings = File.ReadAllLines(filePath).ToList();
+        var fileStrings = File.ReadAllLines(filePath, Encoding.UTF8).ToList();
 
         fileStrings = fileStrings.Where(l => l.Trim().Length > 0).Where(l => !l.StartsWith('#')).Select(l => l.Trim())
             .ToList();
         fileStrings.ForEach(line =>
         {
-            Translations.Add(line.Contains('：')
-                ? new DialogTranslate(line.Split('：', 2)[0], line.Split('：', 2)[1].Replace("…", "..."))
-                : new EffectTranslate(line));
+            if (!line.Contains('：'))
+            {
+                Translations.Add(new EffectTranslate(line));
+                return;
+            }
+
+            var parts = line.Split('：', 2);
+            Translations.Add(new DialogTranslate(parts[0], parts[1].Replace("…", "...")));
         });
     }
 
