@@ -59,12 +59,12 @@ public partial class MainWindow : Window
             0 => new HttpClientHandler(),                         // None
             1 => new HttpClientHandler                            // HTTP
             {
-                Proxy = new WebProxy(_proxyConfig.Host, _proxyConfig.Port),
+                Proxy = new WebProxy(new Uri($"http://{_proxyConfig.Host}:{_proxyConfig.Port}")),
                 UseProxy = true
             },
             2 => new SocketsHttpHandler                           // SOCKS5
             {
-                Proxy = new WebProxy(_proxyConfig.Host, _proxyConfig.Port),
+                Proxy = new WebProxy(new Uri($"http://{_proxyConfig.Host}:{_proxyConfig.Port}")),
                 UseProxy = true
             },
             _ => new HttpClientHandler()
