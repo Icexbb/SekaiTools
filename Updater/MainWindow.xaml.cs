@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Threading;
 using System.Windows;
 
 namespace Updater;
@@ -91,7 +92,7 @@ public partial class MainWindow : Window
     {
         using var client = CreateHttpClient();
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Updater", "1.0"));
-        client.Timeout = TimeSpan.FromMinutes(1);
+        client.Timeout = TimeSpan.FromSeconds(30);
         var json = await client.GetStringAsync("https://api.github.com/repos/Icexbb/SekaiTools/releases/latest");
 
         using var doc = JsonDocument.Parse(json);
@@ -102,7 +103,6 @@ public partial class MainWindow : Window
     private async Task DownloadFileAsync(string url, string destFile, string version = "")
     {
         using var client = CreateHttpClient();
-        client.Timeout = TimeSpan.FromMinutes(10);
         using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
         response.EnsureSuccessStatusCode();
 
@@ -113,7 +113,7 @@ public partial class MainWindow : Window
         var buffer = new byte[8192];
         long read = 0;
         int bytes;
-        while ((bytes = await stream.ReadAsync(buffer)) > 0)
+        while ((bytes = await ReadChunkAsync(stream, buffer, TimeSpan.FromSeconds(30))) > 0)
         {
             await file.WriteAsync(buffer.AsMemory(0, bytes));
             read += bytes;
@@ -124,6 +124,19 @@ public partial class MainWindow : Window
                 StatusText.Text = $"新版本 {version}\n" +
                                   $"正在下载更新包... {Progress.Value:F0}%";
             });
+        }
+    }
+
+    private static async Task<int> ReadChunkAsync(Stream stream, byte[] buffer, TimeSpan timeout)
+    {
+        using var cts = new CancellationTokenSource(timeout);
+        try
+        {
+            return await stream.ReadAsync(buffer, cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            throw new TimeoutException("下载卡死：超过 30 秒未收到数据");
         }
     }
 

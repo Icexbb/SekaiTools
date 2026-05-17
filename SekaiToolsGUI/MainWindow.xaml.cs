@@ -177,7 +177,7 @@ partial class MainWindow
 
         using var client = new HttpClient(GetHttpHandler(proxy))
         {
-            Timeout = TimeSpan.FromMinutes(1)
+            Timeout = TimeSpan.FromSeconds(30)
         };
 
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("SekaiToolsGUI", "1.0"));
