@@ -243,8 +243,8 @@
                         </ui:CardControl>
                     </StackPanel>
                 </ui:CardExpander>
-                <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon ClipboardTask24}">
-                    <ui:CardControl.Header>
+                <ui:CardExpander Margin="0,0,0,8" Icon="{ui:SymbolIcon ClipboardTask24}" ContentPadding="0">
+                    <ui:CardExpander.Header>
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -254,9 +254,38 @@
                             <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                           Text="查看程序运行过程中产生的日志" />
                         </Grid>
-                    </ui:CardControl.Header>
-                    <ui:Button HorizontalAlignment="Right" Content="查看日志" Click="ViewLog_Click" />
-                </ui:CardControl>
+                    </ui:CardExpander.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                            <ui:Button DockPanel.Dock="Right" Content="清空日志" Click="ClearLog_Click" />
+                            <ui:TextBlock Text="等级:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <ComboBox x:Name="LevelFilter" Width="100" SelectedIndex="0"
+                                      SelectionChanged="LevelFilter_SelectionChanged">
+                                <ComboBoxItem>全部</ComboBoxItem>
+                                <ComboBoxItem>INFO+</ComboBoxItem>
+                                <ComboBoxItem>WARN+</ComboBoxItem>
+                                <ComboBoxItem>ERROR+</ComboBoxItem>
+                            </ComboBox>
+                        </DockPanel>
+                        <ListBox x:Name="LogListBox" Grid.Row="1"
+                                 MaxHeight="400"
+                                 Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                 BorderThickness="0"
+                                 FontFamily="Consolas" FontSize="11"
+                                 HorizontalContentAlignment="Stretch"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </ui:CardExpander>
                 <ui:CardExpander ContentPadding="0"
                                  Icon="{ui:ImageIcon 'pack://application:,,,/Resource/icon.png', Width=28, Height=28}">
                     <ui:CardExpander.Header>

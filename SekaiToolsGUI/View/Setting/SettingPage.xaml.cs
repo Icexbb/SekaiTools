@@ -1,5 +1,10 @@
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
+using Microsoft.Extensions.Logging;
+using SekaiToolsBase;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.Setting.Components;
 using SekaiToolsGUI.ViewModel;
@@ -11,10 +16,24 @@ namespace SekaiToolsGUI.View.Setting;
 
 public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
 {
+    private readonly ICollectionView _logView;
+
     public SettingPage()
     {
+        _logView = CollectionViewSource.GetDefaultView(InMemoryLogSink.Entries);
+        _logView.Filter = _ => true;
+
         DataContext = MainWindowViewModel.SettingPageModel;
         InitializeComponent();
+
+        BindingOperations.EnableCollectionSynchronization(InMemoryLogSink.Entries, InMemoryLogSink.Entries);
+        LogListBox.ItemsSource = _logView;
+
+        ((INotifyCollectionChanged)LogListBox.Items).CollectionChanged += (_, _) =>
+        {
+            if (LogListBox.Items.Count > 0)
+                LogListBox.ScrollIntoView(LogListBox.Items[^1]);
+        };
     }
 
     private static ISnackbarService SnackService =>
@@ -22,11 +41,31 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
 
     public SettingPageModel ViewModel => (SettingPageModel)DataContext;
 
-    private async void ViewLog_Click(object sender, RoutedEventArgs e)
+    private void ClearLog_Click(object sender, RoutedEventArgs e)
     {
-        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-        var dialog = new Components.LogViewerDialog();
-        await dialogService.ShowAsync(dialog, CancellationToken.None);
+        InMemoryLogSink.Clear();
+    }
+
+    private static bool FilterAll(object obj) => true;
+
+    private static bool FilterInfoPlus(object obj)
+        => obj is LogEntry e && e.Level <= LogLevel.Information;
+
+    private static bool FilterWarnPlus(object obj)
+        => obj is LogEntry e && e.Level <= LogLevel.Warning;
+
+    private static bool FilterErrorPlus(object obj)
+        => obj is LogEntry e && e.Level <= LogLevel.Error;
+
+    private void LevelFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _logView.Filter = LevelFilter.SelectedIndex switch
+        {
+            1 => FilterInfoPlus,
+            2 => FilterWarnPlus,
+            3 => FilterErrorPlus,
+            _ => FilterAll
+        };
     }
 
     private async void ChooseDialogFont(object sender, RoutedEventArgs e)
