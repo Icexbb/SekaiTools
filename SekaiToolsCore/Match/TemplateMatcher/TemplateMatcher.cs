@@ -16,17 +16,29 @@ public static class TemplateMatcher
         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
         [CallerMemberName] string memberName = "")
     {
-        var img = new Mat();
-        if (imgOriginal.NumberOfChannels == 3)
+        Mat img;
+        bool tempImg = imgOriginal.NumberOfChannels == 3;
+        if (tempImg)
+        {
+            img = new Mat();
             CvInvoke.CvtColor(imgOriginal, img, ColorConversion.Bgr2Gray);
+        }
         else
+        {
             img = imgOriginal;
+        }
 
         var pool = TemplateMatchCachePool.GetPool(usage);
-        if (pool.Query(img)) return pool.prevResult;
+        if (pool.Query(img))
+        {
+            if (tempImg) img.Dispose();
+            return pool.prevResult;
+        }
 
         var res = MatchNoCache(img, tmp, matchingType, memberName);
         pool.RegisterResult(img, res);
+
+        if (tempImg) img.Dispose();
 
         return res;
     }
