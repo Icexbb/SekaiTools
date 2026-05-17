@@ -24,11 +24,11 @@ public class BannerBaseFrameSet(BannerStoryEvent data, FrameRate fps) : BaseFram
 
     public override IProcessFrame Start()
     {
-        return new ProcessFrame(_start, Fps);
+        return IsEmpty() ? new ProcessFrame(0, Fps) : new ProcessFrame(_start, Fps);
     }
 
     public override IProcessFrame End()
     {
-        return new ProcessFrame(_end, Fps);
+        return IsEmpty() ? new ProcessFrame(0, Fps) : new ProcessFrame(_end, Fps);
     }
 }
