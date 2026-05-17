@@ -31,6 +31,7 @@ public class GameScript()
                     break;
                 case 6:
                 {
+                    if (spEffCount >= SpecialEffectData.Length) break;
                     var eff = SpecialEffectData[spEffCount];
                     switch (eff.EffectType)
                     {
@@ -60,6 +61,7 @@ public class GameScript()
                     break;
                 case 6:
                 {
+                    if (seCount >= SpecialEffectData.Length) break;
                     var seData = SpecialEffectData[seCount];
                     if (seData.EffectType is 8 or 18) sn.Add(snippet);
                     seCount += 1;
