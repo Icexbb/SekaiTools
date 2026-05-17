@@ -16,10 +16,11 @@ public partial class LogViewerDialog : ContentDialog
 
     public LogViewerDialog()
     {
-        InitializeComponent();
-        BindingOperations.EnableCollectionSynchronization(InMemoryLogSink.Entries, InMemoryLogSink.Entries);
         _logView = CollectionViewSource.GetDefaultView(InMemoryLogSink.Entries);
         _logView.Filter = FilterAll;
+
+        InitializeComponent();
+        BindingOperations.EnableCollectionSynchronization(InMemoryLogSink.Entries, InMemoryLogSink.Entries);
         LogListBox.ItemsSource = _logView;
 
         ((INotifyCollectionChanged)LogListBox.Items).CollectionChanged += (_, _) =>
