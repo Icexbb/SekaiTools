@@ -45,7 +45,7 @@ public class ResourceManager
 
     public static ResourceManager Instance { get; } = new();
 
-    private HttpClient Client { get; } = new();
+    private HttpClient Client { get; } = new() { Timeout = TimeSpan.FromSeconds(30) };
 
     private Proxy UserProxy { get; set; } = Proxy.None;
 
@@ -173,7 +173,7 @@ public class ResourceManager
         Console.WriteLine($"Downloading {fileListUrl}");
 
         var response = await Download(fileListUrl);
-        var fileListJson = response.Content.ReadAsStringAsync().Result;
+        var fileListJson = await response.Content.ReadAsStringAsync();
 
         var fileList = JsonSerializer.Deserialize<Resource[]>(fileListJson, new JsonSerializerOptions
         {
