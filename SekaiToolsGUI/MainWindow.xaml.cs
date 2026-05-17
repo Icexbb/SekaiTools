@@ -196,7 +196,7 @@ partial class MainWindow
                 {
                     Proxy = new WebProxy(new Uri($"http://{proxyInfo.Host}:{proxyInfo.Port}")), UseProxy = true
                 },
-                Proxy.Type.Socks5 => new SocketsHttpHandler
+                Proxy.Type.Socks5 => new SocketsHttpHandler       // 实际是 HTTP CONNECT，WebProxy 不支持真正的 SOCKS5
                 {
                     Proxy = new WebProxy(new Uri($"http://{proxyInfo.Host}:{proxyInfo.Port}")), UseProxy = true
                 },
