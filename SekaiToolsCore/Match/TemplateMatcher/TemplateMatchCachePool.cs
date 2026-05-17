@@ -18,6 +18,7 @@ public class TemplateMatchCachePool
     }
 
     private static List<TemplateMatchCachePool>? _globalPool;
+    private static readonly object GlobalPoolLock = new();
     public Mat diffMat;
 
     public Mat? prevImg;
@@ -33,12 +34,16 @@ public class TemplateMatchCachePool
         get
         {
             if (_globalPool != null) return _globalPool;
-            const int len = (int)MatchUsage.Misc + 1;
-            _globalPool = new List<TemplateMatchCachePool>(len);
+            lock (GlobalPoolLock)
+            {
+                if (_globalPool != null) return _globalPool;
+                const int len = (int)MatchUsage.Misc + 1;
+                _globalPool = new List<TemplateMatchCachePool>(len);
 
-            for (var i = 0; i < len; i++) _globalPool.Add(new TemplateMatchCachePool());
+                for (var i = 0; i < len; i++) _globalPool.Add(new TemplateMatchCachePool());
 
-            return _globalPool;
+                return _globalPool;
+            }
         }
     }
 
