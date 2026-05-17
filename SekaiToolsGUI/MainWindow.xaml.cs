@@ -194,11 +194,11 @@ partial class MainWindow
                 Proxy.Type.None or Proxy.Type.System => new HttpClientHandler(),
                 Proxy.Type.Http => new HttpClientHandler
                 {
-                    Proxy = new WebProxy(proxyInfo.Host, proxyInfo.Port), UseProxy = true
+                    Proxy = new WebProxy(new Uri($"http://{proxyInfo.Host}:{proxyInfo.Port}")), UseProxy = true
                 },
                 Proxy.Type.Socks5 => new SocketsHttpHandler
                 {
-                    Proxy = new WebProxy(proxyInfo.Host, proxyInfo.Port), UseProxy = true
+                    Proxy = new WebProxy(new Uri($"http://{proxyInfo.Host}:{proxyInfo.Port}")), UseProxy = true
                 },
                 _ => throw new ArgumentOutOfRangeException()
             };
