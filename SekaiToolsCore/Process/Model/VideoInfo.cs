@@ -19,7 +19,7 @@ public class VideoInfo
 
         using var video = new VideoCapture(Path);
         Resolution = new Size((int)video.Get(CapProp.FrameWidth), (int)video.Get(CapProp.FrameHeight));
-        FrameRatio = Resolution.Width / (double)Resolution.Height;
+        FrameRatio = Resolution.Height > 0 ? Resolution.Width / (double)Resolution.Height : 16.0 / 9.0;
         Fps = new FrameRate(video.Get(CapProp.Fps));
         FrameCount = (int)video.Get(CapProp.FrameCount);
     }
