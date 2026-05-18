@@ -303,7 +303,7 @@ public class VideoProcessor
             }
         }
 
-        EmitProgressIfNeeded(1); // 最终完成信号
+        Callbacks.OnProgress(1); // 最终完成信号，不受节流限制
 
         // 关闭预览通道并等待消费任务结束
         _previewChannel?.Writer.Complete();
