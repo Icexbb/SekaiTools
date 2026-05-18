@@ -1,6 +1,7 @@
 using System.Drawing;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
+using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiToolsBase;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
@@ -66,7 +67,8 @@ public class MarkerTemplateMatcher(
 
             if (frameIndex != -1)
                 Logger.Log(
-                    $"{nameof(DialogTemplateMatcher)} Frame {frameIndex} Match Marker {LastNotProcessedIndex()} Result: {matchResult.MaxVal}");
+                    $"{nameof(DialogTemplateMatcher)} Frame {frameIndex} Match Marker {LastNotProcessedIndex()} Result: {matchResult.MaxVal}",
+                    ExtLogLevel.Debug);
 
             var matched = matchResult.MaxVal > config.MatchingThreshold.MarkerNormal && matchResult.MaxVal < 1;
 

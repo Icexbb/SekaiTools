@@ -1,5 +1,6 @@
 using System.Drawing;
 using Emgu.CV;
+using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiToolsBase;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.Model;
@@ -27,7 +28,8 @@ public class ContentTemplateMatcher(TemplateManager templateManager, Config conf
 
         if (frameIndex != -1)
             Logger.Log(
-                $"{nameof(ContentTemplateMatcher)} Frame {frameIndex} Match Content Start Sign Result: {result.MaxVal}"
+                $"{nameof(ContentTemplateMatcher)} Frame {frameIndex} Match Content Start Sign Result: {result.MaxVal}",
+                ExtLogLevel.Debug
             );
 
 

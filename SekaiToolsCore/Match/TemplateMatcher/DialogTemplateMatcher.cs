@@ -1,5 +1,6 @@
 using System.Drawing;
 using Emgu.CV;
+using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiToolsBase;
 using SekaiToolsBase.Story;
 using SekaiToolsCore.Process.Config;
@@ -49,7 +50,8 @@ public class DialogTemplateMatcher(
 
             if (frameIndex != -1)
                 Logger.Log(
-                    $"{nameof(DialogTemplateMatcher)} Frame {frameIndex} Match Name Tag {LastNotProcessedIndex()} Result: {result.MaxVal}");
+                    $"{nameof(DialogTemplateMatcher)} Frame {frameIndex} Match Name Tag {LastNotProcessedIndex()} Result: {result.MaxVal}",
+                    ExtLogLevel.Debug);
 
 
             if (!(threshold < result.MaxVal) || !(result.MaxVal < 1)) return Point.Empty;
@@ -180,7 +182,8 @@ public class DialogTemplateMatcher(
 
             if (frameIndex != -1)
                 Logger.Log(
-                    $"{nameof(DialogTemplateMatcher)} Frame {frameIndex} Match Dialog Content {LastNotProcessedIndex()} Result: {result.MaxVal}");
+                    $"{nameof(DialogTemplateMatcher)} Frame {frameIndex} Match Dialog Content {LastNotProcessedIndex()} Result: {result.MaxVal}",
+                    ExtLogLevel.Debug);
 
             return result.MaxVal > threshold && result.MaxVal < 1;
         }

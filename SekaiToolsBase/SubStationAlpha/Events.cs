@@ -29,4 +29,9 @@ public class Events(IEnumerable<Event> items)
     {
         _subtitleEventItems.Add(item);
     }
+
+    public void Insert(int index, Event item)
+    {
+        _subtitleEventItems.Insert(index, item);
+    }
 }

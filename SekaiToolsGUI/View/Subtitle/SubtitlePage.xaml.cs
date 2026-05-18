@@ -280,6 +280,23 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
         try
         {
             var subtitle = GenerateSubtitle();
+
+            var staffText = BuildStaffLineText(dialog.ViewModel);
+            if (!string.IsNullOrWhiteSpace(staffText))
+            {
+                var startTime = "0:00:00.00";
+                var totalSec = dialog.ViewModel.StaffLineTime;
+                var h = (int)(totalSec / 3600);
+                var m = (int)(totalSec / 60) % 60;
+                var s = (int)totalSec % 60;
+                var cs = (int)((totalSec - (int)totalSec) * 100);
+                var endTime = $"{h}:{m:00}:{s:00}.{cs:00}";
+                var staffEvent = SekaiToolsBase.SubStationAlpha.Event.Dialog(
+                    $"{{\\an{dialog.ViewModel.StaffLinePosition}}}{staffText}",
+                    startTime, endTime, "Screen");
+                subtitle.Events.Insert(0, staffEvent);
+            }
+
             await File.WriteAllTextAsync(fileName, subtitle.ToString(), Encoding.UTF8, token);
 
             SnackService.Show("成功", "字幕文件已保存", ControlAppearance.Success,
@@ -387,6 +404,41 @@ public partial class SubtitlePage
         VideoProcessor?.StopProcess();
     }
 
+    private static string BuildStaffLineText(SaveFileDialogModel model)
+    {
+        if (model.StaffLineTime <= 0) return string.Empty;
+
+        var entries = new List<(string Label, string Value)>();
+
+        AddIfNotEmpty("录制", model.StaffLineRecord);
+        AddIfNotEmpty("翻译", model.StaffLineTranslator);
+        AddIfNotEmpty("校对", model.StaffLineTranslatorSenior);
+        AddIfNotEmpty("时轴", model.StaffLineTimeline);
+        AddIfNotEmpty("轴校", model.StaffLineTimelineSenior);
+        AddIfNotEmpty("压制", model.StaffLineCompression);
+
+
+        var parts = entries
+            .GroupBy(e => e.Value)
+            .Select(g => $"{string.Join("/", g.Select(e => e.Label))}：{g.Key}")
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .ToList();
+
+        var prefix = model.StaffLinePrefix;
+        var suffix = model.StaffLineSuffix;
+        List<string> allParts = [];
+        if (!string.IsNullOrWhiteSpace(prefix)) allParts.Add(prefix.Trim());
+        allParts.AddRange(parts);
+        if (!string.IsNullOrWhiteSpace(suffix)) allParts.Add(suffix.Trim());
+        return string.Join("\\N", allParts).Trim();
+
+        void AddIfNotEmpty(string label, string value)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                entries.Add((label, value.Trim()));
+        }
+    }
+
     private SekaiToolsBase.SubStationAlpha.Subtitle GenerateSubtitle()
     {
         List<BannerBaseFrameSet> bannerFrameSets = [];
@@ -424,107 +476,106 @@ public partial class SubtitlePage
     {
         var settings = SettingPageModel.Instance;
 
-        Logger.Log($"开始处理: 视频={ViewModel.VideoFilePath}, 剧本={ViewModel.ScriptFilePath}, 翻译={ViewModel.TranslateFilePath}", LogLevel.Information);
+        Logger.Log(
+            $"开始处理: 视频={ViewModel.VideoFilePath}, 剧本={ViewModel.ScriptFilePath}, 翻译={ViewModel.TranslateFilePath}",
+            LogLevel.Information);
         try
         {
             VideoProcessor = new VideoProcessor(new Config(
-                ViewModel.VideoFilePath,
-                ViewModel.ScriptFilePath,
-                ViewModel.TranslateFilePath,
-                settings.GetStyleFontConfig(),
-                settings.GetExportStyleConfig(),
-                settings.GetTypewriterSetting(),
-                GetMatchingThreshold()
-            ), new VideoProcessCallbacks
-            {
-                OnTaskFinished = () =>
+                    ViewModel.VideoFilePath,
+                    ViewModel.ScriptFilePath,
+                    ViewModel.TranslateFilePath,
+                    settings.GetStyleFontConfig(),
+                    settings.GetExportStyleConfig(),
+                    settings.GetTypewriterSetting(),
+                    GetMatchingThreshold()
+                ), new VideoProcessCallbacks
                 {
-                    Dispatcher.Invoke(() =>
+                    OnTaskFinished = () =>
                     {
-                        ViewModel.IsRunning = false;
-                        if (!VideoProcessor?.Finished ?? false)
+                        Dispatcher.Invoke(() =>
                         {
-                            var stopReason = VideoProcessor?.StopReason;
-                            var errorMsg = stopReason switch
+                            ViewModel.IsRunning = false;
+                            if (!VideoProcessor?.Finished ?? false)
                             {
-                                SekaiToolsCore.ProcessStopReason.Canceled => "用户中止处理",
-                                SekaiToolsCore.ProcessStopReason.ReadFailed => "视频读帧失败",
-                                SekaiToolsCore.ProcessStopReason.ExceptionThreshold => "异常过多，自动中止",
-                                SekaiToolsCore.ProcessStopReason.CaptureError => "视频捕获设备出错",
-                                _ => "未知错误"
+                                var stopReason = VideoProcessor?.StopReason;
+                                var errorMsg = stopReason switch
+                                {
+                                    SekaiToolsCore.ProcessStopReason.Canceled => "用户中止处理",
+                                    SekaiToolsCore.ProcessStopReason.ReadFailed => "视频读帧失败",
+                                    SekaiToolsCore.ProcessStopReason.ExceptionThreshold => "异常过多，自动中止",
+                                    SekaiToolsCore.ProcessStopReason.CaptureError => "视频捕获设备出错",
+                                    _ => "未知错误"
+                                };
+                                Logger.Log($"处理异常结束: {stopReason}", LogLevel.Warning);
+                                SnackService.Show("错误", errorMsg, ControlAppearance.Danger,
+                                    new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
+                            }
+                            else
+                            {
+                                ViewModel.IsFinished = true;
+                                Logger.Log("处理成功完成", LogLevel.Information);
+                                SnackService.Show("成功", "运行结束", ControlAppearance.Success,
+                                    new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
+                            }
+
+                            TextBlockEta.Text = "";
+                        });
+                    },
+                    OnTaskStarted = () =>
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            ViewModel.IsRunning = true;
+                            ViewModel.HasNotStarted = false;
+                            var contentLength = VideoProcessor?.ContentLength;
+                            if (contentLength != null)
+                            {
+                                ViewModel.DialogTotal = contentLength.Dialog;
+                                ViewModel.DialogCurrent = 0;
+                                ViewModel.BannerTotal = contentLength.Banner;
+                                ViewModel.BannerCurrent = 0;
+                                ViewModel.MarkerTotal = contentLength.Marker;
+                                ViewModel.MarkerCurrent = 0;
+                            }
+                            else
+                            {
+                                ViewModel.DialogTotal = 0;
+                                ViewModel.BannerTotal = 0;
+                                ViewModel.MarkerTotal = 0;
+                            }
+                        });
+                    },
+                    OnProgress = progression => { OnProgressChanged(progression); },
+                    OnFramePreviewImage = frame =>
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (ViewModel.ShowPreview)
+                                ViewModel.FramePreviewImage = frame.ToBitmapSource();
+                        });
+                    },
+                    OnNewDialog = LinePanel_AddDialogLine,
+                    OnNewBanner = LinePanel_AddBannerLine,
+                    OnNewMarker = LinePanel_AddMarkerLine,
+                    OnException = e =>
+                    {
+                        Logger.Log($"视频处理异常: {e.Message}\n{e.StackTrace}", LogLevel.Error);
+                        Dispatcher.Invoke(async () =>
+                        {
+                            var uiMessageBox = new MessageBox
+                            {
+                                Title = "视频处理出错",
+                                Content = e.Message + "\n" + e.StackTrace
                             };
-                            Logger.Log($"处理异常结束: {stopReason}", LogLevel.Warning);
-                            SnackService.Show("错误", errorMsg, ControlAppearance.Danger,
-                                new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
-                        }
-                        else
-                        {
-                            ViewModel.IsFinished = true;
-                            Logger.Log("处理成功完成", LogLevel.Information);
-                            SnackService.Show("成功", "运行结束", ControlAppearance.Success,
-                                new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
-                        }
 
-                        TextBlockEta.Text = "";
-                    });
-                },
-                OnTaskStarted = () =>
-                {
-                    Dispatcher.Invoke(() =>
-                    {
-                        ViewModel.IsRunning = true;
-                        ViewModel.HasNotStarted = false;
-                        var contentLength = VideoProcessor?.ContentLength;
-                        if (contentLength != null)
-                        {
-                            ViewModel.DialogTotal = contentLength.Dialog;
-                            ViewModel.DialogCurrent = 0;
-                            ViewModel.BannerTotal = contentLength.Banner;
-                            ViewModel.BannerCurrent = 0;
-                            ViewModel.MarkerTotal = contentLength.Marker;
-                            ViewModel.MarkerCurrent = 0;
-                        }
-                        else
-                        {
-                            ViewModel.DialogTotal = 0;
-                            ViewModel.BannerTotal = 0;
-                            ViewModel.MarkerTotal = 0;
-                        }
-                    });
-                },
-                OnProgress = progression =>
-                {
-                    OnProgressChanged(progression);
-                },
-                OnFramePreviewImage = frame =>
-                {
-                    Dispatcher.Invoke(() =>
-                    {
-                        if (ViewModel.ShowPreview)
-                            ViewModel.FramePreviewImage = frame.ToBitmapSource();
-                    });
-                },
-                OnNewDialog = LinePanel_AddDialogLine,
-                OnNewBanner = LinePanel_AddBannerLine,
-                OnNewMarker = LinePanel_AddMarkerLine,
-                OnException = e =>
-                {
-                    Logger.Log($"视频处理异常: {e.Message}\n{e.StackTrace}", LogLevel.Error);
-                    Dispatcher.Invoke(async () =>
-                    {
-                        var uiMessageBox = new MessageBox
-                        {
-                            Title = "视频处理出错",
-                            Content = e.Message + "\n" + e.StackTrace
-                        };
-
-                        await uiMessageBox.ShowDialogAsync(cancellationToken: CancellationToken);
-                        ViewModel.IsRunning = false;
-                    });
-                },
-                OnFps = OnFpsChanged
-            }
-        );
+                            await uiMessageBox.ShowDialogAsync(cancellationToken: CancellationToken);
+                            ViewModel.IsRunning = false;
+                        });
+                    },
+                    OnFps = OnFpsChanged
+                }
+            );
             VideoProcessor.StartProcess();
         }
         catch (Exception ex)

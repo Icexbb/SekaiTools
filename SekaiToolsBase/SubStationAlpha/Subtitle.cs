@@ -8,6 +8,8 @@ public class Subtitle(
     Styles styles,
     Events events)
 {
+    public Events Events => events;
+
     public override string ToString()
     {
         return $"{scriptInfo}\n\n{garbage}\n\n{styles}\n\n{events}\n";

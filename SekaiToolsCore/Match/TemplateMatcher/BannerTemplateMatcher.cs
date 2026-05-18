@@ -1,5 +1,6 @@
 using System.Drawing;
 using Emgu.CV;
+using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiToolsBase;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
@@ -73,7 +74,8 @@ public class BannerTemplateMatcher(
 
             if (frameIndex != -1)
                 Logger.Log(
-                    $"{nameof(BannerTemplateMatcher)} Frame {frameIndex} Match Banner {LastNotProcessedIndex()} Result: {result.MaxVal}");
+                    $"{nameof(BannerTemplateMatcher)} Frame {frameIndex} Match Banner {LastNotProcessedIndex()} Result: {result.MaxVal}",
+                    ExtLogLevel.Debug);
 
             return !(result.MaxVal < config.MatchingThreshold.BannerNormal) && !(result.MaxVal > 1);
         }
