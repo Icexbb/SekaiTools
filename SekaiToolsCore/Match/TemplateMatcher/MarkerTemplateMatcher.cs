@@ -25,6 +25,13 @@ public class MarkerTemplateMatcher(
 
     private MatchStatus _status;
 
+    private int _consecutiveFailures;
+    private int _lastFailedIndex = -1;
+    private bool _useFallbackThreshold;
+    private const double FallbackRatio = 0.7;
+    private const double AbsMinThreshold = 0.40;
+    private int FallbackTriggerFrames => (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.5);
+
     public bool Finished => Set.All(d => d.Finished) || Set.Count == 0;
 
     private GaMat GetTemplate(string content)
@@ -70,7 +77,11 @@ public class MarkerTemplateMatcher(
                     $"{nameof(DialogTemplateMatcher)} Frame {frameIndex} Match Marker {LastNotProcessedIndex()} Result: {matchResult.MaxVal}",
                     ExtLogLevel.Debug);
 
-            var matched = matchResult.MaxVal > config.MatchingThreshold.MarkerNormal && matchResult.MaxVal < 1;
+            var threshold = config.MatchingThreshold.MarkerNormal;
+            var effectiveThreshold = _useFallbackThreshold
+                ? Math.Max(threshold * FallbackRatio, AbsMinThreshold)
+                : threshold;
+            var matched = matchResult.MaxVal > effectiveThreshold && matchResult.MaxVal < 1;
 
             if (!matched) return Point.Empty;
 
@@ -118,6 +129,13 @@ public class MarkerTemplateMatcher(
             var index = LastNotProcessedIndex();
             if (index < 0) return;
 
+            if (index != _lastFailedIndex)
+            {
+                _lastFailedIndex = index;
+                _consecutiveFailures = 0;
+                _useFallbackThreshold = false;
+            }
+
             var matchResult = MarkerMatch(frame, Set[index].Data.BodyOriginal, frameIndex);
             _status = matchResult.Status;
 
@@ -125,12 +143,24 @@ public class MarkerTemplateMatcher(
             {
                 case MatchStatus.Dropped:
                     Set[index].Finished = true;
+                    _consecutiveFailures = 0;
+                    _useFallbackThreshold = false;
                     continue;
                 case MatchStatus.NotMatched:
+                    _consecutiveFailures++;
+                    if (_consecutiveFailures >= FallbackTriggerFrames && !_useFallbackThreshold)
+                    {
+                        _useFallbackThreshold = true;
+                        _consecutiveFailures = 0;
+                        continue;
+                    }
+                    _useFallbackThreshold = false;
                     return;
                 case MatchStatus.Matched:
                 default:
                     Set[index].Add(frameIndex, matchResult.Point);
+                    _consecutiveFailures = 0;
+                    _useFallbackThreshold = false;
                     return;
             }
         }

@@ -24,6 +24,13 @@ public class DialogTemplateMatcher(
 
     private MatchStatus _status = 0;
 
+    private int _consecutiveFailures;
+    private int _lastFailedIndex = -1;
+    private bool _useFallbackThreshold;
+    private const double FallbackRatio = 0.7;
+    private const double AbsMinThreshold = 0.40;
+    private int FallbackTriggerFrames => (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.5);
+
     public bool Finished => Set.All(d => d.Finished) || Set.Count == 0;
 
     private GaMat GetNameTag(string name)
@@ -54,8 +61,13 @@ public class DialogTemplateMatcher(
                     ExtLogLevel.Debug);
 
 
-            if (!(threshold < result.MaxVal) || !(result.MaxVal < 1)) return Point.Empty;
-            return new Point(result.MaxLoc.X + roi.X, result.MaxLoc.Y + roi.Y);
+            var effectiveThreshold = _useFallbackThreshold
+                ? Math.Max(threshold * FallbackRatio, AbsMinThreshold)
+                : threshold;
+            if (effectiveThreshold < result.MaxVal && result.MaxVal < 1)
+                return new Point(result.MaxLoc.X + roi.X, result.MaxLoc.Y + roi.Y);
+
+            return Point.Empty;
         }
 
         Rectangle LocalGetCropArea(Size ntt)
@@ -185,7 +197,10 @@ public class DialogTemplateMatcher(
                     $"{nameof(DialogTemplateMatcher)} Frame {frameIndex} Match Dialog Content {LastNotProcessedIndex()} Result: {result.MaxVal}",
                     ExtLogLevel.Debug);
 
-            return result.MaxVal > threshold && result.MaxVal < 1;
+            var effectiveThreshold = _useFallbackThreshold
+                ? Math.Max(threshold * FallbackRatio, AbsMinThreshold)
+                : threshold;
+            return result.MaxVal > effectiveThreshold && result.MaxVal < 1;
         }
 
         List<GaMat> GetDialogInd()
@@ -251,6 +266,13 @@ public class DialogTemplateMatcher(
             var dIndex = LastNotProcessedIndex(Set);
             if (dIndex < 0) break;
 
+            if (dIndex != _lastFailedIndex)
+            {
+                _lastFailedIndex = dIndex;
+                _consecutiveFailures = 0;
+                _useFallbackThreshold = false;
+            }
+
             var dialogRefers = Set[dIndex];
             var matchResult = MatchForDialog(frame, dialogRefers, frameIndex);
             _status = matchResult.Status;
@@ -260,12 +282,24 @@ public class DialogTemplateMatcher(
             {
                 case MatchStatus.DialogDropped:
                     Set[dIndex].Finished = true;
+                    _consecutiveFailures = 0;
+                    _useFallbackThreshold = false;
                     TemplateMatchCachePool.NextDialog();
                     continue;
                 case MatchStatus.DialogNotMatched or MatchStatus.NameTagNotMatched:
+                    _consecutiveFailures++;
+                    if (_consecutiveFailures >= FallbackTriggerFrames && !_useFallbackThreshold)
+                    {
+                        _useFallbackThreshold = true;
+                        _consecutiveFailures = 0;
+                        continue;
+                    }
+                    _useFallbackThreshold = false;
                     return IsStatusMatched(firstStatus.Value);
                 default:
                     Set[dIndex].Add(frameIndex, matchResult.Point);
+                    _consecutiveFailures = 0;
+                    _useFallbackThreshold = false;
                     return IsStatusMatched(firstStatus.Value);
             }
         }
