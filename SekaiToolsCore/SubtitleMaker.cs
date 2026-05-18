@@ -173,31 +173,36 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         var charaOutlineSize = (int)Math.Ceiling(charaFontsize / 15.0);
 
 
-        var blackColor = new AlphaColor(0, 255, 255, 255);
+        var white = new AlphaColor(0, 255, 255, 255);
         var outlineColor = new AlphaColor(50, 73, 71, 102);
         var result = new List<Style>
         {
             new("Line1", StyleFontConfig.DialogFontFamily, fontsize,
-                blackColor, outlineColour: outlineColor,
+                white, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7, marginL: marginH, marginR: marginH, marginV: marginV),
 
             new("Line2", StyleFontConfig.DialogFontFamily, fontsize,
-                blackColor, outlineColour: outlineColor,
+                white, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7, marginL: marginH, marginR: marginH,
                 marginV: marginV + (int)(fontsize * 1.01)),
 
             new("Line3", StyleFontConfig.DialogFontFamily, fontsize,
-                blackColor, outlineColour: outlineColor,
+                white, outlineColour: outlineColor,
                 outline: outlineSize, shadow: 0, alignment: 7, marginL: marginH, marginR: marginH,
                 marginV: marginV + (int)(fontsize * 1.01 * 2)),
 
             new("Character", StyleFontConfig.DialogFontFamily, charaFontsize,
-                blackColor, outlineColour: outlineColor,
+                white, outlineColour: outlineColor,
                 outline: charaOutlineSize, shadow: 0, alignment: 7),
 
-            new("Screen", StyleFontConfig.DialogFontFamily, (int)(charaFontsize * 1.2),
-                blackColor, outlineColour: outlineColor,
-                outline: outlineSize, shadow: 0, alignment: 7)
+            new("Screen", StyleFontConfig.DialogFontFamily, charaFontsize,
+                white, outlineColour: outlineColor,
+                outline: outlineSize, shadow: 0, alignment: 7),
+
+
+            new("Staff", StyleFontConfig.DialogFontFamily, (int)(charaFontsize * 1.5),
+                primaryColour: outlineColor, outlineColour: white,
+                outline: outlineSize, shadow: outlineSize, alignment: 1)
         };
 
         return result;
@@ -334,12 +339,14 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
                 var body = @$"{{\pos({x},{y})}}"
                            + MakeDialogTypewriter(content, frame.Index - dialogBaseFrameSet.StartIndex());
 
-                if (dialogEvents.Count > 0 && lastPosition.X == x && lastPosition.Y == y && body == dialogEvents[^1].Text)
+                if (dialogEvents.Count > 0 && lastPosition.X == x && lastPosition.Y == y &&
+                    body == dialogEvents[^1].Text)
                     dialogEvents[^1].End = frame.EndTime();
                 else
                     dialogEvents.Add(SubtitleEvent.Dialog(body, frame.StartTime(), frame.EndTime(), styleName));
 
-                if (characterEvents.Count > 0 && lastPosition.X == x && lastPosition.Y == y && body == characterEvents[^1].Text)
+                if (characterEvents.Count > 0 && lastPosition.X == x && lastPosition.Y == y &&
+                    body == characterEvents[^1].Text)
                 {
                     characterEvents[^1].End = frame.EndTime();
                 }

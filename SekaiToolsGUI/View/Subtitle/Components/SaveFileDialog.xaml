@@ -87,46 +87,61 @@
                                 <RowDefinition />
                                 <RowDefinition />
                                 <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
                             </Grid.RowDefinitions>
-                            <ui:CardControl Grid.Column="0" Grid.Row="0">
+                            <ui:CardControl Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3">
+                                <ui:CardControl.Header>
+                                    <ui:TextBlock FontTypography="Body" Text="前缀" />
+                                </ui:CardControl.Header>
+                                <ui:TextBox MinWidth="400" Text="{Binding StaffLinePrefix}" />
+                            </ui:CardControl>
+                            <ui:CardControl Grid.Column="0" Grid.Row="1">
                                 <ui:CardControl.Header>
                                     <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="录制" />
                                 </ui:CardControl.Header>
                                 <ui:TextBox Width="100" Text="{Binding StaffLineRecord}" />
                             </ui:CardControl>
-                            <ui:CardControl Grid.Column="1" Grid.Row="0">
+                            <ui:CardControl Grid.Column="1" Grid.Row="1">
                                 <ui:CardControl.Header>
                                     <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="翻译" />
                                 </ui:CardControl.Header>
                                 <ui:TextBox Width="100" Text="{Binding StaffLineTranslator}" />
                             </ui:CardControl>
-                            <ui:CardControl Grid.Column="2" Grid.Row="0">
+                            <ui:CardControl Grid.Column="2" Grid.Row="1">
                                 <ui:CardControl.Header>
                                     <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="校对" />
                                 </ui:CardControl.Header>
                                 <ui:TextBox Width="100" Text="{Binding StaffLineTranslatorSenior}" />
                             </ui:CardControl>
-                            <ui:CardControl Grid.Column="0" Grid.Row="1">
+                            <ui:CardControl Grid.Column="0" Grid.Row="2">
                                 <ui:CardControl.Header>
                                     <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="时轴" />
                                 </ui:CardControl.Header>
                                 <ui:TextBox Width="100" Text="{Binding StaffLineTimeline}" />
                             </ui:CardControl>
-                            <ui:CardControl Grid.Column="1" Grid.Row="1">
+                            <ui:CardControl Grid.Column="1" Grid.Row="2">
                                 <ui:CardControl.Header>
                                     <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="轴校" />
                                 </ui:CardControl.Header>
                                 <ui:TextBox Width="100" Text="{Binding StaffLineTimelineSenior}" />
                             </ui:CardControl>
-                            <ui:CardControl Grid.Column="2" Grid.Row="1">
+                            <ui:CardControl Grid.Column="2" Grid.Row="2">
                                 <ui:CardControl.Header>
                                     <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="压制" />
                                 </ui:CardControl.Header>
                                 <ui:TextBox Width="100" Text="{Binding StaffLineCompression}" />
                             </ui:CardControl>
-                            <ui:CardControl Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="3">
+                   
+                            <ui:CardControl Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="3">
                                 <ui:CardControl.Header>
-                                    <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="位置" />
+                                    <ui:TextBlock FontTypography="Body" Text="后缀" />
+                                </ui:CardControl.Header>
+                                <ui:TextBox MinWidth="400" Text="{Binding StaffLineSuffix}" />
+                            </ui:CardControl>
+                            <ui:CardControl Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="3">
+                                <ui:CardControl.Header>
+                                    <ui:TextBlock FontTypography="Body" Text="位置" />
                                 </ui:CardControl.Header>
                                 <ComboBox Width="100" SelectedIndex="{Binding StaffLinePositionIndex,Mode=TwoWay}">
                                     <ComboBoxItem>左下</ComboBoxItem>

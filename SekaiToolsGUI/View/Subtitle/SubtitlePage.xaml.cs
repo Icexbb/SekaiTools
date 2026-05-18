@@ -293,7 +293,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
                 var endTime = $"{h}:{m:00}:{s:00}.{cs:00}";
                 var staffEvent = SekaiToolsBase.SubStationAlpha.Event.Dialog(
                     $"{{\\an{dialog.ViewModel.StaffLinePosition}}}{staffText}",
-                    startTime, endTime, "Screen");
+                    startTime, endTime, "Staff");
                 subtitle.Events.Insert(0, staffEvent);
             }
 
