@@ -42,7 +42,11 @@ public partial class App : Application
 
     private static Assembly? OnResolveAssembly(object? sender, ResolveEventArgs args)
     {
-        var assemblyName = new AssemblyName(args.Name).Name + ".dll";
+        var name = new AssemblyName(args.Name);
+        if (name.Name is { } n && (n.EndsWith(".resources") || n.EndsWith(".XmlSerializers")))
+            return null;
+
+        var assemblyName = name.Name + ".dll";
         var libsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "libs");
         var dllPath = Path.Combine(libsPath, assemblyName);
 
