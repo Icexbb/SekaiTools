@@ -23,7 +23,7 @@ public class ContentTemplateMatcher(TemplateManager templateManager, Config conf
         var roi = new Rectangle(mat.Width - width, 0, width, height);
         roi.Extend(0.1);
 
-        var frameCropped = new Mat(mat, roi);
+        using var frameCropped = new Mat(mat, roi);
         var result = TemplateMatcher.Match(frameCropped, Template, TemplateMatchCachePool.MatchUsage.ContentStartSign);
 
         if (frameIndex != -1)
@@ -31,7 +31,6 @@ public class ContentTemplateMatcher(TemplateManager templateManager, Config conf
                 $"{nameof(ContentTemplateMatcher)} Frame {frameIndex} Match Content Start Sign Result: {result.MaxVal}",
                 ExtLogLevel.Debug
             );
-
 
         return result.MaxVal > Threshold;
     }

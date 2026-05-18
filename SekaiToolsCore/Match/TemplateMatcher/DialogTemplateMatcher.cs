@@ -52,7 +52,7 @@ public class DialogTemplateMatcher(
         Point LocalMatch(Mat src, GaMat tmp, double threshold)
         {
             var roi = LocalGetCropArea(tmp.Size);
-            var imgCropped = new Mat(src, roi);
+            using var imgCropped = new Mat(src, roi);
             var result = TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.DialogNameTag);
 
             if (frameIndex != -1)
@@ -189,7 +189,7 @@ public class DialogTemplateMatcher(
                 dialogStartPosition.Extend(0.6);
             dialogStartPosition.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
 
-            var imgCropped = new Mat(src, dialogStartPosition);
+            using var imgCropped = new Mat(src, dialogStartPosition);
             var result = TemplateMatcher.Match(imgCropped, tmp, usage);
 
             if (frameIndex != -1)
@@ -215,6 +215,14 @@ public class DialogTemplateMatcher(
         }
     }
 
+    private int _firstUnfinishedIndex;
+
+    private void AdvanceFirstUnfinished()
+    {
+        while (_firstUnfinishedIndex < Set.Count && Set[_firstUnfinishedIndex].Finished)
+            _firstUnfinishedIndex++;
+    }
+
     private static int LastNotProcessedIndex(IReadOnlyList<DialogBaseFrameSet> set)
     {
         for (var i = 0; i < set.Count; i++)
@@ -225,7 +233,8 @@ public class DialogTemplateMatcher(
 
     public int LastNotProcessedIndex()
     {
-        return LastNotProcessedIndex(Set);
+        AdvanceFirstUnfinished();
+        return _firstUnfinishedIndex < Set.Count ? _firstUnfinishedIndex : -1;
     }
 
     public int DebugSetFinishedUntilContains(string targetString, string? speaker = null)

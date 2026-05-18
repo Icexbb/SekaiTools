@@ -19,14 +19,21 @@ public class TemplateMatchCachePool
 
     private static List<TemplateMatchCachePool>? _globalPool;
     private static readonly object GlobalPoolLock = new();
+    private static int _currentFrameIndex = -1;
     public Mat diffMat;
 
     public Mat? prevImg;
     public TemplateMatchResult prevResult;
+    private int _cachedFrameIndex = -1;
 
     public TemplateMatchCachePool()
     {
         diffMat = new Mat();
+    }
+
+    public static void SetFrameIndex(int frameIndex)
+    {
+        _currentFrameIndex = frameIndex;
     }
 
     private static List<TemplateMatchCachePool> GlobalPool
@@ -65,10 +72,14 @@ public class TemplateMatchCachePool
         prevImg?.Dispose();
         prevImg = img.Clone();
         prevResult = result;
+        _cachedFrameIndex = _currentFrameIndex;
     }
 
     public bool Query(Mat img)
     {
+        if (_currentFrameIndex == _cachedFrameIndex)
+            return true;
+
         if (img == null || prevImg == null) return false;
         if (img.IsEmpty && prevImg.IsEmpty) return true;
         if (img.Cols != prevImg.Cols || img.Rows != prevImg.Rows || img.Dims != prevImg.Dims) return false;
@@ -78,6 +89,7 @@ public class TemplateMatchCachePool
 
         if (diffPx > 0) return false;
 
+        _cachedFrameIndex = _currentFrameIndex;
         return true;
     }
 
@@ -85,5 +97,6 @@ public class TemplateMatchCachePool
     {
         prevImg?.Dispose();
         prevImg = null;
+        _cachedFrameIndex = -1;
     }
 }

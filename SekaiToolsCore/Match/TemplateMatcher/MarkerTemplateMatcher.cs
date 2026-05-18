@@ -68,7 +68,7 @@ public class MarkerTemplateMatcher(
             if (cropArea.IsEmpty)
                 return Point.Empty;
 
-            var imgCropped = new Mat(src, cropArea);
+            using var imgCropped = new Mat(src, cropArea);
             var matchResult =
                 TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.Marker, matchingType);
 
@@ -109,6 +109,14 @@ public class MarkerTemplateMatcher(
         }
     }
 
+    private int _firstUnfinishedIndex;
+
+    private void AdvanceFirstUnfinished()
+    {
+        while (_firstUnfinishedIndex < Set.Count && Set[_firstUnfinishedIndex].Finished)
+            _firstUnfinishedIndex++;
+    }
+
     private static int LastNotProcessedIndex(IReadOnlyList<MarkerBaseFrameSet> set)
     {
         for (var i = 0; i < set.Count; i++)
@@ -119,7 +127,8 @@ public class MarkerTemplateMatcher(
 
     public int LastNotProcessedIndex()
     {
-        return LastNotProcessedIndex(Set);
+        AdvanceFirstUnfinished();
+        return _firstUnfinishedIndex < Set.Count ? _firstUnfinishedIndex : -1;
     }
 
     public void Process(Mat frame, int frameIndex)

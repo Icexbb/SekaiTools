@@ -92,6 +92,14 @@ public class BannerTemplateMatcher(
         }
     }
 
+    private int _firstUnfinishedIndex;
+
+    private void AdvanceFirstUnfinished()
+    {
+        while (_firstUnfinishedIndex < Set.Count && Set[_firstUnfinishedIndex].Finished)
+            _firstUnfinishedIndex++;
+    }
+
     private static int LastNotProcessedIndex(List<BannerBaseFrameSet> set)
     {
         for (var i = 0; i < set.Count; i++)
@@ -102,7 +110,8 @@ public class BannerTemplateMatcher(
 
     public int LastNotProcessedIndex()
     {
-        return LastNotProcessedIndex(Set);
+        AdvanceFirstUnfinished();
+        return _firstUnfinishedIndex < Set.Count ? _firstUnfinishedIndex : -1;
     }
 
     public void Process(Mat frame, int frameIndex)

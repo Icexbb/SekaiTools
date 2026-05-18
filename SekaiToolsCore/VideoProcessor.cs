@@ -50,7 +50,6 @@ public enum ProcessStopReason
 
 public class VideoProcessor
 {
-    private bool _debugIgnoreBannerMarker;
     private volatile bool _isProcessing;
     private int _consecutiveExceptionCount;
     private const int ExceptionThreshold = 10;
@@ -197,8 +196,6 @@ public class VideoProcessor
             capture.Set(CapProp.PosFrames, debugFrameId);
         }
 
-        _debugIgnoreBannerMarker = Environment.GetEnvironmentVariable("DebugIgnoreBannerMarker") == "true";
-
         var avgDuration = 0d;
         var frameIndex = 0;
         while (true)
@@ -225,6 +222,7 @@ public class VideoProcessor
                 }
 
                 frameIndex = (int)capture.Get(CapProp.PosFrames);
+                TemplateMatchCachePool.SetFrameIndex(frameIndex);
                 var progress = frameCount > 0 ? (double)frameIndex / frameCount : 0;
 
                 // 节流进度回调（200ms）
@@ -254,7 +252,7 @@ public class VideoProcessor
                     matchBannerNow = !r;
                     if (DialogMatcher.Set[dialogIndex].Finished) Callbacks.OnNewDialog(DialogMatcher.Set[dialogIndex]);
                 }
-                else if (_debugIgnoreBannerMarker)
+                else if (BannerMatcher is { Finished: true } && MarkerMatcher is { Finished: true })
                 {
                     break;
                 }
