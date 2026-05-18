@@ -1,6 +1,4 @@
-﻿using System.IO;
-using System.Reflection;
-using System.Windows;
+﻿using System.Windows;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 
@@ -10,7 +8,6 @@ public partial class App : Application
 {
     public App()
     {
-        AppDomain.CurrentDomain.AssemblyResolve += OnResolveAssembly;
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
@@ -24,7 +21,8 @@ public partial class App : Application
         base.OnExit(e);
     }
 
-    private void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+    private void OnDispatcherUnhandledException(object sender,
+        System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
     {
         Logger.Log($"UI线程未处理异常: {e.Exception.Message}\n{e.Exception.StackTrace}", LogLevel.Critical);
     }
@@ -40,23 +38,5 @@ public partial class App : Application
         Logger.Log($"未观察任务异常: {e.Exception.Message}\n{e.Exception.StackTrace}", LogLevel.Error);
     }
 
-    private static Assembly? OnResolveAssembly(object? sender, ResolveEventArgs args)
-    {
-        var name = new AssemblyName(args.Name);
-        if (name.Name is { } n && (n.EndsWith(".resources") || n.EndsWith(".XmlSerializers")))
-            return null;
 
-        var assemblyName = name.Name + ".dll";
-        var libsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "libs");
-        var dllPath = Path.Combine(libsPath, assemblyName);
-
-        if (!File.Exists(dllPath))
-        {
-            Logger.Log($"程序集解析失败: {args.Name}", LogLevel.Warning);
-            return null;
-        }
-
-        Logger.Log($"程序集从libs加载: {assemblyName}", LogLevel.Debug);
-        return Assembly.LoadFrom(dllPath);
-    }
 }

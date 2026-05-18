@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net8.0-windows</TargetFramework>
+        <TargetFramework>net10.0-windows</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UseWPF>true</UseWPF>
@@ -18,11 +18,11 @@
 
     <ItemGroup>
         <PackageReference Include="CalcBinding" Version="2.5.2"/>
-        <PackageReference Include="Emgu.CV.Wpf" Version="4.12.0.5764"/>
+        <PackageReference Include="Emgu.CV.Wpf" Version="4.13.0.5924" />
         <PackageReference Include="System.Reactive" Version="7.0.0-preview.1" />
-        <PackageReference Include="System.Text.Json" Version="10.0.1"/>
+        <PackageReference Include="System.Text.Json" Version="11.0.0-preview.4.26230.115" />
         <PackageReference Include="TextCopy" Version="6.2.1"/>
-        <PackageReference Include="WPF-UI" Version="4.2.0" />
+        <PackageReference Include="WPF-UI" Version="4.3.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -222,13 +222,13 @@
                  Targets="Publish"
                  Properties="Configuration=$(Configuration);PublishDir=..\Updater\build\;"/>
 
-        <!-- 将 Updater.exe 复制到主程序的发布目录 -->
+        <!-- 将 Updater 及其依赖复制到主程序发布目录的 Updater 子文件夹 -->
         <ItemGroup>
             <UpdaterFiles Include="..\Updater\build\**\*"/>
             <UpdaterFiles Include="..\Updater\7zr.exe"/>
         </ItemGroup>
         <Copy SourceFiles="@(UpdaterFiles)"
-              DestinationFolder="$(OutputDir)%(RecursiveDir)"/>
+              DestinationFolder="$(OutputDir)Updater\%(RecursiveDir)"/>
 
         <Message Text="Updater 构建完成" Importance="high"/>
     </Target>
