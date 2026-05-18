@@ -72,9 +72,8 @@ public partial class CardStoryCard
 
         SourceList.Instance.SourceData = DownloadPageModel.Instance.CurrentSource;
 
-        foreach (var panelItemsChild in PanelItems.Children)
-            if (panelItemsChild is DownloadItem downloadItem)
-                downloadItem.Recycle();
+        foreach (var panelItemsChild in PanelItems.Children.OfType<DownloadItem>().ToList())
+            panelItemsChild.Recycle();
 
         var itemFirst = DownloadItem.GetItem(() => SourceList.Instance.MemberStory(CardStorySet.FirstPart),
             CardName + " 前篇");

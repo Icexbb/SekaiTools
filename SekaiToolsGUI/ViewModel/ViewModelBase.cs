@@ -30,7 +30,7 @@ public class ViewModelBase : INotifyPropertyChanged
             if (_properties.TryGetValue(propertyName, out var oldValue) &&
                 EqualityComparer<T>.Default.Equals((T)oldValue, value))
                 return;
-            if (value != null) _properties[propertyName] = value;
+            _properties[propertyName] = value!;
         }
 
         OnPropertyChanged(propertyName);

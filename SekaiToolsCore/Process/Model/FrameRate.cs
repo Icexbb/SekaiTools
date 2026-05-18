@@ -55,7 +55,7 @@ public class FrameRate
     {
         switch (fps)
         {
-            case < 0:
+            case <= 0:
                 throw new ArgumentOutOfRangeException(nameof(fps), "fps must be greater than 0");
             case >= 1000:
                 throw new ArgumentOutOfRangeException(nameof(fps), "fps must be less than 1000");

@@ -14,7 +14,7 @@ public class AssDraw(params AssDrawPart[] parts) : AssDrawPart("")
         var partsCount = sourceParts.Count(c => c is "m" or "l" or "b");
         var partList = new List<AssDrawPart>();
         for (var i = 0; i < sourceParts.Length; i++)
-            switch (source[i])
+            switch (sourceParts[i][0])
             {
                 case 'm':
                 {

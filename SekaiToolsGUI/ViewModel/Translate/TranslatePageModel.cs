@@ -122,7 +122,7 @@ public class TranslatePageModel : ViewModelBase
                 }
                 case LineEffectModel lineEffectModel:
                 {
-                    if (lineEffectModel.Content.Original == ev.BodyOriginal) continue;
+                    if (lineEffectModel.Content.Original != ev.BodyOriginal) continue;
                     lineEffectModel.Content.Reference = ev.BodyTranslated;
 
                     break;

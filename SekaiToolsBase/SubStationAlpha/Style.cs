@@ -58,7 +58,7 @@ public class Style
     public Style(string source)
     {
         if (!source.StartsWith("Style: ")) throw new Exception("Source Not Start With Marker");
-        var sourcePart = source[^6..].Split(',');
+        var sourcePart = source[6..].Split(',');
         if (sourcePart.Length != 23) throw new Exception("Source Parameter not Enough");
         Name = sourcePart[0];
         _fontName = sourcePart[1];
