@@ -21,7 +21,7 @@ dotnet publish SekaiToolsGUI/SekaiToolsGUI.csproj -c Release -o Build/
 dotnet test SekaiTools.sln
 ```
 
-基于 .NET 8 的 Visual Studio 解决方案，目标平台为 Windows。所有项目通过 `Directory.Build.props` 全局启用可空引用类型。
+基于 .NET 10 的 Visual Studio 解决方案，目标平台为 Windows。所有项目通过 `Directory.Build.props` 全局启用可空引用类型。
 
 ## 架构概览
 
@@ -29,11 +29,11 @@ dotnet test SekaiTools.sln
 
 | 项目 | 目标框架 | 职责 |
 |---------|--------|------|
-| **SekaiToolsBase** | net8.0 | 共享数据模型：游戏剧本解析、ASS 字幕格式、代理/日志 |
-| **SekaiToolsCore** | net8.0-windows | 视频处理引擎：OpenCV 模板匹配 → 帧集合 → ASS 字幕生成 |
-| **SekaiToolsGUI** | net8.0-windows (WPF) | 主桌面应用，使用 WPF-UI，MVVM 导航 |
-| **SekaiDataFetch** | net8.0 | 从远程 API 下载并缓存游戏剧本数据 |
-| **Updater** | net8.0-windows (WPF) | 独立更新程序，随 GUI 发布输出一同打包 |
+| **SekaiToolsBase** | net10.0 | 共享数据模型：游戏剧本解析、ASS 字幕格式、代理/日志 |
+| **SekaiToolsCore** | net10.0-windows | 视频处理引擎：OpenCV 模板匹配 → 帧集合 → ASS 字幕生成 |
+| **SekaiToolsGUI** | net10.0-windows (WPF) | 主桌面应用，使用 WPF-UI 4.3.0，MVVM 导航 |
+| **SekaiDataFetch** | net10.0 | 从远程 API 下载并缓存游戏剧本数据 |
+| **Updater** | net10.0-windows (WPF) | 独立更新程序，PublishSingleFile 打包为单个 exe，放置于 Build 根目录 |
 | **SekaiToolsMauiText** | net10.0-多平台 | 跨平台 MAUI 移植版（独立代码库，仅引用 SekaiToolsBase） |
 
 ### 核心数据流（"自动轴机"管线）
@@ -76,13 +76,24 @@ dotnet test SekaiTools.sln
 
 页面实现 `IAppPage<object>` 接口，通过 `OnNavigatedTo()` 进行初始化。自定义的 `ViewModelBase` 将属性值存储在 `Dictionary<string, object>` 中，而非单独的字段。
 
-### 程序集加载
+### 程序集加载与发布整理
 
-`SekaiToolsGUI` 在 `App.xaml.cs` 中使用自定义 `AssemblyResolve` 处理程序，从 `libs/` 子目录加载 DLL。发布目标会自动将非核心 DLL 移入此目录，并删除 x86/win-arm64/browser 等多余运行时。
+发布时，MSBuild 目标 `OrganizeOutput` 将非核心 DLL（除 `SekaiToolsGUI.dll` 和 `Updater.exe` 外）移至 `libs/` 子目录，并删除 x86/win-arm64/browser 等多余运行时及所有 PDB 文件。
+
+`App.xaml.cs` 中的 `AssemblyResolve` 处理器从 `libs/` 加载被移走的程序集。
+
+`BuildUpdater` 目标将 Updater 以 PublishSingleFile 发布为单个 `Updater.exe`，与 `7zr.exe` 一同复制到 Build 根目录。`LaunchUpdater()` 从 `BaseDirectory` 直接查找 `Updater.exe`（无子文件夹）。
 
 ### 模板资源管理
 
 `SekaiToolsCore.ResourceManager` 从 `resource.g.xbb.moe` 下载外部模板图像资源到 `~/SekaiTools/Resource/`。根据 JSON 清单校验 MD5 和文件大小。
+
+### NuGet 依赖注意事项
+
+- `System.Text.Json` 无需显式 PackageReference — `net10.0` 共享框架已内置
+- `Microsoft.Extensions.*` 系列包版本须与目标框架匹配（当前 10.0.8），不可使用 .NET 11 预览版
+- `System.Drawing.Common` 版本须与目标框架匹配（当前 10.0.8），其传递依赖 `System.Private.Windows.Core` 会要求匹配版本的 `System.Reflection.Metadata`
+- 已移除 `TextCopy`，改用内置 `System.Windows.Clipboard.SetText()`
 
 ## 调试环境变量
 
