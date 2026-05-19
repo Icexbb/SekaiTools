@@ -37,6 +37,4 @@ public partial class App : Application
     {
         Logger.Log($"未观察任务异常: {e.Exception.Message}\n{e.Exception.StackTrace}", LogLevel.Error);
     }
-
-
 }

@@ -20,7 +20,6 @@
         <PackageReference Include="CalcBinding" Version="2.5.2"/>
         <PackageReference Include="Emgu.CV.Wpf" Version="4.13.0.5924" />
         <PackageReference Include="System.Reactive" Version="7.0.0-preview.1" />
-        <PackageReference Include="System.Text.Json" Version="11.0.0-preview.4.26230.115" />
         <PackageReference Include="TextCopy" Version="6.2.1"/>
         <PackageReference Include="WPF-UI" Version="4.3.0" />
     </ItemGroup>
