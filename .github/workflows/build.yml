@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '9.0.x' # The .NET SDK version to use
+  DOTNET_VERSION: '10.0.x' # The .NET SDK version to use
   BUILD_DIR: 'SekaiTools'
   PROJECT_NAME: 'SekaiToolsGUI'
 
@@ -24,9 +24,9 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -39,7 +39,7 @@ jobs:
         run: 7z a SekaiTools-Nightly.7z ${{ env.BUILD_DIR }}/*
 
       - name: Create Release and Upload Release Asset
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: SekaiTools-Nightly
           path: ${{ env.BUILD_DIR }}
