@@ -18,10 +18,10 @@
 
     <ItemGroup>
         <PackageReference Include="CalcBinding" Version="2.5.2"/>
-        <PackageReference Include="Emgu.CV.Wpf" Version="4.13.0.5924" />
-        <PackageReference Include="System.Reactive" Version="7.0.0-preview.1" />
-        <PackageReference Include="TextCopy" Version="6.2.1"/>
-        <PackageReference Include="WPF-UI" Version="4.3.0" />
+        <PackageReference Include="Emgu.CV.Wpf" Version="4.13.0.5924"/>
+        <PackageReference Include="System.Reactive" Version="7.0.0-preview.1"/>
+
+        <PackageReference Include="WPF-UI" Version="4.3.0"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -219,15 +219,15 @@
 
         <MSBuild Projects="..\Updater\Updater.csproj"
                  Targets="Publish"
-                 Properties="Configuration=$(Configuration);PublishDir=..\Updater\build\;"/>
+                 Properties="Configuration=$(Configuration);PublishDir=..\Updater\build\;PublishSingleFile=true"/>
 
-        <!-- 将 Updater 及其依赖复制到主程序发布目录的 Updater 子文件夹 -->
+        <!-- 将 Updater 单文件可执行文件复制到主程序发布目录 -->
         <ItemGroup>
-            <UpdaterFiles Include="..\Updater\build\**\*"/>
+            <UpdaterFiles Include="..\Updater\build\Updater.exe"/>
             <UpdaterFiles Include="..\Updater\7zr.exe"/>
         </ItemGroup>
         <Copy SourceFiles="@(UpdaterFiles)"
-              DestinationFolder="$(OutputDir)Updater\%(RecursiveDir)"/>
+              DestinationFolder="$(OutputDir)"/>
 
         <Message Text="Updater 构建完成" Importance="high"/>
     </Target>
@@ -254,7 +254,7 @@
             <AllDlls Include="$(OutputDir)*.dll"/>
             <!-- 排除不需要移动的 DLL -->
             <KeepDlls Include="$(OutputDir)SekaiToolsGUI.dll"/>
-            <KeepDlls Include="$(OutputDir)Updater.dll"/>
+            <KeepDlls Include="$(OutputDir)Updater.exe"/>
             <!--            <KeepDlls Include="$(OutputDir)*_cor3.dll"/>-->
             <BuildDlls Include="@(AllDlls)" Exclude="@(KeepDlls)"/>
         </ItemGroup>

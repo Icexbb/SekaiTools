@@ -207,7 +207,7 @@ partial class MainWindow
 
     private static void LaunchUpdater()
     {
-        var updaterPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Updater", "Updater.exe");
+        var updaterPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Updater.exe");
         if (File.Exists(updaterPath))
             Process.Start(new ProcessStartInfo
             {

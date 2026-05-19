@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using SekaiToolsGUI.ViewModel.Setting;
-using TextCopy;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Input;
@@ -66,7 +65,7 @@ public partial class TranslateFastCopy : UserControl
         try
         {
             if (sender is not Button button) return;
-            ClipboardService.SetText(button.Content.ToString()!);
+            Clipboard.SetText(button.Content.ToString()!);
             SnackService.Show("成功", $"已复制 {button.Content} 到剪贴板", ControlAppearance.Success,
                 new SymbolIcon(SymbolRegular.TextGrammarCheckmark24), new TimeSpan(0, 0, 2));
         }

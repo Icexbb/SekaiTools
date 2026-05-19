@@ -41,8 +41,13 @@ public partial class MainWindow : Window
         {
             _proxyConfig = LoadProxySettings();
         }
-        catch (FileNotFoundException) { }
-        catch (DirectoryNotFoundException) { }
+        catch (FileNotFoundException)
+        {
+        }
+        catch (DirectoryNotFoundException)
+        {
+        }
+
         return _proxyConfig ??= new ProxyConfig(0, "127.0.0.1", 1080);
     }
 
@@ -63,13 +68,13 @@ public partial class MainWindow : Window
         var config = GetProxyConfig();
         HttpMessageHandler handler = config.Type switch
         {
-            0 => new HttpClientHandler(),                         // None
-            1 => new HttpClientHandler                            // HTTP
+            0 => new HttpClientHandler(), // None
+            1 => new HttpClientHandler // HTTP
             {
                 Proxy = new WebProxy(new Uri($"http://{config.Host}:{config.Port}")),
                 UseProxy = true
             },
-            2 => new SocketsHttpHandler                           // Socks5 → HTTP CONNECT (WebProxy 不支持真正的 SOCKS5)
+            2 => new SocketsHttpHandler // Socks5 → HTTP CONNECT (WebProxy 不支持真正的 SOCKS5)
             {
                 Proxy = new WebProxy(new Uri($"http://{config.Host}:{config.Port}")),
                 UseProxy = true
@@ -180,6 +185,7 @@ public partial class MainWindow : Window
                 // 防病毒软件等锁定的文件，同样由批处理脚本替换
             }
         }
+
         foreach (var dir in Directory.GetDirectories(source))
         {
             var dirName = Path.GetFileName(dir);
@@ -199,7 +205,7 @@ public partial class MainWindow : Window
             $"if not errorlevel 1 (\r\n" +
             $"    timeout /t 1 /nobreak > nul\r\n" +
             $"    goto wait\r\n" +
- $")\r\n" +
+            $")\r\n" +
             $"xcopy /y /e /q \"{tempDir}\\SekaiTools\\*\" \"{AppDomain.CurrentDomain.BaseDirectory}\" > nul\r\n" +
             $"rmdir /s /q \"{tempDir}\"\r\n" +
             $"start \"\" \"{MainAppPath}\"\r\n" +
@@ -277,7 +283,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            TextCopy.ClipboardService.SetText(_errorText ?? StatusText.Text);
+            Clipboard.SetText(_errorText ?? StatusText.Text);
             CopyButton.Content = "已复制";
         }
         catch
