@@ -95,6 +95,14 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
         return dialogResult != ContentDialogResult.Primary ? "" : dialog.FontName;
     }
 
+    private void ProxyPort_ValueChanged(object sender, RoutedEventArgs e)
+    {
+        if (sender is Wpf.Ui.Controls.NumberBox numberBox)
+        {
+            numberBox.GetBindingExpression(Wpf.Ui.Controls.NumberBox.ValueProperty)?.UpdateSource();
+        }
+    }
+
     private void ResetToDefault_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.ResetSetting();
