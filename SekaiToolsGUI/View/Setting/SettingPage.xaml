@@ -72,7 +72,8 @@
                             <ui:NumberBox Width="150" Maximum="65536" Minimum="0"
                                           Visibility="{Binding ProxyChangeable}"
                                           Value="{Binding ProxyPort,Mode=TwoWay}"
-                                          ClearButtonEnabled="False" />
+                                          ClearButtonEnabled="False"
+                                          ValueChanged="ProxyPort_ValueChanged" />
                         </StackPanel>
                     </ui:CardControl.Content>
                 </ui:CardControl>
