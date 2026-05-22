@@ -116,15 +116,16 @@ public static class TemplateMatcher
         if (!areas.Contains(memberName))
             return;
 
-        var show = img.Clone()!;
+        using var show = img.Clone()!;
         CvInvoke.PutText(show, $"MaxVal: {maxVal:0.00}", maxLoc with { Y = maxLoc.Y - 5 },
             FontFace.HersheySimplex, 0.4, new MCvScalar(255));
         CvInvoke.Rectangle(show, new Rectangle(maxLoc, tmp.Size), new MCvScalar(255), 2);
 
 
-        var tempGray = tmp.Gray.Clone();
-        var tempAlpha = tmp.Alpha.Clone();
-        var temp = new Mat(tempAlpha.Rows + tempGray.Rows, tempGray.Cols, tempGray.Depth, tempGray.NumberOfChannels);
+        using var tempGray = tmp.Gray.Clone();
+        using var tempAlpha = tmp.Alpha.Clone();
+        using var temp = new Mat(tempAlpha.Rows + tempGray.Rows, tempGray.Cols, tempGray.Depth,
+            tempGray.NumberOfChannels);
         CvInvoke.VConcat(new VectorOfMat(tempGray, tempAlpha), temp);
         if (temp.Height > show.Height)
         {
@@ -140,10 +141,7 @@ public static class TemplateMatcher
         }
 
         CvInvoke.HConcat(new VectorOfMat(show, temp), show);
-        tempGray.Dispose();
-        tempAlpha.Dispose();
-        temp.Dispose();
-        show.Dispose();
+
 
         // var emptyMat = new Mat(show.Rows - tempGray.Rows, tempGray.Cols, tempGray.Depth, tempGray.NumberOfChannels);
         // emptyMat.SetTo(new MCvScalar(0));
