@@ -3,6 +3,7 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiToolsBase;
+using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
@@ -174,5 +175,42 @@ public class MarkerTemplateMatcher(
     {
         public readonly Point Point = point;
         public readonly MatchStatus Status = status;
+    }
+
+    public MarkerMatcherStateDto SaveState()
+    {
+        return new MarkerMatcherStateDto
+        {
+            Status = (int)_status,
+            ConsecutiveFailures = _consecutiveFailures,
+            LastFailedIndex = _lastFailedIndex,
+            UseFallbackThreshold = _useFallbackThreshold,
+            FrameSets = Set.Select(m => new MarkerFrameSetDto
+            {
+                Finished = m.Finished,
+                Frames = m.Frames.Select(f => new FrameResultDto(f.Index, f.Point.X, f.Point.Y)).ToList()
+            }).ToList()
+        };
+    }
+
+    public void RestoreState(MarkerMatcherStateDto state)
+    {
+        _status = (MatchStatus)state.Status;
+        _consecutiveFailures = state.ConsecutiveFailures;
+        _lastFailedIndex = state.LastFailedIndex;
+        _useFallbackThreshold = state.UseFallbackThreshold;
+
+        for (var i = 0; i < state.FrameSets.Count && i < Set.Count; i++)
+        {
+            var src = state.FrameSets[i];
+            var dst = Set[i];
+            dst.Finished = src.Finished;
+            dst.Frames.Clear();
+            foreach (var f in src.Frames)
+                dst.Frames.Add(new MarkerFrameResult(f.Index, dst.Fps, new Point(f.X, f.Y)));
+        }
+
+        _firstUnfinishedIndex = 0;
+        AdvanceFirstUnfinished();
     }
 }

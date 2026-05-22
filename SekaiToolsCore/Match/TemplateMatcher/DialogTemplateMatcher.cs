@@ -3,6 +3,7 @@ using Emgu.CV;
 using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiToolsBase;
 using SekaiToolsBase.Story;
+using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
@@ -359,5 +360,53 @@ public class DialogTemplateMatcher(
     {
         public readonly Point Point = point;
         public readonly MatchStatus Status = status;
+    }
+
+    public DialogMatcherStateDto SaveState()
+    {
+        return new DialogMatcherStateDto
+        {
+            Status = (int)_status,
+            ConsecutiveFailures = _consecutiveFailures,
+            LastFailedIndex = _lastFailedIndex,
+            UseFallbackThreshold = _useFallbackThreshold,
+            NameTagPosition = _nameTagPosition.IsEmpty
+                ? null
+                : new PointDto(_nameTagPosition.X, _nameTagPosition.Y),
+            FrameSets = Set.Select(d => new DialogFrameSetDto
+            {
+                Finished = d.Finished,
+                UseSeparator = d.UseSeparator,
+                SeparateFrame = d.Separate.SeparateFrame,
+                SeparatorContentIndex = d.Separate.SeparatorContentIndex,
+                Frames = d.Frames.Select(f => new FrameResultDto(f.Index, f.Point.X, f.Point.Y)).ToList()
+            }).ToList()
+        };
+    }
+
+    public void RestoreState(DialogMatcherStateDto state)
+    {
+        _status = (MatchStatus)state.Status;
+        _consecutiveFailures = state.ConsecutiveFailures;
+        _lastFailedIndex = state.LastFailedIndex;
+        _useFallbackThreshold = state.UseFallbackThreshold;
+        _nameTagPosition = state.NameTagPosition is { } p
+            ? new Point(p.X, p.Y)
+            : Point.Empty;
+
+        for (var i = 0; i < state.FrameSets.Count && i < Set.Count; i++)
+        {
+            var src = state.FrameSets[i];
+            var dst = Set[i];
+            dst.Finished = src.Finished;
+            dst.UseSeparator = src.UseSeparator;
+            dst.SetSeparator(src.SeparateFrame, src.SeparatorContentIndex);
+            dst.Frames.Clear();
+            foreach (var f in src.Frames)
+                dst.Frames.Add(new DialogFrameResult(f.Index, dst.Fps, new Point(f.X, f.Y)));
+        }
+
+        _firstUnfinishedIndex = 0;
+        AdvanceFirstUnfinished();
     }
 }

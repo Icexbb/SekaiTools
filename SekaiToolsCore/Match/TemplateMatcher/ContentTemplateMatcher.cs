@@ -39,4 +39,9 @@ public class ContentTemplateMatcher(TemplateManager templateManager, Config conf
     {
         if (MatchContentStartSign(mat)) Finished = true;
     }
+
+    public void ForceFinish()
+    {
+        Finished = true;
+    }
 }

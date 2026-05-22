@@ -17,6 +17,12 @@ public class BannerBaseFrameSet(BannerStoryEvent data, FrameRate fps) : BaseFram
         if (_end < index) _end = index;
     }
 
+    public void SetFrameRange(int start, int end)
+    {
+        _start = start;
+        _end = end;
+    }
+
     public override bool IsEmpty()
     {
         return _start == int.MaxValue && _end == int.MinValue;

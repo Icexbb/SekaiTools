@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SekaiToolsBase;
 using SekaiToolsCore;
+using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Utils;
@@ -120,6 +121,46 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
         }
     }
 
+    private async Task CheckSavedProgressOnStartup()
+    {
+        var progressFiles = ProgressStore.EnumerateProgressFiles();
+        foreach (var (saveKey, state) in progressFiles)
+        {
+            if (string.IsNullOrEmpty(state.VideoFilePath) ||
+                string.IsNullOrEmpty(state.ScriptFilePath) ||
+                string.IsNullOrEmpty(state.TranslateFilePath))
+                continue;
+            if (!File.Exists(state.VideoFilePath) ||
+                !File.Exists(state.ScriptFilePath) ||
+                !File.Exists(state.TranslateFilePath))
+                continue;
+
+            var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+            var result = await dialogService.ShowSimpleDialogAsync(
+                new SimpleContentDialogCreateOptions
+                {
+                    Title = "恢复进度",
+                    Content = "检测到未完成的处理进度，是否继续？",
+                    PrimaryButtonText = "继续",
+                    CloseButtonText = "重新开始"
+                }, CancellationToken);
+
+            if (result == ContentDialogResult.Primary)
+            {
+                ViewModel.VideoFilePath = state.VideoFilePath;
+                ViewModel.ScriptFilePath = state.ScriptFilePath;
+                ViewModel.TranslateFilePath = state.TranslateFilePath;
+                StartProcess(saveKey, state);
+            }
+            else
+            {
+                ProgressStore.Delete(saveKey);
+            }
+
+            return;
+        }
+    }
+
 
     private async void VideoFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
@@ -166,7 +207,14 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     {
         try
         {
-            if (CheckConfig()) StartProcess();
+            if (!CheckConfig()) return;
+
+            var saveKey = ProgressStore.GetSaveKey(
+                ViewModel.VideoFilePath,
+                ViewModel.ScriptFilePath,
+                ViewModel.TranslateFilePath);
+
+            StartProcess(saveKey, null);
         }
         catch (Exception ex)
         {
@@ -299,6 +347,9 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
 
             await File.WriteAllTextAsync(fileName, subtitle.ToString(), Encoding.UTF8, token);
 
+            ProgressStore.Delete(ProgressStore.GetSaveKey(
+                ViewModel.VideoFilePath, ViewModel.ScriptFilePath, ViewModel.TranslateFilePath));
+
             SnackService.Show("成功", "字幕文件已保存", ControlAppearance.Success,
                 new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
             ExplorerHelper.OpenFolderAndFocus(fileName);
@@ -385,18 +436,25 @@ public partial class SubtitlePage
     {
         try
         {
-            if (await ResourceManager.Instance.CheckResource(ResourceType.VideoProcess)) return;
-            var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-            var dialog = new RefreshWaitDialog("正在刷新下载源数据");
-            var source = new CancellationTokenSource();
-            _ = dialogService.ShowAsync(dialog, source.Token);
-            await ResourceManager.Instance.EnsureResource(ResourceType.VideoProcess);
-            await source.CancelAsync();
+            await CheckResource();
+            await CheckSavedProgressOnStartup();
         }
         catch (Exception e)
         {
             (Application.Current.MainWindow as MainWindow)?.OnCheckResourceFailed(e, OnNavigatedTo);
         }
+    }
+
+    private async Task CheckResource()
+    {
+        if (await ResourceManager.Instance.CheckResource(ResourceType.VideoProcess)) return;
+
+        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+        var dialog = new RefreshWaitDialog("正在刷新下载源数据");
+        var source = new CancellationTokenSource();
+        _ = dialogService.ShowAsync(dialog, source.Token);
+        await ResourceManager.Instance.EnsureResource(ResourceType.VideoProcess);
+        await source.CancelAsync();
     }
 
     private void StopProcess()
@@ -472,7 +530,34 @@ public partial class SubtitlePage
         return JsonSerializer.Deserialize<MatchingThreshold>(json);
     }
 
-    private void StartProcess()
+    private async Task ShowResumeDialogAsync(string saveKey)
+    {
+        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+        var result = await dialogService.ShowSimpleDialogAsync(
+            new SimpleContentDialogCreateOptions
+            {
+                Title = "恢复进度",
+                Content = "检测到未完成的处理进度，是否继续？",
+                PrimaryButtonText = "继续",
+                CloseButtonText = "重新开始"
+            }, CancellationToken);
+
+        ProcessingState? resumeState = null;
+        if (result == ContentDialogResult.Primary)
+        {
+            resumeState = ProgressStore.Load(saveKey);
+            if (resumeState == null)
+                ProgressStore.Delete(saveKey);
+        }
+        else
+        {
+            ProgressStore.Delete(saveKey);
+        }
+
+        StartProcess(saveKey, resumeState);
+    }
+
+    private void StartProcess(string saveKey, ProcessingState? resumeState)
     {
         var settings = SettingPageModel.Instance;
 
@@ -576,6 +661,17 @@ public partial class SubtitlePage
                     OnFps = OnFpsChanged
                 }
             );
+
+            if (resumeState != null)
+            {
+                VideoProcessor.ApplyState(resumeState);
+                VideoProcessor.ReplayFinishedCallbacks(
+                    LinePanel_AddDialogLine,
+                    LinePanel_AddBannerLine,
+                    LinePanel_AddMarkerLine);
+            }
+
+            VideoProcessor.EnableProgressSaving(saveKey);
             VideoProcessor.StartProcess();
         }
         catch (Exception ex)

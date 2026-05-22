@@ -8,6 +8,7 @@ using SekaiToolsBase.Story;
 using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsBase.SubStationAlpha;
 using SekaiToolsCore.Match.TemplateMatcher;
+using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Utils;
@@ -63,11 +64,23 @@ public class VideoProcessor
     private long _lastFpsCallbackTime;
     private const long CallbackThrottleMs = 200;
 
+    // 进度保存
+    private string? _saveKey;
+    private int _saveInterval = 300;
+    private int _framesSinceLastSave;
+    private bool _frameSetJustCompleted;
+    private readonly string _videoPath;
+    private readonly string _scriptPath;
+    private readonly string _translatePath;
+
     // 处理结果
     public ProcessStopReason StopReason { get; private set; } = ProcessStopReason.None;
 
     public VideoProcessor(Config config, VideoProcessCallbacks callbacks)
     {
+        _videoPath = config.VideoFilePath;
+        _scriptPath = config.ScriptFilePath;
+        _translatePath = config.TranslateFilePath;
         Creator = new TemplateMatcherCreator(config);
         Capture = new VideoCapture(config.VideoFilePath);
         DialogMatcher = Creator.DialogMatcher();
@@ -108,6 +121,67 @@ public class VideoProcessor
         if (Creator == null) throw new NullReferenceException();
         var maker = Creator.SubtitleMaker();
         return maker.Make(dialogFrameSets, bannerFrameSets, markerFrameSets);
+    }
+
+    public void EnableProgressSaving(string saveKey)
+    {
+        _saveKey = saveKey;
+    }
+
+    public ProcessingState CaptureState()
+    {
+        return new ProcessingState
+        {
+            Version = "1.0",
+            FrameIndex = GetCurrentFrameIndex(),
+            ContentFinished = ContentMatcher?.Finished ?? false,
+            VideoFilePath = _videoPath,
+            ScriptFilePath = _scriptPath,
+            TranslateFilePath = _translatePath,
+            Dialog = DialogMatcher?.SaveState(),
+            Banner = BannerMatcher?.SaveState(),
+            Marker = MarkerMatcher?.SaveState()
+        };
+    }
+
+    public void ApplyState(ProcessingState state)
+    {
+        if (Capture != null && Capture.Ptr != IntPtr.Zero)
+            Capture.Set(CapProp.PosFrames, state.FrameIndex);
+
+        if (state.ContentFinished)
+            ContentMatcher?.ForceFinish();
+
+        if (state.Dialog != null)
+            DialogMatcher?.RestoreState(state.Dialog);
+        if (state.Banner != null)
+            BannerMatcher?.RestoreState(state.Banner);
+        if (state.Marker != null)
+            MarkerMatcher?.RestoreState(state.Marker);
+
+        _framesSinceLastSave = 0;
+    }
+
+    public void ReplayFinishedCallbacks(
+        Action<DialogBaseFrameSet> onDialog,
+        Action<BannerBaseFrameSet> onBanner,
+        Action<MarkerBaseFrameSet> onMarker)
+    {
+        if (DialogMatcher != null)
+            foreach (var d in DialogMatcher.Set.Where(d => d.Finished))
+                onDialog(d);
+        if (BannerMatcher != null)
+            foreach (var b in BannerMatcher.Set.Where(b => b.Finished))
+                onBanner(b);
+        if (MarkerMatcher != null)
+            foreach (var m in MarkerMatcher.Set.Where(m => m.Finished))
+                onMarker(m);
+    }
+
+    private int GetCurrentFrameIndex()
+    {
+        if (Capture == null || Capture.Ptr == IntPtr.Zero) return 0;
+        return (int)Capture.Get(CapProp.PosFrames);
     }
 
     public void StartProcess()
@@ -250,7 +324,11 @@ public class VideoProcessor
                     var dialogIndex = DialogMatcher.LastNotProcessedIndex();
                     var r = DialogMatcher.Process(frame, frameIndex);
                     matchBannerNow = !r;
-                    if (DialogMatcher.Set[dialogIndex].Finished) Callbacks.OnNewDialog(DialogMatcher.Set[dialogIndex]);
+                    if (DialogMatcher.Set[dialogIndex].Finished)
+                    {
+                        Callbacks.OnNewDialog(DialogMatcher.Set[dialogIndex]);
+                        _frameSetJustCompleted = true;
+                    }
                 }
                 else if (BannerMatcher is { Finished: true } && MarkerMatcher is { Finished: true })
                 {
@@ -261,18 +339,29 @@ public class VideoProcessor
                 {
                     var bannerIndex = BannerMatcher.LastNotProcessedIndex();
                     BannerMatcher.Process(frame, frameIndex);
-                    if (BannerMatcher.Set[bannerIndex].Finished) Callbacks.OnNewBanner(BannerMatcher.Set[bannerIndex]);
+                    if (BannerMatcher.Set[bannerIndex].Finished)
+                    {
+                        Callbacks.OnNewBanner(BannerMatcher.Set[bannerIndex]);
+                        _frameSetJustCompleted = true;
+                    }
                 }
 
                 if (MarkerMatcher is { Finished: false } && MatchMarkerNow())
                 {
                     var markerIndex = MarkerMatcher.LastNotProcessedIndex();
                     MarkerMatcher.Process(frame, frameIndex);
-                    if (MarkerMatcher.Set[markerIndex].Finished) Callbacks.OnNewMarker(MarkerMatcher.Set[markerIndex]);
+                    if (MarkerMatcher.Set[markerIndex].Finished)
+                    {
+                        Callbacks.OnNewMarker(MarkerMatcher.Set[markerIndex]);
+                        _frameSetJustCompleted = true;
+                    }
                 }
 
                 // 清空异常计数（处理成功）
                 _consecutiveExceptionCount = 0;
+
+                // 定期保存进度
+                TrySaveProgress();
             }
             catch (OperationCanceledException)
             {
@@ -324,7 +413,23 @@ public class VideoProcessor
             StopReason = ProcessStopReason.Completed;
 
         Logger.Log($"视频处理结束: {StopReason}, 当前帧={frameIndex}, 总帧={frameCount}", ExtLogLevel.Information);
+
         return;
+
+        void TrySaveProgress()
+        {
+            if (_saveKey == null) return;
+            _framesSinceLastSave++;
+
+            if (_framesSinceLastSave >= _saveInterval || _frameSetJustCompleted)
+            {
+                _framesSinceLastSave = 0;
+                _frameSetJustCompleted = false;
+                var snapshot = CaptureState();
+                var key = _saveKey;
+                Task.Run(() => ProgressStore.Save(key, snapshot));
+            }
+        }
 
         bool MatchMarkerNow()
         {

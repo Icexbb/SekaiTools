@@ -160,4 +160,41 @@ public class BannerTemplateMatcher(
         Matched,
         Dropped
     }
+
+    public BannerMatcherStateDto SaveState()
+    {
+        return new BannerMatcherStateDto
+        {
+            Status = (int)_status,
+            ConsecutiveFailures = _consecutiveFailures,
+            LastFailedIndex = _lastFailedIndex,
+            UseFallbackThreshold = _useFallbackThreshold,
+            FrameSets = Set.Select(b => new BannerFrameSetDto
+            {
+                Finished = b.Finished,
+                Start = b.IsEmpty() ? -1 : b.StartIndex(),
+                End = b.IsEmpty() ? -1 : b.EndIndex()
+            }).ToList()
+        };
+    }
+
+    public void RestoreState(BannerMatcherStateDto state)
+    {
+        _status = (MatchStatus)state.Status;
+        _consecutiveFailures = state.ConsecutiveFailures;
+        _lastFailedIndex = state.LastFailedIndex;
+        _useFallbackThreshold = state.UseFallbackThreshold;
+
+        for (var i = 0; i < state.FrameSets.Count && i < Set.Count; i++)
+        {
+            var src = state.FrameSets[i];
+            var dst = Set[i];
+            dst.Finished = src.Finished;
+            if (src.Start >= 0 && src.End >= 0)
+                dst.SetFrameRange(src.Start, src.End);
+        }
+
+        _firstUnfinishedIndex = 0;
+        AdvanceFirstUnfinished();
+    }
 }
