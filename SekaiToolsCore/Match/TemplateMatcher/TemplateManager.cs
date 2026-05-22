@@ -1,9 +1,9 @@
 using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Text;
+using System.Runtime.InteropServices;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using SkiaSharp;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
@@ -24,6 +24,8 @@ public class TemplateManager(Size videoResolution, bool noScale = false)
     private readonly Dictionary<TemplateUsage, Dictionary<string, Mat>?> _template = new();
 
     private Mat? _menuSign;
+    private SKTypeface? _dbTypeface;
+    private SKTypeface? _ebTypeface;
 
     public Mat GetMenuSign()
     {
@@ -34,7 +36,6 @@ public class TemplateManager(Size videoResolution, bool noScale = false)
         var menuSize = GetMenuSignSize(videoResolution);
 
         CvInvoke.Resize(menuTemplate, menuTemplate, new Size(menuSize, menuSize));
-        // var result = new TemplateGrayAlpha(menuTemplate, false);
         _menuSign = menuTemplate;
         return menuTemplate;
     }
@@ -75,139 +76,116 @@ public class TemplateManager(Size videoResolution, bool noScale = false)
 
     private static Mat CropZero(Mat mat)
     {
-        var temp = new Mat();
+        using var temp = new Mat();
         CvInvoke.CvtColor(mat, temp, ColorConversion.Bgr2Gray);
         CvInvoke.Threshold(temp, temp, 1, 255, ThresholdType.Binary);
         var rect = CvInvoke.BoundingRectangle(temp);
         return new Mat(mat, rect);
     }
 
-    private static Font GetFont(string fontFilePath, float fontSize)
+    private static SKFont CreateFont(string fontFilePath, float fontSize)
     {
-        var collection = new PrivateFontCollection();
-        collection.AddFontFile(fontFilePath);
-        var result = new Font(collection.Families[0], fontSize, FontStyle.Regular, GraphicsUnit.Pixel);
-        return result;
+        var typeface = SKTypeface.FromFile(fontFilePath)
+                       ?? throw new FileNotFoundException($"Font not found: {fontFilePath}");
+        return new SKFont(typeface, fontSize);
     }
 
-    private Font GetDbFont()
+    private SKFont GetDbFont()
     {
-        var fontFilePath = ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, DbFontBase);
-        return GetFont(fontFilePath, GetFontSize(0.925));
+        _dbTypeface ??= SKTypeface.FromFile(
+            ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, DbFontBase));
+        if (_dbTypeface == null) throw new FileNotFoundException($"Font not found: {DbFontBase}");
+        return new SKFont(_dbTypeface, GetFontSize(0.95f));
     }
 
-    private Font GetEbFont()
+    private SKFont GetEbFont()
     {
-        var fontFilePath = ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, EbFontBase);
-        return GetFont(fontFilePath, GetFontSize(0.95));
+        _ebTypeface ??= SKTypeface.FromFile(
+            ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, EbFontBase));
+        if (_ebTypeface == null) throw new FileNotFoundException($"Font not found: {EbFontBase}");
+        return new SKFont(_ebTypeface, GetFontSize(0.95f));
+    }
+
+    private static Mat SkBitmapToMat(SKBitmap bitmap)
+    {
+        var mat = new Mat(bitmap.Height, bitmap.Width, DepthType.Cv8U, 4);
+        var pixels = bitmap.GetPixelSpan().ToArray();
+        Marshal.Copy(pixels, 0, mat.DataPointer, pixels.Length);
+        return mat;
     }
 
     private Mat CreateImageWithText(TemplateUsage usage, string text)
     {
-        var font = usage switch
+        using var font = usage switch
         {
             TemplateUsage.DialogNameTag => GetEbFont(),
             TemplateUsage.DialogContent or TemplateUsage.BannerContent or TemplateUsage.MarkerContent => GetDbFont(),
             _ => throw new ArgumentOutOfRangeException(nameof(usage), usage, null)
         };
+        font.Edging = SKFontEdging.SubpixelAntialias;
 
-        using var bitmap = new Bitmap((int)(text.Length * font.Size * 2), (int)font.Size * 2);
-        bitmap.MakeTransparent();
-        using var graphics = Graphics.FromImage(bitmap);
-        graphics.SmoothingMode = SmoothingMode.HighQuality;
+        var fontSize = font.Size;
+        var width = (int)(text.Length * fontSize * 2);
+        var height = (int)(fontSize * 2);
 
-        Action<GraphicsPath> drawStroke;
-        Action<GraphicsPath> drawText;
+        using var bitmap = new SKBitmap(width, height, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Transparent);
 
+        var metrics = font.Metrics;
+        float textX = 10f;
+        float textY = 10f - metrics.Ascent;
+
+        const int fillGray = 255;
+        var fillColor = new SKColor(fillGray, fillGray, fillGray);
+        using var fillPaint = new SKPaint();
+        fillPaint.Color = fillColor;
+        fillPaint.IsAntialias = true;
+        fillPaint.Style = SKPaintStyle.Fill;
+
+        const int strokeGray = 80;
+
+        using var strokePaint = new SKPaint();
+        strokePaint.Color = new SKColor(strokeGray, strokeGray, strokeGray);
+        strokePaint.IsAntialias = true;
+        strokePaint.Style = SKPaintStyle.Stroke;
+        strokePaint.StrokeWidth = fontSize / 5f;
+        strokePaint.StrokeJoin = SKStrokeJoin.Round;
 
         switch (usage)
         {
             case TemplateUsage.BannerContent:
-            {
-                const int fillScale = 235;
-                var fillColor = Color.FromArgb(255, fillScale, fillScale, fillScale);
-                drawText = path =>
-                {
-                    using Brush brush = new SolidBrush(fillColor);
-                    graphics.FillPath(brush, path);
-                };
-
-                using GraphicsPath path = new();
-
-                path.AddString(text, font.FontFamily, (int)font.Style, font.Size, new Point(10, 10),
-                    new StringFormat(StringFormatFlags.FitBlackBox)
-                );
-                drawText(path);
-                var mat = CropZero(bitmap.ToMat());
-
-                var extendPixel = (int)(font.Size / 16f);
-                var extendSize = new Size(mat.Width + extendPixel * 2, mat.Height + extendPixel * 2);
-                var expandedMat = new Mat(extendSize, mat.Depth, mat.NumberOfChannels);
-                const int bannerGrayScale = 80;
-                mat.CopyTo(new Mat(expandedMat, new Rectangle(extendPixel, extendPixel, mat.Width, mat.Height)));
-
-                using var bgMat = new Mat(expandedMat.Size, expandedMat.Depth, expandedMat.NumberOfChannels);
-                bgMat.SetTo(new MCvScalar(bannerGrayScale, bannerGrayScale, bannerGrayScale, 255));
-                CvInvoke.BitwiseOr(bgMat, expandedMat, expandedMat);
-                mat.Dispose();
-                return expandedMat;
-            }
+                break;
             case TemplateUsage.DialogNameTag:
-            {
-                const int fillScale = 235;
-                var fillColor = Color.FromArgb(255, fillScale, fillScale, fillScale);
-                const int grayScale = 64;
-                var strokeColor = Color.FromArgb(255, grayScale, grayScale, grayScale);
-                drawStroke = path =>
-                {
-                    var width = font.Size / 5f;
-                    using Pen pen = new(strokeColor, width);
-                    pen.LineJoin = LineJoin.Round;
-                    graphics.DrawPath(pen, path);
-                };
-
-                drawText = path =>
-                {
-                    using Brush brush = new SolidBrush(fillColor);
-                    graphics.FillPath(brush, path);
-                };
-                using GraphicsPath path = new();
-                path.AddString(text, font.FontFamily, (int)font.Style, font.Size, new Point(10, 10),
-                    new StringFormat());
-                drawStroke(path);
-                drawText(path);
-                return CropZero(bitmap.ToMat());
-            }
+            case TemplateUsage.DialogContent:
+            case TemplateUsage.MarkerContent:
+                canvas.DrawText(text, textX, textY, font, strokePaint);
+                break;
             default:
-            {
-                const int fillScale = 235;
-                var fillColor = Color.FromArgb(255, fillScale, fillScale, fillScale);
-                const int grayScale = 64;
-                var strokeColor = Color.FromArgb(255, grayScale, grayScale, grayScale);
-                drawStroke = path =>
-                {
-                    var width = font.Size / 5f;
-                    using Pen pen = new(strokeColor, width);
-                    pen.LineJoin = LineJoin.Round;
-                    graphics.DrawPath(pen, path);
-                };
-
-                drawText = path =>
-                {
-                    using Brush brush = new SolidBrush(fillColor);
-                    graphics.FillPath(brush, path);
-                };
-
-                using GraphicsPath path = new();
-                path.AddString(text, font.FontFamily, (int)font.Style, font.Size, new Point(10, 10),
-                    new StringFormat());
-                drawStroke(path);
-                drawText(path);
-                return CropZero(bitmap.ToMat());
-            }
+                throw new ArgumentOutOfRangeException(nameof(usage), usage, null);
         }
-    }
 
+        canvas.DrawText(text, textX, textY, font, fillPaint);
+
+        canvas.Flush();
+
+        using var mat = SkBitmapToMat(bitmap);
+        var cropped = CropZero(mat);
+
+        if (usage != TemplateUsage.BannerContent) return cropped;
+
+        var extendPixel = (int)(fontSize / 16f);
+        var extendSize = new Size(cropped.Width + extendPixel * 2, cropped.Height + extendPixel * 2);
+        var expandedMat = new Mat(extendSize, cropped.Depth, cropped.NumberOfChannels);
+        const int bannerGrayScale = 80;
+        cropped.CopyTo(new Mat(expandedMat, new Rectangle(extendPixel, extendPixel, cropped.Width, cropped.Height)));
+
+        using var bgMat = new Mat(expandedMat.Size, expandedMat.Depth, expandedMat.NumberOfChannels);
+        bgMat.SetTo(new MCvScalar(bannerGrayScale, bannerGrayScale, bannerGrayScale, 255));
+        CvInvoke.BitwiseOr(bgMat, expandedMat, expandedMat);
+        cropped.Dispose();
+        return expandedMat;
+    }
 
     public Mat GetTemplate(TemplateUsage usage, string text)
     {

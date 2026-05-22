@@ -75,13 +75,14 @@ public class DialogTemplateMatcher(
             var dialogAreaSize = GetDialogAreaSize();
             var rect = new Rectangle
             {
-                X = (videoInfo.Resolution.Width - dialogAreaSize.Width) / 2,
-                Y = (videoInfo.Resolution.Height - dialogAreaSize.Height - (int)(ntt.Height * 1.1)) / 1,
-                Height = (int)(ntt.Height * 1.8),
-                Width = (int)(ntt.Width + ntt.Height * 1.8)
+                X = (videoInfo.Resolution.Width - dialogAreaSize.Width - (int)(ntt.Height * 1f)) / 2,
+                Y = (videoInfo.Resolution.Height - dialogAreaSize.Height - (int)(ntt.Height * 1.3f)) / 1,
+                Height = (int)(ntt.Height * 2f),
+                Width = (int)(ntt.Width * 2f)
             };
+            rect.Extend(0.5);
             if (dialogBase.Data.Shake)
-                rect.Extend(0.6);
+                rect.Extend(0.5);
 
             rect.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
             return rect;
@@ -180,13 +181,14 @@ public class DialogTemplateMatcher(
         {
             var offset = TemplateManager.GetFontSize(src.Size);
             Rectangle dialogStartPosition = new(
-                point.X + (int)(0.1 * offset),
-                point.Y + (int)(1.1 * offset),
-                (int)(4.0 * offset),
+                point.X + (int)(0f * offset),
+                point.Y + (int)(1f * offset),
+                (int)(5.0 * offset),
                 (int)(2.0 * offset)
             );
+            dialogStartPosition.Extend(0.5);
             if (dialogBase.Data.Shake)
-                dialogStartPosition.Extend(0.6);
+                dialogStartPosition.Extend(0.5);
             dialogStartPosition.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
 
             using var imgCropped = new Mat(src, dialogStartPosition);
@@ -303,6 +305,7 @@ public class DialogTemplateMatcher(
                         _consecutiveFailures = 0;
                         continue;
                     }
+
                     _useFallbackThreshold = false;
                     return IsStatusMatched(firstStatus.Value);
                 default:

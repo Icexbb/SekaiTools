@@ -1,8 +1,8 @@
 using System.Drawing;
-using System.Drawing.Text;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using SkiaSharp;
 
 namespace SekaiToolsCore.Utils;
 
@@ -119,8 +119,7 @@ public static class UtilFunc
 
     public static IEnumerable<string> GetFontFamilyNames()
     {
-        var collection = new InstalledFontCollection();
-        return collection.Families.Select(family => family.Name);
+        return SKFontManager.Default.GetFontFamilies();
     }
 
     extension(Rectangle rect)
