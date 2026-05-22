@@ -70,6 +70,14 @@ dotnet test SekaiTools.sln
 
 - **`SekaiToolsCore.Match.TemplateMatcher.TemplateMatcher`** — 基于 OpenCV 相关性的静态模板匹配，配合 `TemplateMatchCachePool` 按帧缓存结果以避免重复计算。
 
+- **`SekaiToolsCore.Process.ProgressStore`** — 进度持久化。`ProcessingState` DTO 捕获全部匹配器状态和帧位置，序列化为 JSON 存入 `~/SekaiTools/Progress/{hash}.json`。应用启动时 `OnNavigatedTo` 扫描进度文件，若对应文件仍存在则弹窗询问恢复。
+
+- **`SekaiToolsCore.Process.HistoryStore`** — 历史记录（最多 100 条）。处理完成后保存完整 `ProcessingState` 到独立文件 `~/SekaiTools/History/{timestamp}_{hash}.json`，同 hash 自动去重保留最新。用户可通过 `HistoryDialog` (ContentDialog) 选择加载历史记录直接导出字幕。
+
+### 进度保存与恢复
+
+每个匹配器 (`DialogTemplateMatcher`, `BannerTemplateMatcher`, `MarkerTemplateMatcher`) 均暴露 `SaveState()` / `RestoreState(Dto)` 方法，序列化内部状态（`_status`、回退阈值、FrameSet 数据）。`VideoProcessor.CaptureState()` 收集全部状态，`ApplyState()` 恢复状态并 seek 视频到断点。保存触发时机：每 300 帧 + 每次 FrameSet 完成时。正常完成后保留进度（仅输出字幕时清除）。
+
 ### MVVM 模式（GUI）
 
 `MainWindow`（FluentWindow）使用 WPF-UI 的 `NavigationView`。`MainWindowViewModel` 定义导航项，映射到各页面类型。每个页面位于 `View/<页面名>/`，对应的 ViewModel 位于 `ViewModel/<页面名>/`。
