@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SekaiToolsAvalonia.View.Download.Components.Unit.UnitStoryTab"
+             HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Padding="10">
+    <Grid RowDefinitions="Auto,*">
+        <Border Grid.Row="0" Padding="5" CornerRadius="8" Margin="0,0,0,5"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+            <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto">
+                <RadioButton Grid.Row="0" Grid.Column="0" GroupName="Unit"
+                             x:Name="RadioLightSound">
+                    <Image Source="avares://SekaiToolsAvalonia/Assets/Unit/logo_light_sound.png" Height="24" />
+                </RadioButton>
+                <RadioButton Grid.Row="0" Grid.Column="1" GroupName="Unit" x:Name="RadioIdol">
+                    <Image Source="avares://SekaiToolsAvalonia/Assets/Unit/logo_idol.png" Height="24" />
+                </RadioButton>
+                <RadioButton Grid.Row="0" Grid.Column="2" GroupName="Unit" x:Name="RadioThemePark">
+                    <Image Source="avares://SekaiToolsAvalonia/Assets/Unit/logo_theme_park.png" Height="24" />
+                </RadioButton>
+                <RadioButton Grid.Row="1" Grid.Column="0" GroupName="Unit" x:Name="RadioStreet">
+                    <Image Source="avares://SekaiToolsAvalonia/Assets/Unit/logo_street.png" Height="24" />
+                </RadioButton>
+                <RadioButton Grid.Row="1" Grid.Column="1" GroupName="Unit" x:Name="RadioSchoolRefusal">
+                    <Image Source="avares://SekaiToolsAvalonia/Assets/Unit/logo_school_refusal.png" Height="24" />
+                </RadioButton>
+                <RadioButton Grid.Row="1" Grid.Column="2" GroupName="Unit" x:Name="RadioPiapro">
+                    <Image Source="avares://SekaiToolsAvalonia/Assets/Unit/logo_piapro.png" Height="24" />
+                </RadioButton>
+            </Grid>
+        </Border>
+        <ScrollViewer Grid.Row="1">
+            <StackPanel x:Name="CardContents" Margin="5" />
+        </ScrollViewer>
+    </Grid>
+</UserControl>

@@ -1,0 +1,8 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SekaiToolsAvalonia.View.Download.Components.DownloadTask">
+    <Border Padding="5" CornerRadius="4" Margin="0,2"
+            Background="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}">
+        <TextBlock TextWrapping="Wrap" x:Name="TagText" />
+    </Border>
+</UserControl>

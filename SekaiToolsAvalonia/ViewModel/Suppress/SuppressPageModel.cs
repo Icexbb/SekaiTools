@@ -1,0 +1,68 @@
+using Emgu.CV;
+using Emgu.CV.CvEnum;
+
+namespace SekaiToolsAvalonia.ViewModel.Suppress;
+
+public class SuppressPageModel : ViewModelBase
+{
+    public static SuppressPageModel Instance { get; } = new();
+
+    public string SourceVideo
+    {
+        get => GetProperty("");
+        set
+        {
+            SetProperty(value);
+            SourceFrameCount = 0;
+            if (File.Exists(value))
+            {
+                using var capture = new VideoCapture(value);
+                SourceFrameCount = (int)capture.Get(CapProp.FrameCount);
+            }
+            var guess = Path.ChangeExtension(value, ".ass");
+            if (File.Exists(guess)) SourceSubtitle = guess;
+            OutputPath = Path.Join(Path.GetDirectoryName(value)!,
+                "[STVS]" + Path.GetFileNameWithoutExtension(value) + ".mp4");
+            UpdateConfigStatus();
+        }
+    }
+
+    public int SourceFrameCount { get => GetProperty(0); set => SetProperty(value); }
+
+    public string SourceSubtitle
+    {
+        get => GetProperty("");
+        set { SetProperty(value); UpdateConfigStatus(); }
+    }
+
+    public string OutputPath
+    {
+        get => GetProperty("");
+        set { SetProperty(value); UpdateConfigStatus(); }
+    }
+
+    private bool CanStart => !string.IsNullOrWhiteSpace(SourceVideo) &&
+                              !string.IsNullOrWhiteSpace(OutputPath);
+
+    public bool CanStartSuppress { get => GetProperty(CanStart); set => SetProperty(value); }
+    public bool HasNotStarted { get => GetProperty(true); set => SetProperty(value); }
+    public bool Running { get => GetProperty(false); set => SetProperty(value); }
+    public int SuppressCrf { get => GetProperty(21); set => SetProperty(value); }
+    public bool UseComplexConfig { get => GetProperty(true); set => SetProperty(value); }
+    public double Progression { get => GetProperty(0.0); set => SetProperty(value); }
+    public double Fps { get => GetProperty(0.0); set => SetProperty(value); }
+    public string Status { get => GetProperty(""); set => SetProperty(value.Trim()); }
+
+    private void UpdateConfigStatus() => CanStartSuppress = CanStart;
+
+    public void ReloadStatus()
+    {
+        Status = ""; Progression = 0; HasNotStarted = true; Running = false; Fps = 0;
+    }
+
+    public void Reset()
+    {
+        ReloadStatus();
+        SourceVideo = ""; SourceSubtitle = ""; OutputPath = ""; SuppressCrf = 21;
+    }
+}

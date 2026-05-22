@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SekaiToolsAvalonia.View.Translate.Components.TranslateFastCopy">
+    <Border Padding="5" CornerRadius="8" HorizontalAlignment="Stretch"
+            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+        <ScrollViewer>
+            <StackPanel Spacing="4">
+                <TextBlock TextAlignment="Center" Text="特殊字符快速复制" FontWeight="SemiBold" />
+                <Grid ColumnDefinitions="*,*" Margin="0,5">
+                    <Button Grid.Column="0" Content="【】" Margin="2,0" Click="ButtonBase_OnClick" />
+                    <Button Grid.Column="1" Content="「」" Margin="2,0" Click="ButtonBase_OnClick" />
+                </Grid>
+                <Grid ColumnDefinitions="*,*" Margin="0,5">
+                    <Button Grid.Column="0" Content="『』" Margin="2,0" Click="ButtonBase_OnClick" />
+                    <Button Grid.Column="1" Content="《》" Margin="2,0" Click="ButtonBase_OnClick" />
+                </Grid>
+                <Grid ColumnDefinitions="*,*" Margin="0,5">
+                    <Button Grid.Column="0" Content="（）" Margin="2,0" Click="ButtonBase_OnClick" />
+                    <Button Grid.Column="1" Content="&#x201C;&#x201D;" Margin="2,0" Click="ButtonBase_OnClick" />
+                </Grid>
+                <Grid ColumnDefinitions="*,*" Margin="0,5">
+                    <Button Grid.Column="0" Content="~" Margin="2,0" Click="ButtonBase_OnClick" />
+                    <Button Grid.Column="1" Content="♪" Margin="2,0" Click="ButtonBase_OnClick" />
+                </Grid>
+                <Grid ColumnDefinitions="*,*" Margin="0,5">
+                    <Button Grid.Column="0" Content="☆" Margin="2,0" Click="ButtonBase_OnClick" />
+                    <Button Grid.Column="1" Content="——" Margin="2,0" Click="ButtonBase_OnClick" />
+                </Grid>
+                <Separator Margin="0,5" />
+                <Button Content="添加自定义字符" Click="ButtonAdd_OnClick" HorizontalAlignment="Stretch" />
+                <StackPanel x:Name="CustomSpecialCharacters" />
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</UserControl>

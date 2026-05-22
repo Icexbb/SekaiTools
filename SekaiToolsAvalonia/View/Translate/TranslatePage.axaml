@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:SekaiToolsAvalonia.ViewModel.Translate"
+             xmlns:components="clr-namespace:SekaiToolsAvalonia.View.Translate.Components"
+             mc:Ignorable="d"
+             x:Class="SekaiToolsAvalonia.View.Translate.TranslatePage"
+             x:DataType="vm:TranslatePageModel"
+             d:DataContext="{d:DesignInstance vm:TranslatePageModel}">
+    <Grid Margin="10" RowDefinitions="Auto,*" ColumnDefinitions="Auto,*">
+        <!-- Toolbar -->
+        <Border Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,5"
+                Padding="8" CornerRadius="8"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="5">
+                <Button Content="载入剧本" Click="LoadFileButton_OnClick" />
+                <Button Content="打开翻译" Click="LoadTranslationButton_OnClick" />
+                <Button Content="打开对照翻译" Click="LoadReviewButton_OnClick" />
+                <Button Content="重置" Click="ResetButton_OnClick" />
+                <Button Content="保存" Click="SaveButton_OnClick" />
+            </StackPanel>
+        </Border>
+
+        <!-- Fast Copy Sidebar -->
+        <components:TranslateFastCopy Grid.Row="1" Grid.Column="0" Width="160" />
+
+        <!-- Event List -->
+        <ListBox Grid.Column="1" Grid.Row="1" Margin="5,0,0,0"
+                 ItemsSource="{Binding Events}"
+                 Background="Transparent"
+                 BorderThickness="0">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:LineModel">
+                    <ContentControl Content="{Binding}" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.Styles>
+                <Style Selector="ListBoxItem">
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="Padding" Value="0,2" />
+                </Style>
+            </ListBox.Styles>
+        </ListBox>
+    </Grid>
+</UserControl>

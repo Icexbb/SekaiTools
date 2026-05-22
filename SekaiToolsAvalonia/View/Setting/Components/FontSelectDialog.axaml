@@ -1,0 +1,15 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SekaiToolsAvalonia.View.Setting.Components.FontSelectDialog"
+             MinWidth="300" MinHeight="200">
+    <Grid RowDefinitions="*,Auto" Margin="10">
+        <ListBox Grid.Row="0" x:Name="FontListBox" MaxHeight="300">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                    <TextBlock Text="{Binding}" FontSize="14" Padding="4" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <TextBox Grid.Row="1" x:Name="FontNameBox" Margin="0,8" Watermark="输入字体名称..." />
+    </Grid>
+</UserControl>

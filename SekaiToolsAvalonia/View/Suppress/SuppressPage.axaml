@@ -1,0 +1,104 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:SekaiToolsAvalonia.ViewModel.Suppress"
+             mc:Ignorable="d"
+             x:Class="SekaiToolsAvalonia.View.Suppress.SuppressPage"
+             x:DataType="vm:SuppressPageModel"
+             d:DataContext="{d:DesignInstance vm:SuppressPageModel}">
+    <Grid Margin="10" RowDefinitions="Auto,*,Auto">
+        <StackPanel Grid.Row="0" Margin="0,5,0,0" Spacing="5">
+            <Border Padding="12" CornerRadius="8" MinHeight="70"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock FontWeight="SemiBold" Text="视频文件" />
+                        <TextBlock Text="{Binding SourceVideo}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   IsVisible="{Binding SourceVideo.Length}" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="浏览" Click="VideoFileBrowser_OnClick"
+                            IsEnabled="{Binding HasNotStarted}" />
+                </Grid>
+            </Border>
+            <Border Padding="12" CornerRadius="8" MinHeight="70"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    IsVisible="{Binding SourceVideo.Length}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock FontWeight="SemiBold" Text="字幕文件" />
+                        <TextBlock Text="{Binding SourceSubtitle}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="浏览" Click="ScriptFileBrowser_OnClick"
+                            IsEnabled="{Binding HasNotStarted}" />
+                </Grid>
+            </Border>
+            <Border Padding="12" CornerRadius="8" MinHeight="70"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    IsVisible="{Binding SourceVideo.Length}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock FontWeight="SemiBold" Text="输出路径" />
+                        <TextBlock Text="{Binding OutputPath}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="浏览" Click="SaveFileBrowser_OnClick"
+                            IsEnabled="{Binding HasNotStarted}" />
+                </Grid>
+            </Border>
+            <Border Padding="12" CornerRadius="8"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    IsVisible="{Binding HasNotStarted}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0">
+                        <TextBlock FontWeight="SemiBold" Text="固定码率因子" />
+                        <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   Text="压制时使用的Crf" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="{Binding SuppressCrf}" VerticalAlignment="Center" />
+                        <Slider Width="100" Minimum="0" Maximum="51"
+                                Value="{Binding SuppressCrf, Mode=TwoWay}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <Border Padding="12" CornerRadius="8"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    IsVisible="{Binding HasNotStarted}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" FontWeight="SemiBold" Text="使用最佳参数" />
+                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding UseComplexConfig}" />
+                </Grid>
+            </Border>
+        </StackPanel>
+
+        <Border Grid.Row="1" Padding="10" Margin="0,10" CornerRadius="8"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+            <Grid>
+                <TextBox IsReadOnly="True" TextWrapping="Wrap"
+                         Text="{Binding Status}" IsVisible="{Binding !HasNotStarted}" />
+                <Button HorizontalAlignment="Center" VerticalAlignment="Center" Content="开始压制"
+                        Click="StartSuppress_OnClick"
+                        IsEnabled="{Binding CanStartSuppress}"
+                        IsVisible="{Binding HasNotStarted}" />
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2" Padding="10" CornerRadius="8"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+            <StackPanel>
+                <ProgressBar IsIndeterminate="{Binding HasNotStarted}" Value="{Binding Progression}"
+                             Maximum="1" Minimum="0" Margin="10" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10"
+                            IsVisible="{Binding !HasNotStarted}">
+                    <Button Content="重置任务" Click="DisposeButton_OnClick" />
+                    <Button Content="清除任务" Click="ClearButton_OnClick" />
+                    <Button Content="显示结果" Click="ShowFileButton_OnClick"
+                            IsVisible="{Binding Progression}" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

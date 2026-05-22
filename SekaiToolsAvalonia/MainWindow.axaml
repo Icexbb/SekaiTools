@@ -1,0 +1,91 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:SekaiToolsAvalonia.ViewModel"
+        mc:Ignorable="d"
+        x:Class="SekaiToolsAvalonia.MainWindow"
+        Title="Sekai Tools"
+        MinWidth="800" MinHeight="500" Width="1000" Height="650"
+        WindowStartupLocation="CenterScreen"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="36"
+        d:DataContext="{d:DesignInstance vm:MainWindowViewModel}"
+        x:DataType="vm:MainWindowViewModel">
+
+    <Window.Styles>
+        <Style Selector="ListBox.navList">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.navList ListBoxItem">
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Margin" Value="4,2" />
+        </Style>
+        <Style Selector="ListBox.navList ListBoxItem:selected">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColorLight2}" />
+        </Style>
+        <Style Selector="ListBox.navList ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColorLight3}" />
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Title Bar -->
+        <Border Grid.Row="0" Height="36" Background="{DynamicResource SystemAccentColorDark2}"
+                IsHitTestVisible="False">
+            <DockPanel VerticalAlignment="Center" Margin="12,0">
+                <Image Source="/Assets/icon.png" Width="18" Height="18" Margin="0,0,8,0"
+                       DockPanel.Dock="Left" />
+                <TextBlock Text="Sekai Tools" FontSize="13" FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
+            </DockPanel>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="1" ColumnDefinitions="180,*">
+            <!-- Sidebar -->
+            <Border Grid.Column="0" Background="{DynamicResource SystemAccentColorDark1}"
+                    Padding="0,8">
+                <Grid RowDefinitions="*,Auto">
+                    <ListBox Grid.Row="0" x:Name="NavListBox" Classes="navList"
+                             ItemsSource="{Binding NavigationItems}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:NavItem">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="{Binding Icon}" FontSize="16"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Content}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <ListBox Grid.Row="1" x:Name="FooterListBox" Classes="navList"
+                             ItemsSource="{Binding NavigationFooterItems}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:NavItem">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="{Binding Icon}" FontSize="16"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Content}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- Page Content -->
+            <ContentControl Grid.Column="1" x:Name="PageContent" />
+        </Grid>
+
+        <!-- Snackbar Overlay -->
+        <Panel Grid.Row="1" x:Name="SnackbarHost" IsHitTestVisible="False"
+               VerticalAlignment="Bottom" HorizontalAlignment="Center"
+               Margin="0,0,0,20" />
+    </Grid>
+</Window>

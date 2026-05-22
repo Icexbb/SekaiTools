@@ -1,0 +1,269 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:SekaiToolsAvalonia.ViewModel.Setting"
+             xmlns:converters="clr-namespace:SekaiToolsAvalonia.Converters"
+             mc:Ignorable="d"
+             x:Class="SekaiToolsAvalonia.View.Setting.SettingPage"
+             x:DataType="vm:SettingPageModel"
+             x:CompileBindings="False"
+             d:DataContext="{d:DesignInstance vm:SettingPageModel}">
+
+    <UserControl.Resources>
+        <converters:BoolToVisibleConverter x:Key="BoolVisible" />
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="*,Auto">
+        <ScrollViewer Grid.Row="0">
+            <StackPanel Margin="10" Spacing="8">
+
+                <!-- Theme -->
+                <Border Padding="14" CornerRadius="8"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock FontWeight="SemiBold" Text="主题" />
+                            <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Text="选择应用配色主题" />
+                        </StackPanel>
+                        <ComboBox Grid.Column="1" MinWidth="120"
+                                  SelectedIndex="{Binding CurrentApplicationTheme, Mode=TwoWay}">
+                            <ComboBoxItem>亮色</ComboBoxItem>
+                            <ComboBoxItem>暗色</ComboBoxItem>
+                            <ComboBoxItem>高对比度</ComboBoxItem>
+                        </ComboBox>
+                    </Grid>
+                </Border>
+
+                <!-- Proxy -->
+                <Border Padding="14" CornerRadius="8"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock FontWeight="SemiBold" Text="代理" />
+                            <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Text="下载剧本时所用的代理" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
+                            <ComboBox SelectedIndex="{Binding ProxyType, Mode=TwoWay}">
+                                <ComboBoxItem>不使用</ComboBoxItem>
+                                <ComboBoxItem>http://</ComboBoxItem>
+                                <ComboBoxItem>sock5://</ComboBoxItem>
+                            </ComboBox>
+                            <TextBox Width="120"
+                                     IsVisible="{Binding ProxyChangeable}"
+                                     Text="{Binding ProxyHost, Mode=TwoWay}" />
+                            <NumericUpDown Width="120" Minimum="0" Maximum="65536"
+                                           IsVisible="{Binding ProxyChangeable}"
+                                           Value="{Binding ProxyPort, Mode=TwoWay}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Typewriter -->
+                <Border Padding="14" CornerRadius="8"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock FontWeight="SemiBold" Text="打字机设置" />
+                            <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Text="设置打字机的渐变时间参数" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
+                            <StackPanel>
+                                <TextBlock Text="字符时间(ms)" FontSize="11" />
+                                <NumericUpDown Width="100" Minimum="0" Maximum="500"
+                                               Value="{Binding TypewriterCharTime, Mode=TwoWay}" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="淡入时间(ms)" FontSize="11" />
+                                <NumericUpDown Width="100" Minimum="0" Maximum="500"
+                                               Value="{Binding TypewriterFadeTime, Mode=TwoWay}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Font Settings -->
+                <Expander Padding="0" CornerRadius="8"
+                          Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                    <Expander.Header>
+                        <StackPanel Margin="14">
+                            <TextBlock FontWeight="SemiBold" Text="字体自定义" />
+                            <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Text="选择字幕样式所用的字体" />
+                        </StackPanel>
+                    </Expander.Header>
+                    <StackPanel Spacing="6" Margin="14,0,14,14">
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,4">
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="对话字体" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
+                                <TextBox Width="150" Text="{Binding DialogFontFamily, Mode=TwoWay}" />
+                                <Button Content="选择" Click="ChooseDialogFont" />
+                            </StackPanel>
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,4">
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="横幅字体" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
+                                <TextBox Width="150" Text="{Binding BannerFontFamily, Mode=TwoWay}" />
+                                <Button Content="选择" Click="ChooseBannerFont" />
+                            </StackPanel>
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,4">
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="地点角标字体" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
+                                <TextBox Width="150" Text="{Binding MarkerFontFamily, Mode=TwoWay}" />
+                                <Button Content="选择" Click="ChooseMarkerFont" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Expander>
+
+                <!-- Export Options -->
+                <Expander Padding="0" CornerRadius="8"
+                          Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                    <Expander.Header>
+                        <StackPanel Margin="14">
+                            <TextBlock FontWeight="SemiBold" Text="输出注释" />
+                            <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Text="选择字幕输出的类别" />
+                        </StackPanel>
+                    </Expander.Header>
+                    <StackPanel Spacing="8" Margin="14,0,14,14">
+                        <!-- Dialog -->
+                        <Border Padding="10" CornerRadius="6"
+                                Background="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="对话" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock VerticalAlignment="Center" Text="一行" />
+                                        <ToggleSwitch IsChecked="{Binding ExportLine1}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock VerticalAlignment="Center" Text="二行" />
+                                        <ToggleSwitch IsChecked="{Binding ExportLine2}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock VerticalAlignment="Center" Text="三行" />
+                                        <ToggleSwitch IsChecked="{Binding ExportLine3}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock VerticalAlignment="Center" Text="姓名" />
+                                        <ToggleSwitch IsChecked="{Binding ExportCharacter}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <!-- Banner -->
+                        <Border Padding="10" CornerRadius="6"
+                                Background="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="横幅" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock VerticalAlignment="Center" Text="遮罩" />
+                                        <ToggleSwitch IsChecked="{Binding ExportBannerMask}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock VerticalAlignment="Center" Text="内容" />
+                                        <ToggleSwitch IsChecked="{Binding ExportBannerText}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <!-- Marker -->
+                        <Border Padding="10" CornerRadius="6"
+                                Background="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="地点角标" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock VerticalAlignment="Center" Text="遮罩" />
+                                        <ToggleSwitch IsChecked="{Binding ExportMarkerMask}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock VerticalAlignment="Center" Text="内容" />
+                                        <ToggleSwitch IsChecked="{Binding ExportMarkerText}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <!-- Other comments -->
+                        <Border Padding="10" CornerRadius="6"
+                                Background="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="其他注释" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock VerticalAlignment="Center" Text="注释" />
+                                        <ToggleSwitch IsChecked="{Binding ExportScreenComment}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Expander>
+
+                <!-- Log Viewer -->
+                <Expander Padding="0" CornerRadius="8"
+                          Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                    <Expander.Header>
+                        <StackPanel Margin="14">
+                            <TextBlock FontWeight="SemiBold" Text="运行日志" />
+                            <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Text="查看程序运行过程中产生的日志" />
+                        </StackPanel>
+                    </Expander.Header>
+                    <Grid RowDefinitions="Auto,*" Margin="14,0,14,14">
+                        <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                            <Button DockPanel.Dock="Right" Content="清空日志" Click="ClearLog_Click" />
+                            <TextBlock Text="等级:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <ComboBox x:Name="LevelFilter" Width="100"
+                                      SelectionChanged="LevelFilter_SelectionChanged">
+                                <ComboBoxItem>全部</ComboBoxItem>
+                                <ComboBoxItem>INFO+</ComboBoxItem>
+                                <ComboBoxItem>WARN+</ComboBoxItem>
+                                <ComboBoxItem>ERROR+</ComboBoxItem>
+                            </ComboBox>
+                        </DockPanel>
+                        <ListBox x:Name="LogListBox" Grid.Row="1" MaxHeight="400"
+                                 FontFamily="Consolas" FontSize="11">
+                        </ListBox>
+                    </Grid>
+                </Expander>
+
+                <!-- About -->
+                <Expander Padding="0" CornerRadius="8"
+                          Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                    <Expander.Header>
+                        <Grid ColumnDefinitions="*,Auto" Margin="14">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock FontWeight="SemiBold" Text="Sekai Tools" />
+                                <TextBlock Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           Text="&#169; 2024 PJS字幕组 | Icexbb 以 AGPL-3.0 协议开源" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Text="{Binding AppVersion}" />
+                        </Grid>
+                    </Expander.Header>
+                    <Button Margin="14,0,14,14" HorizontalAlignment="Stretch"
+                            Content="代码仓库" Click="OpenGitHub_Click" />
+                </Expander>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Save / Reset buttons -->
+        <Border Grid.Row="1" Padding="10" Margin="10,0"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                CornerRadius="8">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                <Button Width="100" Content="重置为默认" Click="ResetToDefault_Click" />
+                <Button Width="100" Content="保存" Click="SaveButton_Click" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

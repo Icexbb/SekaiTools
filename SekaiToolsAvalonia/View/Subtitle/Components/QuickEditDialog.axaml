@@ -1,0 +1,36 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:SekaiToolsAvalonia.ViewModel.Subtitle"
+        mc:Ignorable="d"
+        x:Class="SekaiToolsAvalonia.View.Subtitle.Components.QuickEditDialog"
+        x:DataType="vm:QuickEditDialogModel"
+        d:DataContext="{d:DesignInstance vm:QuickEditDialogModel}"
+        Title="对话语句快速调整"
+        Width="500" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid RowDefinitions="*,Auto" Margin="15">
+        <StackPanel Grid.Row="0" Spacing="10">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" FontWeight="SemiBold" Text="对话语句快速调整" />
+                <ToggleSwitch Grid.Column="1" x:Name="SwitchCanReturn"
+                              IsChecked="{Binding UseReturn}"
+                              OffContent="不换行" OnContent="换行" />
+            </Grid>
+            <Border Padding="10" CornerRadius="6"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                <TextBlock Text="{Binding ContentOriginal}" TextWrapping="Wrap" />
+            </Border>
+            <TextBox x:Name="TextBoxTranslated" MinHeight="55" MaxHeight="80"
+                     AcceptsReturn="True"
+                     Text="{Binding ContentTranslated, Mode=TwoWay}" />
+        </StackPanel>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Margin="0,15,0,0" Spacing="10">
+            <Button Content="取消" Click="CancelButton_Click" />
+            <Button Content="确认" Click="ConfirmButton_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

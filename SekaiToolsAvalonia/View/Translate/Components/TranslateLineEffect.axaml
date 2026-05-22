@@ -1,0 +1,31 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:SekaiToolsAvalonia.ViewModel.Translate"
+             mc:Ignorable="d"
+             x:Class="SekaiToolsAvalonia.View.Translate.Components.TranslateLineEffect"
+             x:DataType="vm:LineEffectModel"
+             d:DataContext="{d:DesignInstance vm:LineEffectModel}"
+             HorizontalAlignment="Stretch" Height="32">
+    <Grid ColumnDefinitions="150,*">
+        <Border Grid.Column="0" Padding="0" CornerRadius="6"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+            <TextBlock Text="&#x1F3F7;" FontSize="16" HorizontalAlignment="Center"
+                       VerticalAlignment="Center" />
+        </Border>
+        <Border Grid.Column="1" Padding="0" CornerRadius="6"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+            <Grid ColumnDefinitions="*,Auto,*">
+                <TextBlock Grid.Column="0" Padding="5,2" VerticalAlignment="Center"
+                           HorizontalAlignment="Stretch" TextAlignment="Center"
+                           Text="{Binding Content.Original}" />
+                <TextBlock Grid.Column="1" Text="&#x2192;" FontSize="16" VerticalAlignment="Center" />
+                <TextBox Grid.Column="2" Padding="5,2" Background="Transparent"
+                         BorderBrush="Transparent" HorizontalContentAlignment="Stretch"
+                         TextAlignment="Center"
+                         Text="{Binding Content.Translated, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,10 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SekaiToolsAvalonia.View.Download.Components.DownloadItem"
+             HorizontalAlignment="Stretch">
+    <Button x:Name="DownloadButton" HorizontalAlignment="Stretch"
+            HorizontalContentAlignment="Left" Padding="10,8"
+            Click="ButtonBase_OnClick">
+        <TextBlock x:Name="KeyText" TextWrapping="Wrap" />
+    </Button>
+</UserControl>

@@ -1,0 +1,135 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:SekaiToolsAvalonia.ViewModel.Subtitle"
+             xmlns:converters="clr-namespace:SekaiToolsAvalonia.Converters"
+             mc:Ignorable="d"
+             x:Class="SekaiToolsAvalonia.View.Subtitle.SubtitlePage"
+             x:DataType="vm:SubtitlePageModel"
+             d:DataContext="{d:DesignInstance vm:SubtitlePageModel}">
+
+    <Grid ColumnDefinitions="Auto,10,*">
+        <!-- Left Panel: File Selection + Progress + Preview -->
+        <Grid Grid.Column="0" MinWidth="200" RowDefinitions="Auto,80,*">
+            <!-- File Selection Cards -->
+            <StackPanel Grid.Row="0" Margin="5,10,0,5" Width="350" Spacing="5">
+                <!-- Video File -->
+                <Border Padding="12" CornerRadius="8" MinHeight="70"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock FontWeight="SemiBold" Text="视频文件" />
+                            <TextBlock Text="{Binding VideoFilePath}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="浏览"
+                                IsEnabled="{Binding HasNotStarted}"
+                                Click="VideoFileBrowser_OnClick" />
+                    </Grid>
+                </Border>
+                <!-- Script File -->
+                <Border Padding="12" CornerRadius="8" MinHeight="70"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock FontWeight="SemiBold" Text="字幕文件" />
+                            <TextBlock Text="{Binding ScriptFilePath}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="浏览"
+                                IsEnabled="{Binding HasNotStarted}"
+                                Click="ScriptFileBrowser_OnClick" />
+                    </Grid>
+                </Border>
+                <!-- Translation File -->
+                <Border Padding="12" CornerRadius="8" MinHeight="70"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock FontWeight="SemiBold" Text="翻译文件" />
+                            <TextBlock Text="{Binding TranslateFilePath}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="浏览"
+                                IsEnabled="{Binding HasNotStarted}"
+                                Click="TranslationFileBrowser_OnClick" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+
+            <!-- Status & Controls -->
+            <Border Grid.Row="1" Margin="5,0,0,5" Padding="12" CornerRadius="8"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                <Grid ColumnDefinitions="Auto,*">
+                    <TextBlock Grid.Column="0" Text="{Binding RunningStatus}" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="5">
+                        <Button Content="重置" IsVisible="{Binding ResetEnabled}"
+                                Click="ResetButton_OnClick" />
+                        <Button Content="停止" Click="StopButton_OnClick"
+                                IsVisible="{Binding IsRunning}" />
+                        <Button Content="开始" Click="StartButton_OnClick"
+                                IsEnabled="{Binding HasNotStarted}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Preview & Progress -->
+            <Border Grid.Row="2" Margin="5,0,0,10" Padding="14,6" CornerRadius="8"
+                    Width="350" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                <StackPanel Spacing="5">
+                    <Image MaxHeight="180" MaxWidth="320"
+                           IsVisible="{Binding ShowPreview}"
+                           Source="{Binding FramePreviewImage}" />
+                    <Button Content="显示预览" IsVisible="{Binding !ShowPreview}"
+                            Click="ShowPreviewButton_OnClick" />
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <TextBlock Grid.Column="0" x:Name="TextBlockFps" Margin="5" />
+                        <ProgressBar Grid.Column="1" x:Name="ProgressBarProgression" Height="8" Margin="5" />
+                        <TextBlock Grid.Column="2" x:Name="TextBlockProgression" Margin="5" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- GridSplitter -->
+        <GridSplitter Grid.Column="1" Width="10" />
+
+        <!-- Right Panel: Results -->
+        <Grid Grid.Column="2" Margin="10" RowDefinitions="Auto,*,Auto">
+            <!-- Filter Toggles -->
+            <Border Grid.Row="0" Padding="8" Margin="0,0,0,5" CornerRadius="8"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,*">
+                    <ToggleSwitch Grid.Row="0" Grid.Column="0" Margin="5"
+                                  IsChecked="{Binding ShowDialog}">显示对话</ToggleSwitch>
+                    <ToggleSwitch Grid.Row="0" Grid.Column="1" Margin="5"
+                                  IsChecked="{Binding ShowTooLongOnly}"
+                                  IsVisible="{Binding ShowDialog}">仅显示过长行</ToggleSwitch>
+                    <ToggleSwitch Grid.Row="1" Grid.Column="0" Margin="5"
+                                  IsChecked="{Binding ShowBanner}">显示横幅</ToggleSwitch>
+                    <ToggleSwitch Grid.Row="1" Grid.Column="1" Margin="5"
+                                  IsChecked="{Binding ShowMarker}">显示标签</ToggleSwitch>
+                </Grid>
+            </Border>
+
+            <!-- Line List -->
+            <Border Grid.Row="1" CornerRadius="8" Padding="0"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                <ScrollViewer x:Name="LineViewer">
+                    <StackPanel x:Name="LinePanel" Margin="5,5,5,15" />
+                </ScrollViewer>
+            </Border>
+
+            <!-- Export & History -->
+            <Grid Grid.Row="2" Margin="0,5,0,0" ColumnDefinitions="*,Auto">
+                <Button Grid.Column="0" HorizontalAlignment="Stretch"
+                        Content="输出" Click="OutputButton_OnClick"
+                        IsEnabled="{Binding IsFinished}" />
+                <Button Grid.Column="1" Content="历史记录" Margin="5,0,0,0"
+                        Click="HistoryButton_OnClick"
+                        IsEnabled="{Binding HasNotStarted}" />
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

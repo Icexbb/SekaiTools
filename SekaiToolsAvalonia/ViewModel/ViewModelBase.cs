@@ -1,0 +1,43 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
+namespace SekaiToolsAvalonia.ViewModel;
+
+public class ViewModelBase : INotifyPropertyChanged
+{
+    private readonly Dictionary<string, object> _properties = new();
+    private readonly object _lock = new();
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected T GetProperty<T>(T defaultValue = default!, [CallerMemberName] string? propertyName = null)
+    {
+        ArgumentNullException.ThrowIfNull(propertyName);
+        lock (_lock)
+        {
+            if (_properties.TryGetValue(propertyName, out var value))
+                return (T)value;
+        }
+
+        SetProperty(defaultValue, propertyName);
+        return defaultValue;
+    }
+
+    protected void SetProperty<T>(T value, [CallerMemberName] string? propertyName = null)
+    {
+        ArgumentNullException.ThrowIfNull(propertyName);
+        lock (_lock)
+        {
+            if (_properties.TryGetValue(propertyName, out var oldValue) &&
+                EqualityComparer<T>.Default.Equals((T)oldValue, value))
+                return;
+            _properties[propertyName] = value!;
+        }
+
+        OnPropertyChanged(propertyName);
+    }
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+}

@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:SekaiToolsAvalonia.ViewModel.Download"
+             mc:Ignorable="d"
+             x:Class="SekaiToolsAvalonia.View.Download.DownloadPage"
+             x:DataType="vm:DownloadPageModel"
+             d:DataContext="{d:DesignInstance vm:DownloadPageModel}">
+    <Grid Margin="10" RowDefinitions="Auto,*" ColumnDefinitions="*,Auto">
+        <Border Grid.Column="0" Grid.Row="0" Margin="0,0,0,10" Padding="8" CornerRadius="8"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+            <Grid ColumnDefinitions="*,*,Auto">
+                <ComboBox Grid.Column="0" x:Name="BoxSource" ItemsSource="{Binding SourceData}"
+                          SelectedIndex="{Binding CurrentSourceIndex}" />
+                <ComboBox Grid.Column="1" Margin="5,0" x:Name="BoxStoryType"
+                          SelectionChanged="StoryTypeSelector_OnSelected">
+                    <ComboBox.Items>
+                        <ComboBoxItem>主线剧情</ComboBoxItem>
+                        <ComboBoxItem>活动剧情</ComboBoxItem>
+                        <ComboBoxItem>特殊剧情</ComboBoxItem>
+                        <ComboBoxItem>角色剧情</ComboBoxItem>
+                        <ComboBoxItem>地图对话</ComboBoxItem>
+                    </ComboBox.Items>
+                </ComboBox>
+                <Button Grid.Column="2" Content="刷新" Click="ButtonRefresh_OnClick" />
+            </Grid>
+        </Border>
+
+        <Border Grid.Column="0" Grid.Row="1" Padding="0" CornerRadius="8"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                x:Name="ContentCard" />
+
+        <Border Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" Width="210"
+                Margin="10,0,0,0" Padding="5" CornerRadius="8"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+            <Grid RowDefinitions="Auto,*">
+                <Grid Grid.Row="0" Margin="5" ColumnDefinitions="Auto,*,Auto">
+                    <Button Grid.Column="0" Content="清空" Click="ClearButton_OnClick" />
+                    <TextBlock Grid.Column="1" Margin="5" Text="下载列表"
+                               TextAlignment="Center" VerticalAlignment="Center" />
+                    <Button Grid.Column="2" Content="下载" Click="DownloadButton_OnClick" />
+                </Grid>
+                <ListBox Grid.Row="1" x:Name="DownloadItemBox" />
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

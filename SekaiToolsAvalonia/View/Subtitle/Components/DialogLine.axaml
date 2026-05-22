@@ -1,0 +1,93 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:SekaiToolsAvalonia.ViewModel.Subtitle"
+             mc:Ignorable="d"
+             x:Class="SekaiToolsAvalonia.View.Subtitle.Components.DialogLine"
+             x:DataType="vm:DialogLineModel"
+             d:DataContext="{d:DesignInstance vm:DialogLineModel}">
+    <Border Padding="10" CornerRadius="8" HorizontalAlignment="Stretch"
+            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+        <StackPanel Spacing="4">
+            <!-- Time Row -->
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="5">
+                <TextBlock Grid.Column="0" Text="{Binding StartTime}" />
+                <TextBlock Grid.Column="1" HorizontalAlignment="Center"
+                           x:Name="TextBlockCharacter" />
+                <TextBlock Grid.Column="2" Text="{Binding EndTime}" />
+            </Grid>
+
+            <!-- Content Card -->
+            <Border Padding="8" CornerRadius="6"
+                    Background="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"
+                    DoubleTapped="DialogLine_OnDoubleClick">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Margin="10" x:Name="TextContentPreview"
+                               PointerEntered="TextContentPreview_OnPointerEnter"
+                               PointerExited="TextContentPreview_OnPointerLeave" />
+                    <TextBlock Grid.Column="1" Text="&#x1F4F3;" Margin="5,0"
+                               IsVisible="{Binding ShakeVisible}" />
+                </Grid>
+            </Border>
+
+            <!-- Separator Panel -->
+            <StackPanel x:Name="PanelSeparator" IsVisible="{Binding UseSeparator}" Spacing="4">
+                <Separator Margin="5" />
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="将文本分割为:" />
+                    <TextBlock Grid.Column="1" IsVisible="{Binding IsDialogJitter}"
+                               Text="*本行文本发生抖动*" />
+                </Grid>
+                <Grid HorizontalAlignment="Center">
+                    <TextBlock Grid.Column="0" Margin="10,2" TextAlignment="Center">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0} / {1}">
+                                <Binding Path="ContentPart1" />
+                                <Binding Path="ContentPart2" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </Grid>
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Margin="5" Grid.Column="0" Text="{Binding ContentPart1.Length}" />
+                    <TextBlock Margin="5" Grid.Column="2" Text="{Binding ContentPart2.Length}" />
+                    <Slider Grid.Column="1" Minimum="1" VerticalAlignment="Center"
+                            Maximum="{Binding SeparatorContentIndexLimit}"
+                            Value="{Binding SeparatorContentIndex}" />
+                </Grid>
+                <Separator Margin="0,5" />
+                <Grid>
+                    <TextBlock>
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0}=> {1}">
+                                <Binding Path="StartFrame" />
+                                <Binding Path="StartTime" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                    <TextBlock HorizontalAlignment="Right">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0}=> {1}">
+                                <Binding Path="EndFrame" />
+                                <Binding Path="EndTime" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </Grid>
+                <Slider Minimum="{Binding StartFrame}" Maximum="{Binding EndFrame}"
+                        Value="{Binding SeparateFrame}" />
+                <TextBlock HorizontalAlignment="Center">
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="{}在 {0}=> {1} 处换行">
+                            <Binding Path="SeparateFrame" />
+                            <Binding Path="SeparateTime" />
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+                <TextBlock HorizontalAlignment="Center" Text="{Binding PromptWarning}"
+                           IsVisible="{Binding PromptWarning.Length}" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

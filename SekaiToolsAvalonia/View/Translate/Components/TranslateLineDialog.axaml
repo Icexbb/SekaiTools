@@ -1,0 +1,74 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:SekaiToolsAvalonia.ViewModel.Translate"
+             mc:Ignorable="d"
+             x:Class="SekaiToolsAvalonia.View.Translate.Components.TranslateLineDialog"
+             x:DataType="vm:LineDialogModel"
+             d:DataContext="{d:DesignInstance vm:LineDialogModel}"
+             HorizontalAlignment="Stretch">
+    <StackPanel Spacing="5">
+        <Grid ColumnDefinitions="150,*">
+            <Border Grid.Column="0" Padding="5,0" CornerRadius="6"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                <Grid ColumnDefinitions="30,10,100" VerticalAlignment="Stretch">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <Image Width="28" Height="28" IsVisible="{Binding HasIcon}"
+                               Source="{Binding IconSrc}" />
+                        <TextBlock Text="&#x1F4AC;" FontSize="20"
+                                   IsVisible="{Binding !HasIcon}" />
+                    </StackPanel>
+                    <Grid Grid.Column="2" RowDefinitions="Auto,*,Auto">
+                        <TextBlock Grid.Row="0" HorizontalAlignment="Center"
+                                   Text="{Binding Character.Original}" />
+                        <TextBlock Grid.Row="1" Text="&#x2193;" HorizontalAlignment="Center"
+                                   FontSize="16" />
+                        <TextBox Grid.Row="2" HorizontalContentAlignment="Center"
+                                 Background="Transparent" BorderBrush="Transparent"
+                                 Text="{Binding Character.Translated, Mode=TwoWay}" />
+                    </Grid>
+                </Grid>
+            </Border>
+            <Border Grid.Column="1" Padding="0" CornerRadius="6"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                <Grid ColumnDefinitions="*,Auto,*">
+                    <TextBox Grid.Column="0" x:Name="OriginalContentTextBox"
+                             IsReadOnly="True" Background="Transparent"
+                             BorderBrush="Transparent" MinLines="2"
+                             Text="{Binding Content.Original}" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Text="&#x2192;" FontSize="16" HorizontalAlignment="Center" />
+                        <TextBlock Text="&#x26A0;" Foreground="Red"
+                                   IsVisible="{Binding Check.Length}"
+                                   ToolTip.Tip="{Binding Check}" />
+                    </StackPanel>
+                    <Grid Grid.Column="2" RowDefinitions="Auto,*">
+                        <TextBox Grid.Row="0" IsReadOnly="True"
+                                 Background="Transparent" BorderBrush="Transparent"
+                                 Text="{Binding Content.Reference}"
+                                 IsVisible="{Binding Content.Reference.Length}" />
+                        <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" RowDefinitions="*,Auto">
+                            <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
+                                     Background="Transparent" BorderBrush="Transparent"
+                                     MinLines="2" AcceptsReturn="True"
+                                     Text="{Binding Content.Translated, Mode=TwoWay}" />
+                            <TextBlock Grid.Column="2" Grid.Row="1" Margin="0,0,10,4">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}{0}/{1}">
+                                        <Binding Path="MaxLineLength" />
+                                        <Binding Path="Content.Translated.Length" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+        <Border Padding="5" CornerRadius="6" IsVisible="{Binding EndLine}"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+            <TextBlock Text="----- ----- -----" TextAlignment="Center" />
+        </Border>
+    </StackPanel>
+</UserControl>
