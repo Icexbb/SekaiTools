@@ -34,7 +34,7 @@ public partial class DialogLine : UserControl
     {
         var dialog = new QuickEditDialog(ViewModel.Set);
         var result = await dialog.ShowAndWaitAsync(
-            TopLevel.GetTopLevel(this) as Window);
+            (TopLevel.GetTopLevel(this) as Window)!);
 
         if (result.Edited == null) return;
 

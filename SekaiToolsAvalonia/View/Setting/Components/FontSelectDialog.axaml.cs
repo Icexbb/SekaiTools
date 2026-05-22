@@ -36,7 +36,7 @@ public partial class FontSelectDialog : UserControl
         };
     }
 
-    public async Task<string?> ShowDialog(Window? owner)
+    public async Task<string?> ShowDialog(Window owner)
     {
         var window = new Window
         {

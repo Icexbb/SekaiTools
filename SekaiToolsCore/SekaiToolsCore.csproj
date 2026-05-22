@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net10.0-windows</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>default</LangVersion>
         <Nullable>enable</Nullable>
@@ -12,7 +12,9 @@
 
     <ItemGroup>
         <PackageReference Include="Emgu.CV" Version="4.13.0.5924" />
-        <PackageReference Include="Emgu.CV.runtime.windows" Version="4.13.0.5924" />
+        <PackageReference Include="Emgu.CV.runtime.windows" Version="4.13.0.5924" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+        <PackageReference Include="Emgu.CV.runtime.macos" Version="4.13.0.5924" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
+        <PackageReference Include="Emgu.CV.runtime.ubuntu" Version="4.13.0.5924" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
         <PackageReference Include="SkiaSharp" Version="3.119.2" />
     </ItemGroup>
 

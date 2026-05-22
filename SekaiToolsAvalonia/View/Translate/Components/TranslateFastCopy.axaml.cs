@@ -53,7 +53,7 @@ public partial class TranslateFastCopy : UserControl
 
     private async void ButtonAdd_OnClick(object? sender, RoutedEventArgs e)
     {
-        var owner = TopLevel.GetTopLevel(this) as Window;
+        if (TopLevel.GetTopLevel(this) is not Window owner) return;
         var window = new Window
         {
             Title = "添加自定义字符", Width = 300, SizeToContent = SizeToContent.Height,

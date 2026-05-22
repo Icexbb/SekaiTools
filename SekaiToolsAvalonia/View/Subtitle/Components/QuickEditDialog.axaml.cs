@@ -16,7 +16,7 @@ public partial class QuickEditDialog : Window
         SwitchCanReturn.IsVisible = ViewModel.CanReturn;
     }
 
-    public async Task<(string? Edited, bool UseReturn)> ShowAndWaitAsync(Window? owner)
+    public async Task<(string? Edited, bool UseReturn)> ShowAndWaitAsync(Window owner)
     {
         await base.ShowDialog(owner);
         return await _tcs.Task;

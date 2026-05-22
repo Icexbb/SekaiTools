@@ -44,8 +44,8 @@ public partial class SettingPage : UserControl, IAppPage
     private async Task<string?> ShowFontDialog(string currentFont)
     {
         var dialog = new Components.FontSelectDialog(currentFont);
-        var owner = TopLevel.GetTopLevel(this) as Window;
-        return await dialog.ShowDialog(owner);
+        return await dialog.ShowDialog(
+            (TopLevel.GetTopLevel(this) as Window)!);
     }
 
     private void ClearLog_Click(object? sender, RoutedEventArgs e)
