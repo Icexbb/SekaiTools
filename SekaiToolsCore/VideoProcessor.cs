@@ -414,6 +414,9 @@ public class VideoProcessor
 
         Logger.Log($"视频处理结束: {StopReason}, 当前帧={frameIndex}, 总帧={frameCount}", ExtLogLevel.Information);
 
+        if (StopReason == ProcessStopReason.Completed)
+            HistoryStore.Add(CaptureState());
+
         return;
 
         void TrySaveProgress()

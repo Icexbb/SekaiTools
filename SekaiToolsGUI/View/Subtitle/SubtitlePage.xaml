@@ -130,6 +130,9 @@
                         <ui:Button Click="StartButton_OnClick"
                                    Margin="5,0" IsEnabled="{Binding HasNotStarted}"
                                    HorizontalAlignment="Center" Content="开始" />
+                        <ui:Button Click="HistoryButton_OnClick"
+                                   Margin="5,0" IsEnabled="{Binding HasNotStarted}"
+                                   HorizontalAlignment="Center" Content="历史记录" />
                     </StackPanel>
                 </Grid>
             </ui:Card>

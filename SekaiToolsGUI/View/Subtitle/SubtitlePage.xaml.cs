@@ -161,6 +161,73 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
         }
     }
 
+    private async Task ShowHistoryDialogAsync()
+    {
+        var entries = HistoryStore.LoadAll();
+        if (entries.Count == 0)
+        {
+            SnackService.Show("提示", "暂无历史记录", ControlAppearance.Info,
+                new SymbolIcon(SymbolRegular.Info24), new TimeSpan(0, 0, 3));
+            return;
+        }
+
+        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+        var dialog = new HistoryDialog(dialogService.GetDialogHostEx() ?? throw new InvalidOperationException(), entries);
+        var result = await dialogService.ShowAsync(dialog, CancellationToken);
+
+        if (result == ContentDialogResult.Primary && dialog.SelectedEntry != null)
+        {
+            LinePanel.Children.Clear();
+            ViewModel.DialogCurrent = 0;
+            ViewModel.BannerCurrent = 0;
+            ViewModel.MarkerCurrent = 0;
+
+            var state = dialog.SelectedEntry.State;
+            ViewModel.VideoFilePath = state.VideoFilePath;
+            ViewModel.ScriptFilePath = state.ScriptFilePath;
+            ViewModel.TranslateFilePath = state.TranslateFilePath;
+            LoadHistoryState(state);
+        }
+    }
+
+    private void LoadHistoryState(ProcessingState state)
+    {
+        var settings = SettingPageModel.Instance;
+        try
+        {
+            VideoProcessor = new VideoProcessor(new Config(
+                state.VideoFilePath,
+                state.ScriptFilePath,
+                state.TranslateFilePath,
+                settings.GetStyleFontConfig(),
+                settings.GetExportStyleConfig(),
+                settings.GetTypewriterSetting(),
+                GetMatchingThreshold()
+            ), new VideoProcessCallbacks
+            {
+                OnNewDialog = LinePanel_AddDialogLine,
+                OnNewBanner = LinePanel_AddBannerLine,
+                OnNewMarker = LinePanel_AddMarkerLine
+            });
+
+            VideoProcessor.ApplyState(state);
+            VideoProcessor.ReplayFinishedCallbacks(
+                LinePanel_AddDialogLine,
+                LinePanel_AddBannerLine,
+                LinePanel_AddMarkerLine);
+
+            ViewModel.DialogTotal = VideoProcessor.ContentLength.Dialog;
+            ViewModel.BannerTotal = VideoProcessor.ContentLength.Banner;
+            ViewModel.MarkerTotal = VideoProcessor.ContentLength.Marker;
+            ViewModel.HasNotStarted = false;
+            ViewModel.IsFinished = true;
+        }
+        catch (Exception ex)
+        {
+            SnackService.Show("错误", $"加载历史记录失败: {ex.Message}", ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 5));
+        }
+    }
 
     private async void VideoFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
@@ -201,6 +268,11 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
         StopProcess();
         ViewModel.IsRunning = false;
         ViewModel.IsFinished = true;
+    }
+
+    private async void HistoryButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await ShowHistoryDialogAsync();
     }
 
     private void StartButton_OnClick(object sender, EventArgs arg)
