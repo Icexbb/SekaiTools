@@ -122,6 +122,15 @@ public class TemplateManager(Size videoResolution, bool noScale = false)
             TemplateUsage.DialogContent or TemplateUsage.BannerContent or TemplateUsage.MarkerContent => GetDbFont(),
             _ => throw new ArgumentOutOfRangeException(nameof(usage), usage, null)
         };
+        var letterSpacingScale = usage switch
+        {
+            TemplateUsage.DialogNameTag => 0.02f,
+            TemplateUsage.DialogContent => 0.04f,
+            TemplateUsage.BannerContent => 0.04f,
+            TemplateUsage.MarkerContent => 0.04f,
+            _ => throw new ArgumentOutOfRangeException(nameof(usage), usage, null)
+        };
+        
         font.Edging = SKFontEdging.SubpixelAntialias;
 
         var fontSize = font.Size;
@@ -152,6 +161,15 @@ public class TemplateManager(Size videoResolution, bool noScale = false)
         strokePaint.StrokeWidth = fontSize / 5f;
         strokePaint.StrokeJoin = SKStrokeJoin.Round;
 
+        var glyphs = font.GetGlyphs(text);
+        var positions = font.GetGlyphPositions(glyphs, SKPoint.Empty);
+
+        var letterSpacing = fontSize * letterSpacingScale;
+        for (var i = 0; i < positions.Length; i++)
+            positions[i].X += letterSpacing * i;
+
+        using var textBlob = SKTextBlob.CreatePositioned(text.AsSpan(), font, positions);
+
         switch (usage)
         {
             case TemplateUsage.BannerContent:
@@ -159,13 +177,13 @@ public class TemplateManager(Size videoResolution, bool noScale = false)
             case TemplateUsage.DialogNameTag:
             case TemplateUsage.DialogContent:
             case TemplateUsage.MarkerContent:
-                canvas.DrawText(text, textX, textY, font, strokePaint);
+                canvas.DrawText(textBlob, textX, textY, strokePaint);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(usage), usage, null);
         }
 
-        canvas.DrawText(text, textX, textY, font, fillPaint);
+        canvas.DrawText(textBlob, textX, textY, fillPaint);
 
         canvas.Flush();
 

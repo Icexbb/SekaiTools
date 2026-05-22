@@ -41,6 +41,7 @@ public class DialogTemplateMatcher(
     private Point DialogMatchNameTag(Mat img, DialogBaseFrameSet dialogBase, int frameIndex = -1)
     {
         var content = dialogBase.Data.CharacterOriginal;
+        var contentLen = content.Length;
         var template = GetNameTag(TrimTemplateContent(content));
         var res = LocalMatch(img, template,
             dialogBase.Data.Shake
@@ -51,7 +52,7 @@ public class DialogTemplateMatcher(
 
         Point LocalMatch(Mat src, GaMat tmp, double threshold)
         {
-            var roi = LocalGetCropArea(tmp.Size);
+            var roi = LocalGetCropArea();
             using var imgCropped = new Mat(src, roi);
             var result = TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.DialogNameTag);
 
@@ -70,19 +71,17 @@ public class DialogTemplateMatcher(
             return Point.Empty;
         }
 
-        Rectangle LocalGetCropArea(Size ntt)
+        Rectangle LocalGetCropArea()
         {
+            var offset = TemplateManager.GetFontSize(img.Size);
             var dialogAreaSize = GetDialogAreaSize();
             var rect = new Rectangle
             {
-                X = (videoInfo.Resolution.Width - dialogAreaSize.Width - (int)(ntt.Height * 1f)) / 2,
-                Y = (videoInfo.Resolution.Height - dialogAreaSize.Height - (int)(ntt.Height * 1.3f)) / 1,
-                Height = (int)(ntt.Height * 2f),
-                Width = (int)(ntt.Width * 2f)
+                X = (videoInfo.Resolution.Width - dialogAreaSize.Width - (int)(offset * 2f)) / 2,
+                Y = (videoInfo.Resolution.Height - dialogAreaSize.Height - (int)(offset * 2f)) / 1,
+                Height = (int)(offset * 3f),
+                Width = (int)(offset * contentLen * 3f)
             };
-            rect.Extend(0.5);
-            if (dialogBase.Data.Shake)
-                rect.Extend(0.5);
 
             rect.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
             return rect;
@@ -180,15 +179,15 @@ public class DialogTemplateMatcher(
         bool LocalMatch(Mat src, GaMat tmp, double threshold, TemplateMatchCachePool.MatchUsage usage)
         {
             var offset = TemplateManager.GetFontSize(src.Size);
-            Rectangle dialogStartPosition = new(
-                point.X + (int)(0f * offset),
-                point.Y + (int)(1f * offset),
-                (int)(5.0 * offset),
-                (int)(2.0 * offset)
-            );
-            dialogStartPosition.Extend(0.5);
-            if (dialogBase.Data.Shake)
-                dialogStartPosition.Extend(0.5);
+            var dialogStartPosition = new Rectangle
+            {
+                X = point.X + (int)(-1f * offset),
+                Y = point.Y + (int)(0.5f * offset),
+                Width = (int)(6.0f * offset),
+                Height = (int)(3.0f * offset)
+            };
+
+
             dialogStartPosition.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
 
             using var imgCropped = new Mat(src, dialogStartPosition);

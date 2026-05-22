@@ -501,10 +501,10 @@ public partial class SubtitlePage
                                 var stopReason = VideoProcessor?.StopReason;
                                 var errorMsg = stopReason switch
                                 {
-                                    SekaiToolsCore.ProcessStopReason.Canceled => "用户中止处理",
-                                    SekaiToolsCore.ProcessStopReason.ReadFailed => "视频读帧失败",
-                                    SekaiToolsCore.ProcessStopReason.ExceptionThreshold => "异常过多，自动中止",
-                                    SekaiToolsCore.ProcessStopReason.CaptureError => "视频捕获设备出错",
+                                    ProcessStopReason.Canceled => "用户中止处理",
+                                    ProcessStopReason.ReadFailed => "视频读帧失败",
+                                    ProcessStopReason.ExceptionThreshold => "异常过多，自动中止",
+                                    ProcessStopReason.CaptureError => "视频捕获设备出错",
                                     _ => "未知错误"
                                 };
                                 Logger.Log($"处理异常结束: {stopReason}", LogLevel.Warning);
