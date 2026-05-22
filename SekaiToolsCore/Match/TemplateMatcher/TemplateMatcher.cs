@@ -11,6 +11,10 @@ namespace SekaiToolsCore.Match.TemplateMatcher;
 
 public static class TemplateMatcher
 {
+    private const double SearchDownscaleRatio = 2.0;
+    private const int MinTemplateDimAfterScale = 8;
+    private static readonly Inter SearchInterpolation = Inter.Area;
+
     public static TemplateMatchResult Match(Mat imgOriginal, GaMat tmp,
         TemplateMatchCachePool.MatchUsage usage = TemplateMatchCachePool.MatchUsage.Misc,
         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
@@ -46,14 +50,63 @@ public static class TemplateMatcher
         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
         string memberName = "")
     {
-        var matchResult = new Mat();
+        if (tmp.Size.Width / SearchDownscaleRatio >= MinTemplateDimAfterScale
+            && tmp.Size.Height / SearchDownscaleRatio >= MinTemplateDimAfterScale)
+        {
+            return MatchNoCacheScaled(img, tmp, matchingType, memberName);
+        }
+
+        return MatchNoCacheFull(img, tmp, matchingType, memberName);
+    }
+
+    private static TemplateMatchResult MatchNoCacheScaled(Mat img, GaMat tmp,
+        TemplateMatchingType matchingType, string memberName)
+    {
+        var smallW = (int)(img.Width / SearchDownscaleRatio);
+        var smallH = (int)(img.Height / SearchDownscaleRatio);
+        var smallSize = new Size(smallW, smallH);
+
+        var tmpSmallW = (int)(tmp.Size.Width / SearchDownscaleRatio);
+        var tmpSmallH = (int)(tmp.Size.Height / SearchDownscaleRatio);
+        var tmpSmallSize = new Size(tmpSmallW, tmpSmallH);
+
+        using var imgSmall = new Mat();
+        using var tmpSmall = new Mat();
+        using var alphaSmall = new Mat();
+
+        CvInvoke.Resize(img, imgSmall, smallSize, interpolation: SearchInterpolation);
+        CvInvoke.Resize(tmp.Gray, tmpSmall, tmpSmallSize, interpolation: Inter.Linear);
+        CvInvoke.Resize(tmp.Alpha, alphaSmall, tmpSmallSize, interpolation: Inter.Nearest);
+
+        using var matchResult = new Mat();
+        CvInvoke.MatchTemplate(imgSmall, tmpSmall, matchResult, matchingType, alphaSmall);
+        matchResult.MatRemoveErrorInf();
+        double maxVal = 0, minVal = 0;
+        Point minLoc = new(), maxLoc = new();
+        CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
+
+        maxLoc = new Point(
+            (int)(maxLoc.X * SearchDownscaleRatio + SearchDownscaleRatio / 2),
+            (int)(maxLoc.Y * SearchDownscaleRatio + SearchDownscaleRatio / 2));
+        minLoc = new Point(
+            (int)(minLoc.X * SearchDownscaleRatio + SearchDownscaleRatio / 2),
+            (int)(minLoc.Y * SearchDownscaleRatio + SearchDownscaleRatio / 2));
+
+        ShowImg(img, tmp, maxVal, maxLoc, memberName);
+        return new TemplateMatchResult(maxVal, minVal, maxLoc, minLoc);
+    }
+
+    private static TemplateMatchResult MatchNoCacheFull(Mat img, GaMat tmp,
+        TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
+        string memberName = "")
+    {
+        using var matchResult = new Mat();
         CvInvoke.MatchTemplate(img, tmp.Gray, matchResult, matchingType, tmp.Alpha);
         matchResult.MatRemoveErrorInf();
         double maxVal = 0, minVal = 0;
         Point minLoc = new(), maxLoc = new();
         CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
         ShowImg(img, tmp, maxVal, maxLoc, memberName);
-        matchResult.Dispose();
         return new TemplateMatchResult(maxVal, minVal, maxLoc, minLoc);
     }
 
