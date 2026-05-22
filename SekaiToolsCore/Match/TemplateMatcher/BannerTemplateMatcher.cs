@@ -74,10 +74,7 @@ public class BannerTemplateMatcher(
             var cropArea = UtilFunc.FromCenter(img.Size.Center(),
                 new Size((int)(tmp.Size.Height * text.Length * 1.5), (int)(tmp.Size.Height * 1.5)));
             using var roi = new Mat(src, cropArea);
-            var imgCropped = roi.Clone();
-            MatProcessor.LaplaceSharpen(imgCropped);
-            var result = TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.Banner);
-            imgCropped.Dispose();
+            var result = TemplateMatcher.Match(roi, tmp, TemplateMatchCachePool.MatchUsage.Banner);
 
             if (frameIndex != -1)
                 Logger.Log(

@@ -62,9 +62,16 @@ public class MarkerTemplateMatcher(
             _ => throw new ArgumentOutOfRangeException(nameof(_status), _status, null)
         };
 
-        Point LocalMatch(Mat src, GaMat tmp, TemplateMatchingType matchingType, Point startPos = default)
+        Point LocalMatch(Mat src, GaMat tmp, TemplateMatchingType matchingType)
         {
-            var cropArea = GetRectNormal(tmp, startPos);
+            var cropArea = new Rectangle(Point.Empty,
+                new Size((int)(templateAll.Size.Width * 1.5), (int)(tmp.Size.Height * 3.0)));
+            if (cropArea.Width < tmp.Size.Width || cropArea.Height < tmp.Size.Height)
+                return Point.Empty;
+
+            if (_status == MatchStatus.Matched)
+                cropArea.Width = Math.Min(cropArea.Width * 2, src.Width - cropArea.X);
+
             if (cropArea.IsEmpty)
                 return Point.Empty;
 
@@ -86,26 +93,7 @@ public class MarkerTemplateMatcher(
             if (!matched) return Point.Empty;
 
             var result = matchResult.MaxLoc + new Size(cropArea.X, cropArea.Y) - templateAll.Size + tmp.Size;
-
-            if (_status != MatchStatus.Matched) return result;
-
-            var resultRight = LocalMatch(src, tmp, matchingType,
-                new Point(cropArea.Left + matchResult.MaxLoc.X + tmp.Size.Width, 0));
-
-            return resultRight.IsEmpty ? result : resultRight;
-        }
-
-        Rectangle GetRectNormal(GaMat tmp, Point startPos)
-        {
-            var size = new Size(
-                (int)(templateAll.Size.Width * 1.5) - startPos.X,
-                (int)(tmp.Size.Height * 3.0)
-            );
-            if (size.Width <= 0 || size.Height <= 0)
-                return Rectangle.Empty;
-            if (size.Width < tmp.Size.Width || size.Height < tmp.Size.Height)
-                return Rectangle.Empty;
-            return new Rectangle(startPos with { Y = 0 }, size);
+            return result;
         }
     }
 
