@@ -26,9 +26,18 @@ public static class HistoryStore
         if (!Directory.Exists(dir))
             Directory.CreateDirectory(dir);
 
+        var saveKey = ProgressStore.GetSaveKey(state.VideoFilePath, state.ScriptFilePath, state.TranslateFilePath);
+
+        // 删除相同 hash 的旧记录，只保留最新一条
+        foreach (var oldFile in Directory.EnumerateFiles(dir, $"*_{saveKey}.json"))
+        {
+            try { File.Delete(oldFile); }
+            catch { /* ignore */ }
+        }
+
         var ts = DateTime.Now;
         var timestamp = ts.ToString("yyyy-MM-dd HH:mm:ss");
-        var fileName = $"{ts:yyyyMMdd_HHmmss}_{ProgressStore.GetSaveKey(state.VideoFilePath, state.ScriptFilePath, state.TranslateFilePath)}.json";
+        var fileName = $"{ts:yyyyMMdd_HHmmss}_{saveKey}.json";
 
         var entry = new HistoryEntry { Timestamp = timestamp, State = state };
         var json = JsonSerializer.Serialize(entry, JsonOptions);

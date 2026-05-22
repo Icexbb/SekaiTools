@@ -130,9 +130,7 @@
                         <ui:Button Click="StartButton_OnClick"
                                    Margin="5,0" IsEnabled="{Binding HasNotStarted}"
                                    HorizontalAlignment="Center" Content="开始" />
-                        <ui:Button Click="HistoryButton_OnClick"
-                                   Margin="5,0" IsEnabled="{Binding HasNotStarted}"
-                                   HorizontalAlignment="Center" Content="历史记录" />
+
                     </StackPanel>
                 </Grid>
             </ui:Card>
@@ -242,9 +240,19 @@
                     <StackPanel Name="LinePanel" Margin="5,5,5,15" />
                 </ui:PassiveScrollViewer>
             </ui:Card>
-            <ui:Button Grid.Row="2" HorizontalAlignment="Stretch"
-                       Content="输出" Margin="0,5,0,0" Click="OutputButton_OnClick"
-                       IsEnabled="{Binding Path=IsFinished}" />
+            <Grid Grid.Row="2" Margin="0,5,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ui:Button Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                           Content="输出" Margin="0,0,0,0" Click="OutputButton_OnClick"
+                           IsEnabled="{Binding Path=IsFinished}" />
+                <ui:Button Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                           Content="历史记录" Margin="5,0,0,0" Click="HistoryButton_OnClick"
+                           IsEnabled="{Binding HasNotStarted}" />
+            </Grid>
+
         </Grid>
     </Grid>
 </UserControl>
