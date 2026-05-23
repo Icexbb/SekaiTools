@@ -71,6 +71,10 @@ public class DialogTemplateMatcher(
                 Height = (int)(offset * 3f),
                 Width = (int)(offset * contentLen * 3f)
             };
+            if (dialogBase.IsJitter)
+            {
+                rect.Extend(1.5);
+            }
 
             rect.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
             return rect;
@@ -168,11 +172,15 @@ public class DialogTemplateMatcher(
             var offset = TemplateManager.GetFontSize(src.Size);
             var dialogStartPosition = new Rectangle
             {
-                X = point.X + (int)(-1f * offset),
-                Y = point.Y + (int)(0.5f * offset),
-                Width = (int)(6.0f * offset),
-                Height = (int)(3.0f * offset)
+                X = point.X + (int)(-0.5f * offset),
+                Y = point.Y + (int)(1f * offset),
+                Width = (int)(5.0f * offset),
+                Height = (int)(2.0f * offset)
             };
+            if (dialogBase.IsJitter)
+            {
+                dialogStartPosition.Extend(1.5);
+            }
 
             dialogStartPosition.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
 

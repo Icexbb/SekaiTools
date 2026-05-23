@@ -11,5 +11,5 @@ using System.Windows;
     // app, or any theme specific resource dictionaries)
 )]
 [assembly: SupportedOSPlatform("windows")]
-[assembly: AssemblyVersion("1.5.2.0519")]
-[assembly: AssemblyFileVersion("1.5.2.0519")]
+[assembly: AssemblyVersion("1.5.4.0523")]
+[assembly: AssemblyFileVersion("1.5.4.0523")]

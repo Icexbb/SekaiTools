@@ -122,7 +122,7 @@ public static class UtilFunc
         return SKFontManager.Default.GetFontFamilies();
     }
 
-    extension(Rectangle rect)
+    extension(ref Rectangle rect)
     {
         public void Extend(int x, int y)
         {
@@ -134,17 +134,10 @@ public static class UtilFunc
 
         public void Extend(double ratio)
         {
-            switch (ratio)
-            {
-                case < 0:
-                    return;
-                case < 1:
-                    ratio = 1 + ratio;
-                    break;
-            }
+            if (ratio <= 0) return;
 
-            var x = (int)(rect.Width * ratio);
-            var y = (int)(rect.Height * ratio);
+            var x = (int)(rect.Width * (ratio - 1) / 2);
+            var y = (int)(rect.Height * (ratio - 1) / 2);
             rect.Extend(x, y);
         }
 
