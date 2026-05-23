@@ -15,28 +15,20 @@ public class BannerTemplateMatcher(
     VideoInfo videoInfo,
     SekaiStory storyData,
     TemplateManager templateManager,
-    Config config)
+    Config config
+) : MatcherStateMachine<BannerBaseFrameSet>(
+    storyData.Banners().Select(d => new BannerBaseFrameSet(d, videoInfo.Fps)).ToList(),
+    (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.5)
+)
 {
-    public readonly List<BannerBaseFrameSet> Set = storyData.Banners()
-        .Select(d => new BannerBaseFrameSet(d, videoInfo.Fps))
-        .ToList();
-
     private MatchStatus _status;
 
-    private int _consecutiveFailures;
-    private int _lastFailedIndex = -1;
-    private bool _useFallbackThreshold;
-    private const double FallbackRatio = 0.7;
-    private const double AbsMinThreshold = 0.40;
-    private int FallbackTriggerFrames => (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.5);
-
-    public bool Finished => Set.All(d => d.Finished) || Set.Count == 0;
+    public int LastNotProcessedIndex() => NextUnfinishedIndex();
 
     private GaMat GetTemplate(string content)
     {
         return new GaMat(templateManager.GetTemplate(TemplateUsage.BannerContent, content));
     }
-
 
     private static string TrimContent(string content)
     {
@@ -81,74 +73,33 @@ public class BannerTemplateMatcher(
                     $"{nameof(BannerTemplateMatcher)} Frame {frameIndex} Match Banner {LastNotProcessedIndex()} Result: {result.MaxVal}",
                     ExtLogLevel.Debug);
 
-            var threshold = config.MatchingThreshold.BannerNormal;
-            var effectiveThreshold = _useFallbackThreshold
-                ? Math.Max(threshold * FallbackRatio, AbsMinThreshold)
-                : threshold;
-            return result.MaxVal > effectiveThreshold && result.MaxVal < 1;
+            return result.MaxVal > EffectiveThreshold(config.MatchingThreshold.BannerNormal) && result.MaxVal < 1;
         }
-    }
-
-    private int _firstUnfinishedIndex;
-
-    private void AdvanceFirstUnfinished()
-    {
-        while (_firstUnfinishedIndex < Set.Count && Set[_firstUnfinishedIndex].Finished)
-            _firstUnfinishedIndex++;
-    }
-
-    private static int LastNotProcessedIndex(List<BannerBaseFrameSet> set)
-    {
-        for (var i = 0; i < set.Count; i++)
-            if (!set[i].Finished)
-                return i;
-        return -1;
-    }
-
-    public int LastNotProcessedIndex()
-    {
-        AdvanceFirstUnfinished();
-        return _firstUnfinishedIndex < Set.Count ? _firstUnfinishedIndex : -1;
     }
 
     public void Process(Mat frame, int frameIndex)
     {
         while (!Finished)
         {
-            var index = LastNotProcessedIndex();
+            var index = NextUnfinishedIndex();
             if (index < 0) return;
 
-            if (index != _lastFailedIndex)
-            {
-                _lastFailedIndex = index;
-                _consecutiveFailures = 0;
-                _useFallbackThreshold = false;
-            }
+            ResetForNewTarget(index);
 
             var matchResult = BannerMatch(frame, Set[index].Data.BodyOriginal, frameIndex);
             _status = matchResult;
             switch (matchResult)
             {
                 case MatchStatus.Dropped:
-                    Set[index].Finished = true;
-                    _consecutiveFailures = 0;
-                    _useFallbackThreshold = false;
+                    MarkDropped(index);
                     continue;
                 case MatchStatus.NotMatched:
-                    _consecutiveFailures++;
-                    if (_consecutiveFailures >= FallbackTriggerFrames && !_useFallbackThreshold)
-                    {
-                        _useFallbackThreshold = true;
-                        _consecutiveFailures = 0;
-                        continue;
-                    }
-                    _useFallbackThreshold = false;
+                    if (TryEnterFallback()) continue;
                     return;
                 case MatchStatus.Matched:
                 default:
                     Set[index].Add(frameIndex);
-                    _consecutiveFailures = 0;
-                    _useFallbackThreshold = false;
+                    MarkSucceeded();
                     return;
             }
         }
@@ -163,12 +114,13 @@ public class BannerTemplateMatcher(
 
     public BannerMatcherStateDto SaveState()
     {
+        var (cf, lfi, uft) = SaveFallbackState();
         return new BannerMatcherStateDto
         {
             Status = (int)_status,
-            ConsecutiveFailures = _consecutiveFailures,
-            LastFailedIndex = _lastFailedIndex,
-            UseFallbackThreshold = _useFallbackThreshold,
+            ConsecutiveFailures = cf,
+            LastFailedIndex = lfi,
+            UseFallbackThreshold = uft,
             FrameSets = Set.Select(b => new BannerFrameSetDto
             {
                 Finished = b.Finished,
@@ -181,9 +133,7 @@ public class BannerTemplateMatcher(
     public void RestoreState(BannerMatcherStateDto state)
     {
         _status = (MatchStatus)state.Status;
-        _consecutiveFailures = state.ConsecutiveFailures;
-        _lastFailedIndex = state.LastFailedIndex;
-        _useFallbackThreshold = state.UseFallbackThreshold;
+        RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold);
 
         for (var i = 0; i < state.FrameSets.Count && i < Set.Count; i++)
         {
@@ -194,7 +144,6 @@ public class BannerTemplateMatcher(
                 dst.SetFrameRange(src.Start, src.End);
         }
 
-        _firstUnfinishedIndex = 0;
-        AdvanceFirstUnfinished();
+        NextUnfinishedIndex();
     }
 }

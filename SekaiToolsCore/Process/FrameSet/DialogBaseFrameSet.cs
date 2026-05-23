@@ -19,8 +19,6 @@ public struct Separator
 
 public partial class DialogBaseFrameSet : BaseFrameSet
 {
-    private const int FrameIndexOffset = -1;
-
     public Separator Separate;
 
     public DialogBaseFrameSet(DialogStoryEvent data, FrameRate fps)
@@ -56,8 +54,6 @@ public partial class DialogBaseFrameSet : BaseFrameSet
 
 
     public bool IsJitter => Data.Shake;
-
-    public bool Finished { get; set; }
 
     public bool NeedSetSeparator => Data.BodyTranslated != string.Empty &&
                                     Data.BodyOriginal.LineCount() == 3 &&

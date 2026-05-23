@@ -11,7 +11,6 @@ using SekaiToolsCore.Match.TemplateMatcher;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
-using SekaiToolsCore.Utils;
 
 namespace SekaiToolsCore;
 
@@ -251,24 +250,7 @@ public class VideoProcessor
         // 启动预览消费任务
         _previewConsumerTask = StartPreviewConsumer(_previewChannel, token);
 
-        // Debug usage
-        if (int.TryParse(Environment.GetEnvironmentVariable("DebugFrameID"), out var debugFrameId))
-        {
-            var targetString = Environment.GetEnvironmentVariable("DebugTargetString");
-            var speakerString = Environment.GetEnvironmentVariable("DebugTargetSpeaker");
-            if (targetString != null)
-            {
-                var debugEarlyTerminate = DialogMatcher.DebugSetFinishedUntilContains(targetString, speakerString);
-
-                if (int.TryParse(Environment.GetEnvironmentVariable("DebugEarlyTermination"), out var etLength))
-                {
-                    debugEarlyTerminate += etLength;
-                    DialogMatcher.DebugSetFinishedAfter(debugEarlyTerminate);
-                }
-            }
-
-            capture.Set(CapProp.PosFrames, debugFrameId);
-        }
+        ApplyDebugConfig(capture, DialogMatcher);
 
         var avgDuration = 0d;
         var frameIndex = 0;
@@ -309,8 +291,6 @@ public class VideoProcessor
                     if (!(_previewChannel?.Writer.TryWrite(previewFrame) ?? true))
                         previewFrame.Dispose();
                 }
-
-                FrameProcess.Process(frame);
 
                 if (ContentMatcher is { Finished: false })
                 {
@@ -390,18 +370,9 @@ public class VideoProcessor
             }
         }
 
-        Callbacks.OnProgress(1); // 最终完成信号，不受节流限制
+        Callbacks.OnProgress(1);
 
-        // 关闭预览通道并等待消费任务结束
-        _previewChannel?.Writer.Complete();
-        try
-        {
-            _previewConsumerTask?.Wait(TimeSpan.FromSeconds(2));
-        }
-        catch
-        {
-            // 超时或异常忽略
-        }
+        TeardownPreview();
 
         frame.Dispose();
         capture.Dispose();
@@ -493,9 +464,42 @@ public class VideoProcessor
         }
     }
 
-    /// <summary>
-    /// 启动预览帧消费任务，确保 Mat 资源正确释放
-    /// </summary>
+    [Conditional("DEBUG")]
+    private static void ApplyDebugConfig(VideoCapture capture, DialogTemplateMatcher dialogMatcher)
+    {
+        if (!Debugger.IsAttached) return;
+
+        if (!int.TryParse(Environment.GetEnvironmentVariable("DebugFrameID"), out var debugFrameId))
+            return;
+
+        var targetString = Environment.GetEnvironmentVariable("DebugTargetString");
+        var speakerString = Environment.GetEnvironmentVariable("DebugTargetSpeaker");
+        if (targetString != null)
+        {
+            var debugEarlyTerminate = dialogMatcher.DebugSetFinishedUntilContains(targetString, speakerString);
+            if (int.TryParse(Environment.GetEnvironmentVariable("DebugEarlyTermination"), out var etLength))
+            {
+                debugEarlyTerminate += etLength;
+                dialogMatcher.DebugSetFinishedAfter(debugEarlyTerminate);
+            }
+        }
+
+        capture.Set(CapProp.PosFrames, debugFrameId);
+    }
+
+    private void TeardownPreview()
+    {
+        _previewChannel?.Writer.Complete();
+        try
+        {
+            _previewConsumerTask?.Wait(TimeSpan.FromSeconds(2));
+        }
+        catch
+        {
+            // 超时或异常忽略
+        }
+    }
+
     private async Task StartPreviewConsumer(Channel<Mat> previewChannel, CancellationToken token)
     {
         try

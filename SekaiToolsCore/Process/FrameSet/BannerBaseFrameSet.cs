@@ -9,8 +9,6 @@ public class BannerBaseFrameSet(BannerStoryEvent data, FrameRate fps) : BaseFram
     public BannerStoryEvent Data { get; } = data;
     private FrameRate Fps { get; } = fps;
 
-    public bool Finished { get; set; }
-
     public void Add(int index)
     {
         if (_start > index) _start = index;

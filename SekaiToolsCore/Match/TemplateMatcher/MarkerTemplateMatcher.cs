@@ -9,31 +9,22 @@ using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
 using SekaiStory = SekaiToolsBase.Story.Story;
 
-
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
 public class MarkerTemplateMatcher(
     VideoInfo videoInfo,
     SekaiStory storyData,
     TemplateManager templateManager,
-    Config config)
+    Config config
+) : MatcherStateMachine<MarkerBaseFrameSet>(
+    storyData.Markers().Select(d => new MarkerBaseFrameSet(d, videoInfo.Fps)).ToList(),
+    (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.5)
+)
 {
     private readonly Dictionary<string, GaMat> _templates = new();
-
-    public readonly List<MarkerBaseFrameSet> Set = storyData.Markers()
-        .Select(d => new MarkerBaseFrameSet(d, videoInfo.Fps))
-        .ToList();
-
     private MatchStatus _status;
 
-    private int _consecutiveFailures;
-    private int _lastFailedIndex = -1;
-    private bool _useFallbackThreshold;
-    private const double FallbackRatio = 0.7;
-    private const double AbsMinThreshold = 0.40;
-    private int FallbackTriggerFrames => (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.5);
-
-    public bool Finished => Set.All(d => d.Finished) || Set.Count == 0;
+    public int LastNotProcessedIndex() => NextUnfinishedIndex();
 
     private GaMat GetTemplate(string content)
     {
@@ -85,10 +76,7 @@ public class MarkerTemplateMatcher(
                     $"{nameof(DialogTemplateMatcher)} Frame {frameIndex} Match Marker {LastNotProcessedIndex()} Result: {matchResult.MaxVal}",
                     ExtLogLevel.Debug);
 
-            var threshold = config.MatchingThreshold.MarkerNormal;
-            var effectiveThreshold = _useFallbackThreshold
-                ? Math.Max(threshold * FallbackRatio, AbsMinThreshold)
-                : threshold;
+            var effectiveThreshold = EffectiveThreshold(config.MatchingThreshold.MarkerNormal);
             var matched = matchResult.MaxVal > effectiveThreshold && matchResult.MaxVal < 1;
 
             if (!matched) return Point.Empty;
@@ -98,41 +86,14 @@ public class MarkerTemplateMatcher(
         }
     }
 
-    private int _firstUnfinishedIndex;
-
-    private void AdvanceFirstUnfinished()
-    {
-        while (_firstUnfinishedIndex < Set.Count && Set[_firstUnfinishedIndex].Finished)
-            _firstUnfinishedIndex++;
-    }
-
-    private static int LastNotProcessedIndex(IReadOnlyList<MarkerBaseFrameSet> set)
-    {
-        for (var i = 0; i < set.Count; i++)
-            if (!set[i].Finished)
-                return i;
-        return -1;
-    }
-
-    public int LastNotProcessedIndex()
-    {
-        AdvanceFirstUnfinished();
-        return _firstUnfinishedIndex < Set.Count ? _firstUnfinishedIndex : -1;
-    }
-
     public void Process(Mat frame, int frameIndex)
     {
         while (!Finished)
         {
-            var index = LastNotProcessedIndex();
+            var index = NextUnfinishedIndex();
             if (index < 0) return;
 
-            if (index != _lastFailedIndex)
-            {
-                _lastFailedIndex = index;
-                _consecutiveFailures = 0;
-                _useFallbackThreshold = false;
-            }
+            ResetForNewTarget(index);
 
             var matchResult = MarkerMatch(frame, Set[index].Data.BodyOriginal, frameIndex);
             _status = matchResult.Status;
@@ -140,25 +101,15 @@ public class MarkerTemplateMatcher(
             switch (matchResult.Status)
             {
                 case MatchStatus.Dropped:
-                    Set[index].Finished = true;
-                    _consecutiveFailures = 0;
-                    _useFallbackThreshold = false;
+                    MarkDropped(index);
                     continue;
                 case MatchStatus.NotMatched:
-                    _consecutiveFailures++;
-                    if (_consecutiveFailures >= FallbackTriggerFrames && !_useFallbackThreshold)
-                    {
-                        _useFallbackThreshold = true;
-                        _consecutiveFailures = 0;
-                        continue;
-                    }
-                    _useFallbackThreshold = false;
+                    if (TryEnterFallback()) continue;
                     return;
                 case MatchStatus.Matched:
                 default:
                     Set[index].Add(frameIndex, matchResult.Point);
-                    _consecutiveFailures = 0;
-                    _useFallbackThreshold = false;
+                    MarkSucceeded();
                     return;
             }
         }
@@ -179,12 +130,13 @@ public class MarkerTemplateMatcher(
 
     public MarkerMatcherStateDto SaveState()
     {
+        var (cf, lfi, uft) = SaveFallbackState();
         return new MarkerMatcherStateDto
         {
             Status = (int)_status,
-            ConsecutiveFailures = _consecutiveFailures,
-            LastFailedIndex = _lastFailedIndex,
-            UseFallbackThreshold = _useFallbackThreshold,
+            ConsecutiveFailures = cf,
+            LastFailedIndex = lfi,
+            UseFallbackThreshold = uft,
             FrameSets = Set.Select(m => new MarkerFrameSetDto
             {
                 Finished = m.Finished,
@@ -196,9 +148,7 @@ public class MarkerTemplateMatcher(
     public void RestoreState(MarkerMatcherStateDto state)
     {
         _status = (MatchStatus)state.Status;
-        _consecutiveFailures = state.ConsecutiveFailures;
-        _lastFailedIndex = state.LastFailedIndex;
-        _useFallbackThreshold = state.UseFallbackThreshold;
+        RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold);
 
         for (var i = 0; i < state.FrameSets.Count && i < Set.Count; i++)
         {
@@ -210,7 +160,6 @@ public class MarkerTemplateMatcher(
                 dst.Frames.Add(new MarkerFrameResult(f.Index, dst.Fps, new Point(f.X, f.Y)));
         }
 
-        _firstUnfinishedIndex = 0;
-        AdvanceFirstUnfinished();
+        NextUnfinishedIndex();
     }
 }

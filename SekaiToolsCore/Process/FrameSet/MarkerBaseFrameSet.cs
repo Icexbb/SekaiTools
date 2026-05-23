@@ -11,12 +11,9 @@ public class MarkerFrameResult(int index, FrameRate fps, Point point) : ProcessF
 
 public class MarkerBaseFrameSet(MarkerStoryEvent data, FrameRate fps) : BaseFrameSet
 {
-    private static int FrameIndexOffset { get; } = -1;
     public MarkerStoryEvent Data { get; } = data;
     public FrameRate Fps { get; } = fps;
     public List<MarkerFrameResult> Frames { get; } = [];
-    public bool Finished { get; set; }
-
     public void Add(int index, Point point)
     {
         Frames.Add(new MarkerFrameResult(index + FrameIndexOffset, Fps, point));

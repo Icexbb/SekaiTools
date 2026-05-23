@@ -16,23 +16,15 @@ public class DialogTemplateMatcher(
     Story storyData,
     TemplateManager templateManager,
     Config config
+) : MatcherStateMachine<DialogBaseFrameSet>(
+    storyData.Dialogs().Select(d => new DialogBaseFrameSet(d, videoInfo.Fps)).ToList(),
+    (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.5)
 )
 {
-    public readonly List<DialogBaseFrameSet> Set =
-        storyData.Dialogs().Select(d => new DialogBaseFrameSet(d, videoInfo.Fps)).ToList();
-
     private Point _nameTagPosition;
+    private MatchStatus _status;
 
-    private MatchStatus _status = 0;
-
-    private int _consecutiveFailures;
-    private int _lastFailedIndex = -1;
-    private bool _useFallbackThreshold;
-    private const double FallbackRatio = 0.7;
-    private const double AbsMinThreshold = 0.40;
-    private int FallbackTriggerFrames => (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.5);
-
-    public bool Finished => Set.All(d => d.Finished) || Set.Count == 0;
+    public int LastNotProcessedIndex() => NextUnfinishedIndex();
 
     private GaMat GetNameTag(string name)
     {
@@ -62,11 +54,7 @@ public class DialogTemplateMatcher(
                     $"{nameof(DialogTemplateMatcher)} Frame {frameIndex} Match Name Tag {LastNotProcessedIndex()} Result: {result.MaxVal}",
                     ExtLogLevel.Debug);
 
-
-            var effectiveThreshold = _useFallbackThreshold
-                ? Math.Max(threshold * FallbackRatio, AbsMinThreshold)
-                : threshold;
-            if (effectiveThreshold < result.MaxVal && result.MaxVal < 1)
+            if (EffectiveThreshold(threshold) < result.MaxVal && result.MaxVal < 1)
                 return new Point(result.MaxLoc.X + roi.X, result.MaxLoc.Y + roi.Y);
 
             return Point.Empty;
@@ -133,7 +121,6 @@ public class DialogTemplateMatcher(
         var template3 = charTemplates[2];
 
         bool matchRes;
-
         var matchingThreshold = dialogBase.Data.Shake
             ? config.MatchingThreshold.DialogContentSpecial
             : config.MatchingThreshold.DialogContentNormal;
@@ -176,7 +163,6 @@ public class DialogTemplateMatcher(
                 return MatchStatus.DialogNotMatched;
         }
 
-
         bool LocalMatch(Mat src, GaMat tmp, double threshold, TemplateMatchCachePool.MatchUsage usage)
         {
             var offset = TemplateManager.GetFontSize(src.Size);
@@ -188,7 +174,6 @@ public class DialogTemplateMatcher(
                 Height = (int)(3.0f * offset)
             };
 
-
             dialogStartPosition.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
 
             using var imgCropped = new Mat(src, dialogStartPosition);
@@ -199,10 +184,7 @@ public class DialogTemplateMatcher(
                     $"{nameof(DialogTemplateMatcher)} Frame {frameIndex} Match Dialog Content {LastNotProcessedIndex()} Result: {result.MaxVal}",
                     ExtLogLevel.Debug);
 
-            var effectiveThreshold = _useFallbackThreshold
-                ? Math.Max(threshold * FallbackRatio, AbsMinThreshold)
-                : threshold;
-            return result.MaxVal > effectiveThreshold && result.MaxVal < 1;
+            return result.MaxVal > EffectiveThreshold(threshold) && result.MaxVal < 1;
         }
 
         List<GaMat> GetDialogInd()
@@ -215,28 +197,6 @@ public class DialogTemplateMatcher(
             var mat3 = templateManager.GetTemplate(TemplateUsage.DialogContent, dialogBody3);
             return [new GaMat(mat1), new GaMat(mat2), new GaMat(mat3)];
         }
-    }
-
-    private int _firstUnfinishedIndex;
-
-    private void AdvanceFirstUnfinished()
-    {
-        while (_firstUnfinishedIndex < Set.Count && Set[_firstUnfinishedIndex].Finished)
-            _firstUnfinishedIndex++;
-    }
-
-    private static int LastNotProcessedIndex(IReadOnlyList<DialogBaseFrameSet> set)
-    {
-        for (var i = 0; i < set.Count; i++)
-            if (!set[i].Finished)
-                return i;
-        return -1;
-    }
-
-    public int LastNotProcessedIndex()
-    {
-        AdvanceFirstUnfinished();
-        return _firstUnfinishedIndex < Set.Count ? _firstUnfinishedIndex : -1;
     }
 
     public int DebugSetFinishedUntilContains(string targetString, string? speaker = null)
@@ -274,15 +234,10 @@ public class DialogTemplateMatcher(
 
         while (!Finished)
         {
-            var dIndex = LastNotProcessedIndex(Set);
+            var dIndex = NextUnfinishedIndex();
             if (dIndex < 0) break;
 
-            if (dIndex != _lastFailedIndex)
-            {
-                _lastFailedIndex = dIndex;
-                _consecutiveFailures = 0;
-                _useFallbackThreshold = false;
-            }
+            ResetForNewTarget(dIndex);
 
             var dialogRefers = Set[dIndex];
             var matchResult = MatchForDialog(frame, dialogRefers, frameIndex);
@@ -292,26 +247,15 @@ public class DialogTemplateMatcher(
             switch (_status)
             {
                 case MatchStatus.DialogDropped:
-                    Set[dIndex].Finished = true;
-                    _consecutiveFailures = 0;
-                    _useFallbackThreshold = false;
+                    MarkDropped(dIndex);
                     TemplateMatchCachePool.NextDialog();
                     continue;
                 case MatchStatus.DialogNotMatched or MatchStatus.NameTagNotMatched:
-                    _consecutiveFailures++;
-                    if (_consecutiveFailures >= FallbackTriggerFrames && !_useFallbackThreshold)
-                    {
-                        _useFallbackThreshold = true;
-                        _consecutiveFailures = 0;
-                        continue;
-                    }
-
-                    _useFallbackThreshold = false;
+                    if (TryEnterFallback()) continue;
                     return IsStatusMatched(firstStatus.Value);
                 default:
                     Set[dIndex].Add(frameIndex, matchResult.Point);
-                    _consecutiveFailures = 0;
-                    _useFallbackThreshold = false;
+                    MarkSucceeded();
                     return IsStatusMatched(firstStatus.Value);
             }
         }
@@ -355,7 +299,6 @@ public class DialogTemplateMatcher(
         DialogDropped = -1
     }
 
-
     private struct MatchResult(Point point, MatchStatus status)
     {
         public readonly Point Point = point;
@@ -364,12 +307,13 @@ public class DialogTemplateMatcher(
 
     public DialogMatcherStateDto SaveState()
     {
+        var (cf, lfi, uft) = SaveFallbackState();
         return new DialogMatcherStateDto
         {
             Status = (int)_status,
-            ConsecutiveFailures = _consecutiveFailures,
-            LastFailedIndex = _lastFailedIndex,
-            UseFallbackThreshold = _useFallbackThreshold,
+            ConsecutiveFailures = cf,
+            LastFailedIndex = lfi,
+            UseFallbackThreshold = uft,
             NameTagPosition = _nameTagPosition.IsEmpty
                 ? null
                 : new PointDto(_nameTagPosition.X, _nameTagPosition.Y),
@@ -387,9 +331,7 @@ public class DialogTemplateMatcher(
     public void RestoreState(DialogMatcherStateDto state)
     {
         _status = (MatchStatus)state.Status;
-        _consecutiveFailures = state.ConsecutiveFailures;
-        _lastFailedIndex = state.LastFailedIndex;
-        _useFallbackThreshold = state.UseFallbackThreshold;
+        RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold);
         _nameTagPosition = state.NameTagPosition is { } p
             ? new Point(p.X, p.Y)
             : Point.Empty;
@@ -406,7 +348,6 @@ public class DialogTemplateMatcher(
                 dst.Frames.Add(new DialogFrameResult(f.Index, dst.Fps, new Point(f.X, f.Y)));
         }
 
-        _firstUnfinishedIndex = 0;
-        AdvanceFirstUnfinished();
+        NextUnfinishedIndex();
     }
 }

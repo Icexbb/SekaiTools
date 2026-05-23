@@ -15,6 +15,18 @@ public static class Logger
 
     private static Dictionary<string, ILogger> LoggerDictionary { get; } = new();
 
+    public static bool IsEnabled(LogLevel logLevel,
+        [CallerMemberName] string callerMemberName = "")
+    {
+        if (!LoggerDictionary.TryGetValue(callerMemberName, out var logger))
+        {
+            logger = Factory.CreateLogger(callerMemberName);
+            LoggerDictionary[callerMemberName] = logger;
+        }
+
+        return logger.IsEnabled(logLevel);
+    }
+
     public static void Log(string message, LogLevel logLevel = LogLevel.Information,
         [CallerMemberName] string callerMemberName = "")
     {
