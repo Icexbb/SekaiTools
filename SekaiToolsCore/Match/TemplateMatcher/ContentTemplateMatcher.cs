@@ -21,7 +21,6 @@ public class ContentTemplateMatcher(TemplateManager templateManager, Config conf
         var width = Template.Size.Width * 3;
         var height = Template.Size.Height * 2;
         var roi = new Rectangle(mat.Width - width, 0, width, height);
-        roi.Extend(0.1);
 
         using var frameCropped = new Mat(mat, roi);
         var result = TemplateMatcher.Match(frameCropped, Template, TemplateMatchCachePool.MatchUsage.ContentStartSign);
