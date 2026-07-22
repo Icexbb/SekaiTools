@@ -107,7 +107,17 @@ public static class ProgressStore
             Directory.CreateDirectory(dir);
         var path = GetSavePath(saveKey);
         var json = JsonSerializer.Serialize(state, JsonOptions);
-        File.WriteAllText(path, json);
+        var tempPath = Path.Combine(dir, $".{saveKey}.{Guid.NewGuid():N}.tmp");
+        try
+        {
+            File.WriteAllText(tempPath, json);
+            File.Move(tempPath, path, true);
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+        }
     }
 
     public static ProcessingState? Load(string saveKey)

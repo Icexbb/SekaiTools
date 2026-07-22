@@ -68,6 +68,8 @@ public class VideoProcessor
     private int _saveInterval = 300;
     private int _framesSinceLastSave;
     private bool _frameSetJustCompleted;
+    private readonly object _progressSaveLock = new();
+    private Task _progressSaveTask = Task.CompletedTask;
     private readonly string _videoPath;
     private readonly string _scriptPath;
     private readonly string _translatePath;
@@ -372,6 +374,11 @@ public class VideoProcessor
 
         TeardownPreview();
 
+        var finalState = CaptureState();
+        if (_saveKey != null)
+            QueueProgressSave(_saveKey, finalState);
+        WaitForProgressSave();
+
         frame.Dispose();
         capture.Dispose();
         if (ReferenceEquals(Capture, capture))
@@ -384,7 +391,7 @@ public class VideoProcessor
         Logger.Log($"视频处理结束: {StopReason}, 当前帧={frameIndex}, 总帧={frameCount}", ExtLogLevel.Information);
 
         if (StopReason == ProcessStopReason.Completed)
-            HistoryStore.Add(CaptureState());
+            HistoryStore.Add(finalState);
 
         return;
 
@@ -399,7 +406,7 @@ public class VideoProcessor
                 _frameSetJustCompleted = false;
                 var snapshot = CaptureState();
                 var key = _saveKey;
-                Task.Run(() => ProgressStore.Save(key, snapshot));
+                QueueProgressSave(key, snapshot);
             }
         }
 
@@ -459,6 +466,46 @@ public class VideoProcessor
                 Callbacks.OnFps(fps, eta);
                 _lastFpsCallbackTime = now;
             }
+        }
+    }
+
+    private void QueueProgressSave(string saveKey, ProcessingState state)
+    {
+        lock (_progressSaveLock)
+        {
+            _progressSaveTask = SaveAfterPreviousAsync(_progressSaveTask, saveKey, state);
+        }
+    }
+
+    private static async Task SaveAfterPreviousAsync(Task previousSave, string saveKey, ProcessingState state)
+    {
+        try
+        {
+            await previousSave.ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Logger.Log($"保存上一份处理进度失败: {e.Message}", ExtLogLevel.Error);
+        }
+
+        await Task.Run(() => ProgressStore.Save(saveKey, state)).ConfigureAwait(false);
+    }
+
+    private void WaitForProgressSave()
+    {
+        Task saveTask;
+        lock (_progressSaveLock)
+        {
+            saveTask = _progressSaveTask;
+        }
+
+        try
+        {
+            saveTask.GetAwaiter().GetResult();
+        }
+        catch (Exception e)
+        {
+            Logger.Log($"保存最终处理进度失败: {e.Message}", ExtLogLevel.Error);
         }
     }
 
