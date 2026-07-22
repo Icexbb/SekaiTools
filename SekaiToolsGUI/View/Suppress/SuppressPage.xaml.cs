@@ -90,7 +90,11 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     {
         try
         {
-            Suppressor.Instance.Suppress();
+            await Suppressor.Instance.SuppressAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            // 用户主动停止。
         }
         catch (Exception exc)
         {
@@ -110,14 +114,14 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     }
 
 
-    private void DisposeButton_OnClick(object sender, RoutedEventArgs e)
+    private async void DisposeButton_OnClick(object sender, RoutedEventArgs e)
     {
-        Suppressor.Instance.Clean();
+        await Suppressor.Instance.CleanAsync();
     }
 
-    private void ClearButton_OnClick(object sender, RoutedEventArgs e)
+    private async void ClearButton_OnClick(object sender, RoutedEventArgs e)
     {
-        Suppressor.Instance.Clean();
+        await Suppressor.Instance.CleanAsync();
         ViewModel.Reset();
     }
 

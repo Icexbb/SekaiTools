@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -11,7 +12,9 @@ namespace SekaiToolsGUI.Suppress;
 
 public partial class Suppressor
 {
-    private readonly List<Task> _subTasks = [];
+    private readonly object _runLock = new();
+    private CancellationTokenSource? _cancellationTokenSource;
+    private Task? _runTask;
     private Process? _fProcess;
     private Process? _vProcess;
     public static Suppressor Instance { get; } = new();
@@ -109,98 +112,139 @@ public partial class Suppressor
         return SuppressPageModel.Instance.SourceFrameCount;
     }
 
-    public void Suppress()
+    public Task SuppressAsync()
+    {
+        lock (_runLock)
+        {
+            if (_runTask is { IsCompleted: false })
+                return _runTask;
+
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = new CancellationTokenSource();
+            _runTask = RunAsync(_cancellationTokenSource.Token);
+            return _runTask;
+        }
+    }
+
+    private async Task RunAsync(CancellationToken cancellationToken)
     {
         if (!ScriptExist)
-        {
-            SuppressPageModel.Instance.Status = "Script not found";
-            return;
-        }
+            throw new FileNotFoundException("压制运行环境不完整");
 
         if (!SourceExist)
-        {
-            SuppressPageModel.Instance.Status = "Source not found";
-            return;
-        }
+            throw new FileNotFoundException("源视频不存在", SuppressPageModel.Instance.SourceVideo);
 
         _vProcess = GetVapourProcess();
         _fProcess = GetFfmpegProcess();
 
-        _vProcess.Start();
-        _fProcess.Start();
+        SuppressPageModel.Instance.ReloadStatus();
+        SuppressPageModel.Instance.HasNotStarted = false;
+        Running = true;
+        UpdateProgression();
+        try
+        {
+            if (!_vProcess.Start())
+                throw new InvalidOperationException("无法启动 VSPipe");
+            if (!_fProcess.Start())
+                throw new InvalidOperationException("无法启动 FFmpeg");
 
-        CreateSubTasks();
-    }
+            var pipeTask = TransferPipeAsync(cancellationToken);
+            var logTask = UpdateLogAsync(cancellationToken);
+            await Task.WhenAll(pipeTask, logTask);
+            await Task.WhenAll(
+                _vProcess.WaitForExitAsync(cancellationToken),
+                _fProcess.WaitForExitAsync(cancellationToken));
 
-    private void CreateSubTasks()
-    {
-        _subTasks.Clear();
-        _subTasks.Add(new Task(UpdateLog));
-        _subTasks.Add(new Task(TransferPipe));
-        _subTasks.ForEach(p => p.Start());
+            if (_vProcess.ExitCode != 0)
+                throw new InvalidOperationException($"VSPipe 异常退出，退出码: {_vProcess.ExitCode}");
+            if (_fProcess.ExitCode != 0)
+                throw new InvalidOperationException($"FFmpeg 异常退出，退出码: {_fProcess.ExitCode}");
+
+            FrameCount = GetFrameCount();
+        }
+        catch (Exception) when (cancellationToken.IsCancellationRequested)
+        {
+            throw new OperationCanceledException(cancellationToken);
+        }
+        finally
+        {
+            StopProcess(_vProcess);
+            StopProcess(_fProcess);
+            Running = false;
+            UpdateProgression();
+            _vProcess?.Dispose();
+            _fProcess?.Dispose();
+            _vProcess = null;
+            _fProcess = null;
+        }
     }
 
     public void Clean()
     {
-        DisposeProcess(_vProcess);
-        DisposeProcess(_fProcess);
-        _vProcess = null;
-        _fProcess = null;
+        _cancellationTokenSource?.Cancel();
+        StopProcess(_vProcess);
+        StopProcess(_fProcess);
 
         SuppressPageModel.Instance.ReloadStatus();
 
         FrameCount = 0;
         Fps = 0;
         Running = false;
-        return;
-
-        void DisposeProcess(Process? p)
-        {
-            if (p == null) return;
-            try { p.Kill(); }
-            catch (InvalidOperationException) { /* already exited */ }
-            catch (System.ComponentModel.Win32Exception) { /* already exited */ }
-            p.Dispose();
-        }
     }
 
-    private void TransferPipe()
+    private static void StopProcess(Process? process)
+    {
+        if (process == null) return;
+        try
+        {
+            if (!process.HasExited)
+                process.Kill(true);
+        }
+        catch (InvalidOperationException) { /* already exited */ }
+        catch (System.ComponentModel.Win32Exception) { /* already exited */ }
+    }
+
+    public async Task CleanAsync()
+    {
+        Task? runTask;
+        lock (_runLock)
+        {
+            runTask = _runTask;
+        }
+
+        Clean();
+        if (runTask != null)
+            try
+            {
+                await runTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // 用户主动停止。
+            }
+
+        SuppressPageModel.Instance.ReloadStatus();
+    }
+
+    private async Task TransferPipeAsync(CancellationToken cancellationToken)
     {
         if (_vProcess == null || _fProcess == null) return;
         var vapourOut = _vProcess.StandardOutput.BaseStream;
         var ffmpegIn = _fProcess.StandardInput.BaseStream;
-
-        var buffer = new byte[512];
-        try
-        {
-            int byteRead;
-            while ((byteRead = vapourOut.Read(buffer, 0, buffer.Length)) > 0) ffmpegIn.Write(buffer, 0, byteRead);
-
-            ffmpegIn.Close();
-        }
-        catch (Exception e)
-        {
-            SuppressPageModel.Instance.Status += e.Message;
-        }
+        await vapourOut.CopyToAsync(ffmpegIn, cancellationToken);
+        await ffmpegIn.FlushAsync(cancellationToken);
+        ffmpegIn.Close();
     }
 
-    private void UpdateLog()
+    private async Task UpdateLogAsync(CancellationToken cancellationToken)
     {
-        Running = true;
-        SuppressPageModel.Instance.ReloadStatus();
-        SuppressPageModel.Instance.HasNotStarted = false;
+        if (_fProcess == null) return;
 
-        while (_fProcess is { StandardError.EndOfStream: false })
+        while (await _fProcess.StandardError.ReadLineAsync(cancellationToken) is { } log)
         {
-            var log = _fProcess.StandardError.ReadLine();
-            if (log == null) continue;
             AnalysisLog(log);
             UpdateProgression();
         }
-
-        Running = false;
-        FrameCount = GetFrameCount();
-        UpdateProgression();
     }
 
     private void AnalysisLog(string log)
@@ -208,8 +252,8 @@ public partial class Suppressor
         if (FfmpegProgressPattern().IsMatch(log))
         {
             var match = FfmpegProgressPattern().Match(log);
-            FrameCount = int.Parse(match.Groups["FrameNumber"].Value);
-            Fps = double.Parse(match.Groups["FramesPerSecond"].Value);
+            FrameCount = int.Parse(match.Groups["FrameNumber"].Value, CultureInfo.InvariantCulture);
+            Fps = double.Parse(match.Groups["FramesPerSecond"].Value, CultureInfo.InvariantCulture);
 
             var lastLine = SuppressPageModel.Instance.Status.Split("\n").Last();
             if (FfmpegProgressPattern().IsMatch(lastLine))
@@ -231,7 +275,10 @@ public partial class Suppressor
 
     private void UpdateProgression()
     {
-        SuppressPageModel.Instance.Progression = (double)FrameCount / GetFrameCount();
+        var totalFrames = GetFrameCount();
+        SuppressPageModel.Instance.Progression = totalFrames > 0
+            ? Math.Clamp((double)FrameCount / totalFrames, 0, 1)
+            : 0;
         SuppressPageModel.Instance.Fps = Fps;
         SuppressPageModel.Instance.Running = Running;
     }
