@@ -36,7 +36,8 @@ public class GameScript()
                     switch (eff.EffectType)
                     {
                         case 6:
-                            shakeIndex.Add(talkDataCount - 1);
+                            if (talkDataCount > 0)
+                                shakeIndex.Add(talkDataCount - 1);
                             if (eff.Duration > 10) shaking = true;
                             break;
                         case 26:
@@ -49,7 +50,9 @@ public class GameScript()
                 }
             }
 
-        foreach (var i in shakeIndex) TalkData[i].Shake = true;
+        foreach (var i in shakeIndex.Distinct())
+            if ((uint)i < (uint)TalkData.Length)
+                TalkData[i].Shake = true;
 
         List<Snippet> sn = [];
         var seCount = 0;

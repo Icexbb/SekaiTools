@@ -32,10 +32,9 @@ public class Story
                 {
                     case 1:
                     {
-                        var talkData = gameScript.TalkData[dialogCount];
-
                         if (dialogCount < gameScript.TalkData.Length)
                         {
+                            var talkData = gameScript.TalkData[dialogCount];
                             var storyDialogEvent = new DialogStoryEvent(
                                 dialogCount,
                                 talkData.Body, talkData.GetCharacterId(),
@@ -51,6 +50,9 @@ public class Story
                     }
                     case 6:
                     {
+                        if (effectCount >= gameScript.SpecialEffectData.Length)
+                            break;
+
                         var seData = gameScript.SpecialEffectData[effectCount];
                         switch (seData.EffectType)
                         {
