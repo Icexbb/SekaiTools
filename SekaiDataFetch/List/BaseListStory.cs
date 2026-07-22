@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using SekaiDataFetch.Source;
 using SekaiToolsBase;
 
@@ -89,11 +90,32 @@ public abstract class BaseListStory
                 if (sourceValue != null && cachePath != null)
                 {
                     var content = await Fetcher.Fetch(sourceValue);
-                    await File.WriteAllTextAsync(cachePath, content);
+                    using var _ = JsonDocument.Parse(content);
+                    return (CachePath: cachePath, Content: content);
                 }
+
+                return (CachePath: (string?)null, Content: (string?)null);
             }).ToArray();
 
-        await Task.WhenAll(tasks);
+        var downloads = await Task.WhenAll(tasks);
+        foreach (var (cachePath, content) in downloads)
+        {
+            if (cachePath == null || content == null) continue;
+            var directory = Path.GetDirectoryName(cachePath)
+                            ?? throw new InvalidDataException($"缓存路径无效: {cachePath}");
+            Directory.CreateDirectory(directory);
+            var tempPath = Path.Combine(directory, $".{Path.GetFileName(cachePath)}.{Guid.NewGuid():N}.tmp");
+            try
+            {
+                await File.WriteAllTextAsync(tempPath, content);
+                File.Move(tempPath, cachePath, true);
+            }
+            finally
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+        }
 
         Logger.Log($"{type.Name} data refreshed from sources: {string.Join(", ", sourceProps.Keys)}");
 

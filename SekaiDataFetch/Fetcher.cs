@@ -41,7 +41,7 @@ public class Fetcher
         };
     }
 
-    public async Task<string> Fetch(string url, string defaultResult = "{}")
+    public async Task<string> Fetch(string url)
     {
         return await TryGet();
 
@@ -59,9 +59,9 @@ public class Fetcher
                     LogLevel.Error);
                 if (time > 0) return await TryGet(time - 1);
                 if (Debugger.IsAttached) throw;
-                Logger.Log($"{GetType().Name} All retries exhausted for {url}, returning default result",
+                Logger.Log($"{GetType().Name} All retries exhausted for {url}",
                     LogLevel.Error);
-                return defaultResult;
+                throw;
             }
             catch (TaskCanceledException)
             {
@@ -71,7 +71,7 @@ public class Fetcher
                 if (time > 0) return await TryGet(time - 1);
                 Logger.Log($"{GetType().Name} All retries exhausted for {url} due to timeout",
                     LogLevel.Error);
-                return defaultResult;
+                throw;
             }
         }
 
