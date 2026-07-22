@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - "*.*.*"
+
+permissions:
+  contents: write
+
 env:
   DOTNET_VERSION: '10.0.x' # The .NET SDK version to use
   BUILD_DIR: 'SekaiTools'
@@ -60,7 +64,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           name: Release ${{ env.VERSION }}
-          body: Release ${{ env.VERSION }}
+          generate_release_notes: true
           draft: false
           prerelease: false
           files: |
