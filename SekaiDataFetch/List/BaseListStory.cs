@@ -27,12 +27,12 @@ public abstract class BaseListStory
     {
         get
         {
-            var fields = GetType().GetFields(BindingFlags.NonPublic |
-                                             BindingFlags.Static |
-                                             BindingFlags.Instance);
-            return fields
-                .Where(f => f.GetCustomAttributes(typeof(CachePathAttribute), false).Length != 0)
-                .Select(f => f.GetValue(this) as string)
+            var properties = GetType().GetProperties(BindingFlags.NonPublic |
+                                                     BindingFlags.Public |
+                                                     BindingFlags.Static);
+            return properties
+                .Where(p => p.GetCustomAttributes(typeof(CachePathAttribute), false).Length != 0)
+                .Select(p => p.GetValue(null) as string)
                 .Where(s => s != null)
                 .ToArray()!;
         }
