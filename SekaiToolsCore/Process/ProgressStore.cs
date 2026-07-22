@@ -102,12 +102,17 @@ public static class ProgressStore
 
     public static void Save(string saveKey, ProcessingState state)
     {
-        var dir = ProgressDir;
+        SaveToPath(GetSavePath(saveKey), state);
+    }
+
+    internal static void SaveToPath(string path, ProcessingState state)
+    {
+        var dir = Path.GetDirectoryName(path)
+                  ?? throw new InvalidDataException($"进度保存路径无效: {path}");
         if (!Directory.Exists(dir))
             Directory.CreateDirectory(dir);
-        var path = GetSavePath(saveKey);
         var json = JsonSerializer.Serialize(state, JsonOptions);
-        var tempPath = Path.Combine(dir, $".{saveKey}.{Guid.NewGuid():N}.tmp");
+        var tempPath = Path.Combine(dir, $".{Path.GetFileName(path)}.{Guid.NewGuid():N}.tmp");
         try
         {
             File.WriteAllText(tempPath, json);
