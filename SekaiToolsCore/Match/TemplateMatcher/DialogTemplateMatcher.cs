@@ -35,7 +35,7 @@ public class DialogTemplateMatcher(
     {
         var content = dialogBase.Data.CharacterOriginal;
         var contentLen = content.Length;
-        var template = GetNameTag(TrimTemplateContent(content));
+        using var template = GetNameTag(TrimTemplateContent(content));
         var res = LocalMatch(img, template,
             dialogBase.Data.Shake
                 ? config.MatchingThreshold.DialogNametagSpecial
@@ -129,42 +129,50 @@ public class DialogTemplateMatcher(
             ? config.MatchingThreshold.DialogContentSpecial
             : config.MatchingThreshold.DialogContentNormal;
 
-        switch (lastStatus)
+        try
         {
-            case MatchStatus.DialogNotMatched:
+            switch (lastStatus)
             {
-                matchRes = LocalMatch(img, template1, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent1);
-                return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogNotMatched;
+                case MatchStatus.DialogNotMatched:
+                {
+                    matchRes = LocalMatch(img, template1, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent1);
+                    return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogNotMatched;
+                }
+                case MatchStatus.DialogMatched1:
+                {
+                    matchRes = LocalMatch(img, template2, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent2);
+                    if (matchRes) return MatchStatus.DialogMatched2;
+                    matchRes = LocalMatch(img, template1, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent1);
+                    return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogDropped;
+                }
+                case MatchStatus.DialogMatched2:
+                {
+                    matchRes = LocalMatch(img, template3, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent3);
+                    if (matchRes) return MatchStatus.DialogMatched3;
+                    matchRes = LocalMatch(img, template2, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent2);
+                    return matchRes ? MatchStatus.DialogMatched2 : MatchStatus.DialogDropped;
+                }
+                case MatchStatus.DialogMatched3:
+                {
+                    matchRes = LocalMatch(img, template3, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent3);
+                    return matchRes ? MatchStatus.DialogMatched3 : MatchStatus.DialogDropped;
+                }
+                case MatchStatus.NameTagNotMatched:
+                case MatchStatus.DialogDropped:
+                default:
+                    return MatchStatus.DialogNotMatched;
             }
-            case MatchStatus.DialogMatched1:
-            {
-                matchRes = LocalMatch(img, template2, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent2);
-                if (matchRes) return MatchStatus.DialogMatched2;
-                matchRes = LocalMatch(img, template1, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent1);
-                return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogDropped;
-            }
-            case MatchStatus.DialogMatched2:
-            {
-                matchRes = LocalMatch(img, template3, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent3);
-                if (matchRes) return MatchStatus.DialogMatched3;
-                matchRes = LocalMatch(img, template2, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent2);
-                return matchRes ? MatchStatus.DialogMatched2 : MatchStatus.DialogDropped;
-            }
-            case MatchStatus.DialogMatched3:
-            {
-                matchRes = LocalMatch(img, template3, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent3);
-                return matchRes ? MatchStatus.DialogMatched3 : MatchStatus.DialogDropped;
-            }
-            case MatchStatus.NameTagNotMatched:
-            case MatchStatus.DialogDropped:
-            default:
-                return MatchStatus.DialogNotMatched;
+        }
+        finally
+        {
+            foreach (var template in charTemplates)
+                template.Dispose();
         }
 
         bool LocalMatch(Mat src, GaMat tmp, double threshold, TemplateMatchCachePool.MatchUsage usage)

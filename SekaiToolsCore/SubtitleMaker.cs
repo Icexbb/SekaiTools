@@ -77,6 +77,12 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         return new GaMat(templateManager.GetTemplate(TemplateUsage.DialogNameTag, name));
     }
 
+    private int GetNameTagWidth(string name)
+    {
+        using var nameTag = GetNameTag(name);
+        return nameTag.Size.Width;
+    }
+
     private static Queue<char> FormatDialogBodyArr(string body)
     {
         var bodyCopy = body
@@ -307,7 +313,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
             var characterItemPosition =
                 dialogBaseFrameSet.Start().Point +
-                new Size(GetNameTag(dialogBaseFrameSet.Data.CharacterOriginal).Size.Width + 10, 0);
+                new Size(GetNameTagWidth(dialogBaseFrameSet.Data.CharacterOriginal) + 10, 0);
             var characterItemPositionTag = $@"{{\pos({characterItemPosition.X},{characterItemPosition.Y})}}";
             var characterItem = SubtitleEvent.Dialog(
                 characterItemPositionTag + characterName, startTime, endTime, "Character");
@@ -352,7 +358,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
                 }
                 else
                 {
-                    var offset = GetNameTag(dialogBaseFrameSet.Data.CharacterOriginal).Size.Width;
+                    var offset = GetNameTagWidth(dialogBaseFrameSet.Data.CharacterOriginal);
                     var position = frame.Point + new Size(offset + 10, 0);
                     var tag = $@"{{\pos({position.X},{position.Y})}}";
 

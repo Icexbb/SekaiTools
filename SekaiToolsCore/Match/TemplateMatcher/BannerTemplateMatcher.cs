@@ -51,7 +51,7 @@ public class BannerTemplateMatcher(
     private MatchStatus BannerMatch(Mat img, string text, int frameIndex = -1)
     {
         var sText = TrimContent(text);
-        var template = GetTemplate(sText);
+        using var template = GetTemplate(sText);
         var match = LocalMatch(img, template);
 
         return _status switch
