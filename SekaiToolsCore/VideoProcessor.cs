@@ -244,7 +244,7 @@ public class VideoProcessor
         // 初始化预览通道（有界队列，容量 1）
         _previewChannel = Channel.CreateBounded<Mat>(new BoundedChannelOptions(1)
         {
-            FullMode = BoundedChannelFullMode.DropOldest
+            FullMode = BoundedChannelFullMode.Wait
         });
 
         // 启动预览消费任务
@@ -287,9 +287,7 @@ public class VideoProcessor
                 if (frameIndex % previewInterval == 0)
                 {
                     var previewFrame = frame.Clone();
-                    // 发送预览帧到有界队列（丢旧帧）
-                    if (!(_previewChannel?.Writer.TryWrite(previewFrame) ?? true))
-                        previewFrame.Dispose();
+                    EnqueueLatestPreview(previewFrame);
                 }
 
                 if (ContentMatcher is { Finished: false })
@@ -498,6 +496,30 @@ public class VideoProcessor
         {
             // 超时或异常忽略
         }
+
+        // 消费任务可能因取消而提前退出，释放仍留在通道中的原生图像。
+        while (_previewChannel?.Reader.TryRead(out var pendingFrame) == true)
+            pendingFrame.Dispose();
+    }
+
+    private void EnqueueLatestPreview(Mat previewFrame)
+    {
+        var channel = _previewChannel;
+        if (channel == null)
+        {
+            previewFrame.Dispose();
+            return;
+        }
+
+        if (channel.Writer.TryWrite(previewFrame)) return;
+
+        // 通道容量为 1。显式取出并释放旧帧，避免 DropOldest 静默丢弃 Mat
+        // 后无人负责释放其原生缓冲区。
+        if (channel.Reader.TryRead(out var droppedFrame))
+            droppedFrame.Dispose();
+
+        if (!channel.Writer.TryWrite(previewFrame))
+            previewFrame.Dispose();
     }
 
     private async Task StartPreviewConsumer(Channel<Mat> previewChannel, CancellationToken token)
