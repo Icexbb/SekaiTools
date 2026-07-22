@@ -48,8 +48,9 @@ public enum ProcessStopReason
     CaptureError // 捕获设备错误
 }
 
-public class VideoProcessor
+public class VideoProcessor : IDisposable
 {
+    private bool _disposed;
     private volatile bool _isProcessing;
     private int _consecutiveExceptionCount;
     private const int ExceptionThreshold = 10;
@@ -589,5 +590,20 @@ public class VideoProcessor
         {
             // 预期的取消
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        if (_isProcessing)
+            throw new InvalidOperationException("视频处理仍在运行，不能释放处理器");
+
+        TokenSource?.Dispose();
+        Capture?.Dispose();
+        ContentMatcher?.Dispose();
+        MarkerMatcher?.Dispose();
+        Creator?.Dispose();
+        TemplateMatchCachePool.ResetAll();
+        _disposed = true;
     }
 }

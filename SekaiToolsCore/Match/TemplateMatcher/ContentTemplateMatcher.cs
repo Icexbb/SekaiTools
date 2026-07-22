@@ -8,7 +8,7 @@ using SekaiToolsCore.Utils;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
-public class ContentTemplateMatcher(TemplateManager templateManager, Config config)
+public class ContentTemplateMatcher(TemplateManager templateManager, Config config) : IDisposable
 {
     private GaMat Template { get; } = new(templateManager.GetMenuSign(), false);
 
@@ -42,5 +42,10 @@ public class ContentTemplateMatcher(TemplateManager templateManager, Config conf
     public void ForceFinish()
     {
         Finished = true;
+    }
+
+    public void Dispose()
+    {
+        Template.Dispose();
     }
 }

@@ -19,7 +19,7 @@ public class MarkerTemplateMatcher(
 ) : MatcherStateMachine<MarkerBaseFrameSet>(
     storyData.Markers().Select(d => new MarkerBaseFrameSet(d, videoInfo.Fps)).ToList(),
     (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.5)
-)
+), IDisposable
 {
     private readonly Dictionary<string, GaMat> _templates = new();
     private MatchStatus _status;
@@ -161,5 +161,12 @@ public class MarkerTemplateMatcher(
         }
 
         NextUnfinishedIndex();
+    }
+
+    public void Dispose()
+    {
+        foreach (var template in _templates.Values)
+            template.Dispose();
+        _templates.Clear();
     }
 }

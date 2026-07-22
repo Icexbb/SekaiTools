@@ -195,6 +195,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
         var settings = SettingPageModel.Instance;
         try
         {
+            VideoProcessor?.Dispose();
             VideoProcessor = new VideoProcessor(new Config(
                 state.VideoFilePath,
                 state.ScriptFilePath,
@@ -256,6 +257,8 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     private void ResetButton_OnClick(object sender, RoutedEventArgs e)
     {
         StopProcess();
+        VideoProcessor?.Dispose();
+        VideoProcessor = null;
         ViewModel.Reset();
         LinePanel.Children.Clear();
         TextBlockProgression.Text = "";
@@ -637,6 +640,7 @@ public partial class SubtitlePage
             LogLevel.Information);
         try
         {
+            VideoProcessor?.Dispose();
             VideoProcessor = new VideoProcessor(new Config(
                     ViewModel.VideoFilePath,
                     ViewModel.ScriptFilePath,

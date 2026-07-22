@@ -15,7 +15,7 @@ public enum TemplateUsage
     MarkerContent
 }
 
-public class TemplateManager(Size videoResolution, bool noScale = false)
+public class TemplateManager(Size videoResolution, bool noScale = false) : IDisposable
 {
     private const string MenuSignBase = "menu-107px.png";
     private const string DbFontBase = "FOT-RodinNTLGPro-DB.otf";
@@ -215,5 +215,24 @@ public class TemplateManager(Size videoResolution, bool noScale = false)
         var mat = CreateImageWithText(usage, text);
         usageDict[text] = mat;
         return mat;
+    }
+
+    public void Dispose()
+    {
+        _menuSign?.Dispose();
+        _menuSign = null;
+        foreach (var usageTemplates in _template.Values)
+        {
+            if (usageTemplates == null) continue;
+            foreach (var template in usageTemplates.Values)
+                template.Dispose();
+            usageTemplates.Clear();
+        }
+
+        _template.Clear();
+        _dbTypeface?.Dispose();
+        _ebTypeface?.Dispose();
+        _dbTypeface = null;
+        _ebTypeface = null;
     }
 }

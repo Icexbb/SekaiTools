@@ -4,7 +4,7 @@ using SekaiStory = SekaiToolsBase.Story.Story;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
-public class TemplateMatcherCreator
+public class TemplateMatcherCreator : IDisposable
 {
     public TemplateMatcherCreator(Config config)
     {
@@ -43,5 +43,10 @@ public class TemplateMatcherCreator
     public SubtitleMaker SubtitleMaker()
     {
         return new SubtitleMaker(VInfo, Manager, Config);
+    }
+
+    public void Dispose()
+    {
+        Manager.Dispose();
     }
 }

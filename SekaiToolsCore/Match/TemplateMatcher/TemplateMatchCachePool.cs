@@ -67,6 +67,13 @@ public class TemplateMatchCachePool
         GlobalPool[(int)MatchUsage.DialogContent3].Reset();
     }
 
+    public static void ResetAll()
+    {
+        foreach (var pool in GlobalPool)
+            pool.Reset();
+        _currentFrameIndex = -1;
+    }
+
     public void RegisterResult(Mat img, TemplateMatchResult result)
     {
         prevImg?.Dispose();
