@@ -45,8 +45,6 @@ public class ResourceManager
 
     public static ResourceManager Instance { get; } = new();
 
-    private HttpClient Client { get; } = new() { Timeout = TimeSpan.FromSeconds(30) };
-
     private Proxy UserProxy { get; set; } = Proxy.None;
 
     public void SetProxy(Proxy proxy)
@@ -74,8 +72,11 @@ public class ResourceManager
 
     private async Task<HttpResponseMessage> Download(string url)
     {
-        using var client = new HttpClient(GetHttpHandler());
-        var response = await Client.GetAsync(url);
+        using var client = new HttpClient(GetHttpHandler())
+        {
+            Timeout = TimeSpan.FromSeconds(30)
+        };
+        var response = await client.GetAsync(url);
         response.EnsureSuccessStatusCode();
         return response;
     }
@@ -149,7 +150,7 @@ public class ResourceManager
         var fileUrl = ResourceServerUrl + resource.Path;
 
         Console.WriteLine($"Downloading {fileUrl}");
-        var response = await Download(fileUrl);
+        using var response = await Download(fileUrl);
         var fileBytes = await response.Content.ReadAsByteArrayAsync();
         await File.WriteAllBytesAsync(filename, fileBytes);
         Console.WriteLine($"Download completed: {filename}");
@@ -172,7 +173,7 @@ public class ResourceManager
 
         Console.WriteLine($"Downloading {fileListUrl}");
 
-        var response = await Download(fileListUrl);
+        using var response = await Download(fileListUrl);
         var fileListJson = await response.Content.ReadAsStringAsync();
 
         var fileList = JsonSerializer.Deserialize<Resource[]>(fileListJson, new JsonSerializerOptions
