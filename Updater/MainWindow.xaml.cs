@@ -186,47 +186,15 @@ public partial class MainWindow : Window
             throw new InvalidDataException($"更新包解压失败，7zr 退出码: {process.ExitCode}");
     }
 
-    private void EnsureMainAppStopped()
-    {
-        foreach (var process in Process.GetProcessesByName(MainAppName))
-        {
-            process.Kill();
-            if (!process.WaitForExit(5000))
-                throw new InvalidOperationException("无法关闭正在运行的 SekaiToolsGUI");
-        }
-    }
-
-    private static void CopyDirectoryRecursive(string source, string dest)
-    {
-        Directory.CreateDirectory(dest);
-        foreach (var file in Directory.GetFiles(source))
-        {
-            var destFile = Path.Combine(dest, Path.GetFileName(file));
-            try
-            {
-                File.Copy(file, destFile, overwrite: true);
-            }
-            catch (IOException)
-            {
-                // 被当前进程锁定的文件（Updater.dll 等）稍后由批处理脚本替换
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // 防病毒软件等锁定的文件，同样由批处理脚本替换
-            }
-        }
-
-        foreach (var dir in Directory.GetDirectories(source))
-        {
-            var dirName = Path.GetFileName(dir);
-            CopyDirectoryRecursive(dir, Path.Combine(dest, dirName));
-        }
-    }
-
     private void StartMainApp(string tempDir)
     {
-        // 为被锁定的 Updater 文件创建一个后续替换脚本
+        // Updater 退出后再替换全部文件；复制失败时用备份恢复旧版本。
         var scriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "post_update.cmd");
+        var installDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(
+            Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var sourceDir = Path.Combine(tempDir, "SekaiTools");
+        var backupDir = Path.Combine(tempDir, "backup");
+        var failureLog = Path.Combine(installDir, "update_failed.txt");
         var pid = Environment.ProcessId;
         var script =
             $"@echo off\r\n" +
@@ -236,10 +204,27 @@ public partial class MainWindow : Window
             $"    timeout /t 1 /nobreak > nul\r\n" +
             $"    goto wait\r\n" +
             $")\r\n" +
-            $"xcopy /y /e /q \"{tempDir}\\SekaiTools\\*\" \"{AppDomain.CurrentDomain.BaseDirectory}\" > nul\r\n" +
-            $"rmdir /s /q \"{tempDir}\"\r\n" +
+            $"taskkill /IM \"{MainAppName}.exe\" /F > nul 2>&1\r\n" +
+            $"xcopy /y /e /i /h /q \"{installDir}\\*\" \"{backupDir}\\\" > nul\r\n" +
+            $"if errorlevel 1 goto backup_failed\r\n" +
+            $"xcopy /y /e /i /h /q \"{sourceDir}\\*\" \"{installDir}\\\" > nul\r\n" +
+            $"if errorlevel 1 goto rollback\r\n" +
             $"start \"\" \"{MainAppPath}\"\r\n" +
+            $"rmdir /s /q \"{tempDir}\"\r\n" +
             $"del \"{scriptPath}\"\r\n";
+        script +=
+            $"exit /b 0\r\n" +
+            $":rollback\r\n" +
+            $"xcopy /y /e /i /h /q \"{backupDir}\\*\" \"{installDir}\\\" > nul\r\n" +
+            $"echo 更新文件复制失败，已尝试恢复旧版本。> \"{failureLog}\"\r\n" +
+            $"start \"\" \"{MainAppPath}\"\r\n" +
+            $"del \"{scriptPath}\"\r\n" +
+            $"exit /b 1\r\n" +
+            $":backup_failed\r\n" +
+            $"echo 无法备份当前版本，未执行更新。> \"{failureLog}\"\r\n" +
+            $"start \"\" \"{MainAppPath}\"\r\n" +
+            $"del \"{scriptPath}\"\r\n" +
+            $"exit /b 1\r\n";
         File.WriteAllText(scriptPath, script);
 
         Process.Start(new ProcessStartInfo
@@ -292,12 +277,7 @@ public partial class MainWindow : Window
             if (!File.Exists(Path.Combine(sourceDir, $"{MainAppName}.exe")))
                 throw new InvalidDataException("更新包目录结构无效，未找到主程序");
 
-            StatusText.Text = "正在更新文件...";
-            var targetDir = AppDomain.CurrentDomain.BaseDirectory;
-            EnsureMainAppStopped();
-            CopyDirectoryRecursive(sourceDir, targetDir);
-
-            StatusText.Text = "更新完成，正在启动主程序...";
+            StatusText.Text = "更新包已准备完成，正在安全替换文件...";
             await Task.Delay(1000);
             StartMainApp(tempDir);
         }
