@@ -44,6 +44,13 @@ jobs:
       - name: Zip the Build
         run: 7z a SekaiTools-${{ env.VERSION }}.7z ${{ env.BUILD_DIR }}/*
 
+      - name: Generate SHA-256 checksum
+        shell: pwsh
+        run: |
+          $archive = "SekaiTools-$env:VERSION.7z"
+          $checksum = (Get-FileHash -Algorithm SHA256 $archive).Hash.ToLowerInvariant()
+          Set-Content -Path "$archive.sha256" -Value $checksum -Encoding ascii -NoNewline
+
       - name: Create Release and Upload Release Asset
         uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
@@ -55,3 +62,4 @@ jobs:
           prerelease: false
           files: |
             SekaiTools-${{ env.VERSION }}.7z
+            SekaiTools-${{ env.VERSION }}.7z.sha256

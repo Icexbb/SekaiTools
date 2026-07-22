@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
 using System.Windows;
@@ -125,11 +126,32 @@ public partial class MainWindow : Window
             var read1 = read;
             Dispatcher.Invoke(() =>
             {
-                Progress.Value = (double)read1 / total * 100;
+                Progress.IsIndeterminate = total <= 0;
+                if (total > 0)
+                    Progress.Value = (double)read1 / total * 100;
                 StatusText.Text = $"新版本 {version}\n" +
-                                  $"正在下载更新包... {Progress.Value:F0}%";
+                                  (total > 0
+                                      ? $"正在下载更新包... {Progress.Value:F0}%"
+                                      : $"正在下载更新包... {read1 / 1024d / 1024d:F1} MB");
             });
         }
+    }
+
+    private async Task VerifyPackageAsync(string packagePath, string checksumUrl)
+    {
+        using var client = CreateHttpClient();
+        client.Timeout = TimeSpan.FromSeconds(30);
+        var checksumText = await client.GetStringAsync(checksumUrl);
+        var expected = checksumText.Split((char[]?)null,
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(expected) || expected.Length != 64)
+            throw new InvalidDataException("更新包校验文件格式无效");
+
+        await using var stream = File.OpenRead(packagePath);
+        var actual = Convert.ToHexString(await SHA256.HashDataAsync(stream));
+        if (!string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("更新包 SHA-256 校验失败，已停止更新");
     }
 
     private static async Task<int> ReadChunkAsync(Stream stream, byte[] buffer, TimeSpan timeout)
@@ -147,23 +169,31 @@ public partial class MainWindow : Window
 
     private void Extract7Z(string filePath, string targetDir)
     {
-        // 确保先关闭主程序
-        foreach (var p in Process.GetProcessesByName(MainAppName))
-        {
-            p.Kill();
-            p.WaitForExit(5000);
-        }
-
-
+        var extractorPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "7zr.exe");
+        if (!File.Exists(extractorPath))
+            throw new FileNotFoundException("更新解压程序不存在", extractorPath);
         var psi = new ProcessStartInfo
         {
-            FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "7zr.exe"),
+            FileName = extractorPath,
             Arguments = $"x \"{filePath}\" -y -o\"{targetDir}\"",
             CreateNoWindow = true,
             UseShellExecute = false
         };
-        var p2 = Process.Start(psi);
-        p2?.WaitForExit();
+        using var process = Process.Start(psi)
+                            ?? throw new InvalidOperationException("无法启动更新解压程序");
+        process.WaitForExit();
+        if (process.ExitCode != 0)
+            throw new InvalidDataException($"更新包解压失败，7zr 退出码: {process.ExitCode}");
+    }
+
+    private void EnsureMainAppStopped()
+    {
+        foreach (var process in Process.GetProcessesByName(MainAppName))
+        {
+            process.Kill();
+            if (!process.WaitForExit(5000))
+                throw new InvalidOperationException("无法关闭正在运行的 SekaiToolsGUI");
+        }
     }
 
     private static void CopyDirectoryRecursive(string source, string dest)
@@ -244,20 +274,27 @@ public partial class MainWindow : Window
 
             var url = $"https://github.com/Icexbb/SekaiTools/releases/download/" +
                       $"{remoteVersion}/SekaiTools-{remoteVersion}.7z";
-            var zipFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update.7z");
-            if (File.Exists(zipFile)) File.Delete(zipFile);
+            var checksumUrl = url + ".sha256";
+            var tempDir = Path.Combine(Path.GetTempPath(), $"SekaiToolsUpdate-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(tempDir);
+            var zipFile = Path.Combine(tempDir, "update.7z");
 
             await DownloadFileAsync(url, zipFile, remoteVersion);
+            StatusText.Text = "正在校验更新包...";
+            Progress.IsIndeterminate = true;
+            await VerifyPackageAsync(zipFile, checksumUrl);
 
             StatusText.Text = "正在解压更新包...";
-            var targetDir = AppDomain.CurrentDomain.BaseDirectory;
-            var tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp");
-
             Extract7Z(zipFile, tempDir);
             File.Delete(zipFile);
-            StatusText.Text = "正在更新文件...";
 
             var sourceDir = Path.Combine(tempDir, "SekaiTools");
+            if (!File.Exists(Path.Combine(sourceDir, $"{MainAppName}.exe")))
+                throw new InvalidDataException("更新包目录结构无效，未找到主程序");
+
+            StatusText.Text = "正在更新文件...";
+            var targetDir = AppDomain.CurrentDomain.BaseDirectory;
+            EnsureMainAppStopped();
             CopyDirectoryRecursive(sourceDir, targetDir);
 
             StatusText.Text = "更新完成，正在启动主程序...";
