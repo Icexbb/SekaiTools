@@ -30,6 +30,9 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Run Tests
+        run: dotnet test SekaiTools.Tests/SekaiTools.Tests.csproj -c Release
+
       - name: Dotnet Build
         run: |
           dotnet restore ${{ env.PROJECT_NAME }}
