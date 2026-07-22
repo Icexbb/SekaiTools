@@ -6,6 +6,10 @@ namespace SekaiToolsGUI;
 
 public partial class App : Application
 {
+    private const string SingleInstanceMutexName = @"Local\SekaiToolsGUI-1D56E931-7BB9-4E91-B960-76A04EC83C45";
+    private Mutex? _singleInstanceMutex;
+    private bool _ownsSingleInstanceMutex;
+
     public App()
     {
         DispatcherUnhandledException += OnDispatcherUnhandledException;
@@ -15,9 +19,31 @@ public partial class App : Application
         Logger.Log("SekaiToolsGUI 启动", LogLevel.Information);
     }
 
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        _singleInstanceMutex = new Mutex(true, SingleInstanceMutexName, out var createdNew);
+        _ownsSingleInstanceMutex = createdNew;
+        if (!createdNew)
+        {
+            MessageBox.Show("SekaiTools 已在运行中。", "SekaiTools",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            Shutdown();
+            return;
+        }
+
+        base.OnStartup(e);
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
         Logger.Log($"SekaiToolsGUI 退出 (exitCode={e.ApplicationExitCode})", LogLevel.Information);
+        if (_ownsSingleInstanceMutex)
+        {
+            _singleInstanceMutex?.ReleaseMutex();
+            _ownsSingleInstanceMutex = false;
+        }
+
+        _singleInstanceMutex?.Dispose();
         base.OnExit(e);
     }
 
