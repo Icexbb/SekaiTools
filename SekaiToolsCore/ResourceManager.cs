@@ -86,7 +86,7 @@ public class ResourceManager
         if (!ResourceTypePathMap.TryGetValue(type, out var typeDir))
             throw new ArgumentException($"ResourceType {type} not mapped");
 
-        var filename = Path.Combine(BasePath, typeDir, fileName);
+        var filename = EnsurePathWithinType(type, Path.Combine(BasePath, typeDir, fileName));
         return File.Exists(filename) ? filename : throw new FileNotFoundException($"{filename} not found");
     }
 
@@ -98,7 +98,7 @@ public class ResourceManager
 
     private static bool CheckResourceFile(ResourceType type, Resource file)
     {
-        var filename = NormalizePath(Path.Combine(BasePath, file.Path));
+        var filename = EnsurePathWithinType(type, Path.Combine(BasePath, file.Path));
         if (!File.Exists(filename)) return false;
         return file.Size == new FileInfo(filename).Length &&
                string.Equals(file.Md5, CalculateMd5(filename), StringComparison.CurrentCultureIgnoreCase);
@@ -141,7 +141,7 @@ public class ResourceManager
 
     private async Task EnsureResourceFile(ResourceType type, Resource resource)
     {
-        var filename = NormalizePath(Path.Combine(BasePath, resource.Path));
+        var filename = EnsurePathWithinType(type, Path.Combine(BasePath, resource.Path));
         var fileDir = Path.GetDirectoryName(filename);
         if (fileDir != null && !Directory.Exists(fileDir)) Directory.CreateDirectory(fileDir);
         if (CheckResourceFile(type, resource)) return;
@@ -160,6 +160,23 @@ public class ResourceManager
     {
         return Path.GetFullPath(path.Trim())
             .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    }
+
+    private static string EnsurePathWithinType(ResourceType type, string path)
+    {
+        if (!ResourceTypePathMap.TryGetValue(type, out var typeDir))
+            throw new ArgumentException($"ResourceType {type} not mapped");
+
+        var typeRoot = NormalizePath(Path.Combine(BasePath, typeDir));
+        var candidate = NormalizePath(path);
+        var comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        var rootPrefix = typeRoot + Path.DirectorySeparatorChar;
+        if (!candidate.StartsWith(rootPrefix, comparison))
+            throw new InvalidDataException($"资源路径超出 {typeDir} 目录: {path}");
+
+        return candidate;
     }
 
     private async Task<Resource[]> GetFileList(ResourceType type)
