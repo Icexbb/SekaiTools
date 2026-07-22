@@ -266,8 +266,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     private void StopButton_OnClick(object sender, RoutedEventArgs e)
     {
         StopProcess();
-        ViewModel.IsRunning = false;
-        ViewModel.IsFinished = true;
+        ViewModel.IsCanceling = true;
     }
 
     private async void HistoryButton_OnClick(object sender, RoutedEventArgs e)
@@ -653,9 +652,18 @@ public partial class SubtitlePage
                         Dispatcher.Invoke(() =>
                         {
                             ViewModel.IsRunning = false;
-                            if (!VideoProcessor?.Finished ?? false)
+                            ViewModel.IsCanceling = false;
+                            var stopReason = VideoProcessor?.StopReason;
+                            if (stopReason == ProcessStopReason.Canceled)
                             {
-                                var stopReason = VideoProcessor?.StopReason;
+                                ViewModel.IsCanceled = true;
+                                Logger.Log("处理已由用户取消，可输出当前结果", LogLevel.Information);
+                                SnackService.Show("提示", "处理已取消，可以输出当前结果进行人工复核",
+                                    ControlAppearance.Info,
+                                    new SymbolIcon(SymbolRegular.Info24), new TimeSpan(0, 0, 4));
+                            }
+                            else if (!VideoProcessor?.Finished ?? false)
+                            {
                                 var errorMsg = stopReason switch
                                 {
                                     ProcessStopReason.Canceled => "用户中止处理",
@@ -684,6 +692,9 @@ public partial class SubtitlePage
                         Dispatcher.Invoke(() =>
                         {
                             ViewModel.IsRunning = true;
+                            ViewModel.IsFinished = false;
+                            ViewModel.IsCanceled = false;
+                            ViewModel.IsCanceling = false;
                             ViewModel.HasNotStarted = false;
                             var contentLength = VideoProcessor?.ContentLength;
                             if (contentLength != null)

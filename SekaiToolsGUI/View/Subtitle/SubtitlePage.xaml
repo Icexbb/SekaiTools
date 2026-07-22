@@ -122,10 +122,10 @@
 
                     <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
                         <ui:Button Click="ResetButton_OnClick"
-                                   Margin="5,0" Visibility="{calcBinding:Binding '!HasNotStarted and IsFinished'}"
+                                   Margin="5,0" Visibility="{calcBinding:Binding '!HasNotStarted and CanOutput'}"
                                    HorizontalAlignment="Center" Content="重置" />
                         <ui:Button Click="StopButton_OnClick" Margin="5,0"
-                                   Visibility="{calcBinding:Binding '!HasNotStarted and !IsFinished'}"
+                                   Visibility="{calcBinding:Binding '!HasNotStarted and !CanOutput'}"
                                    HorizontalAlignment="Center" Content="停止" />
                         <ui:Button Click="StartButton_OnClick"
                                    Margin="5,0" IsEnabled="{Binding HasNotStarted}"
@@ -247,7 +247,7 @@
                 </Grid.ColumnDefinitions>
                 <ui:Button Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                            Content="输出" Margin="0,0,0,0" Click="OutputButton_OnClick"
-                           IsEnabled="{Binding Path=IsFinished}" />
+                           IsEnabled="{Binding Path=CanOutput}" />
                 <ui:Button Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                            Content="历史记录" Margin="5,0,0,0" Click="HistoryButton_OnClick"
                            IsEnabled="{Binding HasNotStarted}" />

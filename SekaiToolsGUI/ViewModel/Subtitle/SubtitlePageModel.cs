@@ -66,6 +66,32 @@ public class SubtitlePageModel : ViewModelBase
         }
     }
 
+    public bool IsCanceled
+    {
+        get => GetProperty(false);
+        set
+        {
+            SetProperty(value);
+            SetResetEnabled();
+            SetRunningStatus();
+            OnPropertyChanged(nameof(CanOutput));
+            OnPropertyChanged(nameof(CanOutput));
+        }
+    }
+
+    public bool IsCanceling
+    {
+        get => GetProperty(false);
+        set
+        {
+            SetProperty(value);
+            SetResetEnabled();
+            SetRunningStatus();
+        }
+    }
+
+    public bool CanOutput => IsFinished || IsCanceled;
+
     public string RunningStatus
     {
         get => GetProperty("未开始");
@@ -155,8 +181,12 @@ public class SubtitlePageModel : ViewModelBase
 
     private void SetRunningStatus()
     {
-        if (IsFinished)
+        if (IsCanceled)
+            RunningStatus = "已取消";
+        else if (IsFinished)
             RunningStatus = "已完成";
+        else if (IsCanceling)
+            RunningStatus = "正在取消";
         else if (IsRunning)
             RunningStatus = "运行中";
         else
@@ -170,6 +200,8 @@ public class SubtitlePageModel : ViewModelBase
         TranslateFilePath = "";
         IsRunning = false;
         IsFinished = false;
+        IsCanceled = false;
+        IsCanceling = false;
         HasNotStarted = true;
         FramePreviewImage = Mat.Zeros(100, 100, DepthType.Cv8U, 4).ToBitmapSource();
 
@@ -184,7 +216,7 @@ public class SubtitlePageModel : ViewModelBase
     private void SetResetEnabled()
     {
         if (VideoFilePath != "" || ScriptFilePath != "" || TranslateFilePath != "" ||
-            IsRunning || IsFinished)
+            IsRunning || IsFinished || IsCanceled || IsCanceling)
             ResetEnabled = Visibility.Visible;
         else
             ResetEnabled = Visibility.Collapsed;
