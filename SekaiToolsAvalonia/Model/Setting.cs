@@ -37,9 +37,9 @@ public struct Setting
     {
         ProxyType = 0, ProxyHost = "127.0.0.1", ProxyPort = 1080,
         TypewriterFadeTime = 50, TypewriterCharTime = 80,
-        DialogFontFamily = "思源黑体 CN Bold",
-        BannerFontFamily = "思源黑体 Medium",
-        MarkerFontFamily = "思源黑体 Medium",
+        DialogFontFamily = "思源黑体 CN Medium",
+        BannerFontFamily = "思源黑体 CN Bold",
+        MarkerFontFamily = "思源黑体 CN Bold",
         ExportLine1 = true, ExportLine2 = true, ExportLine3 = true,
         ExportCharacter = true,
         ExportBannerMask = true, ExportBannerText = true,
