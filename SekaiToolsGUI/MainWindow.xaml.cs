@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Shell;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 using SekaiToolsCore;
@@ -31,6 +32,7 @@ public partial class MainWindow : FluentWindow
         DataContext = new MainWindowViewModel();
         Closed += (sender, args) => { Suppressor.Instance.Clean(); };
         ContentRendered += (sender, args) => { CheckUpdate(); };
+        TaskbarItemInfo = new TaskbarItemInfo();
         SetWindowTitle("");
     }
 
@@ -41,6 +43,19 @@ public partial class MainWindow : FluentWindow
 
         TitleBar.Title = title;
         Title = title;
+    }
+
+    public void SetTaskbarProgressState(TaskbarItemProgressState state, double value)
+    {
+        TaskbarItemInfo ??= new TaskbarItemInfo();
+        TaskbarItemInfo.ProgressValue = Math.Clamp(value, 0, 1);
+        TaskbarItemInfo.ProgressState = state;
+    }
+
+    public void SetTaskbarProgressValue(double value)
+    {
+        TaskbarItemInfo ??= new TaskbarItemInfo();
+        TaskbarItemInfo.ProgressValue = Math.Clamp(value, 0, 1);
     }
 
     public ISnackbarService WindowSnackbarService { get; } = new SnackbarService

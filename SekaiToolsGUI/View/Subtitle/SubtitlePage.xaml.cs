@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Shell;
 using Emgu.CV;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
@@ -222,9 +223,22 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             ViewModel.MarkerTotal = VideoProcessor.ContentLength.Marker;
             ViewModel.HasNotStarted = false;
             ViewModel.IsFinished = true;
+            ProgressBarProgression.Value = 1;
+            ProgressBarProgression.Maximum = 1;
+            TextBlockProgression.Text = $"{1:P}";
+            SetVideoProcessWindowTitle("已完成");
+            SetTaskbarProgressState(TaskbarItemProgressState.Normal, 1);
         }
         catch (Exception ex)
         {
+            ViewModel.IsRunning = false;
+            ViewModel.IsCanceling = false;
+            ViewModel.IsFinished = false;
+            ViewModel.IsCanceled = false;
+            ViewModel.IsFailed = true;
+            ViewModel.HasNotStarted = false;
+            SetVideoProcessWindowTitle("处理失败");
+            SetTaskbarProgressState(TaskbarItemProgressState.Error, ProgressBarProgression.Value);
             SnackService.Show("错误", $"加载历史记录失败: {ex.Message}", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 5));
         }
@@ -258,6 +272,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     {
         StopProcess();
         (Application.Current.MainWindow as MainWindow)?.SetWindowTitle("");
+        SetTaskbarProgressState(TaskbarItemProgressState.None, 0);
         VideoProcessor?.Dispose();
         VideoProcessor = null;
         ViewModel.Reset();
@@ -271,6 +286,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     {
         StopProcess();
         SetVideoProcessWindowTitle("正在取消");
+        SetTaskbarProgressState(TaskbarItemProgressState.Paused, ProgressBarProgression.Value);
         ViewModel.IsCanceling = true;
     }
 
@@ -544,6 +560,11 @@ public partial class SubtitlePage
             $"{status} - {Path.GetFileName(ViewModel.VideoFilePath)}");
     }
 
+    private static void SetTaskbarProgressState(TaskbarItemProgressState state, double value)
+    {
+        (Application.Current.MainWindow as MainWindow)?.SetTaskbarProgressState(state, value);
+    }
+
     private static string BuildStaffLineText(SaveFileDialogModel model)
     {
         if (model.StaffLineTime <= 0) return string.Empty;
@@ -670,33 +691,42 @@ public partial class SubtitlePage
                             {
                                 ViewModel.IsCanceled = true;
                                 SetVideoProcessWindowTitle("已取消");
+                                SetTaskbarProgressState(TaskbarItemProgressState.Paused,
+                                    ProgressBarProgression.Value);
                                 Logger.Log("处理已由用户取消，可输出当前结果", LogLevel.Information);
                                 SnackService.Show("提示", "处理已取消，可以输出当前结果进行人工复核",
                                     ControlAppearance.Info,
                                     new SymbolIcon(SymbolRegular.Info24), new TimeSpan(0, 0, 4));
                             }
-                            else if (!VideoProcessor?.Finished ?? false)
+                            else if (stopReason == ProcessStopReason.Completed)
                             {
+                                ViewModel.IsFinished = true;
+                                ProgressBarProgression.Value = 1;
+                                ProgressBarProgression.Maximum = 1;
+                                TextBlockProgression.Text = $"{1:P}";
+                                SetVideoProcessWindowTitle("已完成");
+                                SetTaskbarProgressState(TaskbarItemProgressState.Normal, 1);
+                                Logger.Log("处理成功完成", LogLevel.Information);
+                                SnackService.Show("成功", "运行结束", ControlAppearance.Success,
+                                    new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
+                            }
+                            else
+                            {
+                                ViewModel.IsFailed = true;
                                 SetVideoProcessWindowTitle("处理失败");
+                                SetTaskbarProgressState(TaskbarItemProgressState.Error,
+                                    ProgressBarProgression.Value);
                                 var errorMsg = stopReason switch
                                 {
-                                    ProcessStopReason.Canceled => "用户中止处理",
                                     ProcessStopReason.ReadFailed => "视频读帧失败",
                                     ProcessStopReason.ExceptionThreshold => "异常过多，自动中止",
                                     ProcessStopReason.CaptureError => "视频捕获设备出错",
+                                    ProcessStopReason.UnexpectedError => "视频处理发生未预期错误",
                                     _ => "未知错误"
                                 };
                                 Logger.Log($"处理异常结束: {stopReason}", LogLevel.Warning);
                                 SnackService.Show("错误", errorMsg, ControlAppearance.Danger,
                                     new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
-                            }
-                            else
-                            {
-                                ViewModel.IsFinished = true;
-                                SetVideoProcessWindowTitle("已完成");
-                                Logger.Log("处理成功完成", LogLevel.Information);
-                                SnackService.Show("成功", "运行结束", ControlAppearance.Success,
-                                    new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
                             }
 
                             TextBlockEta.Text = "";
@@ -707,10 +737,13 @@ public partial class SubtitlePage
                         Dispatcher.Invoke(() =>
                         {
                             SetVideoProcessWindowTitle("处理中");
-                            ViewModel.IsRunning = true;
+                            SetTaskbarProgressState(TaskbarItemProgressState.Normal,
+                                ProgressBarProgression.Value);
                             ViewModel.IsFinished = false;
                             ViewModel.IsCanceled = false;
+                            ViewModel.IsFailed = false;
                             ViewModel.IsCanceling = false;
+                            ViewModel.IsRunning = true;
                             ViewModel.HasNotStarted = false;
                             var contentLength = VideoProcessor?.ContentLength;
                             if (contentLength != null)
@@ -754,7 +787,6 @@ public partial class SubtitlePage
                             };
 
                             await uiMessageBox.ShowDialogAsync(cancellationToken: CancellationToken);
-                            ViewModel.IsRunning = false;
                         });
                     },
                     OnFps = OnFpsChanged
@@ -775,6 +807,14 @@ public partial class SubtitlePage
         }
         catch (Exception ex)
         {
+            ViewModel.IsRunning = false;
+            ViewModel.IsCanceling = false;
+            ViewModel.IsFinished = false;
+            ViewModel.IsCanceled = false;
+            ViewModel.IsFailed = true;
+            ViewModel.HasNotStarted = false;
+            SetVideoProcessWindowTitle("处理失败");
+            SetTaskbarProgressState(TaskbarItemProgressState.Error, ProgressBarProgression.Value);
             Logger.Log($"初始化视频处理器失败: {ex.Message}", LogLevel.Error);
             SnackService.Show("错误", $"初始化视频处理器失败: {ex.Message}", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 5));
@@ -821,9 +861,12 @@ public partial class SubtitlePage
             {
                 Dispatcher.BeginInvoke(() =>
                 {
+                    if (!ViewModel.IsRunning) return;
+
                     ProgressBarProgression.Value = value;
                     ProgressBarProgression.Maximum = 1;
                     TextBlockProgression.Text = $"{value:P}";
+                    (Application.Current.MainWindow as MainWindow)?.SetTaskbarProgressValue(value);
                 });
             });
     }

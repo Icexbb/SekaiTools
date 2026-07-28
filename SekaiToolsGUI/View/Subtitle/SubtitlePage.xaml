@@ -122,10 +122,11 @@
 
                     <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
                         <ui:Button Click="ResetButton_OnClick"
-                                   Margin="5,0" Visibility="{calcBinding:Binding '!HasNotStarted and CanOutput'}"
+                                   Margin="5,0" Visibility="{calcBinding:Binding '!HasNotStarted and CanReset'}"
                                    HorizontalAlignment="Center" Content="重置" />
                         <ui:Button Click="StopButton_OnClick" Margin="5,0"
-                                   Visibility="{calcBinding:Binding '!HasNotStarted and !CanOutput'}"
+                                   Visibility="{calcBinding:Binding '!HasNotStarted and !CanReset'}"
+                                   IsEnabled="{Binding CanStop}"
                                    HorizontalAlignment="Center" Content="停止" />
                         <ui:Button Click="StartButton_OnClick"
                                    Margin="5,0" IsEnabled="{Binding HasNotStarted}"
