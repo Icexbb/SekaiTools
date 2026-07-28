@@ -7,7 +7,6 @@
     xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
     x:Class="SekaiToolsGUI.MainWindow"
     mc:Ignorable="d"
-    Title="Sekai Tools"
     Icon="Resource/icon.png"
     MinHeight="500" Width="800" MinWidth="800"
     ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
@@ -38,7 +37,7 @@
             </ui:NavigationView.ContentOverlay>
         </ui:NavigationView>
         <ui:ContentDialogHost x:Name="RootContentDialog" Grid.Row="0" />
-        <ui:TitleBar Grid.Row="0" Title="Sekai Tools">
+        <ui:TitleBar Name="TitleBar" Grid.Row="0" Title="Sekai Tools">
             <ui:TitleBar.Icon>
                 <ui:ImageIcon Source="pack://application:,,,/Resource/icon.png" />
             </ui:TitleBar.Icon>

@@ -31,6 +31,16 @@ public partial class MainWindow : FluentWindow
         DataContext = new MainWindowViewModel();
         Closed += (sender, args) => { Suppressor.Instance.Clean(); };
         ContentRendered += (sender, args) => { CheckUpdate(); };
+        SetWindowTitle("");
+    }
+
+    public void SetWindowTitle(string? content)
+    {
+        var mainTitle = $"Sekai Tools {GetLocalVersion()}".Trim();
+        var title = content?.Length == 0 ? mainTitle : $"{content} - {mainTitle}";
+
+        TitleBar.Title = title;
+        Title = title;
     }
 
     public ISnackbarService WindowSnackbarService { get; } = new SnackbarService
@@ -196,7 +206,7 @@ partial class MainWindow
                 {
                     Proxy = new WebProxy(new Uri($"http://{proxyInfo.Host}:{proxyInfo.Port}")), UseProxy = true
                 },
-                Proxy.Type.Socks5 => new SocketsHttpHandler       // 实际是 HTTP CONNECT，WebProxy 不支持真正的 SOCKS5
+                Proxy.Type.Socks5 => new SocketsHttpHandler // 实际是 HTTP CONNECT，WebProxy 不支持真正的 SOCKS5
                 {
                     Proxy = new WebProxy(new Uri($"http://{proxyInfo.Host}:{proxyInfo.Port}")), UseProxy = true
                 },
