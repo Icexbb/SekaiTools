@@ -257,6 +257,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     private void ResetButton_OnClick(object sender, RoutedEventArgs e)
     {
         StopProcess();
+        (Application.Current.MainWindow as MainWindow)?.SetWindowTitle("");
         VideoProcessor?.Dispose();
         VideoProcessor = null;
         ViewModel.Reset();
@@ -269,6 +270,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     private void StopButton_OnClick(object sender, RoutedEventArgs e)
     {
         StopProcess();
+        SetVideoProcessWindowTitle("正在取消");
         ViewModel.IsCanceling = true;
     }
 
@@ -536,6 +538,12 @@ public partial class SubtitlePage
         VideoProcessor?.StopProcess();
     }
 
+    private void SetVideoProcessWindowTitle(string status)
+    {
+        (Application.Current.MainWindow as MainWindow)?.SetWindowTitle(
+            $"{status} - {Path.GetFileName(ViewModel.VideoFilePath)}");
+    }
+
     private static string BuildStaffLineText(SaveFileDialogModel model)
     {
         if (model.StaffLineTime <= 0) return string.Empty;
@@ -661,6 +669,7 @@ public partial class SubtitlePage
                             if (stopReason == ProcessStopReason.Canceled)
                             {
                                 ViewModel.IsCanceled = true;
+                                SetVideoProcessWindowTitle("已取消");
                                 Logger.Log("处理已由用户取消，可输出当前结果", LogLevel.Information);
                                 SnackService.Show("提示", "处理已取消，可以输出当前结果进行人工复核",
                                     ControlAppearance.Info,
@@ -668,6 +677,7 @@ public partial class SubtitlePage
                             }
                             else if (!VideoProcessor?.Finished ?? false)
                             {
+                                SetVideoProcessWindowTitle("处理失败");
                                 var errorMsg = stopReason switch
                                 {
                                     ProcessStopReason.Canceled => "用户中止处理",
@@ -683,6 +693,7 @@ public partial class SubtitlePage
                             else
                             {
                                 ViewModel.IsFinished = true;
+                                SetVideoProcessWindowTitle("已完成");
                                 Logger.Log("处理成功完成", LogLevel.Information);
                                 SnackService.Show("成功", "运行结束", ControlAppearance.Success,
                                     new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
@@ -695,6 +706,7 @@ public partial class SubtitlePage
                     {
                         Dispatcher.Invoke(() =>
                         {
+                            SetVideoProcessWindowTitle("处理中");
                             ViewModel.IsRunning = true;
                             ViewModel.IsFinished = false;
                             ViewModel.IsCanceled = false;
