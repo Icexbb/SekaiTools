@@ -1,47 +1,39 @@
 using System.Windows;
 using Microsoft.Extensions.Logging;
-using Microsoft.Windows.AppNotifications;
-using Microsoft.Windows.AppNotifications.Builder;
+using Microsoft.Toolkit.Uwp.Notifications;
 using SekaiToolsBase;
 
 namespace SekaiToolsGUI.Service;
 
 public static class WindowsNotificationService
 {
-    private static AppNotificationManager? _manager;
-    private static bool _registered;
+    private static bool _initialized;
 
     public static void Initialize()
     {
-        if (_registered) return;
+        if (_initialized) return;
 
         try
         {
-            _manager = AppNotificationManager.Default;
-            _manager.NotificationInvoked += OnNotificationInvoked;
-            _manager.Register();
-            _registered = true;
+            ToastNotificationManagerCompat.OnActivated += OnNotificationInvoked;
+            _initialized = true;
         }
         catch (Exception e)
         {
-            if (_manager != null)
-                _manager.NotificationInvoked -= OnNotificationInvoked;
-            _manager = null;
             Logger.Log($"注册 Windows 通知失败: {e}", LogLevel.Warning);
         }
     }
 
     public static void Show(string title, string message)
     {
-        if (!_registered || _manager == null) return;
+        if (!_initialized) return;
 
         try
         {
-            var notification = new AppNotificationBuilder()
+            new ToastContentBuilder()
                 .AddText(title)
                 .AddText(message)
-                .BuildNotification();
-            _manager.Show(notification);
+                .Show();
         }
         catch (Exception e)
         {
@@ -51,12 +43,11 @@ public static class WindowsNotificationService
 
     public static void Shutdown()
     {
-        if (!_registered || _manager == null) return;
+        if (!_initialized) return;
 
         try
         {
-            _manager.NotificationInvoked -= OnNotificationInvoked;
-            _manager.Unregister();
+            ToastNotificationManagerCompat.OnActivated -= OnNotificationInvoked;
         }
         catch (Exception e)
         {
@@ -64,13 +55,11 @@ public static class WindowsNotificationService
         }
         finally
         {
-            _registered = false;
-            _manager = null;
+            _initialized = false;
         }
     }
 
-    private static void OnNotificationInvoked(AppNotificationManager sender,
-        AppNotificationActivatedEventArgs args)
+    private static void OnNotificationInvoked(ToastNotificationActivatedEventArgsCompat args)
     {
         Application.Current?.Dispatcher.BeginInvoke(() =>
         {
