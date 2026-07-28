@@ -111,6 +111,8 @@ public partial class SubtitlePage : UserControl, IAppPage
     private void ResetButton_OnClick(object? sender, RoutedEventArgs e)
     {
         StopProcess();
+        VideoProcessor?.Dispose();
+        VideoProcessor = null;
         ViewModel.Reset();
         LinePanel.Children.Clear();
         TextBlockProgression.Text = "";
@@ -121,8 +123,7 @@ public partial class SubtitlePage : UserControl, IAppPage
     private void StopButton_OnClick(object? sender, RoutedEventArgs e)
     {
         StopProcess();
-        ViewModel.IsRunning = false;
-        ViewModel.IsFinished = true;
+        ViewModel.IsCanceling = true;
     }
 
     private async void HistoryButton_OnClick(object? sender, RoutedEventArgs e)
@@ -367,15 +368,36 @@ public partial class SubtitlePage
                     Dispatcher.UIThread.Post(() =>
                     {
                         ViewModel.IsRunning = false;
-                        if (VideoProcessor?.Finished ?? false)
+                        ViewModel.IsCanceling = false;
+                        var stopReason = VideoProcessor?.StopReason;
+                        if (stopReason == ProcessStopReason.Canceled)
+                        {
+                            ViewModel.IsCanceled = true;
+                            Logger.Log("处理已由用户取消，可输出当前结果", LogLevel.Information);
+                            ShowMessage("处理已取消，可以输出当前结果进行人工复核");
+                        }
+                        else if (stopReason == ProcessStopReason.Completed)
                         {
                             ViewModel.IsFinished = true;
+                            ProgressBarProgression.Value = 1;
+                            ProgressBarProgression.Maximum = 1;
+                            TextBlockProgression.Text = $"{1:P}";
                             Logger.Log("处理成功完成", LogLevel.Information);
+                        }
+                        else
+                        {
+                            ViewModel.IsFailed = true;
+                            Logger.Log($"处理异常结束: {stopReason}", LogLevel.Warning);
+                            ShowMessage("视频处理失败，请检查日志");
                         }
                     });
                 },
                 OnTaskStarted = () => Dispatcher.UIThread.Post(() =>
                 {
+                    ViewModel.IsFinished = false;
+                    ViewModel.IsCanceled = false;
+                    ViewModel.IsFailed = false;
+                    ViewModel.IsCanceling = false;
                     ViewModel.IsRunning = true;
                     ViewModel.HasNotStarted = false;
                     var cl = VideoProcessor?.ContentLength;
@@ -403,7 +425,6 @@ public partial class SubtitlePage
                 OnException = e =>
                 {
                     Logger.Log($"视频处理异常: {e.Message}\n{e.StackTrace}", LogLevel.Error);
-                    Dispatcher.UIThread.Post(() => ViewModel.IsRunning = false);
                 },
                 OnFps = OnFpsChanged
             });
@@ -419,7 +440,14 @@ public partial class SubtitlePage
         }
         catch (Exception ex)
         {
+            ViewModel.IsRunning = false;
+            ViewModel.IsCanceling = false;
+            ViewModel.IsFinished = false;
+            ViewModel.IsCanceled = false;
+            ViewModel.IsFailed = true;
+            ViewModel.HasNotStarted = false;
             Logger.Log($"初始化视频处理器失败: {ex.Message}", LogLevel.Error);
+            ShowMessage($"初始化视频处理器失败: {ex.Message}");
         }
     }
 
@@ -465,6 +493,8 @@ public partial class SubtitlePage
             {
                 Dispatcher.UIThread.Post(() =>
                 {
+                    if (!ViewModel.IsRunning) return;
+
                     ProgressBarProgression.Value = value;
                     ProgressBarProgression.Maximum = 1;
                     TextBlockProgression.Text = $"{value:P}";

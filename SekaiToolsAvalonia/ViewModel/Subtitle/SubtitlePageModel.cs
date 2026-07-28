@@ -19,14 +19,68 @@ public class SubtitlePageModel : ViewModelBase
     public bool IsRunning
     {
         get => GetProperty(false);
-        set { SetProperty(value); NotifyResetEnabled(); UpdateRunningStatus(); }
+        set
+        {
+            SetProperty(value);
+            NotifyResetEnabled();
+            UpdateRunningStatus();
+            OnPropertyChanged(nameof(CanStop));
+        }
     }
 
     public bool IsFinished
     {
         get => GetProperty(false);
-        set { SetProperty(value); NotifyResetEnabled(); UpdateRunningStatus(); }
+        set
+        {
+            SetProperty(value);
+            NotifyResetEnabled();
+            UpdateRunningStatus();
+            OnPropertyChanged(nameof(CanOutput));
+            OnPropertyChanged(nameof(CanReset));
+        }
     }
+
+    public bool IsCanceled
+    {
+        get => GetProperty(false);
+        set
+        {
+            SetProperty(value);
+            NotifyResetEnabled();
+            UpdateRunningStatus();
+            OnPropertyChanged(nameof(CanOutput));
+            OnPropertyChanged(nameof(CanReset));
+        }
+    }
+
+    public bool IsFailed
+    {
+        get => GetProperty(false);
+        set
+        {
+            SetProperty(value);
+            NotifyResetEnabled();
+            UpdateRunningStatus();
+            OnPropertyChanged(nameof(CanReset));
+        }
+    }
+
+    public bool IsCanceling
+    {
+        get => GetProperty(false);
+        set
+        {
+            SetProperty(value);
+            NotifyResetEnabled();
+            UpdateRunningStatus();
+            OnPropertyChanged(nameof(CanStop));
+        }
+    }
+
+    public bool CanOutput => IsFinished || IsCanceled;
+    public bool CanReset => IsFinished || IsCanceled || IsFailed;
+    public bool CanStop => IsRunning && !IsCanceling;
 
     public string RunningStatus
     {
@@ -56,13 +110,25 @@ public class SubtitlePageModel : ViewModelBase
 
     private void UpdateRunningStatus()
     {
-        RunningStatus = IsFinished ? "已完成" : IsRunning ? "运行中" : "未开始";
+        if (IsCanceled)
+            RunningStatus = "已取消";
+        else if (IsFinished)
+            RunningStatus = "已完成";
+        else if (IsFailed)
+            RunningStatus = "处理失败";
+        else if (IsCanceling)
+            RunningStatus = "正在取消";
+        else if (IsRunning)
+            RunningStatus = "处理中";
+        else
+            RunningStatus = "未开始";
     }
 
     public void Reset()
     {
         VideoFilePath = ""; ScriptFilePath = ""; TranslateFilePath = "";
-        IsRunning = false; IsFinished = false; HasNotStarted = true;
+        IsRunning = false; IsFinished = false; IsCanceled = false;
+        IsFailed = false; IsCanceling = false; HasNotStarted = true;
         FramePreviewImage = null;
         DialogTotal = 100; DialogCurrent = 0;
         BannerTotal = 100; BannerCurrent = 0;
@@ -71,6 +137,7 @@ public class SubtitlePageModel : ViewModelBase
 
     private void NotifyResetEnabled()
     {
-        ResetEnabled = VideoFilePath != "" || ScriptFilePath != "" || TranslateFilePath != "" || IsRunning || IsFinished;
+        ResetEnabled = VideoFilePath != "" || ScriptFilePath != "" || TranslateFilePath != "" ||
+                       IsRunning || IsFinished || IsCanceled || IsFailed || IsCanceling;
     }
 }
