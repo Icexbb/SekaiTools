@@ -136,15 +136,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
                 !File.Exists(state.TranslateFilePath))
                 continue;
 
-            var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-            var result = await dialogService.ShowSimpleDialogAsync(
-                new SimpleContentDialogCreateOptions
-                {
-                    Title = "恢复进度",
-                    Content = "检测到未完成的处理进度，是否继续？",
-                    PrimaryButtonText = "继续",
-                    CloseButtonText = "重新开始"
-                }, CancellationToken);
+            var result = await ShowResumeDialogAsync();
 
             if (result == ContentDialogResult.Primary)
             {
@@ -173,7 +165,8 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
         }
 
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-        var dialog = new HistoryDialog(dialogService.GetDialogHostEx() ?? throw new InvalidOperationException(), entries);
+        var dialog = new HistoryDialog(dialogService.GetDialogHostEx() ?? throw new InvalidOperationException(),
+            entries);
         var result = await dialogService.ShowAsync(dialog, CancellationToken);
 
         if (result == ContentDialogResult.Primary && dialog.SelectedEntry != null)
@@ -633,7 +626,7 @@ public partial class SubtitlePage
         return JsonSerializer.Deserialize<MatchingThreshold>(json);
     }
 
-    private async Task ShowResumeDialogAsync(string saveKey)
+    private async Task<ContentDialogResult> ShowResumeDialogAsync()
     {
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
         var result = await dialogService.ShowSimpleDialogAsync(
@@ -642,20 +635,26 @@ public partial class SubtitlePage
                 Title = "恢复进度",
                 Content = "检测到未完成的处理进度，是否继续？",
                 PrimaryButtonText = "继续",
-                CloseButtonText = "重新开始"
+                CloseButtonText = "取消"
             }, CancellationToken);
-
-        ProcessingState? resumeState = null;
-        if (result == ContentDialogResult.Primary)
+        if (result == ContentDialogResult.None)
         {
-            resumeState = ProgressStore.Load(saveKey);
-            if (resumeState == null)
+            foreach (var (saveKey, _) in ProgressStore.EnumerateProgressFiles())
                 ProgressStore.Delete(saveKey);
         }
-        else
-        {
+
+        return result;
+    }
+
+    private async Task ShowResumeDialogAsync(string saveKey)
+    {
+        var result = await ShowResumeDialogAsync();
+        if (result != ContentDialogResult.Primary)
+            return;
+
+        var resumeState = ProgressStore.Load(saveKey);
+        if (resumeState == null)
             ProgressStore.Delete(saveKey);
-        }
 
         StartProcess(saveKey, resumeState);
     }
