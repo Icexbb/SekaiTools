@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
+using SekaiToolsGUI.Service;
 
 namespace SekaiToolsGUI;
 
@@ -31,11 +32,13 @@ public partial class App : Application
             return;
         }
 
+        WindowsNotificationService.Initialize();
         base.OnStartup(e);
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        WindowsNotificationService.Shutdown();
         Logger.Log($"SekaiToolsGUI 退出 (exitCode={e.ApplicationExitCode})", LogLevel.Information);
         if (_ownsSingleInstanceMutex)
         {

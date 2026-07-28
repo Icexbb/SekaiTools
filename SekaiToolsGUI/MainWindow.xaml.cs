@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 using SekaiToolsCore;
 using SekaiToolsGUI.Interface;
+using SekaiToolsGUI.Service;
 using SekaiToolsGUI.View.Setting;
 using SekaiToolsGUI.View.Translate;
 using SekaiToolsGUI.ViewModel;
@@ -58,7 +59,7 @@ public partial class MainWindow : FluentWindow
         TaskbarItemInfo.ProgressValue = Math.Clamp(value, 0, 1);
     }
 
-    public ISnackbarService WindowSnackbarService { get; } = new SnackbarService
+    public ISnackbarService WindowSnackbarService { get; } = new WindowsNotifyingSnackbarService
     {
         DefaultTimeOut = TimeSpan.FromSeconds(3)
     };
