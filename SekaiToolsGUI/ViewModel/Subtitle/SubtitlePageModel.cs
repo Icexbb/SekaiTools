@@ -63,6 +63,7 @@ public class SubtitlePageModel : ViewModelBase
             SetProperty(value);
             SetResetEnabled();
             SetRunningStatus();
+            OnPropertyChanged(nameof(CanOutput));
         }
     }
 
@@ -74,7 +75,6 @@ public class SubtitlePageModel : ViewModelBase
             SetProperty(value);
             SetResetEnabled();
             SetRunningStatus();
-            OnPropertyChanged(nameof(CanOutput));
             OnPropertyChanged(nameof(CanOutput));
         }
     }
