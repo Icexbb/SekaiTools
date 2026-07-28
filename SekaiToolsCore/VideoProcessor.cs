@@ -45,7 +45,8 @@ public enum ProcessStopReason
     Canceled, // 用户取消
     ReadFailed, // 读帧失败
     ExceptionThreshold, // 异常计数超过阈值
-    CaptureError // 捕获设备错误
+    CaptureError, // 捕获设备错误
+    UnexpectedError // 未处理异常
 }
 
 public class VideoProcessor : IDisposable
@@ -208,17 +209,29 @@ public class VideoProcessor : IDisposable
             Logger.Log($"开始视频处理: {(int)cap.Get(CapProp.FrameWidth)}x{(int)cap.Get(CapProp.FrameHeight)}, {(int)cap.Get(CapProp.FrameCount)}帧, {cap.Get(CapProp.Fps):F2}fps", ExtLogLevel.Information);
         ProcessingTask = Task.Run(() =>
         {
-            Callbacks.OnTaskStarted();
             try
             {
+                Callbacks.OnTaskStarted();
                 Process(token);
+            }
+            catch (OperationCanceledException)
+            {
+                StopReason = ProcessStopReason.Canceled;
+            }
+            catch (Exception e)
+            {
+                StopReason = ProcessStopReason.UnexpectedError;
+
+                TokenSource?.Cancel();
+                TeardownPreview();
+                Callbacks.OnException(e);
             }
             finally
             {
                 _isProcessing = false;
                 Callbacks.OnTaskFinished();
             }
-        }, token);
+        });
     }
 
     public void StopProcess()
@@ -371,7 +384,13 @@ public class VideoProcessor : IDisposable
             }
         }
 
-        Callbacks.OnProgress(1);
+        // 循环正常退出代表所有匹配器均已完成。先确定终止状态，再发送最终进度，
+        // 避免取消或失败任务被错误显示为 100%。
+        if (StopReason == ProcessStopReason.None)
+            StopReason = ProcessStopReason.Completed;
+
+        var finalProgress = frameCount > 0 ? Math.Clamp(frameIndex / frameCount, 0, 1) : 0;
+        Callbacks.OnProgress(StopReason == ProcessStopReason.Completed ? 1 : finalProgress);
 
         TeardownPreview();
 
@@ -384,10 +403,6 @@ public class VideoProcessor : IDisposable
         capture.Dispose();
         if (ReferenceEquals(Capture, capture))
             Capture = null;
-
-        // 如果还未设置停止原因，则标记为完成
-        if (StopReason == ProcessStopReason.None)
-            StopReason = ProcessStopReason.Completed;
 
         Logger.Log($"视频处理结束: {StopReason}, 当前帧={frameIndex}, 总帧={frameCount}", ExtLogLevel.Information);
 
