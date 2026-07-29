@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading.Channels;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
@@ -11,6 +12,7 @@ using SekaiToolsCore.Match.TemplateMatcher;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
+using SekaiToolsCore.Process.Model;
 
 namespace SekaiToolsCore;
 
@@ -123,7 +125,38 @@ public class VideoProcessor : IDisposable
     {
         if (Creator == null) throw new NullReferenceException();
         var maker = Creator.SubtitleMaker();
-        return maker.Make(dialogFrameSets, bannerFrameSets, markerFrameSets);
+        var exportInfo = new SubtitleExportInfo(
+            "SekaiTools 自动轴机",
+            GetProgramVersion(),
+            GetTaskStatus(),
+            Path.GetFileName(_videoPath),
+            Path.GetFileName(_scriptPath),
+            Path.GetFileName(_translatePath));
+        return maker.Make(dialogFrameSets, bannerFrameSets, markerFrameSets, exportInfo);
+    }
+
+    private string GetTaskStatus()
+    {
+        if (_isProcessing) return "运行中";
+        return StopReason switch
+        {
+            ProcessStopReason.None => "未开始",
+            ProcessStopReason.Completed => "已完成",
+            ProcessStopReason.Canceled => "已取消",
+            ProcessStopReason.ReadFailed => "视频读帧失败",
+            ProcessStopReason.ExceptionThreshold => "异常过多，自动中止",
+            ProcessStopReason.CaptureError => "视频捕获设备出错",
+            ProcessStopReason.UnexpectedError => "发生未预期错误",
+            _ => StopReason.ToString()
+        };
+    }
+
+    private static string GetProgramVersion()
+    {
+        var assembly = Assembly.GetEntryAssembly() ?? typeof(VideoProcessor).Assembly;
+        return assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version
+               ?? assembly.GetName().Version?.ToString()
+               ?? "未知";
     }
 
     public void EnableProgressSaving(string saveKey)

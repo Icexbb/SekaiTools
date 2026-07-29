@@ -28,7 +28,8 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
     public Subtitle Make(
         List<DialogBaseFrameSet> dialogList,
         List<BannerBaseFrameSet> bannerList,
-        List<MarkerBaseFrameSet> markerList)
+        List<MarkerBaseFrameSet> markerList,
+        SubtitleExportInfo exportInfo)
     {
         var events = new List<SubtitleEvent>();
 
@@ -61,6 +62,8 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         if (!ExportStyleConfig.ExportMarkerMask) events.RemoveAll(e => e.Style == "MarkerMask");
         if (!ExportStyleConfig.ExportMarkerText) events.RemoveAll(e => e.Style == "MarkerText");
         if (!ExportStyleConfig.ExportScreenComment) events.RemoveAll(e => e.Style == "Screen");
+
+        events.InsertRange(0, exportInfo.MakeComments());
 
         return new Subtitle(
             new ScriptInfo(videoInfo.Resolution.Width, videoInfo.Resolution.Height),
