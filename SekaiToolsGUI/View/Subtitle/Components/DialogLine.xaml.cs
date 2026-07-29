@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsGUI.ViewModel.Subtitle;
+using SekaiToolsGUI.ViewModel.Setting;
 using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Controls;
 
@@ -10,10 +11,12 @@ namespace SekaiToolsGUI.View.Subtitle.Components;
 
 public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
 {
+    private int CharTime => SettingPageModel.Instance.TypewriterCharTime;
+
     public DialogLine(DialogBaseFrameSet set)
     {
         set.InitSeparator();
-        DataContext = new DialogLineModel(set);
+        DataContext = new DialogLineModel(set, CharTime);
         InitializeComponent();
         CheckLineExpander();
         TextContentPreview.Text = ViewModel.TranslatedContent;
@@ -46,7 +49,7 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
         var edited = dialog.ViewModel.ContentTranslated;
         ViewModel.TranslatedContent = dialog.ViewModel.ContentTranslated;
 
-        DataContext = new DialogLineModel(set);
+        DataContext = new DialogLineModel(set, CharTime);
         ViewModel.UseSeparator = dialog.ViewModel.UseReturn;
         if (edited.Contains('\n'))
         {

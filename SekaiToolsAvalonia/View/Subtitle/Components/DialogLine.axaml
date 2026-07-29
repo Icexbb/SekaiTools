@@ -85,9 +85,10 @@
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
-                <TextBlock HorizontalAlignment="Center" Text="{Binding PromptWarning}"
-                           IsVisible="{Binding PromptWarning.Length}" />
             </StackPanel>
+            <TextBlock Margin="5" HorizontalAlignment="Center" Foreground="OrangeRed"
+                       Text="{Binding PromptWarning}" TextWrapping="Wrap" TextAlignment="Center"
+                       IsVisible="{Binding PromptWarning.Length}" />
         </StackPanel>
     </Border>
 </UserControl>

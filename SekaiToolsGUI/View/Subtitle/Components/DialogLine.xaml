@@ -102,10 +102,12 @@
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
-                <TextBlock HorizontalAlignment="Center" Text="{Binding PromptWarning,Mode=OneWay}"
-                           Visibility="{c:Binding  RelativeSource={RelativeSource Self},
-                                   Path='Text.Length!=0',FalseToVisibility=Collapsed}" />
             </StackPanel>
+            <TextBlock Margin="5" HorizontalAlignment="Center" Foreground="OrangeRed"
+                       Text="{Binding PromptWarning,Mode=OneWay}"
+                       TextWrapping="Wrap" TextAlignment="Center"
+                       Visibility="{c:Binding RelativeSource={RelativeSource Self},
+                               Path='Text.Length!=0',FalseToVisibility=Collapsed}" />
         </StackPanel>
     </ui:Card>
 

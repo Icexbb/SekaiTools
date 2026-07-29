@@ -6,15 +6,16 @@ namespace SekaiToolsAvalonia.ViewModel.Subtitle;
 
 public class DialogLineModel : ViewModelBase
 {
-    private const int CharTime = 80;
+    private readonly int _charTime;
     public readonly DialogBaseFrameSet Set;
 
-    public DialogLineModel(DialogBaseFrameSet set)
+    public DialogLineModel(DialogBaseFrameSet set, int charTime = 80)
     {
         Set = set;
         RawContent = set.Data.BodyOriginal;
         TranslatedContent = set.Data.BodyTranslated.EscapedReturn();
         FrameRate = set.Fps;
+        _charTime = charTime;
 
         UseSeparator = set.NeedSetSeparator;
         if (set.NeedSetSeparator)
@@ -22,6 +23,8 @@ public class DialogLineModel : ViewModelBase
             SeparateFrame = set.Separate.SeparateFrame;
             SeparatorContentIndex = set.Separate.SeparatorContentIndex;
         }
+
+        SetPromptWarning();
     }
 
     private FrameRate FrameRate { get; }
@@ -46,7 +49,7 @@ public class DialogLineModel : ViewModelBase
     public bool UseSeparator
     {
         get => GetProperty(false);
-        set { SetProperty(value); Set.UseSeparator = value; }
+        set { SetProperty(value); Set.UseSeparator = value; SetPromptWarning(); }
     }
 
     public int SeparateFrame
@@ -82,11 +85,6 @@ public class DialogLineModel : ViewModelBase
 
     private void SetPromptWarning()
     {
-        var frameTime = 1000 / FrameRate.Fps();
-        var frameTime1 = (SeparateFrame - Set.StartIndex()) * frameTime;
-        if (ContentPart1.Length * CharTime > frameTime1) { PromptWarning = "第一行文字将无法显示完全"; return; }
-        var frameTime2 = (Set.EndIndex() - SeparateFrame) * frameTime;
-        if (ContentPart2.Length * CharTime > frameTime2) { PromptWarning = "第二行文字将无法显示完全"; return; }
-        PromptWarning = "";
+        PromptWarning = string.Join("；", DialogTimingCheck.GetIssues(Set, _charTime).Select(x => x.Warning));
     }
 }

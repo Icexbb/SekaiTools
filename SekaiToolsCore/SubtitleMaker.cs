@@ -224,18 +224,22 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             dialogIndex++;
             var dialogEvents = new List<SubtitleEvent>();
             var dialogMarker = $"-----  {dialogIndex:000}  -----";
-            dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  Start",
+            var timingIssues = DialogTimingCheck.GetIssues(set, TypewriterSetting.CharTime);
+            var eventTimingWarning = set.UseSeparator || timingIssues.Count == 0
+                ? string.Empty
+                : $"  [问题：{timingIssues[0].Warning}，请手动排查]";
+            dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  Start{eventTimingWarning}",
                 set.StartTime(), set.EndTime(), "Screen"));
 
             if (set.UseSeparator)
             {
                 var items = SeparateDialogSet(set);
-                dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  Line 1 ↓",
+                dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  Line 1 ↓{GetLineTimingWarning("第一行")}",
                     set.StartTime(), set.EndTime(), "Screen"));
 
                 dialogEvents.AddRange(GenerateDialogEvent(items[0]));
 
-                dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  Line 2 ↓",
+                dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  Line 2 ↓{GetLineTimingWarning("第二行")}",
                     set.StartTime(), set.EndTime(), "Screen"));
 
                 dialogEvents.AddRange(GenerateDialogEvent(items[1]));
@@ -260,6 +264,12 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
                 set.StartTime(), set.EndTime(), "Screen"));
 
             result.AddRange(dialogEvents);
+
+            string GetLineTimingWarning(string lineName)
+            {
+                var issue = timingIssues.FirstOrDefault(x => x.LineName == lineName);
+                return issue == null ? string.Empty : $"  [问题：{issue.Warning}，请手动排查]";
+            }
         }
 
         return result;
