@@ -59,7 +59,9 @@ public class VideoProcessor : IDisposable
     private const int MaxReadRetries = 2;
     private const long CallbackThrottleMs = 200;
     private readonly object _progressSaveLock = new();
+    private readonly Config _config;
     private readonly ProcessingPerformanceMetrics _performanceMetrics = new();
+    private readonly ProcessingStateMetadata _stateMetadata;
     private readonly int _saveInterval = 300;
     private readonly string _scriptPath;
     private readonly string _translatePath;
@@ -84,6 +86,7 @@ public class VideoProcessor : IDisposable
 
     public VideoProcessor(Config config, VideoProcessCallbacks callbacks)
     {
+        _config = config;
         _videoPath = config.VideoFilePath;
         _scriptPath = config.ScriptFilePath;
         _translatePath = config.TranslateFilePath;
@@ -93,6 +96,8 @@ public class VideoProcessor : IDisposable
         ContentMatcher = Creator.ContentMatcher();
         BannerMatcher = Creator.BannerMatcher();
         MarkerMatcher = Creator.MarkerMatcher();
+        _stateMetadata = ProcessingStateMetadata.Create(config,
+            VideoStateMetadata.From(Creator.VideoInfo));
         Callbacks = callbacks;
     }
 
@@ -197,7 +202,8 @@ public class VideoProcessor : IDisposable
     {
         return new ProcessingState
         {
-            Version = "1.0",
+            Version = ProcessingStateCompatibility.CurrentVersion,
+            Metadata = _stateMetadata,
             FrameIndex = GetCurrentFrameIndex(),
             ContentFinished = ContentMatcher?.Finished ?? false,
             VideoFilePath = _videoPath,
@@ -212,11 +218,18 @@ public class VideoProcessor : IDisposable
 
     public void ApplyState(ProcessingState state)
     {
+        var compatibility = ProcessingStateCompatibility.ValidateAndMigrate(state, _config, _stateMetadata);
+        if (!compatibility.CanRestore)
+            throw new InvalidDataException($"无法恢复处理进度: {compatibility.Message}");
+        if (compatibility.Status == ProcessingStateCompatibilityStatus.MigratedLegacy)
+            Logger.Log(compatibility.Message, ExtLogLevel.Warning);
+
         if (state.Timecodes.Count > 0)
             Creator?.FrameRate.RestoreTimecodes(state.Timecodes);
 
-        if (Capture != null && Capture.Ptr != IntPtr.Zero)
-            Capture.Set(CapProp.PosFrames, state.FrameIndex);
+        if (Capture != null && Capture.Ptr != IntPtr.Zero &&
+            !Capture.Set(CapProp.PosFrames, state.FrameIndex))
+            throw new InvalidDataException($"视频无法定位到进度帧 {state.FrameIndex}");
 
         if (state.ContentFinished)
             ContentMatcher?.ForceFinish();

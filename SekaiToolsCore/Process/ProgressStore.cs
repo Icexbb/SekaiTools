@@ -76,7 +76,8 @@ public class MarkerMatcherStateDto
 // --- Top-level Processing State ---
 public class ProcessingState
 {
-    public string Version { get; init; } = "1.0";
+    public string Version { get; set; } = ProcessingStateCompatibility.CurrentVersion;
+    public ProcessingStateMetadata? Metadata { get; set; }
     public int FrameIndex { get; init; }
     public bool ContentFinished { get; init; }
     public string VideoFilePath { get; init; } = "";
