@@ -31,7 +31,7 @@ public class BannerTemplateMatcher(
 
     private GaMat GetTemplate(string content)
     {
-        return new GaMat(templateManager.GetTemplate(TemplateUsage.BannerContent, content));
+        return templateManager.GetMatchTemplate(TemplateUsage.BannerContent, content);
     }
 
     private static string TrimContent(string content)
@@ -57,7 +57,7 @@ public class BannerTemplateMatcher(
         if (string.IsNullOrWhiteSpace(text)) return MatchStatus.NotMatched;
         var sText = TrimContent(text);
         if (string.IsNullOrWhiteSpace(sText)) return MatchStatus.NotMatched;
-        using var template = GetTemplate(sText);
+        var template = GetTemplate(sText);
         var match = LocalMatch(frame, template);
 
         return _status switch

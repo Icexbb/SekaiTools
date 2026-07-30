@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using SekaiToolsCore.Process.Model;
 using SkiaSharp;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
@@ -22,6 +23,7 @@ public class TemplateManager(Size videoResolution, bool noScale = false) : IDisp
     private const string EbFontBase = "FOT-RodinNTLGPro-EB.otf";
 
     private readonly Dictionary<TemplateUsage, Dictionary<string, Mat>?> _template = new();
+    private readonly Dictionary<TemplateUsage, Dictionary<string, GaMat>?> _matchTemplate = new();
     private SKTypeface? _dbTypeface;
     private SKTypeface? _ebTypeface;
 
@@ -29,6 +31,15 @@ public class TemplateManager(Size videoResolution, bool noScale = false) : IDisp
 
     public void Dispose()
     {
+        foreach (var usageTemplates in _matchTemplate.Values)
+        {
+            if (usageTemplates == null) continue;
+            foreach (var template in usageTemplates.Values)
+                template.Dispose();
+            usageTemplates.Clear();
+        }
+        _matchTemplate.Clear();
+
         _menuSign?.Dispose();
         _menuSign = null;
         foreach (var usageTemplates in _template.Values)
@@ -234,5 +245,19 @@ public class TemplateManager(Size videoResolution, bool noScale = false) : IDisp
         var mat = CreateImageWithText(usage, text);
         usageDict[text] = mat;
         return mat;
+    }
+
+    public GaMat GetMatchTemplate(TemplateUsage usage, string text)
+    {
+        var usageDict = _matchTemplate.GetValueOrDefault(usage);
+        if (usageDict == null)
+            _matchTemplate[usage] = usageDict = new Dictionary<string, GaMat>();
+
+        if (usageDict.TryGetValue(text, out var template))
+            return template;
+
+        template = new GaMat(GetTemplate(usage, text));
+        usageDict[text] = template;
+        return template;
     }
 }

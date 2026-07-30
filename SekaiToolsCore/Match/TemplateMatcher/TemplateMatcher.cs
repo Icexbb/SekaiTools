@@ -46,18 +46,10 @@ public static class TemplateMatcher
         TemplateMatchingType matchingType, string memberName)
     {
         var imgSmall = frame.GetScaledGrayRoi(region, SearchDownscaleDivisor, SearchInterpolation);
-        var tmpSmallW = tmp.Size.Width / SearchDownscaleDivisor;
-        var tmpSmallH = tmp.Size.Height / SearchDownscaleDivisor;
-        var tmpSmallSize = new Size(tmpSmallW, tmpSmallH);
-
-        using var tmpSmall = new Mat();
-        using var alphaSmall = new Mat();
-
-        CvInvoke.Resize(tmp.Gray, tmpSmall, tmpSmallSize, interpolation: Inter.Linear);
-        CvInvoke.Resize(tmp.Alpha, alphaSmall, tmpSmallSize, interpolation: Inter.Nearest);
+        var templateLayer = tmp.GetScaledLayer(SearchDownscaleDivisor);
 
         using var matchResult = new Mat();
-        CvInvoke.MatchTemplate(imgSmall, tmpSmall, matchResult, matchingType, alphaSmall);
+        CvInvoke.MatchTemplate(imgSmall, templateLayer.Gray, matchResult, matchingType, templateLayer.Alpha);
         matchResult.MatRemoveErrorInf();
         double maxVal = 0, minVal = 0;
         Point minLoc = new(), maxLoc = new();

@@ -32,7 +32,7 @@ public class DialogTemplateMatcher(
 
     private GaMat GetNameTag(string name)
     {
-        return new GaMat(templateManager.GetTemplate(TemplateUsage.DialogNameTag, name));
+        return templateManager.GetMatchTemplate(TemplateUsage.DialogNameTag, name);
     }
 
     private Point DialogMatchNameTag(FrameMatchContext frame, DialogBaseFrameSet dialogBase, int frameIndex = -1)
@@ -40,7 +40,7 @@ public class DialogTemplateMatcher(
         var content = dialogBase.Data.CharacterOriginal;
         if (string.IsNullOrWhiteSpace(content)) return Point.Empty;
         var contentLen = content.Length;
-        using var template = GetNameTag(TrimTemplateContent(content));
+        var template = GetNameTag(TrimTemplateContent(content));
         var res = LocalMatch(frame, template,
             dialogBase.Data.Shake
                 ? config.MatchingThreshold.DialogNametagSpecial
@@ -133,50 +133,42 @@ public class DialogTemplateMatcher(
             ? config.MatchingThreshold.DialogContentSpecial
             : config.MatchingThreshold.DialogContentNormal;
 
-        try
+        switch (lastStatus)
         {
-            switch (lastStatus)
+            case MatchStatus.DialogNotMatched:
             {
-                case MatchStatus.DialogNotMatched:
-                {
-                    matchRes = LocalMatch(frame, template1, matchingThreshold,
-                        TemplateMatchCachePool.MatchUsage.DialogContent1);
-                    return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogNotMatched;
-                }
-                case MatchStatus.DialogMatched1:
-                {
-                    matchRes = LocalMatch(frame, template2, matchingThreshold,
-                        TemplateMatchCachePool.MatchUsage.DialogContent2);
-                    if (matchRes) return MatchStatus.DialogMatched2;
-                    matchRes = LocalMatch(frame, template1, matchingThreshold,
-                        TemplateMatchCachePool.MatchUsage.DialogContent1);
-                    return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogDropped;
-                }
-                case MatchStatus.DialogMatched2:
-                {
-                    matchRes = LocalMatch(frame, template3, matchingThreshold,
-                        TemplateMatchCachePool.MatchUsage.DialogContent3);
-                    if (matchRes) return MatchStatus.DialogMatched3;
-                    matchRes = LocalMatch(frame, template2, matchingThreshold,
-                        TemplateMatchCachePool.MatchUsage.DialogContent2);
-                    return matchRes ? MatchStatus.DialogMatched2 : MatchStatus.DialogDropped;
-                }
-                case MatchStatus.DialogMatched3:
-                {
-                    matchRes = LocalMatch(frame, template3, matchingThreshold,
-                        TemplateMatchCachePool.MatchUsage.DialogContent3);
-                    return matchRes ? MatchStatus.DialogMatched3 : MatchStatus.DialogDropped;
-                }
-                case MatchStatus.NameTagNotMatched:
-                case MatchStatus.DialogDropped:
-                default:
-                    return MatchStatus.DialogNotMatched;
+                matchRes = LocalMatch(frame, template1, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent1);
+                return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogNotMatched;
             }
-        }
-        finally
-        {
-            foreach (var template in charTemplates)
-                template.Dispose();
+            case MatchStatus.DialogMatched1:
+            {
+                matchRes = LocalMatch(frame, template2, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent2);
+                if (matchRes) return MatchStatus.DialogMatched2;
+                matchRes = LocalMatch(frame, template1, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent1);
+                return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogDropped;
+            }
+            case MatchStatus.DialogMatched2:
+            {
+                matchRes = LocalMatch(frame, template3, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent3);
+                if (matchRes) return MatchStatus.DialogMatched3;
+                matchRes = LocalMatch(frame, template2, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent2);
+                return matchRes ? MatchStatus.DialogMatched2 : MatchStatus.DialogDropped;
+            }
+            case MatchStatus.DialogMatched3:
+            {
+                matchRes = LocalMatch(frame, template3, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent3);
+                return matchRes ? MatchStatus.DialogMatched3 : MatchStatus.DialogDropped;
+            }
+            case MatchStatus.NameTagNotMatched:
+            case MatchStatus.DialogDropped:
+            default:
+                return MatchStatus.DialogNotMatched;
         }
 
         bool LocalMatch(FrameMatchContext src, GaMat tmp, double threshold,
@@ -211,10 +203,10 @@ public class DialogTemplateMatcher(
             var dialogBody1 = content[..Math.Min(1, content.Length)];
             var dialogBody2 = content[..Math.Min(2, content.Length)];
             var dialogBody3 = content[..Math.Min(3, content.Length)];
-            var mat1 = templateManager.GetTemplate(TemplateUsage.DialogContent, dialogBody1);
-            var mat2 = templateManager.GetTemplate(TemplateUsage.DialogContent, dialogBody2);
-            var mat3 = templateManager.GetTemplate(TemplateUsage.DialogContent, dialogBody3);
-            return [new GaMat(mat1), new GaMat(mat2), new GaMat(mat3)];
+            var template1 = templateManager.GetMatchTemplate(TemplateUsage.DialogContent, dialogBody1);
+            var template2 = templateManager.GetMatchTemplate(TemplateUsage.DialogContent, dialogBody2);
+            var template3 = templateManager.GetMatchTemplate(TemplateUsage.DialogContent, dialogBody3);
+            return [template1, template2, template3];
         }
     }
 
