@@ -6,6 +6,7 @@ using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
+using SekaiToolsCore.Utils;
 using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiStory = SekaiToolsBase.Story.Story;
 
@@ -51,6 +52,9 @@ public class MarkerTemplateMatcher(
 
     private MatchResult MarkerMatch(Mat img, string text, int frameIndex = -1)
     {
+        if (string.IsNullOrWhiteSpace(text))
+            return new MatchResult(Point.Empty, MatchStatus.NotMatched);
+
         var templateAll = GetTemplate(text);
         var sText = text[^1].ToString();
         var template = GetTemplate(sText);
@@ -75,7 +79,11 @@ public class MarkerTemplateMatcher(
             if (_status == MatchStatus.Matched)
                 cropArea.Width = Math.Min(cropArea.Width * 2, src.Width - cropArea.X);
 
+            cropArea.Limit(new Rectangle(Point.Empty, src.Size));
             if (cropArea.IsEmpty)
+                return Point.Empty;
+
+            if (cropArea.Width < tmp.Size.Width || cropArea.Height < tmp.Size.Height)
                 return Point.Empty;
 
             using var imgCropped = new Mat(src, cropArea);

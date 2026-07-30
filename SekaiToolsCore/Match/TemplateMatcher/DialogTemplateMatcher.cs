@@ -38,6 +38,7 @@ public class DialogTemplateMatcher(
     private Point DialogMatchNameTag(Mat img, DialogBaseFrameSet dialogBase, int frameIndex = -1)
     {
         var content = dialogBase.Data.CharacterOriginal;
+        if (string.IsNullOrWhiteSpace(content)) return Point.Empty;
         var contentLen = content.Length;
         using var template = GetNameTag(TrimTemplateContent(content));
         var res = LocalMatch(img, template,
@@ -50,6 +51,8 @@ public class DialogTemplateMatcher(
         Point LocalMatch(Mat src, GaMat tmp, double threshold)
         {
             var roi = LocalGetCropArea();
+            if (roi.Width < tmp.Size.Width || roi.Height < tmp.Size.Height)
+                return Point.Empty;
             using var imgCropped = new Mat(src, roi);
             var result = TemplateMatcher.Match(imgCropped, tmp, cachePool,
                 TemplateMatchCachePool.MatchUsage.DialogNameTag);
@@ -120,7 +123,7 @@ public class DialogTemplateMatcher(
         int frameIndex = -1)
     {
         var content = dialogBase.Data.BodyOriginal;
-        if (point.X == 0) return 0;
+        if (point.IsEmpty || string.IsNullOrEmpty(content)) return MatchStatus.DialogNotMatched;
         var charTemplates = GetDialogInd();
         var template1 = charTemplates[0];
         var template2 = charTemplates[1];
@@ -190,6 +193,8 @@ public class DialogTemplateMatcher(
             if (dialogBase.IsJitter) dialogStartPosition.Extend(1.5);
 
             dialogStartPosition.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
+            if (dialogStartPosition.Width < tmp.Size.Width || dialogStartPosition.Height < tmp.Size.Height)
+                return false;
 
             using var imgCropped = new Mat(src, dialogStartPosition);
             var result = TemplateMatcher.Match(imgCropped, tmp, cachePool, usage);
@@ -204,9 +209,9 @@ public class DialogTemplateMatcher(
 
         List<GaMat> GetDialogInd()
         {
-            var dialogBody1 = content[..1];
-            var dialogBody2 = content[..2];
-            var dialogBody3 = content.Length >= 3 ? content[..3] : content[..2];
+            var dialogBody1 = content[..Math.Min(1, content.Length)];
+            var dialogBody2 = content[..Math.Min(2, content.Length)];
+            var dialogBody3 = content[..Math.Min(3, content.Length)];
             var mat1 = templateManager.GetTemplate(TemplateUsage.DialogContent, dialogBody1);
             var mat2 = templateManager.GetTemplate(TemplateUsage.DialogContent, dialogBody2);
             var mat3 = templateManager.GetTemplate(TemplateUsage.DialogContent, dialogBody3);

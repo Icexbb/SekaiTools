@@ -143,10 +143,17 @@ public static class UtilFunc
 
         public void Limit(Rectangle limit)
         {
-            if (rect.X < limit.X) rect.X = limit.X;
-            if (rect.Y < limit.Y) rect.Y = limit.Y;
-            if (rect.Right > limit.Right) rect.X = limit.Right - rect.Width;
-            if (rect.Bottom > limit.Bottom) rect.Y = limit.Bottom - rect.Height;
+            if (limit.Width <= 0 || limit.Height <= 0 || rect.Width <= 0 || rect.Height <= 0)
+            {
+                rect = Rectangle.Empty;
+                return;
+            }
+
+            var width = Math.Min(rect.Width, limit.Width);
+            var height = Math.Min(rect.Height, limit.Height);
+            var x = Math.Clamp(rect.X, limit.Left, limit.Right - width);
+            var y = Math.Clamp(rect.Y, limit.Top, limit.Bottom - height);
+            rect = new Rectangle(x, y, width, height);
         }
     }
 }

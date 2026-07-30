@@ -54,7 +54,9 @@ public class BannerTemplateMatcher(
 
     private MatchStatus BannerMatch(Mat img, string text, int frameIndex = -1)
     {
+        if (string.IsNullOrWhiteSpace(text)) return MatchStatus.NotMatched;
         var sText = TrimContent(text);
+        if (string.IsNullOrWhiteSpace(sText)) return MatchStatus.NotMatched;
         using var template = GetTemplate(sText);
         var match = LocalMatch(img, template);
 
@@ -69,6 +71,9 @@ public class BannerTemplateMatcher(
         {
             var cropArea = UtilFunc.FromCenter(img.Size.Center(),
                 new Size((int)(tmp.Size.Height * text.Length * 1.5), (int)(tmp.Size.Height * 1.5)));
+            cropArea.Limit(new Rectangle(Point.Empty, src.Size));
+            if (cropArea.Width < tmp.Size.Width || cropArea.Height < tmp.Size.Height)
+                return false;
             using var roi = new Mat(src, cropArea);
             var result = TemplateMatcher.Match(roi, tmp, cachePool, TemplateMatchCachePool.MatchUsage.Banner);
 
