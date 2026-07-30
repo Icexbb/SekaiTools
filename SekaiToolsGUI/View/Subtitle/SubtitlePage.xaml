@@ -63,7 +63,7 @@
                                 Margin="0"
                                 FontTypography="BodyStrong"
                                 Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                Text="字幕文件"
+                                Text="剧本文件"
                                 TextWrapping="NoWrap" />
                             <ui:TextBlock
                                 Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
