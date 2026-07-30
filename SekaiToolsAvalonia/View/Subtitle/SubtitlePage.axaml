@@ -3,7 +3,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:SekaiToolsAvalonia.ViewModel.Subtitle"
-             xmlns:converters="clr-namespace:SekaiToolsAvalonia.Converters"
              mc:Ignorable="d"
              x:Class="SekaiToolsAvalonia.View.Subtitle.SubtitlePage"
              x:DataType="vm:SubtitlePageModel"
@@ -103,14 +102,22 @@
                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
                 <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,*">
                     <ToggleSwitch Grid.Row="0" Grid.Column="0" Margin="5"
-                                  IsChecked="{Binding ShowDialog}">显示对话</ToggleSwitch>
+                                  IsChecked="{Binding ShowDialog}">
+                        显示对话
+                    </ToggleSwitch>
                     <ToggleSwitch Grid.Row="0" Grid.Column="1" Margin="5"
                                   IsChecked="{Binding ShowTooLongOnly}"
-                                  IsVisible="{Binding ShowDialog}">仅显示过长行</ToggleSwitch>
+                                  IsVisible="{Binding ShowDialog}">
+                        仅显示过长行
+                    </ToggleSwitch>
                     <ToggleSwitch Grid.Row="1" Grid.Column="0" Margin="5"
-                                  IsChecked="{Binding ShowBanner}">显示横幅</ToggleSwitch>
+                                  IsChecked="{Binding ShowBanner}">
+                        显示横幅
+                    </ToggleSwitch>
                     <ToggleSwitch Grid.Row="1" Grid.Column="1" Margin="5"
-                                  IsChecked="{Binding ShowMarker}">显示标签</ToggleSwitch>
+                                  IsChecked="{Binding ShowMarker}">
+                        显示标签
+                    </ToggleSwitch>
                 </Grid>
             </Border>
 

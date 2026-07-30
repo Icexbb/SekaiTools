@@ -94,11 +94,15 @@ public static class ProgressStore
         return Convert.ToHexString(hash, 0, 8);
     }
 
-    public static string GetSavePath(string saveKey) =>
-        Path.Combine(ProgressDir, $"{saveKey}.json");
+    public static string GetSavePath(string saveKey)
+    {
+        return Path.Combine(ProgressDir, $"{saveKey}.json");
+    }
 
-    public static bool HasSavedState(string saveKey) =>
-        File.Exists(GetSavePath(saveKey));
+    public static bool HasSavedState(string saveKey)
+    {
+        return File.Exists(GetSavePath(saveKey));
+    }
 
     public static void Save(string saveKey, ProcessingState state)
     {

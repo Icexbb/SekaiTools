@@ -46,16 +46,25 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
         InMemoryLogSink.Clear();
     }
 
-    private static bool FilterAll(object obj) => true;
+    private static bool FilterAll(object obj)
+    {
+        return true;
+    }
 
     private static bool FilterInfoPlus(object obj)
-        => obj is LogEntry e && e.Level <= LogLevel.Information;
+    {
+        return obj is LogEntry e && e.Level <= LogLevel.Information;
+    }
 
     private static bool FilterWarnPlus(object obj)
-        => obj is LogEntry e && e.Level <= LogLevel.Warning;
+    {
+        return obj is LogEntry e && e.Level <= LogLevel.Warning;
+    }
 
     private static bool FilterErrorPlus(object obj)
-        => obj is LogEntry e && e.Level <= LogLevel.Error;
+    {
+        return obj is LogEntry e && e.Level <= LogLevel.Error;
+    }
 
     private void LevelFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -97,10 +106,7 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
 
     private void ProxyPort_ValueChanged(object sender, RoutedEventArgs e)
     {
-        if (sender is Wpf.Ui.Controls.NumberBox numberBox)
-        {
-            numberBox.GetBindingExpression(Wpf.Ui.Controls.NumberBox.ValueProperty)?.UpdateSource();
-        }
+        if (sender is NumberBox numberBox) numberBox.GetBindingExpression(NumberBox.ValueProperty)?.UpdateSource();
     }
 
     private void ResetToDefault_Click(object sender, RoutedEventArgs e)

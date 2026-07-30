@@ -1,12 +1,12 @@
 using System.Drawing;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiToolsBase;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
+using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiStory = SekaiToolsBase.Story.Story;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
@@ -24,7 +24,17 @@ public class MarkerTemplateMatcher(
     private readonly Dictionary<string, GaMat> _templates = new();
     private MatchStatus _status;
 
-    public int LastNotProcessedIndex() => NextUnfinishedIndex();
+    public void Dispose()
+    {
+        foreach (var template in _templates.Values)
+            template.Dispose();
+        _templates.Clear();
+    }
+
+    public int LastNotProcessedIndex()
+    {
+        return NextUnfinishedIndex();
+    }
 
     private GaMat GetTemplate(string content)
     {
@@ -115,19 +125,6 @@ public class MarkerTemplateMatcher(
         }
     }
 
-    private enum MatchStatus
-    {
-        NotMatched,
-        Dropped,
-        Matched
-    }
-
-    private struct MatchResult(Point point, MatchStatus status)
-    {
-        public readonly Point Point = point;
-        public readonly MatchStatus Status = status;
-    }
-
     public MarkerMatcherStateDto SaveState()
     {
         var (cf, lfi, uft) = SaveFallbackState();
@@ -163,10 +160,16 @@ public class MarkerTemplateMatcher(
         NextUnfinishedIndex();
     }
 
-    public void Dispose()
+    private enum MatchStatus
     {
-        foreach (var template in _templates.Values)
-            template.Dispose();
-        _templates.Clear();
+        NotMatched,
+        Dropped,
+        Matched
+    }
+
+    private struct MatchResult(Point point, MatchStatus status)
+    {
+        public readonly Point Point = point;
+        public readonly MatchStatus Status = status;
     }
 }

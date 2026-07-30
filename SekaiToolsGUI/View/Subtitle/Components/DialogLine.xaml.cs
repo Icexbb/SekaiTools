@@ -2,8 +2,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using SekaiToolsCore.Process.FrameSet;
-using SekaiToolsGUI.ViewModel.Subtitle;
 using SekaiToolsGUI.ViewModel.Setting;
+using SekaiToolsGUI.ViewModel.Subtitle;
 using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Controls;
 
@@ -11,8 +11,6 @@ namespace SekaiToolsGUI.View.Subtitle.Components;
 
 public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
 {
-    private int CharTime => SettingPageModel.Instance.TypewriterCharTime;
-
     public DialogLine(DialogBaseFrameSet set)
     {
         set.InitSeparator();
@@ -24,6 +22,8 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
             ? ViewModel.Set.Data.CharacterTranslated
             : ViewModel.Set.Data.CharacterOriginal;
     }
+
+    private int CharTime => SettingPageModel.Instance.TypewriterCharTime;
 
     public DialogLineModel ViewModel => (DialogLineModel)DataContext;
 

@@ -1,15 +1,13 @@
 using Avalonia.Controls;
 using Avalonia.Input;
-using SekaiToolsCore.Process.FrameSet;
-using SekaiToolsAvalonia.ViewModel.Subtitle;
 using SekaiToolsAvalonia.ViewModel.Setting;
+using SekaiToolsAvalonia.ViewModel.Subtitle;
+using SekaiToolsCore.Process.FrameSet;
 
 namespace SekaiToolsAvalonia.View.Subtitle.Components;
 
 public partial class DialogLine : UserControl
 {
-    private int CharTime => SettingPageModel.Instance.TypewriterCharTime;
-
     public DialogLine(DialogBaseFrameSet set)
     {
         set.InitSeparator();
@@ -20,6 +18,8 @@ public partial class DialogLine : UserControl
             ? ViewModel.Set.Data.CharacterTranslated
             : ViewModel.Set.Data.CharacterOriginal;
     }
+
+    private int CharTime => SettingPageModel.Instance.TypewriterCharTime;
 
     public DialogLineModel ViewModel => (DialogLineModel)DataContext!;
 

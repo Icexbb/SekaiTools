@@ -1,6 +1,5 @@
 using System.Drawing;
 using Emgu.CV;
-using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiToolsBase;
 using SekaiToolsBase.Story;
 using SekaiToolsCore.Process;
@@ -8,6 +7,7 @@ using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Utils;
+using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
@@ -24,7 +24,10 @@ public class DialogTemplateMatcher(
     private Point _nameTagPosition;
     private MatchStatus _status;
 
-    public int LastNotProcessedIndex() => NextUnfinishedIndex();
+    public int LastNotProcessedIndex()
+    {
+        return NextUnfinishedIndex();
+    }
 
     private GaMat GetNameTag(string name)
     {
@@ -71,10 +74,7 @@ public class DialogTemplateMatcher(
                 Height = (int)(offset * 3f),
                 Width = (int)(offset * contentLen * 3f)
             };
-            if (dialogBase.IsJitter)
-            {
-                rect.Extend(1.5);
-            }
+            if (dialogBase.IsJitter) rect.Extend(1.5);
 
             rect.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
             return rect;
@@ -185,10 +185,7 @@ public class DialogTemplateMatcher(
                 Width = (int)(5.0f * offset),
                 Height = (int)(2.0f * offset)
             };
-            if (dialogBase.IsJitter)
-            {
-                dialogStartPosition.Extend(1.5);
-            }
+            if (dialogBase.IsJitter) dialogStartPosition.Extend(1.5);
 
             dialogStartPosition.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
 
@@ -305,22 +302,6 @@ public class DialogTemplateMatcher(
         return new MatchResult(point, DialogMatchContent(frame, dialogBase, point, lastStatus, frameIndex));
     }
 
-    private enum MatchStatus
-    {
-        NameTagNotMatched = -2,
-        DialogNotMatched = 0,
-        DialogMatched1 = 1,
-        DialogMatched2 = 2,
-        DialogMatched3 = 3,
-        DialogDropped = -1
-    }
-
-    private struct MatchResult(Point point, MatchStatus status)
-    {
-        public readonly Point Point = point;
-        public readonly MatchStatus Status = status;
-    }
-
     public DialogMatcherStateDto SaveState()
     {
         var (cf, lfi, uft) = SaveFallbackState();
@@ -365,5 +346,21 @@ public class DialogTemplateMatcher(
         }
 
         NextUnfinishedIndex();
+    }
+
+    private enum MatchStatus
+    {
+        NameTagNotMatched = -2,
+        DialogNotMatched = 0,
+        DialogMatched1 = 1,
+        DialogMatched2 = 2,
+        DialogMatched3 = 3,
+        DialogDropped = -1
+    }
+
+    private struct MatchResult(Point point, MatchStatus status)
+    {
+        public readonly Point Point = point;
+        public readonly MatchStatus Status = status;
     }
 }

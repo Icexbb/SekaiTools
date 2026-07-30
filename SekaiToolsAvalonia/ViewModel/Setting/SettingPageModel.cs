@@ -1,6 +1,7 @@
-using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Avalonia;
+using Avalonia.Styling;
 using SekaiToolsBase;
 using SekaiToolsCore;
 using SekaiToolsCore.Process.Config;
@@ -24,20 +25,6 @@ public partial class SettingPageModel : ViewModelBase
         {
             SetProperty(value);
             ApplyTheme(value);
-        }
-    }
-
-    private static void ApplyTheme(int theme)
-    {
-        if (Avalonia.Application.Current is { } app)
-        {
-            app.RequestedThemeVariant = theme switch
-            {
-                0 => Avalonia.Styling.ThemeVariant.Light,
-                1 => Avalonia.Styling.ThemeVariant.Dark,
-                2 => Avalonia.Styling.ThemeVariant.Default,
-                _ => Avalonia.Styling.ThemeVariant.Default
-            };
         }
     }
 
@@ -99,18 +86,74 @@ public partial class SettingPageModel : ViewModelBase
         set => SetProperty(value);
     }
 
-    public bool ExportLine1 { get => GetProperty(true); set => SetProperty(value); }
-    public bool ExportLine2 { get => GetProperty(true); set => SetProperty(value); }
-    public bool ExportLine3 { get => GetProperty(true); set => SetProperty(value); }
-    public bool ExportCharacter { get => GetProperty(true); set => SetProperty(value); }
-    public bool ExportBannerMask { get => GetProperty(true); set => SetProperty(value); }
-    public bool ExportBannerText { get => GetProperty(true); set => SetProperty(value); }
-    public bool ExportMarkerMask { get => GetProperty(true); set => SetProperty(value); }
-    public bool ExportMarkerText { get => GetProperty(true); set => SetProperty(value); }
-    public bool ExportScreenComment { get => GetProperty(true); set => SetProperty(value); }
+    public bool ExportLine1
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportLine2
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportLine3
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportCharacter
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportBannerMask
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportBannerText
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportMarkerMask
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportMarkerText
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportScreenComment
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
 
     public static string StaticAppVersion => "1.5.2";
     public string AppVersion => StaticAppVersion;
+
+    private static void ApplyTheme(int theme)
+    {
+        if (Application.Current is { } app)
+            app.RequestedThemeVariant = theme switch
+            {
+                0 => ThemeVariant.Light,
+                1 => ThemeVariant.Dark,
+                2 => ThemeVariant.Default,
+                _ => ThemeVariant.Default
+            };
+    }
 
     public Proxy GetProxy()
     {
@@ -172,7 +215,9 @@ partial class SettingPageModel
             Directory.CreateDirectory(Path.GetDirectoryName(GetSettingPath())!);
             File.WriteAllText(GetSettingPath(), setting.Dump(), Encoding.UTF8);
         }
-        catch (Exception) { }
+        catch (Exception)
+        {
+        }
     }
 
     public void ResetSetting()
@@ -200,8 +245,14 @@ partial class SettingPageModel
     public static void LoadSetting()
     {
         Model.Setting setting;
-        try { setting = Model.Setting.Load(GetSettingPath()); }
-        catch (Exception) { setting = new Model.Setting(); }
+        try
+        {
+            setting = Model.Setting.Load(GetSettingPath());
+        }
+        catch (Exception)
+        {
+            setting = new Model.Setting();
+        }
 
         var self = Instance;
         self.CurrentApplicationTheme = setting.CurrentApplicationTheme;
@@ -211,9 +262,15 @@ partial class SettingPageModel
         self.ProxyPort = setting.ProxyPort;
         self.TypewriterFadeTime = setting.TypewriterFadeTime;
         self.TypewriterCharTime = setting.TypewriterCharTime;
-        self.DialogFontFamily = setting.DialogFontFamily == "" ? Model.Setting.Default.DialogFontFamily : setting.DialogFontFamily;
-        self.BannerFontFamily = setting.BannerFontFamily == "" ? Model.Setting.Default.BannerFontFamily : setting.BannerFontFamily;
-        self.MarkerFontFamily = setting.MarkerFontFamily == "" ? Model.Setting.Default.MarkerFontFamily : setting.MarkerFontFamily;
+        self.DialogFontFamily = setting.DialogFontFamily == ""
+            ? Model.Setting.Default.DialogFontFamily
+            : setting.DialogFontFamily;
+        self.BannerFontFamily = setting.BannerFontFamily == ""
+            ? Model.Setting.Default.BannerFontFamily
+            : setting.BannerFontFamily;
+        self.MarkerFontFamily = setting.MarkerFontFamily == ""
+            ? Model.Setting.Default.MarkerFontFamily
+            : setting.MarkerFontFamily;
         self.ExportLine1 = setting.ExportLine1;
         self.ExportLine2 = setting.ExportLine2;
         self.ExportLine3 = setting.ExportLine3;

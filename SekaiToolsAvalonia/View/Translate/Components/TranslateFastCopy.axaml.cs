@@ -1,5 +1,7 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using SekaiToolsAvalonia.ViewModel.Setting;
 
 namespace SekaiToolsAvalonia.View.Translate.Components;
@@ -17,9 +19,9 @@ public partial class TranslateFastCopy : UserControl
         var button = new Button
         {
             Content = content,
-            Margin = new Avalonia.Thickness(2),
-            HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch
+            Margin = new Thickness(2),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
         button.Click += ButtonBase_OnClick;
         var deleteItem = new MenuItem { Header = "删除" };
@@ -60,19 +62,23 @@ public partial class TranslateFastCopy : UserControl
             WindowStartupLocation = WindowStartupLocation.CenterOwner
         };
 
-        var textBox = new TextBox { Margin = new Avalonia.Thickness(10) };
-        var addBtn = new Button { Content = "添加", Margin = new Avalonia.Thickness(10) };
+        var textBox = new TextBox { Margin = new Thickness(10) };
+        var addBtn = new Button { Content = "添加", Margin = new Thickness(10) };
         window.Content = new StackPanel
         {
             Children =
             {
-                new TextBlock { Text = "输入自定义字符:", Margin = new Avalonia.Thickness(10, 10, 10, 0) },
+                new TextBlock { Text = "输入自定义字符:", Margin = new Thickness(10, 10, 10, 0) },
                 textBox, addBtn
             }
         };
 
         var tcs = new TaskCompletionSource<bool>();
-        addBtn.Click += (_, _) => { tcs.TrySetResult(true); window.Close(); };
+        addBtn.Click += (_, _) =>
+        {
+            tcs.TrySetResult(true);
+            window.Close();
+        };
         window.Closing += (_, _) => tcs.TrySetResult(false);
         await window.ShowDialog(owner);
 

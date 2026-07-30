@@ -23,6 +23,6 @@ public class FrameRateTests
 
         Assert.Equal("1:02:03.46", time.GetAssFormatted());
         Assert.Equal("01:02:03,460", time.GetSrtFormatted());
-        Assert.Equal("1:02:03.456", time.GetAssFormatted(msPrecision: true));
+        Assert.Equal("1:02:03.456", time.GetAssFormatted(true));
     }
 }

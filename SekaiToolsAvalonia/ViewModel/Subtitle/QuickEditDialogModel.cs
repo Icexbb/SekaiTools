@@ -19,11 +19,33 @@ public class QuickEditDialogModel : ViewModelBase
         UseReturn = CanReturn && dialogBase.UseSeparator;
     }
 
-    public string ContentOriginal { get => GetProperty(""); set => SetProperty(value); }
-    public string ContentTranslated { get => GetProperty(""); set => SetProperty(value); }
-    public bool CanReturn { get; }
-    public bool UseReturn { get => GetProperty(false); set => SetProperty(value); }
+    public string ContentOriginal
+    {
+        get => GetProperty("");
+        set => SetProperty(value);
+    }
 
-    public static string NormalContent(string str) => str.Replace("\\R", "\n").Replace("\\N", "\n").Trim();
-    public static string LineContent(string str) => NormalContent(str).Replace("\n", "").Trim();
+    public string ContentTranslated
+    {
+        get => GetProperty("");
+        set => SetProperty(value);
+    }
+
+    public bool CanReturn { get; }
+
+    public bool UseReturn
+    {
+        get => GetProperty(false);
+        set => SetProperty(value);
+    }
+
+    public static string NormalContent(string str)
+    {
+        return str.Replace("\\R", "\n").Replace("\\N", "\n").Trim();
+    }
+
+    public static string LineContent(string str)
+    {
+        return NormalContent(str).Replace("\n", "").Trim();
+    }
 }

@@ -1,8 +1,8 @@
+using SekaiToolsAvalonia.View.Download;
 using SekaiToolsAvalonia.View.Setting;
 using SekaiToolsAvalonia.View.Subtitle;
-using SekaiToolsAvalonia.View.Translate;
-using SekaiToolsAvalonia.View.Download;
 using SekaiToolsAvalonia.View.Suppress;
+using SekaiToolsAvalonia.View.Translate;
 using SekaiToolsAvalonia.ViewModel.Setting;
 
 namespace SekaiToolsAvalonia.ViewModel;
@@ -66,7 +66,7 @@ public class MainWindowViewModel : ViewModelBase
 
     public NavItem? SelectedNavItem
     {
-        get => GetProperty<NavItem?>(null);
+        get => GetProperty<NavItem?>();
         set => SetProperty(value);
     }
 }

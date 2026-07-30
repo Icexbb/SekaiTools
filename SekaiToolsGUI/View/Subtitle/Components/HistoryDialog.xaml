@@ -16,7 +16,7 @@
                TargetType="{x:Type local:HistoryDialog}" />
     </ui:ContentDialog.Resources>
     <ui:ContentDialog.Content>
-        <StackPanel Name="StackPanel"></StackPanel>
+        <StackPanel Name="StackPanel" />
 
 
     </ui:ContentDialog.Content>

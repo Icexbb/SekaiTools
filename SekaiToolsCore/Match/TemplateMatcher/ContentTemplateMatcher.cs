@@ -1,10 +1,9 @@
 using System.Drawing;
 using Emgu.CV;
-using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiToolsBase;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.Model;
-using SekaiToolsCore.Utils;
+using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
@@ -15,6 +14,11 @@ public class ContentTemplateMatcher(TemplateManager templateManager, Config conf
     private double Threshold { get; } = config.MatchingThreshold.DialogContentNormal;
 
     public bool Finished { get; private set; }
+
+    public void Dispose()
+    {
+        Template.Dispose();
+    }
 
     private bool MatchContentStartSign(Mat mat, int frameIndex = -1)
     {
@@ -42,10 +46,5 @@ public class ContentTemplateMatcher(TemplateManager templateManager, Config conf
     public void ForceFinish()
     {
         Finished = true;
-    }
-
-    public void Dispose()
-    {
-        Template.Dispose();
     }
 }

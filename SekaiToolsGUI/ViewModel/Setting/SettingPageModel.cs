@@ -12,8 +12,8 @@ namespace SekaiToolsGUI.ViewModel.Setting;
 
 public partial class SettingPageModel : ViewModelBase
 {
-    private bool _suspendSaving;
     public readonly List<string> CustomSpecialCharacters = [];
+    private bool _suspendSaving;
 
     private SettingPageModel()
     {

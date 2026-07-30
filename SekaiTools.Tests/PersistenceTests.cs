@@ -24,7 +24,7 @@ public class PersistenceTests
         finally
         {
             if (Directory.Exists(directory))
-                Directory.Delete(directory, recursive: true);
+                Directory.Delete(directory, true);
         }
     }
 

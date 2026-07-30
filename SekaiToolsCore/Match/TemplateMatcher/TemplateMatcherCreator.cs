@@ -20,6 +20,11 @@ public class TemplateMatcherCreator : IDisposable
     public SekaiStory Story { get; }
     private TemplateManager Manager { get; }
 
+    public void Dispose()
+    {
+        Manager.Dispose();
+    }
+
     public DialogTemplateMatcher DialogMatcher()
     {
         return new DialogTemplateMatcher(VInfo, Story, Manager, Config);
@@ -43,10 +48,5 @@ public class TemplateMatcherCreator : IDisposable
     public SubtitleMaker SubtitleMaker()
     {
         return new SubtitleMaker(VInfo, Manager, Config);
-    }
-
-    public void Dispose()
-    {
-        Manager.Dispose();
     }
 }

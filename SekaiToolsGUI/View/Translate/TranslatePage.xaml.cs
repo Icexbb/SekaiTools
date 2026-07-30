@@ -95,7 +95,7 @@ public partial class TranslatePage : UserControl
             {
                 _translationPath = filePath;
                 ViewModel.Story = new Story(gData, tData);
-                Logger.Log($"翻译载入成功: 剧本={_scriptPath}, 翻译={filePath}, 对话={tData.Translations.Count}", LogLevel.Information);
+                Logger.Log($"翻译载入成功: 剧本={_scriptPath}, 翻译={filePath}, 对话={tData.Translations.Count}");
                 SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
                     new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
             }

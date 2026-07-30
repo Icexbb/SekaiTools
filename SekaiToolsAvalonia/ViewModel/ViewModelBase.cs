@@ -5,8 +5,8 @@ namespace SekaiToolsAvalonia.ViewModel;
 
 public class ViewModelBase : INotifyPropertyChanged
 {
-    private readonly Dictionary<string, object> _properties = new();
     private readonly object _lock = new();
+    private readonly Dictionary<string, object> _properties = new();
     public event PropertyChangedEventHandler? PropertyChanged;
 
     protected T GetProperty<T>(T defaultValue = default!, [CallerMemberName] string? propertyName = null)

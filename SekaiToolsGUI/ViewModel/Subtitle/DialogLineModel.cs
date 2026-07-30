@@ -7,8 +7,8 @@ namespace SekaiToolsGUI.ViewModel.Subtitle;
 
 public class DialogLineModel : ViewModelBase
 {
-    private readonly int _charTime;
     public readonly DialogBaseFrameSet Set;
+    private readonly int _charTime;
 
     public DialogLineModel(DialogBaseFrameSet set, int charTime = 80)
     {

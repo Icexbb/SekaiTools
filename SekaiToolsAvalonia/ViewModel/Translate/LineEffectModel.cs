@@ -12,7 +12,12 @@ public class LineEffectModel : LineModel
         Content.PropertyChanged += OnContentPropertyChanged;
     }
 
-    public TranslateItemModel Content { get => GetProperty(new TranslateItemModel()); set => SetProperty(value); }
+    public TranslateItemModel Content
+    {
+        get => GetProperty(new TranslateItemModel());
+        set => SetProperty(value);
+    }
+
     public override string Result => Content.Result;
     public bool ContentTranslateChangedEnabled { get; set; } = true;
 

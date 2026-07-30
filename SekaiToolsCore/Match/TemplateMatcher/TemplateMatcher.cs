@@ -21,7 +21,7 @@ public static class TemplateMatcher
         [CallerMemberName] string memberName = "")
     {
         Mat img;
-        bool tempImg = imgOriginal.NumberOfChannels == 3;
+        var tempImg = imgOriginal.NumberOfChannels == 3;
         if (tempImg)
         {
             img = new Mat();
@@ -52,9 +52,7 @@ public static class TemplateMatcher
     {
         if (tmp.Size.Width / SearchDownscaleRatio >= MinTemplateDimAfterScale
             && tmp.Size.Height / SearchDownscaleRatio >= MinTemplateDimAfterScale)
-        {
             return MatchNoCacheScaled(img, tmp, matchingType, memberName);
-        }
 
         return MatchNoCacheFull(img, tmp, matchingType, memberName);
     }

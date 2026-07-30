@@ -1,24 +1,27 @@
 using System.Net;
 using System.Text.Json;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Microsoft.Extensions.Logging;
 using SekaiDataFetch.Source;
-using SekaiToolsBase;
-using SekaiToolsCore;
 using SekaiToolsAvalonia.Interface;
+using SekaiToolsAvalonia.View.Download.Components;
+using SekaiToolsAvalonia.View.Download.Components.Unit;
 using SekaiToolsAvalonia.ViewModel.Download;
 using SekaiToolsAvalonia.ViewModel.Setting;
+using SekaiToolsBase;
+using SekaiToolsCore;
 
 namespace SekaiToolsAvalonia.View.Download;
 
 public partial class DownloadPage : UserControl, IAppPage
 {
-    private readonly Components.Unit.UnitStoryTab _unitTab = new();
-    private readonly TextBlock _stubEvent = new() { Text = "活动剧情 - 开发中", Margin = new(10) };
-    private readonly TextBlock _stubSpecial = new() { Text = "特殊剧情 - 开发中", Margin = new(10) };
-    private readonly TextBlock _stubCard = new() { Text = "角色剧情 - 开发中", Margin = new(10) };
-    private readonly TextBlock _stubAction = new() { Text = "地图对话 - 开发中", Margin = new(10) };
+    private readonly TextBlock _stubAction = new() { Text = "地图对话 - 开发中", Margin = new Thickness(10) };
+    private readonly TextBlock _stubCard = new() { Text = "角色剧情 - 开发中", Margin = new Thickness(10) };
+    private readonly TextBlock _stubEvent = new() { Text = "活动剧情 - 开发中", Margin = new Thickness(10) };
+    private readonly TextBlock _stubSpecial = new() { Text = "特殊剧情 - 开发中", Margin = new Thickness(10) };
+    private readonly UnitStoryTab _unitTab = new();
 
     public DownloadPage()
     {
@@ -37,7 +40,7 @@ public partial class DownloadPage : UserControl, IAppPage
 
     public void AddTask(string tag, string url)
     {
-        DownloadItemBox.Items.Add(new Components.DownloadTask(tag, url));
+        DownloadItemBox.Items.Add(new DownloadTask(tag, url));
     }
 
     private void StoryTypeSelector_OnSelected(object? sender, SelectionChangedEventArgs e)
@@ -65,7 +68,7 @@ public partial class DownloadPage : UserControl, IAppPage
 
         foreach (var item in DownloadItemBox.Items)
         {
-            if (item is not Components.DownloadTask task || task.Downloaded) continue;
+            if (item is not DownloadTask task || task.Downloaded) continue;
             task.ChangeStatus(0);
             try
             {

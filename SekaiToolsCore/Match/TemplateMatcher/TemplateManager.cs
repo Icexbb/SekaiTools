@@ -22,10 +22,29 @@ public class TemplateManager(Size videoResolution, bool noScale = false) : IDisp
     private const string EbFontBase = "FOT-RodinNTLGPro-EB.otf";
 
     private readonly Dictionary<TemplateUsage, Dictionary<string, Mat>?> _template = new();
-
-    private Mat? _menuSign;
     private SKTypeface? _dbTypeface;
     private SKTypeface? _ebTypeface;
+
+    private Mat? _menuSign;
+
+    public void Dispose()
+    {
+        _menuSign?.Dispose();
+        _menuSign = null;
+        foreach (var usageTemplates in _template.Values)
+        {
+            if (usageTemplates == null) continue;
+            foreach (var template in usageTemplates.Values)
+                template.Dispose();
+            usageTemplates.Clear();
+        }
+
+        _template.Clear();
+        _dbTypeface?.Dispose();
+        _ebTypeface?.Dispose();
+        _dbTypeface = null;
+        _ebTypeface = null;
+    }
 
     public Mat GetMenuSign()
     {
@@ -130,7 +149,7 @@ public class TemplateManager(Size videoResolution, bool noScale = false) : IDisp
             TemplateUsage.MarkerContent => 0.04f,
             _ => throw new ArgumentOutOfRangeException(nameof(usage), usage, null)
         };
-        
+
         font.Edging = SKFontEdging.SubpixelAntialias;
 
         var fontSize = font.Size;
@@ -142,8 +161,8 @@ public class TemplateManager(Size videoResolution, bool noScale = false) : IDisp
         canvas.Clear(SKColors.Transparent);
 
         var metrics = font.Metrics;
-        float textX = 10f;
-        float textY = 10f - metrics.Ascent;
+        var textX = 10f;
+        var textY = 10f - metrics.Ascent;
 
         const int fillGray = 255;
         var fillColor = new SKColor(fillGray, fillGray, fillGray);
@@ -215,24 +234,5 @@ public class TemplateManager(Size videoResolution, bool noScale = false) : IDisp
         var mat = CreateImageWithText(usage, text);
         usageDict[text] = mat;
         return mat;
-    }
-
-    public void Dispose()
-    {
-        _menuSign?.Dispose();
-        _menuSign = null;
-        foreach (var usageTemplates in _template.Values)
-        {
-            if (usageTemplates == null) continue;
-            foreach (var template in usageTemplates.Values)
-                template.Dispose();
-            usageTemplates.Clear();
-        }
-
-        _template.Clear();
-        _dbTypeface?.Dispose();
-        _ebTypeface?.Dispose();
-        _dbTypeface = null;
-        _ebTypeface = null;
     }
 }

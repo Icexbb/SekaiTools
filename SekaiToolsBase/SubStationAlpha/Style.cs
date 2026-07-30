@@ -2,6 +2,7 @@ namespace SekaiToolsBase.SubStationAlpha;
 
 public class Style
 {
+    public readonly int Fontsize;
     private readonly int _angle, _borderStyle, _alignment;
     private readonly int _bold;
     private readonly int _encoding;
@@ -14,7 +15,6 @@ public class Style
     private readonly double _spacing, _outline, _shadow;
     private readonly int _strikeOut;
     private readonly int _underline;
-    public readonly int Fontsize;
 
     public Style(
         string name = "Default",

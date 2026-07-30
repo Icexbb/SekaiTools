@@ -1,9 +1,12 @@
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 
 namespace SekaiToolsAvalonia.View.Download.Components;
 
 public partial class DownloadItem : UserControl
 {
+    private readonly Func<string> _urlProvider;
+
     public DownloadItem(string displayText, Func<string> urlProvider)
     {
         InitializeComponent();
@@ -11,10 +14,9 @@ public partial class DownloadItem : UserControl
         _urlProvider = urlProvider;
     }
 
-    private readonly Func<string> _urlProvider;
     public string Url => _urlProvider();
 
-    private void ButtonBase_OnClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private void ButtonBase_OnClick(object? sender, RoutedEventArgs e)
     {
         var parent = Parent;
         while (parent != null && parent is not DownloadPage)

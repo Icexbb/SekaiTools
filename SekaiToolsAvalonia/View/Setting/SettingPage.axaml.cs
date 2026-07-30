@@ -2,15 +2,16 @@ using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Microsoft.Extensions.Logging;
-using SekaiToolsBase;
 using SekaiToolsAvalonia.Interface;
+using SekaiToolsAvalonia.View.Setting.Components;
 using SekaiToolsAvalonia.ViewModel.Setting;
+using SekaiToolsBase;
 
 namespace SekaiToolsAvalonia.View.Setting;
 
 public partial class SettingPage : UserControl, IAppPage
 {
-    private int _logLevel = 0;
+    private int _logLevel;
 
     public SettingPage()
     {
@@ -19,9 +20,11 @@ public partial class SettingPage : UserControl, IAppPage
         RefreshLogView();
     }
 
-    public void OnNavigatedTo() { }
-
     private SettingPageModel ViewModel => (SettingPageModel)DataContext!;
+
+    public void OnNavigatedTo()
+    {
+    }
 
     private async void ChooseDialogFont(object? sender, RoutedEventArgs e)
     {
@@ -43,7 +46,7 @@ public partial class SettingPage : UserControl, IAppPage
 
     private async Task<string?> ShowFontDialog(string currentFont)
     {
-        var dialog = new Components.FontSelectDialog(currentFont);
+        var dialog = new FontSelectDialog(currentFont);
         return await dialog.ShowDialog(
             (TopLevel.GetTopLevel(this) as Window)!);
     }
@@ -54,8 +57,15 @@ public partial class SettingPage : UserControl, IAppPage
         RefreshLogView();
     }
 
-    private void SaveButton_Click(object? sender, RoutedEventArgs e) => ViewModel.SaveSetting();
-    private void ResetToDefault_Click(object? sender, RoutedEventArgs e) => ViewModel.ResetSetting();
+    private void SaveButton_Click(object? sender, RoutedEventArgs e)
+    {
+        ViewModel.SaveSetting();
+    }
+
+    private void ResetToDefault_Click(object? sender, RoutedEventArgs e)
+    {
+        ViewModel.ResetSetting();
+    }
 
     private void OpenGitHub_Click(object? sender, RoutedEventArgs e)
     {

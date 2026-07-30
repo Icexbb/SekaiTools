@@ -1,5 +1,6 @@
-using System.ComponentModel;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using SekaiToolsAvalonia.Interface;
 using SekaiToolsAvalonia.Services;
 using SekaiToolsAvalonia.ViewModel;
@@ -11,16 +12,18 @@ public partial class MainWindow : Window
     private readonly Dictionary<Type, Control> _pageCache = new();
     private SnackbarService? _snackbar;
 
-    public static SnackbarService? Snackbar =>
-        (Avalonia.Application.Current?.ApplicationLifetime as
-            Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)
-            ?.MainWindow is MainWindow mw ? mw._snackbar : null;
-
     public MainWindow()
     {
         InitializeComponent();
         DataContext = new MainWindowViewModel();
     }
+
+    public static SnackbarService? Snackbar =>
+        (Application.Current?.ApplicationLifetime as
+            IClassicDesktopStyleApplicationLifetime)
+        ?.MainWindow is MainWindow mw
+            ? mw._snackbar
+            : null;
 
     protected override void OnInitialized()
     {
@@ -36,10 +39,7 @@ public partial class MainWindow : Window
         NavListBox.SelectionChanged += OnNavSelectionChanged;
         FooterListBox.SelectionChanged += OnFooterSelectionChanged;
 
-        if (NavListBox.ItemCount > 0)
-        {
-            NavListBox.SelectedIndex = 0;
-        }
+        if (NavListBox.ItemCount > 0) NavListBox.SelectedIndex = 0;
     }
 
     private void OnNavSelectionChanged(object? sender, SelectionChangedEventArgs e)

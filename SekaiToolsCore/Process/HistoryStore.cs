@@ -30,10 +30,14 @@ public static class HistoryStore
 
         // 删除相同 hash 的旧记录，只保留最新一条
         foreach (var oldFile in Directory.EnumerateFiles(dir, $"*_{saveKey}.json"))
-        {
-            try { File.Delete(oldFile); }
-            catch { /* ignore */ }
-        }
+            try
+            {
+                File.Delete(oldFile);
+            }
+            catch
+            {
+                /* ignore */
+            }
 
         var ts = DateTime.Now;
         var timestamp = ts.ToString("yyyy-MM-dd HH:mm:ss");
@@ -54,7 +58,6 @@ public static class HistoryStore
 
         var result = new List<HistoryEntry>();
         foreach (var file in Directory.EnumerateFiles(dir, "*.json").OrderByDescending(f => f))
-        {
             try
             {
                 var json = File.ReadAllText(file);
@@ -66,7 +69,6 @@ public static class HistoryStore
             {
                 // skip corrupt files
             }
-        }
 
         return result;
     }
@@ -78,9 +80,13 @@ public static class HistoryStore
         if (files.Count <= MaxEntries) return;
 
         foreach (var file in files.Take(files.Count - MaxEntries))
-        {
-            try { File.Delete(file); }
-            catch { /* ignore */ }
-        }
+            try
+            {
+                File.Delete(file);
+            }
+            catch
+            {
+                /* ignore */
+            }
     }
 }

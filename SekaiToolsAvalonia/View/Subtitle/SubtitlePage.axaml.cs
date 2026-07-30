@@ -1,28 +1,25 @@
-using System.IO;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Text;
 using System.Text.Json;
-using Avalonia.Controls;
-using Avalonia.Input;
-using Avalonia.Platform.Storage;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Emgu.CV;
 using Microsoft.Extensions.Logging;
+using SekaiToolsAvalonia.Interface;
+using SekaiToolsAvalonia.Utils;
+using SekaiToolsAvalonia.View.Subtitle.Components;
+using SekaiToolsAvalonia.ViewModel.Setting;
+using SekaiToolsAvalonia.ViewModel.Subtitle;
 using SekaiToolsBase;
 using SekaiToolsCore;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
-using SekaiToolsCore.Utils;
-using SekaiToolsAvalonia.Interface;
-using SekaiToolsAvalonia.Services;
-using SekaiToolsAvalonia.Utils;
-using SekaiToolsAvalonia.ViewModel.Subtitle;
-using SekaiToolsAvalonia.ViewModel.Setting;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 
 namespace SekaiToolsAvalonia.View.Subtitle;
 
@@ -136,7 +133,8 @@ public partial class SubtitlePage : UserControl, IAppPage
         }
 
         // Simple history selection via dialog
-        var entryNames = entries.Select(e => $"{e.Timestamp:yyyy-MM-dd HH:mm:ss} - {Path.GetFileName(e.State.VideoFilePath)}").ToList();
+        var entryNames = entries
+            .Select(e => $"{e.Timestamp:yyyy-MM-dd HH:mm:ss} - {Path.GetFileName(e.State.VideoFilePath)}").ToList();
         // TODO: Show proper history selection dialog
         ShowMessage($"共 {entries.Count} 条历史记录（选择功能待实现）");
     }
@@ -146,7 +144,8 @@ public partial class SubtitlePage : UserControl, IAppPage
         try
         {
             if (!CheckConfig()) return;
-            var saveKey = ProgressStore.GetSaveKey(ViewModel.VideoFilePath, ViewModel.ScriptFilePath, ViewModel.TranslateFilePath);
+            var saveKey = ProgressStore.GetSaveKey(ViewModel.VideoFilePath, ViewModel.ScriptFilePath,
+                ViewModel.TranslateFilePath);
             StartProcess(saveKey, null);
         }
         catch (Exception ex)
@@ -165,9 +164,25 @@ public partial class SubtitlePage : UserControl, IAppPage
             MainWindow.Snackbar?.Show("请填写完整的文件路径");
             return false;
         }
-        if (!File.Exists(vfp)) { MainWindow.Snackbar?.Show("视频文件不存在"); return false; }
-        if (!File.Exists(sfp)) { MainWindow.Snackbar?.Show("剧情脚本文件不存在"); return false; }
-        if (!File.Exists(tfp)) { MainWindow.Snackbar?.Show("剧情翻译文件不存在"); return false; }
+
+        if (!File.Exists(vfp))
+        {
+            MainWindow.Snackbar?.Show("视频文件不存在");
+            return false;
+        }
+
+        if (!File.Exists(sfp))
+        {
+            MainWindow.Snackbar?.Show("剧情脚本文件不存在");
+            return false;
+        }
+
+        if (!File.Exists(tfp))
+        {
+            MainWindow.Snackbar?.Show("剧情翻译文件不存在");
+            return false;
+        }
+
         return true;
     }
 
@@ -176,7 +191,7 @@ public partial class SubtitlePage : UserControl, IAppPage
     {
         Dispatcher.UIThread.Post(() =>
         {
-            var line = new Components.DialogLine(set) { Margin = new Avalonia.Thickness(5, 5, 10, 5) };
+            var line = new DialogLine(set) { Margin = new Thickness(5, 5, 10, 5) };
             LinePanel.Children.Add(line);
             ViewModel.DialogCurrent++;
             RefreshContentVisibility();
@@ -187,7 +202,7 @@ public partial class SubtitlePage : UserControl, IAppPage
     {
         Dispatcher.UIThread.Post(() =>
         {
-            var line = new Components.BannerLine(set) { Margin = new Avalonia.Thickness(5, 5, 10, 5) };
+            var line = new BannerLine(set) { Margin = new Thickness(5, 5, 10, 5) };
             LinePanel.Children.Add(line);
             ViewModel.BannerCurrent++;
             RefreshContentVisibility();
@@ -198,7 +213,7 @@ public partial class SubtitlePage : UserControl, IAppPage
     {
         Dispatcher.UIThread.Post(() =>
         {
-            var line = new Components.MarkerLine(set) { Margin = new Avalonia.Thickness(5, 5, 10, 5) };
+            var line = new MarkerLine(set) { Margin = new Thickness(5, 5, 10, 5) };
             LinePanel.Children.Add(line);
             ViewModel.MarkerCurrent++;
             RefreshContentVisibility();
@@ -243,22 +258,20 @@ public partial class SubtitlePage : UserControl, IAppPage
         List<DialogBaseFrameSet> dialogFrameSets = [];
         List<MarkerBaseFrameSet> markerFrameSets = [];
         foreach (var child in LinePanel.Children)
-        {
             switch (child)
             {
-                case Components.DialogLine dialogLine:
+                case DialogLine dialogLine:
                     var dset = dialogLine.ViewModel.Set;
                     dset.Data.BodyTranslated = dset.Data.BodyTranslated.Replace("…", "...");
                     dialogFrameSets.Add(dset);
                     break;
-                case Components.BannerLine bannerLine:
+                case BannerLine bannerLine:
                     bannerFrameSets.Add(bannerLine.ViewModel.Set);
                     break;
-                case Components.MarkerLine markerLine:
+                case MarkerLine markerLine:
                     markerFrameSets.Add(markerLine.ViewModel.Set);
                     break;
             }
-        }
 
         return VideoProcessor?.GenerateSubtitle(bannerFrameSets, dialogFrameSets, markerFrameSets)
                ?? throw new NullReferenceException("VideoProcessor is null");
@@ -267,35 +280,39 @@ public partial class SubtitlePage : UserControl, IAppPage
     private void RefreshContentVisibility()
     {
         foreach (var child in LinePanel.Children)
-        {
             switch (child)
             {
-                case Components.DialogLine dialogLine:
+                case DialogLine dialogLine:
                     dialogLine.IsVisible = ViewModel.ShowDialog;
                     break;
-                case Components.BannerLine bannerLine:
+                case BannerLine bannerLine:
                     bannerLine.IsVisible = ViewModel.ShowBanner;
                     break;
-                case Components.MarkerLine markerLine:
+                case MarkerLine markerLine:
                     markerLine.IsVisible = ViewModel.ShowMarker;
                     break;
             }
-        }
     }
 
-    private void ShowPreviewButton_OnClick(object? sender, RoutedEventArgs e) => ViewModel.ShowPreview = true;
+    private void ShowPreviewButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowPreview = true;
+    }
 
-    private static void ShowMessage(string msg) => MainWindow.Snackbar?.Show(msg);
+    private static void ShowMessage(string msg)
+    {
+        MainWindow.Snackbar?.Show(msg);
+    }
 }
 
 // Processing pipeline
 public partial class SubtitlePage
 {
-    private VideoProcessor? VideoProcessor { get; set; }
     private Subject<(int Fps, TimeSpan Eta)>? _fpsChangedSubject;
     private IDisposable? _fpsChangedSubscription;
     private Subject<double>? _progressChangedSubject;
     private IDisposable? _progressChangedSubscription;
+    private VideoProcessor? VideoProcessor { get; set; }
 
     public async void OnNavigatedTo()
     {
@@ -348,8 +365,7 @@ public partial class SubtitlePage
     {
         var settings = SettingPageModel.Instance;
 
-        Logger.Log($"开始处理: 视频={ViewModel.VideoFilePath}, 剧本={ViewModel.ScriptFilePath}",
-            LogLevel.Information);
+        Logger.Log($"开始处理: 视频={ViewModel.VideoFilePath}, 剧本={ViewModel.ScriptFilePath}");
 
         try
         {
@@ -373,7 +389,7 @@ public partial class SubtitlePage
                         if (stopReason == ProcessStopReason.Canceled)
                         {
                             ViewModel.IsCanceled = true;
-                            Logger.Log("处理已由用户取消，可输出当前结果", LogLevel.Information);
+                            Logger.Log("处理已由用户取消，可输出当前结果");
                             ShowMessage("处理已取消，可以输出当前结果进行人工复核");
                         }
                         else if (stopReason == ProcessStopReason.Completed)
@@ -382,7 +398,7 @@ public partial class SubtitlePage
                             ProgressBarProgression.Value = 1;
                             ProgressBarProgression.Maximum = 1;
                             TextBlockProgression.Text = $"{1:P}";
-                            Logger.Log("处理成功完成", LogLevel.Information);
+                            Logger.Log("处理成功完成");
                         }
                         else
                         {
@@ -403,9 +419,12 @@ public partial class SubtitlePage
                     var cl = VideoProcessor?.ContentLength;
                     if (cl != null)
                     {
-                        ViewModel.DialogTotal = cl.Dialog; ViewModel.DialogCurrent = 0;
-                        ViewModel.BannerTotal = cl.Banner; ViewModel.BannerCurrent = 0;
-                        ViewModel.MarkerTotal = cl.Marker; ViewModel.MarkerCurrent = 0;
+                        ViewModel.DialogTotal = cl.Dialog;
+                        ViewModel.DialogCurrent = 0;
+                        ViewModel.BannerTotal = cl.Banner;
+                        ViewModel.BannerCurrent = 0;
+                        ViewModel.MarkerTotal = cl.Marker;
+                        ViewModel.MarkerCurrent = 0;
                     }
                 }),
                 OnProgress = OnProgressChanged,
@@ -422,17 +441,15 @@ public partial class SubtitlePage
                 OnNewDialog = LinePanel_AddDialogLine,
                 OnNewBanner = LinePanel_AddBannerLine,
                 OnNewMarker = LinePanel_AddMarkerLine,
-                OnException = e =>
-                {
-                    Logger.Log($"视频处理异常: {e.Message}\n{e.StackTrace}", LogLevel.Error);
-                },
+                OnException = e => { Logger.Log($"视频处理异常: {e.Message}\n{e.StackTrace}", LogLevel.Error); },
                 OnFps = OnFpsChanged
             });
 
             if (resumeState != null)
             {
                 VideoProcessor.ApplyState(resumeState);
-                VideoProcessor.ReplayFinishedCallbacks(LinePanel_AddDialogLine, LinePanel_AddBannerLine, LinePanel_AddMarkerLine);
+                VideoProcessor.ReplayFinishedCallbacks(LinePanel_AddDialogLine, LinePanel_AddBannerLine,
+                    LinePanel_AddMarkerLine);
             }
 
             VideoProcessor.EnableProgressSaving(saveKey);
@@ -451,7 +468,10 @@ public partial class SubtitlePage
         }
     }
 
-    private static Bitmap? MatToBitmap(Mat mat) => ImageConvert.MatToBitmap(mat);
+    private static Bitmap? MatToBitmap(Mat mat)
+    {
+        return ImageConvert.MatToBitmap(mat);
+    }
 
     private MatchingThreshold GetMatchingThreshold()
     {
@@ -461,8 +481,15 @@ public partial class SubtitlePage
         return JsonSerializer.Deserialize<MatchingThreshold>(json);
     }
 
-    private void OnFpsChanged(int fps, TimeSpan eta) => _fpsChangedSubject?.OnNext((fps, eta));
-    private void OnProgressChanged(double progression) => _progressChangedSubject?.OnNext(progression);
+    private void OnFpsChanged(int fps, TimeSpan eta)
+    {
+        _fpsChangedSubject?.OnNext((fps, eta));
+    }
+
+    private void OnProgressChanged(double progression)
+    {
+        _progressChangedSubject?.OnNext(progression);
+    }
 
     private void SubscribeFpsChange()
     {
@@ -472,13 +499,7 @@ public partial class SubtitlePage
         _fpsChangedSubject = new Subject<(int, TimeSpan)>();
         _fpsChangedSubscription = _fpsChangedSubject
             ?.Sample(TimeSpan.FromMilliseconds(200))
-            .Subscribe(x =>
-            {
-                Dispatcher.UIThread.Post(() =>
-                {
-                    TextBlockFps.Text = $"FPS: {x.Item1}";
-                });
-            });
+            .Subscribe(x => { Dispatcher.UIThread.Post(() => { TextBlockFps.Text = $"FPS: {x.Item1}"; }); });
     }
 
     private void SubscribeProgressChange()

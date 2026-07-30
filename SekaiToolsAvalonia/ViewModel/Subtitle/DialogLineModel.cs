@@ -6,8 +6,8 @@ namespace SekaiToolsAvalonia.ViewModel.Subtitle;
 
 public class DialogLineModel : ViewModelBase
 {
-    private readonly int _charTime;
     public readonly DialogBaseFrameSet Set;
+    private readonly int _charTime;
 
     public DialogLineModel(DialogBaseFrameSet set, int charTime = 80)
     {
@@ -37,11 +37,20 @@ public class DialogLineModel : ViewModelBase
     public string EndTime => FrameRate.TimeAtFrame(EndFrame).GetAssFormatted();
     public bool IsDialogJitter => Set.IsJitter;
 
-    public string RawContent { get => GetProperty(""); set => SetProperty(value); }
+    public string RawContent
+    {
+        get => GetProperty("");
+        set => SetProperty(value);
+    }
+
     public string TranslatedContent
     {
         get => GetProperty("");
-        set { SetProperty(value); Set.Data.BodyTranslated = value; }
+        set
+        {
+            SetProperty(value);
+            Set.Data.BodyTranslated = value;
+        }
     }
 
     public int SeparatorContentIndexLimit => Set.Data.BodyTranslated.TrimAll().Length - 1;
@@ -49,7 +58,12 @@ public class DialogLineModel : ViewModelBase
     public bool UseSeparator
     {
         get => GetProperty(false);
-        set { SetProperty(value); Set.UseSeparator = value; SetPromptWarning(); }
+        set
+        {
+            SetProperty(value);
+            Set.UseSeparator = value;
+            SetPromptWarning();
+        }
     }
 
     public int SeparateFrame
@@ -64,7 +78,11 @@ public class DialogLineModel : ViewModelBase
         }
     }
 
-    public string SeparateTime { get => GetProperty(""); private set => SetProperty(value); }
+    public string SeparateTime
+    {
+        get => GetProperty("");
+        private set => SetProperty(value);
+    }
 
     public int SeparatorContentIndex
     {
@@ -79,9 +97,23 @@ public class DialogLineModel : ViewModelBase
         }
     }
 
-    public string ContentPart1 { get => GetProperty(""); private set => SetProperty(value); }
-    public string ContentPart2 { get => GetProperty(""); private set => SetProperty(value); }
-    public string PromptWarning { get => GetProperty(""); private set => SetProperty(value); }
+    public string ContentPart1
+    {
+        get => GetProperty("");
+        private set => SetProperty(value);
+    }
+
+    public string ContentPart2
+    {
+        get => GetProperty("");
+        private set => SetProperty(value);
+    }
+
+    public string PromptWarning
+    {
+        get => GetProperty("");
+        private set => SetProperty(value);
+    }
 
     private void SetPromptWarning()
     {

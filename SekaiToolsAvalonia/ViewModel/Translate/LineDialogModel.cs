@@ -4,7 +4,7 @@ using SekaiToolsBase.Utils;
 
 namespace SekaiToolsAvalonia.ViewModel.Translate;
 
-public partial class LineDialogModel : LineModel
+public class LineDialogModel : LineModel
 {
     public LineDialogModel(DialogStoryEvent dialogStoryEvent)
     {
@@ -24,12 +24,42 @@ public partial class LineDialogModel : LineModel
         UpdateMetrics();
     }
 
-    public bool EndLine { get => GetProperty(false); set => SetProperty(value); }
-    public TranslateItemModel Character { get => GetProperty(new TranslateItemModel()); set => SetProperty(value); }
-    public TranslateItemModel Content { get => GetProperty(new TranslateItemModel()); set => SetProperty(value); }
-    public int MaxLineLength { get => GetProperty(0); set => SetProperty(value); }
-    public bool TooLong { get => GetProperty(false); set => SetProperty(value); }
-    public string Check { get => GetProperty(string.Empty); set => SetProperty(value); }
+    public bool EndLine
+    {
+        get => GetProperty(false);
+        set => SetProperty(value);
+    }
+
+    public TranslateItemModel Character
+    {
+        get => GetProperty(new TranslateItemModel());
+        set => SetProperty(value);
+    }
+
+    public TranslateItemModel Content
+    {
+        get => GetProperty(new TranslateItemModel());
+        set => SetProperty(value);
+    }
+
+    public int MaxLineLength
+    {
+        get => GetProperty(0);
+        set => SetProperty(value);
+    }
+
+    public bool TooLong
+    {
+        get => GetProperty(false);
+        set => SetProperty(value);
+    }
+
+    public string Check
+    {
+        get => GetProperty(string.Empty);
+        set => SetProperty(value);
+    }
+
     public bool CharacterTranslateChangedEnabled { get; set; } = true;
     public bool ContentTranslateChangedEnabled { get; set; } = true;
 
@@ -69,6 +99,7 @@ public partial class LineDialogModel : LineModel
             Content.Translated = formatted;
             return;
         }
+
         Check = CheckContent(Content.Translated);
         MaxLineLength = (Content.Translated + "\n").MaxLineLength();
         TooLong = Content.Original.LineCount() == 3 ? MaxLineLength > 45 : MaxLineLength > 37;
@@ -98,12 +129,17 @@ public partial class LineDialogModel : LineModel
                 else if (line.Length > 1 && abnormalEnds.Contains(line[^2]))
                     lineRes += "【句尾缺少逗号句号】";
             }
-            else { lineRes += "【句尾缺少逗号句号】"; }
+            else
+            {
+                lineRes += "【句尾缺少逗号句号】";
+            }
+
             if (line.Contains('—') && line.Contains("——") &&
                 line.Split("—").Length != line.Split("——").Length * 2 - 1)
                 lineRes += "【破折号使用错误】";
             if (lineRes != "") result += $"行{i + 1}:{lineRes}\n";
         }
+
         return result.Trim();
     }
 }

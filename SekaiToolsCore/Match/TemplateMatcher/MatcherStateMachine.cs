@@ -8,9 +8,9 @@ public abstract class MatcherStateMachine<T> where T : BaseFrameSet
     protected const double AbsMinThreshold = 0.40;
 
     private int _consecutiveFailures;
+    private int _firstUnfinishedIndex;
     private int _lastFailedIndex = -1;
     private bool _useFallbackThreshold;
-    private int _firstUnfinishedIndex;
 
     protected MatcherStateMachine(List<T> frameSets, int fallbackTriggerFrames)
     {
@@ -23,10 +23,12 @@ public abstract class MatcherStateMachine<T> where T : BaseFrameSet
 
     public bool Finished => Set.Count == 0 || Set.TrueForAll(d => d.Finished);
 
-    protected double EffectiveThreshold(double baseThreshold) =>
-        _useFallbackThreshold
+    protected double EffectiveThreshold(double baseThreshold)
+    {
+        return _useFallbackThreshold
             ? Math.Max(baseThreshold * FallbackRatio, AbsMinThreshold)
             : baseThreshold;
+    }
 
     protected void ResetForNewTarget(int index)
     {
@@ -77,8 +79,10 @@ public abstract class MatcherStateMachine<T> where T : BaseFrameSet
         _firstUnfinishedIndex = 0;
     }
 
-    protected (int consecutiveFailures, int lastFailedIndex, bool useFallbackThreshold) SaveFallbackState() =>
-        (_consecutiveFailures, _lastFailedIndex, _useFallbackThreshold);
+    protected (int consecutiveFailures, int lastFailedIndex, bool useFallbackThreshold) SaveFallbackState()
+    {
+        return (_consecutiveFailures, _lastFailedIndex, _useFallbackThreshold);
+    }
 
     protected void RestoreFallbackState(int consecutiveFailures, int lastFailedIndex, bool useFallbackThreshold)
     {

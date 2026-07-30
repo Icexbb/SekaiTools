@@ -2,7 +2,10 @@ using SekaiToolsBase.Utils;
 
 namespace SekaiToolsCore.Process.FrameSet;
 
-public record DialogTimingIssue(string LineName, int CharacterCount, int RequiredMilliseconds,
+public record DialogTimingIssue(
+    string LineName,
+    int CharacterCount,
+    int RequiredMilliseconds,
     int AvailableMilliseconds)
 {
     public string Warning =>
@@ -37,8 +40,11 @@ public static class DialogTimingCheck
         var requiredMilliseconds = content.Length * charTime;
         var availableMilliseconds = frameCount * 1000 / fps;
         return requiredMilliseconds > availableMilliseconds
-            ? [new DialogTimingIssue(lineName, content.Length, requiredMilliseconds,
-                (int)Math.Round(availableMilliseconds))]
+            ?
+            [
+                new DialogTimingIssue(lineName, content.Length, requiredMilliseconds,
+                    (int)Math.Round(availableMilliseconds))
+            ]
             : [];
     }
 }

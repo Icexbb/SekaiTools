@@ -1,11 +1,12 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media;
 
 namespace SekaiToolsAvalonia.View.Setting.Components;
 
 public partial class FontSelectDialog : UserControl
 {
-    private TaskCompletionSource<string?> _tcs = new();
+    private readonly TaskCompletionSource<string?> _tcs = new();
 
     public FontSelectDialog(string currentFont)
     {
@@ -31,7 +32,7 @@ public partial class FontSelectDialog : UserControl
 
         FontNameBox.KeyDown += (_, e) =>
         {
-            if (e.Key == Avalonia.Input.Key.Enter)
+            if (e.Key == Key.Enter)
                 _tcs.TrySetResult(FontNameBox.Text);
         };
     }
@@ -44,7 +45,7 @@ public partial class FontSelectDialog : UserControl
             Content = this,
             Width = 400,
             Height = 500,
-            WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
         };
 
         window.Closed += (_, _) => _tcs.TrySetResult(null);

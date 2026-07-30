@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text.Json;
-using System.Threading;
 using System.Windows;
 
 namespace Updater;
@@ -16,6 +15,8 @@ namespace Updater;
 public partial class MainWindow : Window
 {
     private string? _errorText;
+
+    private ProxyConfig? _proxyConfig;
 
     public MainWindow()
     {
@@ -30,10 +31,6 @@ public partial class MainWindow : Window
     private static string SettingFilePath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "setting.json");
-
-    private ProxyConfig? _proxyConfig;
-
-    private sealed record ProxyConfig(int Type, string Host, int Port);
 
     private ProxyConfig GetProxyConfig()
     {
@@ -58,9 +55,9 @@ public partial class MainWindow : Window
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
         return new ProxyConfig(
-            Type: root.TryGetProperty("ProxyType", out var t) ? t.GetInt32() : 0,
-            Host: root.TryGetProperty("ProxyHost", out var h) ? h.GetString() ?? "127.0.0.1" : "127.0.0.1",
-            Port: root.TryGetProperty("ProxyPort", out var p) ? p.GetInt32() : 1080
+            root.TryGetProperty("ProxyType", out var t) ? t.GetInt32() : 0,
+            root.TryGetProperty("ProxyHost", out var h) ? h.GetString() ?? "127.0.0.1" : "127.0.0.1",
+            root.TryGetProperty("ProxyPort", out var p) ? p.GetInt32() : 1080
         );
     }
 
@@ -308,4 +305,6 @@ public partial class MainWindow : Window
             CopyButton.Content = "复制失败";
         }
     }
+
+    private sealed record ProxyConfig(int Type, string Host, int Port);
 }

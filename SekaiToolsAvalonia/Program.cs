@@ -5,7 +5,7 @@ using SekaiToolsBase;
 
 namespace SekaiToolsAvalonia;
 
-class Program
+internal class Program
 {
     [STAThread]
     public static void Main(string[] args)
@@ -13,7 +13,7 @@ class Program
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
         AppDomain.CurrentDomain.FirstChanceException += OnFirstChanceException;
-        Logger.Log("SekaiToolsAvalonia 启动", LogLevel.Information);
+        Logger.Log("SekaiToolsAvalonia 启动");
 
         try
         {
@@ -28,10 +28,12 @@ class Program
     }
 
     public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
+    {
+        return AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace();
+    }
 
     private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {

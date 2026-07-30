@@ -33,12 +33,12 @@ public class UnitEpisode : ICloneable
 
 public struct UnitChapter : ICloneable
 {
-    public int Id { set; get; }
-    public string Unit { set; get; }
-    public int ChapterNo { set; get; }
-    public string Title { set; get; }
-    public string AssetBundleName { set; get; }
-    public UnitEpisode[] Episodes { set; get; }
+    public int Id { get; set; }
+    public string Unit { get; set; }
+    public int ChapterNo { get; set; }
+    public string Title { get; set; }
+    public string AssetBundleName { get; set; }
+    public UnitEpisode[] Episodes { get; set; }
 
     public object Clone()
     {

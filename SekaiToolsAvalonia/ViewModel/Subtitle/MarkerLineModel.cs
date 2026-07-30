@@ -5,8 +5,8 @@ namespace SekaiToolsAvalonia.ViewModel.Subtitle;
 
 public class MarkerLineModel(MarkerBaseFrameSet set) : ViewModelBase
 {
-    private readonly FrameRate _frameRate = set.Fps;
     public readonly MarkerBaseFrameSet Set = set;
+    private readonly FrameRate _frameRate = set.Fps;
     public int Index => Set.Data.Index;
     public string Content => Set.Data.BodyOriginal;
     public int StartFrame => Set.Start().Index;

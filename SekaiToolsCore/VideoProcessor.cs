@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Threading.Channels;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiToolsBase;
 using SekaiToolsBase.Story;
 using SekaiToolsBase.Story.StoryEvent;
@@ -13,6 +12,7 @@ using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
+using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace SekaiToolsCore;
 
@@ -38,7 +38,7 @@ public class VideoProcessCallbacks
 public record ContentLength(int Dialog, int Banner, int Marker);
 
 /// <summary>
-/// 视频处理停止原因
+///     视频处理停止原因
 /// </summary>
 public enum ProcessStopReason
 {
@@ -53,33 +53,30 @@ public enum ProcessStopReason
 
 public class VideoProcessor : IDisposable
 {
-    private bool _disposed;
-    private volatile bool _isProcessing;
-    private int _consecutiveExceptionCount;
     private const int ExceptionThreshold = 10;
+    private const long CallbackThrottleMs = 200;
+    private readonly object _progressSaveLock = new();
+    private readonly int _saveInterval = 300;
+    private readonly string _scriptPath;
+    private readonly string _translatePath;
+    private readonly string _videoPath;
+    private int _consecutiveExceptionCount;
+    private bool _disposed;
+    private bool _frameSetJustCompleted;
+    private int _framesSinceLastSave;
+    private volatile bool _isProcessing;
+    private long _lastFpsCallbackTime;
+
+    // 回调节流
+    private long _lastProgressCallbackTime;
 
     // 预览图像有界队列（长度 1，只保留最新帧）
     private Channel<Mat>? _previewChannel;
     private Task? _previewConsumerTask;
-
-    // 回调节流
-    private long _lastProgressCallbackTime;
-    private long _lastFpsCallbackTime;
-    private const long CallbackThrottleMs = 200;
+    private Task _progressSaveTask = Task.CompletedTask;
 
     // 进度保存
     private string? _saveKey;
-    private int _saveInterval = 300;
-    private int _framesSinceLastSave;
-    private bool _frameSetJustCompleted;
-    private readonly object _progressSaveLock = new();
-    private Task _progressSaveTask = Task.CompletedTask;
-    private readonly string _videoPath;
-    private readonly string _scriptPath;
-    private readonly string _translatePath;
-
-    // 处理结果
-    public ProcessStopReason StopReason { get; private set; } = ProcessStopReason.None;
 
     public VideoProcessor(Config config, VideoProcessCallbacks callbacks)
     {
@@ -94,6 +91,9 @@ public class VideoProcessor : IDisposable
         MarkerMatcher = Creator.MarkerMatcher();
         Callbacks = callbacks;
     }
+
+    // 处理结果
+    public ProcessStopReason StopReason { get; private set; } = ProcessStopReason.None;
 
     private CancellationTokenSource? TokenSource { get; set; } = new();
     private ContentTemplateMatcher? ContentMatcher { get; }
@@ -119,6 +119,21 @@ public class VideoProcessor : IDisposable
         BannerMatcher?.Set.Count ?? 0,
         MarkerMatcher?.Set.Count ?? 0
     );
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        if (_isProcessing)
+            throw new InvalidOperationException("视频处理仍在运行，不能释放处理器");
+
+        TokenSource?.Dispose();
+        Capture?.Dispose();
+        ContentMatcher?.Dispose();
+        MarkerMatcher?.Dispose();
+        Creator?.Dispose();
+        TemplateMatchCachePool.ResetAll();
+        _disposed = true;
+    }
 
     public Subtitle GenerateSubtitle(List<BannerBaseFrameSet> bannerFrameSets, List<DialogBaseFrameSet> dialogFrameSets,
         List<MarkerBaseFrameSet> markerFrameSets)
@@ -239,7 +254,8 @@ public class VideoProcessor : IDisposable
 
         var cap = Capture;
         if (cap != null)
-            Logger.Log($"开始视频处理: {(int)cap.Get(CapProp.FrameWidth)}x{(int)cap.Get(CapProp.FrameHeight)}, {(int)cap.Get(CapProp.FrameCount)}帧, {cap.Get(CapProp.Fps):F2}fps", ExtLogLevel.Information);
+            Logger.Log(
+                $"开始视频处理: {(int)cap.Get(CapProp.FrameWidth)}x{(int)cap.Get(CapProp.FrameHeight)}, {(int)cap.Get(CapProp.FrameCount)}帧, {cap.Get(CapProp.Fps):F2}fps");
         ProcessingTask = Task.Run(() =>
         {
             try
@@ -328,7 +344,7 @@ public class VideoProcessor : IDisposable
 
                 frameIndex = (int)capture.Get(CapProp.PosFrames);
                 TemplateMatchCachePool.SetFrameIndex(frameIndex);
-                var progress = frameCount > 0 ? (double)frameIndex / frameCount : 0;
+                var progress = frameCount > 0 ? frameIndex / frameCount : 0;
 
                 // 节流进度回调（200ms）
                 EmitProgressIfNeeded(progress);
@@ -437,7 +453,7 @@ public class VideoProcessor : IDisposable
         if (ReferenceEquals(Capture, capture))
             Capture = null;
 
-        Logger.Log($"视频处理结束: {StopReason}, 当前帧={frameIndex}, 总帧={frameCount}", ExtLogLevel.Information);
+        Logger.Log($"视频处理结束: {StopReason}, 当前帧={frameIndex}, 总帧={frameCount}");
 
         if (StopReason == ProcessStopReason.Completed)
             HistoryStore.Add(finalState);
@@ -623,7 +639,6 @@ public class VideoProcessor : IDisposable
         try
         {
             await foreach (var frame in previewChannel.Reader.ReadAllAsync(token))
-            {
                 try
                 {
                     Callbacks.OnFramePreviewImage(frame);
@@ -632,26 +647,10 @@ public class VideoProcessor : IDisposable
                 {
                     frame.Dispose();
                 }
-            }
         }
         catch (OperationCanceledException)
         {
             // 预期的取消
         }
-    }
-
-    public void Dispose()
-    {
-        if (_disposed) return;
-        if (_isProcessing)
-            throw new InvalidOperationException("视频处理仍在运行，不能释放处理器");
-
-        TokenSource?.Dispose();
-        Capture?.Dispose();
-        ContentMatcher?.Dispose();
-        MarkerMatcher?.Dispose();
-        Creator?.Dispose();
-        TemplateMatchCachePool.ResetAll();
-        _disposed = true;
     }
 }

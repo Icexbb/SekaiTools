@@ -1,12 +1,12 @@
 using System.Drawing;
 using Emgu.CV;
-using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiToolsBase;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Utils;
+using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiStory = SekaiToolsBase.Story.Story;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
@@ -23,7 +23,10 @@ public class BannerTemplateMatcher(
 {
     private MatchStatus _status;
 
-    public int LastNotProcessedIndex() => NextUnfinishedIndex();
+    public int LastNotProcessedIndex()
+    {
+        return NextUnfinishedIndex();
+    }
 
     private GaMat GetTemplate(string content)
     {
@@ -105,13 +108,6 @@ public class BannerTemplateMatcher(
         }
     }
 
-    private enum MatchStatus
-    {
-        NotMatched,
-        Matched,
-        Dropped
-    }
-
     public BannerMatcherStateDto SaveState()
     {
         var (cf, lfi, uft) = SaveFallbackState();
@@ -145,5 +141,12 @@ public class BannerTemplateMatcher(
         }
 
         NextUnfinishedIndex();
+    }
+
+    private enum MatchStatus
+    {
+        NotMatched,
+        Matched,
+        Dropped
     }
 }

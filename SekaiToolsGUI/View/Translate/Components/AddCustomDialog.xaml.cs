@@ -1,4 +1,3 @@
-using System.Windows.Controls;
 using SekaiToolsGUI.ViewModel.Translate;
 using Wpf.Ui.Controls;
 

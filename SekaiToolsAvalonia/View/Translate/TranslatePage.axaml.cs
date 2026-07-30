@@ -1,15 +1,13 @@
-using System.Diagnostics;
-using System.IO;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Microsoft.Extensions.Logging;
+using SekaiToolsAvalonia.Interface;
+using SekaiToolsAvalonia.ViewModel.Translate;
 using SekaiToolsBase;
 using SekaiToolsBase.GameScript;
 using SekaiToolsBase.Story;
 using SekaiToolsBase.Story.Translation;
-using SekaiToolsAvalonia.Interface;
-using SekaiToolsAvalonia.ViewModel.Translate;
 
 namespace SekaiToolsAvalonia.View.Translate;
 
@@ -24,9 +22,11 @@ public partial class TranslatePage : UserControl, IAppPage
         InitializeComponent();
     }
 
-    public void OnNavigatedTo() { }
-
     private TranslatePageModel ViewModel => (TranslatePageModel)DataContext!;
+
+    public void OnNavigatedTo()
+    {
+    }
 
     private async void LoadFileButton_OnClick(object? sender, RoutedEventArgs e)
     {
@@ -48,7 +48,7 @@ public partial class TranslatePage : UserControl, IAppPage
             var story = Story.FromFile(filePath);
             _scriptPath = filePath;
             ViewModel.Story = story;
-            Logger.Log($"剧本载入成功: {filePath}", LogLevel.Information);
+            Logger.Log($"剧本载入成功: {filePath}");
         }
         catch (Exception ex)
         {
@@ -83,7 +83,7 @@ public partial class TranslatePage : UserControl, IAppPage
             {
                 _translationPath = filePath;
                 ViewModel.Story = new Story(gData, tData);
-                Logger.Log($"翻译载入成功: {filePath}", LogLevel.Information);
+                Logger.Log($"翻译载入成功: {filePath}");
             }
         }
         catch (Exception ex)

@@ -15,9 +15,11 @@ public partial class SuppressPage : UserControl, IAppPage
         InitializeComponent();
     }
 
-    public void OnNavigatedTo() { }
-
     private SuppressPageModel ViewModel => (SuppressPageModel)DataContext!;
+
+    public void OnNavigatedTo()
+    {
+    }
 
     private async void VideoFileBrowser_OnClick(object? sender, RoutedEventArgs e)
     {

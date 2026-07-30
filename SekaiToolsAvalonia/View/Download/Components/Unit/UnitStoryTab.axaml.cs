@@ -1,6 +1,8 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using SekaiDataFetch.List;
+using SekaiDataFetch.Source;
 using SekaiToolsAvalonia.Interface;
 using SekaiToolsAvalonia.ViewModel.Download;
 using SekaiToolsAvalonia.ViewModel.Setting;
@@ -49,18 +51,16 @@ public partial class UnitStoryTab : UserControl, IRefreshable
         if (ListUnitStory.Data.Count == 0) return;
 
         if (ListUnitStory.Data.TryGetValue(selectedUnit, out var unitData))
-        {
             foreach (var chapter in unitData.Chapters)
-                foreach (var episode in chapter.Episodes)
-                {
-                    var item = new DownloadItem(
+            foreach (var episode in chapter.Episodes)
+            {
+                var item = new DownloadItem(
                         chapter.Name + "\n" + episode.Key,
-                        () => SekaiDataFetch.Source.SourceList.Instance.UnitStory(
+                        () => SourceList.Instance.UnitStory(
                             episode.ScenarioId, chapter.AssetBundleName))
-                    { Margin = new Avalonia.Thickness(10, 5) };
-                    CardContents.Children.Add(item);
-                }
-        }
+                    { Margin = new Thickness(10, 5) };
+                CardContents.Children.Add(item);
+            }
     }
 
     private void RefreshItems()

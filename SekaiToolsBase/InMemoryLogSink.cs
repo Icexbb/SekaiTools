@@ -22,24 +22,33 @@ public class LogEntry
     };
 
     public override string ToString()
-        => $"{Timestamp:HH:mm:ss} [{LevelText}] {Category}: {Message}";
+    {
+        return $"{Timestamp:HH:mm:ss} [{LevelText}] {Category}: {Message}";
+    }
 }
 
 public class InMemoryLogSink : ILoggerProvider
 {
-    private static readonly object Lock = new();
     private const int MaxEntries = 2000;
+    private static readonly object Lock = new();
 
     public static readonly ObservableCollection<LogEntry> Entries = [];
 
     public ILogger CreateLogger(string categoryName)
-        => new InMemoryLogger(categoryName, this);
+    {
+        return new InMemoryLogger(categoryName, this);
+    }
 
-    public void Dispose() { }
+    public void Dispose()
+    {
+    }
 
     public static void Clear()
     {
-        lock (Lock) Entries.Clear();
+        lock (Lock)
+        {
+            Entries.Clear();
+        }
     }
 
     private void AddEntry(LogEntry entry)
@@ -54,9 +63,15 @@ public class InMemoryLogSink : ILoggerProvider
 
     private class InMemoryLogger(string category, InMemoryLogSink sink) : ILogger
     {
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+        {
+            return null;
+        }
 
-        public bool IsEnabled(LogLevel logLevel) => true;
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return true;
+        }
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
             Exception? exception, Func<TState, Exception?, string> formatter)

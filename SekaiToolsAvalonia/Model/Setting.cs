@@ -7,7 +7,9 @@ namespace SekaiToolsAvalonia.Model;
 
 public struct Setting
 {
-    public Setting() { }
+    public Setting()
+    {
+    }
 
     public string AppVersion { get; init; } = "1.0.0";
     public int CurrentApplicationTheme { get; init; } = 0;

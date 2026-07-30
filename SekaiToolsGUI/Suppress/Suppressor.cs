@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -14,8 +15,8 @@ public partial class Suppressor
 {
     private readonly object _runLock = new();
     private CancellationTokenSource? _cancellationTokenSource;
-    private Task? _runTask;
     private Process? _fProcess;
+    private Task? _runTask;
     private Process? _vProcess;
     public static Suppressor Instance { get; } = new();
 
@@ -200,8 +201,14 @@ public partial class Suppressor
             if (!process.HasExited)
                 process.Kill(true);
         }
-        catch (InvalidOperationException) { /* already exited */ }
-        catch (System.ComponentModel.Win32Exception) { /* already exited */ }
+        catch (InvalidOperationException)
+        {
+            /* already exited */
+        }
+        catch (Win32Exception)
+        {
+            /* already exited */
+        }
     }
 
     public async Task CleanAsync()

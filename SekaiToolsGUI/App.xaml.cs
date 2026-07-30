@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Threading;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 using SekaiToolsGUI.Service;
@@ -8,8 +9,8 @@ namespace SekaiToolsGUI;
 public partial class App : Application
 {
     private const string SingleInstanceMutexName = @"Local\SekaiToolsGUI-1D56E931-7BB9-4E91-B960-76A04EC83C45";
-    private Mutex? _singleInstanceMutex;
     private bool _ownsSingleInstanceMutex;
+    private Mutex? _singleInstanceMutex;
 
     public App()
     {
@@ -17,7 +18,7 @@ public partial class App : Application
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
         InitializeComponent();
-        Logger.Log("SekaiToolsGUI 启动", LogLevel.Information);
+        Logger.Log("SekaiToolsGUI 启动");
     }
 
     protected override void OnStartup(StartupEventArgs e)
@@ -39,7 +40,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         WindowsNotificationService.Shutdown();
-        Logger.Log($"SekaiToolsGUI 退出 (exitCode={e.ApplicationExitCode})", LogLevel.Information);
+        Logger.Log($"SekaiToolsGUI 退出 (exitCode={e.ApplicationExitCode})");
         if (_ownsSingleInstanceMutex)
         {
             _singleInstanceMutex?.ReleaseMutex();
@@ -51,7 +52,7 @@ public partial class App : Application
     }
 
     private void OnDispatcherUnhandledException(object sender,
-        System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+        DispatcherUnhandledExceptionEventArgs e)
     {
         Logger.Log($"UI线程未处理异常: {e.Exception.Message}\n{e.Exception.StackTrace}", LogLevel.Critical);
     }

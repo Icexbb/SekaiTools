@@ -132,7 +132,7 @@
                                 </ui:CardControl.Header>
                                 <ui:TextBox Width="100" Text="{Binding StaffLineCompression}" />
                             </ui:CardControl>
-                   
+
                             <ui:CardControl Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="3">
                                 <ui:CardControl.Header>
                                     <ui:TextBlock FontTypography="Body" Text="后缀" />

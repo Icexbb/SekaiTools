@@ -1,4 +1,6 @@
 using System.IO;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Text;
 using System.Text.Json;
 using System.Windows;
@@ -9,6 +11,7 @@ using Emgu.CV;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SekaiToolsBase;
+using SekaiToolsBase.SubStationAlpha;
 using SekaiToolsCore;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
@@ -24,8 +27,6 @@ using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
 using MessageBox = Wpf.Ui.Controls.MessageBox;
 using SaveFileDialog = SekaiToolsGUI.View.Subtitle.Components.SaveFileDialog;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 
 namespace SekaiToolsGUI.View.Subtitle;
 
@@ -424,7 +425,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
                 var s = (int)totalSec % 60;
                 var cs = (int)((totalSec - (int)totalSec) * 100);
                 var endTime = $"{h}:{m:00}:{s:00}.{cs:00}";
-                var staffEvent = SekaiToolsBase.SubStationAlpha.Event.Dialog(
+                var staffEvent = Event.Dialog(
                     $"{{\\an{dialog.ViewModel.StaffLinePosition}}}{staffText}",
                     startTime, endTime, "Staff");
                 subtitle.Events.Insert(0, staffEvent);
@@ -508,14 +509,14 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
 
 public partial class SubtitlePage
 {
-    private CancellationTokenSource? TokenSource { get; } = new();
-    private CancellationToken CancellationToken => TokenSource!.Token;
-
-    private VideoProcessor? VideoProcessor { get; set; }
     private Subject<(int Fps, TimeSpan Eta)>? _fpsChangedSubject;
     private IDisposable? _fpsChangedSubscription;
     private Subject<double>? _progressChangedSubject;
     private IDisposable? _progressChangedSubscription;
+    private CancellationTokenSource? TokenSource { get; } = new();
+    private CancellationToken CancellationToken => TokenSource!.Token;
+
+    private VideoProcessor? VideoProcessor { get; set; }
 
     public async void OnNavigatedTo()
     {
@@ -638,10 +639,8 @@ public partial class SubtitlePage
                 CloseButtonText = "取消"
             }, CancellationToken);
         if (result == ContentDialogResult.None)
-        {
             foreach (var (saveKey, _) in ProgressStore.EnumerateProgressFiles())
                 ProgressStore.Delete(saveKey);
-        }
 
         return result;
     }
@@ -664,8 +663,7 @@ public partial class SubtitlePage
         var settings = SettingPageModel.Instance;
 
         Logger.Log(
-            $"开始处理: 视频={ViewModel.VideoFilePath}, 剧本={ViewModel.ScriptFilePath}, 翻译={ViewModel.TranslateFilePath}",
-            LogLevel.Information);
+            $"开始处理: 视频={ViewModel.VideoFilePath}, 剧本={ViewModel.ScriptFilePath}, 翻译={ViewModel.TranslateFilePath}");
         try
         {
             VideoProcessor?.Dispose();
@@ -692,7 +690,7 @@ public partial class SubtitlePage
                                 SetVideoProcessWindowTitle("已取消");
                                 SetTaskbarProgressState(TaskbarItemProgressState.Paused,
                                     ProgressBarProgression.Value);
-                                Logger.Log("处理已由用户取消，可输出当前结果", LogLevel.Information);
+                                Logger.Log("处理已由用户取消，可输出当前结果");
                                 SnackService.Show("提示", "处理已取消，可以输出当前结果进行人工复核",
                                     ControlAppearance.Info,
                                     new SymbolIcon(SymbolRegular.Info24), new TimeSpan(0, 0, 4));
@@ -705,7 +703,7 @@ public partial class SubtitlePage
                                 TextBlockProgression.Text = $"{1:P}";
                                 SetVideoProcessWindowTitle("已完成");
                                 SetTaskbarProgressState(TaskbarItemProgressState.Normal, 1);
-                                Logger.Log("处理成功完成", LogLevel.Information);
+                                Logger.Log("处理成功完成");
                                 SnackService.Show("成功", "运行结束", ControlAppearance.Success,
                                     new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
                             }

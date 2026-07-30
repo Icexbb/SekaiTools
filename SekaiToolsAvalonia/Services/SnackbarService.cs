@@ -1,12 +1,14 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Threading;
 
 namespace SekaiToolsAvalonia.Services;
 
 public class SnackbarService
 {
-    private readonly Panel _host;
     private readonly TimeSpan _defaultDuration = TimeSpan.FromSeconds(3);
+    private readonly Panel _host;
 
     public SnackbarService(Panel host)
     {
@@ -17,16 +19,16 @@ public class SnackbarService
     {
         var snackbar = new Border
         {
-            Background = Avalonia.Media.Brushes.Black,
-            CornerRadius = new Avalonia.CornerRadius(8),
-            Padding = new Avalonia.Thickness(16, 10),
+            Background = Brushes.Black,
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(16, 10),
             MaxWidth = 400,
             Opacity = 0,
             Child = new TextBlock
             {
                 Text = message,
-                Foreground = Avalonia.Media.Brushes.White,
-                TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                Foreground = Brushes.White,
+                TextWrapping = TextWrapping.Wrap,
                 FontSize = 13
             }
         };

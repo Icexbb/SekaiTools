@@ -1,6 +1,6 @@
 using Avalonia.Controls;
-using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsAvalonia.ViewModel.Subtitle;
+using SekaiToolsCore.Process.FrameSet;
 
 namespace SekaiToolsAvalonia.View.Subtitle.Components;
 

@@ -13,7 +13,6 @@ using SekaiToolsCore;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.Service;
 using SekaiToolsGUI.View.Setting;
-using SekaiToolsGUI.View.Translate;
 using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Setting;
 using Wpf.Ui;
@@ -37,6 +36,13 @@ public partial class MainWindow : FluentWindow
         SetWindowTitle("");
     }
 
+    public ISnackbarService WindowSnackbarService { get; } = new WindowsNotifyingSnackbarService
+    {
+        DefaultTimeOut = TimeSpan.FromSeconds(3)
+    };
+
+    public IContentDialogService WindowContentDialogService { get; } = new ContentDialogService();
+
     public void SetWindowTitle(string? content)
     {
         var mainTitle = $"Sekai Tools {GetLocalVersion()}".Trim();
@@ -58,13 +64,6 @@ public partial class MainWindow : FluentWindow
         TaskbarItemInfo ??= new TaskbarItemInfo();
         TaskbarItemInfo.ProgressValue = Math.Clamp(value, 0, 1);
     }
-
-    public ISnackbarService WindowSnackbarService { get; } = new WindowsNotifyingSnackbarService
-    {
-        DefaultTimeOut = TimeSpan.FromSeconds(3)
-    };
-
-    public IContentDialogService WindowContentDialogService { get; } = new ContentDialogService();
 
     private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
     {

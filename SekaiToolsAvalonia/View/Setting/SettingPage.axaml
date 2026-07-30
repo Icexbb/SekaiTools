@@ -11,7 +11,6 @@
              d:DataContext="{d:DesignInstance vm:SettingPageModel}">
 
     <UserControl.Resources>
-        <converters:BoolToVisibleConverter x:Key="BoolVisible" />
     </UserControl.Resources>
 
     <Grid RowDefinitions="*,Auto">
@@ -229,8 +228,7 @@
                             </ComboBox>
                         </DockPanel>
                         <ListBox x:Name="LogListBox" Grid.Row="1" MaxHeight="400"
-                                 FontFamily="Consolas" FontSize="11">
-                        </ListBox>
+                                 FontFamily="Consolas" FontSize="11" />
                     </Grid>
                 </Expander>
 

@@ -29,6 +29,7 @@ public class TranslatePageModel : ViewModelBase
                         events.Add(lineEffectModel);
                         break;
                 }
+
             Events = events.ToArray();
         }
     }
@@ -79,6 +80,7 @@ public class TranslatePageModel : ViewModelBase
             line.Character.Translated = changedLine.Character.Translated;
             line.CharacterTranslateChangedEnabled = true;
         }
+
         changedLine.CharacterTranslateChangedEnabled = true;
     }
 
@@ -94,6 +96,7 @@ public class TranslatePageModel : ViewModelBase
             line.Content.Translated = changedLine.Content.Translated;
             line.ContentTranslateChangedEnabled = true;
         }
+
         changedLine.ContentTranslateChangedEnabled = true;
     }
 
