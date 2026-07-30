@@ -92,11 +92,9 @@ public static class UtilFunc
     {
         using Mat positiveInf = new(mat.Size, mat.Depth, 1);
         using Mat negativeInf = new(mat.Size, mat.Depth, 1);
-        using Mat nan = new(mat.Size, mat.Depth, 1);
 
-        positiveInf.SetTo(new MCvScalar(1));
-        negativeInf.SetTo(new MCvScalar(0));
-        nan.SetTo(new MCvScalar(float.NaN));
+        positiveInf.SetTo(new MCvScalar(float.PositiveInfinity));
+        negativeInf.SetTo(new MCvScalar(float.NegativeInfinity));
 
         using (var mask = new Mat(mat.Size, mat.Depth, 1))
         {
@@ -110,11 +108,7 @@ public static class UtilFunc
             mat.SetTo(new MCvScalar(0), mask);
         }
 
-        using (var mask = new Mat(mat.Size, mat.Depth, 1))
-        {
-            CvInvoke.Compare(mat, nan, mask, CmpType.Equal);
-            mat.SetTo(new MCvScalar(0), mask);
-        }
+        CvInvoke.PatchNaNs(mat, 0);
     }
 
     public static IEnumerable<string> GetFontFamilyNames()

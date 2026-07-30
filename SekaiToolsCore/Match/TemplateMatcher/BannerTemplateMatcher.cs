@@ -82,7 +82,7 @@ public class BannerTemplateMatcher(
                     $"{nameof(BannerTemplateMatcher)} Frame {frameIndex} Match Banner {LastNotProcessedIndex()} Result: {result.MaxVal}",
                     ExtLogLevel.Debug);
 
-            return result.MaxVal > EffectiveThreshold(config.MatchingThreshold.BannerNormal) && result.MaxVal < 1;
+            return result.IsMatch(EffectiveThreshold(config.MatchingThreshold.BannerNormal));
         }
     }
 

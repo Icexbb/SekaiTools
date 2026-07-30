@@ -62,7 +62,7 @@ public class DialogTemplateMatcher(
                     $"{nameof(DialogTemplateMatcher)} Frame {frameIndex} Match Name Tag {LastNotProcessedIndex()} Result: {result.MaxVal}",
                     ExtLogLevel.Debug);
 
-            if (EffectiveThreshold(threshold) < result.MaxVal && result.MaxVal < 1)
+            if (result.IsMatch(EffectiveThreshold(threshold)))
                 return new Point(result.MaxLoc.X + roi.X, result.MaxLoc.Y + roi.Y);
 
             return Point.Empty;
@@ -204,7 +204,7 @@ public class DialogTemplateMatcher(
                     $"{nameof(DialogTemplateMatcher)} Frame {frameIndex} Match Dialog Content {LastNotProcessedIndex()} Result: {result.MaxVal}",
                     ExtLogLevel.Debug);
 
-            return result.MaxVal > EffectiveThreshold(threshold) && result.MaxVal < 1;
+            return result.IsMatch(EffectiveThreshold(threshold));
         }
 
         List<GaMat> GetDialogInd()

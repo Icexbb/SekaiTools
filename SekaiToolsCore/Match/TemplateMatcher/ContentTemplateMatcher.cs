@@ -43,7 +43,7 @@ public class ContentTemplateMatcher(
                 ExtLogLevel.Debug
             );
 
-        return result.MaxVal > Threshold;
+        return result.IsMatch(Threshold);
     }
 
     public void Process(Mat mat)

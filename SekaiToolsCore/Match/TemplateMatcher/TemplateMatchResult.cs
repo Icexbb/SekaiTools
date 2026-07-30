@@ -9,4 +9,9 @@ public struct TemplateMatchResult(double maxVal, double minVal, Point maxLoc, Po
 
     public Point MaxLoc { get; set; } = maxLoc;
     public Point MinLoc { get; set; } = minLoc;
+
+    public readonly bool IsMatch(double threshold)
+    {
+        return double.IsFinite(MaxVal) && MaxVal > threshold;
+    }
 }

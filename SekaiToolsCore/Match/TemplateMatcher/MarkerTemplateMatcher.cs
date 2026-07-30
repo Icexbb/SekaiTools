@@ -99,7 +99,7 @@ public class MarkerTemplateMatcher(
                     ExtLogLevel.Debug);
 
             var effectiveThreshold = EffectiveThreshold(config.MatchingThreshold.MarkerNormal);
-            var matched = matchResult.MaxVal > effectiveThreshold && matchResult.MaxVal < 1;
+            var matched = matchResult.IsMatch(effectiveThreshold);
 
             if (!matched) return Point.Empty;
 
