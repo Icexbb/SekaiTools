@@ -9,7 +9,7 @@ public class Config
         StyleFontConfig styleFontConfig = default,
         ExportStyleConfig exportStyleConfig = default,
         TypewriterSetting typerSetting = default,
-        MatchingThreshold matchingThreshold = default
+        MatchingThreshold? matchingThreshold = null
     )
     {
         if (!Path.Exists(videoFilePath))
@@ -27,7 +27,7 @@ public class Config
         ExportStyleConfig = exportStyleConfig;
 
         TyperSetting = typerSetting;
-        MatchingThreshold = matchingThreshold;
+        MatchingThreshold = matchingThreshold ?? new MatchingThreshold();
     }
 
     public string VideoFilePath { get; }
