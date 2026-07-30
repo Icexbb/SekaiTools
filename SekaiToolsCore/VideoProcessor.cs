@@ -133,6 +133,8 @@ public class VideoProcessor : IDisposable
         TokenSource?.Dispose();
         Capture?.Dispose();
         ContentMatcher?.Dispose();
+        DialogMatcher?.Dispose();
+        BannerMatcher?.Dispose();
         MarkerMatcher?.Dispose();
         Creator?.Dispose();
         _disposed = true;
@@ -306,7 +308,11 @@ public class VideoProcessor : IDisposable
         var frameRate = capture.Get(CapProp.Fps);
         var previewInterval = Math.Max(1, (int)Math.Round(frameRate / 5d));
         var frame = new Mat();
-        using var matchFrame = new FrameMatchContext();
+        using var matchFrameA = new FrameMatchContext();
+        using var matchFrameB = new FrameMatchContext();
+        FrameMatchContext? previousMatchFrame = null;
+        var previousMatchFrameIndex = -1;
+        var useFirstMatchFrame = true;
         if (Creator == null) throw new NullReferenceException();
         var frameCount = capture.Get(CapProp.FrameCount);
         var markerIndexInDialog = MarkerIndexOfDialog();
@@ -354,7 +360,13 @@ public class VideoProcessor : IDisposable
                 frameIndex = (int)capture.Get(CapProp.PosFrames);
                 Creator.CachePool.SetFrameIndex(frameIndex);
                 var preprocessStart = Stopwatch.GetTimestamp();
+                var matchFrame = useFirstMatchFrame ? matchFrameA : matchFrameB;
+                var backcheckFrame = previousMatchFrame;
+                var backcheckFrameIndex = previousMatchFrameIndex;
                 matchFrame.Update(frame);
+                useFirstMatchFrame = !useFirstMatchFrame;
+                previousMatchFrame = matchFrame;
+                previousMatchFrameIndex = frameIndex;
                 _performanceMetrics.Record(ProcessingStage.Preprocess, Stopwatch.GetElapsedTime(preprocessStart));
                 _performanceMetrics.RecordFrame();
                 var progress = frameCount > 0 ? frameIndex / frameCount : 0;
@@ -379,7 +391,7 @@ public class VideoProcessor : IDisposable
                 if (DialogMatcher is { Finished: false })
                 {
                     var dialogIndex = DialogMatcher.LastNotProcessedIndex();
-                    var r = DialogMatcher.Process(matchFrame, frameIndex);
+                    var r = DialogMatcher.Process(matchFrame, frameIndex, backcheckFrame, backcheckFrameIndex);
                     matchBannerNow = !r;
                     if (DialogMatcher.Set[dialogIndex].Finished)
                     {
@@ -395,7 +407,7 @@ public class VideoProcessor : IDisposable
                 if (BannerMatcher is { Finished: false } && matchBannerNow)
                 {
                     var bannerIndex = BannerMatcher.LastNotProcessedIndex();
-                    BannerMatcher.Process(matchFrame, frameIndex);
+                    BannerMatcher.Process(matchFrame, frameIndex, backcheckFrame, backcheckFrameIndex);
                     if (BannerMatcher.Set[bannerIndex].Finished)
                     {
                         Callbacks.OnNewBanner(BannerMatcher.Set[bannerIndex]);
@@ -406,7 +418,7 @@ public class VideoProcessor : IDisposable
                 if (MarkerMatcher is { Finished: false } && MatchMarkerNow())
                 {
                     var markerIndex = MarkerMatcher.LastNotProcessedIndex();
-                    MarkerMatcher.Process(matchFrame, frameIndex);
+                    MarkerMatcher.Process(matchFrame, frameIndex, backcheckFrame, backcheckFrameIndex);
                     if (MarkerMatcher.Set[markerIndex].Finished)
                     {
                         Callbacks.OnNewMarker(MarkerMatcher.Set[markerIndex]);

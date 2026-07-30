@@ -20,8 +20,9 @@ public class BannerTemplateMatcher(
 ) : MatcherStateMachine<BannerBaseFrameSet>(
     storyData.Banners().Select(d => new BannerBaseFrameSet(d, videoInfo.Fps)).ToList(),
     (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.5)
-)
+), IDisposable
 {
+    private readonly AdaptiveSearchScheduler _searchScheduler = new();
     private MatchStatus _status;
 
     public int LastNotProcessedIndex()
@@ -87,7 +88,8 @@ public class BannerTemplateMatcher(
         }
     }
 
-    public void Process(FrameMatchContext frame, int frameIndex)
+    public void Process(FrameMatchContext frame, int frameIndex,
+        FrameMatchContext? previousFrame = null, int previousFrameIndex = -1)
     {
         while (!Finished)
         {
@@ -96,23 +98,52 @@ public class BannerTemplateMatcher(
 
             ResetForNewTarget(index);
 
+            var useAdaptiveSearch = _status != MatchStatus.Matched && Set[index].IsEmpty();
+            if (useAdaptiveSearch && !_searchScheduler.ShouldSample(frameIndex))
+            {
+                _searchScheduler.RememberSkipped(frameIndex);
+                return;
+            }
+
             var matchResult = BannerMatch(frame, Set[index].Data.BodyOriginal, frameIndex);
+            var matchedFrameIndex = frameIndex;
+            if (useAdaptiveSearch && matchResult == MatchStatus.Matched &&
+                _searchScheduler.TryGetPrevious(previousFrame, previousFrameIndex,
+                    out var backcheckFrame, out var backcheckFrameIndex))
+            {
+                var previousResult = BannerMatch(backcheckFrame!, Set[index].Data.BodyOriginal,
+                    backcheckFrameIndex);
+                if (previousResult == MatchStatus.Matched)
+                {
+                    matchResult = previousResult;
+                    matchedFrameIndex = backcheckFrameIndex;
+                }
+            }
+            if (useAdaptiveSearch)
+                _searchScheduler.CompleteSample(frameIndex);
+
             _status = matchResult;
             switch (matchResult)
             {
                 case MatchStatus.Dropped:
                     MarkDropped(index);
+                    _searchScheduler.Reset();
                     continue;
                 case MatchStatus.NotMatched:
                     if (TryEnterFallback()) continue;
                     return;
                 case MatchStatus.Matched:
                 default:
-                    Set[index].Add(frameIndex);
+                    Set[index].Add(matchedFrameIndex);
                     MarkSucceeded();
                     return;
             }
         }
+    }
+
+    public void Dispose()
+    {
+        _searchScheduler.Dispose();
     }
 
     public BannerMatcherStateDto SaveState()

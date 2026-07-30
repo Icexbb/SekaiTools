@@ -24,6 +24,7 @@ public class MarkerTemplateMatcher(
 ), IDisposable
 {
     private readonly Dictionary<string, GaMat> _templates = new();
+    private readonly AdaptiveSearchScheduler _searchScheduler = new();
     private MatchStatus _status;
 
     public void Dispose()
@@ -31,6 +32,7 @@ public class MarkerTemplateMatcher(
         foreach (var template in _templates.Values)
             template.Dispose();
         _templates.Clear();
+        _searchScheduler.Dispose();
     }
 
     public int LastNotProcessedIndex()
@@ -108,7 +110,8 @@ public class MarkerTemplateMatcher(
         }
     }
 
-    public void Process(FrameMatchContext frame, int frameIndex)
+    public void Process(FrameMatchContext frame, int frameIndex,
+        FrameMatchContext? previousFrame = null, int previousFrameIndex = -1)
     {
         while (!Finished)
         {
@@ -117,20 +120,44 @@ public class MarkerTemplateMatcher(
 
             ResetForNewTarget(index);
 
+            var useAdaptiveSearch = _status != MatchStatus.Matched && Set[index].IsEmpty();
+            if (useAdaptiveSearch && !_searchScheduler.ShouldSample(frameIndex))
+            {
+                _searchScheduler.RememberSkipped(frameIndex);
+                return;
+            }
+
             var matchResult = MarkerMatch(frame, Set[index].Data.BodyOriginal, frameIndex);
+            var matchedFrameIndex = frameIndex;
+            if (useAdaptiveSearch && matchResult.Status == MatchStatus.Matched &&
+                _searchScheduler.TryGetPrevious(previousFrame, previousFrameIndex,
+                    out var backcheckFrame, out var backcheckFrameIndex))
+            {
+                var previousResult = MarkerMatch(backcheckFrame!, Set[index].Data.BodyOriginal,
+                    backcheckFrameIndex);
+                if (previousResult.Status == MatchStatus.Matched)
+                {
+                    matchResult = previousResult;
+                    matchedFrameIndex = backcheckFrameIndex;
+                }
+            }
+            if (useAdaptiveSearch)
+                _searchScheduler.CompleteSample(frameIndex);
+
             _status = matchResult.Status;
 
             switch (matchResult.Status)
             {
                 case MatchStatus.Dropped:
                     MarkDropped(index);
+                    _searchScheduler.Reset();
                     continue;
                 case MatchStatus.NotMatched:
                     if (TryEnterFallback()) continue;
                     return;
                 case MatchStatus.Matched:
                 default:
-                    Set[index].Add(frameIndex, matchResult.Point);
+                    Set[index].Add(matchedFrameIndex, matchResult.Point);
                     MarkSucceeded();
                     return;
             }

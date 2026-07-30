@@ -20,9 +20,10 @@ public class DialogTemplateMatcher(
 ) : MatcherStateMachine<DialogBaseFrameSet>(
     storyData.Dialogs().Select(d => new DialogBaseFrameSet(d, videoInfo.Fps)).ToList(),
     (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.5)
-)
+), IDisposable
 {
     private Point _nameTagPosition;
+    private readonly AdaptiveSearchScheduler _searchScheduler = new();
     private MatchStatus _status;
 
     public int LastNotProcessedIndex()
@@ -239,7 +240,8 @@ public class DialogTemplateMatcher(
         for (var i = index; i < set.Count; i++) set[i].Finished = true;
     }
 
-    public bool Process(FrameMatchContext frame, int frameIndex)
+    public bool Process(FrameMatchContext frame, int frameIndex,
+        FrameMatchContext? previousFrame = null, int previousFrameIndex = -1)
     {
         MatchStatus? firstStatus = null;
 
@@ -251,7 +253,29 @@ public class DialogTemplateMatcher(
             ResetForNewTarget(dIndex);
 
             var dialogRefers = Set[dIndex];
+            var useAdaptiveSearch = dialogRefers.IsEmpty() && !IsStatusMatched(_status);
+            if (useAdaptiveSearch && !_searchScheduler.ShouldSample(frameIndex))
+            {
+                _searchScheduler.RememberSkipped(frameIndex);
+                return IsStatusMatched(firstStatus ?? MatchStatus.DialogNotMatched);
+            }
+
             var matchResult = MatchForDialog(frame, dialogRefers, frameIndex);
+            var matchedFrameIndex = frameIndex;
+            if (useAdaptiveSearch && IsStatusMatched(matchResult.Status) &&
+                _searchScheduler.TryGetPrevious(previousFrame, previousFrameIndex,
+                    out var backcheckFrame, out var backcheckFrameIndex))
+            {
+                var previousResult = MatchForDialog(backcheckFrame!, dialogRefers, backcheckFrameIndex);
+                if (IsStatusMatched(previousResult.Status))
+                {
+                    matchResult = previousResult;
+                    matchedFrameIndex = backcheckFrameIndex;
+                }
+            }
+            if (useAdaptiveSearch)
+                _searchScheduler.CompleteSample(frameIndex);
+
             _status = matchResult.Status;
             firstStatus ??= matchResult.Status;
 
@@ -259,19 +283,25 @@ public class DialogTemplateMatcher(
             {
                 case MatchStatus.DialogDropped:
                     MarkDropped(dIndex);
+                    _searchScheduler.Reset();
                     cachePool.NextDialog();
                     continue;
                 case MatchStatus.DialogNotMatched or MatchStatus.NameTagNotMatched:
                     if (TryEnterFallback()) continue;
                     return IsStatusMatched(firstStatus.Value);
                 default:
-                    Set[dIndex].Add(frameIndex, matchResult.Point);
+                    Set[dIndex].Add(matchedFrameIndex, matchResult.Point);
                     MarkSucceeded();
                     return IsStatusMatched(firstStatus.Value);
             }
         }
 
         return IsStatusMatched(firstStatus ?? MatchStatus.DialogNotMatched);
+    }
+
+    public void Dispose()
+    {
+        _searchScheduler.Dispose();
     }
 
     private static bool IsStatusMatched(MatchStatus status)
