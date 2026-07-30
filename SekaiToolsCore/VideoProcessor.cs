@@ -12,6 +12,7 @@ using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
+using SekaiToolsCore.Process.Performance;
 using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace SekaiToolsCore;
@@ -56,6 +57,7 @@ public class VideoProcessor : IDisposable
     private const int ExceptionThreshold = 10;
     private const long CallbackThrottleMs = 200;
     private readonly object _progressSaveLock = new();
+    private readonly ProcessingPerformanceMetrics _performanceMetrics = new();
     private readonly int _saveInterval = 300;
     private readonly string _scriptPath;
     private readonly string _translatePath;
@@ -119,6 +121,8 @@ public class VideoProcessor : IDisposable
         BannerMatcher?.Set.Count ?? 0,
         MarkerMatcher?.Set.Count ?? 0
     );
+
+    public ProcessingPerformanceSnapshot Performance => _performanceMetrics.Snapshot();
 
     public void Dispose()
     {
@@ -250,6 +254,7 @@ public class VideoProcessor : IDisposable
         _consecutiveExceptionCount = 0;
         _lastProgressCallbackTime = 0;
         _lastFpsCallbackTime = 0;
+        _performanceMetrics.Reset();
 
         var cap = Capture;
         if (cap != null)
@@ -322,6 +327,7 @@ public class VideoProcessor : IDisposable
         while (true)
         {
             var tic = Environment.TickCount;
+            long matchingStart = 0;
             try
             {
                 if (token.IsCancellationRequested)
@@ -336,7 +342,10 @@ public class VideoProcessor : IDisposable
                     break;
                 }
 
-                if (!capture.Read(frame))
+                var decodeStart = Stopwatch.GetTimestamp();
+                var readSucceeded = capture.Read(frame);
+                _performanceMetrics.Record(ProcessingStage.Decode, Stopwatch.GetElapsedTime(decodeStart));
+                if (!readSucceeded)
                 {
                     StopReason = ProcessStopReason.ReadFailed;
                     break;
@@ -344,7 +353,10 @@ public class VideoProcessor : IDisposable
 
                 frameIndex = (int)capture.Get(CapProp.PosFrames);
                 Creator.CachePool.SetFrameIndex(frameIndex);
+                var preprocessStart = Stopwatch.GetTimestamp();
                 matchFrame.Update(frame);
+                _performanceMetrics.Record(ProcessingStage.Preprocess, Stopwatch.GetElapsedTime(preprocessStart));
+                _performanceMetrics.RecordFrame();
                 var progress = frameCount > 0 ? frameIndex / frameCount : 0;
 
                 // 节流进度回调（200ms）
@@ -356,6 +368,7 @@ public class VideoProcessor : IDisposable
                     EnqueueLatestPreview(previewFrame);
                 }
 
+                matchingStart = Stopwatch.GetTimestamp();
                 if (ContentMatcher is { Finished: false })
                 {
                     ContentMatcher.Process(matchFrame);
@@ -401,6 +414,9 @@ public class VideoProcessor : IDisposable
                     }
                 }
 
+                _performanceMetrics.Record(ProcessingStage.Match, Stopwatch.GetElapsedTime(matchingStart));
+                matchingStart = 0;
+
                 // 清空异常计数（处理成功）
                 _consecutiveExceptionCount = 0;
 
@@ -429,6 +445,8 @@ public class VideoProcessor : IDisposable
             }
             finally
             {
+                if (matchingStart != 0)
+                    _performanceMetrics.Record(ProcessingStage.Match, Stopwatch.GetElapsedTime(matchingStart));
                 var toc = Environment.TickCount;
                 Fps(toc - tic);
             }
@@ -455,6 +473,7 @@ public class VideoProcessor : IDisposable
             Capture = null;
 
         Logger.Log($"视频处理结束: {StopReason}, 当前帧={frameIndex}, 总帧={frameCount}");
+        Logger.Log($"视频处理性能: {Performance}");
 
         if (StopReason == ProcessStopReason.Completed)
             HistoryStore.Add(finalState);
