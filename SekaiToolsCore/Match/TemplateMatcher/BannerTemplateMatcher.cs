@@ -22,7 +22,10 @@ public class BannerTemplateMatcher(
     (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.5)
 ), IDisposable
 {
+    private const int MaxLookaheadTargets = 3;
+    private readonly FiniteLookaheadTracker _lookaheadTracker = new();
     private readonly AdaptiveSearchScheduler _searchScheduler = new();
+    private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
     private MatchStatus _status;
 
     public int LastNotProcessedIndex()
@@ -107,9 +110,11 @@ public class BannerTemplateMatcher(
 
             var matchResult = BannerMatch(frame, Set[index].Data.BodyOriginal, frameIndex);
             var matchedFrameIndex = frameIndex;
+            FrameMatchContext? backcheckFrame = null;
+            var backcheckFrameIndex = -1;
             if (useAdaptiveSearch && matchResult == MatchStatus.Matched &&
                 _searchScheduler.TryGetPrevious(previousFrame, previousFrameIndex,
-                    out var backcheckFrame, out var backcheckFrameIndex))
+                    out backcheckFrame, out backcheckFrameIndex))
             {
                 var previousResult = BannerMatch(backcheckFrame!, Set[index].Data.BodyOriginal,
                     backcheckFrameIndex);
@@ -122,12 +127,60 @@ public class BannerTemplateMatcher(
             if (useAdaptiveSearch)
                 _searchScheduler.CompleteSample(frameIndex);
 
+            if (matchResult == MatchStatus.NotMatched &&
+                _lookaheadTracker.ShouldProbe(index, frameIndex, _lookaheadTriggerFrames))
+            {
+                var originalStatus = _status;
+                var lookaheadEnd = Math.Min(Set.Count, index + MaxLookaheadTargets + 1);
+                var foundIndex = -1;
+                for (var candidateIndex = index + 1; candidateIndex < lookaheadEnd; candidateIndex++)
+                {
+                    if (Set[candidateIndex].Finished) continue;
+                    _status = MatchStatus.NotMatched;
+                    var candidateResult = BannerMatch(frame, Set[candidateIndex].Data.BodyOriginal, frameIndex);
+                    if (candidateResult != MatchStatus.Matched) continue;
+
+                    foundIndex = candidateIndex;
+                    matchResult = candidateResult;
+                    matchedFrameIndex = frameIndex;
+                    if (backcheckFrame != null)
+                    {
+                        _status = MatchStatus.NotMatched;
+                        var previousResult = BannerMatch(backcheckFrame,
+                            Set[candidateIndex].Data.BodyOriginal, backcheckFrameIndex);
+                        if (previousResult == MatchStatus.Matched)
+                        {
+                            matchResult = previousResult;
+                            matchedFrameIndex = backcheckFrameIndex;
+                        }
+                    }
+                    break;
+                }
+
+                if (foundIndex >= 0)
+                {
+                    for (var missingIndex = index; missingIndex < foundIndex; missingIndex++)
+                        if (!Set[missingIndex].Finished)
+                            MarkMissing(missingIndex, frameIndex,
+                                $"有限前瞻命中横幅索引 {foundIndex}，当前目标疑似未出现在视频中");
+                    index = foundIndex;
+                    _searchScheduler.Reset();
+                    _lookaheadTracker.Reset();
+                }
+                else
+                {
+                    _status = originalStatus;
+                    _lookaheadTracker.Postpone(frameIndex);
+                }
+            }
+
             _status = matchResult;
             switch (matchResult)
             {
                 case MatchStatus.Dropped:
                     MarkDropped(index);
                     _searchScheduler.Reset();
+                    _lookaheadTracker.Reset();
                     continue;
                 case MatchStatus.NotMatched:
                     if (TryEnterFallback()) continue;
@@ -136,6 +189,7 @@ public class BannerTemplateMatcher(
                 default:
                     Set[index].Add(matchedFrameIndex);
                     MarkSucceeded();
+                    _lookaheadTracker.Reset();
                     return;
             }
         }
@@ -155,6 +209,7 @@ public class BannerTemplateMatcher(
             ConsecutiveFailures = cf,
             LastFailedIndex = lfi,
             UseFallbackThreshold = uft,
+            Diagnostics = SaveDiagnostics(),
             FrameSets = Set.Select(b => new BannerFrameSetDto
             {
                 Finished = b.Finished,
@@ -168,6 +223,7 @@ public class BannerTemplateMatcher(
     {
         _status = (MatchStatus)state.Status;
         RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold);
+        RestoreDiagnostics(state.Diagnostics);
 
         for (var i = 0; i < state.FrameSets.Count && i < Set.Count; i++)
         {

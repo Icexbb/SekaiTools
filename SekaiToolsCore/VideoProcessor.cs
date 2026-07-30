@@ -124,6 +124,12 @@ public class VideoProcessor : IDisposable
 
     public ProcessingPerformanceSnapshot Performance => _performanceMetrics.Snapshot();
 
+    public IReadOnlyList<MatcherDiagnostic> Diagnostics =>
+        DialogMatcher?.Diagnostics
+            .Concat(BannerMatcher?.Diagnostics ?? [])
+            .Concat(MarkerMatcher?.Diagnostics ?? [])
+            .ToList() ?? [];
+
     public void Dispose()
     {
         if (_disposed) return;
@@ -486,6 +492,9 @@ public class VideoProcessor : IDisposable
 
         Logger.Log($"视频处理结束: {StopReason}, 当前帧={frameIndex}, 总帧={frameCount}");
         Logger.Log($"视频处理性能: {Performance}");
+        foreach (var diagnostic in Diagnostics)
+            Logger.Log($"匹配诊断: {diagnostic.Matcher}[{diagnostic.TargetIndex}] " +
+                       $"帧={diagnostic.FrameIndex}, {diagnostic.Reason}", ExtLogLevel.Warning);
 
         if (StopReason == ProcessStopReason.Completed)
             HistoryStore.Add(finalState);

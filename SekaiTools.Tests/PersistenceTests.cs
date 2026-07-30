@@ -39,4 +39,32 @@ public class PersistenceTests
         Assert.Equal(2, paths.Length);
         Assert.All(paths, path => Assert.EndsWith(".json", path, StringComparison.OrdinalIgnoreCase));
     }
+
+    [Fact]
+    public void 匹配诊断能够随进度状态序列化往返()
+    {
+        var state = new ProcessingState
+        {
+            Banner = new BannerMatcherStateDto
+            {
+                Diagnostics =
+                [
+                    new MatcherDiagnosticDto
+                    {
+                        Matcher = "BannerBaseFrameSet",
+                        TargetIndex = 2,
+                        FrameIndex = 300,
+                        Reason = "有限前瞻命中后续横幅"
+                    }
+                ]
+            }
+        };
+
+        var restored = JsonSerializer.Deserialize<ProcessingState>(JsonSerializer.Serialize(state));
+
+        var diagnostic = Assert.Single(restored!.Banner!.Diagnostics);
+        Assert.Equal(2, diagnostic.TargetIndex);
+        Assert.Equal(300, diagnostic.FrameIndex);
+        Assert.Equal("有限前瞻命中后续横幅", diagnostic.Reason);
+    }
 }

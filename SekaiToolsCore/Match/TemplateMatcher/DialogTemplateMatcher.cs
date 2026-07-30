@@ -22,8 +22,11 @@ public class DialogTemplateMatcher(
     (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.5)
 ), IDisposable
 {
+    private const int MaxLookaheadTargets = 3;
     private Point _nameTagPosition;
+    private readonly FiniteLookaheadTracker _lookaheadTracker = new();
     private readonly AdaptiveSearchScheduler _searchScheduler = new();
+    private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
     private MatchStatus _status;
 
     public int LastNotProcessedIndex()
@@ -262,9 +265,11 @@ public class DialogTemplateMatcher(
 
             var matchResult = MatchForDialog(frame, dialogRefers, frameIndex);
             var matchedFrameIndex = frameIndex;
+            FrameMatchContext? backcheckFrame = null;
+            var backcheckFrameIndex = -1;
             if (useAdaptiveSearch && IsStatusMatched(matchResult.Status) &&
                 _searchScheduler.TryGetPrevious(previousFrame, previousFrameIndex,
-                    out var backcheckFrame, out var backcheckFrameIndex))
+                    out backcheckFrame, out backcheckFrameIndex))
             {
                 var previousResult = MatchForDialog(backcheckFrame!, dialogRefers, backcheckFrameIndex);
                 if (IsStatusMatched(previousResult.Status))
@@ -276,6 +281,57 @@ public class DialogTemplateMatcher(
             if (useAdaptiveSearch)
                 _searchScheduler.CompleteSample(frameIndex);
 
+            if (!IsStatusMatched(matchResult.Status) && matchResult.Status != MatchStatus.DialogDropped &&
+                _lookaheadTracker.ShouldProbe(dIndex, frameIndex, _lookaheadTriggerFrames))
+            {
+                var originalStatus = _status;
+                var originalNameTagPosition = _nameTagPosition;
+                var lookaheadEnd = Math.Min(Set.Count, dIndex + MaxLookaheadTargets + 1);
+                var foundIndex = -1;
+                for (var candidateIndex = dIndex + 1; candidateIndex < lookaheadEnd; candidateIndex++)
+                {
+                    if (Set[candidateIndex].Finished) continue;
+                    _status = MatchStatus.DialogNotMatched;
+                    _nameTagPosition = Point.Empty;
+                    var candidateResult = MatchForDialog(frame, Set[candidateIndex], frameIndex);
+                    if (!IsStatusMatched(candidateResult.Status)) continue;
+
+                    foundIndex = candidateIndex;
+                    matchResult = candidateResult;
+                    matchedFrameIndex = frameIndex;
+                    if (backcheckFrame != null)
+                    {
+                        _status = MatchStatus.DialogNotMatched;
+                        _nameTagPosition = Point.Empty;
+                        var previousResult = MatchForDialog(backcheckFrame, Set[candidateIndex], backcheckFrameIndex);
+                        if (IsStatusMatched(previousResult.Status))
+                        {
+                            matchResult = previousResult;
+                            matchedFrameIndex = backcheckFrameIndex;
+                        }
+                    }
+                    break;
+                }
+
+                if (foundIndex >= 0)
+                {
+                    for (var missingIndex = dIndex; missingIndex < foundIndex; missingIndex++)
+                        if (!Set[missingIndex].Finished)
+                            MarkMissing(missingIndex, frameIndex,
+                                $"有限前瞻命中对话索引 {foundIndex}，当前目标疑似未出现在视频中");
+                    dIndex = foundIndex;
+                    dialogRefers = Set[dIndex];
+                    _searchScheduler.Reset();
+                    _lookaheadTracker.Reset();
+                }
+                else
+                {
+                    _status = originalStatus;
+                    _nameTagPosition = originalNameTagPosition;
+                    _lookaheadTracker.Postpone(frameIndex);
+                }
+            }
+
             _status = matchResult.Status;
             firstStatus ??= matchResult.Status;
 
@@ -284,6 +340,7 @@ public class DialogTemplateMatcher(
                 case MatchStatus.DialogDropped:
                     MarkDropped(dIndex);
                     _searchScheduler.Reset();
+                    _lookaheadTracker.Reset();
                     cachePool.NextDialog();
                     continue;
                 case MatchStatus.DialogNotMatched or MatchStatus.NameTagNotMatched:
@@ -292,6 +349,7 @@ public class DialogTemplateMatcher(
                 default:
                     Set[dIndex].Add(matchedFrameIndex, matchResult.Point);
                     MarkSucceeded();
+                    _lookaheadTracker.Reset();
                     return IsStatusMatched(firstStatus.Value);
             }
         }
@@ -342,6 +400,7 @@ public class DialogTemplateMatcher(
             NameTagPosition = _nameTagPosition.IsEmpty
                 ? null
                 : new PointDto(_nameTagPosition.X, _nameTagPosition.Y),
+            Diagnostics = SaveDiagnostics(),
             FrameSets = Set.Select(d => new DialogFrameSetDto
             {
                 Finished = d.Finished,
@@ -360,6 +419,7 @@ public class DialogTemplateMatcher(
         _nameTagPosition = state.NameTagPosition is { } p
             ? new Point(p.X, p.Y)
             : Point.Empty;
+        RestoreDiagnostics(state.Diagnostics);
 
         for (var i = 0; i < state.FrameSets.Count && i < Set.Count; i++)
         {

@@ -23,8 +23,11 @@ public class MarkerTemplateMatcher(
     (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.5)
 ), IDisposable
 {
+    private const int MaxLookaheadTargets = 3;
     private readonly Dictionary<string, GaMat> _templates = new();
+    private readonly FiniteLookaheadTracker _lookaheadTracker = new();
     private readonly AdaptiveSearchScheduler _searchScheduler = new();
+    private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
     private MatchStatus _status;
 
     public void Dispose()
@@ -129,9 +132,11 @@ public class MarkerTemplateMatcher(
 
             var matchResult = MarkerMatch(frame, Set[index].Data.BodyOriginal, frameIndex);
             var matchedFrameIndex = frameIndex;
+            FrameMatchContext? backcheckFrame = null;
+            var backcheckFrameIndex = -1;
             if (useAdaptiveSearch && matchResult.Status == MatchStatus.Matched &&
                 _searchScheduler.TryGetPrevious(previousFrame, previousFrameIndex,
-                    out var backcheckFrame, out var backcheckFrameIndex))
+                    out backcheckFrame, out backcheckFrameIndex))
             {
                 var previousResult = MarkerMatch(backcheckFrame!, Set[index].Data.BodyOriginal,
                     backcheckFrameIndex);
@@ -144,6 +149,53 @@ public class MarkerTemplateMatcher(
             if (useAdaptiveSearch)
                 _searchScheduler.CompleteSample(frameIndex);
 
+            if (matchResult.Status == MatchStatus.NotMatched &&
+                _lookaheadTracker.ShouldProbe(index, frameIndex, _lookaheadTriggerFrames))
+            {
+                var originalStatus = _status;
+                var lookaheadEnd = Math.Min(Set.Count, index + MaxLookaheadTargets + 1);
+                var foundIndex = -1;
+                for (var candidateIndex = index + 1; candidateIndex < lookaheadEnd; candidateIndex++)
+                {
+                    if (Set[candidateIndex].Finished) continue;
+                    _status = MatchStatus.NotMatched;
+                    var candidateResult = MarkerMatch(frame, Set[candidateIndex].Data.BodyOriginal, frameIndex);
+                    if (candidateResult.Status != MatchStatus.Matched) continue;
+
+                    foundIndex = candidateIndex;
+                    matchResult = candidateResult;
+                    matchedFrameIndex = frameIndex;
+                    if (backcheckFrame != null)
+                    {
+                        _status = MatchStatus.NotMatched;
+                        var previousResult = MarkerMatch(backcheckFrame,
+                            Set[candidateIndex].Data.BodyOriginal, backcheckFrameIndex);
+                        if (previousResult.Status == MatchStatus.Matched)
+                        {
+                            matchResult = previousResult;
+                            matchedFrameIndex = backcheckFrameIndex;
+                        }
+                    }
+                    break;
+                }
+
+                if (foundIndex >= 0)
+                {
+                    for (var missingIndex = index; missingIndex < foundIndex; missingIndex++)
+                        if (!Set[missingIndex].Finished)
+                            MarkMissing(missingIndex, frameIndex,
+                                $"有限前瞻命中标记索引 {foundIndex}，当前目标疑似未出现在视频中");
+                    index = foundIndex;
+                    _searchScheduler.Reset();
+                    _lookaheadTracker.Reset();
+                }
+                else
+                {
+                    _status = originalStatus;
+                    _lookaheadTracker.Postpone(frameIndex);
+                }
+            }
+
             _status = matchResult.Status;
 
             switch (matchResult.Status)
@@ -151,6 +203,7 @@ public class MarkerTemplateMatcher(
                 case MatchStatus.Dropped:
                     MarkDropped(index);
                     _searchScheduler.Reset();
+                    _lookaheadTracker.Reset();
                     continue;
                 case MatchStatus.NotMatched:
                     if (TryEnterFallback()) continue;
@@ -159,6 +212,7 @@ public class MarkerTemplateMatcher(
                 default:
                     Set[index].Add(matchedFrameIndex, matchResult.Point);
                     MarkSucceeded();
+                    _lookaheadTracker.Reset();
                     return;
             }
         }
@@ -173,6 +227,7 @@ public class MarkerTemplateMatcher(
             ConsecutiveFailures = cf,
             LastFailedIndex = lfi,
             UseFallbackThreshold = uft,
+            Diagnostics = SaveDiagnostics(),
             FrameSets = Set.Select(m => new MarkerFrameSetDto
             {
                 Finished = m.Finished,
@@ -185,6 +240,7 @@ public class MarkerTemplateMatcher(
     {
         _status = (MatchStatus)state.Status;
         RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold);
+        RestoreDiagnostics(state.Diagnostics);
 
         for (var i = 0; i < state.FrameSets.Count && i < Set.Count; i++)
         {

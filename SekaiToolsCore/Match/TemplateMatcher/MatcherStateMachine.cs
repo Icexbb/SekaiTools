@@ -1,3 +1,4 @@
+using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.FrameSet;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
@@ -20,6 +21,7 @@ public abstract class MatcherStateMachine<T> where T : BaseFrameSet
     }
 
     public List<T> Set { get; }
+    public List<MatcherDiagnostic> Diagnostics { get; } = [];
     protected int FallbackTriggerFrames { get; }
 
     public bool Finished => Set.Count == 0 || Set.TrueForAll(d => d.Finished);
@@ -71,6 +73,14 @@ public abstract class MatcherStateMachine<T> where T : BaseFrameSet
         _useFallbackThreshold = false;
     }
 
+    protected void MarkMissing(int index, int frameIndex, string reason)
+    {
+        Set[index].Finished = true;
+        Diagnostics.Add(new MatcherDiagnostic(typeof(T).Name, index, frameIndex, reason));
+        _consecutiveFailures = 0;
+        _useFallbackThreshold = false;
+    }
+
     protected int NextUnfinishedIndex()
     {
         while (_firstUnfinishedIndex < Set.Count && Set[_firstUnfinishedIndex].Finished)
@@ -94,5 +104,23 @@ public abstract class MatcherStateMachine<T> where T : BaseFrameSet
         _lastFailedIndex = lastFailedIndex;
         _useFallbackThreshold = useFallbackThreshold;
         _firstUnfinishedIndex = 0;
+    }
+
+    protected List<MatcherDiagnosticDto> SaveDiagnostics()
+    {
+        return Diagnostics.Select(d => new MatcherDiagnosticDto
+        {
+            Matcher = d.Matcher,
+            TargetIndex = d.TargetIndex,
+            FrameIndex = d.FrameIndex,
+            Reason = d.Reason
+        }).ToList();
+    }
+
+    protected void RestoreDiagnostics(IEnumerable<MatcherDiagnosticDto> diagnostics)
+    {
+        Diagnostics.Clear();
+        Diagnostics.AddRange(diagnostics.Select(d =>
+            new MatcherDiagnostic(d.Matcher, d.TargetIndex, d.FrameIndex, d.Reason)));
     }
 }

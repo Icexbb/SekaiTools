@@ -10,6 +10,14 @@ public record PointDto(int X, int Y);
 // --- Frame Result DTOs ---
 public record FrameResultDto(int Index, int X, int Y);
 
+public class MatcherDiagnosticDto
+{
+    public string Matcher { get; init; } = "";
+    public int TargetIndex { get; init; }
+    public int FrameIndex { get; init; }
+    public string Reason { get; init; } = "";
+}
+
 // --- FrameSet DTOs ---
 public class DialogFrameSetDto
 {
@@ -42,6 +50,7 @@ public class DialogMatcherStateDto
     public bool UseFallbackThreshold { get; init; }
     public PointDto? NameTagPosition { get; init; }
     public List<DialogFrameSetDto> FrameSets { get; init; } = [];
+    public List<MatcherDiagnosticDto> Diagnostics { get; init; } = [];
 }
 
 public class BannerMatcherStateDto
@@ -51,6 +60,7 @@ public class BannerMatcherStateDto
     public int LastFailedIndex { get; init; } = -1;
     public bool UseFallbackThreshold { get; init; }
     public List<BannerFrameSetDto> FrameSets { get; init; } = [];
+    public List<MatcherDiagnosticDto> Diagnostics { get; init; } = [];
 }
 
 public class MarkerMatcherStateDto
@@ -60,6 +70,7 @@ public class MarkerMatcherStateDto
     public int LastFailedIndex { get; init; } = -1;
     public bool UseFallbackThreshold { get; init; }
     public List<MarkerFrameSetDto> FrameSets { get; init; } = [];
+    public List<MatcherDiagnosticDto> Diagnostics { get; init; } = [];
 }
 
 // --- Top-level Processing State ---
