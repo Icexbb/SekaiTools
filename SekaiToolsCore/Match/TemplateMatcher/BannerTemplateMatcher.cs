@@ -52,13 +52,13 @@ public class BannerTemplateMatcher(
         return trimmed;
     }
 
-    private MatchStatus BannerMatch(Mat img, string text, int frameIndex = -1)
+    private MatchStatus BannerMatch(FrameMatchContext frame, string text, int frameIndex = -1)
     {
         if (string.IsNullOrWhiteSpace(text)) return MatchStatus.NotMatched;
         var sText = TrimContent(text);
         if (string.IsNullOrWhiteSpace(sText)) return MatchStatus.NotMatched;
         using var template = GetTemplate(sText);
-        var match = LocalMatch(img, template);
+        var match = LocalMatch(frame, template);
 
         return _status switch
         {
@@ -67,15 +67,15 @@ public class BannerTemplateMatcher(
             _ => throw new ArgumentOutOfRangeException(nameof(_status), _status, null)
         };
 
-        bool LocalMatch(Mat src, GaMat tmp)
+        bool LocalMatch(FrameMatchContext src, GaMat tmp)
         {
-            var cropArea = UtilFunc.FromCenter(img.Size.Center(),
+            var cropArea = UtilFunc.FromCenter(src.Size.Center(),
                 new Size((int)(tmp.Size.Height * text.Length * 1.5), (int)(tmp.Size.Height * 1.5)));
             cropArea.Limit(new Rectangle(Point.Empty, src.Size));
             if (cropArea.Width < tmp.Size.Width || cropArea.Height < tmp.Size.Height)
                 return false;
-            using var roi = new Mat(src, cropArea);
-            var result = TemplateMatcher.Match(roi, tmp, cachePool, TemplateMatchCachePool.MatchUsage.Banner);
+            var result = TemplateMatcher.Match(src, cropArea, tmp, cachePool,
+                TemplateMatchCachePool.MatchUsage.Banner);
 
             if (frameIndex != -1)
                 Logger.Log(
@@ -86,7 +86,7 @@ public class BannerTemplateMatcher(
         }
     }
 
-    public void Process(Mat frame, int frameIndex)
+    public void Process(FrameMatchContext frame, int frameIndex)
     {
         while (!Finished)
         {

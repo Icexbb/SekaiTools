@@ -301,6 +301,7 @@ public class VideoProcessor : IDisposable
         var frameRate = capture.Get(CapProp.Fps);
         var previewInterval = Math.Max(1, (int)Math.Round(frameRate / 5d));
         var frame = new Mat();
+        using var matchFrame = new FrameMatchContext();
         if (Creator == null) throw new NullReferenceException();
         var frameCount = capture.Get(CapProp.FrameCount);
         var markerIndexInDialog = MarkerIndexOfDialog();
@@ -343,6 +344,7 @@ public class VideoProcessor : IDisposable
 
                 frameIndex = (int)capture.Get(CapProp.PosFrames);
                 Creator.CachePool.SetFrameIndex(frameIndex);
+                matchFrame.Update(frame);
                 var progress = frameCount > 0 ? frameIndex / frameCount : 0;
 
                 // 节流进度回调（200ms）
@@ -356,7 +358,7 @@ public class VideoProcessor : IDisposable
 
                 if (ContentMatcher is { Finished: false })
                 {
-                    ContentMatcher.Process(frame);
+                    ContentMatcher.Process(matchFrame);
                     continue;
                 }
 
@@ -364,7 +366,7 @@ public class VideoProcessor : IDisposable
                 if (DialogMatcher is { Finished: false })
                 {
                     var dialogIndex = DialogMatcher.LastNotProcessedIndex();
-                    var r = DialogMatcher.Process(frame, frameIndex);
+                    var r = DialogMatcher.Process(matchFrame, frameIndex);
                     matchBannerNow = !r;
                     if (DialogMatcher.Set[dialogIndex].Finished)
                     {
@@ -380,7 +382,7 @@ public class VideoProcessor : IDisposable
                 if (BannerMatcher is { Finished: false } && matchBannerNow)
                 {
                     var bannerIndex = BannerMatcher.LastNotProcessedIndex();
-                    BannerMatcher.Process(frame, frameIndex);
+                    BannerMatcher.Process(matchFrame, frameIndex);
                     if (BannerMatcher.Set[bannerIndex].Finished)
                     {
                         Callbacks.OnNewBanner(BannerMatcher.Set[bannerIndex]);
@@ -391,7 +393,7 @@ public class VideoProcessor : IDisposable
                 if (MarkerMatcher is { Finished: false } && MatchMarkerNow())
                 {
                     var markerIndex = MarkerMatcher.LastNotProcessedIndex();
-                    MarkerMatcher.Process(frame, frameIndex);
+                    MarkerMatcher.Process(matchFrame, frameIndex);
                     if (MarkerMatcher.Set[markerIndex].Finished)
                     {
                         Callbacks.OnNewMarker(MarkerMatcher.Set[markerIndex]);

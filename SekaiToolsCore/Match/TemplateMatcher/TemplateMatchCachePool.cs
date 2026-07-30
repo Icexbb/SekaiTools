@@ -1,3 +1,4 @@
+using System.Drawing;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using SekaiToolsCore.Process.Model;
@@ -35,6 +36,7 @@ public sealed class TemplateMatchCachePool
     public bool TryGet(
         MatchUsage usage,
         Mat image,
+        Rectangle region,
         GaMat template,
         TemplateMatchingType matchingType,
         out TemplateMatchResult result)
@@ -42,6 +44,7 @@ public sealed class TemplateMatchCachePool
         var entry = _entries[(int)usage];
         if (entry.FrameIndex == _currentFrameIndex &&
             ReferenceEquals(entry.Image, image) &&
+            entry.Region == region &&
             ReferenceEquals(entry.Template, template) &&
             entry.MatchingType == matchingType)
         {
@@ -56,6 +59,7 @@ public sealed class TemplateMatchCachePool
     public void RegisterResult(
         MatchUsage usage,
         Mat image,
+        Rectangle region,
         GaMat template,
         TemplateMatchingType matchingType,
         TemplateMatchResult result)
@@ -63,6 +67,7 @@ public sealed class TemplateMatchCachePool
         _entries[(int)usage] = new MatchCacheEntry(
             _currentFrameIndex,
             image,
+            region,
             template,
             matchingType,
             result);
@@ -90,6 +95,7 @@ public sealed class TemplateMatchCachePool
     private readonly record struct MatchCacheEntry(
         int FrameIndex,
         Mat? Image,
+        Rectangle Region,
         GaMat? Template,
         TemplateMatchingType MatchingType,
         TemplateMatchResult Result);

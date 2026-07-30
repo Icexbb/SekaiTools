@@ -24,17 +24,16 @@ public class ContentTemplateMatcher(
         Template.Dispose();
     }
 
-    private bool MatchContentStartSign(Mat mat, int frameIndex = -1)
+    private bool MatchContentStartSign(FrameMatchContext frame, int frameIndex = -1)
     {
         var width = Template.Size.Width * 3;
         var height = Template.Size.Height * 2;
-        var roi = new Rectangle(mat.Width - width, 0, width, height);
-        roi.Limit(new Rectangle(Point.Empty, mat.Size));
+        var roi = new Rectangle(frame.Size.Width - width, 0, width, height);
+        roi.Limit(new Rectangle(Point.Empty, frame.Size));
         if (roi.Width < Template.Size.Width || roi.Height < Template.Size.Height)
             return false;
 
-        using var frameCropped = new Mat(mat, roi);
-        var result = TemplateMatcher.Match(frameCropped, Template, cachePool,
+        var result = TemplateMatcher.Match(frame, roi, Template, cachePool,
             TemplateMatchCachePool.MatchUsage.ContentStartSign);
 
         if (frameIndex != -1)
@@ -46,9 +45,9 @@ public class ContentTemplateMatcher(
         return result.IsMatch(Threshold);
     }
 
-    public void Process(Mat mat)
+    public void Process(FrameMatchContext frame)
     {
-        if (MatchContentStartSign(mat)) Finished = true;
+        if (MatchContentStartSign(frame)) Finished = true;
     }
 
     public void ForceFinish()

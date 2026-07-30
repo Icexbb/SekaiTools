@@ -23,17 +23,24 @@ public class TemplateMatchCachePoolTests
 
         pool.SetFrameIndex(10);
         otherPool.SetFrameIndex(10);
-        pool.RegisterResult(TemplateMatchCachePool.MatchUsage.Banner, image, template1,
-            TemplateMatchingType.CcoeffNormed, result);
+        pool.RegisterResult(TemplateMatchCachePool.MatchUsage.Banner, image,
+            new Rectangle(0, 0, 16, 16), template1, TemplateMatchingType.CcoeffNormed, result);
 
-        Assert.True(pool.TryGet(TemplateMatchCachePool.MatchUsage.Banner, image, template1,
+        Assert.True(pool.TryGet(TemplateMatchCachePool.MatchUsage.Banner, image,
+            new Rectangle(0, 0, 16, 16), template1,
             TemplateMatchingType.CcoeffNormed, out var cached));
         Assert.Equal(result, cached);
-        Assert.False(pool.TryGet(TemplateMatchCachePool.MatchUsage.Banner, image, template2,
+        Assert.False(pool.TryGet(TemplateMatchCachePool.MatchUsage.Banner, image,
+            new Rectangle(0, 0, 16, 16), template2,
             TemplateMatchingType.CcoeffNormed, out _));
-        Assert.False(pool.TryGet(TemplateMatchCachePool.MatchUsage.Banner, image, template1,
+        Assert.False(pool.TryGet(TemplateMatchCachePool.MatchUsage.Banner, image,
+            new Rectangle(0, 0, 16, 16), template1,
             TemplateMatchingType.CcorrNormed, out _));
-        Assert.False(otherPool.TryGet(TemplateMatchCachePool.MatchUsage.Banner, image, template1,
+        Assert.False(pool.TryGet(TemplateMatchCachePool.MatchUsage.Banner, image,
+            new Rectangle(1, 0, 15, 16), template1,
+            TemplateMatchingType.CcoeffNormed, out _));
+        Assert.False(otherPool.TryGet(TemplateMatchCachePool.MatchUsage.Banner, image,
+            new Rectangle(0, 0, 16, 16), template1,
             TemplateMatchingType.CcoeffNormed, out _));
     }
 

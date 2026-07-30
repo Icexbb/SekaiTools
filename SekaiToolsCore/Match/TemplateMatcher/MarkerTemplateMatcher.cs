@@ -52,7 +52,7 @@ public class MarkerTemplateMatcher(
         return _templates[content];
     }
 
-    private MatchResult MarkerMatch(Mat img, string text, int frameIndex = -1)
+    private MatchResult MarkerMatch(FrameMatchContext frame, string text, int frameIndex = -1)
     {
         if (string.IsNullOrWhiteSpace(text))
             return new MatchResult(Point.Empty, MatchStatus.NotMatched);
@@ -60,7 +60,7 @@ public class MarkerTemplateMatcher(
         var templateAll = GetTemplate(text);
         var sText = text[^1].ToString();
         var template = GetTemplate(sText);
-        var matchedPoint = LocalMatch(img, template, TemplateMatchingType.CcoeffNormed);
+        var matchedPoint = LocalMatch(frame, template, TemplateMatchingType.CcoeffNormed);
 
         return _status switch
         {
@@ -71,7 +71,7 @@ public class MarkerTemplateMatcher(
             _ => throw new ArgumentOutOfRangeException(nameof(_status), _status, null)
         };
 
-        Point LocalMatch(Mat src, GaMat tmp, TemplateMatchingType matchingType)
+        Point LocalMatch(FrameMatchContext src, GaMat tmp, TemplateMatchingType matchingType)
         {
             var cropArea = new Rectangle(Point.Empty,
                 new Size((int)(templateAll.Size.Width * 1.5), (int)(tmp.Size.Height * 3.0)));
@@ -79,7 +79,7 @@ public class MarkerTemplateMatcher(
                 return Point.Empty;
 
             if (_status == MatchStatus.Matched)
-                cropArea.Width = Math.Min(cropArea.Width * 2, src.Width - cropArea.X);
+                cropArea.Width = Math.Min(cropArea.Width * 2, src.Size.Width - cropArea.X);
 
             cropArea.Limit(new Rectangle(Point.Empty, src.Size));
             if (cropArea.IsEmpty)
@@ -88,9 +88,8 @@ public class MarkerTemplateMatcher(
             if (cropArea.Width < tmp.Size.Width || cropArea.Height < tmp.Size.Height)
                 return Point.Empty;
 
-            using var imgCropped = new Mat(src, cropArea);
             var matchResult =
-                TemplateMatcher.Match(imgCropped, tmp, cachePool,
+                TemplateMatcher.Match(src, cropArea, tmp, cachePool,
                     TemplateMatchCachePool.MatchUsage.Marker, matchingType);
 
             if (frameIndex != -1)
@@ -108,7 +107,7 @@ public class MarkerTemplateMatcher(
         }
     }
 
-    public void Process(Mat frame, int frameIndex)
+    public void Process(FrameMatchContext frame, int frameIndex)
     {
         while (!Finished)
         {
