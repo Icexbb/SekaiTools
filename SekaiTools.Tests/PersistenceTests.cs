@@ -45,6 +45,7 @@ public class PersistenceTests
     {
         var state = new ProcessingState
         {
+            Timecodes = [0, 40, 90],
             Banner = new BannerMatcherStateDto
             {
                 Diagnostics =
@@ -63,6 +64,7 @@ public class PersistenceTests
         var restored = JsonSerializer.Deserialize<ProcessingState>(JsonSerializer.Serialize(state));
 
         var diagnostic = Assert.Single(restored!.Banner!.Diagnostics);
+        Assert.Equal([0, 40, 90], restored.Timecodes);
         Assert.Equal(2, diagnostic.TargetIndex);
         Assert.Equal(300, diagnostic.FrameIndex);
         Assert.Equal("有限前瞻命中后续横幅", diagnostic.Reason);

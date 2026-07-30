@@ -45,11 +45,11 @@ public class SmpteTime(int hour, int minute, int second, int frame, string separ
 public class FrameRate
 {
     private const long DefaultDenominator = 1000000000L;
-    private const long Last = 0;
     private readonly long _denominator;
     private readonly bool _drop;
     private readonly long _numerator;
     private readonly List<int> _timecodes = [];
+    private long Last => (long)_timecodes[^1] * _numerator;
 
     public FrameRate(double fps)
     {
@@ -101,6 +101,49 @@ public class FrameRate
     public double Fps()
     {
         return _numerator / (double)_denominator;
+    }
+
+    public bool RecordTimecode(int frameIndex, double milliseconds)
+    {
+        if (frameIndex < 0 || !double.IsFinite(milliseconds) || milliseconds < 0)
+            return false;
+        if (frameIndex > 0 && milliseconds <= 0)
+            return false;
+
+        var value = (int)Math.Round(milliseconds);
+        if (frameIndex == 0)
+        {
+            _timecodes[0] = Math.Max(0, value);
+            return true;
+        }
+
+        while (_timecodes.Count < frameIndex)
+            _timecodes.Add(TimeAtFrame(_timecodes.Count).Milliseconds);
+
+        var minimum = _timecodes[frameIndex - 1] + 1;
+        value = Math.Max(value, minimum);
+        if (frameIndex == _timecodes.Count)
+            _timecodes.Add(value);
+        else
+            _timecodes[frameIndex] = value;
+        return true;
+    }
+
+    public IReadOnlyList<int> ExportTimecodes()
+    {
+        return _timecodes.ToList();
+    }
+
+    public void RestoreTimecodes(IEnumerable<int> timecodes)
+    {
+        var restored = timecodes.ToList();
+        if (restored.Count == 0)
+            return;
+        if (restored[0] < 0 || restored.Zip(restored.Skip(1), (a, b) => b > a).Any(valid => !valid))
+            throw new InvalidDataException("视频时间码必须非负且严格递增");
+
+        _timecodes.Clear();
+        _timecodes.AddRange(restored);
     }
 
     // private void SetFromTimecodes(IEnumerable<int> timecodes)

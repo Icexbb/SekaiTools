@@ -82,6 +82,7 @@ public class ProcessingState
     public string VideoFilePath { get; init; } = "";
     public string ScriptFilePath { get; init; } = "";
     public string TranslateFilePath { get; init; } = "";
+    public List<int> Timecodes { get; init; } = [];
     public DialogMatcherStateDto? Dialog { get; init; }
     public BannerMatcherStateDto? Banner { get; init; }
     public MarkerMatcherStateDto? Marker { get; init; }

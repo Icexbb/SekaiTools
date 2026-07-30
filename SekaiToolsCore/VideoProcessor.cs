@@ -203,6 +203,7 @@ public class VideoProcessor : IDisposable
             VideoFilePath = _videoPath,
             ScriptFilePath = _scriptPath,
             TranslateFilePath = _translatePath,
+            Timecodes = Creator?.FrameRate.ExportTimecodes().ToList() ?? [],
             Dialog = DialogMatcher?.SaveState(),
             Banner = BannerMatcher?.SaveState(),
             Marker = MarkerMatcher?.SaveState()
@@ -211,6 +212,9 @@ public class VideoProcessor : IDisposable
 
     public void ApplyState(ProcessingState state)
     {
+        if (state.Timecodes.Count > 0)
+            Creator?.FrameRate.RestoreTimecodes(state.Timecodes);
+
         if (Capture != null && Capture.Ptr != IntPtr.Zero)
             Capture.Set(CapProp.PosFrames, state.FrameIndex);
 
@@ -392,6 +396,7 @@ public class VideoProcessor : IDisposable
                 readRetryCount = 0;
 
                 frameIndex = (int)capture.Get(CapProp.PosFrames);
+                Creator.FrameRate.RecordTimecode(Math.Max(0, frameIndex - 1), capture.Get(CapProp.PosMsec));
                 Creator.CachePool.SetFrameIndex(frameIndex);
                 var preprocessStart = Stopwatch.GetTimestamp();
                 var matchFrame = useFirstMatchFrame ? matchFrameA : matchFrameB;

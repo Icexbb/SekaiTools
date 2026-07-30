@@ -19,6 +19,7 @@ public class TemplateMatcherCreator : IDisposable
     private Config Config { get; }
     private VideoInfo VInfo { get; }
     public SekaiStory Story { get; }
+    public FrameRate FrameRate => VInfo.Fps;
     private TemplateManager Manager { get; }
     public TemplateMatchCachePool CachePool { get; }
 
