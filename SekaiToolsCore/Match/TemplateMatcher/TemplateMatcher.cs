@@ -13,6 +13,7 @@ public static class TemplateMatcher
 {
     private const int SearchDownscaleDivisor = 2;
     private const int MinTemplateDimAfterScale = 8;
+    private const int RefinementMargin = 4;
     private static readonly Inter SearchInterpolation = Inter.Area;
 
     public static TemplateMatchResult Match(FrameMatchContext frame, Rectangle region, GaMat tmp,
@@ -55,12 +56,40 @@ public static class TemplateMatcher
         Point minLoc = new(), maxLoc = new();
         CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
 
-        maxLoc = new Point(
+        var coarseMaxLoc = new Point(
             maxLoc.X * SearchDownscaleDivisor + SearchDownscaleDivisor / 2,
             maxLoc.Y * SearchDownscaleDivisor + SearchDownscaleDivisor / 2);
-        minLoc = new Point(
+        var coarseMinLoc = new Point(
             minLoc.X * SearchDownscaleDivisor + SearchDownscaleDivisor / 2,
             minLoc.Y * SearchDownscaleDivisor + SearchDownscaleDivisor / 2);
+
+        var refinementRegion = new Rectangle(
+            coarseMaxLoc.X - RefinementMargin,
+            coarseMaxLoc.Y - RefinementMargin,
+            tmp.Size.Width + RefinementMargin * 2,
+            tmp.Size.Height + RefinementMargin * 2);
+        refinementRegion = Rectangle.Intersect(refinementRegion, new Rectangle(Point.Empty, region.Size));
+
+        if (refinementRegion.Width >= tmp.Size.Width && refinementRegion.Height >= tmp.Size.Height)
+        {
+            var frameRefinementRegion = new Rectangle(
+                region.X + refinementRegion.X,
+                region.Y + refinementRegion.Y,
+                refinementRegion.Width,
+                refinementRegion.Height);
+            using var refinementImage = frame.CreateGrayRoi(frameRefinementRegion);
+            using var refinementResult = new Mat();
+            CvInvoke.MatchTemplate(refinementImage, tmp.Gray, refinementResult, matchingType, tmp.Alpha);
+            refinementResult.MatRemoveErrorInf();
+            CvInvoke.MinMaxLoc(refinementResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
+            maxLoc += new Size(refinementRegion.Location);
+            minLoc += new Size(refinementRegion.Location);
+        }
+        else
+        {
+            maxLoc = coarseMaxLoc;
+            minLoc = coarseMinLoc;
+        }
 
         using var image = frame.CreateGrayRoi(region);
         ShowImg(image, tmp, maxVal, maxLoc, memberName);
