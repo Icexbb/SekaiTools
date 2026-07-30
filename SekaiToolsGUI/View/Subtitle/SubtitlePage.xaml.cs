@@ -16,6 +16,7 @@ using SekaiToolsCore;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
+using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Utils;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.General;
@@ -207,7 +208,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             });
 
             VideoProcessor.ApplyState(state);
-            VideoProcessor.ReplayFinishedCallbacks(
+            VideoProcessor.ReplayExportableCallbacks(
                 LinePanel_AddDialogLine,
                 LinePanel_AddBannerLine,
                 LinePanel_AddMarkerLine);
@@ -216,12 +217,19 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             ViewModel.BannerTotal = VideoProcessor.ContentLength.Banner;
             ViewModel.MarkerTotal = VideoProcessor.ContentLength.Marker;
             ViewModel.HasNotStarted = false;
-            ViewModel.IsFinished = true;
-            ProgressBarProgression.Value = 1;
+            var resultReport = VideoProcessor.ResultReport;
+            var isPartial = resultReport.Outcome != ProcessingOutcome.Complete;
+            ViewModel.IsFinished = !isPartial;
+            ViewModel.IsPartial = isPartial;
+            var frameCount = state.Metadata?.VideoInfo.FrameCount ?? 0;
+            ProgressBarProgression.Value = isPartial && frameCount > 0
+                ? Math.Clamp((double)state.FrameIndex / frameCount, 0, 1)
+                : 1;
             ProgressBarProgression.Maximum = 1;
-            TextBlockProgression.Text = $"{1:P}";
-            SetVideoProcessWindowTitle("已完成");
-            SetTaskbarProgressState(TaskbarItemProgressState.Normal, 1);
+            TextBlockProgression.Text = $"{ProgressBarProgression.Value:P}";
+            SetVideoProcessWindowTitle(isPartial ? "部分完成" : "已完成");
+            SetTaskbarProgressState(isPartial ? TaskbarItemProgressState.Paused : TaskbarItemProgressState.Normal,
+                ProgressBarProgression.Value);
         }
         catch (Exception ex)
         {
@@ -229,6 +237,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             ViewModel.IsCanceling = false;
             ViewModel.IsFinished = false;
             ViewModel.IsCanceled = false;
+            ViewModel.IsPartial = false;
             ViewModel.IsFailed = true;
             ViewModel.HasNotStarted = false;
             SetVideoProcessWindowTitle("处理失败");
@@ -684,6 +693,7 @@ public partial class SubtitlePage
                             ViewModel.IsRunning = false;
                             ViewModel.IsCanceling = false;
                             var stopReason = VideoProcessor?.StopReason;
+                            var resultReport = VideoProcessor?.ResultReport;
                             if (stopReason == ProcessStopReason.Canceled)
                             {
                                 ViewModel.IsCanceled = true;
@@ -706,6 +716,17 @@ public partial class SubtitlePage
                                 Logger.Log("处理成功完成");
                                 SnackService.Show("成功", "运行结束", ControlAppearance.Success,
                                     new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
+                            }
+                            else if (resultReport is { CanExport: true })
+                            {
+                                ViewModel.IsPartial = true;
+                                SetVideoProcessWindowTitle("部分完成");
+                                SetTaskbarProgressState(TaskbarItemProgressState.Paused,
+                                    ProgressBarProgression.Value);
+                                Logger.Log($"处理部分完成: {resultReport.Summary}", LogLevel.Warning);
+                                SnackService.Show("警告", $"处理未完整结束，已识别 {resultReport.RecognizedTotal}/{resultReport.Total} 项，可输出当前结果进行人工复核",
+                                    ControlAppearance.Caution,
+                                    new SymbolIcon(SymbolRegular.Warning24), new TimeSpan(0, 0, 5));
                             }
                             else
                             {
@@ -739,6 +760,7 @@ public partial class SubtitlePage
                             ViewModel.IsFinished = false;
                             ViewModel.IsCanceled = false;
                             ViewModel.IsFailed = false;
+                            ViewModel.IsPartial = false;
                             ViewModel.IsCanceling = false;
                             ViewModel.IsRunning = true;
                             ViewModel.HasNotStarted = false;
@@ -808,6 +830,7 @@ public partial class SubtitlePage
             ViewModel.IsCanceling = false;
             ViewModel.IsFinished = false;
             ViewModel.IsCanceled = false;
+            ViewModel.IsPartial = false;
             ViewModel.IsFailed = true;
             ViewModel.HasNotStarted = false;
             SetVideoProcessWindowTitle("处理失败");

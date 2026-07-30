@@ -137,6 +137,13 @@ public class VideoProcessor : IDisposable
             .Concat(MarkerMatcher?.Diagnostics ?? [])
             .ToList() ?? [];
 
+    public ProcessingResultReport ResultReport => ProcessingResultReport.Create(
+        StopReason,
+        DialogMatcher?.Set ?? [],
+        BannerMatcher?.Set ?? [],
+        MarkerMatcher?.Set ?? [],
+        Diagnostics);
+
     public void Dispose()
     {
         if (_disposed) return;
@@ -157,6 +164,12 @@ public class VideoProcessor : IDisposable
         List<MarkerBaseFrameSet> markerFrameSets)
     {
         if (Creator == null) throw new NullReferenceException();
+        var exportableDialogs = dialogFrameSets.Where(item => !item.IsEmpty()).ToList();
+        var exportableBanners = bannerFrameSets.Where(item => !item.IsEmpty()).ToList();
+        var exportableMarkers = markerFrameSets.Where(item => !item.IsEmpty()).ToList();
+        if (exportableDialogs.Count + exportableBanners.Count + exportableMarkers.Count == 0)
+            throw new InvalidOperationException("没有可导出的识别结果");
+
         var maker = Creator.SubtitleMaker();
         var exportInfo = new SubtitleExportInfo(
             "SekaiTools 自动轴机",
@@ -164,8 +177,9 @@ public class VideoProcessor : IDisposable
             GetTaskStatus(),
             Path.GetFileName(_videoPath),
             Path.GetFileName(_scriptPath),
-            Path.GetFileName(_translatePath));
-        return maker.Make(dialogFrameSets, bannerFrameSets, markerFrameSets, exportInfo);
+            Path.GetFileName(_translatePath),
+            ResultReport);
+        return maker.Make(exportableDialogs, exportableBanners, exportableMarkers, exportInfo);
     }
 
     private string GetTaskStatus()
@@ -204,6 +218,7 @@ public class VideoProcessor : IDisposable
         {
             Version = ProcessingStateCompatibility.CurrentVersion,
             Metadata = _stateMetadata,
+            StopReason = StopReason,
             FrameIndex = GetCurrentFrameIndex(),
             ContentFinished = ContentMatcher?.Finished ?? false,
             VideoFilePath = _videoPath,
@@ -223,6 +238,8 @@ public class VideoProcessor : IDisposable
             throw new InvalidDataException($"无法恢复处理进度: {compatibility.Message}");
         if (compatibility.Status == ProcessingStateCompatibilityStatus.MigratedLegacy)
             Logger.Log(compatibility.Message, ExtLogLevel.Warning);
+
+        StopReason = state.StopReason;
 
         if (state.Timecodes.Count > 0)
             Creator?.FrameRate.RestoreTimecodes(state.Timecodes);
@@ -258,6 +275,22 @@ public class VideoProcessor : IDisposable
         if (MarkerMatcher != null)
             foreach (var m in MarkerMatcher.Set.Where(m => m.Finished))
                 onMarker(m);
+    }
+
+    public void ReplayExportableCallbacks(
+        Action<DialogBaseFrameSet> onDialog,
+        Action<BannerBaseFrameSet> onBanner,
+        Action<MarkerBaseFrameSet> onMarker)
+    {
+        if (DialogMatcher != null)
+            foreach (var item in DialogMatcher.Set.Where(item => !item.IsEmpty()))
+                onDialog(item);
+        if (BannerMatcher != null)
+            foreach (var item in BannerMatcher.Set.Where(item => !item.IsEmpty()))
+                onBanner(item);
+        if (MarkerMatcher != null)
+            foreach (var item in MarkerMatcher.Set.Where(item => !item.IsEmpty()))
+                onMarker(item);
     }
 
     private int GetCurrentFrameIndex()
@@ -526,6 +559,16 @@ public class VideoProcessor : IDisposable
 
         TeardownPreview();
 
+        if (StopReason != ProcessStopReason.Completed)
+        {
+            if (DialogMatcher.Set.FirstOrDefault(item => !item.Finished && !item.IsEmpty()) is { } dialog)
+                Callbacks.OnNewDialog(dialog);
+            if (BannerMatcher.Set.FirstOrDefault(item => !item.Finished && !item.IsEmpty()) is { } banner)
+                Callbacks.OnNewBanner(banner);
+            if (MarkerMatcher.Set.FirstOrDefault(item => !item.Finished && !item.IsEmpty()) is { } marker)
+                Callbacks.OnNewMarker(marker);
+        }
+
         var finalState = CaptureState();
         if (_saveKey != null)
             QueueProgressSave(_saveKey, finalState);
@@ -542,7 +585,7 @@ public class VideoProcessor : IDisposable
             Logger.Log($"匹配诊断: {diagnostic.Matcher}[{diagnostic.TargetIndex}] " +
                        $"帧={diagnostic.FrameIndex}, {diagnostic.Reason}", ExtLogLevel.Warning);
 
-        if (StopReason == ProcessStopReason.Completed)
+        if (ResultReport.CanExport)
             HistoryStore.Add(finalState);
 
         return;

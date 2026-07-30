@@ -78,6 +78,7 @@ public class ProcessingState
 {
     public string Version { get; set; } = ProcessingStateCompatibility.CurrentVersion;
     public ProcessingStateMetadata? Metadata { get; set; }
+    public ProcessStopReason StopReason { get; init; }
     public int FrameIndex { get; init; }
     public bool ContentFinished { get; init; }
     public string VideoFilePath { get; init; } = "";
