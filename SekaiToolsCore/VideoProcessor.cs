@@ -46,6 +46,7 @@ public enum ProcessStopReason
     None, // 未停止或初始状态
     Completed, // 正常完成
     Canceled, // 用户取消
+    EndOfStream, // 正常到达视频末尾，但仍有未完成目标
     ReadFailed, // 读帧失败
     ExceptionThreshold, // 异常计数超过阈值
     CaptureError, // 捕获设备错误
@@ -55,6 +56,7 @@ public enum ProcessStopReason
 public class VideoProcessor : IDisposable
 {
     private const int ExceptionThreshold = 10;
+    private const int MaxReadRetries = 2;
     private const long CallbackThrottleMs = 200;
     private readonly object _progressSaveLock = new();
     private readonly ProcessingPerformanceMetrics _performanceMetrics = new();
@@ -169,6 +171,7 @@ public class VideoProcessor : IDisposable
             ProcessStopReason.None => "未开始",
             ProcessStopReason.Completed => "已完成",
             ProcessStopReason.Canceled => "已取消",
+            ProcessStopReason.EndOfStream => "视频已结束，存在未完成识别目标",
             ProcessStopReason.ReadFailed => "视频读帧失败",
             ProcessStopReason.ExceptionThreshold => "异常过多，自动中止",
             ProcessStopReason.CaptureError => "视频捕获设备出错",
@@ -336,6 +339,7 @@ public class VideoProcessor : IDisposable
 
         var avgDuration = 0d;
         var frameIndex = 0;
+        var readRetryCount = 0;
         while (true)
         {
             var tic = Environment.TickCount;
@@ -359,9 +363,33 @@ public class VideoProcessor : IDisposable
                 _performanceMetrics.Record(ProcessingStage.Decode, Stopwatch.GetElapsedTime(decodeStart));
                 if (!readSucceeded)
                 {
-                    StopReason = ProcessStopReason.ReadFailed;
+                    var action = VideoReadFailureClassifier.Classify(
+                        capture.IsOpened,
+                        capture.Get(CapProp.PosFrames),
+                        frameCount,
+                        readRetryCount,
+                        MaxReadRetries);
+                    switch (action)
+                    {
+                        case VideoReadFailureAction.Retry:
+                            readRetryCount++;
+                            Logger.Log($"视频读帧暂时失败，正在重试 ({readRetryCount}/{MaxReadRetries})",
+                                ExtLogLevel.Warning);
+                            continue;
+                        case VideoReadFailureAction.EndOfStream:
+                            StopReason = ProcessStopReason.EndOfStream;
+                            break;
+                        case VideoReadFailureAction.CaptureError:
+                            StopReason = ProcessStopReason.CaptureError;
+                            break;
+                        case VideoReadFailureAction.ReadFailed:
+                        default:
+                            StopReason = ProcessStopReason.ReadFailed;
+                            break;
+                    }
                     break;
                 }
+                readRetryCount = 0;
 
                 frameIndex = (int)capture.Get(CapProp.PosFrames);
                 Creator.CachePool.SetFrameIndex(frameIndex);
