@@ -97,7 +97,8 @@ public class MarkerTemplateMatcher(
                     $"{nameof(DialogTemplateMatcher)} Frame {frameIndex} Match Marker {LastNotProcessedIndex()} Result: {matchResult.MaxVal}",
                     ExtLogLevel.Debug);
 
-            var effectiveThreshold = EffectiveThreshold(config.MatchingThreshold.MarkerNormal);
+            var effectiveThreshold = EffectiveThreshold(config.MatchingThreshold.MarkerNormal,
+                _status == MatchStatus.Matched);
             var matched = matchResult.IsMatch(effectiveThreshold);
 
             if (!matched) return Point.Empty;

@@ -25,29 +25,44 @@ public static class TemplateMatcher
         if (cachePool.TryGet(usage, frame.Gray, region, tmp, matchingType, out var cachedResult))
             return cachedResult;
 
-        var res = MatchNoCache(frame, region, tmp, matchingType, memberName);
+        var res = new TemplateMatchResult(double.NegativeInfinity, double.PositiveInfinity,
+            Point.Empty, Point.Empty);
+        foreach (var scale in cachePool.GetCandidateScales(usage))
+        {
+            var candidate = MatchNoCache(frame, region, tmp, scale, matchingType, memberName);
+            if (candidate.MaxVal > res.MaxVal)
+                res = candidate;
+        }
+
+        cachePool.ObserveScale(usage, res.Scale, res.MaxVal);
         cachePool.RegisterResult(usage, frame.Gray, region, tmp, matchingType, res);
 
         return res;
     }
 
     private static TemplateMatchResult MatchNoCache(FrameMatchContext frame, Rectangle region, GaMat tmp,
+        double scale,
         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
         string memberName = "")
     {
-        if (tmp.Size.Width / SearchDownscaleDivisor >= MinTemplateDimAfterScale
-            && tmp.Size.Height / SearchDownscaleDivisor >= MinTemplateDimAfterScale)
-            return MatchNoCacheScaled(frame, region, tmp, matchingType, memberName);
+        var templateLayer = tmp.GetScaledLayer(scale, 1);
+        if (templateLayer.Size.Width > region.Width || templateLayer.Size.Height > region.Height)
+            return new TemplateMatchResult(double.NegativeInfinity, double.PositiveInfinity,
+                Point.Empty, Point.Empty) { Scale = scale };
+
+        if (templateLayer.Size.Width / SearchDownscaleDivisor >= MinTemplateDimAfterScale
+            && templateLayer.Size.Height / SearchDownscaleDivisor >= MinTemplateDimAfterScale)
+            return MatchNoCacheScaled(frame, region, tmp, templateLayer, scale, matchingType, memberName);
 
         using var image = frame.CreateGrayRoi(region);
-        return MatchNoCacheFull(image, tmp, matchingType, memberName);
+        return MatchNoCacheFull(image, templateLayer, scale, matchingType, memberName);
     }
 
     private static TemplateMatchResult MatchNoCacheScaled(FrameMatchContext frame, Rectangle region, GaMat tmp,
-        TemplateMatchingType matchingType, string memberName)
+        GaMatLayer fullTemplateLayer, double scale, TemplateMatchingType matchingType, string memberName)
     {
         var imgSmall = frame.GetScaledGrayRoi(region, SearchDownscaleDivisor, SearchInterpolation);
-        var templateLayer = tmp.GetScaledLayer(SearchDownscaleDivisor);
+        var templateLayer = tmp.GetScaledLayer(scale, SearchDownscaleDivisor);
 
         using var matchResult = new Mat();
         CvInvoke.MatchTemplate(imgSmall, templateLayer.Gray, matchResult, matchingType, templateLayer.Alpha);
@@ -66,11 +81,12 @@ public static class TemplateMatcher
         var refinementRegion = new Rectangle(
             coarseMaxLoc.X - RefinementMargin,
             coarseMaxLoc.Y - RefinementMargin,
-            tmp.Size.Width + RefinementMargin * 2,
-            tmp.Size.Height + RefinementMargin * 2);
+            fullTemplateLayer.Size.Width + RefinementMargin * 2,
+            fullTemplateLayer.Size.Height + RefinementMargin * 2);
         refinementRegion = Rectangle.Intersect(refinementRegion, new Rectangle(Point.Empty, region.Size));
 
-        if (refinementRegion.Width >= tmp.Size.Width && refinementRegion.Height >= tmp.Size.Height)
+        if (refinementRegion.Width >= fullTemplateLayer.Size.Width &&
+            refinementRegion.Height >= fullTemplateLayer.Size.Height)
         {
             var frameRefinementRegion = new Rectangle(
                 region.X + refinementRegion.X,
@@ -79,7 +95,8 @@ public static class TemplateMatcher
                 refinementRegion.Height);
             using var refinementImage = frame.CreateGrayRoi(frameRefinementRegion);
             using var refinementResult = new Mat();
-            CvInvoke.MatchTemplate(refinementImage, tmp.Gray, refinementResult, matchingType, tmp.Alpha);
+            CvInvoke.MatchTemplate(refinementImage, fullTemplateLayer.Gray, refinementResult, matchingType,
+                fullTemplateLayer.Alpha);
             refinementResult.MatRemoveErrorInf();
             CvInvoke.MinMaxLoc(refinementResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
             maxLoc += new Size(refinementRegion.Location);
@@ -92,25 +109,25 @@ public static class TemplateMatcher
         }
 
         using var image = frame.CreateGrayRoi(region);
-        ShowImg(image, tmp, maxVal, maxLoc, memberName);
-        return new TemplateMatchResult(maxVal, minVal, maxLoc, minLoc);
+        ShowImg(image, fullTemplateLayer, maxVal, maxLoc, memberName);
+        return new TemplateMatchResult(maxVal, minVal, maxLoc, minLoc) { Scale = scale };
     }
 
-    private static TemplateMatchResult MatchNoCacheFull(Mat img, GaMat tmp,
+    private static TemplateMatchResult MatchNoCacheFull(Mat img, GaMatLayer templateLayer, double scale,
         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
         string memberName = "")
     {
         using var matchResult = new Mat();
-        CvInvoke.MatchTemplate(img, tmp.Gray, matchResult, matchingType, tmp.Alpha);
+        CvInvoke.MatchTemplate(img, templateLayer.Gray, matchResult, matchingType, templateLayer.Alpha);
         matchResult.MatRemoveErrorInf();
         double maxVal = 0, minVal = 0;
         Point minLoc = new(), maxLoc = new();
         CvInvoke.MinMaxLoc(matchResult, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
-        ShowImg(img, tmp, maxVal, maxLoc, memberName);
-        return new TemplateMatchResult(maxVal, minVal, maxLoc, minLoc);
+        ShowImg(img, templateLayer, maxVal, maxLoc, memberName);
+        return new TemplateMatchResult(maxVal, minVal, maxLoc, minLoc) { Scale = scale };
     }
 
-    private static void ShowImg(Mat img, GaMat tmp, double maxVal, Point maxLoc, string memberName)
+    private static void ShowImg(Mat img, GaMatLayer tmp, double maxVal, Point maxLoc, string memberName)
     {
         var areas = Environment.GetEnvironmentVariable("DebugShowImg") ?? "";
         if (!areas.Contains(memberName))

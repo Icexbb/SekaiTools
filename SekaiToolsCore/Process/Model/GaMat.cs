@@ -6,7 +6,7 @@ namespace SekaiToolsCore.Process.Model;
 
 public class GaMat : IDisposable // Gray and Alpha Mat
 {
-    private readonly Dictionary<int, GaMatLayer> _scaledLayers = new();
+    private readonly Dictionary<GaMatScale, GaMatLayer> _scaledLayers = new();
     private readonly object _scaledLayersLock = new();
     public readonly Mat Alpha;
     public readonly Mat Gray;
@@ -42,16 +42,26 @@ public class GaMat : IDisposable // Gray and Alpha Mat
 
     public GaMatLayer GetScaledLayer(int divisor)
     {
-        if (divisor <= 1) return new GaMatLayer(Gray, Alpha);
+        return GetScaledLayer(1, divisor);
+    }
+
+    public GaMatLayer GetScaledLayer(double scale, int divisor)
+    {
+        if (scale <= 0) throw new ArgumentOutOfRangeException(nameof(scale));
+        if (divisor <= 0) throw new ArgumentOutOfRangeException(nameof(divisor));
+        if (Math.Abs(scale - 1) < double.Epsilon && divisor == 1)
+            return new GaMatLayer(Gray, Alpha);
+
+        var key = new GaMatScale(scale, divisor);
 
         lock (_scaledLayersLock)
         {
-            if (_scaledLayers.TryGetValue(divisor, out var cached))
+            if (_scaledLayers.TryGetValue(key, out var cached))
                 return cached;
 
             var size = new Size(
-                Math.Max(1, Gray.Width / divisor),
-                Math.Max(1, Gray.Height / divisor));
+                Math.Max(1, (int)Math.Round(Gray.Width * scale / divisor)),
+                Math.Max(1, (int)Math.Round(Gray.Height * scale / divisor)));
             var gray = new Mat();
             var alpha = new Mat();
             try
@@ -59,7 +69,7 @@ public class GaMat : IDisposable // Gray and Alpha Mat
                 CvInvoke.Resize(Gray, gray, size, interpolation: Inter.Linear);
                 CvInvoke.Resize(Alpha, alpha, size, interpolation: Inter.Nearest);
                 var layer = new GaMatLayer(gray, alpha);
-                _scaledLayers.Add(divisor, layer);
+                _scaledLayers.Add(key, layer);
                 return layer;
             }
             catch
@@ -86,6 +96,8 @@ public class GaMat : IDisposable // Gray and Alpha Mat
         Alpha.Dispose();
     }
 }
+
+internal readonly record struct GaMatScale(double Scale, int Divisor);
 
 public readonly record struct GaMatLayer(Mat Gray, Mat Alpha)
 {

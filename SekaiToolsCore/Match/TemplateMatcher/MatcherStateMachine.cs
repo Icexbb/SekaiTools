@@ -6,6 +6,7 @@ public abstract class MatcherStateMachine<T> where T : BaseFrameSet
 {
     protected const double FallbackRatio = 0.7;
     protected const double AbsMinThreshold = 0.40;
+    protected const double TrackingThresholdRatio = 0.94;
 
     private int _consecutiveFailures;
     private int _firstUnfinishedIndex;
@@ -23,11 +24,14 @@ public abstract class MatcherStateMachine<T> where T : BaseFrameSet
 
     public bool Finished => Set.Count == 0 || Set.TrueForAll(d => d.Finished);
 
-    protected double EffectiveThreshold(double baseThreshold)
+    protected double EffectiveThreshold(double baseThreshold, bool isTracking = false)
     {
-        return _useFallbackThreshold
+        var threshold = _useFallbackThreshold
             ? Math.Max(baseThreshold * FallbackRatio, AbsMinThreshold)
             : baseThreshold;
+        return isTracking
+            ? Math.Max(threshold * TrackingThresholdRatio, AbsMinThreshold)
+            : threshold;
     }
 
     protected void ResetForNewTarget(int index)

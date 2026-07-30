@@ -25,6 +25,10 @@ public sealed class TemplateMatchCachePool
 
     private readonly MatchCacheEntry[] _entries =
         new MatchCacheEntry[(int)MatchUsage.Misc + 1];
+    private readonly TemplateScaleCalibration[] _scaleCalibrations =
+        Enumerable.Range(0, (int)MatchUsage.Misc + 1)
+            .Select(_ => new TemplateScaleCalibration())
+            .ToArray();
 
     private int _currentFrameIndex = -1;
 
@@ -73,6 +77,16 @@ public sealed class TemplateMatchCachePool
             result);
     }
 
+    internal IReadOnlyList<double> GetCandidateScales(MatchUsage usage)
+    {
+        return _scaleCalibrations[(int)usage].CandidateScales;
+    }
+
+    internal void ObserveScale(MatchUsage usage, double scale, double score)
+    {
+        _scaleCalibrations[(int)usage].Observe(scale, score);
+    }
+
     public void NextDialog()
     {
         Reset(MatchUsage.DialogNameTag);
@@ -84,6 +98,8 @@ public sealed class TemplateMatchCachePool
     public void ResetAll()
     {
         Array.Clear(_entries);
+        foreach (var calibration in _scaleCalibrations)
+            calibration.Reset();
         _currentFrameIndex = -1;
     }
 
