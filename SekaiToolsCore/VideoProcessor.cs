@@ -131,7 +131,6 @@ public class VideoProcessor : IDisposable
         ContentMatcher?.Dispose();
         MarkerMatcher?.Dispose();
         Creator?.Dispose();
-        TemplateMatchCachePool.ResetAll();
         _disposed = true;
     }
 
@@ -343,7 +342,7 @@ public class VideoProcessor : IDisposable
                 }
 
                 frameIndex = (int)capture.Get(CapProp.PosFrames);
-                TemplateMatchCachePool.SetFrameIndex(frameIndex);
+                Creator.CachePool.SetFrameIndex(frameIndex);
                 var progress = frameCount > 0 ? frameIndex / frameCount : 0;
 
                 // 节流进度回调（200ms）

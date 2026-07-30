@@ -13,36 +13,39 @@ public class TemplateMatcherCreator : IDisposable
         Story = SekaiStory.FromFile(Config.ScriptFilePath, Config.TranslateFilePath);
 
         Manager = new TemplateManager(VInfo.Resolution);
+        CachePool = new TemplateMatchCachePool();
     }
 
     private Config Config { get; }
     private VideoInfo VInfo { get; }
     public SekaiStory Story { get; }
     private TemplateManager Manager { get; }
+    public TemplateMatchCachePool CachePool { get; }
 
     public void Dispose()
     {
         Manager.Dispose();
+        CachePool.ResetAll();
     }
 
     public DialogTemplateMatcher DialogMatcher()
     {
-        return new DialogTemplateMatcher(VInfo, Story, Manager, Config);
+        return new DialogTemplateMatcher(VInfo, Story, Manager, CachePool, Config);
     }
 
     public ContentTemplateMatcher ContentMatcher()
     {
-        return new ContentTemplateMatcher(Manager, Config);
+        return new ContentTemplateMatcher(Manager, CachePool, Config);
     }
 
     public BannerTemplateMatcher BannerMatcher()
     {
-        return new BannerTemplateMatcher(VInfo, Story, Manager, Config);
+        return new BannerTemplateMatcher(VInfo, Story, Manager, CachePool, Config);
     }
 
     public MarkerTemplateMatcher MarkerMatcher()
     {
-        return new MarkerTemplateMatcher(VInfo, Story, Manager, Config);
+        return new MarkerTemplateMatcher(VInfo, Story, Manager, CachePool, Config);
     }
 
     public SubtitleMaker SubtitleMaker()

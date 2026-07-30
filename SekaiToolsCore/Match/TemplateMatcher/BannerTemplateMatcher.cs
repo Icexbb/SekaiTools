@@ -15,6 +15,7 @@ public class BannerTemplateMatcher(
     VideoInfo videoInfo,
     SekaiStory storyData,
     TemplateManager templateManager,
+    TemplateMatchCachePool cachePool,
     Config config
 ) : MatcherStateMachine<BannerBaseFrameSet>(
     storyData.Banners().Select(d => new BannerBaseFrameSet(d, videoInfo.Fps)).ToList(),
@@ -69,7 +70,7 @@ public class BannerTemplateMatcher(
             var cropArea = UtilFunc.FromCenter(img.Size.Center(),
                 new Size((int)(tmp.Size.Height * text.Length * 1.5), (int)(tmp.Size.Height * 1.5)));
             using var roi = new Mat(src, cropArea);
-            var result = TemplateMatcher.Match(roi, tmp, TemplateMatchCachePool.MatchUsage.Banner);
+            var result = TemplateMatcher.Match(roi, tmp, cachePool, TemplateMatchCachePool.MatchUsage.Banner);
 
             if (frameIndex != -1)
                 Logger.Log(

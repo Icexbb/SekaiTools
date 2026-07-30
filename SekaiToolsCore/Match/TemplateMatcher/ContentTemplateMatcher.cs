@@ -7,7 +7,10 @@ using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
-public class ContentTemplateMatcher(TemplateManager templateManager, Config config) : IDisposable
+public class ContentTemplateMatcher(
+    TemplateManager templateManager,
+    TemplateMatchCachePool cachePool,
+    Config config) : IDisposable
 {
     private GaMat Template { get; } = new(templateManager.GetMenuSign(), false);
 
@@ -27,7 +30,8 @@ public class ContentTemplateMatcher(TemplateManager templateManager, Config conf
         var roi = new Rectangle(mat.Width - width, 0, width, height);
 
         using var frameCropped = new Mat(mat, roi);
-        var result = TemplateMatcher.Match(frameCropped, Template, TemplateMatchCachePool.MatchUsage.ContentStartSign);
+        var result = TemplateMatcher.Match(frameCropped, Template, cachePool,
+            TemplateMatchCachePool.MatchUsage.ContentStartSign);
 
         if (frameIndex != -1)
             Logger.Log(

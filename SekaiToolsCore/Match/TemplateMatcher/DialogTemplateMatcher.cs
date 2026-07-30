@@ -15,6 +15,7 @@ public class DialogTemplateMatcher(
     VideoInfo videoInfo,
     Story storyData,
     TemplateManager templateManager,
+    TemplateMatchCachePool cachePool,
     Config config
 ) : MatcherStateMachine<DialogBaseFrameSet>(
     storyData.Dialogs().Select(d => new DialogBaseFrameSet(d, videoInfo.Fps)).ToList(),
@@ -50,7 +51,8 @@ public class DialogTemplateMatcher(
         {
             var roi = LocalGetCropArea();
             using var imgCropped = new Mat(src, roi);
-            var result = TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.DialogNameTag);
+            var result = TemplateMatcher.Match(imgCropped, tmp, cachePool,
+                TemplateMatchCachePool.MatchUsage.DialogNameTag);
 
             if (frameIndex != -1)
                 Logger.Log(
@@ -190,7 +192,7 @@ public class DialogTemplateMatcher(
             dialogStartPosition.Limit(new Rectangle(Point.Empty, videoInfo.Resolution));
 
             using var imgCropped = new Mat(src, dialogStartPosition);
-            var result = TemplateMatcher.Match(imgCropped, tmp, usage);
+            var result = TemplateMatcher.Match(imgCropped, tmp, cachePool, usage);
 
             if (frameIndex != -1)
                 Logger.Log(
@@ -261,7 +263,7 @@ public class DialogTemplateMatcher(
             {
                 case MatchStatus.DialogDropped:
                     MarkDropped(dIndex);
-                    TemplateMatchCachePool.NextDialog();
+                    cachePool.NextDialog();
                     continue;
                 case MatchStatus.DialogNotMatched or MatchStatus.NameTagNotMatched:
                     if (TryEnterFallback()) continue;

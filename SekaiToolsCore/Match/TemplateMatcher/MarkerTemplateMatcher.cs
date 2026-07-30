@@ -15,6 +15,7 @@ public class MarkerTemplateMatcher(
     VideoInfo videoInfo,
     SekaiStory storyData,
     TemplateManager templateManager,
+    TemplateMatchCachePool cachePool,
     Config config
 ) : MatcherStateMachine<MarkerBaseFrameSet>(
     storyData.Markers().Select(d => new MarkerBaseFrameSet(d, videoInfo.Fps)).ToList(),
@@ -79,7 +80,8 @@ public class MarkerTemplateMatcher(
 
             using var imgCropped = new Mat(src, cropArea);
             var matchResult =
-                TemplateMatcher.Match(imgCropped, tmp, TemplateMatchCachePool.MatchUsage.Marker, matchingType);
+                TemplateMatcher.Match(imgCropped, tmp, cachePool,
+                    TemplateMatchCachePool.MatchUsage.Marker, matchingType);
 
             if (frameIndex != -1)
                 Logger.Log(

@@ -1,9 +1,14 @@
-﻿using Emgu.CV;
+using Emgu.CV;
 using Emgu.CV.CvEnum;
+using SekaiToolsCore.Process.Model;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
-public class TemplateMatchCachePool
+/// <summary>
+///     单个视频处理任务内的模板匹配结果缓存。
+///     只复用同一帧、同一图像对象、同一模板对象和同一匹配算法的结果。
+/// </summary>
+public sealed class TemplateMatchCachePool
 {
     public enum MatchUsage
     {
@@ -17,93 +22,75 @@ public class TemplateMatchCachePool
         Misc = 7
     }
 
-    private static List<TemplateMatchCachePool>? _globalPool;
-    private static readonly object GlobalPoolLock = new();
-    private static int _currentFrameIndex = -1;
-    private int _cachedFrameIndex = -1;
-    public Mat diffMat;
+    private readonly MatchCacheEntry[] _entries =
+        new MatchCacheEntry[(int)MatchUsage.Misc + 1];
 
-    public Mat? prevImg;
-    public TemplateMatchResult prevResult;
+    private int _currentFrameIndex = -1;
 
-    public TemplateMatchCachePool()
-    {
-        diffMat = new Mat();
-    }
-
-    private static List<TemplateMatchCachePool> GlobalPool
-    {
-        get
-        {
-            if (_globalPool != null) return _globalPool;
-            lock (GlobalPoolLock)
-            {
-                if (_globalPool != null) return _globalPool;
-                const int len = (int)MatchUsage.Misc + 1;
-                _globalPool = new List<TemplateMatchCachePool>(len);
-
-                for (var i = 0; i < len; i++) _globalPool.Add(new TemplateMatchCachePool());
-
-                return _globalPool;
-            }
-        }
-    }
-
-    public static void SetFrameIndex(int frameIndex)
+    public void SetFrameIndex(int frameIndex)
     {
         _currentFrameIndex = frameIndex;
     }
 
-    public static TemplateMatchCachePool GetPool(MatchUsage usage)
+    public bool TryGet(
+        MatchUsage usage,
+        Mat image,
+        GaMat template,
+        TemplateMatchingType matchingType,
+        out TemplateMatchResult result)
     {
-        return GlobalPool[(int)usage];
+        var entry = _entries[(int)usage];
+        if (entry.FrameIndex == _currentFrameIndex &&
+            ReferenceEquals(entry.Image, image) &&
+            ReferenceEquals(entry.Template, template) &&
+            entry.MatchingType == matchingType)
+        {
+            result = entry.Result;
+            return true;
+        }
+
+        result = default;
+        return false;
     }
 
-    public static void NextDialog()
+    public void RegisterResult(
+        MatchUsage usage,
+        Mat image,
+        GaMat template,
+        TemplateMatchingType matchingType,
+        TemplateMatchResult result)
     {
-        GlobalPool[(int)MatchUsage.DialogNameTag].Reset();
-        GlobalPool[(int)MatchUsage.DialogContent1].Reset();
-        GlobalPool[(int)MatchUsage.DialogContent2].Reset();
-        GlobalPool[(int)MatchUsage.DialogContent3].Reset();
+        _entries[(int)usage] = new MatchCacheEntry(
+            _currentFrameIndex,
+            image,
+            template,
+            matchingType,
+            result);
     }
 
-    public static void ResetAll()
+    public void NextDialog()
     {
-        foreach (var pool in GlobalPool)
-            pool.Reset();
+        Reset(MatchUsage.DialogNameTag);
+        Reset(MatchUsage.DialogContent1);
+        Reset(MatchUsage.DialogContent2);
+        Reset(MatchUsage.DialogContent3);
+    }
+
+    public void ResetAll()
+    {
+        Array.Clear(_entries);
         _currentFrameIndex = -1;
     }
 
-    public void RegisterResult(Mat img, TemplateMatchResult result)
+    private void Reset(MatchUsage usage)
     {
-        prevImg?.Dispose();
-        prevImg = img.Clone();
-        prevResult = result;
-        _cachedFrameIndex = _currentFrameIndex;
+        _entries[(int)usage] = default;
     }
 
-    public bool Query(Mat img)
-    {
-        if (_currentFrameIndex == _cachedFrameIndex)
-            return true;
-
-        if (img == null || prevImg == null) return false;
-        if (img.IsEmpty && prevImg.IsEmpty) return true;
-        if (img.Cols != prevImg.Cols || img.Rows != prevImg.Rows || img.Dims != prevImg.Dims) return false;
-
-        CvInvoke.Compare(img, prevImg, diffMat, CmpType.NotEqual);
-        var diffPx = CvInvoke.CountNonZero(diffMat);
-
-        if (diffPx > 0) return false;
-
-        _cachedFrameIndex = _currentFrameIndex;
-        return true;
-    }
-
-    private void Reset()
-    {
-        prevImg?.Dispose();
-        prevImg = null;
-        _cachedFrameIndex = -1;
-    }
+    private readonly record struct MatchCacheEntry(
+        int FrameIndex,
+        Mat? Image,
+        GaMat? Template,
+        TemplateMatchingType MatchingType,
+        TemplateMatchResult Result);
 }

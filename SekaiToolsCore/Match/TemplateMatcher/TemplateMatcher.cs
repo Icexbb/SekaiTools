@@ -15,7 +15,7 @@ public static class TemplateMatcher
     private const int MinTemplateDimAfterScale = 8;
     private static readonly Inter SearchInterpolation = Inter.Area;
 
-    public static TemplateMatchResult Match(Mat imgOriginal, GaMat tmp,
+    public static TemplateMatchResult Match(Mat imgOriginal, GaMat tmp, TemplateMatchCachePool cachePool,
         TemplateMatchCachePool.MatchUsage usage = TemplateMatchCachePool.MatchUsage.Misc,
         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
         [CallerMemberName] string memberName = "")
@@ -32,15 +32,14 @@ public static class TemplateMatcher
             img = imgOriginal;
         }
 
-        var pool = TemplateMatchCachePool.GetPool(usage);
-        if (pool.Query(img))
+        if (cachePool.TryGet(usage, img, tmp, matchingType, out var cachedResult))
         {
             if (tempImg) img.Dispose();
-            return pool.prevResult;
+            return cachedResult;
         }
 
         var res = MatchNoCache(img, tmp, matchingType, memberName);
-        pool.RegisterResult(img, res);
+        cachePool.RegisterResult(usage, img, tmp, matchingType, res);
         if (tempImg) img.Dispose();
 
         return res;
