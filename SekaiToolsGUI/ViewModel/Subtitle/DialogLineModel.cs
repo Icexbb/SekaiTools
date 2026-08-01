@@ -54,6 +54,8 @@ public class DialogLineModel : ViewModelBase
     public int EndFrame => Set.EndIndex();
     public string StartTime => FrameRate.TimeAtFrame(StartFrame).GetAssFormatted();
     public string EndTime => FrameRate.TimeAtFrame(EndFrame).GetAssFormatted();
+    public string EventDuration =>
+        $"{Math.Max(0, FrameRate.TimeAtFrame(EndFrame).Milliseconds - FrameRate.TimeAtFrame(StartFrame).Milliseconds) / 1000d:0.0}s";
 
     public bool IsDialogJitter => Set.IsJitter;
 
