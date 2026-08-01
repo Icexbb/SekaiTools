@@ -8,252 +8,319 @@
              xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
              mc:Ignorable="d"
              d:Background="White"
+             d:DesignWidth="800"
              d:DataContext="{d:DesignInstance subtitle:SubtitlePageModel, IsDesignTimeCreatable=True}">
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" MinWidth="200" />
-            <ColumnDefinition Width="Auto" MaxWidth="10" />
-            <ColumnDefinition Width="*" MinWidth="300" />
-        </Grid.ColumnDefinitions>
-        <Grid Grid.Column="0"
-              Height="{Binding RelativeSource={RelativeSource Mode=FindAncestor,AncestorType=ui:CardControl}, Path=Height}">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="80" />
-                <RowDefinition Height="*" MinHeight="190" />
-            </Grid.RowDefinitions>
-            <StackPanel Grid.Row="0" Margin="5,10,0,5" Width="350"
-                        AllowDrop="True" DragEnter="UIElement_OnDragEnter" Drop="UIElement_OnDrop">
-                <ui:Card Height="70" VerticalAlignment="Stretch"
-                         Margin="0,0,0,5" HorizontalAlignment="Stretch">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <ui:TextBlock
-                                Margin="0"
-                                FontTypography="BodyStrong"
-                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                Text="视频文件"
-                                TextWrapping="NoWrap" />
-                            <ui:TextBlock
-                                Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
-                                Appearance="Secondary"
-                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                Text="{Binding VideoFilePath}"
-                                Name="TextBlockVideoFilePath"
-                                TextWrapping="NoWrap" />
-                        </StackPanel>
-                        <ui:Button Grid.Column="1" HorizontalAlignment="Right"
-                                   IsEnabled="{Binding HasNotStarted}"
-                                   Content="浏览" Click="VideoFileBrowser_OnClick" />
-                    </Grid>
-
-                </ui:Card>
-                <ui:Card Height="70" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <ui:TextBlock
-                                Margin="0"
-                                FontTypography="BodyStrong"
-                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                Text="剧本文件"
-                                TextWrapping="NoWrap" />
-                            <ui:TextBlock
-                                Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
-                                Appearance="Secondary"
-                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                Text="{Binding ScriptFilePath}"
-                                Name="TextBlockScriptFilePath"
-                                TextWrapping="NoWrap" />
-                        </StackPanel>
-                        <ui:Button Grid.Column="1" HorizontalAlignment="Right"
-                                   IsEnabled="{Binding HasNotStarted}"
-                                   Content="浏览" Click="ScriptFileBrowser_OnClick" />
-                    </Grid>
-                </ui:Card>
-                <ui:Card Height="70" VerticalAlignment="Stretch" Margin="0,5,0,0"
-                         HorizontalAlignment="Stretch">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <ui:TextBlock
-                                Margin="0"
-                                FontTypography="BodyStrong"
-                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                Text="翻译文件"
-                                TextWrapping="NoWrap" />
-                            <ui:TextBlock
-                                Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
-                                Appearance="Secondary"
-                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                Text="{Binding TranslateFilePath}"
-                                Name="TextBlockTranslationFilePath"
-                                TextWrapping="NoWrap" />
-                        </StackPanel>
-                        <ui:Button Grid.Column="1" HorizontalAlignment="Right"
-                                   IsEnabled="{Binding HasNotStarted}"
-                                   Content="浏览" Click="TranslationFileBrowser_OnClick" />
-                    </Grid>
-                </ui:Card>
-            </StackPanel>
-            <ui:Card Grid.Row="1" Margin="5,0,0,5"
-                     HorizontalAlignment="Stretch" VerticalAlignment="Center">
+    <Grid Margin="10">
+        <!--任务前-->
+        <StackPanel
+            MinWidth="400"
+            VerticalAlignment="Center" HorizontalAlignment="Center"
+            Visibility="{calcBinding:Binding HasNotStarted,FalseToVisibility=Collapsed}"
+            AllowDrop="True" DragEnter="UIElement_OnDragEnter" Drop="UIElement_OnDrop">
+            <ui:Card Height="70" VerticalAlignment="Stretch"
+                     Margin="0,0,0,5" HorizontalAlignment="Stretch">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" HorizontalAlignment="Left" Orientation="Horizontal">
-                        <TextBlock
-                            Text="{Binding RunningStatus}"
-                            VerticalAlignment="Center" />
-                        <TextBlock VerticalAlignment="Center" Name="TextBlockEta" Margin="5,0" MinWidth="50" />
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <ui:TextBlock
+                            Margin="0"
+                            FontTypography="BodyStrong"
+                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Text="视频文件"
+                            TextWrapping="NoWrap" />
+                        <ui:TextBlock
+                            Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
+                            Appearance="Secondary"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="{Binding VideoFilePath}"
+                            Name="TextBlockVideoFilePath"
+                            TextWrapping="NoWrap" />
                     </StackPanel>
-
-                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
-                        <ui:Button Click="ResetButton_OnClick"
-                                   Margin="5,0" Visibility="{calcBinding:Binding '!HasNotStarted and CanReset'}"
-                                   HorizontalAlignment="Center" Content="重置" />
-                        <ui:Button Click="StopButton_OnClick" Margin="5,0"
-                                   Visibility="{calcBinding:Binding '!HasNotStarted and !CanReset'}"
-                                   IsEnabled="{Binding CanStop}"
-                                   HorizontalAlignment="Center" Content="停止" />
-                        <ui:Button Click="StartButton_OnClick"
-                                   Margin="5,0" IsEnabled="{Binding HasNotStarted}"
-                                   HorizontalAlignment="Center" Content="开始" />
-
-                    </StackPanel>
+                    <ui:Button Grid.Column="1" HorizontalAlignment="Right"
+                               IsEnabled="{Binding HasNotStarted}"
+                               Content="浏览" Click="VideoFileBrowser_OnClick" />
                 </Grid>
             </ui:Card>
-            <ui:Card Grid.Row="2"
-                     Margin="5,0,0,10"
-                     Width="350" Padding="14,6"
-                     VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
-                     VerticalContentAlignment="Bottom">
-                <StackPanel>
-                    <ui:Image MaxHeight="180" MaxWidth="320" VerticalContentAlignment="Stretch"
-                              HorizontalContentAlignment="Stretch" MouseDoubleClick="Control_OnMouseDoubleClick"
-                              Visibility="{calcBinding:Binding ShowPreview,FalseToVisibility=Collapsed}"
-                              ToolTip="双击隐藏预览"
-                              Source="{Binding FramePreviewImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" />
-                    <Button VerticalAlignment="Center" HorizontalAlignment="Center" Click="ShowPreviewButton_OnClick"
-                            Visibility="{calcBinding:Binding !ShowPreview,FalseToVisibility=Collapsed}">
-                        显示预览
-                    </Button>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Name="TextBlockFps" Margin="5" />
-                        <ProgressBar Grid.Column="1" Name="ProgressBarProgression" Height="8"
-                                     Margin="5" />
-                        <TextBlock Grid.Column="2" Name="TextBlockProgression" Margin="5" />
-                    </Grid>
-                    <Grid HorizontalAlignment="Stretch"
-                          Visibility="{calcBinding:Binding !HasNotStarted,FalseToVisibility=Collapsed}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" TextAlignment="Center">
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="{}对话 {0}/{1}">
-                                    <Binding Path="DialogCurrent" Mode="OneWay" />
-                                    <Binding Path="DialogTotal" Mode="OneWay" />
-                                </MultiBinding>
-                            </TextBlock.Text>
-                        </TextBlock>
-                        <TextBlock Grid.Column="1" TextAlignment="Center">
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="{}横幅 {0}/{1}">
-                                    <Binding Path="BannerCurrent" Mode="OneWay" />
-                                    <Binding Path="BannerTotal" Mode="OneWay" />
-                                </MultiBinding>
-                            </TextBlock.Text>
-                        </TextBlock>
-                        <TextBlock Grid.Column="2" TextAlignment="Center">
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="{}标签 {0}/{1}">
-                                    <Binding Path="MarkerCurrent" Mode="OneWay" />
-                                    <Binding Path="MarkerTotal" Mode="OneWay" />
-                                </MultiBinding>
-                            </TextBlock.Text>
-                        </TextBlock>
-                    </Grid>
-                </StackPanel>
+            <ui:Card Height="70" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <ui:TextBlock
+                            Margin="0"
+                            FontTypography="BodyStrong"
+                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Text="剧本文件"
+                            TextWrapping="NoWrap" />
+                        <ui:TextBlock
+                            Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
+                            Appearance="Secondary"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="{Binding ScriptFilePath}"
+                            Name="TextBlockScriptFilePath"
+                            TextWrapping="NoWrap" />
+                    </StackPanel>
+                    <ui:Button Grid.Column="1" HorizontalAlignment="Right"
+                               IsEnabled="{Binding HasNotStarted}"
+                               Content="浏览" Click="ScriptFileBrowser_OnClick" />
+                </Grid>
             </ui:Card>
-        </Grid>
-        <GridSplitter Grid.Column="1" />
-        <Grid Grid.Column="2" VerticalAlignment="Stretch" Margin="10">
+            <ui:Card Height="70" VerticalAlignment="Stretch" Margin="0,5,0,5"
+                     HorizontalAlignment="Stretch">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <ui:TextBlock
+                            Margin="0"
+                            FontTypography="BodyStrong"
+                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Text="翻译文件"
+                            TextWrapping="NoWrap" />
+                        <ui:TextBlock
+                            Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
+                            Appearance="Secondary"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="{Binding TranslateFilePath}"
+                            Name="TextBlockTranslationFilePath"
+                            TextWrapping="NoWrap" />
+                    </StackPanel>
+                    <ui:Button Grid.Column="1" HorizontalAlignment="Right"
+                               IsEnabled="{Binding HasNotStarted}"
+                               Content="浏览" Click="TranslationFileBrowser_OnClick" />
+                </Grid>
+            </ui:Card>
+            <Grid Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="100" />
+                </Grid.ColumnDefinitions>
+                <ui:Button Grid.Column="0" Click="StartButton_OnClick"
+                           Margin="0,0,10,0" IsEnabled="{Binding HasNotStarted}"
+                           HorizontalAlignment="Stretch" Appearance="Primary" Content="开始" />
+
+                <ui:Button Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                           Content="历史记录" Click="HistoryButton_OnClick"
+                           IsEnabled="{Binding HasNotStarted}" />
+
+            </Grid>
+        </StackPanel>
+        <!--任务过程-->
+        <Grid
+            Visibility="{calcBinding:Binding !HasNotStarted,FalseToVisibility=Collapsed}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-
-            <ui:Card Grid.Row="0" Padding="5" Margin="0,0,0,5">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition />
-                        <RowDefinition />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition />
-                        <ColumnDefinition />
-                    </Grid.ColumnDefinitions>
-                    <ui:ToggleSwitch Grid.Row="0" Grid.Column="0" Margin="5" IsChecked="{Binding ShowDialog}"
-                                     Click="FilterSwitch_OnClick">
-                        显示对话
-                    </ui:ToggleSwitch>
-                    <ui:ToggleSwitch Grid.Row="0" Grid.Column="1" Margin="5" IsChecked="{Binding ShowTooLongOnly}"
-                                     Click="FilterSwitch_OnClick"
-                                     OnContent="仅显示过长行" OffContent="显示所有行"
-                                     Visibility="{calcBinding:Binding ShowDialog,FalseToVisibility=Collapsed}" />
-
-                    <ui:ToggleSwitch Grid.Row="1" Grid.Column="0" Margin="5" IsChecked="{Binding ShowBanner}"
-                                     Click="FilterSwitch_OnClick">
-                        显示横幅
-                    </ui:ToggleSwitch>
-                    <ui:ToggleSwitch Grid.Row="1" Grid.Column="1" Margin="5" IsChecked="{Binding ShowMarker}"
-                                     Click="FilterSwitch_OnClick">
-                        显示标签
-                    </ui:ToggleSwitch>
-                </Grid>
-            </ui:Card>
-            <ui:Card Grid.Row="1" MinWidth="300" VerticalAlignment="Stretch"
-                     VerticalContentAlignment="Stretch" Padding="0">
-                <ui:PassiveScrollViewer
-                    Name="LineViewer" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
-                    MaxHeight="{Binding RelativeSource= {RelativeSource Mode=FindAncestor, AncestorType=ui:CardControl}, Path=ActualHeight}">
-                    <StackPanel Name="LinePanel" Margin="5,5,5,15" />
-                </ui:PassiveScrollViewer>
-            </ui:Card>
-            <Grid Grid.Row="2" Margin="0,5,0,0">
+            <!--任务控制-->
+            <Grid Grid.Row="0" Margin="0,0,0,5">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <ui:Button Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"
-                           Content="输出" Margin="0,0,0,0" Click="OutputButton_OnClick"
-                           IsEnabled="{Binding Path=CanOutput}" />
-                <ui:Button Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center"
-                           Content="历史记录" Margin="5,0,0,0" Click="HistoryButton_OnClick"
-                           IsEnabled="{Binding HasNotStarted}" />
-            </Grid>
+                <!--任务状态-->
+                <Grid Grid.Column="0" Width="350" VerticalAlignment="Top">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <!--任务素材显示-->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <ui:CardAction Grid.Column="0" Margin="0,0,5,0" Click="VideoFileBtn_OnCLick">
+                            <StackPanel>
+                                <ui:SymbolIcon Symbol="Video32" />
+                                <ui:TextBlock
+                                    ToolTip="{Binding VideoFilePath}"
+                                    Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
+                                    Appearance="Secondary"
+                                    Text="{Binding VideoFileName}" />
+                            </StackPanel>
+                        </ui:CardAction>
+                        <ui:CardAction Grid.Column="1" Margin="5,0,5,0" Click="ScriptFileBrowser_OnClick">
+                            <StackPanel>
+                                <ui:SymbolIcon Symbol="Script16" />
+                                <ui:TextBlock
+                                    ToolTip="{Binding ScriptFilePath}"
+                                    Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
+                                    Appearance="Secondary"
+                                    Text="{Binding ScriptFileName}" />
+                            </StackPanel>
+                        </ui:CardAction>
+                        <ui:CardAction Grid.Column="2" Margin="5,0,0,0" Click="TranslateFileBtn_OnCLick">
+                            <StackPanel>
+                                <ui:SymbolIcon Symbol="Translate24" />
+                                <ui:TextBlock
+                                    ToolTip="{Binding TranslateFilePath}"
+                                    Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
+                                    Appearance="Secondary"
+                                    Text="{Binding TranslateFileName}" />
+                            </StackPanel>
+                        </ui:CardAction>
+                    </Grid>
+                    <!--任务状态控制-->
+                    <ui:Card Grid.Row="1" Margin="0,5,0,0">
+                        <StackPanel>
+                            <!--状态控制-->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" HorizontalAlignment="Left" Orientation="Horizontal">
+                                    <TextBlock
+                                        Text="{Binding RunningStatus}"
+                                        VerticalAlignment="Center" />
+                                    <TextBlock VerticalAlignment="Center" Name="TextBlockEta" Margin="5,0"
+                                               MinWidth="50" />
+                                </StackPanel>
 
+                                <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
+                                    <ui:Button Click="StopButton_OnClick" Margin="5,0"
+                                               IsEnabled="{Binding CanStop}"
+                                               HorizontalAlignment="Center" Content="终止任务" />
+                                </StackPanel>
+                            </Grid>
+                            <!--状态监控-->
+                            <StackPanel
+                                Visibility="{calcBinding:Binding !HasNotStarted,FalseToVisibility=Collapsed}"
+                                Margin="0,5,0,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Name="TextBlockFps" Margin="5" />
+                                    <ProgressBar Grid.Column="1" Name="ProgressBarProgression" Height="8"
+                                                 Margin="5" />
+                                    <TextBlock Grid.Column="2" Name="TextBlockProgression" Margin="5" />
+                                </Grid>
+                                <Grid HorizontalAlignment="Stretch"
+                                      Visibility="{calcBinding:Binding !HasNotStarted,FalseToVisibility=Collapsed}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" TextAlignment="Center">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}对话 {0}/{1}">
+                                                <Binding Path="DialogCurrent" Mode="OneWay" />
+                                                <Binding Path="DialogTotal" Mode="OneWay" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="1" TextAlignment="Center">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}横幅 {0}/{1}">
+                                                <Binding Path="BannerCurrent" Mode="OneWay" />
+                                                <Binding Path="BannerTotal" Mode="OneWay" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="2" TextAlignment="Center">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}标签 {0}/{1}">
+                                                <Binding Path="MarkerCurrent" Mode="OneWay" />
+                                                <Binding Path="MarkerTotal" Mode="OneWay" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </Grid>
+                            </StackPanel>
+                            <Grid Margin="0,5,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <ui:Button
+                                    Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                                    Click="OutputButton_OnClick"
+                                    IsEnabled="{Binding Path=CanOutput}"
+                                    Margin="0,0,5,0" Content="输出" Appearance="Primary" />
+                                <ui:Button
+                                    Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                                    Click="ResetButton_OnClick"
+                                    IsEnabled="{Binding CanReset}"
+                                    Margin="5,0,0,0" Content="重置" />
+                            </Grid>
+
+                        </StackPanel>
+                    </ui:Card>
+                </Grid>
+                <!--视频处理预览-->
+                <ui:Card Grid.Column="1"
+                         Margin="5,0,0,0"
+                         Padding="5,5"
+                         Height="{Binding RelativeSource= {RelativeSource Mode=FindAncestor, AncestorType=Grid}, Path=ActualHeight}"
+                         VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                         VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                    <ui:Image VerticalContentAlignment="Stretch"
+                              HorizontalContentAlignment="Stretch"
+                              Source="{Binding FramePreviewImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" />
+                </ui:Card>
+            </Grid>
+            <!--事件列表-->
+            <Grid Grid.Row="1" VerticalAlignment="Stretch" MinHeight="200">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <!--事件筛选按钮-->
+                <ui:Card Grid.Column="0" Padding="5" Margin="0,0,5,0"
+                         VerticalAlignment="Stretch"
+                         VerticalContentAlignment="Stretch">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Top">
+                            <ui:Button Click="DialogFilterBtn_OnClick" Margin="0"
+                                       Appearance="{Binding ShowDialog,Converter={StaticResource BoolToAppearance}}">
+                                对话
+                            </ui:Button>
+                            <ui:Button Click="BannerFilterBtn_OnClick" Margin="0,5"
+                                       Appearance="{Binding ShowBanner,Converter={StaticResource BoolToAppearance}}">
+                                横幅
+                            </ui:Button>
+                            <ui:Button Click="MarkerFilterBtn_OnClick" Margin="0"
+                                       Appearance="{Binding ShowMarker,Converter={StaticResource BoolToAppearance}}">
+                                标签
+                            </ui:Button>
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                            <ui:Button Click="BackToTopBtn_OnClick">
+                                <ui:SymbolIcon Symbol="ArrowUp28"></ui:SymbolIcon>
+                            </ui:Button>
+                        </StackPanel>
+                    </Grid>
+
+                </ui:Card>
+                <!--事件列表-->
+                <ui:Card Grid.Column="1" MinWidth="300" VerticalAlignment="Stretch"
+                         VerticalContentAlignment="Stretch" Padding="0">
+                    <ui:PassiveScrollViewer
+                        Name="LineViewer" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
+                        MaxHeight="{Binding RelativeSource= {RelativeSource Mode=FindAncestor, AncestorType=ui:CardControl}, Path=ActualHeight}">
+                        <StackPanel Name="LinePanel" Margin="5,5,5,15" />
+                    </ui:PassiveScrollViewer>
+                </ui:Card>
+            </Grid>
         </Grid>
     </Grid>
+
 </UserControl>

@@ -9,6 +9,8 @@
                 <ui:ThemesDictionary />
                 <ui:ControlsDictionary />
                 <!-- Other merged dictionaries here -->
+                <ResourceDictionary
+                    Source="/Converter/Converters.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <!-- Other app resources here -->
         </ResourceDictionary>

@@ -487,10 +487,6 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             : DragDropEffects.None;
     }
 
-    private void FilterSwitch_OnClick(object sender, RoutedEventArgs e)
-    {
-        RefreshContentVisibility();
-    }
 
     private void RefreshContentVisibility()
     {
@@ -724,7 +720,8 @@ public partial class SubtitlePage
                                 SetTaskbarProgressState(TaskbarItemProgressState.Paused,
                                     ProgressBarProgression.Value);
                                 Logger.Log($"处理部分完成: {resultReport.Summary}", LogLevel.Warning);
-                                SnackService.Show("警告", $"处理未完整结束，已识别 {resultReport.RecognizedTotal}/{resultReport.Total} 项，可输出当前结果进行人工复核",
+                                SnackService.Show("警告",
+                                    $"处理未完整结束，已识别 {resultReport.RecognizedTotal}/{resultReport.Total} 项，可输出当前结果进行人工复核",
                                     ControlAppearance.Caution,
                                     new SymbolIcon(SymbolRegular.Warning24), new TimeSpan(0, 0, 5));
                             }
@@ -900,5 +897,43 @@ public partial class SubtitlePage
     private void ShowPreviewButton_OnClick(object sender, RoutedEventArgs e)
     {
         ViewModel.ShowPreview = true;
+    }
+
+    private void DialogFilterBtn_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowDialog = !ViewModel.ShowDialog;
+        RefreshContentVisibility();
+    }
+
+    private void BannerFilterBtn_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowBanner = !ViewModel.ShowBanner;
+        RefreshContentVisibility();
+    }
+
+    private void MarkerFilterBtn_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowMarker = !ViewModel.ShowMarker;
+        RefreshContentVisibility();
+    }
+
+    private void VideoFileBtn_OnCLick(object sender, RoutedEventArgs e)
+    {
+        ExplorerHelper.OpenFolderAndFocus(ViewModel.VideoFilePath);
+    }
+
+    private void ScriptFileBtn_OnCLick(object sender, RoutedEventArgs e)
+    {
+        ExplorerHelper.OpenFolderAndFocus(ViewModel.ScriptFilePath);
+    }
+
+    private void TranslateFileBtn_OnCLick(object sender, RoutedEventArgs e)
+    {
+        ExplorerHelper.OpenFolderAndFocus(ViewModel.TranslateFilePath);
+    }
+
+    private void BackToTopBtn_OnClick(object sender, RoutedEventArgs e)
+    {
+        LineViewer.ScrollToTop();
     }
 }

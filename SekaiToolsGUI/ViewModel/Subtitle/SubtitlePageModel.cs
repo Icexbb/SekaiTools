@@ -14,8 +14,16 @@ public class SubtitlePageModel : ViewModelBase
         {
             SetProperty(value);
             SetResetEnabled();
+            VideoFileName = System.IO.Path.GetFileName(value);
         }
     }
+
+    public string VideoFileName
+    {
+        get => GetProperty("");
+        set => SetProperty(value);
+    }
+
 
     public string ScriptFilePath
     {
@@ -24,7 +32,14 @@ public class SubtitlePageModel : ViewModelBase
         {
             SetProperty(value);
             SetResetEnabled();
+            ScriptFileName = System.IO.Path.GetFileName(value);
         }
+    }
+
+    public string ScriptFileName
+    {
+        get => GetProperty("");
+        set => SetProperty(value);
     }
 
     public string TranslateFilePath
@@ -34,7 +49,14 @@ public class SubtitlePageModel : ViewModelBase
         {
             SetProperty(value);
             SetResetEnabled();
+            TranslateFileName = System.IO.Path.GetFileName(value);
         }
+    }
+
+    public string TranslateFileName
+    {
+        get => GetProperty("");
+        set => SetProperty(value);
     }
 
 
