@@ -9,6 +9,25 @@
              mc:Ignorable="d" d:DesignWidth="760"
              d:DataContext="{d:DesignInstance subtitle:DialogLineModel, IsDesignTimeCreatable=False}"
              HorizontalAlignment="Stretch">
+    <UserControl.Resources>
+        <Style x:Key="SpeakerColorBorderStyle" TargetType="{x:Type Border}">
+            <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasSpeakerColor}" Value="True">
+                    <Setter Property="Background" Value="{Binding SpeakerBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="SpeakerColorTextStyle" TargetType="{x:Type TextBlock}"
+               BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasSpeakerColor}" Value="True">
+                    <Setter Property="Foreground" Value="{Binding SpeakerForegroundBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
     <ui:Card Padding="0">
         <Grid Margin="12">
             <Grid.ColumnDefinitions>
@@ -16,7 +35,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="{DynamicResource AccentFillColorDefaultBrush}"
+            <Border Grid.Column="0" Style="{StaticResource SpeakerColorBorderStyle}"
                     CornerRadius="3" />
 
             <StackPanel Grid.Column="1" Margin="14,0,0,0">
@@ -33,9 +52,9 @@
                             <TextBlock Text="对话" />
                         </Border>
                         <Border Padding="10,4" CornerRadius="4"
-                                Background="{DynamicResource AccentFillColorDefaultBrush}">
+                                Style="{StaticResource SpeakerColorBorderStyle}">
                             <TextBlock Name="TextBlockCharacter" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
+                                       Style="{StaticResource SpeakerColorTextStyle}"
                                        MouseEnter="TextBlockCharacter_OnMouseEnter"
                                        MouseLeave="TextBlockCharacter_OnMouseLeave" />
                         </Border>

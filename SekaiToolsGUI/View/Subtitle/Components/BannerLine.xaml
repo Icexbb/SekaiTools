@@ -15,7 +15,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="{DynamicResource AccentFillColorDefaultBrush}"
+            <Border Grid.Column="0" Background="#808080"
                     CornerRadius="3" />
 
             <StackPanel Grid.Column="1" Margin="14,0,0,0">
@@ -27,9 +27,9 @@
 
                     <Border Grid.Column="0" HorizontalAlignment="Left"
                             Padding="10,4" CornerRadius="4"
-                            Background="{DynamicResource AccentFillColorDefaultBrush}">
+                            Background="#808080">
                         <TextBlock Text="横幅" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                                   Foreground="White" />
                     </Border>
 
                     <TextBlock Grid.Column="1" VerticalAlignment="Center"

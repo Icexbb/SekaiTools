@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Media;
 using SekaiToolsBase.Utils;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
@@ -9,11 +10,13 @@ public class DialogLineModel : ViewModelBase
 {
     public readonly DialogBaseFrameSet Set;
     private readonly int _charTime;
+    private readonly SpeakerColorPalette? _speakerPalette;
 
     public DialogLineModel(DialogBaseFrameSet set, int charTime = 80)
     {
         // set.Data.BodyTranslated = set.Data.BodyTranslated.Replace("...", "…");
         Set = set;
+        _speakerPalette = SpeakerColorConfig.Get(set.Data.CharacterId);
         RawContent = set.Data.BodyOriginal;
         TranslatedContent = set.Data.BodyTranslated.EscapedReturn();
         FrameRate = set.Fps;
@@ -31,7 +34,13 @@ public class DialogLineModel : ViewModelBase
 
     private FrameRate FrameRate { get; }
 
-    public string SpeakerName => Set.Data.CharacterTranslated;
+    public int SpeakerId => Set.Data.CharacterId;
+    public string SpeakerName => Set.Data.FinalCharacter;
+    public string SpeakerOriginalName => Set.Data.CharacterOriginal;
+    public string SpeakerTranslatedName => Set.Data.CharacterTranslated;
+    public Brush? SpeakerBrush => _speakerPalette?.Background;
+    public Brush? SpeakerForegroundBrush => _speakerPalette?.Foreground;
+    public bool HasSpeakerColor => _speakerPalette is not null;
 
     public string RawContent
     {
