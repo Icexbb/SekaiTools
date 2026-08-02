@@ -7,6 +7,8 @@ public class BannerLineModel(BannerBaseFrameSet set) : ViewModelBase
 {
     public readonly BannerBaseFrameSet Set = set;
 
+    public int EventIndex => Set.Data.EffectiveStoryIndex;
+    public string EventNumber => $"#{EventIndex + 1}";
     public string RawContent => Set.Data.BodyOriginal;
 
     public string TranslatedContent

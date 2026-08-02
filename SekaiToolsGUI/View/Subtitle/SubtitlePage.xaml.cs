@@ -357,6 +357,28 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     }
 
 
+    private void LinePanel_InsertInOriginalOrder(UIElement line, int eventIndex)
+    {
+        var insertionIndex = 0;
+        while (insertionIndex < LinePanel.Children.Count &&
+               GetLineEventIndex(LinePanel.Children[insertionIndex]) <= eventIndex)
+            insertionIndex++;
+
+        LinePanel.Children.Insert(insertionIndex, line);
+    }
+
+    private static int GetLineEventIndex(UIElement line)
+    {
+        return line switch
+        {
+            DialogLine dialogLine => dialogLine.ViewModel.EventIndex,
+            BannerLine bannerLine => bannerLine.ViewModel.EventIndex,
+            MarkerLine markerLine => markerLine.ViewModel.EventIndex,
+            _ => int.MaxValue
+        };
+    }
+
+
     private void LinePanel_AddDialogLine(DialogBaseFrameSet set)
     {
         Dispatcher.Invoke(() =>
@@ -366,7 +388,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             {
                 Margin = new Thickness(5, 5, 10, 5)
             };
-            LinePanel.Children.Add(line);
+            LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.DialogCurrent++;
             RefreshContentVisibility();
             if (needScroll) LineViewer.ScrollToEnd();
@@ -384,7 +406,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             {
                 Margin = new Thickness(5, 5, 10, 5)
             };
-            LinePanel.Children.Add(line);
+            LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.BannerCurrent++;
             RefreshContentVisibility();
             if (needScroll) LineViewer.ScrollToEnd();
@@ -401,7 +423,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             {
                 Margin = new Thickness(5, 5, 10, 5)
             };
-            LinePanel.Children.Add(line);
+            LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.MarkerCurrent++;
             RefreshContentVisibility();
             if (needScroll) LineViewer.ScrollToEnd();

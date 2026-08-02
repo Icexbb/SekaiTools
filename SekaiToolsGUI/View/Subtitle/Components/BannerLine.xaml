@@ -25,12 +25,15 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <Border Grid.Column="0" HorizontalAlignment="Left"
-                            Padding="10,4" CornerRadius="4"
-                            Background="#808080">
-                        <TextBlock Text="横幅" FontWeight="SemiBold"
-                                   Foreground="White" />
-                    </Border>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <Border Margin="0,0,5,0" Padding="10,4" CornerRadius="4"
+                                Background="{DynamicResource ControlFillColorDefaultBrush}">
+                            <TextBlock Text="{Binding EventNumber, Mode=OneWay}" FontWeight="SemiBold" />
+                        </Border>
+                        <Border Padding="10,4" CornerRadius="4" Background="#808080">
+                            <TextBlock Text="横幅" FontWeight="SemiBold" Foreground="White" />
+                        </Border>
+                    </StackPanel>
 
                     <TextBlock Grid.Column="1" VerticalAlignment="Center"
                                FontFamily="Consolas"

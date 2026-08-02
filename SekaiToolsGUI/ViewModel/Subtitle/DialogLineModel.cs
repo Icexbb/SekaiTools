@@ -34,6 +34,8 @@ public class DialogLineModel : ViewModelBase
 
     private FrameRate FrameRate { get; }
 
+    public int EventIndex => Set.Data.EffectiveStoryIndex;
+    public string EventNumber => $"#{EventIndex + 1}";
     public int SpeakerId => Set.Data.CharacterId;
     public string SpeakerName => Set.Data.FinalCharacter;
     public string SpeakerOriginalName => Set.Data.CharacterOriginal;

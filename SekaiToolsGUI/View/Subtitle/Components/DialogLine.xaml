@@ -49,6 +49,10 @@
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
                         <Border Margin="0,0,5,0" Padding="10,4" CornerRadius="4"
                                 Background="{DynamicResource ControlFillColorDefaultBrush}">
+                            <TextBlock Text="{Binding EventNumber, Mode=OneWay}" FontWeight="SemiBold" />
+                        </Border>
+                        <Border Margin="0,0,5,0" Padding="10,4" CornerRadius="4"
+                                Background="{DynamicResource ControlFillColorDefaultBrush}">
                             <TextBlock Text="对话" />
                         </Border>
                         <Border Padding="10,4" CornerRadius="4"

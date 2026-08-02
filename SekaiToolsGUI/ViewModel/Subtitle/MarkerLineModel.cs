@@ -8,6 +8,8 @@ public class MarkerLineModel(MarkerBaseFrameSet set) : ViewModelBase
     public readonly MarkerBaseFrameSet Set = set;
 
     public int Index => Set.Data.Index;
+    public int EventIndex => Set.Data.EffectiveStoryIndex;
+    public string EventNumber => $"#{EventIndex + 1}";
     public string Content => RawContent;
     public string RawContent => Set.Data.BodyOriginal;
 

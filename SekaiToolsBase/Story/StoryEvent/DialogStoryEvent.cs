@@ -8,8 +8,9 @@ public class DialogStoryEvent(
     int characterId,
     string characterOriginal,
     bool closeWindow,
-    bool shake)
-    : BaseStoryEvent("Dialog", index, bodyOriginal)
+    bool shake,
+    int storyIndex = -1)
+    : BaseStoryEvent("Dialog", index, bodyOriginal, storyIndex: storyIndex)
 {
     public readonly int CharacterId = characterId;
     public readonly string CharacterOriginal = characterOriginal;
@@ -32,7 +33,7 @@ public class DialogStoryEvent(
         BodyTranslated = body;
     }
 
-    public static DialogStoryEvent FromData(Talk talkData, int index = 0)
+    public static DialogStoryEvent FromData(Talk talkData, int index = 0, int storyIndex = -1)
     {
         return new DialogStoryEvent(
             index,
@@ -40,13 +41,15 @@ public class DialogStoryEvent(
             talkData.GetCharacterId(),
             talkData.WindowDisplayName,
             talkData.WhenFinishCloseWindow == 1,
-            talkData.Shake
+            talkData.Shake,
+            storyIndex
         );
     }
 
     public override object Clone()
     {
-        var cloned = new DialogStoryEvent(Index, BodyOriginal, CharacterId, CharacterOriginal, CloseWindow, Shake)
+        var cloned = new DialogStoryEvent(
+            Index, BodyOriginal, CharacterId, CharacterOriginal, CloseWindow, Shake, StoryIndex)
         {
             BodyTranslated = BodyTranslated,
             CharacterTranslated = CharacterTranslated

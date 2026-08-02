@@ -40,7 +40,8 @@ public class Story
                                 talkData.Body, talkData.GetCharacterId(),
                                 talkData.WindowDisplayName,
                                 talkData.WhenFinishCloseWindow == 1,
-                                talkData.Shake
+                                talkData.Shake,
+                                events.Count
                             );
                             events.Add(storyDialogEvent);
                         }
@@ -61,7 +62,7 @@ public class Story
                                 bannerCount++;
                                 break;
                             case 18:
-                                events.Add(new MarkerStoryEvent(seData.StringVal, markerCount));
+                                events.Add(new MarkerStoryEvent(seData.StringVal, markerCount, events.Count));
                                 markerCount++;
                                 break;
                         }
