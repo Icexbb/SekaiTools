@@ -1,5 +1,7 @@
 using System.Windows;
 using System.Windows.Input;
+using SekaiToolsBase.Story.StoryEvent;
+using SekaiToolsBase.Utils;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsGUI.ViewModel.Subtitle;
 using Wpf.Ui.Controls;
@@ -10,8 +12,21 @@ namespace SekaiToolsGUI.View.Subtitle.Components;
 public partial class QuickEditDialog : ContentDialog
 {
     public QuickEditDialog(DialogBaseFrameSet dialogBase)
+        : this(dialogBase.Data, dialogBase.Data.BodyOriginal.LineCount() == 3, dialogBase.UseSeparator)
     {
-        DataContext = new QuickEditDialogModel(dialogBase);
+    }
+
+    public QuickEditDialog(BannerBaseFrameSet bannerBase) : this(bannerBase.Data)
+    {
+    }
+
+    public QuickEditDialog(MarkerBaseFrameSet markerBase) : this(markerBase.Data)
+    {
+    }
+
+    private QuickEditDialog(BaseStoryEvent storyEvent, bool canReturn = false, bool useReturn = false)
+    {
+        DataContext = new QuickEditDialogModel(storyEvent, canReturn, useReturn);
         InitializeComponent();
         SwitchCanReturn.Visibility = ViewModel.CanReturn ? Visibility.Visible : Visibility.Collapsed;
     }
@@ -23,7 +38,7 @@ public partial class QuickEditDialog : ContentDialog
         if (sender is not TextBox textBox) return;
         if (e.Key != Key.Enter) return;
         var lineCount = textBox.LineCount;
-        if (lineCount >= 2) e.Handled = true; // 阻止回车键输入新行
+        if (lineCount >= 2) e.Handled = true;
     }
 
     private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -32,6 +47,6 @@ public partial class QuickEditDialog : ContentDialog
         var newText = textBox.Text.Insert(textBox.CaretIndex, e.Text);
         var newLineCount = newText.Split('\n').Length;
 
-        if (newLineCount > 2) e.Handled = true; // 阻止输入导致超过三行
+        if (newLineCount > 2) e.Handled = true;
     }
 }

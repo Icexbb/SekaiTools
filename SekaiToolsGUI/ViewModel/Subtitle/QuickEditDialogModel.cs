@@ -1,15 +1,14 @@
+using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsBase.Utils;
-using SekaiToolsCore.Process.FrameSet;
 
 namespace SekaiToolsGUI.ViewModel.Subtitle;
 
 public class QuickEditDialogModel : ViewModelBase
 {
-    public QuickEditDialogModel(DialogBaseFrameSet dialogBase)
+    public QuickEditDialogModel(BaseStoryEvent storyEvent, bool canReturn = false, bool useReturn = false)
     {
-        // Dialog = dialog;
-        ContentOriginal = dialogBase.Data.BodyOriginal;
-        ContentTranslated = dialogBase.Data.BodyTranslated;
+        ContentOriginal = storyEvent.BodyOriginal;
+        ContentTranslated = storyEvent.BodyTranslated;
         if (ContentTranslated.Contains("\\R"))
             ContentTranslated = ContentTranslated.Replace("\n", "")
                 .Replace("\\N", "").Replace("\\R", "\n");
@@ -19,8 +18,8 @@ public class QuickEditDialogModel : ViewModelBase
         if (ContentTranslated.LineCount() == 3)
             ContentTranslated = ContentTranslated.Replace("\n", "");
 
-        CanReturn = dialogBase.Data.BodyOriginal.LineCount() == 3;
-        UseReturn = CanReturn && dialogBase.UseSeparator;
+        CanReturn = canReturn;
+        UseReturn = CanReturn && useReturn;
     }
 
     public string ContentOriginal
@@ -41,18 +40,5 @@ public class QuickEditDialogModel : ViewModelBase
     {
         get => GetProperty(false);
         set => SetProperty(value);
-    }
-
-    // private Dialog Dialog { get; }
-    private static string NormalContent(string str)
-    {
-        return str.Replace("\\R", "\n")
-            .Replace("\\N", "\n")
-            .Trim();
-    }
-
-    private static string LineContent(string str)
-    {
-        return NormalContent(str).Replace("\n", "").Trim();
     }
 }

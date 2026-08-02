@@ -22,18 +22,16 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock Text="对话语句快速调整" />
+            <TextBlock Text="字幕文本快速调整" />
             <ui:ToggleSwitch
                 Grid.Column="1" Name="SwitchCanReturn" OnContent="换行" OffContent="不换行"
                 Margin="10,0"
                 IsChecked="{Binding UseReturn}"
                 HorizontalAlignment="Right" />
-
         </Grid>
     </ui:ContentDialog.Title>
     <ui:ContentDialog.Content>
         <StackPanel>
-
             <TextBlock Name="TextBlockOriginal" Margin="10"
                        Text="{Binding ContentOriginal}" TextWrapping="Wrap" />
             <TextBox MaxLines="2" Height="55" Name="TextBoxTranslated" TextWrapping="NoWrap"

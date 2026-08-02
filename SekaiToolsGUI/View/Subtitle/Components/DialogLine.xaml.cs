@@ -34,13 +34,23 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
         });
     }
 
-    private async void DialogLine_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
+    private void DialogLine_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        StartQuickEditDialog();
+    }
+
+    private void QuickEditBtn_OnClick(object sender, RoutedEventArgs e)
+    {
+        StartQuickEditDialog();
+    }
+
+    private async void StartQuickEditDialog()
     {
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
 
         var dialog = new QuickEditDialog(ViewModel.Set);
 
-        var token = new CancellationToken();
+        var token = CancellationToken.None;
         var dialogResult = await dialogService.ShowAsync(dialog, token);
         if (dialogResult != ContentDialogResult.Primary) return;
 

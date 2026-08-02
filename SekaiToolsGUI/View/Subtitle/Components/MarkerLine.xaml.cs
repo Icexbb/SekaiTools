@@ -1,8 +1,10 @@
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsGUI.ViewModel.Subtitle;
 using Wpf.Ui.Abstractions.Controls;
+using Wpf.Ui.Controls;
 
 namespace SekaiToolsGUI.View.Subtitle.Components;
 
@@ -12,20 +14,27 @@ public partial class MarkerLine : UserControl, INavigableView<MarkerLineModel>
     {
         DataContext = new MarkerLineModel(set);
         InitializeComponent();
-        if (ViewModel.Set.Data.BodyTranslated.Length > 0)
-            TextBlockContent.Text = ViewModel.Set.Data.BodyTranslated;
     }
 
     public MarkerLineModel ViewModel => (MarkerLineModel)DataContext;
 
-    private void TextBlockContent_OnMouseEnter(object sender, MouseEventArgs e)
+    private void MarkerLine_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        TextBlockContent.Text = ViewModel.Set.Data.BodyOriginal;
+        StartQuickEditDialog();
     }
 
-    private void TextBlockContent_OnMouseLeave(object sender, MouseEventArgs e)
+    private void QuickEditBtn_OnClick(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.Set.Data.BodyTranslated.Length > 0)
-            TextBlockContent.Text = ViewModel.Set.Data.BodyTranslated;
+        StartQuickEditDialog();
+    }
+
+    private async void StartQuickEditDialog()
+    {
+        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+        var dialog = new QuickEditDialog(ViewModel.Set);
+        var dialogResult = await dialogService.ShowAsync(dialog, CancellationToken.None);
+        if (dialogResult != ContentDialogResult.Primary) return;
+
+        ViewModel.TranslatedContent = dialog.ViewModel.ContentTranslated;
     }
 }

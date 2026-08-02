@@ -28,7 +28,7 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <Border Margin="6,0,0,0" Padding="10,4" CornerRadius="4"
+                        <Border Margin="0,0,5,0" Padding="10,4" CornerRadius="4"
                                 Background="{DynamicResource ControlFillColorDefaultBrush}">
                             <TextBlock Text="对话" />
                         </Border>
@@ -59,14 +59,21 @@
                 </Grid>
 
                 <!-- 原文与翻译同时展示；双击打开快速编辑 -->
-                <ui:Card Margin="0,9,0,0" 
+                <ui:Card Margin="0,9,0,0"
                          MouseDoubleClick="DialogLine_OnMouseDoubleClick">
                     <StackPanel>
                         <ui:TextBlock Text="{Binding RawContent, Mode=OneWay}"
                                       TextWrapping="NoWrap" />
                         <Separator Margin="-8,5" />
-                        <ui:TextBlock Text="{Binding TranslatedContent, Mode=OneWay}"
-                                      TextWrapping="NoWrap" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:TextBlock Text="{Binding TranslatedContent, Mode=OneWay}"
+                                          TextWrapping="NoWrap" />
+                            <ui:Button Grid.Column="1" FontSize="12" Padding="6,4" Click="QuickEditBtn_OnClick"> 修改 </ui:Button>
+                        </Grid>
                     </StackPanel>
                 </ui:Card>
 

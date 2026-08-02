@@ -5,22 +5,64 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
-             mc:Ignorable="d"
+             mc:Ignorable="d" d:DesignWidth="760"
              d:DataContext="{d:DesignInstance subtitle:BannerLineModel, IsDesignTimeCreatable=False}"
              HorizontalAlignment="Stretch">
-    <ui:Card>
-        <Grid Margin="5">
+    <ui:Card Padding="0">
+        <Grid Margin="12">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="5" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="{Binding StartTime,Mode=OneWay}" />
-            <TextBlock Grid.Column="1" HorizontalAlignment="Center"
-                       Name="TextBlockContent"
-                       MouseEnter="TextBlockContent_OnMouseEnter"
-                       MouseLeave="TextBlockContent_OnMouseLeave" />
-            <TextBlock Grid.Column="2" Text="{Binding EndTime,Mode=OneWay}" />
+
+            <Border Grid.Column="0" Background="{DynamicResource AccentFillColorDefaultBrush}"
+                    CornerRadius="3" />
+
+            <StackPanel Grid.Column="1" Margin="14,0,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" HorizontalAlignment="Left"
+                            Padding="10,4" CornerRadius="4"
+                            Background="{DynamicResource AccentFillColorDefaultBrush}">
+                        <TextBlock Text="横幅" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                    </Border>
+
+                    <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                               FontFamily="Consolas"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0} → {1}　{2}">
+                                <Binding Path="StartTime" Mode="OneWay" />
+                                <Binding Path="EndTime" Mode="OneWay" />
+                                <Binding Path="EventDuration" Mode="OneWay" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </Grid>
+
+                <ui:Card Margin="0,9,0,0"
+                         MouseDoubleClick="BannerLine_OnMouseDoubleClick">
+                    <StackPanel>
+                        <ui:TextBlock Text="{Binding RawContent, Mode=OneWay}"
+                                      TextWrapping="NoWrap" />
+                        <Separator Margin="-8,5" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:TextBlock Text="{Binding TranslatedContent, Mode=OneWay}"
+                                          TextWrapping="NoWrap" />
+                            <ui:Button Grid.Column="1" FontSize="12" Padding="6,4" Click="QuickEditBtn_OnClick"> 修改 </ui:Button>
+                        </Grid>
+                    </StackPanel>
+                </ui:Card>
+            </StackPanel>
         </Grid>
     </ui:Card>
 </UserControl>
