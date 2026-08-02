@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using SekaiToolsCore;
+using SekaiToolsGUI.Service;
 using SekaiToolsGUI.ViewModel.Suppress;
 
 namespace SekaiToolsGUI.Suppress;
@@ -134,6 +135,7 @@ public partial class Suppressor
 
         if (!SourceExist)
             throw new FileNotFoundException("源视频不存在", SuppressPageModel.Instance.SourceVideo);
+        using var powerRequest = SystemPowerRequest.Acquire("SekaiTools 正在压制视频");
 
         _vProcess = GetVapourProcess();
         _fProcess = GetFfmpegProcess();

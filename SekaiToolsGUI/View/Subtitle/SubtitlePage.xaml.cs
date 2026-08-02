@@ -19,6 +19,7 @@ using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Utils;
 using SekaiToolsGUI.Interface;
+using SekaiToolsGUI.Service;
 using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.View.Subtitle.Components;
 using SekaiToolsGUI.ViewModel.Setting;
@@ -540,6 +541,7 @@ public partial class SubtitlePage
     private IDisposable? _fpsChangedSubscription;
     private Subject<double>? _progressChangedSubject;
     private IDisposable? _progressChangedSubscription;
+    private IDisposable? _subtitlePowerRequest;
     private CancellationTokenSource? TokenSource { get; } = new();
     private CancellationToken CancellationToken => TokenSource!.Token;
 
@@ -706,6 +708,7 @@ public partial class SubtitlePage
                 {
                     OnTaskFinished = () =>
                     {
+                        ReleaseSubtitlePowerRequest();
                         Dispatcher.Invoke(() =>
                         {
                             ViewModel.IsRunning = false;
@@ -841,11 +844,14 @@ public partial class SubtitlePage
             }
 
             VideoProcessor.EnableProgressSaving(saveKey);
+            ReleaseSubtitlePowerRequest();
+            _subtitlePowerRequest = SystemPowerRequest.Acquire("SekaiTools 正在识别字幕");
             VideoProcessor.StartProcess();
         }
         catch (Exception ex)
         {
             ViewModel.IsRunning = false;
+            ReleaseSubtitlePowerRequest();
             ViewModel.IsCanceling = false;
             ViewModel.IsFinished = false;
             ViewModel.IsCanceled = false;
@@ -858,6 +864,11 @@ public partial class SubtitlePage
             SnackService.Show("错误", $"初始化视频处理器失败: {ex.Message}", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 5));
         }
+    }
+
+    private void ReleaseSubtitlePowerRequest()
+    {
+        Interlocked.Exchange(ref _subtitlePowerRequest, null)?.Dispose();
     }
 
     private void OnFpsChanged(int fps, TimeSpan eta)
