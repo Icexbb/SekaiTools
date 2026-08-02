@@ -17,9 +17,6 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
         DataContext = new DialogLineModel(set, CharTime);
         InitializeComponent();
         CheckLineExpander();
-        TextBlockCharacter.Text = ViewModel.Set.Data.CharacterTranslated.Length > 0
-            ? ViewModel.Set.Data.CharacterTranslated
-            : ViewModel.Set.Data.CharacterOriginal;
     }
 
     private int CharTime => SettingPageModel.Instance.TypewriterCharTime;
@@ -69,14 +66,4 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
         CheckLineExpander();
     }
 
-    private void TextBlockCharacter_OnMouseEnter(object sender, MouseEventArgs e)
-    {
-        TextBlockCharacter.Text = ViewModel.Set.Data.CharacterOriginal;
-    }
-
-    private void TextBlockCharacter_OnMouseLeave(object sender, MouseEventArgs e)
-    {
-        if (ViewModel.Set.Data.CharacterTranslated.Length > 0)
-            TextBlockCharacter.Text = ViewModel.Set.Data.CharacterTranslated;
-    }
 }

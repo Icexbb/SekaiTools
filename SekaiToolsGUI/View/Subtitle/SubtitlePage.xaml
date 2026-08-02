@@ -177,86 +177,56 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" HorizontalAlignment="Left" Orientation="Horizontal">
                                     <TextBlock
+                                        Name="TextBlockStatus"
                                         Text="{Binding RunningStatus}"
                                         VerticalAlignment="Center" />
-                                    <TextBlock VerticalAlignment="Center" Name="TextBlockEta" Margin="5,0"
-                                               MinWidth="50" />
+                                    <TextBlock
+                                        Name="TextBlockEta" Margin="5,0"
+                                        VerticalAlignment="Center" />
                                 </StackPanel>
 
-                                <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
-                                    <ui:Button Click="StopButton_OnClick" Margin="5,0"
-                                               IsEnabled="{Binding CanStop}"
-                                               HorizontalAlignment="Center" Content="终止任务" />
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Right" Orientation="Horizontal">
+                                    <TextBlock
+                                        Name="TextBlockFps" Margin="5,0"
+                                        VerticalAlignment="Center" />
+                                    <TextBlock
+                                        Name="TextBlockProgression"
+                                        VerticalAlignment="Center" />
                                 </StackPanel>
                             </Grid>
                             <!--状态监控-->
                             <StackPanel
-                                Visibility="{calcBinding:Binding !HasNotStarted,FalseToVisibility=Collapsed}"
-                                Margin="0,5,0,0">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Name="TextBlockFps" Margin="5" />
-                                    <ProgressBar Grid.Column="1" Name="ProgressBarProgression" Height="8"
-                                                 Margin="5" />
-                                    <TextBlock Grid.Column="2" Name="TextBlockProgression" Margin="5" />
-                                </Grid>
-                                <Grid HorizontalAlignment="Stretch"
-                                      Visibility="{calcBinding:Binding !HasNotStarted,FalseToVisibility=Collapsed}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" TextAlignment="Center">
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="{}对话 {0}/{1}">
-                                                <Binding Path="DialogCurrent" Mode="OneWay" />
-                                                <Binding Path="DialogTotal" Mode="OneWay" />
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                    <TextBlock Grid.Column="1" TextAlignment="Center">
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="{}横幅 {0}/{1}">
-                                                <Binding Path="BannerCurrent" Mode="OneWay" />
-                                                <Binding Path="BannerTotal" Mode="OneWay" />
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                    <TextBlock Grid.Column="2" TextAlignment="Center">
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="{}标签 {0}/{1}">
-                                                <Binding Path="MarkerCurrent" Mode="OneWay" />
-                                                <Binding Path="MarkerTotal" Mode="OneWay" />
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                </Grid>
+                                Visibility="{calcBinding:Binding !HasNotStarted,FalseToVisibility=Collapsed}">
+                                <ProgressBar Name="ProgressBarProgression" Height="8" Margin="5" />
                             </StackPanel>
+                            <!--控制按钮-->
                             <Grid Margin="0,5,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
+
                                 <ui:Button
                                     Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"
-                                    Click="OutputButton_OnClick"
-                                    IsEnabled="{Binding Path=CanOutput}"
-                                    Margin="0,0,5,0" Content="输出" Appearance="Primary" />
+                                    Click="StopButton_OnClick"
+                                    IsEnabled="{Binding CanStop}"
+                                    Content="终止任务" Appearance="Danger" />
                                 <ui:Button
                                     Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                                    Click="OutputButton_OnClick"
+                                    IsEnabled="{Binding Path=CanOutput}"
+                                    Margin="5,0" Content="输出" Appearance="Primary" />
+                                <ui:Button
+                                    Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                                     Click="ResetButton_OnClick"
                                     IsEnabled="{Binding CanReset}"
-                                    Margin="5,0,0,0" Content="重置" />
+                                    Content="重置" />
                             </Grid>
-
                         </StackPanel>
                     </ui:Card>
                 </Grid>
@@ -267,9 +237,26 @@
                          Height="{Binding RelativeSource= {RelativeSource Mode=FindAncestor, AncestorType=Grid}, Path=ActualHeight}"
                          VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                          VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
-                    <ui:Image VerticalContentAlignment="Stretch"
-                              HorizontalContentAlignment="Stretch"
-                              Source="{Binding FramePreviewImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <ui:Image Grid.RowSpan="2" Grid.ColumnSpan="2" VerticalContentAlignment="Stretch"
+                                  HorizontalContentAlignment="Stretch"
+                                  Visibility="{calcBinding:Binding ShowPreview,FalseToVisibility=Hidden}"
+                                  Source="{Binding FramePreviewImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" />
+                        <StackPanel Grid.Row="0" Grid.Column="0">
+                            <ui:Button Click="PreviewToggleBtn_OnClick" Margin="0"
+                                       Appearance="{Binding ShowPreview,Converter={StaticResource BoolToAppearance}}">
+                                显示预览
+                            </ui:Button>
+                        </StackPanel>
+                    </Grid>
                 </ui:Card>
             </Grid>
             <!--事件列表-->
@@ -288,23 +275,63 @@
                             <RowDefinition Height="*" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Top">
-                            <ui:Button Click="DialogFilterBtn_OnClick" Margin="0"
+                        <StackPanel Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Top" Width="55">
+
+                            <ui:Button Click="DialogFilterBtn_OnClick" Margin="0" HorizontalAlignment="Stretch"
+                                       Padding="2"
                                        Appearance="{Binding ShowDialog,Converter={StaticResource BoolToAppearance}}">
-                                对话
+                                <StackPanel>
+                                    <TextBlock TextAlignment="Center" Text="对话" />
+                                    <TextBlock TextAlignment="Center" FontSize="10">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0}/{1}">
+                                                <Binding Path="DialogCurrent" Mode="OneWay" />
+                                                <Binding Path="DialogTotal" Mode="OneWay" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </StackPanel>
+
                             </ui:Button>
-                            <ui:Button Click="BannerFilterBtn_OnClick" Margin="0,5"
+                            <ui:Button Click="BannerFilterBtn_OnClick" Margin="0,5" HorizontalAlignment="Stretch"
+                                       Padding="2"
                                        Appearance="{Binding ShowBanner,Converter={StaticResource BoolToAppearance}}">
-                                横幅
+
+                                <StackPanel>
+                                    <TextBlock TextAlignment="Center" Text="横幅" />
+                                    <TextBlock TextAlignment="Center" FontSize="10">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0}/{1}">
+                                                <Binding Path="BannerCurrent" Mode="OneWay" />
+                                                <Binding Path="BannerTotal" Mode="OneWay" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </StackPanel>
+
                             </ui:Button>
-                            <ui:Button Click="MarkerFilterBtn_OnClick" Margin="0"
+                            <ui:Button Click="MarkerFilterBtn_OnClick" Margin="0" HorizontalAlignment="Stretch"
+                                       Padding="2"
                                        Appearance="{Binding ShowMarker,Converter={StaticResource BoolToAppearance}}">
-                                标签
+                                <StackPanel>
+                                    <TextBlock TextAlignment="Center" Text="标签" />
+                                    <TextBlock TextAlignment="Center" FontSize="10">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0}/{1}">
+                                                <Binding Path="MarkerCurrent" Mode="OneWay" />
+                                                <Binding Path="MarkerTotal" Mode="OneWay" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </StackPanel>
                             </ui:Button>
                         </StackPanel>
                         <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Bottom">
                             <ui:Button Click="BackToTopBtn_OnClick">
-                                <ui:SymbolIcon Symbol="ArrowUp28"></ui:SymbolIcon>
+                                <ui:SymbolIcon Symbol="ArrowUp28" />
+                            </ui:Button>
+                            <ui:Button Click="BackToBottomBtn_OnClick">
+                                <ui:SymbolIcon Symbol="ArrowDown28" />
                             </ui:Button>
                         </StackPanel>
                     </Grid>

@@ -57,10 +57,17 @@
                         </Border>
                         <Border Padding="10,4" CornerRadius="4"
                                 Style="{StaticResource SpeakerColorBorderStyle}">
-                            <TextBlock Name="TextBlockCharacter" FontWeight="SemiBold"
-                                       Style="{StaticResource SpeakerColorTextStyle}"
-                                       MouseEnter="TextBlockCharacter_OnMouseEnter"
-                                       MouseLeave="TextBlockCharacter_OnMouseLeave" />
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding SpeakerName, Mode=OneWay}"
+                                           FontWeight="SemiBold"
+                                           Style="{StaticResource SpeakerColorTextStyle}" />
+                                <TextBlock Text="{Binding SpeakerOriginalName, Mode=OneWay}"
+                                           FontSize="10" Opacity="0.75" TextAlignment="Justify"
+                                           VerticalAlignment="Center"
+                                           Margin="3,0"
+                                           Style="{StaticResource SpeakerColorTextStyle}"
+                                           Visibility="{Binding SpeakerOriginalNameVisibility, Mode=OneWay}" />
+                            </StackPanel>
                         </Border>
                         <!-- 抖动行标识 -->
                         <ui:SymbolIcon Margin="8,0,0,0" Symbol="PhoneShake24"

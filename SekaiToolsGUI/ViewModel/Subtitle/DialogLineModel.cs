@@ -40,6 +40,11 @@ public class DialogLineModel : ViewModelBase
     public string SpeakerName => Set.Data.FinalCharacter;
     public string SpeakerOriginalName => Set.Data.CharacterOriginal;
     public string SpeakerTranslatedName => Set.Data.CharacterTranslated;
+    public Visibility SpeakerOriginalNameVisibility =>
+        !string.IsNullOrWhiteSpace(SpeakerTranslatedName) &&
+        !string.Equals(SpeakerTranslatedName, SpeakerOriginalName, StringComparison.Ordinal)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     public Brush? SpeakerBrush => _speakerPalette?.Background;
     public Brush? SpeakerForegroundBrush => _speakerPalette?.Foreground;
     public bool HasSpeakerColor => _speakerPalette is not null;

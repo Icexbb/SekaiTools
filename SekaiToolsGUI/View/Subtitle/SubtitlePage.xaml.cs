@@ -958,4 +958,14 @@ public partial class SubtitlePage
     {
         LineViewer.ScrollToTop();
     }
+
+    private void PreviewToggleBtn_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowPreview = !ViewModel.ShowPreview;
+    }
+
+    private void BackToBottomBtn_OnClick(object sender, RoutedEventArgs e)
+    {
+        LineViewer.ScrollToBottom();
+    }
 }
