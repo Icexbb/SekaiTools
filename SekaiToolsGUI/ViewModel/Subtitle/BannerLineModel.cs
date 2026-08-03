@@ -25,6 +25,13 @@ public class BannerLineModel(BannerBaseFrameSet set) : ViewModelBase
     public string EndTime => Set.EndTime();
     public string EventDuration => GetEventDuration();
 
+    public void RefreshTiming()
+    {
+        OnPropertyChanged(nameof(StartTime));
+        OnPropertyChanged(nameof(EndTime));
+        OnPropertyChanged(nameof(EventDuration));
+    }
+
     private string GetEventDuration()
     {
         var start = Set.Start();

@@ -131,6 +131,8 @@ public class VideoProcessor : IDisposable
 
     public ProcessingPerformanceSnapshot Performance => _performanceMetrics.Snapshot();
 
+    public VideoInfo VideoInfo => Creator?.VideoInfo ?? throw new ObjectDisposedException(nameof(VideoProcessor));
+
     public IReadOnlyList<MatcherDiagnostic> Diagnostics =>
         DialogMatcher?.Diagnostics
             .Concat(BannerMatcher?.Diagnostics ?? [])

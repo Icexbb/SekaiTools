@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Shell;
 using Emgu.CV;
 using Microsoft.Extensions.Logging;
@@ -175,6 +176,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
         if (result == ContentDialogResult.Primary && dialog.SelectedEntry != null)
         {
             LinePanel.Children.Clear();
+            EventTimelineEditor.ClearSelection();
             ViewModel.DialogCurrent = 0;
             ViewModel.BannerCurrent = 0;
             ViewModel.MarkerCurrent = 0;
@@ -208,6 +210,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
                 OnNewMarker = LinePanel_AddMarkerLine
             });
 
+            SetTimelineVideoDuration();
             VideoProcessor.ApplyState(state);
             VideoProcessor.ReplayExportableCallbacks(
                 LinePanel_AddDialogLine,
@@ -281,6 +284,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
         VideoProcessor = null;
         ViewModel.Reset();
         LinePanel.Children.Clear();
+        EventTimelineEditor.ClearSelection();
         TextBlockProgression.Text = "";
         TextBlockFps.Text = "";
         ProgressBarProgression.Value = 0;
@@ -389,6 +393,9 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             {
                 Margin = new Thickness(5, 5, 10, 5)
             };
+            var timelineEvent = CreateTimelineEvent(line);
+            EventTimelineEditor.RegisterEvent(timelineEvent);
+            line.TimelineRequested += (_, _) => EventTimelineEditor.SelectEvent(timelineEvent);
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.DialogCurrent++;
             RefreshContentVisibility();
@@ -407,6 +414,9 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             {
                 Margin = new Thickness(5, 5, 10, 5)
             };
+            var timelineEvent = CreateTimelineEvent(line);
+            EventTimelineEditor.RegisterEvent(timelineEvent);
+            line.TimelineRequested += (_, _) => EventTimelineEditor.SelectEvent(timelineEvent);
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.BannerCurrent++;
             RefreshContentVisibility();
@@ -424,11 +434,75 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             {
                 Margin = new Thickness(5, 5, 10, 5)
             };
+            var timelineEvent = CreateTimelineEvent(line);
+            EventTimelineEditor.RegisterEvent(timelineEvent);
+            line.TimelineRequested += (_, _) => EventTimelineEditor.SelectEvent(timelineEvent);
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.MarkerCurrent++;
             RefreshContentVisibility();
             if (needScroll) LineViewer.ScrollToEnd();
         });
+    }
+
+    private TimelineEventSelection CreateTimelineEvent(DialogLine line)
+    {
+        var accent = line.ViewModel.SpeakerBrush
+                     ?? TryFindResource("AccentFillColorDefaultBrush") as Brush
+                     ?? Brushes.DodgerBlue;
+        return new TimelineEventSelection(
+            line.ViewModel.Set,
+            line.ViewModel.EventNumber,
+            "对话",
+            TimelineEventTrack.Dialog,
+            GetTimelineContent(line.ViewModel.RawContent, line.ViewModel.TranslatedContent),
+            accent,
+            line.ViewModel.RefreshTiming,
+            line.BringIntoView);
+    }
+
+    private TimelineEventSelection CreateTimelineEvent(BannerLine line)
+    {
+        return new TimelineEventSelection(
+            line.ViewModel.Set,
+            line.ViewModel.EventNumber,
+            "横幅",
+            TimelineEventTrack.Banner,
+            GetTimelineContent(line.ViewModel.RawContent, line.ViewModel.TranslatedContent),
+            Brushes.Gray,
+            line.ViewModel.RefreshTiming,
+            line.BringIntoView);
+    }
+
+    private TimelineEventSelection CreateTimelineEvent(MarkerLine line)
+    {
+        return new TimelineEventSelection(
+            line.ViewModel.Set,
+            line.ViewModel.EventNumber,
+            "标记",
+            TimelineEventTrack.Marker,
+            GetTimelineContent(line.ViewModel.RawContent, line.ViewModel.TranslatedContent),
+            Brushes.Gray,
+            line.ViewModel.RefreshTiming,
+            line.BringIntoView);
+    }
+
+    private static string GetTimelineContent(string original, string translated)
+    {
+        return string.IsNullOrWhiteSpace(translated) ? original : translated;
+    }
+
+    private void SetTimelineVideoDuration()
+    {
+        if (VideoProcessor == null)
+            return;
+
+        var videoInfo = VideoProcessor.VideoInfo;
+        var fps = videoInfo.Fps.Fps();
+        var durationMilliseconds = fps > 0
+            ? (int)Math.Ceiling(videoInfo.FrameCount * 1000d / fps)
+            : 0;
+        EventTimelineEditor.SetVideoDuration(durationMilliseconds);
+        _ = EventTimelineEditor.LoadAudioWaveformAsync(videoInfo.Path);
     }
 
 
@@ -834,6 +908,7 @@ public partial class SubtitlePage
                 }
             );
 
+            SetTimelineVideoDuration();
             if (resumeState != null)
             {
                 VideoProcessor.ApplyState(resumeState);
@@ -978,5 +1053,15 @@ public partial class SubtitlePage
     private void BackToBottomBtn_OnClick(object sender, RoutedEventArgs e)
     {
         LineViewer.ScrollToBottom();
+    }
+    private void SubtitlePage_OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Z ||
+            !Keyboard.Modifiers.HasFlag(ModifierKeys.Control) ||
+            Keyboard.FocusedElement is System.Windows.Controls.TextBox)
+            return;
+
+        if (EventTimelineEditor.Undo())
+            e.Handled = true;
     }
 }

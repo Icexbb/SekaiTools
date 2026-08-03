@@ -1,0 +1,157 @@
+<UserControl x:Class="SekaiToolsGUI.View.Subtitle.Components.TimelineEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             mc:Ignorable="d"
+             d:DesignHeight="260" d:DesignWidth="1000"
+             Focusable="True">
+    <ui:Card Padding="10"
+             Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+             BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+             BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="30" />
+                <RowDefinition Height="132" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid Margin="0,0,0,7">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border x:Name="EventNumberBadge" Margin="0,0,4,0" Padding="7,3" CornerRadius="4"
+                            Background="{DynamicResource ControlFillColorDefaultBrush}" VerticalAlignment="Center">
+                        <ui:TextBlock x:Name="EventNumberText" FontFamily="Consolas" TextAlignment="Center"
+                                      FontWeight="SemiBold" Text="未选择" />
+                    </Border>
+                    <Border x:Name="EventTypeBadge" Margin="0,0,5,0" Padding="7,3" CornerRadius="4"
+                            Background="#808080" VerticalAlignment="Center">
+                        <ui:TextBlock x:Name="EventTypeText" Foreground="White" Text="事件" TextAlignment="Center" />
+                    </Border>
+                    <ui:TextBlock x:Name="EventContentText" MaxWidth="480" TextTrimming="CharacterEllipsis"
+                                  Visibility="Collapsed"
+                                  Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                  VerticalAlignment="Center" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <ui:Button x:Name="UndoButton"
+                               Click="UndoButton_OnClick" ToolTip="撤回时间修改 (Ctrl+Z)">
+                        ↶
+                    </ui:Button>
+                    <ui:Button x:Name="RestoreTimingButton"
+                               Click="RestoreTimingButton_OnClick" ToolTip="还原当前事件识别得到的起止时间">
+                        还原识别时长
+                    </ui:Button>
+                    <Separator Margin="7,2,4,2" />
+                    <ui:Button
+                        Click="ZoomOutButton_OnClick" ToolTip="缩小时间轴">
+                        −
+                    </ui:Button>
+                    <ui:TextBlock x:Name="ZoomText" Width="54" TextAlignment="Center" Visibility="Collapsed"
+                                  VerticalAlignment="Center" FontFamily="Consolas" />
+                    <ui:Button
+                        Click="ZoomInButton_OnClick" ToolTip="放大时间轴">
+                        ＋
+                    </ui:Button>
+                    <ui:Button
+                        Click="CenterButton_OnClick" ToolTip="定位到当前事件">
+                        ◎
+                    </ui:Button>
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="1" Margin="0,0,0,5" CornerRadius="4"
+                    BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    Background="{DynamicResource ControlFillColorDefaultBrush}">
+                <Canvas x:Name="OverviewCanvas"
+                        Background="Transparent"
+                        SizeChanged="OverviewCanvas_OnSizeChanged"
+                        MouseLeftButtonDown="OverviewCanvas_OnMouseLeftButtonDown"
+                        MouseMove="OverviewCanvas_OnMouseMove"
+                        MouseLeftButtonUp="OverviewCanvas_OnMouseLeftButtonUp" />
+            </Border>
+
+            <Border Grid.Row="2" CornerRadius="6"
+                    BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    Background="{DynamicResource ControlFillColorSecondaryBrush}">
+                <Grid ClipToBounds="True">
+                    <Canvas x:Name="TimelineCanvas" Focusable="True"
+                            Background="Transparent"
+                            SizeChanged="TimelineCanvas_OnSizeChanged"
+                            MouseLeftButtonDown="TimelineCanvas_OnMouseLeftButtonDown"
+                            MouseMove="TimelineCanvas_OnMouseMove"
+                            MouseLeftButtonUp="TimelineCanvas_OnMouseLeftButtonUp"
+                            MouseWheel="TimelineCanvas_OnMouseWheel" />
+                    <ui:TextBlock x:Name="EmptyHint" Text="点击时间轴块或列表事件以选择"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                  IsHitTestVisible="False" />
+                    <Border x:Name="ReadOnlyBadge" HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Margin="6" Padding="7,3" CornerRadius="4"
+                            Background="#B0303030" Visibility="Collapsed"
+                            IsHitTestVisible="False">
+                        <ui:TextBlock Text="处理中 · 只读" Foreground="White" FontSize="11" />
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="3" Margin="0,8,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse Width="8" Height="8" Margin="0,0,5,0" Fill="#FF5B63" />
+                    <ui:TextBlock Text="起始" Margin="0,0,5,0" VerticalAlignment="Center" />
+                    <ui:Button x:Name="StartMinusButton" Click="StartMinusButton_OnClick">−</ui:Button>
+                    <ui:TextBox x:Name="StartTimeBox" Width="102" FontFamily="Consolas"
+                                FontWeight="SemiBold" HorizontalContentAlignment="Center"
+                                Margin="3,0,0,0"
+                                PreviewKeyDown="TimeBox_OnPreviewKeyDown"
+                                LostKeyboardFocus="TimeBox_OnLostKeyboardFocus" />
+                    <ui:Button x:Name="StartPlusButton" Click="StartPlusButton_OnClick">＋</ui:Button>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Margin="13,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse Width="8" Height="8" Margin="0,0,5,0"
+                             Fill="{DynamicResource TextFillColorPrimaryBrush}" />
+                    <ui:TextBlock Text="结束" Margin="0,0,5,0" VerticalAlignment="Center" />
+                    <Button x:Name="EndMinusButton" Click="EndMinusButton_OnClick">−</Button>
+                    <TextBox x:Name="EndTimeBox" Width="102" FontFamily="Consolas"
+                             FontWeight="SemiBold" HorizontalContentAlignment="Center"
+                             Margin="3,0,0,0"
+                             PreviewKeyDown="TimeBox_OnPreviewKeyDown"
+                             LostKeyboardFocus="TimeBox_OnLostKeyboardFocus" />
+                    <Button x:Name="EndPlusButton" Click="EndPlusButton_OnClick">＋</Button>
+                </StackPanel>
+
+                <StackPanel Grid.Column="3" Margin="15,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ui:TextBlock Text="时长" Margin="0,0,6,0"
+                                  Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <Border Padding="8,4" CornerRadius="4"
+                            Background="{DynamicResource ControlFillColorDefaultBrush}">
+                        <ui:TextBlock x:Name="DurationText" FontFamily="Consolas" FontWeight="SemiBold" />
+                    </Border>
+                </StackPanel>
+
+                <ui:TextBlock Grid.Column="4" Margin="16,0,0,0" VerticalAlignment="Center"
+                              Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                              Text="拖动边界调整 · 拖动区间平移 · 滚轮平移 · Ctrl+滚轮缩放" />
+            </Grid>
+        </Grid>
+    </ui:Card>
+</UserControl>

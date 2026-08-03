@@ -20,6 +20,7 @@ public struct Separator
 public partial class DialogBaseFrameSet : BaseFrameSet
 {
     public Separator Separate;
+    private List<DialogFrameResult>? _timingSourceFrames;
 
     public DialogBaseFrameSet(DialogStoryEvent data, FrameRate fps)
     {
@@ -94,5 +95,56 @@ public partial class DialogBaseFrameSet
     public void Add(int index, Point point)
     {
         Frames.Add(new DialogFrameResult(index + FrameIndexOffset, Fps, point));
+    }
+
+    public void SetFrameRange(int start, int end)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(start);
+        if (end < start)
+            throw new ArgumentOutOfRangeException(nameof(end), "结束帧不能早于起始帧");
+        if (Frames.Count == 0)
+            return;
+
+        _timingSourceFrames ??= Frames.OrderBy(frame => frame.Index).ToList();
+        var source = _timingSourceFrames;
+        var rebuilt = new List<DialogFrameResult>(end - start + 1);
+        var sourceIndex = 0;
+        for (var frameIndex = start; frameIndex <= end; frameIndex++)
+        {
+            while (sourceIndex + 1 < source.Count &&
+                   Math.Abs(source[sourceIndex + 1].Index - frameIndex) <=
+                   Math.Abs(source[sourceIndex].Index - frameIndex))
+                sourceIndex++;
+
+            rebuilt.Add(new DialogFrameResult(frameIndex, Fps, source[sourceIndex].Point));
+        }
+
+        Frames.Clear();
+        Frames.AddRange(rebuilt);
+    }
+
+    public (int StartFrame, int EndFrame) RecognizedFrameRange
+    {
+        get
+        {
+            if (_timingSourceFrames is { Count: > 0 } source)
+                return (source[0].Index, source[^1].Index);
+            return (StartIndex(), EndIndex());
+        }
+    }
+
+    public bool HasTimingEdits
+    {
+        get
+        {
+            var recognized = RecognizedFrameRange;
+            return StartIndex() != recognized.StartFrame || EndIndex() != recognized.EndFrame;
+        }
+    }
+
+    public void RestoreRecognizedFrameRange()
+    {
+        var recognized = RecognizedFrameRange;
+        SetFrameRange(recognized.StartFrame, recognized.EndFrame);
     }
 }

@@ -18,6 +18,13 @@ public partial class MarkerLine : UserControl, INavigableView<MarkerLineModel>
 
     public MarkerLineModel ViewModel => (MarkerLineModel)DataContext;
 
+    public event EventHandler? TimelineRequested;
+
+    private void MarkerLine_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        TimelineRequested?.Invoke(this, EventArgs.Empty);
+    }
+
     private void MarkerLine_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         StartQuickEditDialog();

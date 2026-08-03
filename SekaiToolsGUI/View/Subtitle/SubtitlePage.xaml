@@ -6,9 +6,11 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
+             xmlns:components="clr-namespace:SekaiToolsGUI.View.Subtitle.Components"
              mc:Ignorable="d"
              d:Background="White"
              d:DesignWidth="800"
+             PreviewKeyDown="SubtitlePage_OnPreviewKeyDown"
              d:DataContext="{d:DesignInstance subtitle:SubtitlePageModel, IsDesignTimeCreatable=True}">
     <Grid Margin="10">
         <!--任务前-->
@@ -118,6 +120,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <!--任务控制-->
             <Grid Grid.Row="0" Margin="0,0,0,5">
@@ -338,7 +341,7 @@
 
                 </ui:Card>
                 <!--事件列表-->
-                <ui:Card Grid.Column="1" MinWidth="300" VerticalAlignment="Stretch"
+                <ui:Card Grid.Column="1" MinWidth="300" MinHeight="300" VerticalAlignment="Stretch"
                          VerticalContentAlignment="Stretch" Padding="0">
                     <ui:PassiveScrollViewer
                         Name="LineViewer" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
@@ -347,6 +350,10 @@
                     </ui:PassiveScrollViewer>
                 </ui:Card>
             </Grid>
+            <!--时间轴-->
+            <components:TimelineEditor x:Name="EventTimelineEditor"
+                                       Grid.Row="2" Margin="0,6,0,0"
+                                       IsReadOnly="{Binding IsRunning}" />
         </Grid>
     </Grid>
 

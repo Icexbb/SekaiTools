@@ -139,6 +139,18 @@ public class DialogLineModel : ViewModelBase
         private set => SetProperty(value);
     }
 
+    public void RefreshTiming()
+    {
+        OnPropertyChanged(nameof(StartFrame));
+        OnPropertyChanged(nameof(EndFrame));
+        OnPropertyChanged(nameof(StartTime));
+        OnPropertyChanged(nameof(EndTime));
+        OnPropertyChanged(nameof(EventDuration));
+        OnPropertyChanged(nameof(SeparateFrame));
+        OnPropertyChanged(nameof(SeparateTime));
+        SetPromptWarning();
+    }
+
     private void SetPromptWarning()
     {
         PromptWarning = string.Join("；", DialogTimingCheck.GetIssues(Set, _charTime).Select(x => x.Warning));

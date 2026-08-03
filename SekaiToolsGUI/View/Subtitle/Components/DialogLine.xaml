@@ -8,6 +8,7 @@
              xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
              mc:Ignorable="d" d:DesignWidth="760"
              d:DataContext="{d:DesignInstance subtitle:DialogLineModel, IsDesignTimeCreatable=False}"
+             PreviewMouseLeftButtonDown="DialogLine_OnPreviewMouseLeftButtonDown"
              HorizontalAlignment="Stretch">
     <UserControl.Resources>
         <Style x:Key="SpeakerColorBorderStyle" TargetType="{x:Type Border}">

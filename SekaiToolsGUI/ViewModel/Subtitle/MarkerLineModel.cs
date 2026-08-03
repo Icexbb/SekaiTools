@@ -29,6 +29,15 @@ public class MarkerLineModel(MarkerBaseFrameSet set) : ViewModelBase
     public string EndTime => Set.EndTime();
     public string EventDuration => GetEventDuration();
 
+    public void RefreshTiming()
+    {
+        OnPropertyChanged(nameof(StartFrame));
+        OnPropertyChanged(nameof(EndFrame));
+        OnPropertyChanged(nameof(StartTime));
+        OnPropertyChanged(nameof(EndTime));
+        OnPropertyChanged(nameof(EventDuration));
+    }
+
     private string GetEventDuration()
     {
         var start = Set.Start();

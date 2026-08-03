@@ -18,6 +18,13 @@ public partial class BannerLine : UserControl, INavigableView<BannerLineModel>
 
     public BannerLineModel ViewModel => (BannerLineModel)DataContext;
 
+    public event EventHandler? TimelineRequested;
+
+    private void BannerLine_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        TimelineRequested?.Invoke(this, EventArgs.Empty);
+    }
+
     private void BannerLine_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         StartQuickEditDialog();

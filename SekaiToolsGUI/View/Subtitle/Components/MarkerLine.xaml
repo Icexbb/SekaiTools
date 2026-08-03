@@ -7,6 +7,7 @@
              xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
              mc:Ignorable="d" d:DesignWidth="760"
              d:DataContext="{d:DesignInstance subtitle:MarkerLineModel, IsDesignTimeCreatable=False}"
+             PreviewMouseLeftButtonDown="MarkerLine_OnPreviewMouseLeftButtonDown"
              HorizontalAlignment="Stretch">
     <ui:Card Padding="0">
         <Grid Margin="12">

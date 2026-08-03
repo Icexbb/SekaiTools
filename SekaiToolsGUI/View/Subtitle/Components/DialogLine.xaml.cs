@@ -23,6 +23,13 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
 
     public DialogLineModel ViewModel => (DialogLineModel)DataContext;
 
+    public event EventHandler? TimelineRequested;
+
+    private void DialogLine_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        TimelineRequested?.Invoke(this, EventArgs.Empty);
+    }
+
     private void CheckLineExpander()
     {
         Dispatcher.Invoke(() =>
