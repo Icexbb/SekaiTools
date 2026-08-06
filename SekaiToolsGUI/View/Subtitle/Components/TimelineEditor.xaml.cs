@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
+using SekaiToolsGUI.ViewModel.Subtitle;
 
 namespace SekaiToolsGUI.View.Subtitle.Components;
 
@@ -56,12 +57,28 @@ public sealed class TimelineEventSelection(
         _ => false
     };
 
+    public bool HasSeparator => FrameSet is DialogBaseFrameSet
+    {
+        UseSeparator: true
+    } dialog && dialog.EndIndex() - dialog.StartIndex() >= 2;
+
+    public int SeparateFrame => FrameSet is DialogBaseFrameSet dialog
+        ? dialog.Separate.SeparateFrame
+        : StartFrame;
+
     public void SetFrameRange(int startFrame, int endFrame)
     {
         switch (FrameSet)
         {
             case DialogBaseFrameSet dialog:
                 dialog.SetFrameRange(startFrame, endFrame);
+                if (dialog.UseSeparator && endFrame - startFrame >= 2)
+                {
+                    dialog.SetSeparator(
+                        Math.Clamp(dialog.Separate.SeparateFrame, startFrame + 1, endFrame - 1),
+                        dialog.Separate.SeparatorContentIndex);
+                }
+
                 break;
             case BannerBaseFrameSet banner:
                 banner.SetFrameRange(startFrame, endFrame);
@@ -75,6 +92,26 @@ public sealed class TimelineEventSelection(
 
         TimingChanged();
     }
+
+    public void SetSeparateFrame(int separateFrame)
+    {
+        if (FrameSet is not DialogBaseFrameSet { UseSeparator: true } dialog)
+            return;
+
+        var minimum = dialog.StartIndex() + 1;
+        var maximum = dialog.EndIndex() - 1;
+        if (minimum > maximum)
+            return;
+
+        var coercedFrame = Math.Clamp(separateFrame, minimum, maximum);
+        if (dialog.Separate.SeparateFrame == coercedFrame)
+            return;
+
+        dialog.SetSeparator(
+            coercedFrame,
+            dialog.Separate.SeparatorContentIndex);
+        TimingChanged();
+    }
 }
 
 public partial class TimelineEditor : UserControl
@@ -86,6 +123,8 @@ public partial class TimelineEditor : UserControl
     private readonly List<TimelineEventSelection> _events = [];
     private readonly List<TimelineHitRegion> _eventHitRegions = [];
     private CancellationTokenSource? _waveformCancellation;
+    private CancellationTokenSource? _framePreviewCancellation;
+    private TimelineFramePreviewLoader? _framePreviewLoader;
     private AudioWaveformEnvelope? _waveform;
     private StreamGeometry? _overviewWaveformGeometry;
     private AudioWaveformEnvelope? _overviewWaveformSource;
@@ -97,13 +136,24 @@ public partial class TimelineEditor : UserControl
     private int _dragAnchorFrame;
     private int _dragOriginalStart;
     private int _dragOriginalEnd;
+    private int _dragOriginalSeparateFrame;
+    private Point _dragStartPoint;
+    private bool _dragMoved;
+    private bool _preserveHandleSelectionAfterDrag;
+    private DragMode _selectedHandle;
+    private double _framePreviewScale = 1;
+    private double _framePreviewHandleX;
     private double _pixelsPerSecond = 100;
     private double _viewStartMilliseconds;
     private int _videoDurationMilliseconds;
     private bool _updatingTimeBoxes;
 
+    public TimelineEditorModel ViewModel => (TimelineEditorModel)DataContext;
+
     public TimelineEditor()
     {
+        DataContext = new TimelineEditorModel();
+
         InitializeComponent();
         ClearSelection();
         UpdateReadOnlyState();
@@ -134,6 +184,11 @@ public partial class TimelineEditor : UserControl
 
     public async Task LoadAudioWaveformAsync(string videoPath)
     {
+        _framePreviewCancellation?.Cancel();
+        _framePreviewCancellation?.Dispose();
+        _framePreviewCancellation = null;
+        _framePreviewLoader?.Dispose();
+        _framePreviewLoader = new TimelineFramePreviewLoader(videoPath);
         _waveformCancellation?.Cancel();
         _waveformCancellation?.Dispose();
         var cancellation = new CancellationTokenSource();
@@ -176,6 +231,8 @@ public partial class TimelineEditor : UserControl
     {
         ArgumentNullException.ThrowIfNull(selection);
         RegisterEvent(selection);
+        if (!ReferenceEquals(_selection, selection))
+            DeselectHandle(false);
         _selection = selection;
         EventNumberText.Text = selection.EventNumber;
         EventTypeText.Text = selection.EventType;
@@ -201,10 +258,14 @@ public partial class TimelineEditor : UserControl
     public void ClearSelection()
     {
         _selection = null;
+        _selectedHandle = DragMode.None;
         _waveformCancellation?.Cancel();
         _waveformCancellation?.Dispose();
         _waveformCancellation = null;
         _waveform = null;
+        HideFramePreview();
+        _framePreviewLoader?.Dispose();
+        _framePreviewLoader = null;
         _overviewWaveformGeometry = null;
         _waveformStatus = "";
         _videoDurationMilliseconds = 0;
@@ -229,7 +290,12 @@ public partial class TimelineEditor : UserControl
 
         var command = _undoStack.Pop();
         _selection = command.Selection;
-        command.Selection.SetFrameRange(command.OldStartFrame, command.OldEndFrame);
+        if (command.Selection.StartFrame != command.OldStartFrame ||
+            command.Selection.EndFrame != command.OldEndFrame)
+            command.Selection.SetFrameRange(command.OldStartFrame, command.OldEndFrame);
+        if (command.OldSeparateFrame is { } separateFrame &&
+            command.Selection.SeparateFrame != separateFrame)
+            command.Selection.SetSeparateFrame(separateFrame);
         EventNumberText.Text = command.Selection.EventNumber;
         EventTypeText.Text = command.Selection.EventType;
         EventTypeBadge.Background = command.Selection.AccentBrush;
@@ -239,11 +305,22 @@ public partial class TimelineEditor : UserControl
         UpdateTimingDisplay();
         UpdateUndoState();
         RenderTimeline();
+        if (_selectedHandle is DragMode.Start or DragMode.End or DragMode.Separator)
+            UpdateFramePreview(_selectedHandle, GetHandleX(_selectedHandle));
         return true;
     }
 
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
+        if (e.Key is Key.Left or Key.Right &&
+            _selectedHandle is DragMode.Start or DragMode.End or DragMode.Separator &&
+            Keyboard.FocusedElement is not TextBox)
+        {
+            NudgeSelectedHandle(e.Key == Key.Left ? -1 : 1);
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Z && Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Undo())
         {
             e.Handled = true;
@@ -335,13 +412,20 @@ public partial class TimelineEditor : UserControl
                 _dragMode = DragMode.Start;
             else if (Math.Abs(point.X - endX) <= HandleHitWidth)
                 _dragMode = DragMode.End;
+            else if (_selection.HasSeparator &&
+                     Math.Abs(point.X - TimeToX(GetSeparateMilliseconds(_selection))) <= HandleHitWidth)
+                _dragMode = DragMode.Separator;
         }
 
         if (_dragMode == DragMode.None)
         {
+            DeselectHandle();
             var hit = _eventHitRegions.LastOrDefault(item => item.Bounds.Contains(point));
             if (hit == null)
+            {
+                e.Handled = true;
                 return;
+            }
 
             if (!ReferenceEquals(hit.Selection, _selection))
             {
@@ -361,8 +445,27 @@ public partial class TimelineEditor : UserControl
 
         _dragOriginalStart = _selection.StartFrame;
         _dragOriginalEnd = _selection.EndFrame;
+        _dragOriginalSeparateFrame = _selection.SeparateFrame;
         _dragAnchorFrame = PointToFrame(point.X);
+        _dragStartPoint = point;
+        _dragMoved = false;
+        _preserveHandleSelectionAfterDrag = _selectedHandle == _dragMode;
+        if (_dragMode is DragMode.Start or DragMode.End or DragMode.Separator &&
+            !_preserveHandleSelectionAfterDrag)
+            _selectedHandle = DragMode.None;
         TimelineCanvas.CaptureMouse();
+        if (_dragMode is DragMode.Start or DragMode.End or DragMode.Separator)
+        {
+            if (!_preserveHandleSelectionAfterDrag)
+            {
+                _framePreviewScale = 1;
+                UpdateFramePreviewScale();
+            }
+
+            UpdateFramePreview(_dragMode, point.X);
+            RenderTimeline();
+        }
+
         e.Handled = true;
     }
 
@@ -376,16 +479,26 @@ public partial class TimelineEditor : UserControl
             return;
         }
 
-        var frame = PointToFrame(e.GetPosition(TimelineCanvas).X);
+        var currentPoint = e.GetPosition(TimelineCanvas);
+        if (Math.Abs(currentPoint.X - _dragStartPoint.X) >= SystemParameters.MinimumHorizontalDragDistance ||
+            Math.Abs(currentPoint.Y - _dragStartPoint.Y) >= SystemParameters.MinimumVerticalDragDistance)
+            _dragMoved = true;
+
+        var frame = PointToFrame(currentPoint.X);
         var start = _selection.StartFrame;
         var end = _selection.EndFrame;
         switch (_dragMode)
         {
             case DragMode.Start:
-                start = Math.Clamp(frame, 0, end);
+                start = Math.Clamp(
+                    frame,
+                    0,
+                    _selection.HasSeparator ? _selection.SeparateFrame - 1 : end);
                 break;
             case DragMode.End:
-                end = Math.Max(start, frame);
+                end = Math.Max(
+                    _selection.HasSeparator ? _selection.SeparateFrame + 1 : start,
+                    frame);
                 break;
             case DragMode.Range:
             {
@@ -396,9 +509,17 @@ public partial class TimelineEditor : UserControl
                 end = _dragOriginalEnd + delta;
                 break;
             }
+            case DragMode.Separator:
+                _selection.SetSeparateFrame(Math.Clamp(frame, start + 1, end - 1));
+                UpdateTimingDisplay();
+                RenderTimeline();
+                break;
         }
 
-        ApplyRangeCore(start, end);
+        if (_dragMode != DragMode.Separator)
+            ApplyRangeCore(start, end);
+        if (_dragMode is DragMode.Start or DragMode.End or DragMode.Separator)
+            UpdateFramePreview(_dragMode, currentPoint.X);
         e.Handled = true;
     }
 
@@ -414,18 +535,159 @@ public partial class TimelineEditor : UserControl
 
         TimelineCanvas.ReleaseMouseCapture();
         var selection = _selection;
+        var completedMode = _dragMode;
         _dragMode = DragMode.None;
         if (selection != null &&
-            (_dragOriginalStart != selection.StartFrame || _dragOriginalEnd != selection.EndFrame))
+            (_dragOriginalStart != selection.StartFrame ||
+             _dragOriginalEnd != selection.EndFrame ||
+             _dragOriginalSeparateFrame != selection.SeparateFrame))
         {
             _undoStack.Push(new TimingEditCommand(
                 selection,
                 _dragOriginalStart,
                 _dragOriginalEnd,
                 selection.StartFrame,
-                selection.EndFrame));
+                selection.EndFrame,
+                selection.FrameSet is DialogBaseFrameSet { UseSeparator: true }
+                    ? _dragOriginalSeparateFrame
+                    : null,
+                selection.FrameSet is DialogBaseFrameSet { UseSeparator: true }
+                    ? selection.SeparateFrame
+                    : null));
             UpdateUndoState();
         }
+
+        if (completedMode is DragMode.Start or DragMode.End or DragMode.Separator)
+        {
+            if (!_dragMoved)
+                _selectedHandle = completedMode;
+            else if (!_preserveHandleSelectionAfterDrag)
+                _selectedHandle = DragMode.None;
+
+            if (_selectedHandle == completedMode)
+                UpdateFramePreview(completedMode, GetHandleX(completedMode));
+            else
+                HideFramePreview();
+            RenderTimeline();
+        }
+    }
+
+    private async void UpdateFramePreview(DragMode handle, double handleX)
+    {
+        if (_selection == null || _framePreviewLoader == null ||
+            handle is not (DragMode.Start or DragMode.End or DragMode.Separator))
+            return;
+
+        var frame = handle switch
+        {
+            DragMode.Start => _selection.StartFrame,
+            DragMode.End => _selection.EndFrame,
+            DragMode.Separator => _selection.SeparateFrame,
+            _ => 0
+        };
+        var firstFrame = handle == DragMode.End ? frame : frame - 1;
+        var secondFrame = handle == DragMode.End ? frame + 1 : frame;
+        var firstCaption = handle == DragMode.End ? "当前帧" : "前一帧";
+        var secondCaption = handle == DragMode.End ? "后一帧" : "当前帧";
+
+        _framePreviewCancellation?.Cancel();
+        _framePreviewCancellation?.Dispose();
+        var cancellation = new CancellationTokenSource();
+        _framePreviewCancellation = cancellation;
+
+        FirstPreviewLabel.Text = FormatPreviewLabel(firstCaption, firstFrame);
+        SecondPreviewLabel.Text = FormatPreviewLabel(secondCaption, secondFrame);
+        UpdateFramePreviewHint();
+        _framePreviewHandleX = handleX;
+        UpdateFramePreviewPlacement();
+        FramePreviewPopup.IsOpen = true;
+
+        try
+        {
+            var pair = await _framePreviewLoader.LoadPairAsync(firstFrame, secondFrame, cancellation.Token);
+            if (!ReferenceEquals(_framePreviewCancellation, cancellation) || cancellation.IsCancellationRequested)
+                return;
+            FirstPreviewImage.Source = pair.First;
+            SecondPreviewImage.Source = pair.Second;
+            if (pair.First == null)
+                FirstPreviewLabel.Text = $"{firstCaption} · 无可用画面";
+            if (pair.Second == null)
+                SecondPreviewLabel.Text = $"{secondCaption} · 无可用画面";
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+        catch
+        {
+            if (ReferenceEquals(_framePreviewCancellation, cancellation))
+            {
+                FirstPreviewImage.Source = null;
+                SecondPreviewImage.Source = null;
+            }
+        }
+    }
+
+    private string FormatPreviewLabel(string caption, int frame)
+    {
+        if (_selection == null)
+            return caption;
+        if (frame < 0)
+            return $"{caption} · 无可用画面";
+        var milliseconds = _selection.FrameRate.TimeAtFrame(frame).Milliseconds;
+        return $"{caption}  #{frame}  {FormatRulerTimestamp(milliseconds)}";
+    }
+
+    private void HideFramePreview()
+    {
+        _framePreviewCancellation?.Cancel();
+        _framePreviewCancellation?.Dispose();
+        _framePreviewCancellation = null;
+        if (FramePreviewPopup == null)
+            return;
+        FramePreviewPopup.IsOpen = false;
+        FirstPreviewImage.Source = null;
+        SecondPreviewImage.Source = null;
+    }
+
+    private void UpdateFramePreviewScale()
+    {
+        var transform = new ScaleTransform(_framePreviewScale, _framePreviewScale);
+        transform.Freeze();
+        FramePreviewContainer.LayoutTransform = transform;
+        UpdateFramePreviewHint();
+        UpdateFramePreviewPlacement();
+    }
+
+    private void UpdateFramePreviewHint()
+    {
+        PreviewZoomText.Text = _selectedHandle is DragMode.Start or DragMode.End or DragMode.Separator
+            ? $"手柄已选中 · ←/→ 逐帧微调 · 预览内滚轮缩放 · {_framePreviewScale * 100:0}%"
+            : $"单击手柄可保持预览 · 预览内滚轮缩放 · {_framePreviewScale * 100:0}%";
+    }
+
+    private void UpdateFramePreviewPlacement()
+    {
+        const double basePopupWidth = 746;
+        const double basePopupHeight = 276;
+        var popupWidth = basePopupWidth * _framePreviewScale;
+        FramePreviewPopup.HorizontalOffset = Math.Clamp(
+            _framePreviewHandleX - popupWidth / 2,
+            0,
+            Math.Max(0, TimelineCanvas.ActualWidth - popupWidth));
+        FramePreviewPopup.VerticalOffset = -basePopupHeight * _framePreviewScale;
+    }
+
+    private void FramePreviewContainer_OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        _framePreviewScale = Math.Clamp(
+            _framePreviewScale * (e.Delta > 0 ? 1.2 : 1 / 1.2),
+            0.5,
+            3);
+        UpdateFramePreviewScale();
+        e.Handled = true;
     }
 
     private void TimelineCanvas_OnMouseWheel(object sender, MouseWheelEventArgs e)
@@ -443,6 +705,95 @@ public partial class TimelineEditor : UserControl
         }
 
         e.Handled = true;
+    }
+
+    private void TimelineEditor_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (_selectedHandle == DragMode.None || e.OriginalSource is not Visual source)
+            return;
+        if (ReferenceEquals(source, TimelineCanvas) || TimelineCanvas.IsAncestorOf(source) ||
+            ReferenceEquals(source, FramePreviewContainer) || FramePreviewContainer.IsAncestorOf(source))
+            return;
+
+        DeselectHandle();
+    }
+
+    private void DeselectHandle(bool render = true)
+    {
+        if (_selectedHandle == DragMode.None)
+            return;
+        _selectedHandle = DragMode.None;
+        HideFramePreview();
+        if (render)
+            RenderTimeline();
+    }
+
+    private void NudgeSelectedHandle(int delta)
+    {
+        if (_selection == null || IsReadOnly || delta == 0)
+            return;
+
+        switch (_selectedHandle)
+        {
+            case DragMode.Start:
+                ApplyRangeWithUndo(
+                    Math.Clamp(
+                        _selection.StartFrame + delta,
+                        0,
+                        _selection.HasSeparator ? _selection.SeparateFrame - 1 : _selection.EndFrame),
+                    _selection.EndFrame);
+                break;
+            case DragMode.End:
+                ApplyRangeWithUndo(
+                    _selection.StartFrame,
+                    Math.Max(
+                        _selection.HasSeparator ? _selection.SeparateFrame + 1 : _selection.StartFrame,
+                        _selection.EndFrame + delta));
+                break;
+            case DragMode.Separator:
+            {
+                if (!_selection.HasSeparator)
+                {
+                    DeselectHandle();
+                    return;
+                }
+
+                var oldFrame = _selection.SeparateFrame;
+                _selection.SetSeparateFrame(oldFrame + delta);
+                var newFrame = _selection.SeparateFrame;
+                if (oldFrame == newFrame)
+                    return;
+                _undoStack.Push(new TimingEditCommand(
+                    _selection,
+                    _selection.StartFrame,
+                    _selection.EndFrame,
+                    _selection.StartFrame,
+                    _selection.EndFrame,
+                    oldFrame,
+                    newFrame));
+                UpdateUndoState();
+                UpdateTimingDisplay();
+                RenderTimeline();
+                break;
+            }
+            default:
+                return;
+        }
+
+        UpdateFramePreview(_selectedHandle, GetHandleX(_selectedHandle));
+    }
+
+    private double GetHandleX(DragMode handle)
+    {
+        if (_selection == null)
+            return TrackHeaderWidth;
+        return handle switch
+        {
+            DragMode.Start => TimeToX(GetStartMilliseconds(_selection)),
+            DragMode.End => TimeToX(GetEndMilliseconds(_selection)),
+            DragMode.Separator => TimeToX(GetSeparateMilliseconds(_selection)),
+            _ => TrackHeaderWidth
+        };
     }
 
     private void StartMinusButton_OnClick(object sender, RoutedEventArgs e)
@@ -517,6 +868,8 @@ public partial class TimelineEditor : UserControl
 
         var oldStart = _selection.StartFrame;
         var oldEnd = _selection.EndFrame;
+        var usesSeparator = _selection.FrameSet is DialogBaseFrameSet { UseSeparator: true };
+        int? oldSeparateFrame = usesSeparator ? _selection.SeparateFrame : null;
         if (oldStart == start && oldEnd == end)
         {
             UpdateTimingDisplay();
@@ -524,7 +877,14 @@ public partial class TimelineEditor : UserControl
         }
 
         ApplyRangeCore(start, end);
-        _undoStack.Push(new TimingEditCommand(_selection, oldStart, oldEnd, start, end));
+        _undoStack.Push(new TimingEditCommand(
+            _selection,
+            oldStart,
+            oldEnd,
+            start,
+            end,
+            oldSeparateFrame,
+            usesSeparator ? _selection.SeparateFrame : null));
         UpdateUndoState();
     }
 
@@ -794,6 +1154,7 @@ public partial class TimelineEditor : UserControl
                     0.92);
             }
         }
+
         if (_waveform == null && !string.IsNullOrWhiteSpace(_waveformStatus))
         {
             var status = new TextBlock
@@ -902,15 +1263,28 @@ public partial class TimelineEditor : UserControl
         if (_selection != null)
         {
             var selectedTop = trackTop + (int)_selection.Track * (laneHeight + laneGap);
-            DrawHandle(TimeToX(GetStartMilliseconds(_selection)), Brushes.IndianRed, true, selectedTop);
-            DrawHandle(TimeToX(GetEndMilliseconds(_selection)), primaryBrush, false, selectedTop);
+            DrawHandle(
+                TimeToX(GetStartMilliseconds(_selection)),
+                Brushes.IndianRed,
+                true,
+                selectedTop,
+                DragMode.Start);
+            DrawHandle(
+                TimeToX(GetEndMilliseconds(_selection)),
+                primaryBrush,
+                false,
+                selectedTop,
+                DragMode.End);
+            if (_selection.HasSeparator)
+                DrawSeparatorHandle(TimeToX(GetSeparateMilliseconds(_selection)), selectedTop);
         }
 
-        void DrawHandle(double x, Brush brush, bool pointsRight, double top)
+        void DrawHandle(double x, Brush brush, bool pointsRight, double top, DragMode handle)
         {
             if (x < TrackHeaderWidth || x > width)
                 return;
 
+            var isActive = _selectedHandle == handle || _dragMode == handle;
             var flagTop = waveformTop;
             var flagBottom = waveformTop + 8;
             TimelineCanvas.Children.Add(new Line
@@ -920,12 +1294,50 @@ public partial class TimelineEditor : UserControl
                 Y1 = flagTop,
                 Y2 = top + laneHeight,
                 Stroke = brush,
-                StrokeThickness = 3
+                StrokeThickness = isActive ? 5 : 3
             });
             var points = pointsRight
                 ? new PointCollection([new Point(x, flagTop), new Point(x + 8, flagTop), new Point(x, flagBottom)])
                 : new PointCollection([new Point(x, flagTop), new Point(x - 8, flagTop), new Point(x, flagBottom)]);
-            TimelineCanvas.Children.Add(new Polygon { Points = points, Fill = brush });
+            TimelineCanvas.Children.Add(new Polygon
+            {
+                Points = points,
+                Fill = brush,
+                Stroke = isActive ? Brushes.White : null,
+                StrokeThickness = isActive ? 2 : 0
+            });
+        }
+
+        void DrawSeparatorHandle(double x, double top)
+        {
+            if (x < TrackHeaderWidth || x > width)
+                return;
+
+            var brush = Brushes.Gold;
+            var isActive = _selectedHandle == DragMode.Separator || _dragMode == DragMode.Separator;
+            TimelineCanvas.Children.Add(new Line
+            {
+                X1 = x,
+                X2 = x,
+                Y1 = waveformTop,
+                Y2 = top + laneHeight,
+                Stroke = brush,
+                StrokeThickness = isActive ? 5 : 2
+            });
+            TimelineCanvas.Children.Add(new Polygon
+            {
+                Points = new PointCollection(
+                [
+                    new Point(x, waveformTop),
+                    new Point(x + 6, waveformTop + 6),
+                    new Point(x, waveformTop + 12),
+                    new Point(x - 6, waveformTop + 6)
+                ]),
+                Fill = brush,
+                Stroke = isActive ? Brushes.White : null,
+                StrokeThickness = isActive ? 2 : 0,
+                ToolTip = "拖动以调整长文本分割位置"
+            });
         }
 
         RenderOverview();
@@ -1177,6 +1589,11 @@ public partial class TimelineEditor : UserControl
         return selection.FrameRate.TimeAtFrame(selection.EndFrame, FrameType.End).Milliseconds;
     }
 
+    private static int GetSeparateMilliseconds(TimelineEventSelection selection)
+    {
+        return selection.FrameRate.TimeAtFrame(selection.SeparateFrame, FrameType.Start).Milliseconds;
+    }
+
     private static string FormatTimestamp(int milliseconds)
     {
         milliseconds = Math.Max(0, milliseconds);
@@ -1235,6 +1652,7 @@ public partial class TimelineEditor : UserControl
         None,
         Start,
         End,
+        Separator,
         Range
     }
 
@@ -1243,7 +1661,19 @@ public partial class TimelineEditor : UserControl
         int OldStartFrame,
         int OldEndFrame,
         int NewStartFrame,
-        int NewEndFrame);
+        int NewEndFrame,
+        int? OldSeparateFrame = null,
+        int? NewSeparateFrame = null);
 
     private sealed record TimelineHitRegion(TimelineEventSelection Selection, Rect Bounds);
+
+    private void TitleHeader_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowTimeLine = true;
+    }
+
+    private void HideTimeLine_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowTimeLine = false;
+    }
 }

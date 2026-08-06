@@ -90,8 +90,7 @@ public class DialogLineModel : ViewModelBase
 
     public int SeparateFrame
     {
-        // get => GetProperty(Set.StartIndex());
-        get => GetProperty(Set.Separate.SeparatorContentIndex);
+        get => GetProperty(Set.Separate.SeparateFrame);
         set
         {
             SetProperty(value);
@@ -141,6 +140,11 @@ public class DialogLineModel : ViewModelBase
 
     public void RefreshTiming()
     {
+        if (Set.UseSeparator)
+        {
+            SetProperty(Set.Separate.SeparateFrame, nameof(SeparateFrame));
+            SeparateTime = new ProcessFrame(Set.Separate.SeparateFrame, FrameRate).StartTime();
+        }
         OnPropertyChanged(nameof(StartFrame));
         OnPropertyChanged(nameof(EndFrame));
         OnPropertyChanged(nameof(StartTime));
