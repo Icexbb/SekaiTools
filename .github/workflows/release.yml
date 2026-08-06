@@ -36,6 +36,25 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v5
 
+      - name: Prepare Release Notes
+        shell: pwsh
+        run: |
+          $source = "release-notes/$env:VERSION.md"
+          $target = Join-Path $env:RUNNER_TEMP "release-notes.md"
+
+          if (Test-Path $source) {
+            Copy-Item $source $target
+          }
+          else {
+            Set-Content `
+              -Path $target `
+              -Value "## $env:VERSION 更新内容" `
+              -Encoding utf8
+          }
+
+          "RELEASE_NOTES_PATH=$target" |
+            Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -62,8 +81,9 @@ jobs:
         uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          tag_name: ${{ github.ref }}
+          tag_name: ${{ github.ref_name }}
           name: Release ${{ env.VERSION }}
+          body_path: ${{ env.RELEASE_NOTES_PATH }}
           generate_release_notes: true
           draft: false
           prerelease: false

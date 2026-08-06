@@ -129,7 +129,6 @@ public partial class TimelineEditor : UserControl
     private StreamGeometry? _overviewWaveformGeometry;
     private AudioWaveformEnvelope? _overviewWaveformSource;
     private Size _overviewWaveformSize;
-    private string _waveformStatus = "";
     private bool _overviewDragging;
     private TimelineEventSelection? _selection;
     private DragMode _dragMode;
@@ -195,7 +194,7 @@ public partial class TimelineEditor : UserControl
         _waveformCancellation = cancellation;
         _waveform = null;
         _overviewWaveformGeometry = null;
-        _waveformStatus = "正在生成音频波形…";
+        ViewModel.WaveformStatus = "正在生成音频波形…";
         RenderTimeline();
 
         try
@@ -204,7 +203,7 @@ public partial class TimelineEditor : UserControl
             if (!ReferenceEquals(_waveformCancellation, cancellation))
                 return;
             _waveform = waveform;
-            _waveformStatus = "";
+            ViewModel.WaveformStatus = "";
         }
         catch (OperationCanceledException)
         {
@@ -214,7 +213,7 @@ public partial class TimelineEditor : UserControl
         {
             if (!ReferenceEquals(_waveformCancellation, cancellation))
                 return;
-            _waveformStatus = "音频波形不可用";
+            ViewModel.WaveformStatus = "音频波形不可用";
         }
         finally
         {
@@ -234,11 +233,12 @@ public partial class TimelineEditor : UserControl
         if (!ReferenceEquals(_selection, selection))
             DeselectHandle(false);
         _selection = selection;
-        EventNumberText.Text = selection.EventNumber;
-        EventTypeText.Text = selection.EventType;
-        EventTypeBadge.Background = selection.AccentBrush;
-        EventContentText.Text = selection.Content;
-        EmptyHint.Visibility = Visibility.Collapsed;
+        ViewModel.SetSelection(
+            selection.EventNumber,
+            selection.EventType,
+            selection.Content,
+            selection.AccentBrush,
+            selection.HasTimingEdits);
         CenterOnSelection();
         UpdateTimingDisplay();
         RenderTimeline();
@@ -267,16 +267,11 @@ public partial class TimelineEditor : UserControl
         _framePreviewLoader?.Dispose();
         _framePreviewLoader = null;
         _overviewWaveformGeometry = null;
-        _waveformStatus = "";
         _videoDurationMilliseconds = 0;
         _viewStartMilliseconds = 0;
         _events.Clear();
         _eventHitRegions.Clear();
-        EventNumberText.Text = "未选择";
-        EventTypeText.Text = "事件";
-        EventTypeBadge.Background = Brushes.Gray;
-        EventContentText.Text = "";
-        EmptyHint.Visibility = Visibility.Visible;
+        ViewModel.ClearSelection();
         _undoStack.Clear();
         UpdateUndoState();
         UpdateTimingDisplay();
@@ -296,11 +291,12 @@ public partial class TimelineEditor : UserControl
         if (command.OldSeparateFrame is { } separateFrame &&
             command.Selection.SeparateFrame != separateFrame)
             command.Selection.SetSeparateFrame(separateFrame);
-        EventNumberText.Text = command.Selection.EventNumber;
-        EventTypeText.Text = command.Selection.EventType;
-        EventTypeBadge.Background = command.Selection.AccentBrush;
-        EventContentText.Text = command.Selection.Content;
-        EmptyHint.Visibility = Visibility.Collapsed;
+        ViewModel.SetSelection(
+            command.Selection.EventNumber,
+            command.Selection.EventType,
+            command.Selection.Content,
+            command.Selection.AccentBrush,
+            command.Selection.HasTimingEdits);
         CenterOnSelection();
         UpdateTimingDisplay();
         UpdateUndoState();
@@ -337,11 +333,10 @@ public partial class TimelineEditor : UserControl
 
     private void UpdateReadOnlyState()
     {
+        ViewModel.IsReadOnly = IsReadOnly;
         if (!IsInitialized)
             return;
 
-        ReadOnlyBadge.Visibility = IsReadOnly ? Visibility.Visible : Visibility.Collapsed;
-        UpdateEditControlState();
         UpdateUndoState();
         RenderTimeline();
     }
@@ -998,22 +993,20 @@ public partial class TimelineEditor : UserControl
         try
         {
             var hasSelection = _selection != null;
-            StartTimeBox.IsEnabled = hasSelection;
-            EndTimeBox.IsEnabled = hasSelection;
             UpdateEditControlState();
             if (!hasSelection)
             {
-                StartTimeBox.Text = "--:--:--.--";
-                EndTimeBox.Text = "--:--:--.--";
-                DurationText.Text = "--";
+                ViewModel.StartTime = "--:--:--.--";
+                ViewModel.EndTime = "--:--:--.--";
+                ViewModel.Duration = "--";
                 return;
             }
 
             var start = GetStartMilliseconds(_selection!);
             var end = GetEndMilliseconds(_selection!);
-            StartTimeBox.Text = FormatTimestamp(start);
-            EndTimeBox.Text = FormatTimestamp(end);
-            DurationText.Text = $"{Math.Max(0, end - start) / 1000d:0.00}s";
+            ViewModel.StartTime = FormatTimestamp(start);
+            ViewModel.EndTime = FormatTimestamp(end);
+            ViewModel.Duration = $"{Math.Max(0, end - start) / 1000d:0.00}s";
         }
         finally
         {
@@ -1023,31 +1016,21 @@ public partial class TimelineEditor : UserControl
 
     private void UpdateEditControlState()
     {
-        var canEdit = !IsReadOnly && _selection != null;
-        StartTimeBox.IsReadOnly = !canEdit;
-        EndTimeBox.IsReadOnly = !canEdit;
-        StartMinusButton.IsEnabled = canEdit;
-        StartPlusButton.IsEnabled = canEdit;
-        EndMinusButton.IsEnabled = canEdit;
-        EndPlusButton.IsEnabled = canEdit;
-        RestoreTimingButton.IsEnabled = canEdit && _selection!.HasTimingEdits;
+        ViewModel.IsReadOnly = IsReadOnly;
+        ViewModel.HasSelection = _selection != null;
+        ViewModel.HasTimingEdits = _selection?.HasTimingEdits ?? false;
     }
 
 
     private void UpdateUndoState()
     {
-        if (!IsInitialized)
-            return;
-        UndoButton.IsEnabled = !IsReadOnly && _undoStack.Count > 0;
-        UndoButton.ToolTip = _undoStack.Count == 0
-            ? "没有可撤回的时间修改"
-            : $"撤回时间修改 (Ctrl+Z) · {_undoStack.Count}";
+        ViewModel.IsReadOnly = IsReadOnly;
+        ViewModel.UndoCount = _undoStack.Count;
     }
 
     private void UpdateZoomText()
     {
-        if (ZoomText != null)
-            ZoomText.Text = $"{_pixelsPerSecond:0.##}px/s";
+        ViewModel.ZoomText = $"{_pixelsPerSecond:0.##}px/s";
     }
 
     private void RenderTimeline()
@@ -1155,11 +1138,11 @@ public partial class TimelineEditor : UserControl
             }
         }
 
-        if (_waveform == null && !string.IsNullOrWhiteSpace(_waveformStatus))
+        if (_waveform == null && !string.IsNullOrWhiteSpace(ViewModel.WaveformStatus))
         {
             var status = new TextBlock
             {
-                Text = _waveformStatus,
+                Text = ViewModel.WaveformStatus,
                 FontSize = 10,
                 Foreground = textBrush,
                 IsHitTestVisible = false

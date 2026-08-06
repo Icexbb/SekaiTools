@@ -48,6 +48,7 @@ public class FrameRate
     private readonly long _denominator;
     private readonly bool _drop;
     private readonly long _numerator;
+    private readonly object _timecodesLock = new();
     private readonly List<int> _timecodes = [];
     private long Last => (long)_timecodes[^1] * _numerator;
 
@@ -105,33 +106,37 @@ public class FrameRate
 
     public bool RecordTimecode(int frameIndex, double milliseconds)
     {
-        if (frameIndex < 0 || !double.IsFinite(milliseconds) || milliseconds < 0)
-            return false;
-        if (frameIndex > 0 && milliseconds <= 0)
-            return false;
-
-        var value = (int)Math.Round(milliseconds);
-        if (frameIndex == 0)
+        lock (_timecodesLock)
         {
-            _timecodes[0] = Math.Max(0, value);
+            if (frameIndex < 0 || !double.IsFinite(milliseconds) || milliseconds < 0)
+                return false;
+            if (frameIndex > 0 && milliseconds <= 0)
+                return false;
+
+            var value = (int)Math.Round(milliseconds);
+            if (frameIndex == 0)
+            {
+                _timecodes[0] = Math.Max(0, value);
+                return true;
+            }
+
+            while (_timecodes.Count < frameIndex)
+                _timecodes.Add(TimeAtFrame(_timecodes.Count).Milliseconds);
+
+            var minimum = _timecodes[frameIndex - 1] + 1;
+            value = Math.Max(value, minimum);
+            if (frameIndex == _timecodes.Count)
+                _timecodes.Add(value);
+            else
+                _timecodes[frameIndex] = value;
             return true;
         }
-
-        while (_timecodes.Count < frameIndex)
-            _timecodes.Add(TimeAtFrame(_timecodes.Count).Milliseconds);
-
-        var minimum = _timecodes[frameIndex - 1] + 1;
-        value = Math.Max(value, minimum);
-        if (frameIndex == _timecodes.Count)
-            _timecodes.Add(value);
-        else
-            _timecodes[frameIndex] = value;
-        return true;
     }
 
     public IReadOnlyList<int> ExportTimecodes()
     {
-        return _timecodes.ToList();
+        lock (_timecodesLock)
+            return _timecodes.ToList();
     }
 
     public void RestoreTimecodes(IEnumerable<int> timecodes)
@@ -142,8 +147,11 @@ public class FrameRate
         if (restored[0] < 0 || restored.Zip(restored.Skip(1), (a, b) => b > a).Any(valid => !valid))
             throw new InvalidDataException("视频时间码必须非负且严格递增");
 
-        _timecodes.Clear();
-        _timecodes.AddRange(restored);
+        lock (_timecodesLock)
+        {
+            _timecodes.Clear();
+            _timecodes.AddRange(restored);
+        }
     }
 
     // private void SetFromTimecodes(IEnumerable<int> timecodes)
@@ -213,14 +221,19 @@ public class FrameRate
 
     public int FrameAtTime(int ms, FrameType type = FrameType.Exact)
     {
-        if (type == FrameType.Start) return FrameAtTime(ms - 1) + 1;
-        if (type == FrameType.End) return FrameAtTime(ms - 1);
+        lock (_timecodesLock)
+        {
+            if (type == FrameType.Start) return FrameAtTime(ms - 1) + 1;
+            if (type == FrameType.End) return FrameAtTime(ms - 1);
 
-        if (ms < 0) return (int)((ms * _numerator / _denominator - 999) / 1000);
-        if (ms > _timecodes.Last())
-            return (int)((ms * _numerator - Last + _denominator - 1) / _denominator / 1000) +
-                   (_timecodes.Count - 1);
-        return _timecodes.Select((t, i) => (t, i)).First(p => p.t >= ms).i;
+            if (ms < 0) return (int)((ms * _numerator / _denominator - 999) / 1000);
+            if (ms > _timecodes[^1])
+                return (int)((ms * _numerator - Last + _denominator - 1) / _denominator / 1000) +
+                       (_timecodes.Count - 1);
+
+            var index = _timecodes.BinarySearch(ms);
+            return index >= 0 ? index : ~index;
+        }
     }
 
     public int FrameAtSmpte(SmpteTime smpte)
@@ -252,32 +265,35 @@ public class FrameRate
 
     public SubtitleTime TimeAtFrame(int frame, FrameType type = FrameType.Exact)
     {
-        switch (type)
+        lock (_timecodesLock)
         {
-            case FrameType.Start:
+            switch (type)
             {
-                var prev = TimeAtFrame(frame - 1).Milliseconds;
-                var cur = TimeAtFrame(frame).Milliseconds;
-                return new SubtitleTime(prev + (cur - prev + 1) / 2);
-            }
-            case FrameType.End:
-            {
-                var cur = TimeAtFrame(frame).Milliseconds;
-                var next = TimeAtFrame(frame + 1).Milliseconds;
-                return new SubtitleTime(cur + (next - cur + 1) / 2);
-            }
-            case FrameType.Exact:
-            {
-                if (frame < 0) return new SubtitleTime((int)(frame * _denominator * 1000 / _numerator));
+                case FrameType.Start:
+                {
+                    var prev = TimeAtFrame(frame - 1).Milliseconds;
+                    var cur = TimeAtFrame(frame).Milliseconds;
+                    return new SubtitleTime(prev + (cur - prev + 1) / 2);
+                }
+                case FrameType.End:
+                {
+                    var cur = TimeAtFrame(frame).Milliseconds;
+                    var next = TimeAtFrame(frame + 1).Milliseconds;
+                    return new SubtitleTime(cur + (next - cur + 1) / 2);
+                }
+                case FrameType.Exact:
+                {
+                    if (frame < 0) return new SubtitleTime((int)(frame * _denominator * 1000 / _numerator));
 
-                if (frame < _timecodes.Count) return new SubtitleTime(_timecodes[frame]);
+                    if (frame < _timecodes.Count) return new SubtitleTime(_timecodes[frame]);
 
-                var framesPastEnd = frame - _timecodes.Count + 1;
-                return new SubtitleTime((int)(
-                    (framesPastEnd * 1000 * _denominator + Last + _numerator / 2) / _numerator));
+                    var framesPastEnd = frame - _timecodes.Count + 1;
+                    return new SubtitleTime((int)(
+                        (framesPastEnd * 1000 * _denominator + Last + _numerator / 2) / _numerator));
+                }
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }
-            default:
-                throw new ArgumentOutOfRangeException(nameof(type), type, null);
         }
     }
 
@@ -321,7 +337,8 @@ public class FrameRate
 
     public bool IsVfr()
     {
-        return _timecodes.Count > 1;
+        lock (_timecodesLock)
+            return _timecodes.Count > 1;
     }
 
     public bool IsLoaded()

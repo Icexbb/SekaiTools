@@ -770,6 +770,7 @@ public partial class SubtitlePage
         try
         {
             VideoProcessor?.Dispose();
+            ViewModel.IsRunning = true;
             VideoProcessor = new VideoProcessor(new Config(
                     ViewModel.VideoFilePath,
                     ViewModel.ScriptFilePath,

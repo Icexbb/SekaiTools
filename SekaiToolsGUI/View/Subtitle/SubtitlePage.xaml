@@ -1,4 +1,5 @@
 <UserControl x:Class="SekaiToolsGUI.View.Subtitle.SubtitlePage"
+             x:Name="Root"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -353,7 +354,7 @@
             <!--时间轴-->
             <components:TimelineEditor x:Name="EventTimelineEditor"
                                        Grid.Row="2" Margin="0,6,0,0"
-                                       IsReadOnly="{Binding IsRunning}" />
+                                       IsReadOnly="{Binding DataContext.IsRunning, ElementName=Root}" />
         </Grid>
     </Grid>
 

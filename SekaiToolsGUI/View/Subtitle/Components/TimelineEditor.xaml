@@ -43,24 +43,24 @@
                         <Border x:Name="EventNumberBadge" Margin="0,0,4,0" Padding="7,3" CornerRadius="4"
                                 Background="{DynamicResource ControlFillColorDefaultBrush}" VerticalAlignment="Center">
                             <ui:TextBlock x:Name="EventNumberText" FontFamily="Consolas" TextAlignment="Center"
-                                          FontWeight="SemiBold" Text="未选择" />
+                                          FontWeight="SemiBold" Text="{Binding EventNumber}" />
                         </Border>
                         <Border x:Name="EventTypeBadge" Margin="0,0,5,0" Padding="7,3" CornerRadius="4"
-                                Background="#808080" VerticalAlignment="Center">
-                            <ui:TextBlock x:Name="EventTypeText" Foreground="White" Text="事件" TextAlignment="Center" />
+                                Background="{Binding EventAccentBrush}" VerticalAlignment="Center">
+                            <ui:TextBlock x:Name="EventTypeText" Foreground="White" Text="{Binding EventType}" TextAlignment="Center" />
                         </Border>
-                        <ui:TextBlock x:Name="EventContentText" MaxWidth="480" TextTrimming="CharacterEllipsis"
+                        <ui:TextBlock x:Name="EventContentText" MaxWidth="480" Text="{Binding EventContent}" TextTrimming="CharacterEllipsis"
                                       Visibility="Collapsed"
                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                       VerticalAlignment="Center" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <ui:Button x:Name="UndoButton"
-                                   Click="UndoButton_OnClick" ToolTip="撤回时间修改 (Ctrl+Z)">
+                        <ui:Button x:Name="UndoButton" IsEnabled="{Binding CanUndo}"
+                                   Click="UndoButton_OnClick" ToolTip="{Binding UndoToolTip}">
                             ↶
                         </ui:Button>
-                        <ui:Button x:Name="RestoreTimingButton"
+                        <ui:Button x:Name="RestoreTimingButton" IsEnabled="{Binding CanRestoreTiming}"
                                    Click="RestoreTimingButton_OnClick" ToolTip="还原当前事件识别得到的起止时间">
                             还原识别时长
                         </ui:Button>
@@ -69,7 +69,7 @@
                             Click="ZoomOutButton_OnClick" ToolTip="缩小时间轴">
                             −
                         </ui:Button>
-                        <ui:TextBlock x:Name="ZoomText" Width="54" TextAlignment="Center" Visibility="Collapsed"
+                        <ui:TextBlock x:Name="ZoomText" Width="54" Text="{Binding ZoomText}" TextAlignment="Center" Visibility="Collapsed"
                                       VerticalAlignment="Center" FontFamily="Consolas" />
                         <ui:Button
                             Click="ZoomInButton_OnClick" ToolTip="放大时间轴">
@@ -111,12 +111,14 @@
                                 MouseLeftButtonUp="TimelineCanvas_OnMouseLeftButtonUp"
                                 MouseWheel="TimelineCanvas_OnMouseWheel" />
                         <ui:TextBlock x:Name="EmptyHint" Text="点击时间轴块或列表事件以选择"
+                                      Visibility="{calcBinding:Binding !HasSelection,FalseToVisibility=Collapsed}"
                                       HorizontalAlignment="Center" VerticalAlignment="Center"
                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                       IsHitTestVisible="False" />
                         <Border x:Name="ReadOnlyBadge" HorizontalAlignment="Right" VerticalAlignment="Top"
                                 Margin="6" Padding="7,3" CornerRadius="4"
-                                Background="#B0303030" Visibility="Collapsed"
+                                Background="#B0303030"
+                                Visibility="{calcBinding:Binding IsReadOnly,FalseToVisibility=Collapsed}"
                                 IsHitTestVisible="False">
                             <ui:TextBlock Text="处理中 · 只读" Foreground="White" FontSize="11" />
                         </Border>
@@ -172,26 +174,30 @@
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                         <Ellipse Width="8" Height="8" Margin="0,0,5,0" Fill="#FF5B63" />
                         <ui:TextBlock Text="起始" Margin="0,0,5,0" VerticalAlignment="Center" />
-                        <ui:Button x:Name="StartMinusButton" Click="StartMinusButton_OnClick">−</ui:Button>
+                        <ui:Button x:Name="StartMinusButton" IsEnabled="{Binding CanEdit}" Click="StartMinusButton_OnClick">−</ui:Button>
                         <ui:TextBox x:Name="StartTimeBox" Width="102" FontFamily="Consolas"
+                                    Text="{Binding StartTime, Mode=OneWay}" IsEnabled="{Binding HasSelection}"
+                                    IsReadOnly="{calcBinding:Binding !CanEdit}"
                                     FontWeight="SemiBold" HorizontalContentAlignment="Center"
                                     Margin="3,0,0,0"
                                     PreviewKeyDown="TimeBox_OnPreviewKeyDown"
                                     LostKeyboardFocus="TimeBox_OnLostKeyboardFocus" />
-                        <ui:Button x:Name="StartPlusButton" Click="StartPlusButton_OnClick">＋</ui:Button>
+                        <ui:Button x:Name="StartPlusButton" IsEnabled="{Binding CanEdit}" Click="StartPlusButton_OnClick">＋</ui:Button>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Margin="13,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
                         <Ellipse Width="8" Height="8" Margin="0,0,5,0"
                                  Fill="{DynamicResource TextFillColorPrimaryBrush}" />
                         <ui:TextBlock Text="结束" Margin="0,0,5,0" VerticalAlignment="Center" />
-                        <Button x:Name="EndMinusButton" Click="EndMinusButton_OnClick">−</Button>
+                        <Button x:Name="EndMinusButton" IsEnabled="{Binding CanEdit}" Click="EndMinusButton_OnClick">−</Button>
                         <TextBox x:Name="EndTimeBox" Width="102" FontFamily="Consolas"
+                                 Text="{Binding EndTime, Mode=OneWay}" IsEnabled="{Binding HasSelection}"
+                                 IsReadOnly="{calcBinding:Binding !CanEdit}"
                                  FontWeight="SemiBold" HorizontalContentAlignment="Center"
                                  Margin="3,0,0,0"
                                  PreviewKeyDown="TimeBox_OnPreviewKeyDown"
                                  LostKeyboardFocus="TimeBox_OnLostKeyboardFocus" />
-                        <Button x:Name="EndPlusButton" Click="EndPlusButton_OnClick">＋</Button>
+                        <Button x:Name="EndPlusButton" IsEnabled="{Binding CanEdit}" Click="EndPlusButton_OnClick">＋</Button>
                     </StackPanel>
 
                     <StackPanel Grid.Column="3" Margin="15,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
@@ -199,7 +205,7 @@
                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         <Border Padding="8,4" CornerRadius="4"
                                 Background="{DynamicResource ControlFillColorDefaultBrush}">
-                            <ui:TextBlock x:Name="DurationText" FontFamily="Consolas" FontWeight="SemiBold" />
+                            <ui:TextBlock x:Name="DurationText" Text="{Binding Duration}" FontFamily="Consolas" FontWeight="SemiBold" />
                         </Border>
                     </StackPanel>
 
