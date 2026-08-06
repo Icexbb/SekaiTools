@@ -28,7 +28,7 @@ public struct Resource
 
 public class ResourceManager
 {
-    private const string ResourceServerUrl = "https://resource.g.xbb.moe/";
+    private const string ResourceServerUrl = "https://v.xbb.moe/files/sekai-tools/";
 
     public static readonly string DataBaseDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "SekaiTools");
