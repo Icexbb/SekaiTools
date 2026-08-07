@@ -25,6 +25,28 @@ dotnet test SekaiTools.sln
 
 基于 .NET 10 的解决方案。所有项目通过 `Directory.Build.props` 全局启用可空引用类型。
 
+## Git 提交规范
+
+Git 提交信息必须遵循 Conventional Commits（语义化提交）格式：
+
+```text
+<type>(<scope>): <中文描述>
+```
+
+- `type` 使用小写英文，常用类别包括：`feat`、`fix`、`docs`、`refactor`、`perf`、`test`、`build`、`ci`、`chore`、`revert`。
+- `scope` 可选，使用简短的小写英文标识影响范围，例如 `ui`、`video`、`subtitle`、`download`、`settings`。
+- 冒号后的提交描述必须使用中文，简洁说明本次提交完成的变更。
+- 存在破坏性变更时，在类型或作用域后添加 `!`，并在提交正文或页脚中说明影响。
+
+示例：
+
+```text
+feat(ui): 增加历史记录筛选功能
+fix(video): 修复取消压制后进度状态未重置的问题
+docs(git): 补充提交信息规范
+refactor(subtitle)!: 调整字幕生成配置结构
+```
+
 ## 架构概览
 
 ### 解决方案结构
