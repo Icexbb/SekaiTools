@@ -8,7 +8,26 @@ internal sealed class TimelineFramePreviewLoader(string videoPath) : IDisposable
 {
     private readonly object _sync = new();
     private VideoCapture? _capture;
+    private int _nextFrameIndex = -1;
     private bool _disposed;
+
+    public Task<BitmapSource?> LoadFrameAsync(int frameIndex, CancellationToken cancellationToken)
+    {
+        return Task.Run(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            lock (_sync)
+            {
+                ObjectDisposedException.ThrowIf(_disposed, this);
+                cancellationToken.ThrowIfCancellationRequested();
+                _capture ??= new VideoCapture(videoPath);
+                var frameCount = Math.Max(1, (int)_capture.Get(CapProp.FrameCount));
+                return frameIndex >= 0 && frameIndex < frameCount
+                    ? ReadFrame(frameIndex)
+                    : null;
+            }
+        }, cancellationToken);
+    }
 
     public Task<(BitmapSource? First, BitmapSource? Second)> LoadPairAsync(
         int firstFrame,
@@ -42,8 +61,14 @@ internal sealed class TimelineFramePreviewLoader(string videoPath) : IDisposable
 
     private BitmapSource? ReadFrame(int frameIndex)
     {
-        if (_capture == null || !_capture.Set(CapProp.PosFrames, frameIndex))
+        if (_capture == null)
             return null;
+        if (_nextFrameIndex != frameIndex)
+        {
+            if (!_capture.Set(CapProp.PosFrames, frameIndex))
+                return null;
+            _nextFrameIndex = frameIndex;
+        }
 
         return ReadCurrentFrame();
     }
@@ -55,8 +80,12 @@ internal sealed class TimelineFramePreviewLoader(string videoPath) : IDisposable
 
         using var frame = new Mat();
         if (!_capture.Read(frame) || frame.IsEmpty)
+        {
+            _nextFrameIndex = -1;
             return null;
+        }
 
+        _nextFrameIndex++;
         var source = frame.ToBitmapSource();
         source.Freeze();
         return source;
@@ -71,6 +100,7 @@ internal sealed class TimelineFramePreviewLoader(string videoPath) : IDisposable
             _disposed = true;
             _capture?.Dispose();
             _capture = null;
+            _nextFrameIndex = -1;
         }
     }
 }

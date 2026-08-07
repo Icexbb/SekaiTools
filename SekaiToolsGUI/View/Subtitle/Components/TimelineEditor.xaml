@@ -10,6 +10,7 @@
              d:DesignHeight="260" d:DesignWidth="1000"
              Focusable="True"
              d:DataContext="{d:DesignInstance Type=vm:TimelineEditorModel, IsDesignTimeCreatable=True}"
+             Unloaded="TimelineEditor_OnUnloaded"
              PreviewMouseLeftButtonDown="TimelineEditor_OnPreviewMouseLeftButtonDown">
     <StackPanel>
         <ui:CardAction Padding="10"  Click="TitleHeader_OnClick"
@@ -56,6 +57,16 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <ui:Button IsEnabled="{Binding CanPlay}" Click="PlayAudioButton_OnClick"
+                                   ToolTip="仅播放当前事件区间的音频">▶ 音频</ui:Button>
+                        <ui:Button IsEnabled="{Binding CanPlay}" Click="PlayVideoButton_OnClick"
+                                   ToolTip="播放当前事件区间的音频和视频">▶ 音视频</ui:Button>
+                        <ui:Button IsEnabled="{Binding IsPlaying}" Click="StopPlaybackButton_OnClick"
+                                   ToolTip="停止播放">■</ui:Button>
+                        <ui:TextBlock Width="150" Margin="5,0" VerticalAlignment="Center"
+                                      Text="{Binding PlaybackStatus}" TextTrimming="CharacterEllipsis"
+                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <Separator Margin="4,2,7,2" />
                         <ui:Button x:Name="UndoButton" IsEnabled="{Binding CanUndo}"
                                    Click="UndoButton_OnClick" ToolTip="{Binding UndoToolTip}">
                             ↶

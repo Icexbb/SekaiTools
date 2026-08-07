@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -5,6 +6,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
 using SekaiToolsGUI.ViewModel.Subtitle;
@@ -146,6 +150,20 @@ public partial class TimelineEditor : UserControl
     private double _viewStartMilliseconds;
     private int _videoDurationMilliseconds;
     private bool _updatingTimeBoxes;
+    private readonly DispatcherTimer _playbackTimer;
+    private readonly Stopwatch _audioPlaybackClock = new();
+    private MediaFoundationReader? _audioReader;
+    private WaveOutEvent? _audioOutput;
+    private TimelinePlaybackWindow? _videoPlaybackWindow;
+    private TimelineFramePreviewLoader? _videoPlaybackLoader;
+    private CancellationTokenSource? _videoPlaybackCancellation;
+    private bool _videoFrameLoading;
+    private int _lastVideoFrame = -1;
+    private int _playbackVersion;
+    private string? _mediaPath;
+    private PlaybackMode _playbackMode;
+    private TimeSpan _playbackStart;
+    private TimeSpan _playbackEnd;
 
     public TimelineEditorModel ViewModel => (TimelineEditorModel)DataContext;
 
@@ -154,6 +172,11 @@ public partial class TimelineEditor : UserControl
         DataContext = new TimelineEditorModel();
 
         InitializeComponent();
+        _playbackTimer = new DispatcherTimer(
+            TimeSpan.FromMilliseconds(10),
+            DispatcherPriority.Background,
+            PlaybackTimer_OnTick,
+            Dispatcher);
         ClearSelection();
         UpdateReadOnlyState();
         UpdateUndoState();
@@ -183,6 +206,9 @@ public partial class TimelineEditor : UserControl
 
     public async Task LoadAudioWaveformAsync(string videoPath)
     {
+        StopPlayback();
+        _mediaPath = videoPath;
+        ViewModel.HasMediaSource = System.IO.File.Exists(videoPath);
         _framePreviewCancellation?.Cancel();
         _framePreviewCancellation?.Dispose();
         _framePreviewCancellation = null;
@@ -231,7 +257,10 @@ public partial class TimelineEditor : UserControl
         ArgumentNullException.ThrowIfNull(selection);
         RegisterEvent(selection);
         if (!ReferenceEquals(_selection, selection))
+        {
+            StopPlayback(keepVideoPreview: _videoPlaybackWindow?.IsVisible == true);
             DeselectHandle(false);
+        }
         _selection = selection;
         ViewModel.SetSelection(
             selection.EventNumber,
@@ -257,6 +286,9 @@ public partial class TimelineEditor : UserControl
 
     public void ClearSelection()
     {
+        StopPlayback();
+        _mediaPath = null;
+        ViewModel.HasMediaSource = false;
         _selection = null;
         _selectedHandle = DragMode.None;
         _waveformCancellation?.Cancel();
@@ -789,6 +821,299 @@ public partial class TimelineEditor : UserControl
             DragMode.Separator => TimeToX(GetSeparateMilliseconds(_selection)),
             _ => TrackHeaderWidth
         };
+    }
+
+    private TimelinePlaybackWindow GetOrCreatePlaybackWindow()
+    {
+        if (_videoPlaybackWindow != null)
+            return _videoPlaybackWindow;
+
+        var window = new TimelinePlaybackWindow();
+        window.Closed += PlaybackWindow_OnClosed;
+        _videoPlaybackWindow = window;
+        return window;
+    }
+
+    private void PlaybackWindow_OnClosed(object? sender, EventArgs e)
+    {
+        if (!ReferenceEquals(sender, _videoPlaybackWindow))
+            return;
+
+        _videoPlaybackWindow = null;
+        if (_playbackMode == PlaybackMode.Video)
+            StopPlayback();
+    }
+
+    private void DisposePlaybackWindow()
+    {
+        var window = _videoPlaybackWindow;
+        _videoPlaybackWindow = null;
+        if (window == null)
+            return;
+
+        window.Closed -= PlaybackWindow_OnClosed;
+        window.PlaybackImageElement.Source = null;
+        window.Close();
+    }
+
+    private async void PlayAudioButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await StartPlaybackAsync(PlaybackMode.Audio);
+    }
+
+    private async void PlayVideoButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await StartPlaybackAsync(PlaybackMode.Video);
+    }
+
+    private void StopPlaybackButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        StopPlayback();
+    }
+
+    private async Task StartPlaybackAsync(PlaybackMode mode)
+    {
+        if (_selection == null || string.IsNullOrWhiteSpace(_mediaPath) || !System.IO.File.Exists(_mediaPath))
+        {
+            SetPlaybackStatus("媒体文件不可用");
+            return;
+        }
+
+        var startMilliseconds = GetStartMilliseconds(_selection);
+        var endMilliseconds = GetEndMilliseconds(_selection);
+        if (endMilliseconds <= startMilliseconds)
+        {
+            SetPlaybackStatus("事件区间无效");
+            return;
+        }
+
+        StopPlayback(
+            keepVideoPreview: mode == PlaybackMode.Video &&
+                              _videoPlaybackWindow?.IsVisible == true);
+        _playbackMode = mode;
+        _playbackVersion++;
+        _playbackStart = TimeSpan.FromMilliseconds(startMilliseconds);
+        _playbackEnd = TimeSpan.FromMilliseconds(endMilliseconds);
+        ViewModel.IsPlaying = true;
+        SetPlaybackStatus("正在加载…");
+
+        if (mode == PlaybackMode.Video)
+        {
+            var playbackWindow = GetOrCreatePlaybackWindow();
+            playbackWindow.Title = $"事件预览 · {_selection.EventNumber} {_selection.EventType}";
+            if (!playbackWindow.IsVisible)
+                playbackWindow.Show();
+            if (playbackWindow.WindowState == WindowState.Minimized)
+                playbackWindow.WindowState = WindowState.Normal;
+            playbackWindow.Activate();
+            playbackWindow.PlaybackImageElement.Source = null;
+
+            var playbackVersion = _playbackVersion;
+            var cancellation = new CancellationTokenSource();
+            var loader = new TimelineFramePreviewLoader(_mediaPath);
+            _videoPlaybackCancellation = cancellation;
+            _videoPlaybackLoader = loader;
+            SetPlaybackStatus($"正在解码 {FormatTimestamp(startMilliseconds)}…");
+            try
+            {
+                var firstFrame = await loader.LoadFrameAsync(
+                    _selection.StartFrame,
+                    cancellation.Token);
+                if (playbackVersion != _playbackVersion ||
+                    _playbackMode != PlaybackMode.Video ||
+                    !ReferenceEquals(loader, _videoPlaybackLoader))
+                    return;
+                if (firstFrame == null)
+                {
+                    StopPlayback("播放失败：无法解码事件起始帧");
+                    return;
+                }
+
+                playbackWindow.PlaybackImageElement.Source = firstFrame;
+                _lastVideoFrame = _selection.StartFrame;
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            catch (Exception ex)
+            {
+                if (playbackVersion == _playbackVersion)
+                    StopPlayback($"播放失败：{ex.Message}");
+                return;
+            }
+        }
+
+        StartAudioSegment();
+    }
+
+    private void StartAudioSegment()
+    {
+        MediaFoundationReader? reader = null;
+        WaveOutEvent? output = null;
+        try
+        {
+            reader = new MediaFoundationReader(_mediaPath);
+            var segment = new OffsetSampleProvider(reader.ToSampleProvider())
+            {
+                SkipOver = _playbackStart,
+                Take = _playbackEnd - _playbackStart
+            };
+            output = new WaveOutEvent();
+            output.Init(segment);
+            output.PlaybackStopped += AudioOutput_OnPlaybackStopped;
+            _audioReader = reader;
+            _audioOutput = output;
+            _audioPlaybackClock.Restart();
+            output.Play();
+            _playbackTimer.Start();
+            UpdatePlaybackStatus(_playbackStart);
+        }
+        catch (Exception ex)
+        {
+            output?.Dispose();
+            reader?.Dispose();
+            _audioOutput = null;
+            _audioReader = null;
+            StopPlayback($"播放失败：{ex.Message}");
+        }
+    }
+
+    private void AudioOutput_OnPlaybackStopped(object? sender, StoppedEventArgs e)
+    {
+        if (_playbackMode == PlaybackMode.None || !ReferenceEquals(sender, _audioOutput))
+            return;
+
+        var playbackVersion = _playbackVersion;
+        var keepVideoPreview = _playbackMode == PlaybackMode.Video && e.Exception == null;
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (playbackVersion != _playbackVersion)
+                return;
+            StopPlayback(
+                e.Exception == null ? "播放完成" : $"播放失败：{e.Exception.Message}",
+                keepVideoPreview);
+        });
+    }
+
+    private void PlaybackTimer_OnTick(object? sender, EventArgs e)
+    {
+        if (_playbackMode == PlaybackMode.None)
+            return;
+
+        var position = _playbackStart + _audioPlaybackClock.Elapsed;
+        if (position >= _playbackEnd)
+        {
+            StopPlayback("播放完成", _playbackMode == PlaybackMode.Video);
+            return;
+        }
+
+        if (_playbackMode == PlaybackMode.Video)
+            UpdateVideoPlaybackFrame(position);
+        UpdatePlaybackStatus(position);
+    }
+
+    private async void UpdateVideoPlaybackFrame(TimeSpan position)
+    {
+        if (_videoFrameLoading ||
+            _selection == null ||
+            _videoPlaybackLoader == null ||
+            _videoPlaybackCancellation == null ||
+            _videoPlaybackWindow == null)
+            return;
+
+        var frame = Math.Clamp(
+            _selection.FrameRate.FrameAtTime((int)position.TotalMilliseconds),
+            _selection.StartFrame,
+            _selection.EndFrame);
+        if (frame == _lastVideoFrame)
+            return;
+
+        var playbackVersion = _playbackVersion;
+        var loader = _videoPlaybackLoader;
+        var cancellation = _videoPlaybackCancellation;
+        _lastVideoFrame = frame;
+        _videoFrameLoading = true;
+        try
+        {
+            var source = await loader.LoadFrameAsync(frame, cancellation.Token);
+            if (source != null &&
+                playbackVersion == _playbackVersion &&
+                _playbackMode == PlaybackMode.Video &&
+                ReferenceEquals(loader, _videoPlaybackLoader) &&
+                _videoPlaybackWindow != null)
+                _videoPlaybackWindow.PlaybackImageElement.Source = source;
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+        finally
+        {
+            if (playbackVersion == _playbackVersion)
+                _videoFrameLoading = false;
+        }
+    }
+
+    private void UpdatePlaybackStatus(TimeSpan position)
+    {
+        var elapsed = Math.Clamp(
+            (position - _playbackStart).TotalMilliseconds,
+            0,
+            (_playbackEnd - _playbackStart).TotalMilliseconds);
+        var duration = (_playbackEnd - _playbackStart).TotalMilliseconds;
+        var mode = _playbackMode == PlaybackMode.Video ? "音视频" : "音频";
+        SetPlaybackStatus($"{mode} · {FormatTimestamp((int)elapsed)} / {FormatTimestamp((int)duration)}");
+    }
+
+    private void SetPlaybackStatus(string status)
+    {
+        ViewModel.PlaybackStatus = status;
+    }
+
+    private void StopPlayback(string status = "", bool keepVideoPreview = false)
+    {
+        _playbackMode = PlaybackMode.None;
+        _playbackVersion++;
+        _playbackTimer.Stop();
+        _audioPlaybackClock.Reset();
+
+        var output = _audioOutput;
+        _audioOutput = null;
+        if (output != null)
+        {
+            output.PlaybackStopped -= AudioOutput_OnPlaybackStopped;
+            output.Stop();
+            output.Dispose();
+        }
+
+        _audioReader?.Dispose();
+        _audioReader = null;
+
+        _videoPlaybackCancellation?.Cancel();
+        _videoPlaybackCancellation?.Dispose();
+        _videoPlaybackCancellation = null;
+        _videoPlaybackLoader?.Dispose();
+        _videoPlaybackLoader = null;
+        _videoFrameLoading = false;
+        _lastVideoFrame = -1;
+        if (!keepVideoPreview)
+        {
+            if (_videoPlaybackWindow != null)
+                _videoPlaybackWindow.PlaybackImageElement.Source = null;
+            if (_videoPlaybackWindow?.IsVisible == true)
+                _videoPlaybackWindow.Hide();
+        }
+        ViewModel.IsPlaying = false;
+        SetPlaybackStatus(status);
+    }
+
+    private void TimelineEditor_OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        StopPlayback();
+        DisposePlaybackWindow();
     }
 
     private void StartMinusButton_OnClick(object sender, RoutedEventArgs e)
@@ -1629,6 +1954,13 @@ public partial class TimelineEditor : UserControl
 
     [GeneratedRegex(@"^(?<hour>\d{1,2}):(?<minute>\d{2}):(?<second>\d{2})(?:[\.,](?<fraction>\d{1,3}))?$")]
     private static partial Regex TimestampPattern();
+
+    private enum PlaybackMode
+    {
+        None,
+        Audio,
+        Video
+    }
 
     private enum DragMode
     {
