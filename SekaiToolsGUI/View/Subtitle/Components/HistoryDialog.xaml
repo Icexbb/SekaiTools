@@ -8,16 +8,18 @@
                   mc:Ignorable="d"
                   ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
                   ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                  IsPrimaryButtonEnabled="False" DefaultButton="Primary"
-                  Title="历史记录">
+                  IsPrimaryButtonEnabled="False" DefaultButton="Close"
+                  Title="历史记录" CloseButtonText="关闭">
     <ui:ContentDialog.Resources>
         <!-- ReSharper disable once Xaml.StaticResourceNotResolved -->
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"
                TargetType="{x:Type local:HistoryDialog}" />
     </ui:ContentDialog.Resources>
     <ui:ContentDialog.Content>
-        <StackPanel Name="StackPanel" />
-
-
+        <ScrollViewer MinWidth="480" MaxHeight="420"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Name="HistoryItemsPanel" />
+        </ScrollViewer>
     </ui:ContentDialog.Content>
 </ui:ContentDialog>
