@@ -253,9 +253,9 @@ partial class SettingPageModel
                     File.Delete(tempPath);
             }
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            // 设置保存失败不应中断用户操作
+            Logger.Log($"设置保存失败: {exception.Message}", Microsoft.Extensions.Logging.LogLevel.Error);
         }
     }
 

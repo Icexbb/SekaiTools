@@ -127,10 +127,4 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
             new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
     }
 
-    private void SaveButton_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.SaveSetting();
-        SnackService.Show("成功", "设置已保存", ControlAppearance.Success,
-            new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
-    }
 }

@@ -342,20 +342,20 @@
             </StackPanel>
         </ScrollViewer>
         <ui:Card Grid.Row="1" Padding="5">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Grid>
                 <ui:Button
                     Margin="10"
                     HorizontalAlignment="Left"
                     Width="100"
                     Content="重置为默认"
                     Click="ResetToDefault_Click" />
-                <ui:Button
+                <ui:TextBlock
                     Margin="10"
                     HorizontalAlignment="Right"
-                    Width="100"
-                    Content="保存"
-                    Click="SaveButton_Click" />
-            </StackPanel>
+                    VerticalAlignment="Center"
+                    Appearance="Secondary"
+                    Text="更改会自动保存" />
+            </Grid>
         </ui:Card>
     </Grid>
 </UserControl>
