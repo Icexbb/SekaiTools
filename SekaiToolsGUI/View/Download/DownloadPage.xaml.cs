@@ -21,7 +21,6 @@ using SekaiToolsGUI.ViewModel.Setting;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Button = System.Windows.Controls.Button;
-using MessageBox = System.Windows.MessageBox;
 
 namespace SekaiToolsGUI.View.Download;
 
@@ -101,22 +100,27 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
             ContentCard.IsEnabled = false;
             var tasks = DownloadItemBox.Items.OfType<DownloadTask>().ToArray();
             var savePath = "";
+            var successCount = 0;
+            var failures = new List<string>();
             try
             {
                 foreach (var downloadItem in tasks)
                 {
-                    savePath = Path.GetDirectoryName(downloadItem.SavePath)!;
                     if (downloadItem.Downloaded) continue;
                     downloadItem.ChangeStatus(0);
                     try
                     {
                         await Download(downloadItem.Url, downloadItem.SavePath);
                         downloadItem.ChangeStatus(1);
+                        successCount++;
+                        savePath = Path.GetDirectoryName(downloadItem.SavePath)!;
                     }
                     catch (Exception exception)
                     {
-                        MessageBox.Show(exception.Message);
                         downloadItem.ChangeStatus(2);
+                        failures.Add(downloadItem.ScriptTag);
+                        Log.Logger.LogError(exception, "Download {Tag} from {Url} failed",
+                            downloadItem.ScriptTag, downloadItem.Url);
                     }
                 }
             }
@@ -127,9 +131,34 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
                 ContentCard.IsEnabled = true;
             }
 
+            ShowDownloadSummary(successCount, failures);
             if (savePath.Length != 0)
                 ShowFile(savePath);
             return;
+
+            void ShowDownloadSummary(int succeeded, IReadOnlyCollection<string> failed)
+            {
+                if (succeeded == 0 && failed.Count == 0)
+                {
+                    SnackService.Show("提示", "没有待下载的任务。", ControlAppearance.Info,
+                        new SymbolIcon(SymbolRegular.Info24), TimeSpan.FromSeconds(3));
+                    return;
+                }
+
+                if (failed.Count == 0)
+                {
+                    SnackService.Show("下载完成", $"已成功下载 {succeeded} 个文件。", ControlAppearance.Success,
+                        new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(4));
+                    return;
+                }
+
+                var failedPreview = string.Join("、", failed.Take(3));
+                if (failed.Count > 3) failedPreview += "等";
+                SnackService.Show("下载完成",
+                    $"成功 {succeeded} 个，失败 {failed.Count} 个：{failedPreview}。详情请查看运行日志。",
+                    ControlAppearance.Caution, new SymbolIcon(SymbolRegular.DocumentDismiss24),
+                    TimeSpan.FromSeconds(7));
+            }
 
             void ShowFile(string path)
             {
