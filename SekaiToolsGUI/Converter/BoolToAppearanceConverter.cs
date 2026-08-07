@@ -7,6 +7,8 @@ namespace SekaiToolsGUI.Converter;
 public class BoolToAppearanceConverter : IValueConverter
 {
     public bool Invert { get; set; }
+    public ControlAppearance TrueToAppearance { get; set; } = ControlAppearance.Primary;
+    public ControlAppearance FalseToAppearance { get; set; } = ControlAppearance.Secondary;
 
     public object Convert(
         object? value,
@@ -20,8 +22,8 @@ public class BoolToAppearanceConverter : IValueConverter
             result = !result;
 
         return result
-            ? ControlAppearance.Primary
-            : ControlAppearance.Secondary;
+            ? TrueToAppearance
+            : FalseToAppearance;
     }
 
     public object ConvertBack(
@@ -30,6 +32,7 @@ public class BoolToAppearanceConverter : IValueConverter
         object? parameter,
         CultureInfo culture)
     {
-        return value is ControlAppearance.Primary;
+        var result = Equals(value, TrueToAppearance);
+        return Invert ? !result : result;
     }
 }

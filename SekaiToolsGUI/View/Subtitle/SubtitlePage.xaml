@@ -250,13 +250,23 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <ui:Image Grid.RowSpan="2" Grid.ColumnSpan="2" VerticalContentAlignment="Stretch"
-                                  HorizontalContentAlignment="Stretch"
-                                  Visibility="{calcBinding:Binding ShowPreview,FalseToVisibility=Hidden}"
-                                  Source="{Binding FramePreviewImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" />
+                        <Grid
+                            VerticalAlignment="Stretch"
+                            HorizontalAlignment="Stretch"
+                            Visibility="{calcBinding:Binding ShowPreview,FalseToVisibility=Hidden}"
+                            Grid.RowSpan="2" Grid.ColumnSpan="2">
+                            <ui:TextBlock
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center">
+                                暂无画面预览
+                            </ui:TextBlock>
+                            <ui:Image VerticalContentAlignment="Stretch"
+                                      HorizontalContentAlignment="Stretch"
+                                      Source="{Binding FramePreviewImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" />
+                        </Grid>
                         <StackPanel Grid.Row="0" Grid.Column="0">
                             <ui:Button Click="PreviewToggleBtn_OnClick" Margin="0"
-                                       Appearance="{Binding ShowPreview,Converter={StaticResource BoolToAppearance}}">
+                                       Appearance="{Binding ShowPreview,Converter={StaticResource BoolToAppearancePriOrSec}}">
                                 显示预览
                             </ui:Button>
                         </StackPanel>
@@ -282,7 +292,7 @@
                         <StackPanel Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Top" Width="55">
                             <ui:Button Click="DialogFilterBtn_OnClick" Margin="0" HorizontalAlignment="Stretch"
                                        Padding="2"
-                                       Appearance="{Binding ShowDialog,Converter={StaticResource BoolToAppearance}}">
+                                       Appearance="{Binding ShowDialog,Converter={StaticResource BoolToAppearancePriOrSec} }">
                                 <StackPanel>
                                     <TextBlock TextAlignment="Center" Text="对话" />
                                     <TextBlock TextAlignment="Center" FontSize="10">
@@ -297,23 +307,23 @@
                                     <ui:Button Click="DialogFilterLine1Btn_OnClick" Margin="0,2"
                                                HorizontalAlignment="Stretch"
                                                Padding="2"
-                                               Appearance="{Binding ShowDialogLine1,Converter={StaticResource BoolToAppearance}}"
+                                               Appearance="{Binding ShowDialogLine1,Converter={StaticResource BoolToAppearancePriOrSec}}"
                                                Content="单行" />
                                     <ui:Button Click="DialogFilterLine2Btn_OnClick" Margin="0,2"
                                                HorizontalAlignment="Stretch"
                                                Padding="2"
-                                               Appearance="{Binding ShowDialogLine2,Converter={StaticResource BoolToAppearance}}"
+                                               Appearance="{Binding ShowDialogLine2,Converter={StaticResource BoolToAppearancePriOrSec}}"
                                                Content="双行" />
                                     <ui:Button Click="DialogFilterLine3Btn_OnClick" Margin="0,2"
                                                HorizontalAlignment="Stretch"
                                                Padding="2"
-                                               Appearance="{Binding ShowDialogLine3,Converter={StaticResource BoolToAppearance}}"
+                                               Appearance="{Binding ShowDialogLine3,Converter={StaticResource BoolToAppearancePriOrSec}}"
                                                Content="三行" />
                                 </StackPanel>
                             </ui:Button>
                             <ui:Button Click="BannerFilterBtn_OnClick" Margin="0,5" HorizontalAlignment="Stretch"
                                        Padding="2"
-                                       Appearance="{Binding ShowBanner,Converter={StaticResource BoolToAppearance}}">
+                                       Appearance="{Binding ShowBanner,Converter={StaticResource BoolToAppearancePriOrSec}}">
 
                                 <StackPanel>
                                     <TextBlock TextAlignment="Center" Text="横幅" />
@@ -329,7 +339,7 @@
                             </ui:Button>
                             <ui:Button Click="MarkerFilterBtn_OnClick" Margin="0" HorizontalAlignment="Stretch"
                                        Padding="2"
-                                       Appearance="{Binding ShowMarker,Converter={StaticResource BoolToAppearance}}">
+                                       Appearance="{Binding ShowMarker,Converter={StaticResource BoolToAppearancePriOrSec}}">
                                 <StackPanel>
                                     <TextBlock TextAlignment="Center" Text="标签" />
                                     <TextBlock TextAlignment="Center" FontSize="10">
