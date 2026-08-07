@@ -2,13 +2,16 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
+using SekaiToolsBase;
 using SekaiToolsCore;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.Suppress;
 using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.ViewModel.Suppress;
-using MessageBox = Wpf.Ui.Controls.MessageBox;
+using Wpf.Ui;
+using Wpf.Ui.Controls;
 using TextBox = Wpf.Ui.Controls.TextBox;
 
 namespace SekaiToolsGUI.View.Suppress;
@@ -22,6 +25,9 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     }
 
     public SuppressPageModel ViewModel => (SuppressPageModel)DataContext;
+
+    private static ISnackbarService SnackService =>
+        ((MainWindow)Application.Current.MainWindow!).WindowSnackbarService;
 
     public async void OnNavigatedTo()
     {
@@ -98,17 +104,10 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
         }
         catch (Exception exc)
         {
-            await Dispatcher.Invoke<Task>(async () =>
-            {
-                var uiMessageBox = new MessageBox
-                {
-                    Title = "视频处理出错",
-                    Content = exc.Message + "\n" + exc.StackTrace
-                };
-
-                await uiMessageBox.ShowDialogAsync();
-                ViewModel.Running = false;
-            });
+            Logger.Log($"视频压制失败: {exc}", LogLevel.Error);
+            SnackService.Show("视频处理出错", exc.Message, ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.VideoClipOff24), TimeSpan.FromSeconds(6));
+            ViewModel.Running = false;
             if (Debugger.IsAttached) throw;
         }
     }

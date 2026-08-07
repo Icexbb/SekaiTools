@@ -18,6 +18,10 @@ using SekaiToolsGUI.View.Download.Components.Unit;
 using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.ViewModel.Download;
 using SekaiToolsGUI.ViewModel.Setting;
+using Wpf.Ui;
+using Wpf.Ui.Controls;
+using Button = System.Windows.Controls.Button;
+using MessageBox = System.Windows.MessageBox;
 
 namespace SekaiToolsGUI.View.Download;
 
@@ -37,6 +41,9 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     private CardStoryTab CardStoryTab { get; } = new();
     private ActionStoryTab ActionStoryTab { get; } = new();
     public DownloadPageModel ViewModel => DownloadPageModel.Instance;
+
+    private static ISnackbarService SnackService =>
+        ((MainWindow)Application.Current.MainWindow!).WindowSnackbarService;
 
 
     public void OnNavigatedTo()
@@ -199,7 +206,8 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         }
         catch (Exception e)
         {
-            MessageBox.Show("数据源获取失败: " + e.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            SnackService.Show("错误", "数据源获取失败，已使用内置数据源。" + e.Message,
+                ControlAppearance.Danger, new SymbolIcon(SymbolRegular.CloudDismiss24), TimeSpan.FromSeconds(5));
             Log.Logger.LogError(e, "{TypeName} InitDownloadSource Error", nameof(DownloadPage));
             ViewModel.SourceData = SourceData.Default;
             if (Debugger.IsAttached) throw;
@@ -223,7 +231,9 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         }
         catch (Exception exception)
         {
-            MessageBox.Show("刷新失败: " + exception.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            SnackService.Show("刷新失败", exception.Message, ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.ArrowSyncDismiss24), TimeSpan.FromSeconds(5));
+            Log.Logger.LogError(exception, "{TypeName} Refresh Error", nameof(DownloadPage));
             if (Debugger.IsAttached) throw;
         }
         finally
