@@ -90,26 +90,36 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         async Task FuncDownload()
         {
             button.IsEnabled = false;
+            TaskClearButton.IsEnabled = false;
+            ContentCard.IsEnabled = false;
+            var tasks = DownloadItemBox.Items.OfType<DownloadTask>().ToArray();
             var savePath = "";
-            foreach (var item in DownloadItemBox.Items)
+            try
             {
-                if (item is not DownloadTask downloadItem) continue;
-                savePath = Path.GetDirectoryName(downloadItem.SavePath)!;
-                if (downloadItem.Downloaded) continue;
-                downloadItem.ChangeStatus(0);
-                try
+                foreach (var downloadItem in tasks)
                 {
-                    await Download(downloadItem.Url, downloadItem.SavePath);
-                    downloadItem.ChangeStatus(1);
-                }
-                catch (Exception exception)
-                {
-                    MessageBox.Show(exception.Message);
-                    downloadItem.ChangeStatus(2);
+                    savePath = Path.GetDirectoryName(downloadItem.SavePath)!;
+                    if (downloadItem.Downloaded) continue;
+                    downloadItem.ChangeStatus(0);
+                    try
+                    {
+                        await Download(downloadItem.Url, downloadItem.SavePath);
+                        downloadItem.ChangeStatus(1);
+                    }
+                    catch (Exception exception)
+                    {
+                        MessageBox.Show(exception.Message);
+                        downloadItem.ChangeStatus(2);
+                    }
                 }
             }
+            finally
+            {
+                button.IsEnabled = true;
+                TaskClearButton.IsEnabled = true;
+                ContentCard.IsEnabled = true;
+            }
 
-            button.IsEnabled = true;
             if (savePath.Length != 0)
                 ShowFile(savePath);
             return;
