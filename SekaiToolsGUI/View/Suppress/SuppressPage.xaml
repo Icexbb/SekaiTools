@@ -131,8 +131,9 @@
 
         <ui:Card Grid.Row="2" Padding="5" VerticalAlignment="Stretch">
             <StackPanel>
-                <ProgressBar IsIndeterminate="{Binding HasNotStarted}" Value="{Binding Progression}"
-                             Maximum="1" Minimum="0" Margin="10" />
+                <ProgressBar Value="{Binding Progression}"
+                             Maximum="1" Minimum="0" Margin="10"
+                             Visibility="{c:Binding !HasNotStarted,FalseToVisibility=Collapsed}" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
                             Visibility="{c:Binding !HasNotStarted,FalseToVisibility=Collapsed}">
                     <ui:Button Name="DisposeButton" Margin="10" Click="DisposeButton_OnClick">重置任务</ui:Button>
