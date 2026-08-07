@@ -61,10 +61,13 @@
                         <StackPanel Orientation="Horizontal"
                                     Visibility="{calcBinding:Binding IsEventPlaybackEnabled,FalseToVisibility=Collapsed}">
                             <ui:Button IsEnabled="{Binding CanPlay}" Click="PlayAudioButton_OnClick"
+                                       AutomationProperties.Name="播放当前事件音频"
                                        ToolTip="仅播放当前事件区间的音频">▶ 音频</ui:Button>
                             <ui:Button IsEnabled="{Binding CanPlay}" Click="PlayVideoButton_OnClick"
+                                       AutomationProperties.Name="播放当前事件音频和视频"
                                        ToolTip="播放当前事件区间的音频和视频">▶ 音视频</ui:Button>
                             <ui:Button IsEnabled="{Binding IsPlaying}" Click="StopPlaybackButton_OnClick"
+                                       AutomationProperties.Name="停止事件预览"
                                        ToolTip="停止播放">■</ui:Button>
                             <ui:TextBlock Width="150" Margin="5,0" VerticalAlignment="Center"
                                           Text="{Binding PlaybackStatus}" TextTrimming="CharacterEllipsis"
@@ -72,6 +75,7 @@
                             <Separator Margin="4,2,7,2" />
                         </StackPanel>
                         <ui:Button x:Name="UndoButton" IsEnabled="{Binding CanUndo}"
+                                   AutomationProperties.Name="撤销时间轴调整"
                                    Click="UndoButton_OnClick" ToolTip="{Binding UndoToolTip}">
                             ↶
                         </ui:Button>
@@ -81,16 +85,19 @@
                         </ui:Button>
                         <Separator Margin="7,2,4,2" />
                         <ui:Button
+                            AutomationProperties.Name="缩小时间轴"
                             Click="ZoomOutButton_OnClick" ToolTip="缩小时间轴">
                             −
                         </ui:Button>
                         <ui:TextBlock x:Name="ZoomText" Width="54" Text="{Binding ZoomText}" TextAlignment="Center" Visibility="Collapsed"
                                       VerticalAlignment="Center" FontFamily="Consolas" />
                         <ui:Button
+                            AutomationProperties.Name="放大时间轴"
                             Click="ZoomInButton_OnClick" ToolTip="放大时间轴">
                             ＋
                         </ui:Button>
                         <ui:Button
+                            AutomationProperties.Name="定位到当前事件"
                             Click="CenterButton_OnClick" ToolTip="定位到当前事件">
                             ◎
                         </ui:Button>

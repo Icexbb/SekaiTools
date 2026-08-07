@@ -365,10 +365,14 @@
                             </ui:Button>
                         </StackPanel>
                         <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Bottom">
-                            <ui:Button Click="BackToTopBtn_OnClick">
+                            <ui:Button Click="BackToTopBtn_OnClick"
+                                       ToolTip="滚动到事件列表顶部"
+                                       AutomationProperties.Name="滚动到事件列表顶部">
                                 <ui:SymbolIcon Symbol="ArrowUp28" />
                             </ui:Button>
-                            <ui:Button Click="BackToBottomBtn_OnClick">
+                            <ui:Button Click="BackToBottomBtn_OnClick"
+                                       ToolTip="滚动到事件列表底部"
+                                       AutomationProperties.Name="滚动到事件列表底部">
                                 <ui:SymbolIcon Symbol="ArrowDown28" />
                             </ui:Button>
                         </StackPanel>
