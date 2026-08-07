@@ -33,6 +33,8 @@
                         <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="视频文件" />
                         <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                       Text="{Binding SourceVideo}"
+                                      ToolTip="{Binding SourceVideo}"
+                                      TextTrimming="CharacterEllipsis"
                                       Visibility="{c:Binding 'SourceVideo.Length!=0', FalseToVisibility=Collapsed}" />
                     </Grid>
                 </ui:CardControl.Header>
@@ -54,6 +56,8 @@
                         <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="字幕文件" />
                         <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                       Text="{Binding SourceSubtitle}"
+                                      ToolTip="{Binding SourceSubtitle}"
+                                      TextTrimming="CharacterEllipsis"
                                       Visibility="{c:Binding 'SourceSubtitle.Length!=0', FalseToVisibility=Collapsed}" />
                     </Grid>
                 </ui:CardControl.Header>
@@ -74,6 +78,8 @@
                         <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="输出路径" />
                         <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                       Text="{Binding OutputPath}"
+                                      ToolTip="{Binding OutputPath}"
+                                      TextTrimming="CharacterEllipsis"
                                       Visibility="{c:Binding 'OutputPath.Length!=0', FalseToVisibility=Collapsed}" />
                     </Grid>
                 </ui:CardControl.Header>

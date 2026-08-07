@@ -39,8 +39,10 @@
                             Appearance="Secondary"
                             Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                             Text="{Binding VideoFilePath}"
+                            ToolTip="{Binding VideoFilePath}"
                             Name="TextBlockVideoFilePath"
-                            TextWrapping="NoWrap" />
+                            TextWrapping="NoWrap"
+                            TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                     <ui:Button Grid.Column="1" HorizontalAlignment="Right"
                                IsEnabled="{Binding HasNotStarted}"
@@ -65,8 +67,10 @@
                             Appearance="Secondary"
                             Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                             Text="{Binding ScriptFilePath}"
+                            ToolTip="{Binding ScriptFilePath}"
                             Name="TextBlockScriptFilePath"
-                            TextWrapping="NoWrap" />
+                            TextWrapping="NoWrap"
+                            TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                     <ui:Button Grid.Column="1" HorizontalAlignment="Right"
                                IsEnabled="{Binding HasNotStarted}"
@@ -92,8 +96,10 @@
                             Appearance="Secondary"
                             Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                             Text="{Binding TranslateFilePath}"
+                            ToolTip="{Binding TranslateFilePath}"
                             Name="TextBlockTranslationFilePath"
-                            TextWrapping="NoWrap" />
+                            TextWrapping="NoWrap"
+                            TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                     <ui:Button Grid.Column="1" HorizontalAlignment="Right"
                                IsEnabled="{Binding HasNotStarted}"
@@ -151,7 +157,8 @@
                                     ToolTip="{Binding VideoFilePath}"
                                     Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
                                     Appearance="Secondary"
-                                    Text="{Binding VideoFileName}" />
+                                    Text="{Binding VideoFileName}"
+                                    TextTrimming="CharacterEllipsis" />
                             </StackPanel>
                         </ui:CardAction>
                         <ui:CardAction Grid.Column="1" Margin="5,0,5,0" Click="ScriptFileBtn_OnClick">
@@ -161,7 +168,8 @@
                                     ToolTip="{Binding ScriptFilePath}"
                                     Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
                                     Appearance="Secondary"
-                                    Text="{Binding ScriptFileName}" />
+                                    Text="{Binding ScriptFileName}"
+                                    TextTrimming="CharacterEllipsis" />
                             </StackPanel>
                         </ui:CardAction>
                         <ui:CardAction Grid.Column="2" Margin="5,0,0,0" Click="TranslateFileBtn_OnClick">
@@ -171,7 +179,8 @@
                                     ToolTip="{Binding TranslateFilePath}"
                                     Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
                                     Appearance="Secondary"
-                                    Text="{Binding TranslateFileName}" />
+                                    Text="{Binding TranslateFileName}"
+                                    TextTrimming="CharacterEllipsis" />
                             </StackPanel>
                         </ui:CardAction>
                     </Grid>
