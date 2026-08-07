@@ -4,11 +4,17 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
+             xmlns:converter="clr-namespace:SekaiToolsGUI.Converter"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance suppress:SuppressPageModel, IsDesignTimeCreatable=True}"
              d:DesignHeight="600" d:DesignWidth="800" d:Background="White">
+    <UserControl.Resources>
+        <converter:BoolToAppearanceConverter x:Key="RunningToAppearance"
+                                             TrueToAppearance="Danger"
+                                             FalseToAppearance="Secondary" />
+    </UserControl.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -136,8 +142,11 @@
                              Visibility="{c:Binding !HasNotStarted,FalseToVisibility=Collapsed}" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
                             Visibility="{c:Binding !HasNotStarted,FalseToVisibility=Collapsed}">
-                    <ui:Button Name="DisposeButton" Margin="10" Click="DisposeButton_OnClick">重置任务</ui:Button>
-                    <ui:Button Name="ClearButton" Margin="10" Click="ClearButton_OnClick">清除任务</ui:Button>
+                    <ui:Button Name="DisposeButton" Margin="10" Click="DisposeButton_OnClick"
+                               Content="{Binding TaskControlText}"
+                               Appearance="{Binding Running, Converter={StaticResource RunningToAppearance}}" />
+                    <ui:Button Name="ClearButton" Margin="10" Click="ClearButton_OnClick"
+                               Content="清空任务" IsEnabled="{c:Binding !Running}" />
                     <ui:Button Name="ShowFileButton" Margin="10" Click="ShowFileButton_OnClick"
                                Visibility="{c:Binding 'Progression==1', FalseToVisibility=Collapsed}">
                         显示结果

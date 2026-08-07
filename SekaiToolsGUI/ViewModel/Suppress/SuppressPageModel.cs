@@ -77,8 +77,14 @@ public class SuppressPageModel : ViewModelBase
     public bool Running
     {
         get => GetProperty(false);
-        set => SetProperty(value);
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(TaskControlText));
+        }
     }
+
+    public string TaskControlText => Running ? "取消压制" : "返回设置";
 
     public int SuppressCrf
     {
