@@ -275,8 +275,18 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
         await SelectSameNameFile(result);
     }
 
-    private void ResetButton_OnClick(object sender, RoutedEventArgs e)
+    private async void ResetButton_OnClick(object sender, RoutedEventArgs e)
     {
+        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+        var result = await dialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
+        {
+            Title = "重置当前任务？",
+            Content = "当前处理结果和手动调整将从界面清除。",
+            PrimaryButtonText = "重置",
+            CloseButtonText = "取消"
+        }, CancellationToken.None);
+        if (result != ContentDialogResult.Primary) return;
+
         StopProcess();
         (Application.Current.MainWindow as MainWindow)?.SetWindowTitle("");
         SetTaskbarProgressState(TaskbarItemProgressState.None, 0);

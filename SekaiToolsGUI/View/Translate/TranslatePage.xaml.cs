@@ -11,6 +11,7 @@ using SekaiToolsBase.Story.Translation;
 using SekaiToolsGUI.ViewModel.Translate;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
+using Wpf.Ui.Extensions;
 using SaveFileDialog = SekaiToolsGUI.View.Translate.Components.SaveFileDialog;
 
 namespace SekaiToolsGUI.View.Translate;
@@ -40,7 +41,7 @@ public partial class TranslatePage : UserControl
         ViewModel.Story = Story.FromFile(_scriptPath);
     }
 
-    private void LoadFileButton_OnClick(object sender, RoutedEventArgs e)
+    private async void LoadFileButton_OnClick(object sender, RoutedEventArgs e)
     {
         var openFileDialog = new OpenFileDialog
         {
@@ -53,7 +54,6 @@ public partial class TranslatePage : UserControl
         try
         {
             story = Story.FromFile(openFileDialog.FileName);
-            _scriptPath = openFileDialog.FileName;
         }
         catch (Exception exception)
         {
@@ -62,12 +62,16 @@ public partial class TranslatePage : UserControl
             return;
         }
 
+        if (!ViewModel.IsEmpty && !await ConfirmReplaceCurrentContentAsync()) return;
+
+        _scriptPath = openFileDialog.FileName;
+        _translationPath = "";
         ViewModel.Story = story;
         SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
             new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
     }
 
-    private void LoadTranslationButton_OnClick(object sender, RoutedEventArgs e)
+    private async void LoadTranslationButton_OnClick(object sender, RoutedEventArgs e)
     {
         if (ViewModel.IsEmpty)
         {
@@ -93,6 +97,8 @@ public partial class TranslatePage : UserControl
 
             if (tData.IsApplicable(gData))
             {
+                if (!await ConfirmReplaceCurrentContentAsync()) return;
+
                 _translationPath = filePath;
                 ViewModel.Story = new Story(gData, tData);
                 Logger.Log($"翻译载入成功: 剧本={_scriptPath}, 翻译={filePath}, 对话={tData.Translations.Count}");
@@ -151,11 +157,26 @@ public partial class TranslatePage : UserControl
     }
 
 
-    private void ResetButton_OnClick(object sender, RoutedEventArgs e)
+    private async void ResetButton_OnClick(object sender, RoutedEventArgs e)
     {
+        if (ViewModel.IsEmpty || !await ConfirmReplaceCurrentContentAsync()) return;
+
         ViewModel.Clear();
         _scriptPath = "";
         _translationPath = "";
+    }
+
+    private static async Task<bool> ConfirmReplaceCurrentContentAsync()
+    {
+        var dialogService = ((MainWindow)Application.Current.MainWindow!).WindowContentDialogService;
+        var result = await dialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
+        {
+            Title = "替换当前内容？",
+            Content = "当前翻译内容将被清除，未保存的修改无法恢复。",
+            PrimaryButtonText = "继续",
+            CloseButtonText = "取消"
+        }, CancellationToken.None);
+        return result == ContentDialogResult.Primary;
     }
 
     private async void SaveButton_OnClick(object sender, RoutedEventArgs e)
