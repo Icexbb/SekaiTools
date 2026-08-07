@@ -16,6 +16,7 @@ public class SubtitlePageModel : ViewModelBase
             SetResetEnabled();
             VideoFileName = System.IO.Path.GetFileName(value);
             OnPropertyChanged(nameof(CanStart));
+            OnPropertyChanged(nameof(StartHint));
         }
     }
 
@@ -35,6 +36,7 @@ public class SubtitlePageModel : ViewModelBase
             SetResetEnabled();
             ScriptFileName = System.IO.Path.GetFileName(value);
             OnPropertyChanged(nameof(CanStart));
+            OnPropertyChanged(nameof(StartHint));
         }
     }
 
@@ -53,6 +55,7 @@ public class SubtitlePageModel : ViewModelBase
             SetResetEnabled();
             TranslateFileName = System.IO.Path.GetFileName(value);
             OnPropertyChanged(nameof(CanStart));
+            OnPropertyChanged(nameof(StartHint));
         }
     }
 
@@ -150,6 +153,7 @@ public class SubtitlePageModel : ViewModelBase
     public bool CanStart => !string.IsNullOrWhiteSpace(VideoFilePath) &&
                             !string.IsNullOrWhiteSpace(ScriptFilePath) &&
                             !string.IsNullOrWhiteSpace(TranslateFilePath);
+    public string? StartHint => CanStart ? null : "请选择视频、剧本和翻译文件";
 
     public string RunningStatus
     {
