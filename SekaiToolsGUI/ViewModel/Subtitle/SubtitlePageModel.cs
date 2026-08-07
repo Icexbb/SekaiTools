@@ -15,6 +15,7 @@ public class SubtitlePageModel : ViewModelBase
             SetProperty(value);
             SetResetEnabled();
             VideoFileName = System.IO.Path.GetFileName(value);
+            OnPropertyChanged(nameof(CanStart));
         }
     }
 
@@ -33,6 +34,7 @@ public class SubtitlePageModel : ViewModelBase
             SetProperty(value);
             SetResetEnabled();
             ScriptFileName = System.IO.Path.GetFileName(value);
+            OnPropertyChanged(nameof(CanStart));
         }
     }
 
@@ -50,6 +52,7 @@ public class SubtitlePageModel : ViewModelBase
             SetProperty(value);
             SetResetEnabled();
             TranslateFileName = System.IO.Path.GetFileName(value);
+            OnPropertyChanged(nameof(CanStart));
         }
     }
 
@@ -144,6 +147,9 @@ public class SubtitlePageModel : ViewModelBase
     public bool CanOutput => IsFinished || IsCanceled || IsPartial;
     public bool CanReset => IsFinished || IsCanceled || IsPartial || IsFailed;
     public bool CanStop => IsRunning && !IsCanceling;
+    public bool CanStart => !string.IsNullOrWhiteSpace(VideoFilePath) &&
+                            !string.IsNullOrWhiteSpace(ScriptFilePath) &&
+                            !string.IsNullOrWhiteSpace(TranslateFilePath);
 
     public string RunningStatus
     {

@@ -106,7 +106,9 @@
                     <ColumnDefinition Width="100" />
                 </Grid.ColumnDefinitions>
                 <ui:Button Grid.Column="0" Click="StartButton_OnClick"
-                           Margin="0,0,10,0" IsEnabled="{Binding HasNotStarted}"
+                           Margin="0,0,10,0" IsEnabled="{Binding CanStart}"
+                           ToolTip="请选择视频、剧本和翻译文件"
+                           ToolTipService.ShowOnDisabled="True"
                            HorizontalAlignment="Stretch" Appearance="Primary" Content="开始" />
 
                 <ui:Button Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center"
