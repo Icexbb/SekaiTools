@@ -198,20 +198,28 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 
     private async void ButtonRefresh_OnClick(object sender, RoutedEventArgs e)
     {
+        if (ContentCard.Content is not IRefreshable refreshable) return;
+
+        var button = (Button)sender;
+        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+        var dialog = new RefreshWaitDialog("正在刷新下载源数据");
+        using var source = new CancellationTokenSource();
+
+        button.IsEnabled = false;
+        _ = dialogService.ShowAsync(dialog, source.Token);
         try
         {
-            if (ContentCard.Content is not IRefreshable refreshable) return;
-            var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-            var dialog = new RefreshWaitDialog("正在刷新下载源数据");
-            var source = new CancellationTokenSource();
-            _ = dialogService.ShowAsync(dialog, source.Token);
             await refreshable.Refresh();
-            await source.CancelAsync();
         }
         catch (Exception exception)
         {
             MessageBox.Show("刷新失败: " + exception.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             if (Debugger.IsAttached) throw;
+        }
+        finally
+        {
+            await source.CancelAsync();
+            button.IsEnabled = true;
         }
     }
 }
