@@ -4,6 +4,9 @@ namespace SekaiToolsGUI.ViewModel.Subtitle;
 
 public class TimelineEditorModel : ViewModelBase
 {
+    public bool IsEventTimelineEnabled => global::SekaiToolsGUI.GeneralFunctionSwitch.EventTimeline;
+    public bool IsEventPlaybackEnabled => global::SekaiToolsGUI.GeneralFunctionSwitch.EventPlayBack;
+
     public bool ShowTimeLine
     {
         get => GetProperty(false);
@@ -117,7 +120,7 @@ public class TimelineEditorModel : ViewModelBase
     }
 
     public bool CanEdit => !IsReadOnly && HasSelection;
-    public bool CanPlay => HasSelection && HasMediaSource;
+    public bool CanPlay => IsEventPlaybackEnabled && HasSelection && HasMediaSource;
     public bool CanRestoreTiming => CanEdit && HasTimingEdits;
     public bool CanUndo => !IsReadOnly && UndoCount > 0;
 

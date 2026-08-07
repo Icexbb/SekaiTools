@@ -393,9 +393,12 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             {
                 Margin = new Thickness(5, 5, 10, 5)
             };
-            var timelineEvent = CreateTimelineEvent(line);
-            EventTimelineEditor.RegisterEvent(timelineEvent);
-            line.TimelineRequested += (_, _) => EventTimelineEditor.SelectEvent(timelineEvent);
+            if (GeneralFunctionSwitch.EventTimeline)
+            {
+                var timelineEvent = CreateTimelineEvent(line);
+                EventTimelineEditor.RegisterEvent(timelineEvent);
+                line.TimelineRequested += (_, _) => EventTimelineEditor.SelectEvent(timelineEvent);
+            }
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.DialogCurrent++;
             RefreshContentVisibility();
@@ -414,9 +417,12 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             {
                 Margin = new Thickness(5, 5, 10, 5)
             };
-            var timelineEvent = CreateTimelineEvent(line);
-            EventTimelineEditor.RegisterEvent(timelineEvent);
-            line.TimelineRequested += (_, _) => EventTimelineEditor.SelectEvent(timelineEvent);
+            if (GeneralFunctionSwitch.EventTimeline)
+            {
+                var timelineEvent = CreateTimelineEvent(line);
+                EventTimelineEditor.RegisterEvent(timelineEvent);
+                line.TimelineRequested += (_, _) => EventTimelineEditor.SelectEvent(timelineEvent);
+            }
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.BannerCurrent++;
             RefreshContentVisibility();
@@ -434,9 +440,12 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             {
                 Margin = new Thickness(5, 5, 10, 5)
             };
-            var timelineEvent = CreateTimelineEvent(line);
-            EventTimelineEditor.RegisterEvent(timelineEvent);
-            line.TimelineRequested += (_, _) => EventTimelineEditor.SelectEvent(timelineEvent);
+            if (GeneralFunctionSwitch.EventTimeline)
+            {
+                var timelineEvent = CreateTimelineEvent(line);
+                EventTimelineEditor.RegisterEvent(timelineEvent);
+                line.TimelineRequested += (_, _) => EventTimelineEditor.SelectEvent(timelineEvent);
+            }
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.MarkerCurrent++;
             RefreshContentVisibility();
@@ -493,7 +502,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
 
     private void SetTimelineVideoDuration()
     {
-        if (VideoProcessor == null)
+        if (!GeneralFunctionSwitch.EventTimeline || VideoProcessor == null)
             return;
 
         var videoInfo = VideoProcessor.VideoInfo;
@@ -1092,7 +1101,7 @@ public partial class SubtitlePage
             Keyboard.FocusedElement is System.Windows.Controls.TextBox)
             return;
 
-        if (EventTimelineEditor.Undo())
+        if (GeneralFunctionSwitch.EventTimeline && EventTimelineEditor.Undo())
             e.Handled = true;
     }
 }

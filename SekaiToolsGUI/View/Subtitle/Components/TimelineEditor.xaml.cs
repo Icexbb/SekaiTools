@@ -873,6 +873,9 @@ public partial class TimelineEditor : UserControl
 
     private async Task StartPlaybackAsync(PlaybackMode mode)
     {
+        if (!GeneralFunctionSwitch.EventPlayBack)
+            return;
+
         if (_selection == null || string.IsNullOrWhiteSpace(_mediaPath) || !System.IO.File.Exists(_mediaPath))
         {
             SetPlaybackStatus("媒体文件不可用");
