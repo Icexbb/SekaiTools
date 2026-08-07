@@ -456,7 +456,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             TimelineEventTrack.Dialog,
             GetTimelineContent(line.ViewModel.RawContent, line.ViewModel.TranslatedContent),
             accent,
-            line.ViewModel.RefreshTiming,
+            line.RefreshTiming,
             line.BringIntoView);
     }
 
@@ -591,13 +591,20 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
             switch (child)
             {
                 case DialogLine dialogLine:
-                    if (dialogLine.ViewModel.Set.NeedSetSeparator)
-                        dialogLine.Visibility = ViewModel.ShowDialog ? Visibility.Visible : Visibility.Collapsed;
-                    else
-                        dialogLine.Visibility = ViewModel is { ShowDialog: true, ShowTooLongOnly: false }
+                    var lineCount = dialogLine.ViewModel.RawContent.Split("\n").Length;
+                    dialogLine.Visibility = lineCount switch
+                    {
+                        1 => ViewModel is { ShowDialog: true, ShowDialogLine1: true }
                             ? Visibility.Visible
-                            : Visibility.Collapsed;
-
+                            : Visibility.Collapsed,
+                        2 => ViewModel is { ShowDialog: true, ShowDialogLine2: true }
+                            ? Visibility.Visible
+                            : Visibility.Collapsed,
+                        3 => ViewModel is { ShowDialog: true, ShowDialogLine3: true }
+                            ? Visibility.Visible
+                            : Visibility.Collapsed,
+                        _ => dialogLine.Visibility
+                    };
                     break;
                 case BannerLine bannerLine:
                     bannerLine.Visibility = ViewModel.ShowBanner ? Visibility.Visible : Visibility.Collapsed;
@@ -1014,6 +1021,28 @@ public partial class SubtitlePage
         RefreshContentVisibility();
     }
 
+    private void DialogFilterLine1Btn_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowDialogLine1 = !ViewModel.ShowDialogLine1;
+        RefreshContentVisibility();
+        e.Handled = true;
+    }
+
+    private void DialogFilterLine2Btn_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowDialogLine2 = !ViewModel.ShowDialogLine2;
+        RefreshContentVisibility();
+        e.Handled = true;
+    }
+
+    private void DialogFilterLine3Btn_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowDialogLine3 = !ViewModel.ShowDialogLine3;
+        RefreshContentVisibility();
+        e.Handled = true;
+    }
+
+
     private void BannerFilterBtn_OnClick(object sender, RoutedEventArgs e)
     {
         ViewModel.ShowBanner = !ViewModel.ShowBanner;
@@ -1055,6 +1084,7 @@ public partial class SubtitlePage
     {
         LineViewer.ScrollToBottom();
     }
+
     private void SubtitlePage_OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key != Key.Z ||

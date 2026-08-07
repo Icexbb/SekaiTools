@@ -179,6 +179,30 @@ public class SubtitlePageModel : ViewModelBase
     public bool ShowDialog
     {
         get => GetProperty(true);
+        set
+        {
+            SetProperty(value);
+            ShowDialogLine1 = value;
+            ShowDialogLine2 = value;
+            ShowDialogLine3 = value;
+        }
+    }
+
+    public bool ShowDialogLine1
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ShowDialogLine2
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ShowDialogLine3
+    {
+        get => GetProperty(true);
         set => SetProperty(value);
     }
 

@@ -280,7 +280,6 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <StackPanel Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Top" Width="55">
-
                             <ui:Button Click="DialogFilterBtn_OnClick" Margin="0" HorizontalAlignment="Stretch"
                                        Padding="2"
                                        Appearance="{Binding ShowDialog,Converter={StaticResource BoolToAppearance}}">
@@ -294,8 +293,23 @@
                                             </MultiBinding>
                                         </TextBlock.Text>
                                     </TextBlock>
-                                </StackPanel>
 
+                                    <ui:Button Click="DialogFilterLine1Btn_OnClick" Margin="0,2"
+                                               HorizontalAlignment="Stretch"
+                                               Padding="2"
+                                               Appearance="{Binding ShowDialogLine1,Converter={StaticResource BoolToAppearance}}"
+                                               Content="单行" />
+                                    <ui:Button Click="DialogFilterLine2Btn_OnClick" Margin="0,2"
+                                               HorizontalAlignment="Stretch"
+                                               Padding="2"
+                                               Appearance="{Binding ShowDialogLine2,Converter={StaticResource BoolToAppearance}}"
+                                               Content="双行" />
+                                    <ui:Button Click="DialogFilterLine3Btn_OnClick" Margin="0,2"
+                                               HorizontalAlignment="Stretch"
+                                               Padding="2"
+                                               Appearance="{Binding ShowDialogLine3,Converter={StaticResource BoolToAppearance}}"
+                                               Content="三行" />
+                                </StackPanel>
                             </ui:Button>
                             <ui:Button Click="BannerFilterBtn_OnClick" Margin="0,5" HorizontalAlignment="Stretch"
                                        Padding="2"
@@ -312,7 +326,6 @@
                                         </TextBlock.Text>
                                     </TextBlock>
                                 </StackPanel>
-
                             </ui:Button>
                             <ui:Button Click="MarkerFilterBtn_OnClick" Margin="0" HorizontalAlignment="Stretch"
                                        Padding="2"

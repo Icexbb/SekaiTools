@@ -25,6 +25,15 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
 
     public event EventHandler? TimelineRequested;
 
+    public void RefreshTiming()
+    {
+        ViewModel.RefreshTiming();
+        SeparateFrameSlider.GetBindingExpression(Slider.ValueProperty)?.UpdateTarget();
+        System.Windows.Data.BindingOperations
+            .GetMultiBindingExpression(SeparateTimeText, System.Windows.Controls.TextBlock.TextProperty)
+            ?.UpdateTarget();
+    }
+
     private void DialogLine_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         TimelineRequested?.Invoke(this, EventArgs.Empty);

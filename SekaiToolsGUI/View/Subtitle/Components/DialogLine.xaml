@@ -164,9 +164,10 @@
                                 </TextBlock.Text>
                             </TextBlock>
                         </Grid>
-                        <Slider Minimum="{Binding StartFrame}" Maximum="{Binding EndFrame}"
+                        <Slider x:Name="SeparateFrameSlider"
+                                Minimum="{Binding StartFrame}" Maximum="{Binding EndFrame}"
                                 Value="{Binding SeparateFrame}" />
-                        <TextBlock HorizontalAlignment="Center">
+                        <TextBlock x:Name="SeparateTimeText" HorizontalAlignment="Center">
                             <TextBlock.Text>
                                 <MultiBinding StringFormat="{}在 {0} ⇒ {1} 处换行">
                                     <Binding Path="SeparateFrame" Mode="OneWay" />

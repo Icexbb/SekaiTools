@@ -57,8 +57,7 @@ public partial class DialogBaseFrameSet : BaseFrameSet
     public bool IsJitter => Data.Shake;
 
     public bool NeedSetSeparator => Data.BodyTranslated != string.Empty &&
-                                    Data.BodyOriginal.LineCount() == 3 &&
-                                    Data.BodyTranslated.TrimAll().Length > 37;
+                                    Data.BodyOriginal.LineCount() == 3;
 
     public bool UseSeparator { get; set; }
 
