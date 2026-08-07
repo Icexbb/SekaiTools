@@ -142,7 +142,7 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <ui:CardAction Grid.Column="0" Margin="0,0,5,0" Click="VideoFileBtn_OnCLick">
+                        <ui:CardAction Grid.Column="0" Margin="0,0,5,0" Click="VideoFileBtn_OnClick">
                             <StackPanel>
                                 <ui:SymbolIcon Symbol="Video32" />
                                 <ui:TextBlock
@@ -152,7 +152,7 @@
                                     Text="{Binding VideoFileName}" />
                             </StackPanel>
                         </ui:CardAction>
-                        <ui:CardAction Grid.Column="1" Margin="5,0,5,0" Click="ScriptFileBrowser_OnClick">
+                        <ui:CardAction Grid.Column="1" Margin="5,0,5,0" Click="ScriptFileBtn_OnClick">
                             <StackPanel>
                                 <ui:SymbolIcon Symbol="Script16" />
                                 <ui:TextBlock
@@ -162,7 +162,7 @@
                                     Text="{Binding ScriptFileName}" />
                             </StackPanel>
                         </ui:CardAction>
-                        <ui:CardAction Grid.Column="2" Margin="5,0,0,0" Click="TranslateFileBtn_OnCLick">
+                        <ui:CardAction Grid.Column="2" Margin="5,0,0,0" Click="TranslateFileBtn_OnClick">
                             <StackPanel>
                                 <ui:SymbolIcon Symbol="Translate24" />
                                 <ui:TextBlock

@@ -399,6 +399,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
                 EventTimelineEditor.RegisterEvent(timelineEvent);
                 line.TimelineRequested += (_, _) => EventTimelineEditor.SelectEvent(timelineEvent);
             }
+
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.DialogCurrent++;
             RefreshContentVisibility();
@@ -423,6 +424,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
                 EventTimelineEditor.RegisterEvent(timelineEvent);
                 line.TimelineRequested += (_, _) => EventTimelineEditor.SelectEvent(timelineEvent);
             }
+
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.BannerCurrent++;
             RefreshContentVisibility();
@@ -446,6 +448,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
                 EventTimelineEditor.RegisterEvent(timelineEvent);
                 line.TimelineRequested += (_, _) => EventTimelineEditor.SelectEvent(timelineEvent);
             }
+
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.MarkerCurrent++;
             RefreshContentVisibility();
@@ -1064,17 +1067,17 @@ public partial class SubtitlePage
         RefreshContentVisibility();
     }
 
-    private void VideoFileBtn_OnCLick(object sender, RoutedEventArgs e)
+    private void VideoFileBtn_OnClick(object sender, RoutedEventArgs e)
     {
         ExplorerHelper.OpenFolderAndFocus(ViewModel.VideoFilePath);
     }
 
-    private void ScriptFileBtn_OnCLick(object sender, RoutedEventArgs e)
+    private void ScriptFileBtn_OnClick(object sender, RoutedEventArgs e)
     {
         ExplorerHelper.OpenFolderAndFocus(ViewModel.ScriptFilePath);
     }
 
-    private void TranslateFileBtn_OnCLick(object sender, RoutedEventArgs e)
+    private void TranslateFileBtn_OnClick(object sender, RoutedEventArgs e)
     {
         ExplorerHelper.OpenFolderAndFocus(ViewModel.TranslateFilePath);
     }
