@@ -17,7 +17,8 @@ public class NetworkEndpointsTests
     {
         var endpoints = NetworkEndpoints.Load();
 
-        Assert.True(NetworkEndpoints.RepositoryUri.IsAbsoluteUri);
+        Assert.Equal(endpoints.GitHub.RepositoryUrl, NetworkEndpoints.RepositoryUrl);
+        Assert.True(Uri.TryCreate(NetworkEndpoints.RepositoryUrl, UriKind.Absolute, out _));
         Assert.NotEmpty(endpoints.DefaultDataSources);
         Assert.All(endpoints.DefaultDataSources,
             source => Assert.Contains("{type}", source.SourceTemplate, StringComparison.Ordinal));

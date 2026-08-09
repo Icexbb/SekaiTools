@@ -328,7 +328,7 @@
                             Background="Transparent"
                             BorderThickness="0,1,0,0"
                             CornerRadius="0"
-                            NavigateUri="{x:Static configuration:NetworkEndpoints.RepositoryUri}">
+                            NavigateUri="{x:Static configuration:NetworkEndpoints.RepositoryUrl}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />

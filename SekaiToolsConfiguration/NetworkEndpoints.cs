@@ -14,7 +14,7 @@ public sealed class NetworkEndpoints
     public required List<DataSourceEndpointOptions> DefaultDataSources { get; init; }
 
     public static NetworkEndpoints Current => CurrentValue.Value;
-    public static Uri RepositoryUri => new(Current.GitHub.RepositoryUrl, UriKind.Absolute);
+    public static string RepositoryUrl => Current.GitHub.RepositoryUrl;
 
     public static NetworkEndpoints Load(string? filePath = null)
     {
