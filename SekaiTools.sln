@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SekaiToolsInfrastructure", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SekaiToolsMedia", "SekaiToolsMedia\SekaiToolsMedia.csproj", "{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SekaiToolsSubtitles", "SekaiToolsSubtitles\SekaiToolsSubtitles.csproj", "{75DF4443-1330-4A23-96D8-1706B2BDBEE7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,6 +129,18 @@ Global
 		{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}.Release|x64.Build.0 = Release|Any CPU
 		{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}.Release|x86.ActiveCfg = Release|Any CPU
 		{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}.Release|x86.Build.0 = Release|Any CPU
+		{75DF4443-1330-4A23-96D8-1706B2BDBEE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75DF4443-1330-4A23-96D8-1706B2BDBEE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75DF4443-1330-4A23-96D8-1706B2BDBEE7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{75DF4443-1330-4A23-96D8-1706B2BDBEE7}.Debug|x64.Build.0 = Debug|Any CPU
+		{75DF4443-1330-4A23-96D8-1706B2BDBEE7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{75DF4443-1330-4A23-96D8-1706B2BDBEE7}.Debug|x86.Build.0 = Debug|Any CPU
+		{75DF4443-1330-4A23-96D8-1706B2BDBEE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75DF4443-1330-4A23-96D8-1706B2BDBEE7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75DF4443-1330-4A23-96D8-1706B2BDBEE7}.Release|x64.ActiveCfg = Release|Any CPU
+		{75DF4443-1330-4A23-96D8-1706B2BDBEE7}.Release|x64.Build.0 = Release|Any CPU
+		{75DF4443-1330-4A23-96D8-1706B2BDBEE7}.Release|x86.ActiveCfg = Release|Any CPU
+		{75DF4443-1330-4A23-96D8-1706B2BDBEE7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
