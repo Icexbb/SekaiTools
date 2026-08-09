@@ -30,6 +30,7 @@
         <ProjectReference Include="..\SekaiDataFetch\SekaiDataFetch.csproj"/>
         <ProjectReference Include="..\SekaiToolsCore\SekaiToolsCore.csproj"/>
         <ProjectReference Include="..\SekaiToolsInfrastructure\SekaiToolsInfrastructure.csproj"/>
+        <ProjectReference Include="..\SekaiToolsMedia\SekaiToolsMedia.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

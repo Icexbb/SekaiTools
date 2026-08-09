@@ -13,6 +13,7 @@ using SekaiToolsCore;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.Service;
 using SekaiToolsGUI.View.Setting;
+using SekaiToolsGUI.View.Suppress;
 using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Setting;
 using Wpf.Ui;
@@ -20,7 +21,6 @@ using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
 using MessageBox = System.Windows.MessageBox;
 using MessageBoxButton = System.Windows.MessageBoxButton;
-using Suppressor = SekaiToolsGUI.Suppress.Suppressor;
 
 namespace SekaiToolsGUI;
 
@@ -30,7 +30,7 @@ public partial class MainWindow : FluentWindow
     {
         InitializeComponent();
         DataContext = new MainWindowViewModel();
-        Closed += (sender, args) => { Suppressor.Instance.Clean(); };
+        Closed += (sender, args) => { SuppressPage.DisposeSuppressor(); };
         ContentRendered += (sender, args) => { CheckUpdate(); };
         TaskbarItemInfo = new TaskbarItemInfo();
         SetWindowTitle("");

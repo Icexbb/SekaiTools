@@ -7,7 +7,6 @@ using Microsoft.Win32;
 using SekaiToolsBase;
 using SekaiToolsCore;
 using SekaiToolsGUI.Interface;
-using SekaiToolsGUI.Suppress;
 using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.ViewModel.Suppress;
 using Wpf.Ui;
@@ -22,6 +21,7 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     {
         DataContext = SuppressPageModel.Instance;
         InitializeComponent();
+        InitializeSuppressor();
     }
 
     public SuppressPageModel ViewModel => (SuppressPageModel)DataContext;
@@ -96,7 +96,7 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     {
         try
         {
-            await Suppressor.Instance.SuppressAsync();
+            await BeginSuppressAsync();
         }
         catch (OperationCanceledException)
         {
@@ -115,12 +115,12 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 
     private async void DisposeButton_OnClick(object sender, RoutedEventArgs e)
     {
-        await Suppressor.Instance.CleanAsync();
+        await CancelSuppressAsync();
     }
 
     private async void ClearButton_OnClick(object sender, RoutedEventArgs e)
     {
-        await Suppressor.Instance.CleanAsync();
+        await CancelSuppressAsync();
         ViewModel.Reset();
     }
 

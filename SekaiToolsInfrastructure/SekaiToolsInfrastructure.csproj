@@ -9,5 +9,6 @@
     <ItemGroup>
         <ProjectReference Include="..\SekaiToolsBase\SekaiToolsBase.csproj" />
         <ProjectReference Include="..\SekaiToolsCore\SekaiToolsCore.csproj" />
+        <ProjectReference Include="..\SekaiToolsMedia\SekaiToolsMedia.csproj" />
     </ItemGroup>
 </Project>

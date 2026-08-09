@@ -1,7 +1,7 @@
 using System.IO;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using SekaiToolsGUI.Suppress;
+using SekaiToolsMedia;
 
 namespace SekaiToolsGUI.ViewModel.Suppress;
 

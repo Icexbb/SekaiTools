@@ -1,6 +1,6 @@
-namespace SekaiToolsGUI.Suppress;
+namespace SekaiToolsMedia;
 
-internal class X264Params
+public sealed class X264Params
 {
     public static X264Params Instance { get; } = new();
     public int BFrames { get; set; } = 16;

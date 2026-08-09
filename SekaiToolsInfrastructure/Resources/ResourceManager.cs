@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using SekaiToolsBase;
 using SekaiToolsCore.Abstractions;
+using SekaiToolsMedia;
 
 namespace SekaiToolsInfrastructure.Resources;
 
@@ -27,7 +28,7 @@ public struct Resource
     public long Size { get; set; }
 }
 
-public class ResourceManager : ITemplateResourceProvider
+public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
 {
     private const string ResourceServerUrl = "https://v.xbb.moe/files/sekai-tools/";
 
@@ -85,6 +86,11 @@ public class ResourceManager : ITemplateResourceProvider
     public string GetVideoProcessResourcePath(string fileName)
     {
         return ResourcePath(ResourceType.VideoProcess, fileName);
+    }
+
+    public string GetVapourSynthResourcePath(string fileName)
+    {
+        return ResourcePath(ResourceType.VapourSynth, fileName);
     }
 
     public string ResourcePath(ResourceType type, string fileName)

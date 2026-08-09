@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SekaiTools.Tests", "SekaiTo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SekaiToolsInfrastructure", "SekaiToolsInfrastructure\SekaiToolsInfrastructure.csproj", "{9B53432B-003D-485D-9A7C-3E5AFEC678A8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SekaiToolsMedia", "SekaiToolsMedia\SekaiToolsMedia.csproj", "{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -113,6 +115,18 @@ Global
 		{9B53432B-003D-485D-9A7C-3E5AFEC678A8}.Release|x64.Build.0 = Release|Any CPU
 		{9B53432B-003D-485D-9A7C-3E5AFEC678A8}.Release|x86.ActiveCfg = Release|Any CPU
 		{9B53432B-003D-485D-9A7C-3E5AFEC678A8}.Release|x86.Build.0 = Release|Any CPU
+		{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}.Debug|x64.Build.0 = Debug|Any CPU
+		{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}.Debug|x86.Build.0 = Debug|Any CPU
+		{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}.Release|x64.ActiveCfg = Release|Any CPU
+		{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}.Release|x64.Build.0 = Release|Any CPU
+		{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}.Release|x86.ActiveCfg = Release|Any CPU
+		{4C22E36D-F7E3-41F5-B312-FD9EA5F0C4DD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
