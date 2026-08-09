@@ -37,6 +37,24 @@ public class ProjectDependencyTests
         Assert.Equal(expectedDependencies.Order(StringComparer.OrdinalIgnoreCase), actualDependencies);
     }
 
+    [Fact]
+    public void GUI发布目标会显式还原并发布Updater()
+    {
+        var root = FindRepositoryRoot();
+        var projectPath = Path.Combine(root, "SekaiToolsGUI", "SekaiToolsGUI.csproj");
+        var document = XDocument.Load(projectPath);
+        var buildUpdater = document.Descendants("Target")
+            .Single(element => element.Attribute("Name")?.Value == "BuildUpdater");
+        var updaterBuild = buildUpdater.Descendants("MSBuild")
+            .Single(element => element.Attribute("Projects")?.Value.Contains("Updater.csproj",
+                StringComparison.OrdinalIgnoreCase) == true);
+        var targets = updaterBuild.Attribute("Targets")?.Value
+            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
+
+        Assert.Contains("Restore", targets);
+        Assert.Contains("Publish", targets);
+    }
+
     private static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

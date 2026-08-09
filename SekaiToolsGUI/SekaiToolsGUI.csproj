@@ -227,8 +227,9 @@
         <Message Text="输出目录: $(OutputDir)" Importance="high"/>
         <Message Text="========================================" Importance="high"/>
 
+        <!-- Updater 不在 GUI 的静态项目引用图中，发布前必须显式还原。 -->
         <MSBuild Projects="..\Updater\Updater.csproj"
-                 Targets="Publish"
+                 Targets="Restore;Publish"
                  Properties="Configuration=$(Configuration);PublishDir=..\Updater\build\;PublishSingleFile=true"/>
 
         <!-- 将 Updater 单文件可执行文件复制到主程序发布目录 -->
