@@ -24,6 +24,8 @@ namespace SekaiToolsGUI.View.Download;
 
 public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 {
+    private static Task? _sourceListInitializationTask;
+
     public DownloadPage()
     {
         InitializeComponent();
@@ -43,9 +45,10 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         ((MainWindow)Application.Current.MainWindow!).WindowSnackbarService;
 
 
-    public void OnNavigatedTo()
+    public async void OnNavigatedTo()
     {
-        InitDownloadSource();
+        _sourceListInitializationTask ??= InitDownloadSourceAsync();
+        await _sourceListInitializationTask;
     }
 
 
@@ -179,7 +182,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         return ViewModel.CurrentSource;
     }
 
-    private async void InitDownloadSource()
+    private async Task InitDownloadSourceAsync()
     {
         var sourceListUrl = NetworkEndpoints.Current.Resources.SourceListUrl;
         try
