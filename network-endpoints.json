@@ -6,7 +6,7 @@
   },
   "resources": {
     "baseUrl": "https://v.xbb.moe/files/sekai-tools/",
-    "sourceListUrl": "https://config.g.xbb.moe/source.json"
+    "sourceListUrl": "https://v.xbb.moe/files/sekai-tools/source.json"
   },
   "defaultDataSources": [
     {
