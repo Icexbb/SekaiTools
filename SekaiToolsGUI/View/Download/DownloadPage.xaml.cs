@@ -1,13 +1,11 @@
 using System.Diagnostics;
 using System.IO;
-using System.Net;
-using System.Net.Http;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.Logging;
+using SekaiDataFetch;
 using SekaiDataFetch.Source;
-using SekaiToolsBase;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.Download.Components;
 using SekaiToolsGUI.View.Download.Components.Action;
@@ -17,7 +15,6 @@ using SekaiToolsGUI.View.Download.Components.Special;
 using SekaiToolsGUI.View.Download.Components.Unit;
 using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.ViewModel.Download;
-using SekaiToolsGUI.ViewModel.Setting;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Button = System.Windows.Controls.Button;
@@ -110,7 +107,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
                     downloadItem.ChangeStatus(0);
                     try
                     {
-                        await Download(downloadItem.Url, downloadItem.SavePath);
+                        await Fetcher.Instance.FetchToFile(downloadItem.Url, downloadItem.SavePath);
                         downloadItem.ChangeStatus(1);
                         successCount++;
                         savePath = Path.GetDirectoryName(downloadItem.SavePath)!;
@@ -176,47 +173,6 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         DownloadItemBox.Items.Clear();
     }
 
-    private static async Task<string> FetchString(string url)
-    {
-        Log.Logger.LogInformation("GET {Url}", url);
-        var client = new HttpClient(GetHttpHandler());
-        var response = await client.GetAsync(url);
-        response.EnsureSuccessStatusCode();
-        var responseContent = await response.Content.ReadAsStringAsync();
-
-        return responseContent;
-
-        HttpMessageHandler GetHttpHandler()
-        {
-            var proxy = SettingPageModel.Instance.GetProxy();
-            return proxy.ProxyType switch
-            {
-                Proxy.Type.None or Proxy.Type.System => new HttpClientHandler(),
-                Proxy.Type.Http => new HttpClientHandler
-                {
-                    Proxy = new WebProxy(proxy.Host, proxy.Port), UseProxy = true
-                },
-                Proxy.Type.Socks5 => new SocketsHttpHandler
-                {
-                    Proxy = new WebProxy(proxy.Host, proxy.Port), UseProxy = true
-                },
-                _ => throw new ArgumentOutOfRangeException()
-            };
-        }
-    }
-
-    private static async Task Download(string url, string filepath)
-    {
-        Log.Logger.LogInformation("{TypeName} Downloading from {Url} to {FilePath}", nameof(DownloadPage), url,
-            filepath);
-        var responseContent = await FetchString(url);
-
-        var saveDir = Path.GetDirectoryName(filepath);
-        if (saveDir != null && !Directory.Exists(saveDir))
-            Directory.CreateDirectory(saveDir);
-        await File.WriteAllTextAsync(filepath, responseContent);
-    }
-
     public SourceData GetSourceType()
     {
         return ViewModel.CurrentSource;
@@ -228,7 +184,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         try
         {
             // structure : {data:SourceData[],keyword:string}
-            var sourceListJson = await FetchString(sourceListUrl);
+            var sourceListJson = await Fetcher.Instance.Fetch(sourceListUrl);
             var sourceListDoc = JsonDocument.Parse(sourceListJson);
             var sourceList = sourceListDoc.RootElement.Deserialize<SourceData[]>()!;
             ViewModel.SourceData = sourceList;

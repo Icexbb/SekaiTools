@@ -94,7 +94,7 @@ public abstract class BaseListStory
                     return (CachePath: cachePath, Content: content);
                 }
 
-                return (CachePath: null, Content: null);
+                return (CachePath: (string?)null, Content: (string?)null);
             }).ToArray();
 
         var downloads = await Task.WhenAll(tasks);
