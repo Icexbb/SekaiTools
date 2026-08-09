@@ -47,6 +47,7 @@ refactor(subtitle)!: 调整字幕生成配置结构
 ## 架构概览
 
 ### 解决方案结构
+| **SekaiToolsConfiguration** | net10.0 | 统一加载、校验并随发布产物复制网络端点配置 |
 
 | 项目 | 目标框架 | 职责 |
 |---------|--------|------|
@@ -122,7 +123,13 @@ refactor(subtitle)!: 调整字幕生成配置结构
 
 ### 模板资源管理
 
-`SekaiToolsInfrastructure.Resources.ResourceManager` 从 `resource.g.xbb.moe` 下载外部模板图像资源到 `~/SekaiTools/Resource/`。根据 JSON 清单校验 MD5 和文件大小。
+`SekaiToolsInfrastructure.Resources.ResourceManager` 从 `network-endpoints.json` 配置的资源服务下载外部模板图像资源到 `~/SekaiTools/Resource/`。根据 JSON 清单校验 MD5 和文件大小。
+
+### 网络端点配置
+
+所有运行时网络服务地址和默认数据源集中在根目录 `network-endpoints.json`。该文件由 `SekaiToolsConfiguration.NetworkEndpoints` 加载并校验，构建和发布时会复制到输出目录；若外部文件缺失，则回退到程序集内嵌的默认配置。
+
+新增或修改远程端点时只编辑该 JSON，不在 C# 或 XAML 中写入完整 HTTPS 地址。代理协议和 XAML 命名空间不属于远程服务端点。
 
 ## NuGet 依赖注意事项
 
