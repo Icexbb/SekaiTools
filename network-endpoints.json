@@ -8,36 +8,26 @@
     "baseUrl": "https://v.xbb.moe/files/sekai-tools/",
     "sourceListUrl": "https://v.xbb.moe/files/sekai-tools/source.json"
   },
-  "defaultDataSources": [
+  "defaultDataSources":[
     {
-      "sourceName": "Sekai Best",
-      "sourceTemplate": "https://sekai-world.github.io/sekai-master-db-diff/{type}.json",
-      "storageBaseUrl": "https://storage.sekai.best/sekai-jp-assets/",
-      "actionSetTemplate": "scenario/actionset/{abName}/{scenarioId}.asset",
-      "memberStoryTemplate": "character/member/{abName}/{scenarioId}.asset",
-      "eventStoryTemplate": "event_story/{abName}/scenario/{scenarioId}.asset",
-      "specialStoryTemplate": "scenario/special/{abName}/{scenarioId}.asset",
-      "unitStoryTemplate": "scenario/unitstory/{abName}/{scenarioId}.asset"
+      "SourceName": "Sekai Best",
+      "SourceTemplate": "https://sekai-world.github.io/sekai-master-db-diff/{type}.json",
+      "StorageBaseUrl": "https://storage.sekai.best/sekai-jp-assets/",
+      "ActionSetTemplate": "scenario/actionset/{abName}/{scenarioId}.asset",
+      "MemberStoryTemplate": "character/member/{abName}/{scenarioId}.asset",
+      "EventStoryTemplate": "event_story/{abName}/scenario/{scenarioId}.asset",
+      "SpecialStoryTemplate": "scenario/special/{abName}/{scenarioId}.asset",
+      "UnitStoryTemplate": "scenario/unitstory/{abName}/{scenarioId}.asset"
     },
     {
-      "sourceName": "Haruki JP",
-      "sourceTemplate": "https://storage.haruki.wacca.cn/master-jp/{type}.json",
-      "storageBaseUrl": "https://sekai-assets-bdf29c81.seiunx.net/jp-assets/",
-      "actionSetTemplate": "startapp/scenario/actionset/{abName}/{scenarioId}.json",
-      "memberStoryTemplate": "startapp/character/member/{abName}/{scenarioId}.json",
-      "eventStoryTemplate": "ondemand/event_story/{abName}/scenario/{scenarioId}.json",
-      "specialStoryTemplate": "startapp/scenario/special/{abName}/{scenarioId}.json",
-      "unitStoryTemplate": "startapp/scenario/unitstory/{abName}/{scenarioId}.json"
-    },
-    {
-      "sourceName": "Haruki CN",
-      "sourceTemplate": "https://storage.haruki.wacca.cn/master-jp/{type}.json",
-      "storageBaseUrl": "https://storage.haruki.wacca.cn/assets/",
-      "actionSetTemplate": "startapp/scenario/actionset/{abName}/{scenarioId}.json",
-      "memberStoryTemplate": "startapp/character/member/{abName}/{scenarioId}.json",
-      "eventStoryTemplate": "ondemand/event_story/{abName}/scenario/{scenarioId}.json",
-      "specialStoryTemplate": "startapp/scenario/special/{abName}/{scenarioId}.json",
-      "unitStoryTemplate": "startapp/scenario/unitstory/{abName}/{scenarioId}.json"
+      "SourceName": "Haruki NEO",
+      "SourceTemplate": "https://sekai-master-direct.haruki.seiunx.com/haruki-sekai-master/master/{type}.json",
+      "StorageBaseUrl": "https://production-sekai-assets.neo.bot.haruki.seiunx.com/jp-assets/",
+      "ActionSetTemplate": "startapp/scenario/actionset/{abName}/{scenarioId}.json",
+      "MemberStoryTemplate": "startapp/character/member/{abName}/{scenarioId}.json",
+      "EventStoryTemplate": "ondemand/event_story/{abName}/scenario/{scenarioId}.json",
+      "SpecialStoryTemplate": "startapp/scenario/special/{abName}/{scenarioId}.json",
+      "UnitStoryTemplate": "startapp/scenario/unitstory/{abName}/{scenarioId}.json"
     }
   ]
 }
