@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using SekaiToolsCore.Abstractions;
 using SekaiToolsCore.Process.Model;
 using SkiaSharp;
 
@@ -16,7 +17,8 @@ public enum TemplateUsage
     MarkerContent
 }
 
-public class TemplateManager(Size videoResolution, bool noScale = false) : IDisposable
+public class TemplateManager(Size videoResolution, ITemplateResourceProvider resourceProvider,
+    bool noScale = false) : IDisposable
 {
     private const string MenuSignBase = "menu-107px.png";
     private const string DbFontBase = "FOT-RodinNTLGPro-DB.otf";
@@ -60,7 +62,7 @@ public class TemplateManager(Size videoResolution, bool noScale = false) : IDisp
     public Mat GetMenuSign()
     {
         if (_menuSign != null) return _menuSign;
-        var menuTemplatePath = ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, MenuSignBase);
+        var menuTemplatePath = resourceProvider.GetVideoProcessResourcePath(MenuSignBase);
         if (!File.Exists(menuTemplatePath)) throw new FileNotFoundException();
         var menuTemplate = CvInvoke.Imread(menuTemplatePath, ImreadModes.Unchanged)!;
         var menuSize = GetMenuSignSize(videoResolution);
@@ -123,7 +125,7 @@ public class TemplateManager(Size videoResolution, bool noScale = false) : IDisp
     private SKFont GetDbFont()
     {
         _dbTypeface ??= SKTypeface.FromFile(
-            ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, DbFontBase));
+            resourceProvider.GetVideoProcessResourcePath(DbFontBase));
         if (_dbTypeface == null) throw new FileNotFoundException($"Font not found: {DbFontBase}");
         return new SKFont(_dbTypeface, GetFontSize(0.95f));
     }
@@ -131,7 +133,7 @@ public class TemplateManager(Size videoResolution, bool noScale = false) : IDisp
     private SKFont GetEbFont()
     {
         _ebTypeface ??= SKTypeface.FromFile(
-            ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, EbFontBase));
+            resourceProvider.GetVideoProcessResourcePath(EbFontBase));
         if (_ebTypeface == null) throw new FileNotFoundException($"Font not found: {EbFontBase}");
         return new SKFont(_ebTypeface, GetFontSize(0.95f));
     }

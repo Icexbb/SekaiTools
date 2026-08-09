@@ -7,6 +7,7 @@ using SekaiToolsBase;
 using SekaiToolsBase.Story;
 using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsBase.SubStationAlpha;
+using SekaiToolsCore.Abstractions;
 using SekaiToolsCore.Match.TemplateMatcher;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
@@ -60,6 +61,7 @@ public class VideoProcessor : IDisposable
     private const long CallbackThrottleMs = 200;
     private readonly object _progressSaveLock = new();
     private readonly Config _config;
+    private readonly IProcessingStatePersistence _persistence;
     private readonly ProcessingPerformanceMetrics _performanceMetrics = new();
     private readonly ProcessingStateMetadata _stateMetadata;
     private readonly int _saveInterval = 300;
@@ -84,13 +86,18 @@ public class VideoProcessor : IDisposable
     // 进度保存
     private string? _saveKey;
 
-    public VideoProcessor(Config config, VideoProcessCallbacks callbacks)
+    public VideoProcessor(
+        Config config,
+        VideoProcessCallbacks callbacks,
+        ITemplateResourceProvider resourceProvider,
+        IProcessingStatePersistence persistence)
     {
         _config = config;
+        _persistence = persistence;
         _videoPath = config.VideoFilePath;
         _scriptPath = config.ScriptFilePath;
         _translatePath = config.TranslateFilePath;
-        Creator = new TemplateMatcherCreator(config);
+        Creator = new TemplateMatcherCreator(config, resourceProvider);
         Capture = new VideoCapture(config.VideoFilePath);
         DialogMatcher = Creator.DialogMatcher();
         ContentMatcher = Creator.ContentMatcher();
@@ -588,7 +595,7 @@ public class VideoProcessor : IDisposable
                        $"帧={diagnostic.FrameIndex}, {diagnostic.Reason}", ExtLogLevel.Warning);
 
         if (ResultReport.CanExport)
-            HistoryStore.Add(finalState);
+            _persistence.AddHistory(finalState);
 
         return;
 
@@ -674,7 +681,7 @@ public class VideoProcessor : IDisposable
         }
     }
 
-    private static async Task SaveAfterPreviousAsync(Task previousSave, string saveKey, ProcessingState state)
+    private async Task SaveAfterPreviousAsync(Task previousSave, string saveKey, ProcessingState state)
     {
         try
         {
@@ -685,7 +692,7 @@ public class VideoProcessor : IDisposable
             Logger.Log($"保存上一份处理进度失败: {e.Message}", ExtLogLevel.Error);
         }
 
-        await Task.Run(() => ProgressStore.Save(saveKey, state)).ConfigureAwait(false);
+        await Task.Run(() => _persistence.SaveProgress(saveKey, state)).ConfigureAwait(false);
     }
 
     private void WaitForProgressSave()

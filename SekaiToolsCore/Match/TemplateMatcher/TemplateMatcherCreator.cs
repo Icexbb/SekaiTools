@@ -1,3 +1,4 @@
+using SekaiToolsCore.Abstractions;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.Model;
 using SekaiStory = SekaiToolsBase.Story.Story;
@@ -6,13 +7,13 @@ namespace SekaiToolsCore.Match.TemplateMatcher;
 
 public class TemplateMatcherCreator : IDisposable
 {
-    public TemplateMatcherCreator(Config config)
+    public TemplateMatcherCreator(Config config, ITemplateResourceProvider resourceProvider)
     {
         Config = config;
         VInfo = new VideoInfo(Config.VideoFilePath);
         Story = SekaiStory.FromFile(Config.ScriptFilePath, Config.TranslateFilePath);
 
-        Manager = new TemplateManager(VInfo.Resolution);
+        Manager = new TemplateManager(VInfo.Resolution, resourceProvider);
         CachePool = new TemplateMatchCachePool();
     }
 

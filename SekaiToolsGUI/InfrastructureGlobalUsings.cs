@@ -1,0 +1,2 @@
+global using SekaiToolsInfrastructure.Persistence;
+global using SekaiToolsInfrastructure.Resources;

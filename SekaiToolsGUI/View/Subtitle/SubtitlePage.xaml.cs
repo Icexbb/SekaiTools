@@ -208,7 +208,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
                 OnNewDialog = LinePanel_AddDialogLine,
                 OnNewBanner = LinePanel_AddBannerLine,
                 OnNewMarker = LinePanel_AddMarkerLine
-            });
+            }, ResourceManager.Instance, ProcessingStatePersistence.Instance);
 
             SetTimelineVideoDuration();
             VideoProcessor.ApplyState(state);
@@ -935,7 +935,9 @@ public partial class SubtitlePage
                         });
                     },
                     OnFps = OnFpsChanged
-                }
+                },
+                ResourceManager.Instance,
+                ProcessingStatePersistence.Instance
             );
 
             SetTimelineVideoDuration();

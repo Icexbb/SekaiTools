@@ -1,6 +1,8 @@
 using System.Text.Json;
+using SekaiToolsCore.Process;
+using SekaiToolsInfrastructure.Resources;
 
-namespace SekaiToolsCore.Process;
+namespace SekaiToolsInfrastructure.Persistence;
 
 public class HistoryEntry
 {

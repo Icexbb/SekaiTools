@@ -3,8 +3,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using SekaiToolsBase;
+using SekaiToolsCore.Abstractions;
 
-namespace SekaiToolsCore;
+namespace SekaiToolsInfrastructure.Resources;
 
 public enum ResourceType
 {
@@ -26,7 +27,7 @@ public struct Resource
     public long Size { get; set; }
 }
 
-public class ResourceManager
+public class ResourceManager : ITemplateResourceProvider
 {
     private const string ResourceServerUrl = "https://v.xbb.moe/files/sekai-tools/";
 
@@ -79,6 +80,11 @@ public class ResourceManager
         var response = await client.GetAsync(url);
         response.EnsureSuccessStatusCode();
         return response;
+    }
+
+    public string GetVideoProcessResourcePath(string fileName)
+    {
+        return ResourcePath(ResourceType.VideoProcess, fileName);
     }
 
     public string ResourcePath(ResourceType type, string fileName)
