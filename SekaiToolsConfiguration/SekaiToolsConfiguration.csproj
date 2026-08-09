@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>SekaiToolsConfiguration</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="..\network-endpoints.json"
+                          LogicalName="SekaiToolsConfiguration.network-endpoints.json" />
+        <None Include="..\network-endpoints.json"
+              Link="network-endpoints.json"
+              CopyToOutputDirectory="PreserveNewest"
+              CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+</Project>
