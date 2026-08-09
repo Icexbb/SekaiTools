@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using Microsoft.Extensions.Logging;
 using SekaiDataFetch;
 using SekaiDataFetch.Source;
+using SekaiToolsConfiguration;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.Download.Components;
 using SekaiToolsGUI.View.Download.Components.Action;
@@ -180,7 +181,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 
     private async void InitDownloadSource()
     {
-        const string sourceListUrl = "https://config.g.xbb.moe/source.json";
+        var sourceListUrl = NetworkEndpoints.Current.Resources.SourceListUrl;
         try
         {
             // structure : {data:SourceData[],keyword:string}

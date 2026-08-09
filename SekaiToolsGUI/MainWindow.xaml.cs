@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Shell;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
+using SekaiToolsConfiguration;
 using SekaiToolsCore;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.Service;
@@ -197,7 +198,7 @@ partial class MainWindow
 
     private static async Task<string> GetLatestVersionAsync()
     {
-        const string url = "https://api.github.com/repos/Icexbb/SekaiTools/releases/latest";
+        var url = NetworkEndpoints.Current.GitHub.LatestReleaseApiUrl;
         var proxy = SettingPageModel.Instance.GetProxy();
 
         using var client = new HttpClient(GetHttpHandler(proxy))

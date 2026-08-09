@@ -32,6 +32,7 @@
         <ProjectReference Include="..\SekaiToolsInfrastructure\SekaiToolsInfrastructure.csproj"/>
         <ProjectReference Include="..\SekaiToolsMedia\SekaiToolsMedia.csproj"/>
         <ProjectReference Include="..\SekaiToolsSubtitles\SekaiToolsSubtitles.csproj"/>
+        <ProjectReference Include="..\SekaiToolsConfiguration\SekaiToolsConfiguration.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

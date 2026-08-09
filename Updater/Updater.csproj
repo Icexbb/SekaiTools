@@ -12,4 +12,8 @@
         <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     </PropertyGroup>
 
+
+    <ItemGroup>
+        <ProjectReference Include="..\SekaiToolsConfiguration\SekaiToolsConfiguration.csproj" />
+    </ItemGroup>
 </Project>

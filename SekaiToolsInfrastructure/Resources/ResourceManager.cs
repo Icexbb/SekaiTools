@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using SekaiToolsBase;
 using SekaiToolsCore.Abstractions;
+using SekaiToolsConfiguration;
 using SekaiToolsMedia;
 
 namespace SekaiToolsInfrastructure.Resources;
@@ -30,7 +31,7 @@ public struct Resource
 
 public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
 {
-    private const string ResourceServerUrl = "https://v.xbb.moe/files/sekai-tools/";
+    private static string ResourceServerUrl => NetworkEndpoints.Current.Resources.BaseUrl;
 
     public static readonly string DataBaseDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "SekaiTools");

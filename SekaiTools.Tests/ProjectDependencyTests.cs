@@ -7,16 +7,17 @@ public class ProjectDependencyTests
     public static TheoryData<string, string[]> AllowedDependencies => new()
     {
         { "SekaiToolsBase", [] },
+        { "SekaiToolsConfiguration", [] },
         { "SekaiToolsSubtitles", [] },
         { "SekaiToolsMedia", [] },
-        { "SekaiDataFetch", ["SekaiToolsBase"] },
+        { "SekaiDataFetch", ["SekaiToolsBase", "SekaiToolsConfiguration"] },
         { "SekaiToolsCore", ["SekaiToolsBase", "SekaiToolsSubtitles"] },
-        { "SekaiToolsInfrastructure", ["SekaiToolsBase", "SekaiToolsCore", "SekaiToolsMedia"] },
+        { "SekaiToolsInfrastructure", ["SekaiToolsBase", "SekaiToolsConfiguration", "SekaiToolsCore", "SekaiToolsMedia"] },
         {
             "SekaiToolsGUI",
-            ["SekaiDataFetch", "SekaiToolsCore", "SekaiToolsInfrastructure", "SekaiToolsMedia", "SekaiToolsSubtitles"]
+            ["SekaiDataFetch", "SekaiToolsConfiguration", "SekaiToolsCore", "SekaiToolsInfrastructure", "SekaiToolsMedia", "SekaiToolsSubtitles"]
         },
-        { "Updater", [] }
+        { "Updater", ["SekaiToolsConfiguration"] }
     };
 
     [Theory]

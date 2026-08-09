@@ -1,6 +1,7 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
+using SekaiToolsConfiguration;
 
 namespace SekaiDataFetch.Source;
 
@@ -17,58 +18,19 @@ public class SourceData
     public required string UnitStoryTemplate { get; init; }
 
 
-    public static SourceData[] Default =>
-    [
-        new()
+    public static SourceData[] Default => NetworkEndpoints.Current.DefaultDataSources
+        .Select(source => new SourceData
         {
-            SourceName = "Sekai Best",
-
-            SourceTemplate = "https://sekai-world.github.io/sekai-master-db-diff/{type}.json",
-            StorageBaseUrl = "https://storage.sekai.best/sekai-jp-assets/",
-            ActionSetTemplate =
-                "scenario/actionset/{abName}/{scenarioId}.asset",
-            MemberStoryTemplate =
-                "character/member/{abName}/{scenarioId}.asset",
-            EventStoryTemplate =
-                "event_story/{abName}/scenario/{scenarioId}.asset",
-            SpecialStoryTemplate =
-                "scenario/special/{abName}/{scenarioId}.asset",
-            UnitStoryTemplate =
-                "scenario/unitstory/{abName}/{scenarioId}.asset"
-        },
-        new()
-        {
-            SourceName = "Haruki JP",
-            SourceTemplate = "https://storage.haruki.wacca.cn/master-jp/{type}.json",
-            StorageBaseUrl = "https://sekai-assets-bdf29c81.seiunx.net/jp-assets/",
-            ActionSetTemplate =
-                "startapp/scenario/actionset/{abName}/{scenarioId}.json",
-            MemberStoryTemplate =
-                "startapp/character/member/{abName}/{scenarioId}.json",
-            EventStoryTemplate =
-                "ondemand/event_story/{abName}/scenario/{scenarioId}.json",
-            SpecialStoryTemplate =
-                "startapp/scenario/special/{abName}/{scenarioId}.json",
-            UnitStoryTemplate =
-                "startapp/scenario/unitstory/{abName}/{scenarioId}.json"
-        },
-        new()
-        {
-            SourceName = "Haruki CN",
-            SourceTemplate = "https://storage.haruki.wacca.cn/master-jp/{type}.json",
-            StorageBaseUrl = "https://storage.haruki.wacca.cn/assets/",
-            ActionSetTemplate =
-                "startapp/scenario/actionset/{abName}/{scenarioId}.json",
-            MemberStoryTemplate =
-                "startapp/character/member/{abName}/{scenarioId}.json",
-            EventStoryTemplate =
-                "ondemand/event_story/{abName}/scenario/{scenarioId}.json",
-            SpecialStoryTemplate =
-                "startapp/scenario/special/{abName}/{scenarioId}.json",
-            UnitStoryTemplate =
-                "startapp/scenario/unitstory/{abName}/{scenarioId}.json"
-        }
-    ];
+            SourceName = source.SourceName,
+            SourceTemplate = source.SourceTemplate,
+            StorageBaseUrl = source.StorageBaseUrl,
+            ActionSetTemplate = source.ActionSetTemplate,
+            MemberStoryTemplate = source.MemberStoryTemplate,
+            EventStoryTemplate = source.EventStoryTemplate,
+            SpecialStoryTemplate = source.SpecialStoryTemplate,
+            UnitStoryTemplate = source.UnitStoryTemplate
+        })
+        .ToArray();
 
     public static SourceData[] Load(string filepath)
     {

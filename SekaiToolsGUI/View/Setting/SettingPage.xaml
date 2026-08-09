@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:configuration="clr-namespace:SekaiToolsConfiguration;assembly=SekaiToolsConfiguration"
              xmlns:setting="clr-namespace:SekaiToolsGUI.ViewModel.Setting"
              d:DataContext="{d:DesignInstance setting:SettingPageModel, IsDesignTimeCreatable=True}"
              mc:Ignorable="d">
@@ -327,7 +328,7 @@
                             Background="Transparent"
                             BorderThickness="0,1,0,0"
                             CornerRadius="0"
-                            NavigateUri="https://github.com/Icexbb/SekaiTools">
+                            NavigateUri="{x:Static configuration:NetworkEndpoints.RepositoryUri}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />

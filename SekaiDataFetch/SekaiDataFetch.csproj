@@ -8,6 +8,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\SekaiToolsBase\SekaiToolsBase.csproj"/>
+        <ProjectReference Include="..\SekaiToolsConfiguration\SekaiToolsConfiguration.csproj"/>
     </ItemGroup>
 
 </Project>

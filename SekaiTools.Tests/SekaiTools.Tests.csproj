@@ -22,5 +22,6 @@
         <ProjectReference Include="..\SekaiToolsInfrastructure\SekaiToolsInfrastructure.csproj"/>
         <ProjectReference Include="..\SekaiToolsMedia\SekaiToolsMedia.csproj"/>
         <ProjectReference Include="..\SekaiDataFetch\SekaiDataFetch.csproj"/>
+        <ProjectReference Include="..\SekaiToolsConfiguration\SekaiToolsConfiguration.csproj"/>
     </ItemGroup>
 </Project>

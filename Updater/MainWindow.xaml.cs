@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Windows;
+using SekaiToolsConfiguration;
 
 namespace Updater;
 
@@ -96,7 +97,7 @@ public partial class MainWindow : Window
         using var client = CreateHttpClient();
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Updater", "1.0"));
         client.Timeout = TimeSpan.FromSeconds(30);
-        var json = await client.GetStringAsync("https://api.github.com/repos/Icexbb/SekaiTools/releases/latest");
+        var json = await client.GetStringAsync(NetworkEndpoints.Current.GitHub.LatestReleaseApiUrl);
 
         using var doc = JsonDocument.Parse(json);
         var version = doc.RootElement.GetProperty("tag_name").GetString();
@@ -254,7 +255,7 @@ public partial class MainWindow : Window
                 return;
             }
 
-            var url = $"https://github.com/Icexbb/SekaiTools/releases/download/" +
+            var url = NetworkEndpoints.Current.GitHub.ReleaseDownloadBaseUrl +
                       $"{remoteVersion}/SekaiTools-{remoteVersion}.7z";
             var checksumUrl = url + ".sha256";
             var tempDir = Path.Combine(Path.GetTempPath(), $"SekaiToolsUpdate-{Guid.NewGuid():N}");
