@@ -264,6 +264,13 @@
                         </Grid.RowDefinitions>
                         <DockPanel Grid.Row="0" Margin="8">
                             <ui:Button DockPanel.Dock="Right" Content="清空日志" Click="ClearLog_Click" />
+                            <ui:Button x:Name="TestErrorButton"
+                                       DockPanel.Dock="Right"
+                                       Margin="0,0,8,0"
+                                       Content="测试错误提示"
+                                       Visibility="Collapsed"
+                                       Click="TestErrorButton_Click" />
+
                             <ui:TextBlock Text="等级:" VerticalAlignment="Center" Margin="0,0,8,0" />
                             <ComboBox x:Name="LevelFilter" Width="100" SelectedIndex="0"
                                       SelectionChanged="LevelFilter_SelectionChanged">

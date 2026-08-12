@@ -1,5 +1,6 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -26,6 +27,7 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
 
         DataContext = MainWindowViewModel.SettingPageModel;
         InitializeComponent();
+        TestErrorButton.Visibility = Debugger.IsAttached ? Visibility.Visible : Visibility.Collapsed;
 
         BindingOperations.EnableCollectionSynchronization(InMemoryLogSink.Entries, InMemoryLogSink.Entries);
         LogListBox.ItemsSource = _logView;
@@ -45,6 +47,11 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
     private void ClearLog_Click(object sender, RoutedEventArgs e)
     {
         InMemoryLogSink.Clear();
+    }
+
+    private void TestErrorButton_Click(object sender, RoutedEventArgs e)
+    {
+        throw new InvalidOperationException("这是用于测试错误提示的模拟异常。");
     }
 
     private static bool FilterAll(object obj)

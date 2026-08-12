@@ -51,6 +51,14 @@ public class InMemoryLogSink : ILoggerProvider
         }
     }
 
+    public static IReadOnlyList<LogEntry> Snapshot()
+    {
+        lock (Lock)
+        {
+            return Entries.ToArray();
+        }
+    }
+
     private void AddEntry(LogEntry entry)
     {
         lock (Lock)
