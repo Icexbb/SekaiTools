@@ -96,6 +96,7 @@ public partial class EventStoryTab : UserControl, IRefreshable
             GroupName = groupName,
             Name = characterId == 0 ? "全部角色" : CharacterNames[characterId],
             Value = characterId,
+            GameCharacterId = characterId is >= 27 and <= 31 ? 21 : characterId,
             Source = characterId == 0
                 ? "pack://application:,,,/Resource/icon.png"
                 : $"pack://application:,,,/Resource/Characters/chr_{characterId}.png"
@@ -148,11 +149,11 @@ public partial class EventStoryTab : UserControl, IRefreshable
 
         if (!filterTypes.Contains(data.GameEvent.EventType)) return false;
 
-        var selectedCharacterId = CharacterComboBox.SelectedItem is CharacterComboBoxItem character
-            ? character.Value
-            : 0;
-        if (selectedCharacterId == 0) return true;
+        if (CharacterComboBox.SelectedItem is not CharacterComboBoxItem character || character.Value == 0)
+            return true;
 
-        return data.EventStory.BannerGameCharacterUnitId == selectedCharacterId;
+        return data.GameEvent.EventType == "world_bloom"
+            ? data.BannerGameCharacterIds.Contains(character.GameCharacterId)
+            : data.EventStory.BannerGameCharacterUnitId == character.Value;
     }
 }

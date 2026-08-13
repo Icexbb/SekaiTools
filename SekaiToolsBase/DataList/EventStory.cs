@@ -47,7 +47,7 @@ public class EventStory : ICloneable
     public int Id { get; set; }
     public int EventId { get; set; }
     public string Outline { get; set; } = "";
-    public int BannerGameCharacterUnitId { get; set; }
+    public int? BannerGameCharacterUnitId { get; set; }
     public string AssetBundleName { get; set; } = "";
     public EventEpisode[] EventStoryEpisodes { get; set; } = [];
 

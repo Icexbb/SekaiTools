@@ -11,6 +11,7 @@ public partial class SourceList(SourceData data)
     public string ActionSets => SourceData.SourceTemplate.Replace("{type}", "actionSets");
     public string Events => SourceData.SourceTemplate.Replace("{type}", "events");
     public string EventStories => SourceData.SourceTemplate.Replace("{type}", "eventStories");
+    public string WorldBlooms => SourceData.SourceTemplate.Replace("{type}", "worldBlooms");
     public string Character2ds => SourceData.SourceTemplate.Replace("{type}", "character2ds");
     public string Cards => SourceData.SourceTemplate.Replace("{type}", "cards");
     public string CardEpisodes => SourceData.SourceTemplate.Replace("{type}", "cardEpisodes");
