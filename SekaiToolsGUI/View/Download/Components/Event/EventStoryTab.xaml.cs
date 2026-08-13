@@ -153,23 +153,6 @@ public partial class EventStoryTab : UserControl, IRefreshable
             : 0;
         if (selectedCharacterId == 0) return true;
 
-        var bannerCharacterId = data.EventStory.BannerGameCharacterUnitId;
-        return data.GameEvent.EventType == "world_bloom"
-            ? bannerCharacterId == GetWorldBloomBannerCharacterId(selectedCharacterId)
-            : bannerCharacterId == selectedCharacterId;
-    }
-
-    private static int GetWorldBloomBannerCharacterId(int characterId)
-    {
-        return characterId switch
-        {
-            >= 1 and <= 4 or 27 => 1,
-            >= 5 and <= 8 or 28 => 5,
-            >= 9 and <= 12 or 29 => 9,
-            >= 13 and <= 16 or 30 => 13,
-            >= 17 and <= 20 or 31 => 17,
-            >= 21 and <= 26 => 21,
-            _ => characterId
-        };
+        return data.EventStory.BannerGameCharacterUnitId == selectedCharacterId;
     }
 }
