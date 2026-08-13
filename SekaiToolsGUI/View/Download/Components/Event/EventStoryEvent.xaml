@@ -5,17 +5,13 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d">
-    <ui:Card VerticalContentAlignment="Center" HorizontalAlignment="Stretch">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition />
-                <RowDefinition />
-            </Grid.RowDefinitions>
-            <StackPanel Grid.Row="0" Orientation="Horizontal">
-                <Image Name="ImageBannerIcon" Margin="0,0,5,0" Height="24" />
+    <ui:Card VerticalContentAlignment="Center" HorizontalAlignment="Stretch" Padding="5">
+        <StackPanel>
+            <StackPanel Margin="0,0,0,5" Orientation="Horizontal">
+                <StackPanel Name="IconContainer" Orientation="Horizontal" />
                 <TextBlock Name="TextBlockTitle" Text="No.xxx TitleHere" VerticalAlignment="Center" />
             </StackPanel>
-            <StackPanel Grid.Row="1" Name="PanelItems" />
-        </Grid>
+            <StackPanel Name="PanelItems" />
+        </StackPanel>
     </ui:Card>
 </UserControl>

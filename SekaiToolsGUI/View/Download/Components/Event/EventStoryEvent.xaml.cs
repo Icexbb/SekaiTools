@@ -67,13 +67,32 @@ public partial class EventStoryEvent
         var storyIndex = UseStoryIndex ? EventStorySet.EventStory.EventId : EventStorySet.Index;
         TextBlockTitle.Text = $"No.{storyIndex} {EventStorySet.GameEvent.Name}";
 
-        var bannerCharacterId = EventStorySet.EventStory.BannerGameCharacterUnitId ??
-                                EventStorySet.BannerGameCharacterIds.FirstOrDefault();
-        ImageBannerIcon.Source = bannerCharacterId > 0
-            ? new BitmapImage(new Uri($"pack://application:,,,/Resource/Characters/chr_{bannerCharacterId}.png"))
-            : null;
+        RefreshBannerIcons();
 
         InitDownloadItems();
+    }
+
+    private void RefreshBannerIcons()
+    {
+        IconContainer.Children.Clear();
+
+        var bannerCharacterIds = EventStorySet!.BannerGameCharacterIds.Length > 0
+            ? EventStorySet.BannerGameCharacterIds
+            : EventStorySet.EventStory.BannerGameCharacterUnitId is { } bannerCharacterId
+                ? [bannerCharacterId]
+                : [];
+
+        foreach (var characterId in bannerCharacterIds.Distinct())
+        {
+            IconContainer.Children.Add(new Image
+            {
+                Width = 24,
+                Height = 24,
+                Margin = new Thickness(0, 0, 5, 0),
+                Source = new BitmapImage(
+                    new Uri($"pack://application:,,,/Resource/Characters/chr_{characterId}.png"))
+            });
+        }
     }
 
     private void InitDownloadItems()
