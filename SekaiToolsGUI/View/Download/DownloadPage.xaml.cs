@@ -20,6 +20,7 @@ using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Button = System.Windows.Controls.Button;
 
+
 namespace SekaiToolsGUI.View.Download;
 
 public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
@@ -90,7 +91,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         DownloadButton.IsEnabled = tasks.Any(task => !task.Downloaded);
     }
 
-    private void StoryTypeSelector_OnSelected(object sender, RoutedEventArgs e)
+    private void StoryTypeSelector_OnSelected(object sender, SelectionChangedEventArgs e)
     {
         SelectIndex(BoxStoryType.SelectedIndex);
     }

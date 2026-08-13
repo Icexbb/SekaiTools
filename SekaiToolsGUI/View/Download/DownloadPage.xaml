@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:download1="clr-namespace:SekaiToolsGUI.ViewModel.Download"
+             xmlns:control="clr-namespace:SekaiToolsGUI.Control"
              ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
              ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
              Foreground="{DynamicResource TextFillColorPrimaryBrush}"
@@ -19,19 +20,19 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="200" />
         </Grid.ColumnDefinitions>
-        <ui:Card Grid.Column="0" Grid.Row="0" Margin="0,0,0,10">
-            <Grid>
+        <StackPanel Grid.Column="0" Grid.Row="0">
+            <Grid Margin="0,0,0,5">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0">
-                    <TextBlock Margin="2,0,0,4" Text="数据源" />
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Margin="0,0,10,0" Text="数据源" VerticalAlignment="Center" />
                     <ComboBox Name="BoxSource" ItemsSource="{Binding SourceData}"
-                              AutomationProperties.Name="数据源"
+                              AutomationProperties.Name="数据源" MinWidth="120"
                               SelectedIndex="{Binding CurrentSourceIndex}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -40,32 +41,32 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                 </StackPanel>
-                <StackPanel Grid.Column="1" Margin="5,0">
-                    <TextBlock Margin="2,0,0,4" Text="剧情类型" />
-                    <ComboBox Name="BoxStoryType"
-                              AutomationProperties.Name="剧情类型"
-                              SelectionChanged="StoryTypeSelector_OnSelected">
-                        <ComboBox.Items>
-                            <ComboBoxItem Content="主线剧情" />
-                            <ComboBoxItem Content="活动剧情" />
-                            <ComboBoxItem Content="特殊剧情" />
-                            <ComboBoxItem Content="角色剧情" />
-                            <ComboBoxItem Content="地图对话" />
-                        </ComboBox.Items>
-                    </ComboBox>
-                </StackPanel>
+
                 <Button Grid.Column="2" VerticalAlignment="Bottom"
                         Content="刷新当前列表" Click="ButtonRefresh_OnClick" />
             </Grid>
-        </ui:Card>
+            <ui:Card Margin="0,0,0,5" Padding="5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                <control:SelectorBar x:Name="BoxStoryType" HorizontalAlignment="Stretch"
+                                     HorizontalContentAlignment="Stretch"
+                                     AutomationProperties.Name="剧情类型"
+                                     SelectionChanged="StoryTypeSelector_OnSelected">
+                    <control:SelectorBar.Items>
+                        <control:SelectorBarItem Content="主线剧情" />
+                        <control:SelectorBarItem Content="活动剧情" />
+                        <control:SelectorBarItem Content="特殊剧情" />
+                        <control:SelectorBarItem Content="角色剧情" />
+                        <control:SelectorBarItem Content="地图对话" />
+                    </control:SelectorBar.Items>
+                </control:SelectorBar>
+            </ui:Card>
+        </StackPanel>
         <ui:Card Grid.Column="0" Padding="0" Grid.Row="1"
                  HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                  VerticalContentAlignment="Top"
                  Name="ContentCard" />
-
         <ui:Card Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"
                  VerticalContentAlignment="Top" Padding="0" Margin="10,0,0,0"
-                 VerticalAlignment="Stretch" Width="260">
+                 VerticalAlignment="Stretch" Width="200">
             <ui:Card.Content>
                 <Grid>
                     <Grid.RowDefinitions>
