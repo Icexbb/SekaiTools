@@ -15,7 +15,7 @@
         <PackageReference Include="Emgu.CV.runtime.windows" Version="4.13.0.5924" Condition="$([MSBuild]::IsOSPlatform('Windows'))"/>
         <PackageReference Include="Emgu.CV.runtime.macos" Version="4.13.0.5924" Condition="$([MSBuild]::IsOSPlatform('OSX'))"/>
         <PackageReference Include="Emgu.CV.runtime.ubuntu" Version="4.13.0.5924" Condition="$([MSBuild]::IsOSPlatform('Linux'))"/>
-        <PackageReference Include="SkiaSharp" Version="3.119.2"/>
+        <PackageReference Include="SkiaSharp" Version="4.151.1" />
     </ItemGroup>
 
     <ItemGroup>
