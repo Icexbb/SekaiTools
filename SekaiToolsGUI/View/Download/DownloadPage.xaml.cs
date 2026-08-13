@@ -52,9 +52,42 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     }
 
 
-    public void AddTask(string tag, string url)
+    public bool AddTask(string tag, string url)
     {
-        Dispatcher.Invoke(() => { DownloadItemBox.Items.Add(new DownloadTask(tag, url)); });
+        return Dispatcher.Invoke(() =>
+        {
+            if (DownloadItemBox.Items.OfType<DownloadTask>().Any(item => item.Url == url))
+            {
+                SnackService.Show("已在下载列表中", tag, ControlAppearance.Info,
+                    new SymbolIcon(SymbolRegular.Info24), TimeSpan.FromSeconds(2));
+                return false;
+            }
+
+            var task = new DownloadTask(tag, url);
+            task.RemoveRequested += DownloadTask_OnRemoveRequested;
+            DownloadItemBox.Items.Add(task);
+            UpdateTaskListState();
+            SnackService.Show("已加入下载列表", tag, ControlAppearance.Success,
+                new SymbolIcon(SymbolRegular.AddCircle24), TimeSpan.FromSeconds(2));
+            return true;
+        });
+    }
+
+    private void DownloadTask_OnRemoveRequested(object? sender, EventArgs e)
+    {
+        if (sender is not DownloadTask task) return;
+        task.RemoveRequested -= DownloadTask_OnRemoveRequested;
+        DownloadItemBox.Items.Remove(task);
+        UpdateTaskListState();
+    }
+
+    private void UpdateTaskListState()
+    {
+        var tasks = DownloadItemBox.Items.OfType<DownloadTask>().ToArray();
+        TaskCountText.Text = $"下载列表 ({tasks.Length})";
+        EmptyTaskPanel.Visibility = tasks.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+        TaskClearButton.IsEnabled = tasks.Length > 0;
+        DownloadButton.IsEnabled = tasks.Any(task => !task.Downloaded);
     }
 
     private void StoryTypeSelector_OnSelected(object sender, RoutedEventArgs e)
@@ -100,6 +133,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
             TaskClearButton.IsEnabled = false;
             ContentCard.IsEnabled = false;
             var tasks = DownloadItemBox.Items.OfType<DownloadTask>().ToArray();
+            foreach (var task in tasks) task.SetCanRemove(false);
             var savePath = "";
             var successCount = 0;
             var failures = new List<string>();
@@ -128,8 +162,9 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
             finally
             {
                 button.IsEnabled = true;
-                TaskClearButton.IsEnabled = true;
                 ContentCard.IsEnabled = true;
+                foreach (var task in tasks) task.SetCanRemove(true);
+                UpdateTaskListState();
             }
 
             ShowDownloadSummary(successCount, failures);
@@ -174,7 +209,10 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 
     private void ClearButton_OnClick(object sender, RoutedEventArgs e)
     {
+        foreach (var task in DownloadItemBox.Items.OfType<DownloadTask>())
+            task.RemoveRequested -= DownloadTask_OnRemoveRequested;
         DownloadItemBox.Items.Clear();
+        UpdateTaskListState();
     }
 
     public SourceData GetSourceType()

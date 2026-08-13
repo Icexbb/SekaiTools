@@ -28,26 +28,34 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <ComboBox Grid.Column="0" Name="BoxSource" ItemsSource="{Binding SourceData}"
-                          SelectedIndex="{Binding CurrentSourceIndex}">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding SourceName }" />
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-                <ComboBox Grid.Column="1" Margin="5,0"
-                          Name="BoxStoryType"
-                          SelectionChanged="StoryTypeSelector_OnSelected">
-                    <ComboBox.Items>
-                        <ComboBoxItem Content="主线剧情" />
-                        <ComboBoxItem Content="活动剧情" />
-                        <ComboBoxItem Content="特殊剧情" />
-                        <ComboBoxItem Content="角色剧情" />
-                        <ComboBoxItem Content="地图对话" />
-                    </ComboBox.Items>
-                </ComboBox>
-                <Button Grid.Column="2" Content="刷新" Click="ButtonRefresh_OnClick" />
+                <StackPanel Grid.Column="0">
+                    <TextBlock Margin="2,0,0,4" Text="数据源" />
+                    <ComboBox Name="BoxSource" ItemsSource="{Binding SourceData}"
+                              AutomationProperties.Name="数据源"
+                              SelectedIndex="{Binding CurrentSourceIndex}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding SourceName }" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="5,0">
+                    <TextBlock Margin="2,0,0,4" Text="剧情类型" />
+                    <ComboBox Name="BoxStoryType"
+                              AutomationProperties.Name="剧情类型"
+                              SelectionChanged="StoryTypeSelector_OnSelected">
+                        <ComboBox.Items>
+                            <ComboBoxItem Content="主线剧情" />
+                            <ComboBoxItem Content="活动剧情" />
+                            <ComboBoxItem Content="特殊剧情" />
+                            <ComboBoxItem Content="角色剧情" />
+                            <ComboBoxItem Content="地图对话" />
+                        </ComboBox.Items>
+                    </ComboBox>
+                </StackPanel>
+                <Button Grid.Column="2" VerticalAlignment="Bottom"
+                        Content="刷新当前列表" Click="ButtonRefresh_OnClick" />
             </Grid>
         </ui:Card>
         <ui:Card Grid.Column="0" Padding="0" Grid.Row="1"
@@ -57,7 +65,7 @@
 
         <ui:Card Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"
                  VerticalContentAlignment="Top" Padding="0" Margin="10,0,0,0"
-                 VerticalAlignment="Stretch" Width="210">
+                 VerticalAlignment="Stretch" Width="260">
             <ui:Card.Content>
                 <Grid>
                     <Grid.RowDefinitions>
@@ -70,20 +78,35 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <ui:Button Grid.Column="0" Name="TaskClearButton"
+                        <ui:Button Grid.Column="0" Name="TaskClearButton" IsEnabled="False"
                                    Click="ClearButton_OnClick"
                                    HorizontalAlignment="Right" Margin="5" Content="清空" />
-                        <ui:TextBlock Grid.Column="1" Margin="5" Text="下载列表"
+                        <ui:TextBlock Grid.Column="1" Margin="5" Name="TaskCountText"
+                                      Text="下载列表 (0)"
                                       TextAlignment="Center" VerticalAlignment="Center" />
 
-                        <ui:Button Grid.Column="2"
+                        <ui:Button Grid.Column="2" Name="DownloadButton" IsEnabled="False"
                                    Click="DownloadButton_OnClick"
                                    HorizontalAlignment="Right" Margin="5" Content="下载" />
                     </Grid>
-                    <ListBox Grid.Row="1" IsEnabled="False"
-                             VerticalAlignment="Stretch"
-                             HorizontalAlignment="Stretch"
-                             Name="DownloadItemBox" />
+                    <Grid Grid.Row="1">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl VerticalAlignment="Top"
+                                          HorizontalAlignment="Stretch"
+                                          Name="DownloadItemBox" />
+                        </ScrollViewer>
+                        <StackPanel Name="EmptyTaskPanel" VerticalAlignment="Center"
+                                    HorizontalAlignment="Center" IsHitTestVisible="False">
+                            <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="28"
+                                           HorizontalAlignment="Center" Opacity="0.7" />
+                            <TextBlock Margin="0,8,0,0" Text="暂无下载任务"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Margin="0,4,0,0" Text="点击左侧剧情即可加入"
+                                       FontSize="12" Opacity="0.7"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
                 </Grid>
             </ui:Card.Content>
         </ui:Card>
