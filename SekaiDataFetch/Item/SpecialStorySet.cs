@@ -10,7 +10,7 @@ public class SpecialStorySet
         Episodes = specialStory.Episodes.Select(episode => new Episode(this, episode)).ToArray();
     }
 
-    private SpecialStory SpecialStory { get; }
+    public SpecialStory SpecialStory { get; }
 
     public Episode[] Episodes { get; }
 

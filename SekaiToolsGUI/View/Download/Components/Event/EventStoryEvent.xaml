@@ -5,13 +5,24 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d">
-    <ui:Card VerticalContentAlignment="Center" HorizontalAlignment="Stretch" Padding="5">
-        <StackPanel>
-            <StackPanel Margin="0,0,0,5" Orientation="Horizontal">
-                <StackPanel Name="IconContainer" Orientation="Horizontal" />
-                <TextBlock Name="TextBlockTitle" Text="No.xxx TitleHere" VerticalAlignment="Center" />
-            </StackPanel>
+    <ui:CardExpander VerticalContentAlignment="Center" HorizontalAlignment="Stretch" ContentPadding="10,5">
+        <ui:CardExpander.Header>
+            <Grid Margin="0,0,0,5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition MinWidth="20" Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Name="TextBlockTitle" Text="No.xxx TitleHere" VerticalAlignment="Center"
+                           FontWeight="DemiBold" />
+                <StackPanel Grid.Column="2" Name="IconContainer" Orientation="Horizontal" VerticalAlignment="Center"
+                            Margin="10,0">
+                    <Image Height="24" Width="24" Source="pack://application:,,,/Resource/Characters/chr_1.png"></Image>
+                </StackPanel>
+            </Grid>
+        </ui:CardExpander.Header>
+        <ui:CardExpander.Content>
             <StackPanel Name="PanelItems" />
-        </StackPanel>
-    </ui:Card>
+        </ui:CardExpander.Content>
+    </ui:CardExpander>
 </UserControl>

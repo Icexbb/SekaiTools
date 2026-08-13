@@ -32,11 +32,9 @@ public class UnitStorySet
 
         public class Episode(UnitEpisode episode)
         {
-            private string EpisodeNoLabel { get; } = episode.EpisodeNoLabel;
-            private string Title { get; } = episode.Title;
+            public string EpisodeNoLabel { get; } = episode.EpisodeNoLabel;
+            public string Title { get; } = episode.Title;
             public string ScenarioId { get; } = episode.ScenarioId;
-
-            public string Key => $"{EpisodeNoLabel} - {Title}";
         }
     }
 }

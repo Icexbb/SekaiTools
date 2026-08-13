@@ -57,7 +57,7 @@ public partial class EventStoryEvent
     public EventStoryEvent()
     {
         InitializeComponent();
-        Margin = new Thickness(5);
+        Margin = new Thickness(0, 0, 0, 5);
     }
 
 
@@ -106,10 +106,14 @@ public partial class EventStoryEvent
         {
             var storyIndex = UseStoryIndex ? EventStorySet.EventStory.EventId : EventStorySet.Index;
             var episode = EventStorySet.EventStory.EventStoryEpisodes[i];
-            var key = $"{storyIndex} - {episode.EpisodeNo} : {episode.Title}";
+            var key = $"{storyIndex}-{episode.EpisodeNo}";
 
-            PanelItems.Children.Add(DownloadItem.GetItem(() => SourceList.Instance.EventStory(episode.ScenarioId,
-                EventStorySet.EventStory.AssetBundleName), key));
+            var downloadItem = DownloadItem.GetItem(() => SourceList.Instance.EventStory(episode.ScenarioId,
+                    EventStorySet.EventStory.AssetBundleName), episode.Title, key,
+                $"EventStory|{storyIndex}-{EventStorySet.GameEvent.Name}|{episode.EpisodeNo}-{episode.Title}");
+
+            downloadItem.Margin = new Thickness(0, 5, 0, 0);
+            PanelItems.Children.Add(downloadItem);
         }
     }
 }

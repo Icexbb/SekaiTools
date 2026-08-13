@@ -13,22 +13,19 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <ui:Card Name="CardCharacter"
-                 Grid.Row="0" Padding="5" HorizontalContentAlignment="Stretch" Margin="0,0,0,5">
-            <ComboBox Name="CharacterComboBox" SelectionChanged="CharacterComboBox_OnSelectionChanged"
-                      ItemsSource="{Binding Characters}">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <Image Source="{Binding Source}"
-                                   Height="24" />
-                            <TextBlock VerticalAlignment="Center"
-                                       Text="{Binding Name}" Margin="10,0" />
-                        </StackPanel>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-        </ui:Card>
+        <ComboBox Name="CharacterComboBox" SelectionChanged="CharacterComboBox_OnSelectionChanged"
+                  ItemsSource="{Binding Characters}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="{Binding Source}"
+                               Height="24" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="{Binding Name}" Margin="10,0" />
+                    </StackPanel>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
         <ListView Grid.Row="1" ItemsSource="{Binding CardStories}"
                   BorderBrush="Transparent"
                   Background="Transparent"

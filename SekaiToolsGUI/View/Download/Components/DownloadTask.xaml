@@ -14,7 +14,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Text="{Binding ScriptTag}" TextWrapping="Wrap" />
+            <TextBlock Grid.Row="0" Name="TaskNameTextBlock"  TextWrapping="Wrap" />
             <Grid Grid.Row="1" Margin="0,8,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />

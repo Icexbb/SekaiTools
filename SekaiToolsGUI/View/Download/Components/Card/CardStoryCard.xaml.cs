@@ -45,8 +45,6 @@ public partial class CardStoryCard : UserControl
 
 public partial class CardStoryCard
 {
-    private string CardName { get; set; } = "";
-
     private void Initialize(CardStorySet cardStorySet)
     {
         CardStorySet = cardStorySet;
@@ -60,9 +58,8 @@ public partial class CardStoryCard
             _ => CardStorySet.Card.CardRarityType
         };
 
-        CardName = $"No.{CardStorySet.Card.Id} {rarity} {CardStorySet.Card.Prefix}";
-        TextBlockTitle.Text = CardName;
-
+        TextBlockTitle.Text = $"# {CardStorySet.Card.Id}";
+        TextBlockName.Text = $"{rarity} - {CardStorySet.Card.Prefix}";
         InitDownloadItems();
     }
 
@@ -76,9 +73,13 @@ public partial class CardStoryCard
             panelItemsChild.Recycle();
 
         var itemFirst = DownloadItem.GetItem(() => SourceList.Instance.MemberStory(CardStorySet.FirstPart),
-            CardName + " 前篇");
+            "前篇", "",
+            $"CardStory|{CardStorySet.Card.Id}-{CardStorySet.Card.Prefix}|前篇"
+        );
         var itemSecond = DownloadItem.GetItem(() => SourceList.Instance.MemberStory(CardStorySet.SecondPart),
-            CardName + " 后篇");
+            "后篇", "",
+            $"CardStory|{CardStorySet.Card.Id}-{CardStorySet.Card.Prefix}|后篇"
+        );
 
         itemFirst.HorizontalAlignment = HorizontalAlignment.Stretch;
         itemSecond.HorizontalAlignment = HorizontalAlignment.Stretch;

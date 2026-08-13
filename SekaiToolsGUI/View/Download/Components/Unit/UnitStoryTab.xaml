@@ -13,7 +13,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <ui:Card Name="CardUnits"
-                 Grid.Row="0" Padding="5" HorizontalContentAlignment="Stretch" Margin="0,0,0,5">
+                 Grid.Row="0" Padding="10,5" HorizontalContentAlignment="Stretch" Margin="0,0,0,5">
             <Grid VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -50,10 +50,10 @@
                 </RadioButton>
             </Grid>
         </ui:Card>
-        <ui:Card Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
+        <UserControl Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
             <ui:PassiveScrollViewer>
-                <StackPanel Margin="5" Name="CardContents" />
+                <StackPanel Name="CardContents" />
             </ui:PassiveScrollViewer>
-        </ui:Card>
+        </UserControl>
     </Grid>
 </UserControl>

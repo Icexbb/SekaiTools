@@ -9,9 +9,19 @@
              d:DataContext="{d:DesignInstance local:DownloadItem}"
              HorizontalAlignment="Stretch">
     <ui:CardAction HorizontalAlignment="Stretch" Click="ButtonBase_OnClick">
-        <StackPanel Orientation="Vertical">
-            <ui:TextBlock Name="KeyText" Text="Key" />
-            <StackPanel Orientation="Horizontal" Name="Icons" Margin="0,5,0,0" />
-        </StackPanel>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal">
+                <ui:TextBlock Name="TextId" Text="# 1" VerticalAlignment="Center" FontWeight="DemiBold"
+                              Margin="0,0,10,0" />
+                <ui:TextBlock Name="TextKey" Text="Key" VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Name="Icons" Margin="10,0" />
+        </Grid>
+
     </ui:CardAction>
 </UserControl>

@@ -35,7 +35,9 @@ public partial class ActionStoryItem : UserControl
             while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
             SourceList.Instance.SourceData = DownloadPageModel.Instance.CurrentSource;
             var url = SourceList.Instance.ActionSet(AreaStorySet);
-            (parent as DownloadPage)?.AddTask(AreaStorySet.ActionSet.ScriptId, url);
+            (parent as DownloadPage)?.AddTask(
+                DownloadPageModel.Instance.CurrentSource.SourceName + "|" +
+                $"ActionSet|{AreaStorySet.ActionSet.Id}-{AreaStorySet.ActionSet.ScriptId}", url);
         });
     }
 
@@ -70,6 +72,7 @@ public partial class ActionStoryItem : UserControl
                 Icons.Children.Add(icon);
             }
 
-        KeyText.Text = $"{areaStorySet.ActionSet.Id} {areaStorySet.ActionSet.ScenarioId}";
+        TextId.Text = $"# {areaStorySet.ActionSet.Id}";
+        TextKey.Text = $"{areaStorySet.ActionSet.ScenarioId}";
     }
 }

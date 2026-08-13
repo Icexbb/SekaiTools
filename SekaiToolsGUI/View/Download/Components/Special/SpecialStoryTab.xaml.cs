@@ -36,6 +36,7 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
             SpecialStoryTypeSelector.Items.Add(key);
 
         SpecialStoryTypeSelector.SelectedIndex = 0;
+        RefreshSelection();
     }
 
     private void RefreshSelection()
@@ -47,8 +48,12 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
         var set = ListSpecialStory.Data[selectedUnit];
         foreach (var episode in set.Episodes)
         {
-            var item = DownloadItem.GetItem(() => SourceList.Instance.SpecialStory(episode), episode.Title);
-            item.Margin = new Thickness(10, 5, 10, 5);
+            var item = DownloadItem.GetItem(() => SourceList.Instance.SpecialStory(episode),
+                episode.Title,
+                episode.ScenarioId,
+                $"SpecialStory|{set.SpecialStory.AssetBundleName}-{set.SpecialStory.Title}|{episode.ScenarioId}-{episode.Title}"
+            );
+            item.Margin = new Thickness(5);
             CardContents.Children.Add(item);
         }
     }

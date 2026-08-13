@@ -5,10 +5,14 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:SekaiToolsGUI.View.Download.Components"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             mc:Ignorable="d"
+             mc:Ignorable="d" Margin="0"
              d:DataContext="{d:DesignInstance local:DownloadItem}"
              HorizontalAlignment="Stretch">
-    <ui:CardAction HorizontalAlignment="Stretch" Click="ButtonBase_OnClick">
-        <ui:TextBlock Name="KeyText" TextWrapping="Wrap" />
+    <ui:CardAction HorizontalAlignment="Stretch" Click="ButtonBase_OnClick" Padding="10">
+        <StackPanel Orientation="Horizontal">
+            <ui:InfoBadge Name="IndexInfoBadge" Severity="Attention" Margin="0,0,5,0" Value="1" />
+            <ui:TextBlock Name="TitleTextBlock" VerticalAlignment="Center" TextWrapping="Wrap"
+                          Text="Download Item Title" />
+        </StackPanel>
     </ui:CardAction>
 </UserControl>

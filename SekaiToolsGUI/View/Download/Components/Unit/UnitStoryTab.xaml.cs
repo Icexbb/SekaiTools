@@ -43,13 +43,12 @@ public partial class UnitStoryTab : UserControl, IRefreshable
         CardContents.Children.Clear();
         if (ListUnitStory.Data.Count == 0) return;
         foreach (var chapter in ListUnitStory.Data[selectedUnit].Chapters)
-        foreach (var episode in chapter.Episodes)
         {
-            var item = DownloadItem.GetItem(
-                () => SourceList.Instance.UnitStory(episode.ScenarioId, chapter.AssetBundleName),
-                chapter.Name + "\n" + episode.Key);
-            item.Margin = new Thickness(10, 5, 10, 5);
-            CardContents.Children.Add(item);
+            var chapterItem = new UnitStoryChapter(chapter)
+            {
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            CardContents.Children.Add(chapterItem);
         }
     }
 
