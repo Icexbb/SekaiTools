@@ -60,10 +60,10 @@
                 </control:SelectorBar>
             </ui:Card>
         </StackPanel>
-        <ui:Card Grid.Column="0" Padding="0" Grid.Row="1"
-                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                 VerticalContentAlignment="Top"
-                 Name="ContentCard" />
+        <ContentControl Grid.Column="0" Grid.Row="1"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                        Name="ContentCard" />
         <ui:Card Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"
                  VerticalContentAlignment="Top" Padding="0" Margin="10,0,0,0"
                  VerticalAlignment="Stretch" Width="200">

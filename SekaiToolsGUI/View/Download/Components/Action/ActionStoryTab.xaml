@@ -388,6 +388,7 @@
         <ListView Grid.Row="1" ItemsSource="{Binding EventStories}"
                   BorderBrush="Transparent"
                   Background="Transparent"
+                  Padding="0"
                   ScrollViewer.CanContentScroll="True"
                   VirtualizingStackPanel.ScrollUnit="Pixel">
             <ListView.ItemTemplate>
