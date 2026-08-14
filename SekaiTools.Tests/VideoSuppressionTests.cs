@@ -54,4 +54,59 @@ public class VideoSuppressionTests
             File.Delete(sourceVideo);
         }
     }
+
+    [Fact]
+    public void 音频探测保留全部兼容音轨()
+    {
+        const string log = """
+                               Stream #0:1[0x2](jpn): Audio: aac (LC), 48000 Hz, stereo
+                               Stream #0:2(chi): Audio: mp3, 48000 Hz, stereo
+                           """;
+
+        var plan = FfmpegAudioInspector.Parse(log);
+        var arguments = VideoSuppressor.BuildFfmpegArguments(CreateOptions(), plan);
+
+        Assert.Equal(2, plan.StreamCount);
+        Assert.True(plan.CopyAudio);
+        AssertArgumentPair(arguments, "-map", "1:a?");
+        AssertArgumentPair(arguments, "-c:a", "copy");
+    }
+
+    [Fact]
+    public void 无音轨视频使用可选音频映射()
+    {
+        var plan = FfmpegAudioInspector.Parse("Stream #0:0: Video: h264, yuv420p");
+        var arguments = VideoSuppressor.BuildFfmpegArguments(CreateOptions(), plan);
+
+        Assert.Equal(0, plan.StreamCount);
+        AssertArgumentPair(arguments, "-map", "1:a?");
+    }
+
+    [Theory]
+    [InlineData("opus")]
+    [InlineData("vorbis")]
+    [InlineData("pcm_s16le")]
+    public void Mp4不兼容音频统一转为Aac(string codec)
+    {
+        var plan = FfmpegAudioPlan.FromCodecs(["aac", codec]);
+        var arguments = VideoSuppressor.BuildFfmpegArguments(CreateOptions(), plan);
+
+        Assert.Equal(2, plan.StreamCount);
+        Assert.False(plan.CopyAudio);
+        AssertArgumentPair(arguments, "-c:a", "aac");
+        AssertArgumentPair(arguments, "-b:a", "192k");
+    }
+
+    private static VideoSuppressionOptions CreateOptions()
+    {
+        return new VideoSuppressionOptions("input.mkv", "", "output.mp4", "crf=21");
+    }
+
+    private static void AssertArgumentPair(IReadOnlyList<string> arguments, string name, string value)
+    {
+        var found = arguments
+            .Zip(arguments.Skip(1))
+            .Any(pair => pair.First == name && pair.Second == value);
+        Assert.True(found, $"未找到参数组合 {name} {value}");
+    }
 }

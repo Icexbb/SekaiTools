@@ -75,9 +75,19 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
         _processedFrames = 0;
         _fps = 0;
         _status = "";
+        var ffmpegPath = resourceProvider.GetVapourSynthResourcePath("ffmpeg.exe");
+        var audioPlan = await FfmpegAudioInspector
+            .InspectAsync(ffmpegPath, options.SourceVideo, cancellationToken)
+            .ConfigureAwait(false);
+        _status = audioPlan.StreamCount switch
+        {
+            0 => "未检测到音轨，将仅输出视频",
+            _ when audioPlan.CopyAudio => $"检测到 {audioPlan.StreamCount} 条兼容音轨，将全部保留",
+            _ => $"检测到 {audioPlan.StreamCount} 条音轨，存在 MP4 不兼容编码，将全部转为 AAC"
+        };
         _totalFrames = GetFrameCount(options);
         _vapourProcess = CreateVapourProcess(options);
-        _ffmpegProcess = CreateFfmpegProcess(options);
+        _ffmpegProcess = CreateFfmpegProcess(options, audioPlan, ffmpegPath);
         _running = true;
         PublishProgress();
 
@@ -146,25 +156,45 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
         return new Process { StartInfo = startInfo };
     }
 
-    private Process CreateFfmpegProcess(VideoSuppressionOptions options)
+    private static Process CreateFfmpegProcess(
+        VideoSuppressionOptions options,
+        FfmpegAudioPlan audioPlan,
+        string ffmpegPath)
     {
         var startInfo = new ProcessStartInfo
         {
-            FileName = resourceProvider.GetVapourSynthResourcePath("ffmpeg.exe"),
+            FileName = ffmpegPath,
             UseShellExecute = false,
             CreateNoWindow = true,
             RedirectStandardInput = true,
             RedirectStandardError = true,
             StandardErrorEncoding = Encoding.UTF8
         };
-        foreach (var argument in new[]
-                 {
-                     "-f", "yuv4mpegpipe", "-i", "-", "-i", options.SourceVideo,
-                     "-map", "0:v:0", "-map", "1:a:0", "-c:v", "libx264",
-                     "-x264-params", options.X264Parameters, "-c:a", "copy", options.OutputPath, "-y"
-                 })
+        foreach (var argument in BuildFfmpegArguments(options, audioPlan))
             startInfo.ArgumentList.Add(argument);
         return new Process { StartInfo = startInfo };
+    }
+
+    internal static IReadOnlyList<string> BuildFfmpegArguments(
+        VideoSuppressionOptions options,
+        FfmpegAudioPlan audioPlan)
+    {
+        var arguments = new List<string>
+        {
+            "-f", "yuv4mpegpipe", "-i", "-", "-i", options.SourceVideo,
+            "-map", "0:v:0", "-map", "1:a?", "-c:v", "libx264",
+            "-x264-params", options.X264Parameters,
+            "-c:a", audioPlan.CopyAudio ? "copy" : "aac"
+        };
+        if (!audioPlan.CopyAudio)
+        {
+            arguments.Add("-b:a");
+            arguments.Add("192k");
+        }
+
+        arguments.Add(options.OutputPath);
+        arguments.Add("-y");
+        return arguments;
     }
 
     private int GetFrameCount(VideoSuppressionOptions options)
