@@ -51,7 +51,11 @@ public sealed record VideoSuppressionProgress(
     int TotalFrames,
     double FramesPerSecond,
     VideoSuppressionState State,
-    string Status)
+    string Status,
+    string Bitrate = "",
+    string Speed = "",
+    string OutputSize = "",
+    string OutputTime = "")
 {
     public bool Running => State is VideoSuppressionState.Preparing
         or VideoSuppressionState.Running

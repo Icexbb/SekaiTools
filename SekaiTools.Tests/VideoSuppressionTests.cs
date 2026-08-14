@@ -152,22 +152,27 @@ public class VideoSuppressionTests
     }
 
     [Fact]
-    public void 从原始Ffmpeg日志解析帧数和Fps()
+    public void 从原始Ffmpeg日志解析进度信息()
     {
-        const string log = "frame=  125 fps=48.25 q=24.0 size=1024KiB time=00:00:05.20 bitrate=1613.2kbits/s";
+        const string log =
+            "frame=  125 fps=48.25 q=24.0 size=1024KiB time=00:00:05.20 bitrate=1613.2kbits/s speed=1.20x";
 
-        var parsed = VideoSuppressor.TryParseFfmpegProgress(log, out var frame, out var fps);
+        var parsed = VideoSuppressor.TryParseFfmpegProgress(log, out var progress);
 
         Assert.True(parsed);
-        Assert.Equal(125, frame);
-        Assert.Equal(48.25, fps);
+        Assert.Equal(125, progress.Frame);
+        Assert.Equal(48.25, progress.FramesPerSecond);
+        Assert.Equal("1613.2kbits/s", progress.Bitrate);
+        Assert.Equal("1.20x", progress.Speed);
+        Assert.Equal("1024KiB", progress.OutputSize);
+        Assert.Equal("00:00:05.20", progress.OutputTime);
     }
 
     [Fact]
     public void 普通Ffmpeg日志不会被识别为进度行()
     {
         Assert.False(VideoSuppressor.TryParseFfmpegProgress(
-            "Stream #0:0: Video: h264", out _, out _));
+            "Stream #0:0: Video: h264", out _));
     }
 
     [Theory]

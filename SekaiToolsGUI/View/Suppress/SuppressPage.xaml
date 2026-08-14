@@ -195,6 +195,10 @@
 
         <ui:Card Grid.Row="2" Padding="5" VerticalAlignment="Stretch">
             <StackPanel>
+                <ui:TextBlock Margin="10,8,10,0" HorizontalAlignment="Center"
+                              Text="{Binding ProgressDescription}" TextWrapping="Wrap"
+                              Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                              Visibility="{c:Binding !HasNotStarted,FalseToVisibility=Collapsed}" />
                 <ProgressBar Value="{Binding Progression}"
                              Maximum="1" Minimum="0" Margin="10"
                              Visibility="{c:Binding !HasNotStarted,FalseToVisibility=Collapsed}" />

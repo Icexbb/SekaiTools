@@ -199,6 +199,57 @@ public class SuppressPageModel : ViewModelBase
         set => SetProperty(value);
     }
 
+    public int ProcessedFrames
+    {
+        get => GetProperty(0);
+        set => SetProperty(value);
+    }
+
+    public string Bitrate
+    {
+        get => GetProperty("");
+        set => SetProperty(value);
+    }
+
+    public string Speed
+    {
+        get => GetProperty("");
+        set => SetProperty(value);
+    }
+
+    public string OutputSize
+    {
+        get => GetProperty("");
+        set => SetProperty(value);
+    }
+
+    public string OutputTime
+    {
+        get => GetProperty("");
+        set => SetProperty(value);
+    }
+
+    public string ProgressDescription
+    {
+        get
+        {
+            var framePosition = SourceFrameCount > 0
+                ? $"帧位 {ProcessedFrames:N0} / {SourceFrameCount:N0}"
+                : $"帧位 {ProcessedFrames:N0}";
+            var parts = new List<string>
+            {
+                framePosition,
+                Fps > 0 ? $"{Fps:F1} FPS" : "FPS —",
+                $"进度 {Progression:P1}"
+            };
+            // if (!string.IsNullOrWhiteSpace(Bitrate)) parts.Add($"码率 {Bitrate}");
+            if (!string.IsNullOrWhiteSpace(Speed)) parts.Add($"速度 {Speed}");
+            if (!string.IsNullOrWhiteSpace(OutputTime)) parts.Add($"时间 {OutputTime}");
+            // if (!string.IsNullOrWhiteSpace(OutputSize)) parts.Add($"大小 {OutputSize}");
+            return string.Join(" · ", parts);
+        }
+    }
+
     public string Status
     {
         get => GetProperty("");
@@ -240,7 +291,13 @@ public class SuppressPageModel : ViewModelBase
         Status = "正在准备压制任务…";
         Progression = 0;
         Fps = 0;
+        ProcessedFrames = 0;
+        Bitrate = "";
+        Speed = "";
+        OutputSize = "";
+        OutputTime = "";
         TaskState = VideoSuppressionState.Preparing;
+        OnPropertyChanged(nameof(ProgressDescription));
     }
 
     public void ApplyProgress(VideoSuppressionProgress progress)
@@ -248,8 +305,14 @@ public class SuppressPageModel : ViewModelBase
         SourceFrameCount = progress.TotalFrames;
         Progression = progress.Fraction;
         Fps = progress.FramesPerSecond;
+        ProcessedFrames = progress.ProcessedFrames;
+        Bitrate = progress.Bitrate;
+        Speed = progress.Speed;
+        OutputSize = progress.OutputSize;
+        OutputTime = progress.OutputTime;
         Status = progress.Status;
         TaskState = progress.State;
+        OnPropertyChanged(nameof(ProgressDescription));
     }
 
     public void FailTask(string message)
@@ -263,7 +326,13 @@ public class SuppressPageModel : ViewModelBase
         Status = "";
         Progression = 0;
         Fps = 0;
+        ProcessedFrames = 0;
+        Bitrate = "";
+        Speed = "";
+        OutputSize = "";
+        OutputTime = "";
         TaskState = VideoSuppressionState.Idle;
+        OnPropertyChanged(nameof(ProgressDescription));
         UpdateConfigStatus();
     }
 

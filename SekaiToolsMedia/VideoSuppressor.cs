@@ -18,6 +18,10 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
     private int _processedFrames;
     private int _totalFrames;
     private double _fps;
+    private string _bitrate = "";
+    private string _speed = "";
+    private string _outputSize = "";
+    private string _outputTime = "";
     private VideoSuppressionState _state = VideoSuppressionState.Idle;
     private string _status = "";
 
@@ -92,6 +96,10 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
         _processedFrames = 0;
         _totalFrames = 0;
         _fps = 0;
+        _bitrate = "";
+        _speed = "";
+        _outputSize = "";
+        _outputTime = "";
         _status = "正在分析媒体信息…";
         State = VideoSuppressionState.Preparing;
         PublishProgress();
@@ -268,12 +276,16 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
 
     private void UpdateLog(string log)
     {
-        if (TryParseFfmpegProgress(log, out var processedFrames, out var framesPerSecond))
+        if (TryParseFfmpegProgress(log, out var progress))
         {
-            _processedFrames = processedFrames;
-            _fps = framesPerSecond;
+            _processedFrames = progress.Frame;
+            _fps = progress.FramesPerSecond;
+            _bitrate = progress.Bitrate;
+            _speed = progress.Speed;
+            _outputSize = progress.OutputSize;
+            _outputTime = progress.OutputTime;
             var lastLine = _status.Split('\n').LastOrDefault() ?? "";
-            if (TryParseFfmpegProgress(lastLine, out _, out _))
+            if (TryParseFfmpegProgress(lastLine, out _))
                 _status = _status[..Math.Max(0, _status.LastIndexOf('\n'))] + "\n" + log;
             else
                 _status += "\n" + log;
@@ -286,20 +298,40 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
         _status = _status.Trim();
     }
 
-    internal static bool TryParseFfmpegProgress(string log, out int processedFrames, out double framesPerSecond)
+    internal static bool TryParseFfmpegProgress(string log, out FfmpegProgressValues progress)
     {
         var match = FfmpegProgressPattern().Match(log);
         var parsedFrame = int.TryParse(match.Groups["FrameNumber"].Value, NumberStyles.Integer,
-            CultureInfo.InvariantCulture, out processedFrames);
+            CultureInfo.InvariantCulture, out var processedFrames);
         var parsedFps = double.TryParse(match.Groups["FramesPerSecond"].Value, NumberStyles.Float,
-            CultureInfo.InvariantCulture, out framesPerSecond);
-        return parsedFrame && parsedFps;
+            CultureInfo.InvariantCulture, out var framesPerSecond);
+        if (!parsedFrame || !parsedFps)
+        {
+            progress = default;
+            return false;
+        }
+
+        progress = new FfmpegProgressValues(
+            processedFrames,
+            framesPerSecond,
+            GetProgressValue(BitratePattern(), log),
+            GetProgressValue(SpeedPattern(), log),
+            GetProgressValue(SizePattern(), log),
+            GetProgressValue(TimePattern(), log));
+        return true;
+    }
+
+    private static string GetProgressValue(Regex pattern, string log)
+    {
+        var match = pattern.Match(log);
+        return match.Success ? match.Groups["Value"].Value : "";
     }
 
     private void PublishProgress()
     {
         ProgressChanged?.Invoke(new VideoSuppressionProgress(
-            _processedFrames, _totalFrames, _fps, State, _status));
+            _processedFrames, _totalFrames, _fps, State, _status,
+            _bitrate, _speed, _outputSize, _outputTime));
     }
 
     private static void StopProcess(Process? process)
@@ -320,7 +352,27 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
         }
     }
 
-    [GeneratedRegex(@"^frame=\s*(?<FrameNumber>\d+)\s+fps=\s*(?<FramesPerSecond>[\d.]+)")]
+    [GeneratedRegex(@"^\s*frame=\s*(?<FrameNumber>\d+)\s+fps=\s*(?<FramesPerSecond>[\d.]+)")]
     private static partial Regex FfmpegProgressPattern();
 
+    [GeneratedRegex(@"(?:^|\s)bitrate=\s*(?<Value>\S+)")]
+    private static partial Regex BitratePattern();
+
+    [GeneratedRegex(@"(?:^|\s)speed=\s*(?<Value>\S+)")]
+    private static partial Regex SpeedPattern();
+
+    [GeneratedRegex(@"(?:^|\s)size=\s*(?<Value>\S+)")]
+    private static partial Regex SizePattern();
+
+    [GeneratedRegex(@"(?:^|\s)time=\s*(?<Value>\S+)")]
+    private static partial Regex TimePattern();
+
 }
+
+internal readonly record struct FfmpegProgressValues(
+    int Frame,
+    double FramesPerSecond,
+    string Bitrate,
+    string Speed,
+    string OutputSize,
+    string OutputTime);
