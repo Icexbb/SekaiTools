@@ -1,21 +1,35 @@
-using System.Collections.ObjectModel;
 using System.IO;
+using Emgu.CV;
+using Emgu.CV.CvEnum;
 using SekaiToolsMedia;
 
 namespace SekaiToolsGUI.ViewModel.Suppress;
 
 public class SuppressPageModel : ViewModelBase
 {
-    private bool _synchronizingQueue;
-
     public static SuppressPageModel Instance { get; } = new();
-
-    public ObservableCollection<VideoSuppressionQueueItem> QueueItems { get; } = [];
 
     public string SourceVideo
     {
         get => GetProperty("");
-        private set => SetProperty(value);
+        set
+        {
+            SetProperty(value);
+            SourceFrameCount = 0;
+            SourceSubtitle = "";
+            if (File.Exists(value))
+            {
+                using var capture = new VideoCapture(value);
+                SourceFrameCount = (int)capture.Get(CapProp.FrameCount);
+
+                var guess = Path.ChangeExtension(value, ".ass");
+                if (File.Exists(guess)) SourceSubtitle = guess;
+            }
+
+            OutputPath = Path.Join(Path.GetDirectoryName(value),
+                "[STVS]" + Path.GetFileNameWithoutExtension(value) + ".mp4");
+            UpdateConfigStatus();
+        }
     }
 
     public int SourceFrameCount
@@ -30,8 +44,6 @@ public class SuppressPageModel : ViewModelBase
         set
         {
             SetProperty(value);
-            if (!_synchronizingQueue && QueueItems.Count == 1)
-                QueueItems[0] = QueueItems[0] with { SourceSubtitle = value };
             UpdateConfigStatus();
         }
     }
@@ -42,92 +54,18 @@ public class SuppressPageModel : ViewModelBase
         set
         {
             SetProperty(value);
-            if (!_synchronizingQueue && QueueItems.Count == 1)
-                QueueItems[0] = QueueItems[0] with { OutputPath = value };
             UpdateConfigStatus();
         }
     }
 
-    public int QueueCount => QueueItems.Count;
+    private bool GetCanStartSuppress => File.Exists(SourceVideo) &&
+                                         (string.IsNullOrWhiteSpace(SourceSubtitle) || File.Exists(SourceSubtitle)) &&
+                                         !string.IsNullOrWhiteSpace(OutputPath) &&
+                                         !OutputMatchesSource &&
+                                         ResourcesReady &&
+                                         TaskState == VideoSuppressionState.Idle;
 
-    public bool HasSourceVideos => QueueItems.Count > 0;
-
-    public bool IsSingleVideo => QueueItems.Count == 1;
-
-    public bool IsBatchQueue => QueueItems.Count > 1;
-
-    public string QueueSummary => QueueItems.Count switch
-    {
-        0 => "尚未选择视频，可将多个视频拖放到此页面",
-        1 => QueueItems[0].SourceVideo,
-        _ => $"已选择 {QueueItems.Count} 个视频"
-    };
-
-    public void SetSourceVideos(IEnumerable<string> sourceVideos)
-    {
-        QueueItems.Clear();
-        AddSourceVideosCore(sourceVideos);
-        SynchronizePrimaryItem();
-    }
-
-    public void AddSourceVideos(IEnumerable<string> sourceVideos)
-    {
-        AddSourceVideosCore(sourceVideos);
-        SynchronizePrimaryItem();
-    }
-
-    public void RemoveQueueItem(VideoSuppressionQueueItem item)
-    {
-        QueueItems.Remove(item);
-        SynchronizePrimaryItem();
-    }
-
-    public void ClearQueue()
-    {
-        QueueItems.Clear();
-        SynchronizePrimaryItem();
-    }
-
-    private void AddSourceVideosCore(IEnumerable<string> sourceVideos)
-    {
-        var comparer = OperatingSystem.IsWindows()
-            ? StringComparer.OrdinalIgnoreCase
-            : StringComparer.Ordinal;
-        var existingPaths = QueueItems.Select(item => item.SourceVideo).ToHashSet(comparer);
-        foreach (var sourceVideo in sourceVideos.Where(path => !string.IsNullOrWhiteSpace(path)))
-        {
-            var item = VideoSuppressionQueueItem.Create(sourceVideo);
-            if (existingPaths.Add(item.SourceVideo)) QueueItems.Add(item);
-        }
-    }
-
-    private void SynchronizePrimaryItem()
-    {
-        _synchronizingQueue = true;
-        try
-        {
-            var firstItem = QueueItems.FirstOrDefault();
-            SourceVideo = firstItem?.SourceVideo ?? "";
-            SourceSubtitle = firstItem?.SourceSubtitle ?? "";
-            OutputPath = firstItem?.OutputPath ?? "";
-            SourceFrameCount = 0;
-        }
-        finally
-        {
-            _synchronizingQueue = false;
-        }
-
-        OnPropertyChanged(nameof(QueueCount));
-        OnPropertyChanged(nameof(HasSourceVideos));
-        OnPropertyChanged(nameof(IsSingleVideo));
-        OnPropertyChanged(nameof(IsBatchQueue));
-        OnPropertyChanged(nameof(QueueSummary));
-        UpdateConfigStatus();
-    }
-
-    private bool GetCanStartSuppress => ResourcesReady &&
-                                         TaskState == VideoSuppressionState.Idle &&
-                                         string.IsNullOrEmpty(GetQueueError());
+    private bool OutputMatchesSource => PathsEqual(SourceVideo, OutputPath);
 
     private string GetConfigError
     {
@@ -137,30 +75,14 @@ public class SuppressPageModel : ViewModelBase
             if (!ResourcesReady) return string.IsNullOrWhiteSpace(ResourcePreparationError)
                 ? "视频压制环境尚未就绪"
                 : ResourcePreparationError;
-            return GetQueueError();
+            if (string.IsNullOrWhiteSpace(SourceVideo)) return "请选择视频文件";
+            if (!File.Exists(SourceVideo)) return "视频文件不存在，请重新选择";
+            if (!string.IsNullOrWhiteSpace(SourceSubtitle) && !File.Exists(SourceSubtitle))
+                return "字幕文件不存在，请重新选择或清除";
+            if (string.IsNullOrWhiteSpace(OutputPath)) return "请选择输出路径";
+            if (OutputMatchesSource) return "输出路径不能与源视频相同";
+            return "";
         }
-    }
-
-    private string GetQueueError()
-    {
-        if (QueueItems.Count == 0) return "请选择一个或多个视频文件";
-        foreach (var item in QueueItems)
-        {
-            if (!File.Exists(item.SourceVideo)) return $"视频文件不存在：{item.DisplayName}";
-            if (!string.IsNullOrWhiteSpace(item.SourceSubtitle) && !File.Exists(item.SourceSubtitle))
-                return $"字幕文件不存在：{Path.GetFileName(item.SourceSubtitle)}";
-            if (string.IsNullOrWhiteSpace(item.OutputPath)) return $"请选择 {item.DisplayName} 的输出路径";
-            if (PathsEqual(item.SourceVideo, item.OutputPath))
-                return $"{item.DisplayName} 的输出路径不能与源视频相同";
-        }
-
-        var pathComparer = OperatingSystem.IsWindows()
-            ? StringComparer.OrdinalIgnoreCase
-            : StringComparer.Ordinal;
-        if (QueueItems.Select(item => Path.GetFullPath(item.OutputPath)).Distinct(pathComparer).Count() !=
-            QueueItems.Count)
-            return "队列中存在重复的输出路径，请移除同名视频";
-        return "";
     }
 
     private static bool PathsEqual(string first, string second)
@@ -312,17 +234,16 @@ public class SuppressPageModel : ViewModelBase
     {
         get
         {
-            var elapsedLabel = IsBatchQueue ? "当前已用" : "已用";
             if (TaskState == VideoSuppressionState.Preparing)
-                return $"{elapsedLabel} {FormatDuration(Elapsed)}";
+                return $"已用 {FormatDuration(Elapsed)}";
             if (TaskState == VideoSuppressionState.Idle) return "";
 
             var parts = new List<string> { $"{Progression:P1}" };
             if (Fps > 0) parts.Add($"{Fps:F1} FPS");
             if (!string.IsNullOrWhiteSpace(Speed) && Speed != "N/A") parts.Add(Speed);
-            parts.Add($"{elapsedLabel} {FormatDuration(Elapsed)}");
+            parts.Add($"已用 {FormatDuration(Elapsed)}");
             if (EstimatedRemaining is { } remaining)
-                parts.Add($"{(IsBatchQueue ? "当前预计剩余" : "预计剩余")} {FormatDuration(remaining)}");
+                parts.Add($"预计剩余 {FormatDuration(remaining)}");
             return string.Join(" · ", parts);
         }
     }
@@ -391,32 +312,6 @@ public class SuppressPageModel : ViewModelBase
         OnPropertyChanged(nameof(ProgressDescription));
     }
 
-    public void ApplyQueueProgress(
-        VideoSuppressionProgress progress,
-        int itemIndex,
-        int itemCount,
-        string displayName)
-    {
-        var isLastItem = itemIndex == itemCount - 1;
-        var state = progress.State switch
-        {
-            VideoSuppressionState.Completed when !isLastItem => VideoSuppressionState.Running,
-            VideoSuppressionState.Preparing when itemIndex > 0 => VideoSuppressionState.Running,
-            _ => progress.State
-        };
-
-        SourceFrameCount = progress.TotalFrames;
-        Progression = Math.Clamp((itemIndex + progress.Fraction) / itemCount, 0, 1);
-        Fps = progress.FramesPerSecond;
-        Status = $"[{itemIndex + 1}/{itemCount}] {displayName}\n{progress.Status}";
-        DetailLog = progress.DetailLog;
-        Speed = progress.Speed;
-        Elapsed = progress.Elapsed;
-        EstimatedRemaining = progress.EstimatedRemaining;
-        TaskState = state;
-        OnPropertyChanged(nameof(ProgressDescription));
-    }
-
     public void FailTask(string message)
     {
         Status = string.IsNullOrWhiteSpace(Status) ? message : $"{Status}\n{message}";
@@ -440,7 +335,9 @@ public class SuppressPageModel : ViewModelBase
     public void Reset()
     {
         ReloadStatus();
-        ClearQueue();
+        SourceVideo = "";
+        SourceSubtitle = "";
+        OutputPath = "";
         SuppressCrf = 21;
         QualityPreset = VideoQualityPreset.Balanced;
         SpeedPreset = VideoEncodingSpeedPreset.Balanced;

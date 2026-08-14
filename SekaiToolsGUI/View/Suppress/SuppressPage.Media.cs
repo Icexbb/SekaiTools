@@ -1,4 +1,3 @@
-using System.IO;
 using System.Windows;
 using System.Windows.Shell;
 using SekaiToolsGUI.Service;
@@ -9,43 +8,29 @@ namespace SekaiToolsGUI.View.Suppress;
 public partial class SuppressPage
 {
     private static readonly VideoSuppressor VideoSuppressor = new(ResourceManager.Instance);
-    private IReadOnlyList<VideoSuppressionQueueItem> _activeQueueItems = [];
-    private int _activeQueueIndex;
 
     private void InitializeSuppressor()
     {
         VideoSuppressor.ProgressChanged += ApplySuppressionProgress;
     }
 
-    private async Task BeginSuppressQueueAsync(IReadOnlySet<string> confirmedOverwritePaths)
+    private async Task BeginSuppressAsync(bool overwriteExisting)
     {
         ViewModel.BeginTask();
         var encodingSettings = new X264EncodingSettings(
             ViewModel.QualityPreset,
             ViewModel.SpeedPreset,
             ViewModel.SuppressCrf);
+        var options = new VideoSuppressionOptions(
+            ViewModel.SourceVideo,
+            ViewModel.SourceSubtitle,
+            ViewModel.OutputPath,
+            encodingSettings,
+            ViewModel.SourceFrameCount,
+            overwriteExisting);
 
         using var powerRequest = SystemPowerRequest.Acquire("SekaiTools 正在压制视频");
-        _activeQueueItems = ViewModel.QueueItems.ToArray();
-        try
-        {
-            for (_activeQueueIndex = 0; _activeQueueIndex < _activeQueueItems.Count; _activeQueueIndex++)
-            {
-                var item = _activeQueueItems[_activeQueueIndex];
-                var options = new VideoSuppressionOptions(
-                    item.SourceVideo,
-                    item.SourceSubtitle,
-                    item.OutputPath,
-                    encodingSettings,
-                    OverwriteExisting: confirmedOverwritePaths.Contains(Path.GetFullPath(item.OutputPath)));
-                await VideoSuppressor.SuppressAsync(options);
-            }
-        }
-        finally
-        {
-            _activeQueueItems = [];
-            _activeQueueIndex = 0;
-        }
+        await VideoSuppressor.SuppressAsync(options);
     }
 
     private async Task CancelSuppressAsync()
@@ -55,23 +40,10 @@ public partial class SuppressPage
 
     private void ApplySuppressionProgress(VideoSuppressionProgress progress)
     {
-        var activeQueueItems = _activeQueueItems;
-        var activeQueueIndex = _activeQueueIndex;
-
         void Apply()
         {
-            if (activeQueueItems.Count > 1)
-            {
-                var item = activeQueueItems[Math.Min(activeQueueIndex, activeQueueItems.Count - 1)];
-                ViewModel.ApplyQueueProgress(
-                    progress, activeQueueIndex, activeQueueItems.Count, item.DisplayName);
-            }
-            else
-            {
-                ViewModel.ApplyProgress(progress);
-            }
-
-            ApplyTaskbarProgress(ViewModel.TaskState, ViewModel.Progression);
+            ViewModel.ApplyProgress(progress);
+            ApplyTaskbarProgress(progress);
         }
 
         if (Dispatcher.CheckAccess())
@@ -80,25 +52,25 @@ public partial class SuppressPage
             Dispatcher.BeginInvoke(Apply);
     }
 
-    private static void ApplyTaskbarProgress(VideoSuppressionState state, double fraction)
+    private static void ApplyTaskbarProgress(VideoSuppressionProgress progress)
     {
         if (Application.Current.MainWindow is not MainWindow mainWindow) return;
-        switch (state)
+        switch (progress.State)
         {
             case VideoSuppressionState.Preparing:
                 mainWindow.SetTaskbarProgressState(TaskbarItemProgressState.Indeterminate, 0);
                 break;
             case VideoSuppressionState.Running:
-                mainWindow.SetTaskbarProgressState(TaskbarItemProgressState.Normal, fraction);
+                mainWindow.SetTaskbarProgressState(TaskbarItemProgressState.Normal, progress.Fraction);
                 break;
             case VideoSuppressionState.Cancelling:
-                mainWindow.SetTaskbarProgressState(TaskbarItemProgressState.Paused, fraction);
+                mainWindow.SetTaskbarProgressState(TaskbarItemProgressState.Paused, progress.Fraction);
                 break;
             case VideoSuppressionState.Completed:
                 mainWindow.SetTaskbarProgressState(TaskbarItemProgressState.Normal, 1);
                 break;
             case VideoSuppressionState.Failed:
-                mainWindow.SetTaskbarProgressState(TaskbarItemProgressState.Error, fraction);
+                mainWindow.SetTaskbarProgressState(TaskbarItemProgressState.Error, progress.Fraction);
                 break;
             default:
                 mainWindow.SetTaskbarProgressState(TaskbarItemProgressState.None, 0);

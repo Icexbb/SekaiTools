@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SekaiToolsBase;
+using SekaiToolsCore;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.ViewModel.Suppress;
@@ -18,11 +19,6 @@ namespace SekaiToolsGUI.View.Suppress;
 
 public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 {
-    private static readonly HashSet<string> SupportedVideoExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".mp4", ".avi", ".mkv", ".webm", ".wmv"
-    };
-
     private bool _preparingResources;
 
     public SuppressPage()
@@ -87,7 +83,7 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
         }
     }
 
-    private static string? SelectFile(string filter)
+    private static string? SelectFile(object sender, RoutedEventArgs e, string filter)
     {
         var openFileDialog = new OpenFileDialog { Filter = filter };
         var result = openFileDialog.ShowDialog();
@@ -96,19 +92,15 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 
     private void VideoFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFileDialog
-        {
-            Filter = "视频文件|*.mp4;*.avi;*.mkv;*.webm;*.wmv",
-            Multiselect = true
-        };
-        if (dialog.ShowDialog() != true) return;
+        var result = SelectFile(sender, e, "视频文件|*.mp4;*.avi;*.mkv;*.webm;*.wmv");
+        if (result == null) return;
 
-        ViewModel.SetSourceVideos(dialog.FileNames);
+        ViewModel.SourceVideo = result;
     }
 
     private void ScriptFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
-        var result = SelectFile("字幕文件|*.ass");
+        var result = SelectFile(sender, e, "字幕文件|*.ass");
         if (result == null) return;
 
         ViewModel.SourceSubtitle = result;
@@ -144,16 +136,10 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     {
         try
         {
-            var existingOutputs = ViewModel.QueueItems
-                .Select(item => Path.GetFullPath(item.OutputPath))
-                .Where(File.Exists)
-                .ToArray();
-            if (existingOutputs.Length > 0 && !await ConfirmOverwriteAsync(existingOutputs)) return;
+            var overwriteExisting = File.Exists(ViewModel.OutputPath);
+            if (overwriteExisting && !await ConfirmOverwriteAsync()) return;
 
-            var pathComparer = OperatingSystem.IsWindows()
-                ? StringComparer.OrdinalIgnoreCase
-                : StringComparer.Ordinal;
-            await BeginSuppressQueueAsync(existingOutputs.ToHashSet(pathComparer));
+            await BeginSuppressAsync(overwriteExisting);
         }
         catch (OperationCanceledException)
         {
@@ -170,58 +156,18 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
         }
     }
 
-    private async Task<bool> ConfirmOverwriteAsync(IReadOnlyList<string> existingOutputs)
+    private async Task<bool> ConfirmOverwriteAsync()
     {
-        var outputSummary = existingOutputs.Count == 1
-            ? existingOutputs[0]
-            : string.Join("\n", existingOutputs.Take(5).Select(Path.GetFileName)) +
-              (existingOutputs.Count > 5 ? $"\n等 {existingOutputs.Count} 个文件" : "");
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
         var result = await dialogService.ShowSimpleDialogAsync(
             new SimpleContentDialogCreateOptions
             {
-                Title = existingOutputs.Count == 1 ? "覆盖已有文件？" : $"覆盖 {existingOutputs.Count} 个已有文件？",
-                Content = $"以下输出文件已存在：\n{outputSummary}\n\n对应任务压制成功后将替换原文件。",
-                PrimaryButtonText = existingOutputs.Count == 1 ? "覆盖" : "全部覆盖",
+                Title = "覆盖已有文件？",
+                Content = $"输出文件已存在：\n{ViewModel.OutputPath}\n\n压制成功后将替换该文件。",
+                PrimaryButtonText = "覆盖",
                 CloseButtonText = "取消"
             }, CancellationToken.None);
         return result == ContentDialogResult.Primary;
-    }
-
-    private void ClearQueue_OnClick(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ClearQueue();
-    }
-
-    private void RemoveQueueItem_OnClick(object sender, RoutedEventArgs e)
-    {
-        if (sender is Wpf.Ui.Controls.Button { CommandParameter: VideoSuppressionQueueItem item })
-            ViewModel.RemoveQueueItem(item);
-    }
-
-    private void SuppressPage_OnPreviewDragOver(object sender, DragEventArgs e)
-    {
-        e.Effects = ViewModel.HasNotStarted && GetDroppedVideoFiles(e.Data).Length > 0
-            ? DragDropEffects.Copy
-            : DragDropEffects.None;
-        e.Handled = true;
-    }
-
-    private void SuppressPage_OnDrop(object sender, DragEventArgs e)
-    {
-        if (!ViewModel.HasNotStarted) return;
-        var files = GetDroppedVideoFiles(e.Data);
-        if (files.Length > 0) ViewModel.AddSourceVideos(files);
-    }
-
-    private static string[] GetDroppedVideoFiles(IDataObject data)
-    {
-        if (!data.GetDataPresent(DataFormats.FileDrop) || data.GetData(DataFormats.FileDrop) is not string[] files)
-            return [];
-        return files
-            .Where(File.Exists)
-            .Where(path => SupportedVideoExtensions.Contains(Path.GetExtension(path)))
-            .ToArray();
     }
 
 

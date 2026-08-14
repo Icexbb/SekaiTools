@@ -8,10 +8,7 @@
               xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
               xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
               xmlns:media="clr-namespace:SekaiToolsMedia;assembly=SekaiToolsMedia"
-              mc:Ignorable="d"
-              AllowDrop="True"
-              PreviewDragOver="SuppressPage_OnPreviewDragOver"
-              Drop="SuppressPage_OnDrop"
+             mc:Ignorable="d"
              d:DataContext="{d:DesignInstance suppress:SuppressPageModel, IsDesignTimeCreatable=True}"
              d:DesignHeight="600" d:DesignWidth="800" d:Background="White">
     <UserControl.Resources>
@@ -36,60 +33,21 @@
                         </Grid.RowDefinitions>
                         <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="视频文件" />
                         <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="{Binding QueueSummary}"
-                                      ToolTip="{Binding QueueSummary}"
-                                      TextTrimming="CharacterEllipsis" />
+                                      Text="{Binding SourceVideo}"
+                                      ToolTip="{Binding SourceVideo}"
+                                      TextTrimming="CharacterEllipsis"
+                                      Visibility="{c:Binding 'SourceVideo.Length!=0', FalseToVisibility=Collapsed}" />
                     </Grid>
                 </ui:CardControl.Header>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <ui:Button Margin="0,0,8,0" Content="清空"
-                               IsEnabled="{Binding HasNotStarted}"
-                               Visibility="{c:Binding HasSourceVideos, FalseToVisibility=Collapsed}"
-                               Click="ClearQueue_OnClick" />
-                    <ui:Button IsEnabled="{Binding HasNotStarted ,Mode=OneWay}"
-                               Content="选择" Click="VideoFileBrowser_OnClick" />
-                </StackPanel>
+                <ui:Button HorizontalAlignment="Right"
+                           IsEnabled="{Binding HasNotStarted ,Mode=OneWay}"
+                           Content="浏览" Click="VideoFileBrowser_OnClick" />
 
-            </ui:CardControl>
-
-            <ui:CardControl Margin="0,0,0,5"
-                            Visibility="{c:Binding IsBatchQueue, FalseToVisibility=Collapsed}">
-                <ui:CardControl.Header>
-                    <ui:TextBlock FontTypography="Body" Text="压制队列" />
-                </ui:CardControl.Header>
-                <ListBox Width="420" MaxHeight="140" ItemsSource="{Binding QueueItems}"
-                         BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="0,2">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
-                                     <TextBlock FontSize="11"
-                                                Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                                Text="{Binding SubtitleSummary}" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock FontSize="11"
-                                                Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                                Text="{Binding OutputPath}" TextTrimming="CharacterEllipsis"
-                                               ToolTip="{Binding OutputPath}" />
-                                </StackPanel>
-                                <ui:Button Grid.Column="1" Margin="8,0,0,0" Content="移除"
-                                           IsEnabled="{Binding DataContext.HasNotStarted,
-                                               RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                           CommandParameter="{Binding}"
-                                           Click="RemoveQueueItem_OnClick" />
-                            </Grid>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
             </ui:CardControl>
 
             <ui:CardControl Height="70" VerticalAlignment="Stretch" Icon="{ui:SymbolIcon Subtitles24}"
-                             Margin="0,0,0,5" HorizontalAlignment="Stretch"
-                             Visibility="{c:Binding IsSingleVideo, FalseToVisibility=Collapsed}">
+                            Margin="0,0,0,5" HorizontalAlignment="Stretch"
+                            Visibility="{c:Binding 'SourceVideo.Length != 0', FalseToVisibility=Collapsed}">
                 <ui:CardControl.Header>
                     <Grid>
                         <Grid.RowDefinitions>
@@ -118,8 +76,8 @@
             </ui:CardControl>
 
             <ui:CardControl Height="70" VerticalAlignment="Stretch" Icon="{ui:SymbolIcon StreamOutput20}"
-                             Margin="0,0,0,5" HorizontalAlignment="Stretch"
-                             Visibility="{c:Binding IsSingleVideo, FalseToVisibility=Collapsed}">
+                            Margin="0,0,0,5" HorizontalAlignment="Stretch"
+                            Visibility="{c:Binding 'SourceVideo.Length!=0', FalseToVisibility=Collapsed}">
                 <ui:CardControl.Header>
                     <Grid>
                         <Grid.RowDefinitions>
