@@ -172,24 +172,11 @@
         <ui:Card Grid.Row="1" Padding="5" Margin="0,10"
                  VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
             <Grid VerticalAlignment="Stretch">
-                <Grid Margin="10" Visibility="{c:Binding !HasNotStarted,FalseToVisibility=Collapsed}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <ui:TextBlock Grid.Row="0" FontSize="18" FontWeight="SemiBold"
-                                  Text="{Binding Status}" TextWrapping="Wrap" />
-                    <ui:TextBlock Grid.Row="1" Margin="0,6,0,10"
-                                  Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                  Text="{Binding ProgressDescription}" />
-                    <Expander Grid.Row="2" Header="详细日志" VerticalAlignment="Stretch">
-                        <ui:TextBox IsReadOnlyCaretVisible="False" MinHeight="100"
-                                    VerticalAlignment="Stretch" IsReadOnly="True" TextWrapping="Wrap"
-                                    Text="{Binding DetailLog}"
-                                    TextChanged="StatusTextChange_OnTextChanged" />
-                    </Expander>
-                </Grid>
+                <ui:TextBox IsReadOnlyCaretVisible="False"
+                            VerticalAlignment="Stretch" IsReadOnly="True" TextWrapping="Wrap"
+                            Text="{Binding Status}"
+                            TextChanged="StatusTextChange_OnTextChanged"
+                            Visibility="{c:Binding !HasNotStarted,FalseToVisibility=Collapsed}" />
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                             Visibility="{c:Binding HasNotStarted,FalseToVisibility=Collapsed}">
                     <ui:ProgressRing Margin="0,0,0,8" IsIndeterminate="True"

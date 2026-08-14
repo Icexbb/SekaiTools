@@ -51,11 +51,7 @@ public sealed record VideoSuppressionProgress(
     int TotalFrames,
     double FramesPerSecond,
     VideoSuppressionState State,
-    string Status,
-    string DetailLog = "",
-    string Speed = "",
-    TimeSpan Elapsed = default,
-    TimeSpan? EstimatedRemaining = null)
+    string Status)
 {
     public bool Running => State is VideoSuppressionState.Preparing
         or VideoSuppressionState.Running

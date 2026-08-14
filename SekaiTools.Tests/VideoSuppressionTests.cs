@@ -147,41 +147,27 @@ public class VideoSuppressionTests
 
         Assert.Equal(0, plan.StreamCount);
         AssertArgumentPair(arguments, "-map", "1:a?");
-        AssertArgumentPair(arguments, "-progress", "pipe:2");
-        Assert.Contains("-nostats", arguments);
+        Assert.DoesNotContain("-nostats", arguments);
+        Assert.DoesNotContain("-progress", arguments);
     }
 
-    [Theory]
-    [InlineData("frame=125", "frame", "125")]
-    [InlineData("fps=48.25", "fps", "48.25")]
-    [InlineData("speed=1.20x", "speed", "1.20x")]
-    [InlineData("progress=continue", "progress", "continue")]
-    public void 解析Ffmpeg结构化进度(string line, string expectedKey, string expectedValue)
+    [Fact]
+    public void 从原始Ffmpeg日志解析帧数和Fps()
     {
-        var parsed = VideoSuppressor.TryParseProgressValue(line, out var key, out var value);
+        const string log = "frame=  125 fps=48.25 q=24.0 size=1024KiB time=00:00:05.20 bitrate=1613.2kbits/s";
+
+        var parsed = VideoSuppressor.TryParseFfmpegProgress(log, out var frame, out var fps);
 
         Assert.True(parsed);
-        Assert.Equal(expectedKey, key);
-        Assert.Equal(expectedValue, value);
+        Assert.Equal(125, frame);
+        Assert.Equal(48.25, fps);
     }
 
     [Fact]
-    public void 普通Ffmpeg日志不会被识别为结构化进度()
+    public void 普通Ffmpeg日志不会被识别为进度行()
     {
-        Assert.False(VideoSuppressor.TryParseProgressValue(
+        Assert.False(VideoSuppressor.TryParseFfmpegProgress(
             "Stream #0:0: Video: h264", out _, out _));
-    }
-
-    [Fact]
-    public void 详细日志仅保留最近的指定行数()
-    {
-        var buffer = new BoundedLineBuffer(3);
-        buffer.Add("line 1");
-        buffer.Add("line 2");
-        buffer.Add("line 3");
-        buffer.Add("line 4");
-
-        Assert.Equal(string.Join(Environment.NewLine, "line 2", "line 3", "line 4"), buffer.ToString());
     }
 
     [Theory]
