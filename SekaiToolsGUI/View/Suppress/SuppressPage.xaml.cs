@@ -71,6 +71,11 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
         ViewModel.SourceSubtitle = result;
     }
 
+    private void ClearSubtitle_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.SourceSubtitle = "";
+    }
+
     private void SaveFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
         var result = SelectSavePath();

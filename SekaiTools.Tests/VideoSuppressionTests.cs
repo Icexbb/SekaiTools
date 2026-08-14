@@ -22,4 +22,36 @@ public class VideoSuppressionTests
 
         Assert.Contains("crf=18", parameters.GetSimpleX264Params());
     }
+
+    [Fact]
+    public void 未选择字幕时压制选项有效()
+    {
+        var sourceVideo = Path.GetTempFileName();
+        try
+        {
+            var options = new VideoSuppressionOptions(sourceVideo, "", "output.mp4", "crf=21");
+
+            options.Validate();
+        }
+        finally
+        {
+            File.Delete(sourceVideo);
+        }
+    }
+
+    [Fact]
+    public void 已选择的字幕必须存在()
+    {
+        var sourceVideo = Path.GetTempFileName();
+        try
+        {
+            var options = new VideoSuppressionOptions(sourceVideo, "missing.ass", "output.mp4", "crf=21");
+
+            Assert.Throws<FileNotFoundException>(options.Validate);
+        }
+        finally
+        {
+            File.Delete(sourceVideo);
+        }
+    }
 }

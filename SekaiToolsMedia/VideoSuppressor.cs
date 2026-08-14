@@ -120,10 +120,7 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
 
     private void ValidateOptions(VideoSuppressionOptions options)
     {
-        if (!File.Exists(options.SourceVideo))
-            throw new FileNotFoundException("源视频不存在", options.SourceVideo);
-        if (string.IsNullOrWhiteSpace(options.OutputPath))
-            throw new ArgumentException("输出路径不能为空", nameof(options));
+        options.Validate();
 
         foreach (var fileName in new[] { "VSPipe.exe", "lim5994.vpy", "ffmpeg.exe" })
             _ = resourceProvider.GetVapourSynthResourcePath(fileName);

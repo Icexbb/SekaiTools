@@ -16,14 +16,15 @@ public class SuppressPageModel : ViewModelBase
         {
             SetProperty(value);
             SourceFrameCount = 0;
+            SourceSubtitle = "";
             if (File.Exists(value))
             {
                 using var capture = new VideoCapture(value);
                 SourceFrameCount = (int)capture.Get(CapProp.FrameCount);
-            }
 
-            var guess = Path.ChangeExtension(value, ".ass");
-            if (File.Exists(guess)) SourceSubtitle = guess;
+                var guess = Path.ChangeExtension(value, ".ass");
+                if (File.Exists(guess)) SourceSubtitle = guess;
+            }
 
             OutputPath = Path.Join(Path.GetDirectoryName(value),
                 "[STVS]" + Path.GetFileNameWithoutExtension(value) + ".mp4");
@@ -57,14 +58,33 @@ public class SuppressPageModel : ViewModelBase
         }
     }
 
-    private bool GetCanStartSuppress => !string.IsNullOrWhiteSpace(SourceVideo) &&
-                                        // !string.IsNullOrWhiteSpace(SourceSubtitle) &&
-                                        !string.IsNullOrWhiteSpace(OutputPath);
+    private bool GetCanStartSuppress => File.Exists(SourceVideo) &&
+                                         (string.IsNullOrWhiteSpace(SourceSubtitle) || File.Exists(SourceSubtitle)) &&
+                                         !string.IsNullOrWhiteSpace(OutputPath);
+
+    private string GetConfigError
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(SourceVideo)) return "请选择视频文件";
+            if (!File.Exists(SourceVideo)) return "视频文件不存在，请重新选择";
+            if (!string.IsNullOrWhiteSpace(SourceSubtitle) && !File.Exists(SourceSubtitle))
+                return "字幕文件不存在，请重新选择或清除";
+            if (string.IsNullOrWhiteSpace(OutputPath)) return "请选择输出路径";
+            return "";
+        }
+    }
 
     public bool CanStartSuppress
     {
         get => GetProperty(GetCanStartSuppress);
         set => SetProperty(value);
+    }
+
+    public string ConfigError
+    {
+        get => GetProperty(GetConfigError);
+        private set => SetProperty(value);
     }
 
 
@@ -124,6 +144,7 @@ public class SuppressPageModel : ViewModelBase
     private void UpdateConfigStatus()
     {
         CanStartSuppress = GetCanStartSuppress;
+        ConfigError = GetConfigError;
     }
 
     public void ReloadStatus()

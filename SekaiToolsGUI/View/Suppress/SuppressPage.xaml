@@ -53,17 +53,25 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="字幕文件" />
+                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="字幕文件（可选）" />
                         <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                       Text="{Binding SourceSubtitle}"
                                       ToolTip="{Binding SourceSubtitle}"
                                       TextTrimming="CharacterEllipsis"
                                       Visibility="{c:Binding 'SourceSubtitle.Length!=0', FalseToVisibility=Collapsed}" />
+                        <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                      Text="未选择时仅转码"
+                                      Visibility="{c:Binding 'SourceSubtitle.Length==0', FalseToVisibility=Collapsed}" />
                     </Grid>
                 </ui:CardControl.Header>
-                <ui:Button HorizontalAlignment="Right"
-                           IsEnabled="{Binding HasNotStarted}"
-                           Content="浏览" Click="ScriptFileBrowser_OnClick" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <ui:Button Margin="0,0,8,0" Content="清除"
+                               IsEnabled="{Binding HasNotStarted}"
+                               Visibility="{c:Binding 'SourceSubtitle.Length!=0', FalseToVisibility=Collapsed}"
+                               Click="ClearSubtitle_OnClick" />
+                    <ui:Button IsEnabled="{Binding HasNotStarted}"
+                               Content="浏览" Click="ScriptFileBrowser_OnClick" />
+                </StackPanel>
             </ui:CardControl>
 
             <ui:CardControl Height="70" VerticalAlignment="Stretch" Icon="{ui:SymbolIcon StreamOutput20}"
@@ -132,11 +140,16 @@
                             Text="{Binding Status}"
                             TextChanged="StatusTextChange_OnTextChanged"
                             Visibility="{c:Binding !HasNotStarted,FalseToVisibility=Collapsed}" />
-                <ui:Button
-                    HorizontalAlignment="Center" VerticalAlignment="Center" Content="开始压制"
-                    Click="StartSuppress_OnClick"
-                    IsEnabled="{c:Binding CanStartSuppress,FalseToVisibility=Collapsed}"
-                    Visibility="{c:Binding HasNotStarted,FalseToVisibility=Collapsed}" />
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Visibility="{c:Binding HasNotStarted,FalseToVisibility=Collapsed}">
+                    <ui:Button HorizontalAlignment="Center" Content="开始压制"
+                               Click="StartSuppress_OnClick"
+                               IsEnabled="{Binding CanStartSuppress}" />
+                    <ui:TextBlock Margin="0,8,0,0" HorizontalAlignment="Center"
+                                  Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                  Text="{Binding ConfigError}"
+                                  Visibility="{c:Binding 'ConfigError.Length != 0', FalseToVisibility=Collapsed}" />
+                </StackPanel>
             </Grid>
 
         </ui:Card>
