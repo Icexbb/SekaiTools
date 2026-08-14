@@ -61,7 +61,8 @@ public class SuppressPageModel : ViewModelBase
     private bool GetCanStartSuppress => File.Exists(SourceVideo) &&
                                          (string.IsNullOrWhiteSpace(SourceSubtitle) || File.Exists(SourceSubtitle)) &&
                                          !string.IsNullOrWhiteSpace(OutputPath) &&
-                                         !OutputMatchesSource;
+                                         !OutputMatchesSource &&
+                                         ResourcesReady;
 
     private bool OutputMatchesSource => PathsEqual(SourceVideo, OutputPath);
 
@@ -69,6 +70,10 @@ public class SuppressPageModel : ViewModelBase
     {
         get
         {
+            if (IsPreparingResources) return "正在准备视频压制环境，请稍候";
+            if (!ResourcesReady) return string.IsNullOrWhiteSpace(ResourcePreparationError)
+                ? "视频压制环境尚未就绪"
+                : ResourcePreparationError;
             if (string.IsNullOrWhiteSpace(SourceVideo)) return "请选择视频文件";
             if (!File.Exists(SourceVideo)) return "视频文件不存在，请重新选择";
             if (!string.IsNullOrWhiteSpace(SourceSubtitle) && !File.Exists(SourceSubtitle))
@@ -97,6 +102,24 @@ public class SuppressPageModel : ViewModelBase
     public string ConfigError
     {
         get => GetProperty(GetConfigError);
+        private set => SetProperty(value);
+    }
+
+    public bool IsPreparingResources
+    {
+        get => GetProperty(false);
+        private set => SetProperty(value);
+    }
+
+    public bool ResourcesReady
+    {
+        get => GetProperty(false);
+        private set => SetProperty(value);
+    }
+
+    public string ResourcePreparationError
+    {
+        get => GetProperty("");
         private set => SetProperty(value);
     }
 
@@ -158,6 +181,30 @@ public class SuppressPageModel : ViewModelBase
     {
         CanStartSuppress = GetCanStartSuppress;
         ConfigError = GetConfigError;
+    }
+
+    public void BeginResourcePreparation()
+    {
+        IsPreparingResources = true;
+        ResourcesReady = false;
+        ResourcePreparationError = "";
+        UpdateConfigStatus();
+    }
+
+    public void CompleteResourcePreparation()
+    {
+        IsPreparingResources = false;
+        ResourcesReady = true;
+        ResourcePreparationError = "";
+        UpdateConfigStatus();
+    }
+
+    public void FailResourcePreparation()
+    {
+        IsPreparingResources = false;
+        ResourcesReady = false;
+        ResourcePreparationError = "视频压制环境准备失败，请重试或检查设置";
+        UpdateConfigStatus();
     }
 
     public void ReloadStatus()

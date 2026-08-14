@@ -18,6 +18,8 @@ namespace SekaiToolsGUI.View.Suppress;
 
 public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 {
+    private bool _preparingResources;
+
     public SuppressPage()
     {
         DataContext = SuppressPageModel.Instance;
@@ -32,20 +34,51 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 
     public async void OnNavigatedTo()
     {
+        if (ViewModel.ResourcesReady || _preparingResources) return;
+
+        _preparingResources = true;
+        ViewModel.BeginResourcePreparation();
         try
         {
-            if (await ResourceManager.Instance.CheckResource(ResourceType.VapourSynth)) return;
+            if (!await ResourceManager.Instance.CheckResource(ResourceType.VapourSynth))
+                await EnsureVapourSynthResourceAsync();
+            if (!await ResourceManager.Instance.CheckResource(ResourceType.VapourSynth))
+                throw new InvalidDataException("VapourSynth 运行环境校验失败");
 
-            var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-            var dialog = new RefreshWaitDialog("正在准备 VapourSynth 运行环境，请稍候……");
-            var source = new CancellationTokenSource();
-            _ = dialogService.ShowAsync(dialog, source.Token);
-            await ResourceManager.Instance.EnsureResource(ResourceType.VapourSynth);
-            await source.CancelAsync();
+            ViewModel.CompleteResourcePreparation();
         }
         catch (Exception e)
         {
+            ViewModel.FailResourcePreparation();
             (Application.Current.MainWindow as MainWindow)?.OnCheckResourceFailed(e, OnNavigatedTo);
+        }
+        finally
+        {
+            _preparingResources = false;
+        }
+    }
+
+    private static async Task EnsureVapourSynthResourceAsync()
+    {
+        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+        var dialog = new RefreshWaitDialog("正在准备 VapourSynth 运行环境，请稍候……");
+        using var source = new CancellationTokenSource();
+        var dialogTask = dialogService.ShowAsync(dialog, source.Token);
+        try
+        {
+            await ResourceManager.Instance.EnsureResource(ResourceType.VapourSynth);
+        }
+        finally
+        {
+            await source.CancelAsync();
+            try
+            {
+                await dialogTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // 下载完成或失败时关闭等待对话框。
+            }
         }
     }
 
