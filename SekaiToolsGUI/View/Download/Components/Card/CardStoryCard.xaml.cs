@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using SekaiDataFetch.Item;
 using SekaiDataFetch.Source;
 using SekaiToolsGUI.ViewModel.Download;
@@ -58,6 +59,9 @@ public partial class CardStoryCard
 
         TextBlockTitle.Text = $"# {CardStorySet.Card.Id}";
         TextBlockName.Text = $"{rarity} - {CardStorySet.Card.Prefix}";
+        var url = $"pack://application:,,,/Resource/Characters/chr_{cardStorySet.Card.CharacterId}.png";
+        IconImage.Source = new BitmapImage(new Uri(url));
+        
         InitDownloadItems();
     }
 

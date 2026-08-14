@@ -12,11 +12,16 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <StackPanel VerticalAlignment="Center">
-                <TextBlock Name="TextBlockTitle"
-                           Text="# 1" />
-                <TextBlock Name="TextBlockName" FontWeight="DemiBold"
-                           Text="★2 XXX" />
+            <StackPanel Orientation="Horizontal">
+                <Image Width="24" Height="24" Name="IconImage" Margin="0,0,10,0" />
+
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Name="TextBlockTitle"
+                               Text="# 1" />
+                    <TextBlock Name="TextBlockName" FontWeight="DemiBold"
+                               Text="★2 XXX" />
+                </StackPanel>
+
             </StackPanel>
 
             <Grid Grid.Column="2" Name="PanelItems" HorizontalAlignment="Right">
