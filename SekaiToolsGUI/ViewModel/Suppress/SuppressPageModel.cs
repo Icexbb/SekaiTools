@@ -138,6 +138,7 @@ public class SuppressPageModel : ViewModelBase
             OnPropertyChanged(nameof(CanClearTask));
             OnPropertyChanged(nameof(ShowResult));
             OnPropertyChanged(nameof(TaskControlText));
+            OnPropertyChanged(nameof(ProgressDescription));
         }
     }
 
@@ -197,6 +198,55 @@ public class SuppressPageModel : ViewModelBase
         set => SetProperty(value.Trim());
     }
 
+    public string DetailLog
+    {
+        get => GetProperty("");
+        set => SetProperty(value);
+    }
+
+    public string Speed
+    {
+        get => GetProperty("");
+        set => SetProperty(value);
+    }
+
+    public TimeSpan Elapsed
+    {
+        get => GetProperty(TimeSpan.Zero);
+        set => SetProperty(value);
+    }
+
+    public TimeSpan? EstimatedRemaining
+    {
+        get => GetProperty<TimeSpan?>();
+        set => SetProperty(value);
+    }
+
+    public string ProgressDescription
+    {
+        get
+        {
+            if (TaskState == VideoSuppressionState.Preparing)
+                return $"已用 {FormatDuration(Elapsed)}";
+            if (TaskState == VideoSuppressionState.Idle) return "";
+
+            var parts = new List<string> { $"{Progression:P1}" };
+            if (Fps > 0) parts.Add($"{Fps:F1} FPS");
+            if (!string.IsNullOrWhiteSpace(Speed) && Speed != "N/A") parts.Add(Speed);
+            parts.Add($"已用 {FormatDuration(Elapsed)}");
+            if (EstimatedRemaining is { } remaining)
+                parts.Add($"预计剩余 {FormatDuration(remaining)}");
+            return string.Join(" · ", parts);
+        }
+    }
+
+    private static string FormatDuration(TimeSpan duration)
+    {
+        return duration.TotalHours >= 1
+            ? $"{(int)duration.TotalHours:00}:{duration.Minutes:00}:{duration.Seconds:00}"
+            : $"{duration.Minutes:00}:{duration.Seconds:00}";
+    }
+
     private void UpdateConfigStatus()
     {
         CanStartSuppress = GetCanStartSuppress;
@@ -230,9 +280,14 @@ public class SuppressPageModel : ViewModelBase
     public void BeginTask()
     {
         Status = "正在准备压制任务…";
+        DetailLog = "";
         Progression = 0;
         Fps = 0;
+        Speed = "";
+        Elapsed = TimeSpan.Zero;
+        EstimatedRemaining = null;
         TaskState = VideoSuppressionState.Preparing;
+        OnPropertyChanged(nameof(ProgressDescription));
     }
 
     public void ApplyProgress(VideoSuppressionProgress progress)
@@ -241,7 +296,12 @@ public class SuppressPageModel : ViewModelBase
         Progression = progress.Fraction;
         Fps = progress.FramesPerSecond;
         Status = progress.Status;
+        DetailLog = progress.DetailLog;
+        Speed = progress.Speed;
+        Elapsed = progress.Elapsed;
+        EstimatedRemaining = progress.EstimatedRemaining;
         TaskState = progress.State;
+        OnPropertyChanged(nameof(ProgressDescription));
     }
 
     public void FailTask(string message)
@@ -253,9 +313,14 @@ public class SuppressPageModel : ViewModelBase
     public void ReloadStatus()
     {
         Status = "";
+        DetailLog = "";
         Progression = 0;
         Fps = 0;
+        Speed = "";
+        Elapsed = TimeSpan.Zero;
+        EstimatedRemaining = null;
         TaskState = VideoSuppressionState.Idle;
+        OnPropertyChanged(nameof(ProgressDescription));
         UpdateConfigStatus();
     }
 

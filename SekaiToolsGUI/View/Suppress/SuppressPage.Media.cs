@@ -48,7 +48,7 @@ public partial class SuppressPage
         if (Dispatcher.CheckAccess())
             Apply();
         else
-            Dispatcher.Invoke(Apply);
+            Dispatcher.BeginInvoke(Apply);
     }
 
     private static void ApplyTaskbarProgress(VideoSuppressionProgress progress)
