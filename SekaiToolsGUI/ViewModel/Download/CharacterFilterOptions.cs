@@ -26,19 +26,21 @@ public static class CharacterFilterOptions
         ("Piapro Characters", [21, 22, 23, 24, 25, 26])
     ];
 
-    public static CharacterComboBoxItem[] CreateItems()
+    public static CharacterComboBoxItem[] CreateItems(bool includeUnitMikuVariants = true)
     {
         return CharacterGroups
-            .SelectMany(group => group.CharacterIds.Select(characterId => new CharacterComboBoxItem
-            {
-                GroupName = group.GroupName,
-                Name = characterId == 0 ? "全部角色" : CharacterNames[characterId],
-                Value = characterId,
-                GameCharacterId = characterId is >= 27 and <= 31 ? 21 : characterId,
-                Source = characterId == 0
-                    ? "pack://application:,,,/Resource/icon.png"
-                    : $"pack://application:,,,/Resource/Characters/chr_{characterId}.png"
-            }))
+            .SelectMany(group => group.CharacterIds
+                .Where(characterId => includeUnitMikuVariants || characterId < 27)
+                .Select(characterId => new CharacterComboBoxItem
+                {
+                    GroupName = group.GroupName,
+                    Name = characterId == 0 ? "全部角色" : CharacterNames[characterId],
+                    Value = characterId,
+                    GameCharacterId = characterId is >= 27 and <= 31 ? 21 : characterId,
+                    Source = characterId == 0
+                        ? "pack://application:,,,/Resource/icon.png"
+                        : $"pack://application:,,,/Resource/Characters/chr_{characterId}.png"
+                }))
             .ToArray();
     }
 }
