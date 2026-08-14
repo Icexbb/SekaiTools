@@ -4,12 +4,14 @@ public sealed record VideoSuppressionOptions(
     string SourceVideo,
     string SourceSubtitle,
     string OutputPath,
-    string X264Parameters,
+    X264EncodingSettings EncodingSettings,
     int SourceFrameCount = 0,
     bool OverwriteExisting = false)
 {
     public void Validate()
     {
+        ArgumentNullException.ThrowIfNull(EncodingSettings);
+        EncodingSettings.Validate();
         if (!File.Exists(SourceVideo))
             throw new FileNotFoundException("源视频不存在", SourceVideo);
         if (!string.IsNullOrWhiteSpace(SourceSubtitle) && !File.Exists(SourceSubtitle))

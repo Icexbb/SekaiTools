@@ -166,18 +166,26 @@ public class SuppressPageModel : ViewModelBase
     public int SuppressCrf
     {
         get => GetProperty(21);
+        set => SetProperty(value);
+    }
+
+    public VideoQualityPreset QualityPreset
+    {
+        get => GetProperty(VideoQualityPreset.Balanced);
         set
         {
             SetProperty(value);
-            X264Params.Instance.Crf = value;
+            OnPropertyChanged(nameof(UseCustomCrf));
         }
     }
 
-    public bool UseComplexConfig
+    public VideoEncodingSpeedPreset SpeedPreset
     {
-        get => GetProperty(true);
+        get => GetProperty(VideoEncodingSpeedPreset.Balanced);
         set => SetProperty(value);
     }
+
+    public bool UseCustomCrf => QualityPreset == VideoQualityPreset.Custom;
 
 
     public double Progression
@@ -331,5 +339,7 @@ public class SuppressPageModel : ViewModelBase
         SourceSubtitle = "";
         OutputPath = "";
         SuppressCrf = 21;
+        QualityPreset = VideoQualityPreset.Balanced;
+        SpeedPreset = VideoEncodingSpeedPreset.Balanced;
     }
 }

@@ -17,14 +17,15 @@ public partial class SuppressPage
     private async Task BeginSuppressAsync(bool overwriteExisting)
     {
         ViewModel.BeginTask();
-        var x264Parameters = ViewModel.UseComplexConfig
-            ? X264Params.Instance.GetX264Params()
-            : X264Params.Instance.GetSimpleX264Params();
+        var encodingSettings = new X264EncodingSettings(
+            ViewModel.QualityPreset,
+            ViewModel.SpeedPreset,
+            ViewModel.SuppressCrf);
         var options = new VideoSuppressionOptions(
             ViewModel.SourceVideo,
             ViewModel.SourceSubtitle,
             ViewModel.OutputPath,
-            x264Parameters,
+            encodingSettings,
             ViewModel.SourceFrameCount,
             overwriteExisting);
 

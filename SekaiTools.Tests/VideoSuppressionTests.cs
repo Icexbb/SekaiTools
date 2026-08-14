@@ -36,19 +36,56 @@ public class VideoSuppressionTests
         using var suppressor = new VideoSuppressor(new UnusedMediaResourceProvider());
         var states = new List<VideoSuppressionState>();
         suppressor.ProgressChanged += progress => states.Add(progress.State);
-        var options = new VideoSuppressionOptions("missing.mp4", "", "output.mp4", "crf=21");
+        var options = new VideoSuppressionOptions(
+            "missing.mp4", "", "output.mp4", new X264EncodingSettings());
 
         await Assert.ThrowsAsync<FileNotFoundException>(() => suppressor.SuppressAsync(options));
 
         Assert.Equal([VideoSuppressionState.Preparing, VideoSuppressionState.Failed], states);
     }
 
-    [Fact]
-    public void 简单编码参数包含用户设置的质量值()
+    [Theory]
+    [InlineData(VideoQualityPreset.HighQuality, 18)]
+    [InlineData(VideoQualityPreset.Balanced, 21)]
+    [InlineData(VideoQualityPreset.Compact, 25)]
+    [InlineData(VideoQualityPreset.Custom, 23)]
+    public void 画质预设映射到正确Crf(VideoQualityPreset preset, int expectedCrf)
     {
-        var parameters = new X264Params { Crf = 18 };
+        var settings = new X264EncodingSettings(preset, CustomCrf: 23);
 
-        Assert.Contains("crf=18", parameters.GetSimpleX264Params());
+        Assert.Equal(expectedCrf, settings.Crf);
+    }
+
+    [Theory]
+    [InlineData(VideoEncodingSpeedPreset.Fast, "fast")]
+    [InlineData(VideoEncodingSpeedPreset.Balanced, "medium")]
+    [InlineData(VideoEncodingSpeedPreset.Slow, "veryslow")]
+    public void 速度预设映射到编码器参数(VideoEncodingSpeedPreset preset, string expectedPreset)
+    {
+        var settings = new X264EncodingSettings(Speed: preset);
+
+        Assert.Equal(expectedPreset, settings.FfmpegPreset);
+    }
+
+    [Fact]
+    public void 自定义Crf超出范围时拒绝编码()
+    {
+        var settings = new X264EncodingSettings(VideoQualityPreset.Custom, CustomCrf: 52);
+
+        Assert.Throws<ArgumentOutOfRangeException>(settings.Validate);
+    }
+
+    [Fact]
+    public void Ffmpeg参数包含所选画质和速度预设()
+    {
+        var settings = new X264EncodingSettings(
+            VideoQualityPreset.Custom, VideoEncodingSpeedPreset.Slow, 19);
+        var options = new VideoSuppressionOptions("input.mkv", "", "output.mp4", settings);
+        var arguments = VideoSuppressor.BuildFfmpegArguments(
+            options, FfmpegAudioPlan.FromCodecs([]));
+
+        AssertArgumentPair(arguments, "-preset", "veryslow");
+        AssertArgumentPair(arguments, "-crf", "19");
     }
 
     [Fact]
@@ -57,7 +94,8 @@ public class VideoSuppressionTests
         var sourceVideo = Path.GetTempFileName();
         try
         {
-            var options = new VideoSuppressionOptions(sourceVideo, "", "output.mp4", "crf=21");
+            var options = new VideoSuppressionOptions(
+                sourceVideo, "", "output.mp4", new X264EncodingSettings());
 
             options.Validate();
         }
@@ -73,7 +111,8 @@ public class VideoSuppressionTests
         var sourceVideo = Path.GetTempFileName();
         try
         {
-            var options = new VideoSuppressionOptions(sourceVideo, "missing.ass", "output.mp4", "crf=21");
+            var options = new VideoSuppressionOptions(
+                sourceVideo, "missing.ass", "output.mp4", new X264EncodingSettings());
 
             Assert.Throws<FileNotFoundException>(options.Validate);
         }
@@ -168,7 +207,7 @@ public class VideoSuppressionTests
         try
         {
             var options = new VideoSuppressionOptions(
-                sourceVideo, "", outputPath, "crf=21", OverwriteExisting: false);
+                sourceVideo, "", outputPath, new X264EncodingSettings(), OverwriteExisting: false);
 
             Assert.Throws<IOException>(options.Validate);
             (options with { OverwriteExisting = true }).Validate();
@@ -187,7 +226,7 @@ public class VideoSuppressionTests
         try
         {
             var options = new VideoSuppressionOptions(
-                sourceVideo, "", sourceVideo, "crf=21", OverwriteExisting: true);
+                sourceVideo, "", sourceVideo, new X264EncodingSettings(), OverwriteExisting: true);
 
             Assert.Throws<ArgumentException>(options.Validate);
         }
@@ -235,7 +274,8 @@ public class VideoSuppressionTests
 
     private static VideoSuppressionOptions CreateOptions()
     {
-        return new VideoSuppressionOptions("input.mkv", "", "output.mp4", "crf=21");
+        return new VideoSuppressionOptions(
+            "input.mkv", "", "output.mp4", new X264EncodingSettings());
     }
 
     private static void AssertArgumentPair(IReadOnlyList<string> arguments, string name, string value)

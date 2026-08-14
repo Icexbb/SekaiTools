@@ -242,7 +242,8 @@ public sealed class VideoSuppressor(IMediaResourceProvider resourceProvider) : I
             "-nostats", "-progress", "pipe:2",
             "-f", "yuv4mpegpipe", "-i", "-", "-i", options.SourceVideo,
             "-map", "0:v:0", "-map", "1:a?", "-c:v", "libx264",
-            "-x264-params", options.X264Parameters,
+            "-preset", options.EncodingSettings.FfmpegPreset,
+            "-crf", options.EncodingSettings.Crf.ToString(CultureInfo.InvariantCulture),
             "-c:a", audioPlan.CopyAudio ? "copy" : "aac"
         };
         if (!audioPlan.CopyAudio)

@@ -5,8 +5,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:converter="clr-namespace:SekaiToolsGUI.Converter"
-             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
+              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+              xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
+              xmlns:media="clr-namespace:SekaiToolsMedia;assembly=SekaiToolsMedia"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance suppress:SuppressPageModel, IsDesignTimeCreatable=True}"
              d:DesignHeight="600" d:DesignWidth="800" d:Background="White">
@@ -97,23 +98,29 @@
             </ui:CardControl>
 
             <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon TabInPrivate24}"
-                            Visibility="{c:Binding 'HasNotStarted', FalseToVisibility=Collapsed}">
+                             Visibility="{c:Binding 'HasNotStarted', FalseToVisibility=Collapsed}">
                 <ui:CardControl.Header>
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="固定码率因子" />
+                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="画质" />
                         <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="压制时使用的Crf" />
+                                      Text="画质越高，输出文件通常越大" />
                     </Grid>
                 </ui:CardControl.Header>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Path=SuppressCrf}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                    <Slider Width="100" Minimum="0" Maximum="51" IsSnapToTickEnabled="True"
-                            Value="{Binding Path=SuppressCrf, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                </StackPanel>
+                <ComboBox Width="190" SelectedValue="{Binding QualityPreset, Mode=TwoWay}"
+                          SelectedValuePath="Tag">
+                    <ComboBoxItem Content="高质量（CRF 18）"
+                                  Tag="{x:Static media:VideoQualityPreset.HighQuality}" />
+                    <ComboBoxItem Content="均衡（CRF 21）"
+                                  Tag="{x:Static media:VideoQualityPreset.Balanced}" />
+                    <ComboBoxItem Content="小体积（CRF 25）"
+                                  Tag="{x:Static media:VideoQualityPreset.Compact}" />
+                    <ComboBoxItem Content="自定义"
+                                  Tag="{x:Static media:VideoQualityPreset.Custom}" />
+                </ComboBox>
             </ui:CardControl>
 
             <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon AppsAddIn24}"
@@ -124,12 +131,42 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="使用最佳参数" />
+                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="编码速度" />
                         <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="压制速度较慢" />
+                                      Text="速度越慢，相同画质下压缩率通常越高" />
                     </Grid>
                 </ui:CardControl.Header>
-                <ui:ToggleSwitch IsChecked="{Binding UseComplexConfig}" />
+                <ComboBox Width="190" SelectedValue="{Binding SpeedPreset, Mode=TwoWay}"
+                          SelectedValuePath="Tag">
+                    <ComboBoxItem Content="快速"
+                                  Tag="{x:Static media:VideoEncodingSpeedPreset.Fast}" />
+                    <ComboBoxItem Content="均衡"
+                                  Tag="{x:Static media:VideoEncodingSpeedPreset.Balanced}" />
+                    <ComboBoxItem Content="慢速高压缩率"
+                                  Tag="{x:Static media:VideoEncodingSpeedPreset.Slow}" />
+                </ComboBox>
+            </ui:CardControl>
+
+            <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Settings24}"
+                            Visibility="{c:Binding 'HasNotStarted &amp;&amp; UseCustomCrf', FalseToVisibility=Collapsed}">
+                <ui:CardControl.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="自定义 CRF" />
+                        <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                      Text="数值越低画质越高，常用范围为 16–28" />
+                    </Grid>
+                </ui:CardControl.Header>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Width="24" Text="{Binding SuppressCrf}" VerticalAlignment="Center"
+                               Margin="0,0,10,0" />
+                    <Slider Width="150" Minimum="0" Maximum="51" TickFrequency="1"
+                            IsSnapToTickEnabled="True"
+                            Value="{Binding SuppressCrf, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
             </ui:CardControl>
         </StackPanel>
         <ui:Card Grid.Row="1" Padding="5" Margin="0,10"
