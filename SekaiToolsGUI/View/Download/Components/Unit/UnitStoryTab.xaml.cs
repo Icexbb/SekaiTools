@@ -13,6 +13,7 @@ public partial class UnitStoryTab : UserControl, IRefreshable
     public UnitStoryTab()
     {
         InitializeComponent();
+        UnitComboBox.SelectedIndex = 0;
     }
 
     private ListUnitStory ListUnitStory => ListUnitStory.Instance;
@@ -40,6 +41,8 @@ public partial class UnitStoryTab : UserControl, IRefreshable
 
     private void RefreshItems()
     {
+        if (CardContents == null) return;
+
         CardContents.Children.Clear();
         if (ListUnitStory.Data.Count == 0 ||
             UnitComboBox.SelectedItem is not ComboBoxItem { Tag: string selectedUnit } ||
