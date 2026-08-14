@@ -76,6 +76,43 @@ public class VideoSuppressionTests
     }
 
     [Fact]
+    public void 队列项目自动匹配同名字幕并输出到源目录()
+    {
+        var basePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var sourceVideo = basePath + ".mkv";
+        var sourceSubtitle = basePath + ".ass";
+        File.WriteAllText(sourceVideo, "video");
+        File.WriteAllText(sourceSubtitle, "subtitle");
+        try
+        {
+            var item = VideoSuppressionQueueItem.Create(sourceVideo);
+
+            Assert.Equal(Path.GetFullPath(sourceVideo), item.SourceVideo);
+            Assert.Equal(Path.GetFullPath(sourceSubtitle), item.SourceSubtitle);
+            Assert.Equal(
+                Path.Combine(Path.GetDirectoryName(sourceVideo)!, $"[STVS]{Path.GetFileNameWithoutExtension(sourceVideo)}.mp4"),
+                item.OutputPath);
+            Assert.Equal($"字幕：{Path.GetFileName(sourceSubtitle)}", item.SubtitleSummary);
+        }
+        finally
+        {
+            File.Delete(sourceVideo);
+            File.Delete(sourceSubtitle);
+        }
+    }
+
+    [Fact]
+    public void 队列项目未找到同名字幕时仅转码()
+    {
+        var sourceVideo = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.webm");
+
+        var item = VideoSuppressionQueueItem.Create(sourceVideo);
+
+        Assert.Empty(item.SourceSubtitle);
+        Assert.Equal("未匹配字幕，仅转码", item.SubtitleSummary);
+    }
+
+    [Fact]
     public void Ffmpeg参数包含所选画质和速度预设()
     {
         var settings = new X264EncodingSettings(
