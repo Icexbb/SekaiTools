@@ -72,6 +72,7 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
     private async Task RunAsync(VideoSuppressionOptions options, CancellationToken cancellationToken)
     {
         ValidateOptions(options);
+        using var outputTransaction = new VideoOutputTransaction(options.OutputPath, options.OverwriteExisting);
         _processedFrames = 0;
         _fps = 0;
         _status = "";
@@ -87,7 +88,8 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
         };
         _totalFrames = GetFrameCount(options);
         _vapourProcess = CreateVapourProcess(options);
-        _ffmpegProcess = CreateFfmpegProcess(options, audioPlan, ffmpegPath);
+        _ffmpegProcess = CreateFfmpegProcess(
+            options, audioPlan, ffmpegPath, outputTransaction.TemporaryPath);
         _running = true;
         PublishProgress();
 
@@ -109,6 +111,7 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
             if (_ffmpegProcess.ExitCode != 0)
                 throw new InvalidOperationException($"FFmpeg 异常退出，退出码: {_ffmpegProcess.ExitCode}");
 
+            outputTransaction.Commit();
             _processedFrames = _totalFrames;
         }
         catch (Exception) when (cancellationToken.IsCancellationRequested)
@@ -159,7 +162,8 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
     private static Process CreateFfmpegProcess(
         VideoSuppressionOptions options,
         FfmpegAudioPlan audioPlan,
-        string ffmpegPath)
+        string ffmpegPath,
+        string outputPath)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -170,14 +174,15 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
             RedirectStandardError = true,
             StandardErrorEncoding = Encoding.UTF8
         };
-        foreach (var argument in BuildFfmpegArguments(options, audioPlan))
+        foreach (var argument in BuildFfmpegArguments(options, audioPlan, outputPath))
             startInfo.ArgumentList.Add(argument);
         return new Process { StartInfo = startInfo };
     }
 
     internal static IReadOnlyList<string> BuildFfmpegArguments(
         VideoSuppressionOptions options,
-        FfmpegAudioPlan audioPlan)
+        FfmpegAudioPlan audioPlan,
+        string? outputPath = null)
     {
         var arguments = new List<string>
         {
@@ -192,8 +197,8 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
             arguments.Add("192k");
         }
 
-        arguments.Add(options.OutputPath);
-        arguments.Add("-y");
+        arguments.Add(outputPath ?? options.OutputPath);
+        arguments.Add("-n");
         return arguments;
     }
 

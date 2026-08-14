@@ -11,6 +11,7 @@ using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.ViewModel.Suppress;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
+using Wpf.Ui.Extensions;
 using TextBox = Wpf.Ui.Controls.TextBox;
 
 namespace SekaiToolsGUI.View.Suppress;
@@ -101,7 +102,10 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     {
         try
         {
-            await BeginSuppressAsync();
+            var overwriteExisting = File.Exists(ViewModel.OutputPath);
+            if (overwriteExisting && !await ConfirmOverwriteAsync()) return;
+
+            await BeginSuppressAsync(overwriteExisting);
         }
         catch (OperationCanceledException)
         {
@@ -115,6 +119,20 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
             ViewModel.Running = false;
             if (Debugger.IsAttached) throw;
         }
+    }
+
+    private async Task<bool> ConfirmOverwriteAsync()
+    {
+        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
+        var result = await dialogService.ShowSimpleDialogAsync(
+            new SimpleContentDialogCreateOptions
+            {
+                Title = "覆盖已有文件？",
+                Content = $"输出文件已存在：\n{ViewModel.OutputPath}\n\n压制成功后将替换该文件。",
+                PrimaryButtonText = "覆盖",
+                CloseButtonText = "取消"
+            }, CancellationToken.None);
+        return result == ContentDialogResult.Primary;
     }
 
 

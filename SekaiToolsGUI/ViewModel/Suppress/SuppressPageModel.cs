@@ -60,7 +60,10 @@ public class SuppressPageModel : ViewModelBase
 
     private bool GetCanStartSuppress => File.Exists(SourceVideo) &&
                                          (string.IsNullOrWhiteSpace(SourceSubtitle) || File.Exists(SourceSubtitle)) &&
-                                         !string.IsNullOrWhiteSpace(OutputPath);
+                                         !string.IsNullOrWhiteSpace(OutputPath) &&
+                                         !OutputMatchesSource;
+
+    private bool OutputMatchesSource => PathsEqual(SourceVideo, OutputPath);
 
     private string GetConfigError
     {
@@ -71,8 +74,18 @@ public class SuppressPageModel : ViewModelBase
             if (!string.IsNullOrWhiteSpace(SourceSubtitle) && !File.Exists(SourceSubtitle))
                 return "字幕文件不存在，请重新选择或清除";
             if (string.IsNullOrWhiteSpace(OutputPath)) return "请选择输出路径";
+            if (OutputMatchesSource) return "输出路径不能与源视频相同";
             return "";
         }
+    }
+
+    private static bool PathsEqual(string first, string second)
+    {
+        if (string.IsNullOrWhiteSpace(first) || string.IsNullOrWhiteSpace(second)) return false;
+        var comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        return string.Equals(Path.GetFullPath(first), Path.GetFullPath(second), comparison);
     }
 
     public bool CanStartSuppress

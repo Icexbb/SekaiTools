@@ -12,7 +12,7 @@ public partial class SuppressPage
         VideoSuppressor.ProgressChanged += ApplySuppressionProgress;
     }
 
-    private async Task BeginSuppressAsync()
+    private async Task BeginSuppressAsync(bool overwriteExisting)
     {
         ViewModel.ReloadStatus();
         ViewModel.HasNotStarted = false;
@@ -24,7 +24,8 @@ public partial class SuppressPage
             ViewModel.SourceSubtitle,
             ViewModel.OutputPath,
             x264Parameters,
-            ViewModel.SourceFrameCount);
+            ViewModel.SourceFrameCount,
+            overwriteExisting);
 
         using var powerRequest = SystemPowerRequest.Acquire("SekaiTools 正在压制视频");
         await VideoSuppressor.SuppressAsync(options);

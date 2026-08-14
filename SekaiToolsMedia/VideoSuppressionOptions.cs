@@ -5,7 +5,8 @@ public sealed record VideoSuppressionOptions(
     string SourceSubtitle,
     string OutputPath,
     string X264Parameters,
-    int SourceFrameCount = 0)
+    int SourceFrameCount = 0,
+    bool OverwriteExisting = false)
 {
     public void Validate()
     {
@@ -15,6 +16,20 @@ public sealed record VideoSuppressionOptions(
             throw new FileNotFoundException("字幕文件不存在", SourceSubtitle);
         if (string.IsNullOrWhiteSpace(OutputPath))
             throw new ArgumentException("输出路径不能为空", nameof(OutputPath));
+
+        var sourcePath = Path.GetFullPath(SourceVideo);
+        var outputPath = Path.GetFullPath(OutputPath);
+        var pathComparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        if (string.Equals(sourcePath, outputPath, pathComparison))
+            throw new ArgumentException("输出路径不能与源视频相同", nameof(OutputPath));
+
+        var outputDirectory = Path.GetDirectoryName(outputPath);
+        if (outputDirectory == null || !Directory.Exists(outputDirectory))
+            throw new DirectoryNotFoundException($"输出目录不存在: {outputDirectory}");
+        if (File.Exists(outputPath) && !OverwriteExisting)
+            throw new IOException($"输出文件已存在: {outputPath}");
     }
 }
 
