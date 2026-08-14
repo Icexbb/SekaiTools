@@ -62,7 +62,8 @@ public class SuppressPageModel : ViewModelBase
                                          (string.IsNullOrWhiteSpace(SourceSubtitle) || File.Exists(SourceSubtitle)) &&
                                          !string.IsNullOrWhiteSpace(OutputPath) &&
                                          !OutputMatchesSource &&
-                                         ResourcesReady;
+                                         ResourcesReady &&
+                                         TaskState == VideoSuppressionState.Idle;
 
     private bool OutputMatchesSource => PathsEqual(SourceVideo, OutputPath);
 
@@ -124,23 +125,42 @@ public class SuppressPageModel : ViewModelBase
     }
 
 
-    public bool HasNotStarted
+    public VideoSuppressionState TaskState
     {
-        get => GetProperty(true);
-        set => SetProperty(value);
-    }
-
-    public bool Running
-    {
-        get => GetProperty(false);
-        set
+        get => GetProperty(VideoSuppressionState.Idle);
+        private set
         {
             SetProperty(value);
+            OnPropertyChanged(nameof(HasNotStarted));
+            OnPropertyChanged(nameof(Running));
+            OnPropertyChanged(nameof(IsTaskActive));
+            OnPropertyChanged(nameof(CanControlTask));
+            OnPropertyChanged(nameof(CanClearTask));
+            OnPropertyChanged(nameof(ShowResult));
             OnPropertyChanged(nameof(TaskControlText));
         }
     }
 
-    public string TaskControlText => Running ? "取消压制" : "返回设置";
+    public bool HasNotStarted => TaskState == VideoSuppressionState.Idle;
+
+    public bool Running => TaskState is VideoSuppressionState.Preparing
+        or VideoSuppressionState.Running
+        or VideoSuppressionState.Cancelling;
+
+    public bool IsTaskActive => TaskState is VideoSuppressionState.Preparing or VideoSuppressionState.Running;
+
+    public bool CanControlTask => TaskState != VideoSuppressionState.Cancelling;
+
+    public bool CanClearTask => !Running;
+
+    public bool ShowResult => TaskState == VideoSuppressionState.Completed;
+
+    public string TaskControlText => TaskState switch
+    {
+        VideoSuppressionState.Preparing or VideoSuppressionState.Running => "取消压制",
+        VideoSuppressionState.Cancelling => "正在取消…",
+        _ => "返回设置"
+    };
 
     public int SuppressCrf
     {
@@ -207,13 +227,36 @@ public class SuppressPageModel : ViewModelBase
         UpdateConfigStatus();
     }
 
+    public void BeginTask()
+    {
+        Status = "正在准备压制任务…";
+        Progression = 0;
+        Fps = 0;
+        TaskState = VideoSuppressionState.Preparing;
+    }
+
+    public void ApplyProgress(VideoSuppressionProgress progress)
+    {
+        SourceFrameCount = progress.TotalFrames;
+        Progression = progress.Fraction;
+        Fps = progress.FramesPerSecond;
+        Status = progress.Status;
+        TaskState = progress.State;
+    }
+
+    public void FailTask(string message)
+    {
+        Status = string.IsNullOrWhiteSpace(Status) ? message : $"{Status}\n{message}";
+        TaskState = VideoSuppressionState.Failed;
+    }
+
     public void ReloadStatus()
     {
         Status = "";
         Progression = 0;
-        HasNotStarted = true;
-        Running = false;
         Fps = 0;
+        TaskState = VideoSuppressionState.Idle;
+        UpdateConfigStatus();
     }
 
     public void Reset()

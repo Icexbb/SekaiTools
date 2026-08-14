@@ -18,8 +18,20 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
     private int _processedFrames;
     private int _totalFrames;
     private double _fps;
-    private bool _running;
+    private VideoSuppressionState _state = VideoSuppressionState.Idle;
     private string _status = "";
+
+    private VideoSuppressionState State
+    {
+        get
+        {
+            lock (_runLock) return _state;
+        }
+        set
+        {
+            lock (_runLock) _state = value;
+        }
+    }
 
     public event Action<VideoSuppressionProgress>? ProgressChanged;
 
@@ -42,13 +54,18 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
         Task? runTask;
         lock (_runLock)
         {
+            runTask = _runTask;
+            if (runTask is not { IsCompleted: false } ||
+                State is not (VideoSuppressionState.Preparing or VideoSuppressionState.Running))
+                return;
+
+            State = VideoSuppressionState.Cancelling;
             _cancellationTokenSource?.Cancel();
             StopProcess(_vapourProcess);
             StopProcess(_ffmpegProcess);
-            runTask = _runTask;
         }
 
-        if (runTask == null) return;
+        PublishProgress();
         try
         {
             await runTask.ConfigureAwait(false);
@@ -71,34 +88,40 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
 
     private async Task RunAsync(VideoSuppressionOptions options, CancellationToken cancellationToken)
     {
-        ValidateOptions(options);
-        using var outputTransaction = new VideoOutputTransaction(options.OutputPath, options.OverwriteExisting);
         _processedFrames = 0;
+        _totalFrames = 0;
         _fps = 0;
-        _status = "";
-        var ffmpegPath = resourceProvider.GetVapourSynthResourcePath("ffmpeg.exe");
-        var audioPlan = await FfmpegAudioInspector
-            .InspectAsync(ffmpegPath, options.SourceVideo, cancellationToken)
-            .ConfigureAwait(false);
-        _status = audioPlan.StreamCount switch
-        {
-            0 => "未检测到音轨，将仅输出视频",
-            _ when audioPlan.CopyAudio => $"检测到 {audioPlan.StreamCount} 条兼容音轨，将全部保留",
-            _ => $"检测到 {audioPlan.StreamCount} 条音轨，存在 MP4 不兼容编码，将全部转为 AAC"
-        };
-        _totalFrames = GetFrameCount(options);
-        _vapourProcess = CreateVapourProcess(options);
-        _ffmpegProcess = CreateFfmpegProcess(
-            options, audioPlan, ffmpegPath, outputTransaction.TemporaryPath);
-        _running = true;
+        _status = "正在分析媒体信息…";
+        State = VideoSuppressionState.Preparing;
         PublishProgress();
 
+        VideoOutputTransaction? outputTransaction = null;
         try
         {
+            ValidateOptions(options);
+            outputTransaction = new VideoOutputTransaction(options.OutputPath, options.OverwriteExisting);
+            var ffmpegPath = resourceProvider.GetVapourSynthResourcePath("ffmpeg.exe");
+            var audioPlan = await FfmpegAudioInspector
+                .InspectAsync(ffmpegPath, options.SourceVideo, cancellationToken)
+                .ConfigureAwait(false);
+            _status = audioPlan.StreamCount switch
+            {
+                0 => "未检测到音轨，将仅输出视频",
+                _ when audioPlan.CopyAudio => $"检测到 {audioPlan.StreamCount} 条兼容音轨，将全部保留",
+                _ => $"检测到 {audioPlan.StreamCount} 条音轨，存在 MP4 不兼容编码，将全部转为 AAC"
+            };
+            _totalFrames = GetFrameCount(options);
+            _vapourProcess = CreateVapourProcess(options);
+            _ffmpegProcess = CreateFfmpegProcess(
+                options, audioPlan, ffmpegPath, outputTransaction.TemporaryPath);
+
             if (!_vapourProcess.Start())
                 throw new InvalidOperationException("无法启动 VSPipe");
             if (!_ffmpegProcess.Start())
                 throw new InvalidOperationException("无法启动 FFmpeg");
+
+            State = VideoSuppressionState.Running;
+            PublishProgress();
 
             await Task.WhenAll(
                 TransferPipeAsync(cancellationToken),
@@ -113,21 +136,33 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
 
             outputTransaction.Commit();
             _processedFrames = _totalFrames;
+            _status = $"{_status}\n压制完成";
+            State = VideoSuppressionState.Completed;
         }
         catch (Exception) when (cancellationToken.IsCancellationRequested)
         {
+            _status = $"{_status}\n压制已取消";
+            State = VideoSuppressionState.Cancelled;
             throw new OperationCanceledException(cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            State = VideoSuppressionState.Failed;
+            _status = string.IsNullOrWhiteSpace(_status)
+                ? $"压制失败：{exception.Message}"
+                : $"{_status}\n压制失败：{exception.Message}";
+            throw;
         }
         finally
         {
             StopProcess(_vapourProcess);
             StopProcess(_ffmpegProcess);
-            _running = false;
             PublishProgress();
             _vapourProcess?.Dispose();
             _ffmpegProcess?.Dispose();
             _vapourProcess = null;
             _ffmpegProcess = null;
+            outputTransaction?.Dispose();
         }
     }
 
@@ -253,7 +288,7 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
     private void PublishProgress()
     {
         ProgressChanged?.Invoke(new VideoSuppressionProgress(
-            _processedFrames, _totalFrames, _fps, _running, _status));
+            _processedFrames, _totalFrames, _fps, State, _status));
     }
 
     private static void StopProcess(Process? process)

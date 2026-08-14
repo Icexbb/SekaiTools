@@ -10,9 +10,37 @@ public class VideoSuppressionTests
     [InlineData(150, 100, 1)]
     public void 压制进度始终处于有效范围(int processed, int total, double expected)
     {
-        var progress = new VideoSuppressionProgress(processed, total, 0, true, "");
+        var progress = new VideoSuppressionProgress(
+            processed, total, 0, VideoSuppressionState.Running, "");
 
         Assert.Equal(expected, progress.Fraction);
+    }
+
+    [Theory]
+    [InlineData(VideoSuppressionState.Preparing, true)]
+    [InlineData(VideoSuppressionState.Running, true)]
+    [InlineData(VideoSuppressionState.Cancelling, true)]
+    [InlineData(VideoSuppressionState.Completed, false)]
+    [InlineData(VideoSuppressionState.Cancelled, false)]
+    [InlineData(VideoSuppressionState.Failed, false)]
+    public void 压制状态准确标识活动任务(VideoSuppressionState state, bool expectedRunning)
+    {
+        var progress = new VideoSuppressionProgress(0, 0, 0, state, "");
+
+        Assert.Equal(expectedRunning, progress.Running);
+    }
+
+    [Fact]
+    public async Task 输入校验失败时发布准备和失败状态()
+    {
+        using var suppressor = new VideoSuppressor(new UnusedMediaResourceProvider());
+        var states = new List<VideoSuppressionState>();
+        suppressor.ProgressChanged += progress => states.Add(progress.State);
+        var options = new VideoSuppressionOptions("missing.mp4", "", "output.mp4", "crf=21");
+
+        await Assert.ThrowsAsync<FileNotFoundException>(() => suppressor.SuppressAsync(options));
+
+        Assert.Equal([VideoSuppressionState.Preparing, VideoSuppressionState.Failed], states);
     }
 
     [Fact]
@@ -181,5 +209,13 @@ public class VideoSuppressionTests
             .Zip(arguments.Skip(1))
             .Any(pair => pair.First == name && pair.Second == value);
         Assert.True(found, $"未找到参数组合 {name} {value}");
+    }
+
+    private sealed class UnusedMediaResourceProvider : IMediaResourceProvider
+    {
+        public string GetVapourSynthResourcePath(string fileName)
+        {
+            throw new InvalidOperationException("输入校验失败时不应访问媒体资源");
+        }
     }
 }

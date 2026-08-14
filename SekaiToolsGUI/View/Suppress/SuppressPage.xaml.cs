@@ -9,6 +9,7 @@ using SekaiToolsCore;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.ViewModel.Suppress;
+using SekaiToolsMedia;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
@@ -149,7 +150,8 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
             Logger.Log($"视频压制失败: {exc}", LogLevel.Error);
             SnackService.Show("视频处理出错", exc.Message, ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.VideoClipOff24), TimeSpan.FromSeconds(6));
-            ViewModel.Running = false;
+            if (ViewModel.TaskState != VideoSuppressionState.Failed)
+                ViewModel.FailTask($"压制失败：{exc.Message}");
             if (Debugger.IsAttached) throw;
         }
     }
@@ -171,13 +173,21 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 
     private async void DisposeButton_OnClick(object sender, RoutedEventArgs e)
     {
-        await CancelSuppressAsync();
+        if (ViewModel.IsTaskActive)
+        {
+            await CancelSuppressAsync();
+            return;
+        }
+
+        ViewModel.ReloadStatus();
+        ClearTaskbarProgress();
     }
 
     private async void ClearButton_OnClick(object sender, RoutedEventArgs e)
     {
         await CancelSuppressAsync();
         ViewModel.Reset();
+        ClearTaskbarProgress();
     }
 
     private void ShowFileButton_OnClick(object sender, RoutedEventArgs e)

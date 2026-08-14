@@ -33,13 +33,28 @@ public sealed record VideoSuppressionOptions(
     }
 }
 
+public enum VideoSuppressionState
+{
+    Idle,
+    Preparing,
+    Running,
+    Cancelling,
+    Completed,
+    Cancelled,
+    Failed
+}
+
 public sealed record VideoSuppressionProgress(
     int ProcessedFrames,
     int TotalFrames,
     double FramesPerSecond,
-    bool Running,
+    VideoSuppressionState State,
     string Status)
 {
+    public bool Running => State is VideoSuppressionState.Preparing
+        or VideoSuppressionState.Running
+        or VideoSuppressionState.Cancelling;
+
     public double Fraction => TotalFrames > 0
         ? Math.Clamp((double)ProcessedFrames / TotalFrames, 0, 1)
         : 0;

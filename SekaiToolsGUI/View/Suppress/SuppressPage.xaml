@@ -165,11 +165,12 @@
                             Visibility="{c:Binding !HasNotStarted,FalseToVisibility=Collapsed}">
                     <ui:Button Name="DisposeButton" Margin="10" Click="DisposeButton_OnClick"
                                Content="{Binding TaskControlText}"
+                               IsEnabled="{Binding CanControlTask}"
                                Appearance="{Binding Running, Converter={StaticResource RunningToAppearance}}" />
                     <ui:Button Name="ClearButton" Margin="10" Click="ClearButton_OnClick"
-                               Content="清空任务" IsEnabled="{c:Binding !Running}" />
+                               Content="清空任务" IsEnabled="{Binding CanClearTask}" />
                     <ui:Button Name="ShowFileButton" Margin="10" Click="ShowFileButton_OnClick"
-                               Visibility="{c:Binding 'Progression==1', FalseToVisibility=Collapsed}">
+                               Visibility="{c:Binding ShowResult, FalseToVisibility=Collapsed}">
                         显示结果
                     </ui:Button>
                 </StackPanel>
