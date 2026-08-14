@@ -31,41 +31,21 @@ public partial class EventStoryEvent : UserControl
 
 public partial class EventStoryEvent
 {
-    public static readonly DependencyProperty UseStoryIndexProperty =
-        DependencyProperty.Register(
-            nameof(UseStoryIndex),
-            typeof(bool),
-            typeof(EventStoryEvent),
-            new PropertyMetadata(false, OnUseStoryIndexChanged));
-
-    public bool UseStoryIndex
-    {
-        get => (bool)GetValue(UseStoryIndexProperty);
-        set => SetValue(UseStoryIndexProperty, value);
-    }
-
-    private static void OnUseStoryIndexChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        if (d is not EventStoryEvent control || e.NewValue is not bool useStoryIndex) return;
-        control.UseStoryIndex = useStoryIndex;
-        control.RefreshControl();
-    }
-}
-
-public partial class EventStoryEvent
-{
     public EventStoryEvent()
     {
         InitializeComponent();
         Margin = new Thickness(0, 0, 0, 5);
     }
 
-
     private void RefreshControl()
     {
         if (EventStorySet == null) return;
-        var storyIndex = UseStoryIndex ? EventStorySet.EventStory.EventId : EventStorySet.Index;
-        TextBlockTitle.Text = $"No.{storyIndex} {EventStorySet.GameEvent.Name}";
+        IndexInfoBadge.Value = EventStorySet.Index.ToString();
+        IndexInfoBadgeEx.Value = EventStorySet.EventStory.EventId.ToString();
+        IndexInfoBadgeEx.Visibility = EventStorySet.Index != EventStorySet.EventStory.EventId
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        TextBlockTitle.Text = $"{EventStorySet.GameEvent.Name}";
 
         RefreshBannerIcons();
 
@@ -104,7 +84,7 @@ public partial class EventStoryEvent
 
         for (var i = 0; i < EventStorySet!.EventStory.EventStoryEpisodes.Length; i++)
         {
-            var storyIndex = UseStoryIndex ? EventStorySet.EventStory.EventId : EventStorySet.Index;
+            var storyIndex = EventStorySet.Index;
             var episode = EventStorySet.EventStory.EventStoryEpisodes[i];
             var key = $"{storyIndex}-{episode.EpisodeNo}";
 

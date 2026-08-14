@@ -29,21 +29,11 @@ public partial class ActionStoryTab : UserControl, IRefreshable
 
     public async Task Refresh()
     {
-        CardCharacters.IsEnabled = false;
-        CardUnits.IsEnabled = false;
-        try
-        {
-            ActionStory.SetSource(GetSourceType());
-            ActionStory.SetProxy(SettingPageModel.Instance.GetProxy());
-            await ActionStory.Refresh();
-            InitializeAreas();
-            RefreshItems();
-        }
-        finally
-        {
-            CardCharacters.IsEnabled = true;
-            CardUnits.IsEnabled = true;
-        }
+        ActionStory.SetSource(GetSourceType());
+        ActionStory.SetProxy(SettingPageModel.Instance.GetProxy());
+        await ActionStory.Refresh();
+        InitializeAreas();
+        RefreshItems();
     }
 
     private SourceData GetSourceType()

@@ -27,20 +27,10 @@ public partial class EventStoryTab : UserControl, IRefreshable
 
     public async Task Refresh()
     {
-        CardCharacters.IsEnabled = false;
-        CardUnits.IsEnabled = false;
-        try
-        {
-            ListEventStory.SetSource(GetSourceType());
-            ListEventStory.SetProxy(SettingPageModel.Instance.GetProxy());
-            await ListEventStory.Refresh();
-            RefreshItems();
-        }
-        finally
-        {
-            CardCharacters.IsEnabled = true;
-            CardUnits.IsEnabled = true;
-        }
+        ListEventStory.SetSource(GetSourceType());
+        ListEventStory.SetProxy(SettingPageModel.Instance.GetProxy());
+        await ListEventStory.Refresh();
+        RefreshItems();
     }
 
     private SourceData GetSourceType()

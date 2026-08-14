@@ -16,8 +16,14 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
-            <ui:Card Name="CardCharacters" Padding="7" HorizontalContentAlignment="Stretch" Margin="0,0,0,5">
-                <Grid>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <!--登场角色筛选-->
+                <Grid Grid.Column="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
@@ -50,15 +56,15 @@
                         </ComboBox.GroupStyle>
                     </ComboBox>
                 </Grid>
-            </ui:Card>
-
-            <ui:Card Name="CardUnits" Padding="2" HorizontalContentAlignment="Stretch" Margin="0,0,0,5">
-                <Grid>
+                <Grid Grid.Column="1">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <ComboBox Grid.Column="0" Margin="5" Name="BoxType" ItemsSource="{Binding Areas}"
+                    <ui:TextBlock Grid.Column="0" Margin="12,0,12,0"
+                                  VerticalAlignment="Center" Text="地点" />
+                    <ComboBox Grid.Column="1" Margin="5" Name="BoxType" ItemsSource="{Binding Areas}"
                               SelectedIndex="0" SelectionChanged="Filter_OnSelected">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -67,15 +73,15 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
 
-                    <ui:Button Grid.Column="1" Margin="5" Name="ButtonSort"
-                               Click="ButtonSort_OnClick" RenderTransformOrigin="0.5,0.5"
-                               ToolTip="切换排序方向" AutomationProperties.Name="切换排序方向">
-                        <ui:SymbolIcon Symbol="ArrowSortDownLines24" />
-                    </ui:Button>
-                </Grid>
-            </ui:Card>
-        </StackPanel>
 
+                </Grid>
+                <ui:Button Grid.Column="2" Margin="0,5" Name="ButtonSort"
+                           Click="ButtonSort_OnClick" RenderTransformOrigin="0.5,0.5"
+                           ToolTip="切换排序方向" AutomationProperties.Name="切换排序方向">
+                    <ui:SymbolIcon Symbol="ArrowSortDownLines24" />
+                </ui:Button>
+            </Grid>
+        </StackPanel>
         <ListView Grid.Row="1" ItemsSource="{Binding EventStories}"
                   BorderBrush="Transparent"
                   Background="Transparent"

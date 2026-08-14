@@ -12,7 +12,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <StackPanel>
+            <StackPanel VerticalAlignment="Center">
                 <TextBlock Name="TextBlockTitle"
                            Text="# 1" />
                 <TextBlock Name="TextBlockName" FontWeight="DemiBold"

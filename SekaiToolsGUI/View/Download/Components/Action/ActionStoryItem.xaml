@@ -8,14 +8,14 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:DownloadItem}"
              HorizontalAlignment="Stretch">
-    <ui:CardAction HorizontalAlignment="Stretch" Click="ButtonBase_OnClick">
+    <ui:CardAction HorizontalAlignment="Stretch" Click="ButtonBase_OnClick" Padding="10,8">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Horizontal">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <ui:TextBlock Name="TextId" Text="# 1" VerticalAlignment="Center" FontWeight="DemiBold"
                               Margin="0,0,10,0" />
                 <ui:TextBlock Name="TextKey" Text="Key" VerticalAlignment="Center" />

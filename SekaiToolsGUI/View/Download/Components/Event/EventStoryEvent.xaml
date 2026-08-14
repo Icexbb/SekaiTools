@@ -13,8 +13,13 @@
                     <ColumnDefinition MinWidth="20" Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Name="TextBlockTitle" Text="No.xxx TitleHere" VerticalAlignment="Center"
-                           FontWeight="DemiBold" />
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ui:InfoBadge Name="IndexInfoBadge" Severity="Attention" />
+                    <ui:InfoBadge Name="IndexInfoBadgeEx" Severity="Informational" />
+                    <ui:TextBlock Name="TextBlockTitle" Text="TitleHere" VerticalAlignment="Center"
+                                  FontWeight="DemiBold" />
+                </StackPanel>
+
                 <StackPanel Grid.Column="2" Name="IconContainer" Orientation="Horizontal" VerticalAlignment="Center"
                             Margin="10,0">
                     <Image Height="24" Width="24" Source="pack://application:,,,/Resource/Characters/chr_1.png"></Image>

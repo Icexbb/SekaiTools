@@ -65,8 +65,8 @@ public partial class ActionStoryItem : UserControl
                 var icon = new Image
                 {
                     Source = new BitmapImage(new Uri(url)),
-                    Width = 36,
-                    Height = 36,
+                    Width = 30,
+                    Height = 30,
                     Margin = new Thickness(5, 0, 5, 0)
                 };
                 Icons.Children.Add(icon);

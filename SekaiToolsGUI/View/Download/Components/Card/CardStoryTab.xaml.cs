@@ -60,11 +60,29 @@ public partial class CardStoryTab : UserControl, IRefreshable
     {
         if (CharacterComboBox.SelectedItem is not CharacterComboBoxItem item) return;
         ViewModel.CardStories = CardStory.Data.Where(x => x.Card.CharacterId == item.Value).ToArray() ?? [];
+
+        if (_currentDirection == -1) ViewModel.CardStories = [.. ViewModel.CardStories.Reverse()];
+    }
+
+    private void RefreshItems()
+    {
+        if (CardStory.Data.Count == 0) return;
+        if (CharacterComboBox.SelectedIndex < 0) CharacterComboBox.SelectedIndex = 0;
+        CharacterComboBox_OnSelectionChanged(null!, null!);
     }
 
     private void CardStoryTab_OnLoaded(object sender, RoutedEventArgs e)
     {
         CharacterComboBox.SelectedIndex = 0;
         CharacterComboBox_OnSelectionChanged(null!, null!);
+    }
+
+    private int _currentDirection = -1;
+
+    private void ButtonSort_OnClick(object sender, RoutedEventArgs e)
+    {
+        ButtonSort.RenderTransform = new ScaleTransform(-1, _currentDirection);
+        _currentDirection *= -1;
+        RefreshItems();
     }
 }

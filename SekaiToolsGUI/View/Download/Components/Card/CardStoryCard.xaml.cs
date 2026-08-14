@@ -18,13 +18,11 @@ public partial class CardStoryCard : UserControl
     public CardStoryCard()
     {
         InitializeComponent();
-        Margin = new Thickness(5);
     }
 
     public CardStoryCard(CardStorySet cardStorySet)
     {
         InitializeComponent();
-        Margin = new Thickness(5);
 
         CardStorySet = cardStorySet;
         Initialize(cardStorySet);

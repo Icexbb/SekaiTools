@@ -20,7 +20,7 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="200" />
+            <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <StackPanel Grid.Column="0" Grid.Row="0">
             <Grid Margin="0,0,0,5">
@@ -72,25 +72,14 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0" Margin="5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <ui:Button Grid.Column="0" Name="TaskClearButton" IsEnabled="False"
-                                   Click="ClearButton_OnClick"
-                                   HorizontalAlignment="Right" Margin="5" Content="清空" />
-                        <ui:TextBlock Grid.Column="1" Margin="5" Name="TaskCountText"
+                        <ui:TextBlock Name="TaskCountText"
                                       Text="下载列表 (0)"
                                       TextAlignment="Center" VerticalAlignment="Center" />
-
-                        <ui:Button Grid.Column="2" Name="DownloadButton" IsEnabled="False"
-                                   Click="DownloadButton_OnClick"
-                                   HorizontalAlignment="Right" Margin="5" Content="下载" />
                     </Grid>
-                    <Grid Grid.Row="1">
+                    <Grid Grid.Row="2" VerticalAlignment="Stretch">
                         <ScrollViewer VerticalScrollBarVisibility="Auto"
                                       HorizontalScrollBarVisibility="Disabled">
                             <ItemsControl VerticalAlignment="Top"
@@ -107,6 +96,18 @@
                                        FontSize="12" Opacity="0.7"
                                        HorizontalAlignment="Center" />
                         </StackPanel>
+                    </Grid>
+                    <Grid Grid.Row="1" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <ui:Button Grid.Column="0" Name="TaskClearButton" IsEnabled="False"
+                                   Click="ClearButton_OnClick"
+                                   HorizontalAlignment="Stretch" Margin="5" Content="清空" />
+                        <ui:Button Grid.Column="1" Name="DownloadButton" IsEnabled="False"
+                                   Click="DownloadButton_OnClick"
+                                   HorizontalAlignment="Stretch" Margin="5" Content="下载" />
                     </Grid>
                 </Grid>
             </ui:Card.Content>

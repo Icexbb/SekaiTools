@@ -17,16 +17,22 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
-            <ui:Card Name="CardCharacters" Padding="7" HorizontalContentAlignment="Stretch" Margin="0,0,0,5">
-                <Grid>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <!--Banner 角色-->
+                <Grid Grid.Column="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <ui:TextBlock Grid.Column="0" Margin="5,0,12,0"
-                                  VerticalAlignment="Center" Text="Banner 角色" />
+                                  VerticalAlignment="Center" Text="Banner 角色" Visibility="Collapsed" />
                     <ComboBox Grid.Column="1" Name="CharacterComboBox"
-                              MaxDropDownHeight="480" 
+                              MaxDropDownHeight="480"
                               SelectionChanged="CharacterComboBox_OnSelectionChanged">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -51,19 +57,15 @@
                         </ComboBox.GroupStyle>
                     </ComboBox>
                 </Grid>
-            </ui:Card>
-
-            <ui:Card Name="CardUnits" Padding="2" HorizontalContentAlignment="Stretch" Margin="0,0,0,5">
-                <Grid>
+                <!---->
+                <Grid Grid.Column="1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <ComboBox Grid.Column="0" Margin="5" Name="BoxType"
                               SelectedIndex="0" SelectionChanged="Filter_OnSelected">
                         <ComboBoxItem>
-                            <TextBlock HorizontalAlignment="Stretch" TextAlignment="Center" Text="不指定" />
+                            <TextBlock HorizontalAlignment="Stretch" TextAlignment="Center" Text="所有活动类型" />
                         </ComboBoxItem>
                         <ComboBoxItem>
                             <TextBlock HorizontalAlignment="Stretch" TextAlignment="Center" Text="累计点数" />
@@ -76,25 +78,19 @@
                             <TextBlock HorizontalAlignment="Stretch" TextAlignment="Center" Text="World Link" />
                         </ComboBoxItem>
                     </ComboBox>
-
+                </Grid>
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
                     <ui:Button Grid.Column="1" Margin="5" Name="ButtonSort"
                                Click="ButtonSort_OnClick" RenderTransformOrigin="0.5,0.5"
                                ToolTip="切换排序方向" AutomationProperties.Name="切换排序方向">
                         <ui:SymbolIcon Symbol="ArrowSortDownLines24" />
                     </ui:Button>
-                    <ui:ToggleSwitch Grid.Column="2" Margin="5"
-                                     IsChecked="{Binding UseStoryIndex}"
-                                     RenderTransformOrigin="0.5,0.5">
-                        <StackPanel>
-                            <TextBlock Visibility="{calcBinding:Binding UseStoryIndex,FalseToVisibility=Collapsed}">
-                                使用故事序号
-                            </TextBlock>
-                            <TextBlock Visibility="{calcBinding:Binding !UseStoryIndex,FalseToVisibility=Collapsed}">
-                                使用故事编号
-                            </TextBlock>
-                        </StackPanel>
-                    </ui:ToggleSwitch>
-                </Grid>
+                </StackPanel>
+            </Grid>
+
+
+            <ui:Card Name="CardUnits" Padding="2" HorizontalContentAlignment="Stretch" Margin="0,0,0,5">
+
             </ui:Card>
         </StackPanel>
 
@@ -105,7 +101,6 @@
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <event:EventStoryEvent EventStorySet="{Binding}"
-                                           UseStoryIndex="{Binding DataContext.UseStoryIndex, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
                                            HorizontalAlignment="Stretch" />
                 </DataTemplate>
             </ListView.ItemTemplate>
