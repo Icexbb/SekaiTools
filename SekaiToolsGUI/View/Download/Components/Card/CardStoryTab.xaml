@@ -15,70 +15,56 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0">
-            <ui:Card Name="CardCharacters" Padding="7" HorizontalContentAlignment="Stretch" Margin="0,0,0,5">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBlock Grid.Column="0" Margin="5,0,12,0"
-                                  VerticalAlignment="Center" Text="角色" />
-                    <ComboBox Grid.Column="1" Name="CharacterComboBox"
-                              MaxDropDownHeight="480"
-                              SelectionChanged="Filter_OnSelectionChanged">
-                        <ComboBox.ItemTemplate>
+        <Grid Grid.Row="0" Name="FilterContainer" Margin="0,0,0,5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <!--角色-->
+            <ComboBox Grid.Column="0" Name="CharacterComboBox"
+                      MaxDropDownHeight="480"
+                      SelectionChanged="Filter_OnSelectionChanged">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Width="24" Height="24" Source="{Binding Source}" />
+                            <TextBlock Margin="10,0,0,0" VerticalAlignment="Center"
+                                       Text="{Binding Name}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+                <ComboBox.GroupStyle>
+                    <GroupStyle>
+                        <GroupStyle.HeaderTemplate>
                             <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Width="24" Height="24" Source="{Binding Source}" />
-                                    <TextBlock Margin="10,0,0,0" VerticalAlignment="Center"
-                                               Text="{Binding Name}" />
-                                </StackPanel>
+                                <Border Margin="0,6,0,2" Padding="8,4"
+                                        Background="{DynamicResource ControlFillColorSecondaryBrush}">
+                                    <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                                </Border>
                             </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                        <ComboBox.GroupStyle>
-                            <GroupStyle>
-                                <GroupStyle.HeaderTemplate>
-                                    <DataTemplate>
-                                        <Border Margin="0,6,0,2" Padding="8,4"
-                                                Background="{DynamicResource ControlFillColorSecondaryBrush}">
-                                            <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
-                                        </Border>
-                                    </DataTemplate>
-                                </GroupStyle.HeaderTemplate>
-                            </GroupStyle>
-                        </ComboBox.GroupStyle>
-                    </ComboBox>
-                </Grid>
-            </ui:Card>
+                        </GroupStyle.HeaderTemplate>
+                    </GroupStyle>
+                </ComboBox.GroupStyle>
+            </ComboBox>
+            <!--稀有度-->
+            <ComboBox Grid.Column="1" Margin="5,0" Name="RarityComboBox"
+                      VerticalAlignment="Stretch" VerticalContentAlignment="Center"
+                      SelectedIndex="0" SelectionChanged="Filter_OnSelectionChanged">
+                <ComboBoxItem Tag="">全部稀有度</ComboBoxItem>
+                <ComboBoxItem Tag="rarity_1">★ 1</ComboBoxItem>
+                <ComboBoxItem Tag="rarity_2">★ 2</ComboBoxItem>
+                <ComboBoxItem Tag="rarity_3">★ 3</ComboBoxItem>
+                <ComboBoxItem Tag="rarity_4">★ 4</ComboBoxItem>
+                <ComboBoxItem Tag="rarity_birthday">生日卡</ComboBoxItem>
+            </ComboBox>
 
-            <ui:Card Name="CardFilters" Padding="2" HorizontalContentAlignment="Stretch" Margin="0,0,0,5">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBlock Grid.Column="0" Margin="10,0,12,0"
-                                  VerticalAlignment="Center" Text="稀有度" />
-                    <ComboBox Grid.Column="1" Margin="5" Name="RarityComboBox"
-                              SelectedIndex="0" SelectionChanged="Filter_OnSelectionChanged">
-                        <ComboBoxItem Tag="">全部稀有度</ComboBoxItem>
-                        <ComboBoxItem Tag="rarity_1">★ 1</ComboBoxItem>
-                        <ComboBoxItem Tag="rarity_2">★ 2</ComboBoxItem>
-                        <ComboBoxItem Tag="rarity_3">★ 3</ComboBoxItem>
-                        <ComboBoxItem Tag="rarity_4">★ 4</ComboBoxItem>
-                        <ComboBoxItem Tag="rarity_birthday">生日卡</ComboBoxItem>
-                    </ComboBox>
-
-                    <ui:Button Grid.Column="2" Margin="5" Name="ButtonSort"
-                               Click="ButtonSort_OnClick" RenderTransformOrigin="0.5,0.5"
-                               ToolTip="切换排序方向" AutomationProperties.Name="切换排序方向">
-                        <ui:SymbolIcon Symbol="ArrowSortDownLines24" />
-                    </ui:Button>
-                </Grid>
-            </ui:Card>
-        </StackPanel>
+            <ui:Button Grid.Column="2" Margin="5" Name="ButtonSort"
+                       Click="ButtonSort_OnClick" RenderTransformOrigin="0.5,0.5"
+                       ToolTip="切换排序方向" AutomationProperties.Name="切换排序方向">
+                <ui:SymbolIcon Symbol="ArrowSortDownLines24" />
+            </ui:Button>
+        </Grid>
 
         <ListView Grid.Row="1" ItemsSource="{Binding CardStories}"
                   BorderBrush="Transparent"

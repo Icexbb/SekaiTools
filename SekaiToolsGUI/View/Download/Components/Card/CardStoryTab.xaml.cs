@@ -24,8 +24,7 @@ public partial class CardStoryTab : UserControl, IRefreshable
 
     public async Task Refresh()
     {
-        CardCharacters.IsEnabled = false;
-        CardFilters.IsEnabled = false;
+        FilterContainer.IsEnabled = false;
         try
         {
             CardStory.SetSource(GetSourceType());
@@ -35,8 +34,7 @@ public partial class CardStoryTab : UserControl, IRefreshable
         }
         finally
         {
-            CardCharacters.IsEnabled = true;
-            CardFilters.IsEnabled = true;
+            FilterContainer.IsEnabled = true;
         }
     }
 
