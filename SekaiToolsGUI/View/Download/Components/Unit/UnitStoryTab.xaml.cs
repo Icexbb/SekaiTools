@@ -19,30 +19,34 @@ public partial class UnitStoryTab : UserControl, IRefreshable
 
     public async Task Refresh()
     {
-        CardUnits.IsEnabled = false;
-        ListUnitStory.SetSource(GetSourceType());
-        ListUnitStory.SetProxy(SettingPageModel.Instance.GetProxy());
-        await ListUnitStory.Refresh();
-        RefreshItems();
-        CardUnits.IsEnabled = true;
+        UnitComboBox.IsEnabled = false;
+        try
+        {
+            ListUnitStory.SetSource(GetSourceType());
+            ListUnitStory.SetProxy(SettingPageModel.Instance.GetProxy());
+            await ListUnitStory.Refresh();
+            RefreshItems();
+        }
+        finally
+        {
+            UnitComboBox.IsEnabled = true;
+        }
     }
 
-
-    private void RadioButton_OnChecked(object sender, RoutedEventArgs e)
+    private void UnitComboBox_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        var selectedUnit = ((RadioButton)sender).Name switch
-        {
-            "RadioLightSound" => "light_sound",
-            "RadioIdol" => "idol",
-            "RadioThemePark" => "theme_park",
-            "RadioStreet" => "street",
-            "RadioSchoolRefusal" => "school_refusal",
-            "RadioPiapro" => "piapro",
-            _ => throw new ArgumentOutOfRangeException()
-        };
+        RefreshItems();
+    }
+
+    private void RefreshItems()
+    {
         CardContents.Children.Clear();
-        if (ListUnitStory.Data.Count == 0) return;
-        foreach (var chapter in ListUnitStory.Data[selectedUnit].Chapters)
+        if (ListUnitStory.Data.Count == 0 ||
+            UnitComboBox.SelectedItem is not ComboBoxItem { Tag: string selectedUnit } ||
+            !ListUnitStory.Data.TryGetValue(selectedUnit, out var unitStory))
+            return;
+
+        foreach (var chapter in unitStory.Chapters)
         {
             var chapterItem = new UnitStoryChapter(chapter)
             {
@@ -52,42 +56,9 @@ public partial class UnitStoryTab : UserControl, IRefreshable
         }
     }
 
-    private void RefreshItems()
-    {
-        if (ListUnitStory.Data.Count == 0) return;
-        if (RadioLightSound.IsChecked == true)
-        {
-            RadioButton_OnChecked(RadioLightSound, null!);
-        }
-        else if (RadioIdol.IsChecked == true)
-        {
-            RadioButton_OnChecked(RadioIdol, null!);
-        }
-        else if (RadioThemePark.IsChecked == true)
-        {
-            RadioButton_OnChecked(RadioThemePark, null!);
-        }
-        else if (RadioStreet.IsChecked == true)
-        {
-            RadioButton_OnChecked(RadioStreet, null!);
-        }
-        else if (RadioSchoolRefusal.IsChecked == true)
-        {
-            RadioButton_OnChecked(RadioSchoolRefusal, null!);
-        }
-        else if (RadioPiapro.IsChecked == true)
-        {
-            RadioButton_OnChecked(RadioPiapro, null!);
-        }
-        else
-        {
-            RadioLightSound.IsChecked = true;
-            RefreshItems();
-        }
-    }
-
     private void UnitStoryTab_OnLoaded(object sender, RoutedEventArgs e)
     {
+        if (UnitComboBox.SelectedIndex < 0) UnitComboBox.SelectedIndex = 0;
         RefreshItems();
     }
 

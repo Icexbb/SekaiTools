@@ -12,44 +12,51 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <ui:Card Name="CardUnits"
-                 Grid.Row="0" Padding="10,5" HorizontalContentAlignment="Stretch" Margin="0,0,0,5">
-            <Grid VerticalAlignment="Center">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <RadioButton Grid.Row="0" Grid.Column="0" GroupName="Unit" Checked="RadioButton_OnChecked"
-                             Name="RadioLightSound">
-                    <Image Source="pack://application:,,,/Resource/Unit/logo_light_sound.png" Height="24" />
-                </RadioButton>
-                <RadioButton Grid.Row="0" Grid.Column="1" GroupName="Unit" Checked="RadioButton_OnChecked"
-                             Name="RadioIdol">
-                    <Image Source="pack://application:,,,/Resource/Unit/logo_idol.png" Height="24" />
-                </RadioButton>
-                <RadioButton Grid.Row="0" Grid.Column="2" GroupName="Unit" Checked="RadioButton_OnChecked"
-                             Name="RadioThemePark">
-                    <Image Source="pack://application:,,,/Resource/Unit/logo_theme_park.png" Height="24" />
-                </RadioButton>
-                <RadioButton Grid.Row="1" Grid.Column="0" GroupName="Unit" Checked="RadioButton_OnChecked"
-                             Name="RadioStreet">
-                    <Image Source="pack://application:,,,/Resource/Unit/logo_street.png" Height="24" />
-                </RadioButton>
-                <RadioButton Grid.Row="1" Grid.Column="1" GroupName="Unit" Checked="RadioButton_OnChecked"
-                             Name="RadioSchoolRefusal">
-                    <Image Source="pack://application:,,,/Resource/Unit/logo_school_refusal.png" Height="24" />
-                </RadioButton>
-                <RadioButton Grid.Row="1" Grid.Column="2" GroupName="Unit" Checked="RadioButton_OnChecked"
-                             Name="RadioPiapro">
-                    <Image Source="pack://application:,,,/Resource/Unit/logo_piapro.png" Height="24" />
-                </RadioButton>
-            </Grid>
-        </ui:Card>
+        <ComboBox Grid.Row="0" Name="UnitComboBox" Margin="0,0,0,5"
+                  SelectedIndex="0" SelectionChanged="UnitComboBox_OnSelectionChanged">
+            <ComboBoxItem Tag="light_sound">
+                <StackPanel Orientation="Horizontal">
+                    <Image Width="60" Height="24" Stretch="Uniform"
+                           Source="pack://application:,,,/Resource/Unit/logo_light_sound.png" />
+                    <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Text="Leo/need" />
+                </StackPanel>
+            </ComboBoxItem>
+            <ComboBoxItem Tag="idol">
+                <StackPanel Orientation="Horizontal">
+                    <Image Width="60" Height="24" Stretch="Uniform"
+                           Source="pack://application:,,,/Resource/Unit/logo_idol.png" />
+                    <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Text="MORE MORE JUMP！" />
+                </StackPanel>
+            </ComboBoxItem>
+            <ComboBoxItem Tag="street">
+                <StackPanel Orientation="Horizontal">
+                    <Image Width="60" Height="24" Stretch="Uniform"
+                           Source="pack://application:,,,/Resource/Unit/logo_street.png" />
+                    <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Text="Vivid BAD SQUAD" />
+                </StackPanel>
+            </ComboBoxItem>
+            <ComboBoxItem Tag="theme_park">
+                <StackPanel Orientation="Horizontal">
+                    <Image Width="60" Height="24" Stretch="Uniform"
+                           Source="pack://application:,,,/Resource/Unit/logo_theme_park.png" />
+                    <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Text="Wonderlands×Showtime" />
+                </StackPanel>
+            </ComboBoxItem>
+            <ComboBoxItem Tag="school_refusal">
+                <StackPanel Orientation="Horizontal">
+                    <Image Width="60" Height="24" Stretch="Uniform"
+                           Source="pack://application:,,,/Resource/Unit/logo_school_refusal.png" />
+                    <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Text="25时，在Nightcord。" />
+                </StackPanel>
+            </ComboBoxItem>
+            <ComboBoxItem Tag="piapro">
+                <StackPanel Orientation="Horizontal">
+                    <Image Width="60" Height="24" Stretch="Uniform"
+                           Source="pack://application:,,,/Resource/Unit/logo_piapro.png" />
+                    <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Text="Piapro Characters" />
+                </StackPanel>
+            </ComboBoxItem>
+        </ComboBox>
         <UserControl Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
             <ui:PassiveScrollViewer>
                 <StackPanel Name="CardContents" />
