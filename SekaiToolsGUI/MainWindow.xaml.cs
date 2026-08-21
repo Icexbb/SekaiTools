@@ -10,11 +10,11 @@ using System.Windows.Shell;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 using SekaiToolsConfiguration;
-using SekaiToolsCore;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.Service;
 using SekaiToolsGUI.View.Setting;
 using SekaiToolsGUI.View.Suppress;
+using SekaiToolsGUI.View.Translate;
 using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Setting;
 using Wpf.Ui;
@@ -27,6 +27,8 @@ namespace SekaiToolsGUI;
 
 public partial class MainWindow : FluentWindow
 {
+    private object? _currentNavigatedPage;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -83,10 +85,18 @@ public partial class MainWindow : FluentWindow
         NavigationView.IsPaneOpen = false;
         if (NavigationView.MenuItems.Count != 0)
             NavigationView.Navigate((NavigationView.MenuItems[0] as NavigationViewItem)?.TargetPageType!);
+        // NavigationView_Debug();
+    }
+
+
+    private void NavigationView_Debug()
+    {
+        NavigationView.Navigate(typeof(TranslatePage));
     }
 
     private void NavigationView_OnNavigated(NavigationView sender, NavigatedEventArgs args)
     {
+        _currentNavigatedPage = args.Page;
         ResourceManager.Instance.SetProxy(SettingPageModel.Instance.GetProxy());
         switch (args.Page)
         {
@@ -99,6 +109,16 @@ public partial class MainWindow : FluentWindow
     private void NavigateToSetting()
     {
         NavigationView.Navigate(typeof(SettingPage));
+
+        GetNavigatePage<SettingPage>(typeof(SettingPage));
+    }
+
+    private T? GetNavigatePage<T>(Type type)
+        where T : class
+    {
+        if (!type.IsInstanceOfType(_currentNavigatedPage)) return null;
+
+        return _currentNavigatedPage as T;
     }
 
     public async void OnCheckResourceFailed(Exception e, Action retryAction, string content = "检查资源错误，是否重试或检查设置？")

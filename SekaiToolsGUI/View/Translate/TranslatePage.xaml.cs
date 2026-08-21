@@ -19,11 +19,10 @@ namespace SekaiToolsGUI.View.Translate;
 
 public partial class TranslatePage : UserControl
 {
+    private bool _hasReferenceTranslation;
     private string _scriptPath = "";
 
     private string _translationPath = "";
-
-    private bool _hasReferenceTranslation;
 
     public TranslatePage()
     {

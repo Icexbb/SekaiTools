@@ -5,9 +5,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:translate="clr-namespace:SekaiToolsGUI.ViewModel.Translate"
-             mc:Ignorable="d" HorizontalAlignment="Stretch"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance translate:LineEffectModel, IsDesignTimeCreatable=False}"
              d:DesignWidth="800"
-             d:DataContext="{d:DesignInstance translate:LineEffectModel, IsDesignTimeCreatable=False}">
+             HorizontalAlignment="Stretch">
     <Grid Height="32">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="150" />

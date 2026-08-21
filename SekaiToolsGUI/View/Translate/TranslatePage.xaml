@@ -31,7 +31,7 @@
                 <StackPanel Grid.Column="0" Margin="0,0,10,0">
                     <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="在线载入" />
                     <ui:Button Content="前往数据下载" Click="OpenDownloadPageButton_OnClick" />
-                </StackPanel> 
+                </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="本地载入" />
                     <StackPanel Orientation="Horizontal">
@@ -55,9 +55,8 @@
                     </StackPanel>
                 </StackPanel>
             </Grid>
-
         </ui:Card>
-        <components:TranslateFastCopy Grid.Row="1" Grid.Column="0" Width="160" />
+        <components:TranslateFastCopy Visibility="Collapsed" Grid.Row="1" Grid.Column="0" Width="160" />
         <!-- <ui:Card Grid.Column="1" Margin="5,0,0,0"  -->
         <!--          Grid.Row="1" Name="TranslateContainer" -->
         <!--          VerticalContentAlignment="Top" VerticalAlignment="Stretch" Padding="2"> -->
