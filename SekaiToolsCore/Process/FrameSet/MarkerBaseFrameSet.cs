@@ -16,6 +16,25 @@ public class MarkerBaseFrameSet(MarkerStoryEvent data, FrameRate fps) : BaseFram
     public FrameRate Fps { get; } = fps;
     public List<MarkerFrameResult> Frames { get; } = [];
 
+    public (int StartFrame, int EndFrame) RecognizedFrameRange
+    {
+        get
+        {
+            if (_timingSourceFrames is { Count: > 0 } source)
+                return (source[0].Index, source[^1].Index);
+            return (StartIndex(), EndIndex());
+        }
+    }
+
+    public bool HasTimingEdits
+    {
+        get
+        {
+            var recognized = RecognizedFrameRange;
+            return StartIndex() != recognized.StartFrame || EndIndex() != recognized.EndFrame;
+        }
+    }
+
     public void Add(int index, Point point)
     {
         Frames.Add(new MarkerFrameResult(index + FrameIndexOffset, Fps, point));
@@ -45,25 +64,6 @@ public class MarkerBaseFrameSet(MarkerStoryEvent data, FrameRate fps) : BaseFram
 
         Frames.Clear();
         Frames.AddRange(rebuilt);
-    }
-
-    public (int StartFrame, int EndFrame) RecognizedFrameRange
-    {
-        get
-        {
-            if (_timingSourceFrames is { Count: > 0 } source)
-                return (source[0].Index, source[^1].Index);
-            return (StartIndex(), EndIndex());
-        }
-    }
-
-    public bool HasTimingEdits
-    {
-        get
-        {
-            var recognized = RecognizedFrameRange;
-            return StartIndex() != recognized.StartFrame || EndIndex() != recognized.EndFrame;
-        }
     }
 
     public void RestoreRecognizedFrameRange()

@@ -21,6 +21,8 @@ public partial class LineDialogModel : LineModel
         Content.Original = dialogStoryEvent.BodyOriginal;
         Content.Translated = dialogStoryEvent.BodyTranslated;
 
+        Index = dialogStoryEvent.Index;
+
         Content.PropertyChanged += OnContentPropertyChanged;
         Character.PropertyChanged += OnCharacterPropertyChanged;
         UpdateMetrics();

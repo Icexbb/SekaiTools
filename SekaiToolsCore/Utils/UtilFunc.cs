@@ -108,7 +108,7 @@ public static class UtilFunc
             mat.SetTo(new MCvScalar(0), mask);
         }
 
-        CvInvoke.PatchNaNs(mat, 0);
+        CvInvoke.PatchNaNs(mat);
     }
 
     public static IEnumerable<string> GetFontFamilyNames()

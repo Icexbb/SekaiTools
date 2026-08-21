@@ -30,6 +30,7 @@ using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
 using MessageBox = Wpf.Ui.Controls.MessageBox;
 using SaveFileDialog = SekaiToolsGUI.View.Subtitle.Components.SaveFileDialog;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace SekaiToolsGUI.View.Subtitle;
 
@@ -1113,7 +1114,7 @@ public partial class SubtitlePage
     {
         if (e.Key != Key.Z ||
             !Keyboard.Modifiers.HasFlag(ModifierKeys.Control) ||
-            Keyboard.FocusedElement is System.Windows.Controls.TextBox)
+            Keyboard.FocusedElement is TextBox)
             return;
 
         if (GeneralFunctionSwitch.EventTimeline && EventTimelineEditor.Undo())

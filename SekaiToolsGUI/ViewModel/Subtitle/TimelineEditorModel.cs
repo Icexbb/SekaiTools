@@ -4,8 +4,8 @@ namespace SekaiToolsGUI.ViewModel.Subtitle;
 
 public class TimelineEditorModel : ViewModelBase
 {
-    public bool IsEventTimelineEnabled => global::SekaiToolsGUI.GeneralFunctionSwitch.EventTimeline;
-    public bool IsEventPlaybackEnabled => global::SekaiToolsGUI.GeneralFunctionSwitch.EventPlayBack;
+    public bool IsEventTimelineEnabled => GeneralFunctionSwitch.EventTimeline;
+    public bool IsEventPlaybackEnabled => GeneralFunctionSwitch.EventPlayBack;
 
     public bool ShowTimeLine
     {

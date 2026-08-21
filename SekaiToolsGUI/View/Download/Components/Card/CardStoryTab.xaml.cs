@@ -12,6 +12,8 @@ namespace SekaiToolsGUI.View.Download.Components.Card;
 
 public partial class CardStoryTab : UserControl, IRefreshable
 {
+    private int _currentDirection = -1;
+
     public CardStoryTab()
     {
         DataContext ??= new CardStoryTabModel();
@@ -84,8 +86,6 @@ public partial class CardStoryTab : UserControl, IRefreshable
         RarityComboBox.SelectedIndex = 0;
         RefreshItems();
     }
-
-    private int _currentDirection = -1;
 
     private void ButtonSort_OnClick(object sender, RoutedEventArgs e)
     {

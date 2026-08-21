@@ -1,11 +1,13 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsGUI.ViewModel.Setting;
 using SekaiToolsGUI.ViewModel.Subtitle;
 using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Controls;
+using TextBlock = System.Windows.Controls.TextBlock;
 
 namespace SekaiToolsGUI.View.Subtitle.Components;
 
@@ -29,8 +31,8 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
     {
         ViewModel.RefreshTiming();
         SeparateFrameSlider.GetBindingExpression(Slider.ValueProperty)?.UpdateTarget();
-        System.Windows.Data.BindingOperations
-            .GetMultiBindingExpression(SeparateTimeText, System.Windows.Controls.TextBlock.TextProperty)
+        BindingOperations
+            .GetMultiBindingExpression(SeparateTimeText, TextBlock.TextProperty)
             ?.UpdateTarget();
     }
 
@@ -81,5 +83,4 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
 
         CheckLineExpander();
     }
-
 }

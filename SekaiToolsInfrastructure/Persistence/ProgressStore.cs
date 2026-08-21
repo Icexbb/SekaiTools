@@ -97,11 +97,11 @@ public static class ProgressStore
 
 public sealed class ProcessingStatePersistence : IProcessingStatePersistence
 {
-    public static ProcessingStatePersistence Instance { get; } = new();
-
     private ProcessingStatePersistence()
     {
     }
+
+    public static ProcessingStatePersistence Instance { get; } = new();
 
     public void SaveProgress(string saveKey, ProcessingState state)
     {

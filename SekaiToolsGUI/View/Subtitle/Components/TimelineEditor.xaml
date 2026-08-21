@@ -14,11 +14,11 @@
              Unloaded="TimelineEditor_OnUnloaded"
              PreviewMouseLeftButtonDown="TimelineEditor_OnPreviewMouseLeftButtonDown">
     <StackPanel>
-        <ui:CardAction Padding="10"  Click="TitleHeader_OnClick"
+        <ui:CardAction Padding="10" Click="TitleHeader_OnClick"
                        Visibility="{calcBinding:Binding !ShowTimeLine,FalseToVisibility=Collapsed}">
             <StackPanel Orientation="Horizontal">
-              <ui:SymbolIcon Symbol="Timeline24" Margin="5,0"></ui:SymbolIcon>  
-                <ui:TextBlock Text="时间轴"></ui:TextBlock>
+                <ui:SymbolIcon Symbol="Timeline24" Margin="5,0" />
+                <ui:TextBlock Text="时间轴" />
             </StackPanel>
         </ui:CardAction>
         <ui:Card Padding="10"
@@ -49,9 +49,11 @@
                         </Border>
                         <Border x:Name="EventTypeBadge" Margin="0,0,5,0" Padding="7,3" CornerRadius="4"
                                 Background="{Binding EventAccentBrush}" VerticalAlignment="Center">
-                            <ui:TextBlock x:Name="EventTypeText" Foreground="White" Text="{Binding EventType}" TextAlignment="Center" />
+                            <ui:TextBlock x:Name="EventTypeText" Foreground="White" Text="{Binding EventType}"
+                                          TextAlignment="Center" />
                         </Border>
-                        <ui:TextBlock x:Name="EventContentText" MaxWidth="480" Text="{Binding EventContent}" TextTrimming="CharacterEllipsis"
+                        <ui:TextBlock x:Name="EventContentText" MaxWidth="480" Text="{Binding EventContent}"
+                                      TextTrimming="CharacterEllipsis"
                                       Visibility="Collapsed"
                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                       VerticalAlignment="Center" />
@@ -62,13 +64,19 @@
                                     Visibility="{calcBinding:Binding IsEventPlaybackEnabled,FalseToVisibility=Collapsed}">
                             <ui:Button IsEnabled="{Binding CanPlay}" Click="PlayAudioButton_OnClick"
                                        AutomationProperties.Name="播放当前事件音频"
-                                       ToolTip="仅播放当前事件区间的音频">▶ 音频</ui:Button>
+                                       ToolTip="仅播放当前事件区间的音频">
+                                ▶ 音频
+                            </ui:Button>
                             <ui:Button IsEnabled="{Binding CanPlay}" Click="PlayVideoButton_OnClick"
                                        AutomationProperties.Name="播放当前事件音频和视频"
-                                       ToolTip="播放当前事件区间的音频和视频">▶ 音视频</ui:Button>
+                                       ToolTip="播放当前事件区间的音频和视频">
+                                ▶ 音视频
+                            </ui:Button>
                             <ui:Button IsEnabled="{Binding IsPlaying}" Click="StopPlaybackButton_OnClick"
                                        AutomationProperties.Name="停止事件预览"
-                                       ToolTip="停止播放">■</ui:Button>
+                                       ToolTip="停止播放">
+                                ■
+                            </ui:Button>
                             <ui:TextBlock Width="150" Margin="5,0" VerticalAlignment="Center"
                                           Text="{Binding PlaybackStatus}" TextTrimming="CharacterEllipsis"
                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
@@ -89,7 +97,8 @@
                             Click="ZoomOutButton_OnClick" ToolTip="缩小时间轴">
                             −
                         </ui:Button>
-                        <ui:TextBlock x:Name="ZoomText" Width="54" Text="{Binding ZoomText}" TextAlignment="Center" Visibility="Collapsed"
+                        <ui:TextBlock x:Name="ZoomText" Width="54" Text="{Binding ZoomText}" TextAlignment="Center"
+                                      Visibility="Collapsed"
                                       VerticalAlignment="Center" FontFamily="Consolas" />
                         <ui:Button
                             AutomationProperties.Name="放大时间轴"
@@ -196,7 +205,10 @@
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                         <Ellipse Width="8" Height="8" Margin="0,0,5,0" Fill="#FF5B63" />
                         <ui:TextBlock Text="起始" Margin="0,0,5,0" VerticalAlignment="Center" />
-                        <ui:Button x:Name="StartMinusButton" IsEnabled="{Binding CanEdit}" Click="StartMinusButton_OnClick">−</ui:Button>
+                        <ui:Button x:Name="StartMinusButton" IsEnabled="{Binding CanEdit}"
+                                   Click="StartMinusButton_OnClick">
+                            −
+                        </ui:Button>
                         <ui:TextBox x:Name="StartTimeBox" Width="102" FontFamily="Consolas"
                                     Text="{Binding StartTime, Mode=OneWay}" IsEnabled="{Binding HasSelection}"
                                     IsReadOnly="{calcBinding:Binding !CanEdit}"
@@ -204,7 +216,10 @@
                                     Margin="3,0,0,0"
                                     PreviewKeyDown="TimeBox_OnPreviewKeyDown"
                                     LostKeyboardFocus="TimeBox_OnLostKeyboardFocus" />
-                        <ui:Button x:Name="StartPlusButton" IsEnabled="{Binding CanEdit}" Click="StartPlusButton_OnClick">＋</ui:Button>
+                        <ui:Button x:Name="StartPlusButton" IsEnabled="{Binding CanEdit}"
+                                   Click="StartPlusButton_OnClick">
+                            ＋
+                        </ui:Button>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Margin="13,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
@@ -227,7 +242,8 @@
                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         <Border Padding="8,4" CornerRadius="4"
                                 Background="{DynamicResource ControlFillColorDefaultBrush}">
-                            <ui:TextBlock x:Name="DurationText" Text="{Binding Duration}" FontFamily="Consolas" FontWeight="SemiBold" />
+                            <ui:TextBlock x:Name="DurationText" Text="{Binding Duration}" FontFamily="Consolas"
+                                          FontWeight="SemiBold" />
                         </Border>
                     </StackPanel>
 

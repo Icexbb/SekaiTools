@@ -10,7 +10,7 @@ public class AdaptiveSearchSchedulerTests
     [Fact]
     public void ShouldSample_SkipsIntermediateSearchFrame()
     {
-        using var scheduler = new AdaptiveSearchScheduler(2);
+        using var scheduler = new AdaptiveSearchScheduler();
 
         Assert.True(scheduler.ShouldSample(10));
         scheduler.CompleteSample(10);
@@ -25,7 +25,7 @@ public class AdaptiveSearchSchedulerTests
         source.SetTo(new MCvScalar(20, 30, 40));
         using var context = new FrameMatchContext();
         context.Update(source);
-        using var scheduler = new AdaptiveSearchScheduler(2);
+        using var scheduler = new AdaptiveSearchScheduler();
         scheduler.RememberSkipped(11);
 
         Assert.True(scheduler.TryGetPrevious(context, 11, out var previous, out var frameIndex));

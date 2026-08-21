@@ -76,6 +76,25 @@ public partial class DialogBaseFrameSet : BaseFrameSet
 
 public partial class DialogBaseFrameSet
 {
+    public (int StartFrame, int EndFrame) RecognizedFrameRange
+    {
+        get
+        {
+            if (_timingSourceFrames is { Count: > 0 } source)
+                return (source[0].Index, source[^1].Index);
+            return (StartIndex(), EndIndex());
+        }
+    }
+
+    public bool HasTimingEdits
+    {
+        get
+        {
+            var recognized = RecognizedFrameRange;
+            return StartIndex() != recognized.StartFrame || EndIndex() != recognized.EndFrame;
+        }
+    }
+
     public override bool IsEmpty()
     {
         return Frames.Count == 0;
@@ -120,25 +139,6 @@ public partial class DialogBaseFrameSet
 
         Frames.Clear();
         Frames.AddRange(rebuilt);
-    }
-
-    public (int StartFrame, int EndFrame) RecognizedFrameRange
-    {
-        get
-        {
-            if (_timingSourceFrames is { Count: > 0 } source)
-                return (source[0].Index, source[^1].Index);
-            return (StartIndex(), EndIndex());
-        }
-    }
-
-    public bool HasTimingEdits
-    {
-        get
-        {
-            var recognized = RecognizedFrameRange;
-            return StartIndex() != recognized.StartFrame || EndIndex() != recognized.EndFrame;
-        }
     }
 
     public void RestoreRecognizedFrameRange()

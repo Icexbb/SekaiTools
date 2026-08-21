@@ -20,7 +20,9 @@ public class TemplateMatcherRefinementTests
         frame.SetTo(new MCvScalar(12, 12, 12));
         var expected = new Point(31, 19);
         using (var target = new Mat(frame, new Rectangle(expected, templateBgr.Size)))
+        {
             templateBgr.CopyTo(target);
+        }
 
         using var context = new FrameMatchContext();
         context.Update(frame);

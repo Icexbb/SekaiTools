@@ -133,5 +133,4 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
         SnackService.Show("成功", "设置已重置", ControlAppearance.Caution,
             new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
     }
-
 }

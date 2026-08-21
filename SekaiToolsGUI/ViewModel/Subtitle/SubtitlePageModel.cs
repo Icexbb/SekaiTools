@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using Emgu.CV;
@@ -14,7 +15,7 @@ public class SubtitlePageModel : ViewModelBase
         {
             SetProperty(value);
             SetResetEnabled();
-            VideoFileName = System.IO.Path.GetFileName(value);
+            VideoFileName = Path.GetFileName(value);
             OnPropertyChanged(nameof(CanStart));
             OnPropertyChanged(nameof(StartHint));
         }
@@ -34,7 +35,7 @@ public class SubtitlePageModel : ViewModelBase
         {
             SetProperty(value);
             SetResetEnabled();
-            ScriptFileName = System.IO.Path.GetFileName(value);
+            ScriptFileName = Path.GetFileName(value);
             OnPropertyChanged(nameof(CanStart));
             OnPropertyChanged(nameof(StartHint));
         }
@@ -53,7 +54,7 @@ public class SubtitlePageModel : ViewModelBase
         {
             SetProperty(value);
             SetResetEnabled();
-            TranslateFileName = System.IO.Path.GetFileName(value);
+            TranslateFileName = Path.GetFileName(value);
             OnPropertyChanged(nameof(CanStart));
             OnPropertyChanged(nameof(StartHint));
         }
@@ -150,9 +151,11 @@ public class SubtitlePageModel : ViewModelBase
     public bool CanOutput => IsFinished || IsCanceled || IsPartial;
     public bool CanReset => IsFinished || IsCanceled || IsPartial || IsFailed;
     public bool CanStop => IsRunning && !IsCanceling;
+
     public bool CanStart => !string.IsNullOrWhiteSpace(VideoFilePath) &&
                             !string.IsNullOrWhiteSpace(ScriptFilePath) &&
                             !string.IsNullOrWhiteSpace(TranslateFilePath);
+
     public string? StartHint => CanStart ? null : "请选择视频、剧本和翻译文件";
 
     public string RunningStatus

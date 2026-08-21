@@ -7,6 +7,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Emgu.CV" Version="4.13.0.5924" />
+        <PackageReference Include="Emgu.CV" Version="4.13.0.5924"/>
     </ItemGroup>
 </Project>

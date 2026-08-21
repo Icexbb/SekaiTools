@@ -22,5 +22,4 @@ public class ActionStoryTabModel : ViewModelBase
         get => GetProperty<AreaStorySet[]>([]);
         set => SetProperty(value);
     }
-
 }

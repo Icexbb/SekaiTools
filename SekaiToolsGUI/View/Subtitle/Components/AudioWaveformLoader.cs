@@ -65,7 +65,7 @@ internal static class AudioWaveformLoader
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var read = sampleProvider.Read(buffer, 0, buffer.Length);
+            var read = sampleProvider.Read(buffer.AsSpan());
             if (read == 0)
                 break;
 

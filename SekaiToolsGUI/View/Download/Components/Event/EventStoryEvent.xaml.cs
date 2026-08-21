@@ -63,7 +63,6 @@ public partial class EventStoryEvent
                 : [];
 
         foreach (var characterId in bannerCharacterIds.Distinct())
-        {
             IconContainer.Children.Add(new Image
             {
                 Width = 24,
@@ -72,7 +71,6 @@ public partial class EventStoryEvent
                 Source = new BitmapImage(
                     new Uri($"pack://application:,,,/Resource/Characters/chr_{characterId}.png"))
             });
-        }
     }
 
     private void InitDownloadItems()

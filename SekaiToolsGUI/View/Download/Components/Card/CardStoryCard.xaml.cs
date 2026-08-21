@@ -61,7 +61,7 @@ public partial class CardStoryCard
         TextBlockName.Text = $"{rarity} - {CardStorySet.Card.Prefix}";
         var url = $"pack://application:,,,/Resource/Characters/chr_{cardStorySet.Card.CharacterId}.png";
         IconImage.Source = new BitmapImage(new Uri(url));
-        
+
         InitDownloadItems();
     }
 

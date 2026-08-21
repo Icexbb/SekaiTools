@@ -17,15 +17,17 @@ public enum TemplateUsage
     MarkerContent
 }
 
-public class TemplateManager(Size videoResolution, ITemplateResourceProvider resourceProvider,
+public class TemplateManager(
+    Size videoResolution,
+    ITemplateResourceProvider resourceProvider,
     bool noScale = false) : IDisposable
 {
     private const string MenuSignBase = "menu-107px.png";
     private const string DbFontBase = "FOT-RodinNTLGPro-DB.otf";
     private const string EbFontBase = "FOT-RodinNTLGPro-EB.otf";
+    private readonly Dictionary<TemplateUsage, Dictionary<string, GaMat>?> _matchTemplate = new();
 
     private readonly Dictionary<TemplateUsage, Dictionary<string, Mat>?> _template = new();
-    private readonly Dictionary<TemplateUsage, Dictionary<string, GaMat>?> _matchTemplate = new();
     private SKTypeface? _dbTypeface;
     private SKTypeface? _ebTypeface;
 
@@ -40,6 +42,7 @@ public class TemplateManager(Size videoResolution, ITemplateResourceProvider res
                 template.Dispose();
             usageTemplates.Clear();
         }
+
         _matchTemplate.Clear();
 
         _menuSign?.Dispose();

@@ -1,7 +1,6 @@
 using System.IO;
 using System.Windows;
 using SekaiToolsCore;
-using SekaiToolsCore.Process;
 using Wpf.Ui.Controls;
 using Button = Wpf.Ui.Controls.Button;
 
@@ -23,7 +22,8 @@ public partial class HistoryDialog : ContentDialog
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 Margin = new Thickness(0, 0, 0, 6),
                 Padding = new Thickness(12, 8, 12, 8),
-                ToolTip = $"视频：{entry.State.VideoFilePath}\n剧本：{entry.State.ScriptFilePath}\n翻译：{entry.State.TranslateFilePath}"
+                ToolTip =
+                    $"视频：{entry.State.VideoFilePath}\n剧本：{entry.State.ScriptFilePath}\n翻译：{entry.State.TranslateFilePath}"
             };
 
             button.Click += (_, _) =>

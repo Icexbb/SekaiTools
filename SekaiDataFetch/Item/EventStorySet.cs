@@ -4,10 +4,10 @@ namespace SekaiDataFetch.Item;
 
 public class EventStorySet(EventStory es, GameEvent ge, int index, int[]? bannerGameCharacterIds = null) : ICloneable
 {
+    public readonly int[] BannerGameCharacterIds = bannerGameCharacterIds ?? [];
     public readonly EventStory EventStory = es;
     public readonly GameEvent GameEvent = ge;
     public readonly int Index = index;
-    public readonly int[] BannerGameCharacterIds = bannerGameCharacterIds ?? [];
 
     public object Clone()
     {

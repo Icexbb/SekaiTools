@@ -2,7 +2,6 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using SekaiToolsCore;
 using Wpf.Ui.Controls;
 
 namespace SekaiToolsGUI.View.Download.Components;

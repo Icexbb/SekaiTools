@@ -59,11 +59,11 @@ public class SuppressPageModel : ViewModelBase
     }
 
     private bool GetCanStartSuppress => File.Exists(SourceVideo) &&
-                                         (string.IsNullOrWhiteSpace(SourceSubtitle) || File.Exists(SourceSubtitle)) &&
-                                         !string.IsNullOrWhiteSpace(OutputPath) &&
-                                         !OutputMatchesSource &&
-                                         ResourcesReady &&
-                                         TaskState == VideoSuppressionState.Idle;
+                                        (string.IsNullOrWhiteSpace(SourceSubtitle) || File.Exists(SourceSubtitle)) &&
+                                        !string.IsNullOrWhiteSpace(OutputPath) &&
+                                        !OutputMatchesSource &&
+                                        ResourcesReady &&
+                                        TaskState == VideoSuppressionState.Idle;
 
     private bool OutputMatchesSource => PathsEqual(SourceVideo, OutputPath);
 
@@ -72,9 +72,10 @@ public class SuppressPageModel : ViewModelBase
         get
         {
             if (IsPreparingResources) return "正在准备视频压制环境，请稍候";
-            if (!ResourcesReady) return string.IsNullOrWhiteSpace(ResourcePreparationError)
-                ? "视频压制环境尚未就绪"
-                : ResourcePreparationError;
+            if (!ResourcesReady)
+                return string.IsNullOrWhiteSpace(ResourcePreparationError)
+                    ? "视频压制环境尚未就绪"
+                    : ResourcePreparationError;
             if (string.IsNullOrWhiteSpace(SourceVideo)) return "请选择视频文件";
             if (!File.Exists(SourceVideo)) return "视频文件不存在，请重新选择";
             if (!string.IsNullOrWhiteSpace(SourceSubtitle) && !File.Exists(SourceSubtitle))
@@ -83,15 +84,6 @@ public class SuppressPageModel : ViewModelBase
             if (OutputMatchesSource) return "输出路径不能与源视频相同";
             return "";
         }
-    }
-
-    private static bool PathsEqual(string first, string second)
-    {
-        if (string.IsNullOrWhiteSpace(first) || string.IsNullOrWhiteSpace(second)) return false;
-        var comparison = OperatingSystem.IsWindows()
-            ? StringComparison.OrdinalIgnoreCase
-            : StringComparison.Ordinal;
-        return string.Equals(Path.GetFullPath(first), Path.GetFullPath(second), comparison);
     }
 
     public bool CanStartSuppress
@@ -254,6 +246,15 @@ public class SuppressPageModel : ViewModelBase
     {
         get => GetProperty("");
         set => SetProperty(value.Trim());
+    }
+
+    private static bool PathsEqual(string first, string second)
+    {
+        if (string.IsNullOrWhiteSpace(first) || string.IsNullOrWhiteSpace(second)) return false;
+        var comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        return string.Equals(Path.GetFullPath(first), Path.GetFullPath(second), comparison);
     }
 
     private void UpdateConfigStatus()

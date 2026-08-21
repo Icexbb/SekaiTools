@@ -9,15 +9,15 @@ internal static class SpeakerColorConfig
     // Project Sekai 剧本角色 ID -> UI 代表色。未配置的 ID 由界面回退到当前主题强调色。
     private static readonly IReadOnlyDictionary<int, string> SpeakerColors = new Dictionary<int, string>
     {
-        [1] = "#33AAEE",  // 一歌
-        [2] = "#FFDD44",  // 咲希
-        [3] = "#EE6666",  // 穗波
-        [4] = "#BBDD22",  // 志步
-        [5] = "#FFCCAA",  // 实乃理
-        [6] = "#99CCFF",  // 遥
-        [7] = "#FFAACC",  // 爱莉
-        [8] = "#99EEDD",  // 雫
-        [9] = "#FF6699",  // 心羽
+        [1] = "#33AAEE", // 一歌
+        [2] = "#FFDD44", // 咲希
+        [3] = "#EE6666", // 穗波
+        [4] = "#BBDD22", // 志步
+        [5] = "#FFCCAA", // 实乃理
+        [6] = "#99CCFF", // 遥
+        [7] = "#FFAACC", // 爱莉
+        [8] = "#99EEDD", // 雫
+        [9] = "#FF6699", // 心羽
         [10] = "#00BBDD", // 杏
         [11] = "#FF7722", // 彰人
         [12] = "#0077DD", // 冬弥
@@ -39,7 +39,7 @@ internal static class SpeakerColorConfig
         [28] = "#33CCBB", // MIKU_MMJ
         [29] = "#33CCBB", // MIKU_VBS
         [30] = "#33CCBB", // MIKU_WS
-        [31] = "#33CCBB"  // MIKU_25
+        [31] = "#33CCBB" // MIKU_25
     };
 
     private static readonly IReadOnlyDictionary<int, SpeakerColorPalette> Palettes =

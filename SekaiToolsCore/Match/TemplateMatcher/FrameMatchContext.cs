@@ -19,6 +19,12 @@ public sealed class FrameMatchContext : IDisposable
     public Mat Gray { get; }
     public Size Size => Gray.Size;
 
+    public void Dispose()
+    {
+        ClearScaledRegions();
+        Gray.Dispose();
+    }
+
     public void Update(Mat source)
     {
         ClearScaledRegions();
@@ -58,12 +64,6 @@ public sealed class FrameMatchContext : IDisposable
         CvInvoke.Resize(source, scaled, new Size(width, height), interpolation: interpolation);
         _scaledGrayRegions.Add(key, scaled);
         return scaled;
-    }
-
-    public void Dispose()
-    {
-        ClearScaledRegions();
-        Gray.Dispose();
     }
 
     private void ClearScaledRegions()

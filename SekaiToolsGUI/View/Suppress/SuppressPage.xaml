@@ -5,9 +5,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:converter="clr-namespace:SekaiToolsGUI.Converter"
-              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-              xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
-              xmlns:media="clr-namespace:SekaiToolsMedia;assembly=SekaiToolsMedia"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
+             xmlns:media="clr-namespace:SekaiToolsMedia;assembly=SekaiToolsMedia"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance suppress:SuppressPageModel, IsDesignTimeCreatable=True}"
              d:DesignHeight="600" d:DesignWidth="800" d:Background="White">
@@ -98,7 +98,7 @@
             </ui:CardControl>
 
             <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon TabInPrivate24}"
-                             Visibility="{c:Binding 'HasNotStarted', FalseToVisibility=Collapsed}">
+                            Visibility="{c:Binding 'HasNotStarted', FalseToVisibility=Collapsed}">
                 <ui:CardControl.Header>
                     <Grid>
                         <Grid.RowDefinitions>

@@ -45,8 +45,19 @@ public class MatcherThresholdTests
 
     private sealed class TestFrameSet : BaseFrameSet
     {
-        public override bool IsEmpty() => true;
-        public override IProcessFrame Start() => throw new NotSupportedException();
-        public override IProcessFrame End() => throw new NotSupportedException();
+        public override bool IsEmpty()
+        {
+            return true;
+        }
+
+        public override IProcessFrame Start()
+        {
+            throw new NotSupportedException();
+        }
+
+        public override IProcessFrame End()
+        {
+            throw new NotSupportedException();
+        }
     }
 }

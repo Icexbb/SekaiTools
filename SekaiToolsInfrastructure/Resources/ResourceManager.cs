@@ -3,8 +3,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using SekaiToolsBase;
-using SekaiToolsCore.Abstractions;
 using SekaiToolsConfiguration;
+using SekaiToolsCore.Abstractions;
 using SekaiToolsMedia;
 
 namespace SekaiToolsInfrastructure.Resources;
@@ -31,8 +31,6 @@ public struct Resource
 
 public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
 {
-    private static string ResourceServerUrl => NetworkEndpoints.Current.Resources.BaseUrl;
-
     public static readonly string DataBaseDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "SekaiTools");
 
@@ -45,10 +43,21 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
     };
 
     private static readonly Dictionary<ResourceType, Resource[]> ResourceFileList = new();
+    private static string ResourceServerUrl => NetworkEndpoints.Current.Resources.BaseUrl;
 
     public static ResourceManager Instance { get; } = new();
 
     private Proxy UserProxy { get; set; } = Proxy.None;
+
+    public string GetVapourSynthResourcePath(string fileName)
+    {
+        return ResourcePath(ResourceType.VapourSynth, fileName);
+    }
+
+    public string GetVideoProcessResourcePath(string fileName)
+    {
+        return ResourcePath(ResourceType.VideoProcess, fileName);
+    }
 
     public void SetProxy(Proxy proxy)
     {
@@ -82,16 +91,6 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
         var response = await client.GetAsync(url);
         response.EnsureSuccessStatusCode();
         return response;
-    }
-
-    public string GetVideoProcessResourcePath(string fileName)
-    {
-        return ResourcePath(ResourceType.VideoProcess, fileName);
-    }
-
-    public string GetVapourSynthResourcePath(string fileName)
-    {
-        return ResourcePath(ResourceType.VapourSynth, fileName);
     }
 
     public string ResourcePath(ResourceType type, string fileName)

@@ -66,7 +66,7 @@ public sealed class NetworkEndpoints
     private static void ValidateHttpUrl(string value, string name)
     {
         if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
-            uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
             throw new InvalidDataException($"{name} 不是有效的 HTTP(S) URL: {value}");
     }
 

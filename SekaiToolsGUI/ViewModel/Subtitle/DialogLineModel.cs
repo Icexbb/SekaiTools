@@ -40,11 +40,13 @@ public class DialogLineModel : ViewModelBase
     public string SpeakerName => Set.Data.FinalCharacter;
     public string SpeakerOriginalName => Set.Data.CharacterOriginal;
     public string SpeakerTranslatedName => Set.Data.CharacterTranslated;
+
     public Visibility SpeakerOriginalNameVisibility =>
         !string.IsNullOrWhiteSpace(SpeakerTranslatedName) &&
         !string.Equals(SpeakerTranslatedName, SpeakerOriginalName, StringComparison.Ordinal)
             ? Visibility.Visible
             : Visibility.Collapsed;
+
     public Brush? SpeakerBrush => _speakerPalette?.Background;
     public Brush? SpeakerForegroundBrush => _speakerPalette?.Foreground;
     public bool HasSpeakerColor => _speakerPalette is not null;
@@ -70,6 +72,7 @@ public class DialogLineModel : ViewModelBase
     public int EndFrame => Set.EndIndex();
     public string StartTime => FrameRate.TimeAtFrame(StartFrame).GetAssFormatted();
     public string EndTime => FrameRate.TimeAtFrame(EndFrame).GetAssFormatted();
+
     public string EventDuration =>
         $"{Math.Max(0, FrameRate.TimeAtFrame(EndFrame).Milliseconds - FrameRate.TimeAtFrame(StartFrame).Milliseconds) / 1000d:0.0}s";
 
@@ -145,6 +148,7 @@ public class DialogLineModel : ViewModelBase
             SetProperty(Set.Separate.SeparateFrame, nameof(SeparateFrame));
             SeparateTime = new ProcessFrame(Set.Separate.SeparateFrame, FrameRate).StartTime();
         }
+
         OnPropertyChanged(nameof(StartFrame));
         OnPropertyChanged(nameof(EndFrame));
         OnPropertyChanged(nameof(StartTime));

@@ -25,6 +25,7 @@ public sealed class TemplateMatchCachePool
 
     private readonly MatchCacheEntry[] _entries =
         new MatchCacheEntry[(int)MatchUsage.Misc + 1];
+
     private readonly TemplateScaleCalibration[] _scaleCalibrations =
         Enumerable.Range(0, (int)MatchUsage.Misc + 1)
             .Select(_ => new TemplateScaleCalibration())

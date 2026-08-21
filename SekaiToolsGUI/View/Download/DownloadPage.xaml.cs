@@ -40,10 +40,11 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     private SpecialStoryTab SpecialStoryTab { get; } = new();
     private CardStoryTab CardStoryTab { get; } = new();
     private ActionStoryTab ActionStoryTab { get; } = new();
-    public DownloadPageModel ViewModel => DownloadPageModel.Instance;
 
     private static ISnackbarService SnackService =>
         ((MainWindow)Application.Current.MainWindow!).WindowSnackbarService;
+
+    public DownloadPageModel ViewModel => DownloadPageModel.Instance;
 
 
     public async void OnNavigatedTo()

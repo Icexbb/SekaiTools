@@ -1,5 +1,4 @@
 using System.Drawing;
-using Emgu.CV;
 using SekaiToolsBase;
 using SekaiToolsBase.Story;
 using SekaiToolsCore.Process;
@@ -23,11 +22,16 @@ public class DialogTemplateMatcher(
 ), IDisposable
 {
     private const int MaxLookaheadTargets = 3;
-    private Point _nameTagPosition;
     private readonly FiniteLookaheadTracker _lookaheadTracker = new();
-    private readonly AdaptiveSearchScheduler _searchScheduler = new();
     private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
+    private readonly AdaptiveSearchScheduler _searchScheduler = new();
+    private Point _nameTagPosition;
     private MatchStatus _status;
+
+    public void Dispose()
+    {
+        _searchScheduler.Dispose();
+    }
 
     public int LastNotProcessedIndex()
     {
@@ -278,6 +282,7 @@ public class DialogTemplateMatcher(
                     matchedFrameIndex = backcheckFrameIndex;
                 }
             }
+
             if (useAdaptiveSearch)
                 _searchScheduler.CompleteSample(frameIndex);
 
@@ -310,6 +315,7 @@ public class DialogTemplateMatcher(
                             matchedFrameIndex = backcheckFrameIndex;
                         }
                     }
+
                     break;
                 }
 
@@ -355,11 +361,6 @@ public class DialogTemplateMatcher(
         }
 
         return IsStatusMatched(firstStatus ?? MatchStatus.DialogNotMatched);
-    }
-
-    public void Dispose()
-    {
-        _searchScheduler.Dispose();
     }
 
     private static bool IsStatusMatched(MatchStatus status)

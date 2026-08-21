@@ -11,30 +11,46 @@ namespace SekaiToolsMedia;
 public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvider) : IDisposable
 {
     private readonly object _runLock = new();
+    private string _bitrate = "";
     private CancellationTokenSource? _cancellationTokenSource;
     private Process? _ffmpegProcess;
-    private Process? _vapourProcess;
-    private Task? _runTask;
-    private int _processedFrames;
-    private int _totalFrames;
     private double _fps;
-    private string _bitrate = "";
-    private string _speed = "";
     private string _outputSize = "";
     private string _outputTime = "";
+    private int _processedFrames;
+    private Task? _runTask;
+    private string _speed = "";
     private VideoSuppressionState _state = VideoSuppressionState.Idle;
     private string _status = "";
+    private int _totalFrames;
+    private Process? _vapourProcess;
 
     private VideoSuppressionState State
     {
         get
         {
-            lock (_runLock) return _state;
+            lock (_runLock)
+            {
+                return _state;
+            }
         }
         set
         {
-            lock (_runLock) _state = value;
+            lock (_runLock)
+            {
+                _state = value;
+            }
         }
+    }
+
+    public void Dispose()
+    {
+        _cancellationTokenSource?.Cancel();
+        StopProcess(_vapourProcess);
+        StopProcess(_ffmpegProcess);
+        _cancellationTokenSource?.Dispose();
+        _vapourProcess?.Dispose();
+        _ffmpegProcess?.Dispose();
     }
 
     public event Action<VideoSuppressionProgress>? ProgressChanged;
@@ -79,16 +95,6 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
         {
             // Expected when the user cancels the operation.
         }
-    }
-
-    public void Dispose()
-    {
-        _cancellationTokenSource?.Cancel();
-        StopProcess(_vapourProcess);
-        StopProcess(_ffmpegProcess);
-        _cancellationTokenSource?.Dispose();
-        _vapourProcess?.Dispose();
-        _ffmpegProcess?.Dispose();
     }
 
     private async Task RunAsync(VideoSuppressionOptions options, CancellationToken cancellationToken)
@@ -366,7 +372,6 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
 
     [GeneratedRegex(@"(?:^|\s)time=\s*(?<Value>\S+)")]
     private static partial Regex TimePattern();
-
 }
 
 internal readonly record struct FfmpegProgressValues(

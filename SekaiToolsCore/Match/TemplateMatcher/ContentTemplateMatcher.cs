@@ -1,5 +1,4 @@
 using System.Drawing;
-using Emgu.CV;
 using SekaiToolsBase;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.Model;

@@ -5,7 +5,6 @@ using System.Windows.Controls;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SekaiToolsBase;
-using SekaiToolsCore;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.ViewModel.Suppress;
@@ -28,10 +27,10 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
         InitializeSuppressor();
     }
 
-    public SuppressPageModel ViewModel => (SuppressPageModel)DataContext;
-
     private static ISnackbarService SnackService =>
         ((MainWindow)Application.Current.MainWindow!).WindowSnackbarService;
+
+    public SuppressPageModel ViewModel => (SuppressPageModel)DataContext;
 
     public async void OnNavigatedTo()
     {

@@ -34,6 +34,14 @@ public partial class DownloadItem : UserControl
 
 public partial class DownloadItem
 {
+    private DownloadItem(Func<string> url, string title, string index, string taskName)
+    {
+        InitializeComponent();
+        DataContext = this;
+        TaskName = taskName;
+        Initialize(url, title, index);
+    }
+
     private static List<DownloadItem> RecycleContainer { get; } = [];
 
     private void Initialize(Func<string> url, string title, string index)
@@ -53,14 +61,6 @@ public partial class DownloadItem
         Visibility = Visibility.Collapsed;
         RecycleContainer.Add(this);
         if (Parent is Panel parent) parent.Children.Remove(this);
-    }
-
-    private DownloadItem(Func<string> url, string title, string index, string taskName)
-    {
-        InitializeComponent();
-        DataContext = this;
-        TaskName = taskName;
-        Initialize(url, title, index);
     }
 
     public static DownloadItem GetItem(Func<string> url, string title, string index, string taskName)

@@ -10,9 +10,9 @@ namespace SekaiToolsGUI;
 public partial class App : Application
 {
     private const string SingleInstanceMutexName = @"Local\SekaiToolsGUI-1D56E931-7BB9-4E91-B960-76A04EC83C45";
+    private int _isShowingErrorDialog;
     private bool _ownsSingleInstanceMutex;
     private Mutex? _singleInstanceMutex;
-    private int _isShowingErrorDialog;
 
     public App()
     {

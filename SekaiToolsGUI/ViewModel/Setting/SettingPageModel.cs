@@ -3,8 +3,8 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
+using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
-using SekaiToolsCore;
 using SekaiToolsCore.Process.Config;
 using Wpf.Ui.Appearance;
 
@@ -255,7 +255,7 @@ partial class SettingPageModel
         }
         catch (Exception exception)
         {
-            Logger.Log($"设置保存失败: {exception.Message}", Microsoft.Extensions.Logging.LogLevel.Error);
+            Logger.Log($"设置保存失败: {exception.Message}", LogLevel.Error);
         }
     }
 

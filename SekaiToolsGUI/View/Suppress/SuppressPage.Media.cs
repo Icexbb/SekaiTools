@@ -88,5 +88,4 @@ public partial class SuppressPage
     {
         VideoSuppressor.Dispose();
     }
-
 }

@@ -7,16 +7,35 @@ using SekaiToolsBase;
 namespace SekaiToolsGUI.Service;
 
 /// <summary>
-/// Keeps Windows and the display awake for the lifetime of the returned lease.
+///     Keeps Windows and the display awake for the lifetime of the returned lease.
 /// </summary>
 internal sealed class SystemPowerRequest : IDisposable
 {
-    private SafeFileHandle? _handle;
+    private const uint ReasonContextVersion = 0;
+    private const uint ReasonContextSimpleString = 1;
     private bool _displayRequired;
+    private SafeFileHandle? _handle;
     private bool _systemRequired;
 
     private SystemPowerRequest()
     {
+    }
+
+    public void Dispose()
+    {
+        var handle = Interlocked.Exchange(ref _handle, null);
+        if (handle == null)
+            return;
+
+        if (!handle.IsInvalid)
+        {
+            if (_displayRequired)
+                PowerClearRequest(handle, PowerRequestType.DisplayRequired);
+            if (_systemRequired)
+                PowerClearRequest(handle, PowerRequestType.SystemRequired);
+        }
+
+        handle.Dispose();
     }
 
     public static IDisposable Acquire(string reason)
@@ -70,46 +89,10 @@ internal sealed class SystemPowerRequest : IDisposable
         return true;
     }
 
-    public void Dispose()
-    {
-        var handle = Interlocked.Exchange(ref _handle, null);
-        if (handle == null)
-            return;
-
-        if (!handle.IsInvalid)
-        {
-            if (_displayRequired)
-                PowerClearRequest(handle, PowerRequestType.DisplayRequired);
-            if (_systemRequired)
-                PowerClearRequest(handle, PowerRequestType.SystemRequired);
-        }
-
-        handle.Dispose();
-    }
-
     private static void LogLastWin32Error(string message)
     {
         var error = new Win32Exception(Marshal.GetLastWin32Error());
         Logger.Log($"{message}: {error.Message}", LogLevel.Warning);
-    }
-
-    private const uint ReasonContextVersion = 0;
-    private const uint ReasonContextSimpleString = 1;
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct ReasonContext
-    {
-        public uint Version;
-        public uint Flags;
-
-        [MarshalAs(UnmanagedType.LPWStr)]
-        public string SimpleReasonString;
-    }
-
-    private enum PowerRequestType
-    {
-        DisplayRequired,
-        SystemRequired
     }
 
     [DllImport("kernel32.dll", SetLastError = true)]
@@ -122,6 +105,21 @@ internal sealed class SystemPowerRequest : IDisposable
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool PowerClearRequest(SafeFileHandle powerRequest, PowerRequestType requestType);
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct ReasonContext
+    {
+        public uint Version;
+        public uint Flags;
+
+        [MarshalAs(UnmanagedType.LPWStr)] public string SimpleReasonString;
+    }
+
+    private enum PowerRequestType
+    {
+        DisplayRequired,
+        SystemRequired
+    }
 
     private sealed class EmptyLease : IDisposable
     {

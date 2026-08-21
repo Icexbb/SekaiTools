@@ -8,8 +8,21 @@ internal sealed class TimelineFramePreviewLoader(string videoPath) : IDisposable
 {
     private readonly object _sync = new();
     private VideoCapture? _capture;
-    private int _nextFrameIndex = -1;
     private bool _disposed;
+    private int _nextFrameIndex = -1;
+
+    public void Dispose()
+    {
+        lock (_sync)
+        {
+            if (_disposed)
+                return;
+            _disposed = true;
+            _capture?.Dispose();
+            _capture = null;
+            _nextFrameIndex = -1;
+        }
+    }
 
     public Task<BitmapSource?> LoadFrameAsync(int frameIndex, CancellationToken cancellationToken)
     {
@@ -89,18 +102,5 @@ internal sealed class TimelineFramePreviewLoader(string videoPath) : IDisposable
         var source = frame.ToBitmapSource();
         source.Freeze();
         return source;
-    }
-
-    public void Dispose()
-    {
-        lock (_sync)
-        {
-            if (_disposed)
-                return;
-            _disposed = true;
-            _capture?.Dispose();
-            _capture = null;
-            _nextFrameIndex = -1;
-        }
     }
 }

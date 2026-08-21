@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,6 +13,7 @@ using NAudio.Wave.SampleProviders;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
 using SekaiToolsGUI.ViewModel.Subtitle;
+using Path = System.Windows.Shapes.Path;
 
 namespace SekaiToolsGUI.View.Subtitle.Components;
 
@@ -77,11 +79,9 @@ public sealed class TimelineEventSelection(
             case DialogBaseFrameSet dialog:
                 dialog.SetFrameRange(startFrame, endFrame);
                 if (dialog.UseSeparator && endFrame - startFrame >= 2)
-                {
                     dialog.SetSeparator(
                         Math.Clamp(dialog.Separate.SeparateFrame, startFrame + 1, endFrame - 1),
                         dialog.Separate.SeparatorContentIndex);
-                }
 
                 break;
             case BannerBaseFrameSet banner:
@@ -123,49 +123,54 @@ public partial class TimelineEditor : UserControl
     private const double MaxPixelsPerSecond = 800;
     private const double HandleHitWidth = 11;
     private const double TrackHeaderWidth = 48;
-    private readonly Stack<TimingEditCommand> _undoStack = new();
-    private readonly List<TimelineEventSelection> _events = [];
+
+    public static readonly DependencyProperty IsReadOnlyProperty = DependencyProperty.Register(
+        nameof(IsReadOnly),
+        typeof(bool),
+        typeof(TimelineEditor),
+        new FrameworkPropertyMetadata(false, OnIsReadOnlyChanged));
+
+    private readonly Stopwatch _audioPlaybackClock = new();
     private readonly List<TimelineHitRegion> _eventHitRegions = [];
-    private CancellationTokenSource? _waveformCancellation;
-    private CancellationTokenSource? _framePreviewCancellation;
-    private TimelineFramePreviewLoader? _framePreviewLoader;
-    private AudioWaveformEnvelope? _waveform;
-    private StreamGeometry? _overviewWaveformGeometry;
-    private AudioWaveformEnvelope? _overviewWaveformSource;
-    private Size _overviewWaveformSize;
-    private bool _overviewDragging;
-    private TimelineEventSelection? _selection;
-    private DragMode _dragMode;
+    private readonly List<TimelineEventSelection> _events = [];
+    private readonly DispatcherTimer _playbackTimer;
+    private readonly Stack<TimingEditCommand> _undoStack = new();
+    private WaveOutEvent? _audioOutput;
+    private MediaFoundationReader? _audioReader;
     private int _dragAnchorFrame;
-    private int _dragOriginalStart;
+    private DragMode _dragMode;
+    private bool _dragMoved;
     private int _dragOriginalEnd;
     private int _dragOriginalSeparateFrame;
+    private int _dragOriginalStart;
     private Point _dragStartPoint;
-    private bool _dragMoved;
-    private bool _preserveHandleSelectionAfterDrag;
-    private DragMode _selectedHandle;
-    private double _framePreviewScale = 1;
+    private CancellationTokenSource? _framePreviewCancellation;
     private double _framePreviewHandleX;
-    private double _pixelsPerSecond = 100;
-    private double _viewStartMilliseconds;
-    private int _videoDurationMilliseconds;
-    private bool _updatingTimeBoxes;
-    private readonly DispatcherTimer _playbackTimer;
-    private readonly Stopwatch _audioPlaybackClock = new();
-    private MediaFoundationReader? _audioReader;
-    private WaveOutEvent? _audioOutput;
-    private TimelinePlaybackWindow? _videoPlaybackWindow;
-    private TimelineFramePreviewLoader? _videoPlaybackLoader;
-    private CancellationTokenSource? _videoPlaybackCancellation;
-    private bool _videoFrameLoading;
+    private TimelineFramePreviewLoader? _framePreviewLoader;
+    private double _framePreviewScale = 1;
     private int _lastVideoFrame = -1;
-    private int _playbackVersion;
     private string? _mediaPath;
+    private bool _overviewDragging;
+    private StreamGeometry? _overviewWaveformGeometry;
+    private Size _overviewWaveformSize;
+    private AudioWaveformEnvelope? _overviewWaveformSource;
+    private double _pixelsPerSecond = 100;
+    private TimeSpan _playbackEnd;
     private PlaybackMode _playbackMode;
     private TimeSpan _playbackStart;
-    private TimeSpan _playbackEnd;
-
-    public TimelineEditorModel ViewModel => (TimelineEditorModel)DataContext;
+    private int _playbackVersion;
+    private bool _preserveHandleSelectionAfterDrag;
+    private DragMode _selectedHandle;
+    private TimelineEventSelection? _selection;
+    private bool _updatingTimeBoxes;
+    private int _videoDurationMilliseconds;
+    private bool _videoFrameLoading;
+    private CancellationTokenSource? _videoPlaybackCancellation;
+    private TimelineFramePreviewLoader? _videoPlaybackLoader;
+    private TimelinePlaybackWindow? _videoPlaybackWindow;
+    private double _viewStartMilliseconds;
+    private AudioWaveformEnvelope? _waveform;
+    private CancellationTokenSource? _waveformCancellation;
 
     public TimelineEditor()
     {
@@ -183,11 +188,7 @@ public partial class TimelineEditor : UserControl
         UpdateZoomText();
     }
 
-    public static readonly DependencyProperty IsReadOnlyProperty = DependencyProperty.Register(
-        nameof(IsReadOnly),
-        typeof(bool),
-        typeof(TimelineEditor),
-        new FrameworkPropertyMetadata(false, OnIsReadOnlyChanged));
+    public TimelineEditorModel ViewModel => (TimelineEditorModel)DataContext;
 
     public bool IsReadOnly
     {
@@ -208,7 +209,7 @@ public partial class TimelineEditor : UserControl
     {
         StopPlayback();
         _mediaPath = videoPath;
-        ViewModel.HasMediaSource = System.IO.File.Exists(videoPath);
+        ViewModel.HasMediaSource = File.Exists(videoPath);
         _framePreviewCancellation?.Cancel();
         _framePreviewCancellation?.Dispose();
         _framePreviewCancellation = null;
@@ -233,7 +234,6 @@ public partial class TimelineEditor : UserControl
         }
         catch (OperationCanceledException)
         {
-            return;
         }
         catch
         {
@@ -261,6 +261,7 @@ public partial class TimelineEditor : UserControl
             StopPlayback(keepVideoPreview: _videoPlaybackWindow?.IsVisible == true);
             DeselectHandle(false);
         }
+
         _selection = selection;
         ViewModel.SetSelection(
             selection.EventNumber,
@@ -876,7 +877,7 @@ public partial class TimelineEditor : UserControl
         if (!GeneralFunctionSwitch.EventPlayBack)
             return;
 
-        if (_selection == null || string.IsNullOrWhiteSpace(_mediaPath) || !System.IO.File.Exists(_mediaPath))
+        if (_selection == null || string.IsNullOrWhiteSpace(_mediaPath) || !File.Exists(_mediaPath))
         {
             SetPlaybackStatus("媒体文件不可用");
             return;
@@ -1109,6 +1110,7 @@ public partial class TimelineEditor : UserControl
             if (_videoPlaybackWindow?.IsVisible == true)
                 _videoPlaybackWindow.Hide();
         }
+
         ViewModel.IsPlaying = false;
         SetPlaybackStatus(status);
     }
@@ -1452,7 +1454,6 @@ public partial class TimelineEditor : UserControl
             var highlightStart = Math.Max(_viewStartMilliseconds, GetStartMilliseconds(_selection));
             var highlightEnd = Math.Min(viewEnd, GetEndMilliseconds(_selection));
             if (highlightEnd > highlightStart)
-            {
                 DrawWaveform(
                     TimelineCanvas,
                     highlightStart,
@@ -1463,7 +1464,6 @@ public partial class TimelineEditor : UserControl
                     waveformHeight,
                     primaryBrush,
                     0.92);
-            }
         }
 
         if (_waveform == null && !string.IsNullOrWhiteSpace(ViewModel.WaveformStatus))
@@ -1713,7 +1713,6 @@ public partial class TimelineEditor : UserControl
         }
 
         if (_overviewWaveformGeometry != null)
-        {
             OverviewCanvas.Children.Add(new Path
             {
                 Data = _overviewWaveformGeometry,
@@ -1722,7 +1721,6 @@ public partial class TimelineEditor : UserControl
                 Opacity = 0.20,
                 IsHitTestVisible = false
             });
-        }
 
         foreach (var item in _events)
         {
@@ -1958,6 +1956,16 @@ public partial class TimelineEditor : UserControl
     [GeneratedRegex(@"^(?<hour>\d{1,2}):(?<minute>\d{2}):(?<second>\d{2})(?:[\.,](?<fraction>\d{1,3}))?$")]
     private static partial Regex TimestampPattern();
 
+    private void TitleHeader_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowTimeLine = true;
+    }
+
+    private void HideTimeLine_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowTimeLine = false;
+    }
+
     private enum PlaybackMode
     {
         None,
@@ -1984,14 +1992,4 @@ public partial class TimelineEditor : UserControl
         int? NewSeparateFrame = null);
 
     private sealed record TimelineHitRegion(TimelineEventSelection Selection, Rect Bounds);
-
-    private void TitleHeader_OnClick(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ShowTimeLine = true;
-    }
-
-    private void HideTimeLine_OnClick(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ShowTimeLine = false;
-    }
 }

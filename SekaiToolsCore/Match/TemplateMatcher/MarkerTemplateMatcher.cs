@@ -24,10 +24,10 @@ public class MarkerTemplateMatcher(
 ), IDisposable
 {
     private const int MaxLookaheadTargets = 3;
-    private readonly Dictionary<string, GaMat> _templates = new();
     private readonly FiniteLookaheadTracker _lookaheadTracker = new();
-    private readonly AdaptiveSearchScheduler _searchScheduler = new();
     private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
+    private readonly AdaptiveSearchScheduler _searchScheduler = new();
+    private readonly Dictionary<string, GaMat> _templates = new();
     private MatchStatus _status;
 
     public void Dispose()
@@ -146,6 +146,7 @@ public class MarkerTemplateMatcher(
                     matchedFrameIndex = backcheckFrameIndex;
                 }
             }
+
             if (useAdaptiveSearch)
                 _searchScheduler.CompleteSample(frameIndex);
 
@@ -176,6 +177,7 @@ public class MarkerTemplateMatcher(
                             matchedFrameIndex = backcheckFrameIndex;
                         }
                     }
+
                     break;
                 }
 

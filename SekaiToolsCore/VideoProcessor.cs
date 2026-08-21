@@ -59,13 +59,13 @@ public class VideoProcessor : IDisposable
     private const int ExceptionThreshold = 10;
     private const int MaxReadRetries = 2;
     private const long CallbackThrottleMs = 200;
-    private readonly object _progressSaveLock = new();
     private readonly Config _config;
-    private readonly IProcessingStatePersistence _persistence;
     private readonly ProcessingPerformanceMetrics _performanceMetrics = new();
-    private readonly ProcessingStateMetadata _stateMetadata;
+    private readonly IProcessingStatePersistence _persistence;
+    private readonly object _progressSaveLock = new();
     private readonly int _saveInterval = 300;
     private readonly string _scriptPath;
+    private readonly ProcessingStateMetadata _stateMetadata;
     private readonly string _translatePath;
     private readonly string _videoPath;
     private int _consecutiveExceptionCount;
@@ -446,8 +446,10 @@ public class VideoProcessor : IDisposable
                             StopReason = ProcessStopReason.ReadFailed;
                             break;
                     }
+
                     break;
                 }
+
                 readRetryCount = 0;
 
                 frameIndex = (int)capture.Get(CapProp.PosFrames);

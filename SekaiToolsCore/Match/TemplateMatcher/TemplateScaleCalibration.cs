@@ -2,13 +2,13 @@ namespace SekaiToolsCore.Match.TemplateMatcher;
 
 internal sealed class TemplateScaleCalibration
 {
-    private static readonly double[] InitialScales = [1.00, 0.96, 1.04];
     private const double LockConfidence = 0.85;
     private const double UnlockConfidence = 0.50;
     private const int UnlockFailureCount = 30;
+    private static readonly double[] InitialScales = [1.00, 0.96, 1.04];
+    private double? _lockedScale;
 
     private int _lowConfidenceCount;
-    private double? _lockedScale;
 
     public IReadOnlyList<double> CandidateScales => _lockedScale is { } scale ? [scale] : InitialScales;
 
@@ -21,6 +21,7 @@ internal sealed class TemplateScaleCalibration
                 _lockedScale = scale;
                 _lowConfidenceCount = 0;
             }
+
             return;
         }
 

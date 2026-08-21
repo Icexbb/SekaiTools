@@ -109,8 +109,9 @@
                                     </BeginStoryboard>
                                 </Trigger.ExitActions>
                             </Trigger>
-                            <DataTrigger Binding="{Binding Orientation, RelativeSource={RelativeSource AncestorType={x:Type local:SelectorBar}}}"
-                                         Value="Vertical">
+                            <DataTrigger
+                                Binding="{Binding Orientation, RelativeSource={RelativeSource AncestorType={x:Type local:SelectorBar}}}"
+                                Value="Vertical">
                                 <Setter TargetName="SelectionIndicator" Property="Width" Value="3" />
                                 <Setter TargetName="SelectionIndicator" Property="Height" Value="Auto" />
                                 <Setter TargetName="SelectionIndicator" Property="MinWidth" Value="0" />
@@ -137,8 +138,9 @@
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
-                <DataTrigger Binding="{Binding Orientation, RelativeSource={RelativeSource AncestorType={x:Type local:SelectorBar}}}"
-                             Value="Vertical">
+                <DataTrigger
+                    Binding="{Binding Orientation, RelativeSource={RelativeSource AncestorType={x:Type local:SelectorBar}}}"
+                    Value="Vertical">
                     <Setter Property="Margin" Value="0,0,0,4" />
                 </DataTrigger>
             </Style.Triggers>

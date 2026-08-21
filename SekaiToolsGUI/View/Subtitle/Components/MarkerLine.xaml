@@ -49,7 +49,7 @@
                     </TextBlock>
                 </Grid>
 
-                <ui:Card Margin="0,9,0,0" 
+                <ui:Card Margin="0,9,0,0"
                          MouseDoubleClick="MarkerLine_OnMouseDoubleClick">
                     <StackPanel>
                         <ui:TextBlock Text="{Binding RawContent, Mode=OneWay}"

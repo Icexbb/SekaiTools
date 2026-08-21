@@ -8,10 +8,10 @@
 
     <ItemGroup>
         <EmbeddedResource Include="..\network-endpoints.json"
-                          LogicalName="SekaiToolsConfiguration.network-endpoints.json" />
+                          LogicalName="SekaiToolsConfiguration.network-endpoints.json"/>
         <None Include="..\network-endpoints.json"
               Link="network-endpoints.json"
               CopyToOutputDirectory="PreserveNewest"
-              CopyToPublishDirectory="PreserveNewest" />
+              CopyToPublishDirectory="PreserveNewest"/>
     </ItemGroup>
 </Project>

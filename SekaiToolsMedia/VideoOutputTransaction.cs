@@ -25,7 +25,13 @@ internal sealed class VideoOutputTransaction : IDisposable
 
     public string TargetPath { get; }
 
-    public string TemporaryPath { get; private set; } = "";
+    public string TemporaryPath { get; } = "";
+
+    public void Dispose()
+    {
+        if (!_committed && File.Exists(TemporaryPath))
+            File.Delete(TemporaryPath);
+    }
 
     public void Commit()
     {
@@ -34,11 +40,5 @@ internal sealed class VideoOutputTransaction : IDisposable
 
         File.Move(TemporaryPath, TargetPath, _overwriteExisting);
         _committed = true;
-    }
-
-    public void Dispose()
-    {
-        if (!_committed && File.Exists(TemporaryPath))
-            File.Delete(TemporaryPath);
     }
 }

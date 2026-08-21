@@ -6,10 +6,10 @@ namespace SekaiToolsCore.Process.Model;
 
 public class GaMat : IDisposable // Gray and Alpha Mat
 {
-    private readonly Dictionary<GaMatScale, GaMatLayer> _scaledLayers = new();
-    private readonly object _scaledLayersLock = new();
     public readonly Mat Alpha;
     public readonly Mat Gray;
+    private readonly Dictionary<GaMatScale, GaMatLayer> _scaledLayers = new();
+    private readonly object _scaledLayersLock = new();
 
     public GaMat(IInputArray src, bool resize = true)
     {
@@ -39,6 +39,23 @@ public class GaMat : IDisposable // Gray and Alpha Mat
     }
 
     public Size Size => Gray.Size;
+
+    public void Dispose()
+    {
+        lock (_scaledLayersLock)
+        {
+            foreach (var layer in _scaledLayers.Values)
+            {
+                layer.Gray.Dispose();
+                layer.Alpha.Dispose();
+            }
+
+            _scaledLayers.Clear();
+        }
+
+        Gray.Dispose();
+        Alpha.Dispose();
+    }
 
     public GaMatLayer GetScaledLayer(int divisor)
     {
@@ -79,21 +96,6 @@ public class GaMat : IDisposable // Gray and Alpha Mat
                 throw;
             }
         }
-    }
-
-    public void Dispose()
-    {
-        lock (_scaledLayersLock)
-        {
-            foreach (var layer in _scaledLayers.Values)
-            {
-                layer.Gray.Dispose();
-                layer.Alpha.Dispose();
-            }
-            _scaledLayers.Clear();
-        }
-        Gray.Dispose();
-        Alpha.Dispose();
     }
 }
 

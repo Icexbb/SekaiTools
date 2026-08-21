@@ -61,7 +61,8 @@ public class NetworkEndpointsTests
         };
 
         var offenders = productProjects
-            .SelectMany(project => Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories))
+            .SelectMany(project =>
+                Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories))
             .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}") &&
                            !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"))
             .Where(path => File.ReadAllText(path).Contains("https://", StringComparison.OrdinalIgnoreCase))

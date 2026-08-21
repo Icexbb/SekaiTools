@@ -1,5 +1,5 @@
-using SekaiToolsCore;
 using SekaiToolsBase.Story.StoryEvent;
+using SekaiToolsCore;
 using SekaiToolsCore.Match.TemplateMatcher;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;

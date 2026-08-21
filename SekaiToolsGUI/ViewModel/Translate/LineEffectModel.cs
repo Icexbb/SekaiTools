@@ -9,6 +9,8 @@ public class LineEffectModel : LineModel
     {
         Content.Original = eBaseStoryEvent.BodyOriginal;
         Content.Translated = eBaseStoryEvent.BodyTranslated;
+        Index = eBaseStoryEvent.Index;
+
         Content.PropertyChanged += OnContentPropertyChanged;
     }
 

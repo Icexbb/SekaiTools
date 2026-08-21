@@ -1,5 +1,4 @@
 using System.Drawing;
-using Emgu.CV;
 using SekaiToolsBase;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
@@ -24,9 +23,14 @@ public class BannerTemplateMatcher(
 {
     private const int MaxLookaheadTargets = 3;
     private readonly FiniteLookaheadTracker _lookaheadTracker = new();
-    private readonly AdaptiveSearchScheduler _searchScheduler = new();
     private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
+    private readonly AdaptiveSearchScheduler _searchScheduler = new();
     private MatchStatus _status;
+
+    public void Dispose()
+    {
+        _searchScheduler.Dispose();
+    }
 
     public int LastNotProcessedIndex()
     {
@@ -124,6 +128,7 @@ public class BannerTemplateMatcher(
                     matchedFrameIndex = backcheckFrameIndex;
                 }
             }
+
             if (useAdaptiveSearch)
                 _searchScheduler.CompleteSample(frameIndex);
 
@@ -154,6 +159,7 @@ public class BannerTemplateMatcher(
                             matchedFrameIndex = backcheckFrameIndex;
                         }
                     }
+
                     break;
                 }
 
@@ -193,11 +199,6 @@ public class BannerTemplateMatcher(
                     return;
             }
         }
-    }
-
-    public void Dispose()
-    {
-        _searchScheduler.Dispose();
     }
 
     public BannerMatcherStateDto SaveState()

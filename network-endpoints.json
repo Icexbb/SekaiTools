@@ -8,7 +8,7 @@
     "baseUrl": "https://v.xbb.moe/files/sekai-tools/",
     "sourceListUrl": "https://v.xbb.moe/files/sekai-tools/source.json"
   },
-  "defaultDataSources":[
+  "defaultDataSources": [
     {
       "SourceName": "Sekai Best",
       "SourceTemplate": "https://sekai-world.github.io/sekai-master-db-diff/{type}.json",

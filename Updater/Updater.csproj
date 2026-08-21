@@ -14,6 +14,6 @@
 
 
     <ItemGroup>
-        <ProjectReference Include="..\SekaiToolsConfiguration\SekaiToolsConfiguration.csproj" />
+        <ProjectReference Include="..\SekaiToolsConfiguration\SekaiToolsConfiguration.csproj"/>
     </ItemGroup>
 </Project>

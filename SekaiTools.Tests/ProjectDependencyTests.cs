@@ -12,10 +12,16 @@ public class ProjectDependencyTests
         { "SekaiToolsMedia", [] },
         { "SekaiDataFetch", ["SekaiToolsBase", "SekaiToolsConfiguration"] },
         { "SekaiToolsCore", ["SekaiToolsBase", "SekaiToolsSubtitles"] },
-        { "SekaiToolsInfrastructure", ["SekaiToolsBase", "SekaiToolsConfiguration", "SekaiToolsCore", "SekaiToolsMedia"] },
+        {
+            "SekaiToolsInfrastructure",
+            ["SekaiToolsBase", "SekaiToolsConfiguration", "SekaiToolsCore", "SekaiToolsMedia"]
+        },
         {
             "SekaiToolsGUI",
-            ["SekaiDataFetch", "SekaiToolsConfiguration", "SekaiToolsCore", "SekaiToolsInfrastructure", "SekaiToolsMedia", "SekaiToolsSubtitles"]
+            [
+                "SekaiDataFetch", "SekaiToolsConfiguration", "SekaiToolsCore", "SekaiToolsInfrastructure",
+                "SekaiToolsMedia", "SekaiToolsSubtitles"
+            ]
         },
         { "Updater", ["SekaiToolsConfiguration"] }
     };

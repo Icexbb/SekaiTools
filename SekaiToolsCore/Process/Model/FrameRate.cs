@@ -48,9 +48,8 @@ public class FrameRate
     private readonly long _denominator;
     private readonly bool _drop;
     private readonly long _numerator;
-    private readonly object _timecodesLock = new();
     private readonly List<int> _timecodes = [];
-    private long Last => (long)_timecodes[^1] * _numerator;
+    private readonly object _timecodesLock = new();
 
     public FrameRate(double fps)
     {
@@ -82,6 +81,8 @@ public class FrameRate
         _drop = drop && _numerator % _denominator != 0;
         _timecodes.Add(0);
     }
+
+    private long Last => _timecodes[^1] * _numerator;
 
     public static FrameRate Fps23976 { get; } = new(24000, 1001, true);
 
@@ -136,7 +137,9 @@ public class FrameRate
     public IReadOnlyList<int> ExportTimecodes()
     {
         lock (_timecodesLock)
+        {
             return _timecodes.ToList();
+        }
     }
 
     public void RestoreTimecodes(IEnumerable<int> timecodes)
@@ -338,7 +341,9 @@ public class FrameRate
     public bool IsVfr()
     {
         lock (_timecodesLock)
+        {
             return _timecodes.Count > 1;
+        }
     }
 
     public bool IsLoaded()
