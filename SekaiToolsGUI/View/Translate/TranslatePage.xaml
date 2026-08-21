@@ -10,7 +10,7 @@
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="800" d:Background="White"
              d:DataContext="{d:DesignInstance translate:TranslatePageModel, IsDesignTimeCreatable=True}">
-    <Grid Margin="10">
+    <Grid Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -19,20 +19,43 @@
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <ui:Card Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,5">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <ui:Button Margin="5,0" Click="LoadFileButton_OnClick" Name="LoadScriptButton">载入剧本</ui:Button>
-                <ui:Button Margin="5,0" Click="LoadTranslationButton_OnClick"
-                           Visibility="{c:Binding Path='Events.Length!=0',FalseToVisibility=Collapsed}">
-                    打开翻译
-                </ui:Button>
-                <ui:Button Margin="5,0" Click="LoadReviewButton_OnClick"
-                           Visibility="{c:Binding Path='Events.Length!=0',FalseToVisibility=Collapsed}">
-                    打开对照翻译
-                </ui:Button>
-                <ui:Button Margin="5,0" Click="ResetButton_OnClick" Name="ResetButton">重置</ui:Button>
-                <ui:Button Margin="5,0" Click="SaveButton_OnClick" Name="SaveButton">保存</ui:Button>
-            </StackPanel>
+        <ui:Card Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,8"
+                 Padding="14,10" VerticalContentAlignment="Center"
+                 HorizontalAlignment="Stretch">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="在线载入" />
+                    <ui:Button Content="前往数据下载" Click="OpenDownloadPageButton_OnClick" />
+                </StackPanel> 
+                <StackPanel Grid.Column="1">
+                    <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="本地载入" />
+                    <StackPanel Orientation="Horizontal">
+                        <ui:Button Margin="0,0,8,0" Click="LoadFileButton_OnClick"
+                                   Name="LoadScriptButton" Content="载入剧本" />
+                        <ui:Button Margin="0,0,8,0" Click="LoadTranslationButton_OnClick"
+                                   IsEnabled="{c:Binding Path='Events.Length!=0'}"
+                                   Content="载入翻译文件" />
+                        <ui:Button Name="ReferenceTranslationButton" Click="LoadReviewButton_OnClick"
+                                   IsEnabled="{c:Binding Path='Events.Length!=0'}"
+                                   Content="载入参考翻译文件" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                    <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="任务控制" />
+                    <StackPanel Orientation="Horizontal">
+                        <ui:Button Margin="0,0,8,0" Click="ResetButton_OnClick" Name="ResetButton"
+                                   Content="重置" IsEnabled="{c:Binding Path='Events.Length!=0'}" />
+                        <ui:Button Click="SaveButton_OnClick" Name="SaveButton" Content="保存"
+                                   Appearance="Primary" IsEnabled="{c:Binding Path='Events.Length!=0'}" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
         </ui:Card>
         <components:TranslateFastCopy Grid.Row="1" Grid.Column="0" Width="160" />
         <!-- <ui:Card Grid.Column="1" Margin="5,0,0,0"  -->

@@ -130,4 +130,19 @@ public class TranslatePageModel : ViewModelBase
             }
         }
     }
+
+    public void ClearReference()
+    {
+        foreach (var line in Events)
+            switch (line)
+            {
+                case LineDialogModel lineDialogModel:
+                    lineDialogModel.Character.Reference = string.Empty;
+                    lineDialogModel.Content.Reference = string.Empty;
+                    break;
+                case LineEffectModel lineEffectModel:
+                    lineEffectModel.Content.Reference = string.Empty;
+                    break;
+            }
+    }
 }

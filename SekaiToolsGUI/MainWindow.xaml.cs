@@ -66,6 +66,11 @@ public partial class MainWindow : FluentWindow
         TaskbarItemInfo.ProgressValue = Math.Clamp(value, 0, 1);
     }
 
+    public void Navigate(Type pageType)
+    {
+        NavigationView.Navigate(pageType);
+    }
+
     private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
     {
         WindowSnackbarService.SetSnackbarPresenter(SnackbarPresenter);

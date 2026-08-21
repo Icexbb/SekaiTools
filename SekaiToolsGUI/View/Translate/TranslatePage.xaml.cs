@@ -8,6 +8,7 @@ using SekaiToolsBase;
 using SekaiToolsBase.GameScript;
 using SekaiToolsBase.Story;
 using SekaiToolsBase.Story.Translation;
+using SekaiToolsGUI.View.Download;
 using SekaiToolsGUI.ViewModel.Translate;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
@@ -22,10 +23,13 @@ public partial class TranslatePage : UserControl
 
     private string _translationPath = "";
 
+    private bool _hasReferenceTranslation;
+
     public TranslatePage()
     {
         InitializeComponent();
         DataContext = new TranslatePageModel();
+        UpdateReferenceTranslationButton();
         // TestLoad();
     }
 
@@ -67,6 +71,7 @@ public partial class TranslatePage : UserControl
         _scriptPath = openFileDialog.FileName;
         _translationPath = "";
         ViewModel.Story = story;
+        SetReferenceTranslationLoaded(false);
         SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
             new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
     }
@@ -101,6 +106,7 @@ public partial class TranslatePage : UserControl
 
                 _translationPath = filePath;
                 ViewModel.Story = new Story(gData, tData);
+                SetReferenceTranslationLoaded(false);
                 Logger.Log($"翻译载入成功: 剧本={_scriptPath}, 翻译={filePath}, 对话={tData.Translations.Count}");
                 SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
                     new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
@@ -122,6 +128,15 @@ public partial class TranslatePage : UserControl
 
     private void LoadReviewButton_OnClick(object sender, RoutedEventArgs e)
     {
+        if (_hasReferenceTranslation)
+        {
+            ViewModel.ClearReference();
+            SetReferenceTranslationLoaded(false);
+            SnackbarService.Show("已清除", "参考翻译已清除", ControlAppearance.Info,
+                new SymbolIcon(SymbolRegular.Info24), TimeSpan.FromSeconds(2));
+            return;
+        }
+
         if (ViewModel.IsEmpty)
         {
             SnackbarService.Show("错误", "请先载入剧本", ControlAppearance.Danger,
@@ -144,8 +159,8 @@ public partial class TranslatePage : UserControl
 
         if (tData.IsApplicable(gData))
         {
-            _translationPath = filePath;
             ViewModel.ApplyReference(new Story(gData, tData));
+            SetReferenceTranslationLoaded(true);
             SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
                 new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
         }
@@ -164,6 +179,30 @@ public partial class TranslatePage : UserControl
         ViewModel.Clear();
         _scriptPath = "";
         _translationPath = "";
+        SetReferenceTranslationLoaded(false);
+    }
+
+    private void OpenDownloadPageButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (Application.Current.MainWindow is MainWindow mainWindow)
+            mainWindow.Navigate(typeof(DownloadPage));
+    }
+
+    private void SetReferenceTranslationLoaded(bool loaded)
+    {
+        _hasReferenceTranslation = loaded;
+        UpdateReferenceTranslationButton();
+    }
+
+    private void UpdateReferenceTranslationButton()
+    {
+        if (ReferenceTranslationButton == null) return;
+        ReferenceTranslationButton.Content = _hasReferenceTranslation
+            ? "清除参考翻译"
+            : "载入参考翻译文件";
+        ReferenceTranslationButton.Appearance = _hasReferenceTranslation
+            ? ControlAppearance.Caution
+            : ControlAppearance.Secondary;
     }
 
     private static async Task<bool> ConfirmReplaceCurrentContentAsync()
