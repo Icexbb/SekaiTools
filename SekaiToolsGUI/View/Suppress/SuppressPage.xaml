@@ -4,218 +4,48 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
-             xmlns:converter="clr-namespace:SekaiToolsGUI.Converter"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
-             xmlns:media="clr-namespace:SekaiToolsMedia;assembly=SekaiToolsMedia"
+             xmlns:components="clr-namespace:SekaiToolsGUI.View.Suppress.Components"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance suppress:SuppressPageModel, IsDesignTimeCreatable=True}"
              d:DesignHeight="600" d:DesignWidth="800" d:Background="White">
-    <UserControl.Resources>
-        <converter:BoolToAppearanceConverter x:Key="RunningToAppearance"
-                                             TrueToAppearance="Danger"
-                                             FalseToAppearance="Secondary" />
-    </UserControl.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" Margin="0,5,0,0">
-            <ui:CardControl Height="70" VerticalAlignment="Stretch" Icon="{ui:SymbolIcon Video24}"
-                            Margin="0,0,0,5" HorizontalAlignment="Stretch">
-                <ui:CardControl.Header>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="视频文件" />
-                        <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="{Binding SourceVideo}"
-                                      ToolTip="{Binding SourceVideo}"
-                                      TextTrimming="CharacterEllipsis"
-                                      Visibility="{c:Binding 'SourceVideo.Length!=0', FalseToVisibility=Collapsed}" />
-                    </Grid>
-                </ui:CardControl.Header>
-                <ui:Button HorizontalAlignment="Right"
-                           IsEnabled="{Binding HasNotStarted ,Mode=OneWay}"
-                           Content="浏览" Click="VideoFileBrowser_OnClick" />
-
-            </ui:CardControl>
-
-            <ui:CardControl Height="70" VerticalAlignment="Stretch" Icon="{ui:SymbolIcon Subtitles24}"
-                            Margin="0,0,0,5" HorizontalAlignment="Stretch"
-                            Visibility="{c:Binding 'SourceVideo.Length != 0', FalseToVisibility=Collapsed}">
-                <ui:CardControl.Header>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="字幕文件（可选）" />
-                        <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="{Binding SourceSubtitle}"
-                                      ToolTip="{Binding SourceSubtitle}"
-                                      TextTrimming="CharacterEllipsis"
-                                      Visibility="{c:Binding 'SourceSubtitle.Length!=0', FalseToVisibility=Collapsed}" />
-                        <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="未选择时仅转码"
-                                      Visibility="{c:Binding 'SourceSubtitle.Length==0', FalseToVisibility=Collapsed}" />
-                    </Grid>
-                </ui:CardControl.Header>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <ui:Button Margin="0,0,8,0" Content="清除"
-                               IsEnabled="{Binding HasNotStarted}"
-                               Visibility="{c:Binding 'SourceSubtitle.Length!=0', FalseToVisibility=Collapsed}"
-                               Click="ClearSubtitle_OnClick" />
-                    <ui:Button IsEnabled="{Binding HasNotStarted}"
-                               Content="浏览" Click="ScriptFileBrowser_OnClick" />
-                </StackPanel>
-            </ui:CardControl>
-
-            <ui:CardControl Height="70" VerticalAlignment="Stretch" Icon="{ui:SymbolIcon StreamOutput20}"
-                            Margin="0,0,0,5" HorizontalAlignment="Stretch"
-                            Visibility="{c:Binding 'SourceVideo.Length!=0', FalseToVisibility=Collapsed}">
-                <ui:CardControl.Header>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="输出路径" />
-                        <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="{Binding OutputPath}"
-                                      ToolTip="{Binding OutputPath}"
-                                      TextTrimming="CharacterEllipsis"
-                                      Visibility="{c:Binding 'OutputPath.Length!=0', FalseToVisibility=Collapsed}" />
-                    </Grid>
-                </ui:CardControl.Header>
-                <ui:Button HorizontalAlignment="Right"
-                           IsEnabled="{Binding HasNotStarted}"
-                           Content="浏览" Click="SaveFileBrowser_OnClick" />
-            </ui:CardControl>
-
-            <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon TabInPrivate24}"
-                            Visibility="{c:Binding 'HasNotStarted', FalseToVisibility=Collapsed}">
-                <ui:CardControl.Header>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="画质" />
-                        <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="画质越高，输出文件通常越大" />
-                    </Grid>
-                </ui:CardControl.Header>
-                <ComboBox Width="190" SelectedValue="{Binding QualityPreset, Mode=TwoWay}"
-                          SelectedValuePath="Tag">
-                    <ComboBoxItem Content="高质量（CRF 18）"
-                                  Tag="{x:Static media:VideoQualityPreset.HighQuality}" />
-                    <ComboBoxItem Content="均衡（CRF 21）"
-                                  Tag="{x:Static media:VideoQualityPreset.Balanced}" />
-                    <ComboBoxItem Content="小体积（CRF 25）"
-                                  Tag="{x:Static media:VideoQualityPreset.Compact}" />
-                    <ComboBoxItem Content="自定义"
-                                  Tag="{x:Static media:VideoQualityPreset.Custom}" />
-                </ComboBox>
-            </ui:CardControl>
-
-            <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon AppsAddIn24}"
-                            Visibility="{c:Binding 'HasNotStarted', FalseToVisibility=Collapsed}">
-                <ui:CardControl.Header>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="编码速度" />
-                        <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="速度越慢，相同画质下压缩率通常越高" />
-                    </Grid>
-                </ui:CardControl.Header>
-                <ComboBox Width="190" SelectedValue="{Binding SpeedPreset, Mode=TwoWay}"
-                          SelectedValuePath="Tag">
-                    <ComboBoxItem Content="快速"
-                                  Tag="{x:Static media:VideoEncodingSpeedPreset.Fast}" />
-                    <ComboBoxItem Content="均衡"
-                                  Tag="{x:Static media:VideoEncodingSpeedPreset.Balanced}" />
-                    <ComboBoxItem Content="慢速高压缩率"
-                                  Tag="{x:Static media:VideoEncodingSpeedPreset.Slow}" />
-                </ComboBox>
-            </ui:CardControl>
-
-            <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Settings24}"
-                            Visibility="{c:Binding 'HasNotStarted &amp;&amp; UseCustomCrf', FalseToVisibility=Collapsed}">
-                <ui:CardControl.Header>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="自定义 CRF" />
-                        <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="数值越低画质越高，常用范围为 16–28" />
-                    </Grid>
-                </ui:CardControl.Header>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Width="24" Text="{Binding SuppressCrf}" VerticalAlignment="Center"
-                               Margin="0,0,10,0" />
-                    <Slider Width="150" Minimum="0" Maximum="51" TickFrequency="1"
-                            IsSnapToTickEnabled="True"
-                            Value="{Binding SuppressCrf, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                </StackPanel>
-            </ui:CardControl>
-        </StackPanel>
-        <ui:Card Grid.Row="1" Padding="5" Margin="0,10"
-                 VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
-            <Grid VerticalAlignment="Stretch">
-                <ui:TextBox IsReadOnlyCaretVisible="False"
-                            VerticalAlignment="Stretch" IsReadOnly="True" TextWrapping="Wrap"
-                            Text="{Binding Status}"
-                            TextChanged="StatusTextChange_OnTextChanged"
-                            Visibility="{c:Binding !HasNotStarted,FalseToVisibility=Collapsed}" />
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                            Visibility="{c:Binding HasNotStarted,FalseToVisibility=Collapsed}">
-                    <ui:ProgressRing Margin="0,0,0,8" IsIndeterminate="True"
-                                     Visibility="{c:Binding IsPreparingResources,FalseToVisibility=Collapsed}" />
-                    <ui:Button HorizontalAlignment="Center" Content="开始压制"
-                               Click="StartSuppress_OnClick"
-                               IsEnabled="{Binding CanStartSuppress}" />
-                    <ui:TextBlock Margin="0,8,0,0" HorizontalAlignment="Center"
-                                  Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                  Text="{Binding ConfigError}"
-                                  Visibility="{c:Binding 'ConfigError.Length != 0', FalseToVisibility=Collapsed}" />
-                </StackPanel>
-            </Grid>
-
-        </ui:Card>
-
-        <ui:Card Grid.Row="2" Padding="5" VerticalAlignment="Stretch">
-            <StackPanel>
-                <ui:TextBlock Margin="10,8,10,0" HorizontalAlignment="Center"
-                              Text="{Binding ProgressDescription}" TextWrapping="Wrap"
-                              Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                              Visibility="{c:Binding !HasNotStarted,FalseToVisibility=Collapsed}" />
-                <ProgressBar Value="{Binding Progression}"
-                             Maximum="1" Minimum="0" Margin="10"
-                             Visibility="{c:Binding !HasNotStarted,FalseToVisibility=Collapsed}" />
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
-                            Visibility="{c:Binding !HasNotStarted,FalseToVisibility=Collapsed}">
-                    <ui:Button Name="DisposeButton" Margin="10" Click="DisposeButton_OnClick"
-                               Content="{Binding TaskControlText}"
-                               IsEnabled="{Binding CanControlTask}"
-                               Appearance="{Binding Running, Converter={StaticResource RunningToAppearance}}" />
-                    <ui:Button Name="ClearButton" Margin="10" Click="ClearButton_OnClick"
-                               Content="清空任务" IsEnabled="{Binding CanClearTask}" />
-                    <ui:Button Name="ShowFileButton" Margin="10" Click="ShowFileButton_OnClick"
-                               Visibility="{c:Binding ShowResult, FalseToVisibility=Collapsed}">
-                        显示结果
-                    </ui:Button>
-                </StackPanel>
+        <StackPanel Grid.Row="0" Margin="0,5,0,8" Orientation="Horizontal" VerticalAlignment="Center">
+            <ui:Button Content="创建任务" Click="CreateTask_OnClick"
+                       IsEnabled="{Binding ResourcesReady}" />
+            <ui:Button Content="清除已结束任务" Click="ClearButton_OnClick" Margin="10,0,10,0" />
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <ui:ProgressRing Width="18" Height="18" VerticalAlignment="Center"
+                                 Visibility="{c:Binding IsPreparingResources, FalseToVisibility=Collapsed}" />
+                <TextBlock Margin="6,0,0,0" VerticalAlignment="Center"
+                           Text="{Binding ResourcePreparationError}"
+                           Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+                           Visibility="{c:Binding 'ResourcePreparationError.Length!=0', FalseToVisibility=Collapsed}" />
             </StackPanel>
-        </ui:Card>
+        </StackPanel>
+        <Grid Grid.Row="1" Margin="0,8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <ui:TextBlock Text="任务队列" FontSize="16" FontWeight="SemiBold" />
+            <!--任务列表-->
+            <ui:PassiveScrollViewer Grid.Row="1" Margin="0,8,0,0"
+                                    VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+                <ItemsControl ItemsSource="{Binding Jobs}" HorizontalContentAlignment="Stretch">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <components:SuppressionJobItem />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ui:PassiveScrollViewer>
+        </Grid>
+
     </Grid>
 </UserControl>

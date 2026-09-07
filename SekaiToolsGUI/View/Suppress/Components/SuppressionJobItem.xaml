@@ -1,0 +1,49 @@
+<UserControl x:Class="SekaiToolsGUI.View.Suppress.Components.SuppressionJobItem"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
+             mc:Ignorable="d" d:DesignWidth="400"
+             d:DataContext="{d:DesignInstance suppress:SuppressionJobModel, IsDesignTimeCreatable=True}">
+    <ui:CardExpander Margin="0,0,10,6">
+        <ui:CardExpander.Header>
+            <StackPanel Margin="0,0,10,0">
+                <TextBlock Text="{Binding SourceVideo}" TextTrimming="CharacterEllipsis"
+                           ToolTip="{Binding SourceVideo}" />
+                <TextBlock Text="{Binding OutputPath}" TextTrimming="CharacterEllipsis"
+                           ToolTip="{Binding OutputPath}"
+                           Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+
+                <ProgressBar Value="{Binding Progress.Fraction, Mode=OneWay}" Maximum="1"
+                             Height="6" Margin="0,6" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <ui:TextBlock Text="{Binding Progress.Fraction, StringFormat={}{0:P1}}"
+                                      Margin="0,0,12,0" VerticalAlignment="Center" />
+                        <ui:TextBlock Text="{Binding Progress.FramesPerSecond, StringFormat={}{0:F1} FPS}"
+                                      Margin="0,0,12,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <ui:Button Content="显示结果" Click="ShowFileButton_OnClick"
+                                   IsEnabled="{Binding IsCompleted}" />
+                        <ui:Button Content="取消" Click="CancelJob_OnClick"
+                                   IsEnabled="{Binding CanCancel}" Margin="10,0,0,0" />
+                    </StackPanel>
+                </Grid>
+
+            </StackPanel>
+        </ui:CardExpander.Header>
+        <ui:CardExpander.Content>
+            <ui:PassiveScrollViewer Height="300" VerticalScrollBarVisibility="Auto">
+                <ui:TextBlock Margin="0,0,10,0" Text="{Binding Progress.Status}" VerticalAlignment="Stretch" />
+            </ui:PassiveScrollViewer>
+        </ui:CardExpander.Content>
+    </ui:CardExpander>
+</UserControl>

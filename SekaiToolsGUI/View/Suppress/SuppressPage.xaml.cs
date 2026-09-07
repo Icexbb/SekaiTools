@@ -3,16 +3,15 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.Logging;
-using Microsoft.Win32;
 using SekaiToolsBase;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.General;
+using SekaiToolsGUI.View.Suppress.Components;
 using SekaiToolsGUI.ViewModel.Suppress;
 using SekaiToolsMedia;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
-using TextBox = Wpf.Ui.Controls.TextBox;
 
 namespace SekaiToolsGUI.View.Suppress;
 
@@ -24,7 +23,7 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     {
         DataContext = SuppressPageModel.Instance;
         InitializeComponent();
-        InitializeSuppressor();
+
     }
 
     private static ISnackbarService SnackService =>
@@ -82,87 +81,42 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
         }
     }
 
-    private static string? SelectFile(object sender, RoutedEventArgs e, string filter)
+    private async void CreateTask_OnClick(object sender, RoutedEventArgs e)
     {
-        var openFileDialog = new OpenFileDialog { Filter = filter };
-        var result = openFileDialog.ShowDialog();
-        return result == true ? openFileDialog.FileName : null;
-    }
+        if (!ViewModel.ResourcesReady) return;
 
-    private void VideoFileBrowser_OnClick(object sender, RoutedEventArgs e)
-    {
-        var result = SelectFile(sender, e, "视频文件|*.mp4;*.avi;*.mkv;*.webm;*.wmv");
-        if (result == null) return;
-
-        ViewModel.SourceVideo = result;
-    }
-
-    private void ScriptFileBrowser_OnClick(object sender, RoutedEventArgs e)
-    {
-        var result = SelectFile(sender, e, "字幕文件|*.ass");
-        if (result == null) return;
-
-        ViewModel.SourceSubtitle = result;
-    }
-
-    private void ClearSubtitle_OnClick(object sender, RoutedEventArgs e)
-    {
-        ViewModel.SourceSubtitle = "";
-    }
-
-    private void SaveFileBrowser_OnClick(object sender, RoutedEventArgs e)
-    {
-        var result = SelectSavePath();
-        if (result == null) return;
-
-        ViewModel.OutputPath = result;
-    }
-
-    private string? SelectSavePath()
-    {
-        var openFileDialog = new SaveFileDialog
-        {
-            Filter = "Mp4 文件|*.mp4",
-            DefaultDirectory = Path.GetDirectoryName(ViewModel.SourceVideo),
-            DefaultExt = ".mp4",
-            FileName = Path.ChangeExtension("[STVS]" + Path.GetFileName(ViewModel.SourceVideo), ".mp4")
-        };
-        var result = openFileDialog.ShowDialog();
-        return result == true ? openFileDialog.FileName : null;
-    }
-
-    private async void StartSuppress_OnClick(object sender, RoutedEventArgs e)
-    {
         try
         {
-            var overwriteExisting = File.Exists(ViewModel.OutputPath);
-            if (overwriteExisting && !await ConfirmOverwriteAsync()) return;
+            var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService
+                                ?? throw new InvalidOperationException("内容对话框服务不可用");
+            var dialog = new SuppressionTaskDialog(
+                dialogService.GetDialogHostEx() ?? throw new InvalidOperationException("内容对话框宿主不可用"));
+            var result = await dialogService.ShowAsync(dialog, CancellationToken.None);
+            if (result != ContentDialogResult.Primary) return;
 
-            await BeginSuppressAsync(overwriteExisting);
-        }
-        catch (OperationCanceledException)
-        {
-            // 用户主动停止。
+            var options = dialog.ViewModel.ToOptions();
+            var overwriteExisting = File.Exists(options.OutputPath);
+            if (overwriteExisting && !await ConfirmOverwriteAsync(options.OutputPath)) return;
+
+            EnqueueSuppression(options with { OverwriteExisting = overwriteExisting });
         }
         catch (Exception exc)
         {
-            Logger.Log($"视频压制失败: {exc}", LogLevel.Error);
-            SnackService.Show("视频处理出错", exc.Message, ControlAppearance.Danger,
+            Logger.Log($"创建压制任务失败: {exc}", LogLevel.Error);
+            SnackService.Show("创建任务失败", exc.Message, ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.VideoClipOff24), TimeSpan.FromSeconds(6));
-            if (ViewModel.TaskState != VideoSuppressionState.Failed)
-                ViewModel.FailTask($"压制失败：{exc.Message}");
             if (Debugger.IsAttached) throw;
         }
     }
 
-    private async Task<bool> ConfirmOverwriteAsync()
+    private async Task<bool> ConfirmOverwriteAsync(string outputPath)
     {
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
         var result = await dialogService.ShowSimpleDialogAsync(
             new SimpleContentDialogCreateOptions
             {
                 Title = "覆盖已有文件？",
-                Content = $"输出文件已存在：\n{ViewModel.OutputPath}\n\n压制成功后将替换该文件。",
+                Content = $"输出文件已存在：\n{outputPath}\n\n压制成功后将替换该文件。",
                 PrimaryButtonText = "覆盖",
                 CloseButtonText = "取消"
             }, CancellationToken.None);
@@ -170,43 +124,12 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     }
 
 
-    private async void DisposeButton_OnClick(object sender, RoutedEventArgs e)
+    private void ClearButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.IsTaskActive)
-        {
-            await CancelSuppressAsync();
-            return;
-        }
-
-        ViewModel.ReloadStatus();
-        ClearTaskbarProgress();
+        foreach (var job in ViewModel.Jobs.Where(x => x.Progress.State is VideoSuppressionState.Completed
+                     or VideoSuppressionState.Cancelled or VideoSuppressionState.Failed).ToList())
+            ViewModel.Jobs.Remove(job);
+        if (ViewModel.Jobs.Count == 0) ClearTaskbarProgress();
     }
 
-    private async void ClearButton_OnClick(object sender, RoutedEventArgs e)
-    {
-        await CancelSuppressAsync();
-        ViewModel.Reset();
-        ClearTaskbarProgress();
-    }
-
-    private void ShowFileButton_OnClick(object sender, RoutedEventArgs e)
-    {
-        ShowFile(ViewModel.OutputPath);
-        return;
-
-        void ShowFile(string path)
-        {
-            var psi = new ProcessStartInfo("Explorer.exe")
-            {
-                Arguments = "/e,/select," + path
-            };
-            Process.Start(psi);
-        }
-    }
-
-    private void StatusTextChange_OnTextChanged(object sender, TextChangedEventArgs e)
-    {
-        var box = (TextBox)sender!;
-        box.ScrollToEnd();
-    }
 }

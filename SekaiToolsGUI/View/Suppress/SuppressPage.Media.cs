@@ -7,49 +7,36 @@ namespace SekaiToolsGUI.View.Suppress;
 
 public partial class SuppressPage
 {
-    private static readonly VideoSuppressor VideoSuppressor = new(ResourceManager.Instance);
-
-    private void InitializeSuppressor()
+    private static readonly VideoSuppressionQueue Queue = new(async (options, report, token) =>
     {
-        VideoSuppressor.ProgressChanged += ApplySuppressionProgress;
-    }
-
-    private async Task BeginSuppressAsync(bool overwriteExisting)
-    {
-        ViewModel.BeginTask();
-        var encodingSettings = new X264EncodingSettings(
-            ViewModel.QualityPreset,
-            ViewModel.SpeedPreset,
-            ViewModel.SuppressCrf);
-        var options = new VideoSuppressionOptions(
-            ViewModel.SourceVideo,
-            ViewModel.SourceSubtitle,
-            ViewModel.OutputPath,
-            encodingSettings,
-            ViewModel.SourceFrameCount,
-            overwriteExisting);
-
         using var powerRequest = SystemPowerRequest.Acquire("SekaiTools 正在压制视频");
-        await VideoSuppressor.SuppressAsync(options);
-    }
+        using var suppressor = new VideoSuppressor(ResourceManager.Instance);
+        suppressor.ProgressChanged += report;
+        await suppressor.SuppressAsync(options, token);
+    });
 
-    private async Task CancelSuppressAsync()
+    private void EnqueueSuppression(VideoSuppressionOptions options)
     {
-        await VideoSuppressor.CancelAsync();
-    }
+        options.Validate();
+        var output = System.IO.Path.GetFullPath(options.OutputPath);
+        if (ViewModel.Jobs.Any(x => (x.CanCancel || x.Progress.State == VideoSuppressionState.Cancelling) &&
+                string.Equals(System.IO.Path.GetFullPath(x.OutputPath), output, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("队列中已有任务使用此输出路径，请选择其他路径。");
 
-    private void ApplySuppressionProgress(VideoSuppressionProgress progress)
-    {
-        void Apply()
+        var job = new VideoSuppressionJob(options);
+        var model = new SekaiToolsGUI.ViewModel.Suppress.SuppressionJobModel(job);
+        job.ProgressChanged += progress =>
         {
-            ViewModel.ApplyProgress(progress);
-            ApplyTaskbarProgress(progress);
-        }
-
-        if (Dispatcher.CheckAccess())
-            Apply();
-        else
-            Dispatcher.BeginInvoke(Apply);
+            var dispatcher = Application.Current.Dispatcher;
+            if (dispatcher.HasShutdownStarted) return;
+            dispatcher.BeginInvoke(() =>
+            {
+                model.Progress = progress;
+                ApplyTaskbarProgress(progress);
+            });
+        };
+        ViewModel.Jobs.Add(model);
+        Queue.Enqueue(job);
     }
 
     private static void ApplyTaskbarProgress(VideoSuppressionProgress progress)
@@ -86,6 +73,7 @@ public partial class SuppressPage
 
     internal static void DisposeSuppressor()
     {
-        VideoSuppressor.Dispose();
+        Queue.Dispose();
+        Queue.Completion.GetAwaiter().GetResult();
     }
 }
