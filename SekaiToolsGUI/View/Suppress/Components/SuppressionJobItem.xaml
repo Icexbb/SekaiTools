@@ -7,7 +7,7 @@
              xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
              mc:Ignorable="d" d:DesignWidth="400"
              d:DataContext="{d:DesignInstance suppress:SuppressionJobModel, IsDesignTimeCreatable=True}">
-    <ui:CardExpander Margin="0,0,10,6">
+    <ui:CardExpander x:Name="Control" Margin="0,0,10,6">
         <ui:CardExpander.Header>
             <StackPanel Margin="0,0,10,0">
                 <Grid>
