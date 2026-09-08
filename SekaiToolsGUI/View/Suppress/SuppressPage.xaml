@@ -33,7 +33,6 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <ui:TextBlock Text="任务队列" FontSize="16" FontWeight="SemiBold" />
             <!--任务列表-->
             <ui:PassiveScrollViewer Grid.Row="1" Margin="0,8,0,0"
                                     VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
@@ -46,6 +45,5 @@
                 </ItemsControl>
             </ui:PassiveScrollViewer>
         </Grid>
-
     </Grid>
 </UserControl>

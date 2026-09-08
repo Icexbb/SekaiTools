@@ -51,12 +51,23 @@ public sealed record VideoSuppressionProgress(
     int TotalFrames,
     double FramesPerSecond,
     VideoSuppressionState State,
-    string Status,
+    string Log,
     string Bitrate = "",
     string Speed = "",
     string OutputSize = "",
     string OutputTime = "")
 {
+    public string Status => State switch
+    {
+        VideoSuppressionState.Idle => "等待中",
+        VideoSuppressionState.Preparing or VideoSuppressionState.Running => "正在处理",
+        VideoSuppressionState.Cancelling => "正在取消",
+        VideoSuppressionState.Completed => "已完成",
+        VideoSuppressionState.Cancelled => "已取消",
+        VideoSuppressionState.Failed => "失败",
+        _ => State.ToString()
+    };
+
     public bool Running => State is VideoSuppressionState.Preparing
         or VideoSuppressionState.Running
         or VideoSuppressionState.Cancelling;

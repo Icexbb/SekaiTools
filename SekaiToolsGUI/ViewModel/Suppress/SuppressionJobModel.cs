@@ -24,7 +24,6 @@ public sealed class SuppressionJobModel(VideoSuppressionJob job) : ViewModelBase
         Progress = Progress with
         {
             State = Progress.State == VideoSuppressionState.Idle ? VideoSuppressionState.Cancelled : VideoSuppressionState.Cancelling,
-            Status = Progress.State == VideoSuppressionState.Idle ? "任务已取消" : "正在取消…"
         };
         Job.Cancel();
     }

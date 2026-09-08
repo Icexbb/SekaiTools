@@ -10,12 +10,25 @@
     <ui:CardExpander Margin="0,0,10,6">
         <ui:CardExpander.Header>
             <StackPanel Margin="0,0,10,0">
-                <TextBlock Text="{Binding SourceVideo}" TextTrimming="CharacterEllipsis"
-                           ToolTip="{Binding SourceVideo}" />
-                <TextBlock Text="{Binding OutputPath}" TextTrimming="CharacterEllipsis"
-                           ToolTip="{Binding OutputPath}"
-                           Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="{Binding SourceVideo}" TextTrimming="CharacterEllipsis"
+                                   ToolTip="{Binding SourceVideo}" />
+                        <TextBlock Text="{Binding OutputPath}" TextTrimming="CharacterEllipsis"
+                                   ToolTip="{Binding OutputPath}"
+                                   Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
 
+
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="{Binding Progress.Status}" FontWeight="SemiBold" />
+                    </StackPanel>
+                </Grid>
                 <ProgressBar Value="{Binding Progress.Fraction, Mode=OneWay}" Maximum="1"
                              Height="6" Margin="0,6" />
                 <Grid>
@@ -41,8 +54,9 @@
             </StackPanel>
         </ui:CardExpander.Header>
         <ui:CardExpander.Content>
-            <ui:PassiveScrollViewer Height="300" VerticalScrollBarVisibility="Auto">
-                <ui:TextBlock Margin="0,0,10,0" Text="{Binding Progress.Status}" VerticalAlignment="Stretch" />
+            <ui:PassiveScrollViewer Height="100" VerticalScrollBarVisibility="Auto">
+                <ui:TextBlock Margin="0,0,10,0" Text="{Binding Progress.Log}"
+                              TextWrapping="Wrap" VerticalAlignment="Stretch" />
             </ui:PassiveScrollViewer>
         </ui:CardExpander.Content>
     </ui:CardExpander>

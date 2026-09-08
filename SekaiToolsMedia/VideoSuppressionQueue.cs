@@ -34,11 +34,11 @@ public sealed class VideoSuppressionQueue : IDisposable
                 source.Token.ThrowIfCancellationRequested();
                 job.Report(new(0, job.Options.SourceFrameCount, 0, VideoSuppressionState.Preparing, "正在准备压制…"));
                 await _run(job.Options, job.Report, source.Token).ConfigureAwait(false);
-                job.Finish(VideoSuppressionState.Completed, "压制完成");
+                job.Finish(VideoSuppressionState.Completed);
             }
             catch (OperationCanceledException) when (source.IsCancellationRequested)
             {
-                job.Finish(VideoSuppressionState.Cancelled, "任务已取消");
+                job.Finish(VideoSuppressionState.Cancelled);
             }
             catch (Exception ex)
             {
@@ -70,5 +70,11 @@ public sealed class VideoSuppressionJob(VideoSuppressionOptions options)
         Progress = progress;
         ProgressChanged?.Invoke(progress);
     }
-    internal void Finish(VideoSuppressionState state, string status) => Report(Progress with { State = state, Status = status });
+    internal void Finish(VideoSuppressionState state, string? log = null)
+    {
+        var finalLog = string.IsNullOrWhiteSpace(log)
+            ? Progress.Log
+            : $"{Progress.Log}\n{log}";
+        Report(Progress with { State = state, Log = finalLog.Trim() });
+    }
 }
