@@ -135,7 +135,7 @@ public partial class TimelineEditor : UserControl
     private readonly List<TimelineEventSelection> _events = [];
     private readonly DispatcherTimer _playbackTimer;
     private readonly Stack<TimingEditCommand> _undoStack = new();
-    private WaveOutEvent? _audioOutput;
+    private WaveOut? _audioOutput;
     private MediaFoundationReader? _audioReader;
     private int _dragAnchorFrame;
     private DragMode _dragMode;
@@ -954,7 +954,7 @@ public partial class TimelineEditor : UserControl
     private void StartAudioSegment()
     {
         MediaFoundationReader? reader = null;
-        WaveOutEvent? output = null;
+        WaveOut? output = null;
         try
         {
             reader = new MediaFoundationReader(_mediaPath);
@@ -963,7 +963,7 @@ public partial class TimelineEditor : UserControl
                 SkipOver = _playbackStart,
                 Take = _playbackEnd - _playbackStart
             };
-            output = new WaveOutEvent();
+            output = new WaveOut();
             output.Init(segment);
             output.PlaybackStopped += AudioOutput_OnPlaybackStopped;
             _audioReader = reader;
