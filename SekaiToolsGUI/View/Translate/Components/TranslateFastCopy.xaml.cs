@@ -12,6 +12,8 @@ namespace SekaiToolsGUI.View.Translate.Components;
 
 public partial class TranslateFastCopy : UserControl
 {
+    public event EventHandler? CustomCharacterAdding;
+
     public TranslateFastCopy()
     {
         InitializeComponent();
@@ -79,6 +81,7 @@ public partial class TranslateFastCopy : UserControl
 
     private async void ButtonAdd_OnClick(object sender, RoutedEventArgs e)
     {
+        CustomCharacterAdding?.Invoke(this, EventArgs.Empty);
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
 
         var dialog = new AddCustomDialog(dialogService.GetDialogHostEx() ?? throw new InvalidOperationException());

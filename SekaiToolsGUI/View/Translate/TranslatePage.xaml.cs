@@ -261,4 +261,14 @@ public partial class TranslatePage : UserControl
             return ViewModel.Result;
         }
     }
+
+    private void SpecialCharButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        SpecialCharPopover.Open();
+    }
+
+    private void SpecialCharacters_OnCustomCharacterAdding(object? sender, EventArgs e)
+    {
+        SpecialCharPopover.Close();
+    }
 }

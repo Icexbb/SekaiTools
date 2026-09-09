@@ -7,6 +7,7 @@
              xmlns:components="clr-namespace:SekaiToolsGUI.View.Translate.Components"
              xmlns:translate="clr-namespace:SekaiToolsGUI.ViewModel.Translate"
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
+             xmlns:control="clr-namespace:SekaiToolsGUI.Control"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="800" d:Background="White"
              d:DataContext="{d:DesignInstance translate:TranslatePageModel, IsDesignTimeCreatable=True}">
@@ -43,6 +44,17 @@
                         <ui:Button Name="ReferenceTranslationButton" Click="LoadReviewButton_OnClick"
                                    IsEnabled="{c:Binding Path='Events.Length!=0'}"
                                    Content="载入参考翻译文件" />
+                        <control:Popover x:Name="SpecialCharPopover" Margin="8,0,0,0"
+                                         Padding="0" StaysOpen="False">
+                            <control:Popover.Target>
+                                <ui:Button Click="SpecialCharButton_OnClick" Content="复制特殊字符" />
+                            </control:Popover.Target>
+                            <control:Popover.Content>
+                                <components:TranslateFastCopy Width="240" MaxHeight="420"
+                                                              CustomCharacterAdding="SpecialCharacters_OnCustomCharacterAdding" />
+                            </control:Popover.Content>
+
+                        </control:Popover>
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Grid.Column="2" HorizontalAlignment="Right">
@@ -56,7 +68,6 @@
                 </StackPanel>
             </Grid>
         </ui:Card>
-        <components:TranslateFastCopy Visibility="Collapsed" Grid.Row="1" Grid.Column="0" Width="160" />
         <!-- <ui:Card Grid.Column="1" Margin="5,0,0,0"  -->
         <!--          Grid.Row="1" Name="TranslateContainer" -->
         <!--          VerticalContentAlignment="Top" VerticalAlignment="Stretch" Padding="2"> -->
