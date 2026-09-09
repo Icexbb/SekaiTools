@@ -35,8 +35,8 @@ public partial class SuppressPage
                 ApplyTaskbarProgress(progress);
             });
         };
-        ViewModel.Jobs.Add(model);
         Queue.Enqueue(job);
+        ViewModel.Jobs.Add(model);
     }
 
     private static void ApplyTaskbarProgress(VideoSuppressionProgress progress)

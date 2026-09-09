@@ -5,19 +5,34 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
+             xmlns:media="clr-namespace:SekaiToolsMedia;assembly=SekaiToolsMedia"
              mc:Ignorable="d" d:DesignWidth="400"
              d:DataContext="{d:DesignInstance suppress:SuppressionJobModel, IsDesignTimeCreatable=True}">
     <ui:CardExpander x:Name="Control" Margin="0,0,10,6">
+        <ui:CardExpander.Style>
+            <Style TargetType="ui:CardExpander" BasedOn="{StaticResource {x:Type ui:CardExpander}}">
+                <Setter Property="BorderThickness" Value="2" />
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Progress.State}" Value="{x:Static media:VideoSuppressionState.Preparing}"><Setter Property="BorderBrush" Value="LightBlue" /></DataTrigger>
+                    <DataTrigger Binding="{Binding Progress.State}" Value="{x:Static media:VideoSuppressionState.Running}"><Setter Property="BorderBrush" Value="LightBlue" /></DataTrigger>
+                    <DataTrigger Binding="{Binding Progress.State}" Value="{x:Static media:VideoSuppressionState.Cancelling}"><Setter Property="BorderBrush" Value="Khaki" /></DataTrigger>
+                    <DataTrigger Binding="{Binding Progress.State}" Value="{x:Static media:VideoSuppressionState.Completed}"><Setter Property="BorderBrush" Value="LightGreen" /></DataTrigger>
+                    <DataTrigger Binding="{Binding Progress.State}" Value="{x:Static media:VideoSuppressionState.Cancelled}"><Setter Property="BorderBrush" Value="LightGray" /></DataTrigger>
+                    <DataTrigger Binding="{Binding Progress.State}" Value="{x:Static media:VideoSuppressionState.Failed}"><Setter Property="BorderBrush" Value="LightPink" /></DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ui:CardExpander.Style>
         <ui:CardExpander.Header>
             <StackPanel Margin="0,0,10,0">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Text="{Binding SourceVideo}" TextTrimming="CharacterEllipsis"
+                        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
                                    ToolTip="{Binding SourceVideo}" />
                         <TextBlock Text="{Binding OutputPath}" TextTrimming="CharacterEllipsis"
                                    ToolTip="{Binding OutputPath}"
@@ -29,7 +44,10 @@
                         <TextBlock Text="{Binding Progress.Status}" FontWeight="SemiBold" />
                     </StackPanel>
                 </Grid>
+                <TextBlock Text="{Binding EncodingDescription}" Margin="0,6,0,0"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 <ProgressBar Value="{Binding Progress.Fraction, Mode=OneWay}" Maximum="1"
+                             IsIndeterminate="{Binding IsPreparing}"
                              Height="6" Margin="0,6" />
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -54,10 +72,12 @@
             </StackPanel>
         </ui:CardExpander.Header>
         <ui:CardExpander.Content>
-            <ui:PassiveScrollViewer Height="100" VerticalScrollBarVisibility="Auto">
-                <ui:TextBlock Margin="0,0,10,0" Text="{Binding Progress.Log}"
-                              TextWrapping="Wrap" VerticalAlignment="Stretch" />
-            </ui:PassiveScrollViewer>
+            <StackPanel>
+                <TextBlock Text="处理日志 · 可选中复制" Margin="0,0,0,8" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <TextBox Height="200" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True"
+                         FontFamily="Consolas" FontSize="12" TextWrapping="NoWrap"
+                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" />
+            </StackPanel>
         </ui:CardExpander.Content>
     </ui:CardExpander>
 </UserControl>

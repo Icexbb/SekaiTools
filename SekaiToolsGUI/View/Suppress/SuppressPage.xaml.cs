@@ -90,15 +90,8 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
             var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService
                                 ?? throw new InvalidOperationException("内容对话框服务不可用");
             var dialog = new SuppressionTaskDialog(
-                dialogService.GetDialogHostEx() ?? throw new InvalidOperationException("内容对话框宿主不可用"));
-            var result = await dialogService.ShowAsync(dialog, CancellationToken.None);
-            if (result != ContentDialogResult.Primary) return;
-
-            var options = dialog.ViewModel.ToOptions();
-            var overwriteExisting = File.Exists(options.OutputPath);
-            if (overwriteExisting && !await ConfirmOverwriteAsync(options.OutputPath)) return;
-
-            EnqueueSuppression(options with { OverwriteExisting = overwriteExisting });
+                dialogService.GetDialogHostEx() ?? throw new InvalidOperationException("内容对话框宿主不可用"), EnqueueSuppression);
+            await dialogService.ShowAsync(dialog, CancellationToken.None);
         }
         catch (Exception exc)
         {
@@ -108,21 +101,6 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
             if (Debugger.IsAttached) throw;
         }
     }
-
-    private async Task<bool> ConfirmOverwriteAsync(string outputPath)
-    {
-        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-        var result = await dialogService.ShowSimpleDialogAsync(
-            new SimpleContentDialogCreateOptions
-            {
-                Title = "覆盖已有文件？",
-                Content = $"输出文件已存在：\n{outputPath}\n\n压制成功后将替换该文件。",
-                PrimaryButtonText = "覆盖",
-                CloseButtonText = "取消"
-            }, CancellationToken.None);
-        return result == ContentDialogResult.Primary;
-    }
-
 
     private void ClearButton_OnClick(object sender, RoutedEventArgs e)
     {

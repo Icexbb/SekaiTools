@@ -15,19 +15,37 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" Margin="0,5,0,8" Orientation="Horizontal" VerticalAlignment="Center">
-            <ui:Button Content="创建任务" Click="CreateTask_OnClick"
-                       IsEnabled="{Binding ResourcesReady}" />
-            <ui:Button Content="清除已结束任务" Click="ClearButton_OnClick" Margin="10,0,10,0" />
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <ui:ProgressRing Width="18" Height="18" VerticalAlignment="Center"
-                                 Visibility="{c:Binding IsPreparingResources, FalseToVisibility=Collapsed}" />
-                <TextBlock Margin="6,0,0,0" VerticalAlignment="Center"
-                           Text="{Binding ResourcePreparationError}"
-                           Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
-                           Visibility="{c:Binding 'ResourcePreparationError.Length!=0', FalseToVisibility=Collapsed}" />
-            </StackPanel>
-        </StackPanel>
+        <ui:Card Padding="5" Grid.Row="0" Margin="0,5,0,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding QueueSummary}" VerticalAlignment="Center"
+                           Margin="10,0,10,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ui:ProgressRing Width="18" Height="18" VerticalAlignment="Center"
+                                     Visibility="{c:Binding IsPreparingResources, FalseToVisibility=Collapsed}" />
+                    <TextBlock Margin="6,0,0,0" VerticalAlignment="Center"
+                               Text="{Binding ResourcePreparationError}"
+                               Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
+                               Visibility="{c:Binding 'ResourcePreparationError.Length!=0', FalseToVisibility=Collapsed}" />
+                </StackPanel>
+
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <ui:Button Content="创建任务" Click="CreateTask_OnClick"
+                               IsEnabled="{Binding ResourcesReady}" Appearance="Primary" />
+                    <ui:Button Content="清除已结束任务" IsEnabled="{Binding CanClear}" Click="ClearButton_OnClick"
+                               Margin="10,0,10,0" />
+                </StackPanel>
+
+
+            </Grid>
+
+        </ui:Card>
         <Grid Grid.Row="1" Margin="0,8">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -44,6 +62,15 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </ui:PassiveScrollViewer>
+            <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Visibility="{c:Binding 'Jobs.Count==0', FalseToVisibility=Collapsed}">
+                <TextBlock Text="还没有压制任务" HorizontalAlignment="Center" FontSize="18"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                <TextBlock Text="点击上方“创建任务”，选择视频并设置输出参数。" Margin="0,18,0,0"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <ui:Button Content="创建任务" Click="CreateTask_OnClick" HorizontalAlignment="Center" Margin="0,20,0,0"
+                           IsEnabled="{Binding ResourcesReady}" Appearance="Primary" />
+            </StackPanel>
         </Grid>
     </Grid>
 </UserControl>
