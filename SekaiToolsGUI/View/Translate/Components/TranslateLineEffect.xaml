@@ -7,8 +7,8 @@
              xmlns:translate="clr-namespace:SekaiToolsGUI.ViewModel.Translate"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance translate:LineEffectModel, IsDesignTimeCreatable=False}"
              d:DesignWidth="800"
-             HorizontalAlignment="Stretch">
-    <Grid Height="32">
+             Height="32" HorizontalAlignment="Stretch">
+    <Grid Height="32" HorizontalAlignment="Stretch">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="150" />
             <ColumnDefinition Width="*" />
@@ -20,11 +20,6 @@
         </ui:Card>
         <ui:Card Grid.Column="1" Margin="0" Padding="0">
             <Grid>
-                <Grid.Resources>
-                    <Style TargetType="ui:SymbolIcon">
-                        <Setter Property="Margin" Value="5" />
-                    </Style>
-                </Grid.Resources>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
@@ -37,7 +32,7 @@
                            HorizontalAlignment="Stretch"
                            TextAlignment="Center"
                            Text="{Binding Path= Content.Original}" />
-                <ui:SymbolIcon Grid.Column="1" Symbol="ArrowRight28" />
+                <ui:SymbolIcon Grid.Column="1" Symbol="ArrowRight28" Margin="5" />
                 <ui:TextBox Grid.Column="2"
                             Padding="5,2"
                             BorderBrush="Transparent"
