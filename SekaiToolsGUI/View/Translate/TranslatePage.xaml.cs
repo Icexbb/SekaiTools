@@ -1,7 +1,9 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SekaiToolsBase;
@@ -19,17 +21,18 @@ namespace SekaiToolsGUI.View.Translate;
 
 public partial class TranslatePage : UserControl
 {
-    private bool _hasReferenceTranslation;
-    private string _scriptPath = "";
-
-    private string _translationPath = "";
-
     public TranslatePage()
     {
         InitializeComponent();
         DataContext = new TranslatePageModel();
-        UpdateReferenceTranslationButton();
-        // TestLoad();
+        ViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(TranslatePageModel.ScriptPath)
+                or nameof(TranslatePageModel.TranslationPath)
+                or nameof(TranslatePageModel.ReferenceTranslationPath))
+                UpdateLoadButtons();
+        };
+        UpdateLoadButtons();
     }
 
     public TranslatePageModel ViewModel => (TranslatePageModel)DataContext;
@@ -38,14 +41,15 @@ public partial class TranslatePage : UserControl
     private static ISnackbarService SnackbarService =>
         ((MainWindow)Application.Current.MainWindow!).WindowSnackbarService;
 
-    private void TestLoad()
-    {
-        _scriptPath = @"E:\ProjectSekai\test\aprilfool_2024_01.json";
-        ViewModel.Story = Story.FromFile(_scriptPath);
-    }
-
     private async void LoadFileButton_OnClick(object sender, RoutedEventArgs e)
     {
+        if (ViewModel.HasScript)
+        {
+            if (!await ConfirmReplaceCurrentContentAsync()) return;
+            ViewModel.Clear();
+            return;
+        }
+
         var openFileDialog = new OpenFileDialog
         {
             Filter = "剧本文件|*.json;*.asset"
@@ -53,10 +57,12 @@ public partial class TranslatePage : UserControl
 
         if (openFileDialog.ShowDialog() != true) return;
 
-        Story story;
+        GameScript script;
         try
         {
-            story = Story.FromFile(openFileDialog.FileName);
+            script = new GameScript(openFileDialog.FileName);
+            // 先验证能够转换，再更新当前页面状态。
+            _ = new Story(script, new TranslationData(null));
         }
         catch (Exception exception)
         {
@@ -67,17 +73,21 @@ public partial class TranslatePage : UserControl
 
         if (!ViewModel.IsEmpty && !await ConfirmReplaceCurrentContentAsync()) return;
 
-        _scriptPath = openFileDialog.FileName;
-        _translationPath = "";
-        ViewModel.Story = story;
-        SetReferenceTranslationLoaded(false);
+        ViewModel.LoadScript(script, openFileDialog.FileName);
         SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
             new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
     }
 
     private async void LoadTranslationButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.IsEmpty)
+        if (ViewModel.HasTranslation)
+        {
+            if (!await ConfirmReplaceCurrentContentAsync()) return;
+            ViewModel.ClearTranslation();
+            return;
+        }
+
+        if (!ViewModel.HasScript)
         {
             SnackbarService.Show("错误", "请先载入剧本", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
@@ -97,16 +107,12 @@ public partial class TranslatePage : UserControl
             var tData = new TranslationData(filePath);
             foreach (var t in tData.Translations) t.Body = t.Body.Replace("\\N", "\n");
 
-            var gData = new GameScript(_scriptPath);
-
-            if (tData.IsApplicable(gData))
+            if (ViewModel.IsTranslationApplicable(tData))
             {
                 if (!await ConfirmReplaceCurrentContentAsync()) return;
 
-                _translationPath = filePath;
-                ViewModel.Story = new Story(gData, tData);
-                SetReferenceTranslationLoaded(false);
-                Logger.Log($"翻译载入成功: 剧本={_scriptPath}, 翻译={filePath}, 对话={tData.Translations.Count}");
+                ViewModel.LoadTranslation(tData, filePath);
+                Logger.Log($"翻译载入成功: 剧本={ViewModel.ScriptPath}, 翻译={filePath}, 对话={tData.Translations.Count}");
                 SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
                     new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
             }
@@ -127,16 +133,15 @@ public partial class TranslatePage : UserControl
 
     private void LoadReviewButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (_hasReferenceTranslation)
+        if (ViewModel.HasReferenceTranslation)
         {
             ViewModel.ClearReference();
-            SetReferenceTranslationLoaded(false);
             SnackbarService.Show("已清除", "参考翻译已清除", ControlAppearance.Info,
                 new SymbolIcon(SymbolRegular.Info24), TimeSpan.FromSeconds(2));
             return;
         }
 
-        if (ViewModel.IsEmpty)
+        if (!ViewModel.HasScript)
         {
             SnackbarService.Show("错误", "请先载入剧本", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
@@ -151,34 +156,37 @@ public partial class TranslatePage : UserControl
         if (openFileDialog.ShowDialog() != true) return;
         var filePath = openFileDialog.FileName;
 
-        var tData = new TranslationData(filePath);
-        foreach (var t in tData.Translations) t.Body = t.Body.Replace("\\N", "\n");
-
-        var gData = new GameScript(_scriptPath);
-
-        if (tData.IsApplicable(gData))
+        try
         {
-            ViewModel.ApplyReference(new Story(gData, tData));
-            SetReferenceTranslationLoaded(true);
-            SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
-                new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
+            var tData = new TranslationData(filePath);
+            foreach (var t in tData.Translations) t.Body = t.Body.Replace("\\N", "\n");
+
+            if (ViewModel.IsTranslationApplicable(tData))
+            {
+                ViewModel.LoadReferenceTranslation(tData, filePath);
+                SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
+                    new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
+            }
+            else
+            {
+                SnackbarService.Show("错误", "翻译数据不适用于此剧本", ControlAppearance.Danger,
+                    new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
+            }
         }
-        else
+        catch (Exception ex)
         {
-            SnackbarService.Show("错误", "翻译数据不适用于此剧本", ControlAppearance.Danger,
-                new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
+            Logger.Log($"参考翻译载入失败: {ex.Message}", LogLevel.Error);
+            SnackbarService.Show("错误", $"载入失败: {ex.Message}", ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(5));
         }
     }
 
 
     private async void ResetButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.IsEmpty || !await ConfirmReplaceCurrentContentAsync()) return;
+        if (!ViewModel.HasScript || !await ConfirmReplaceCurrentContentAsync()) return;
 
         ViewModel.Clear();
-        _scriptPath = "";
-        _translationPath = "";
-        SetReferenceTranslationLoaded(false);
     }
 
     private void OpenDownloadPageButton_OnClick(object sender, RoutedEventArgs e)
@@ -187,21 +195,60 @@ public partial class TranslatePage : UserControl
             mainWindow.Navigate(typeof(DownloadPage));
     }
 
-    private void SetReferenceTranslationLoaded(bool loaded)
+    private void UpdateLoadButtons()
     {
-        _hasReferenceTranslation = loaded;
-        UpdateReferenceTranslationButton();
+        UpdateButton(LoadScriptButton, ViewModel.ScriptPath, "载入剧本", "清除剧本");
+        UpdateButton(LoadTranslationButton, ViewModel.TranslationPath, "载入翻译文件", "清除翻译");
+        UpdateButton(ReferenceTranslationButton, ViewModel.ReferenceTranslationPath, "载入参考翻译文件", "清除参考翻译");
+        UpdateFilePath(TextBlockScriptFile, ViewModel.ScriptPath);
+        UpdateFilePath(TextBlockTranslation, ViewModel.TranslationPath);
+        UpdateFilePath(TextBlockTranslationReference, ViewModel.ReferenceTranslationPath);
+
+        static void UpdateButton(Wpf.Ui.Controls.Button button, string path, string loadText, string clearText)
+        {
+            var loaded = !string.IsNullOrEmpty(path);
+            button.Content = loaded ? clearText : loadText;
+            button.Appearance = loaded ? ControlAppearance.Caution : ControlAppearance.Secondary;
+            button.ToolTip = loaded ? path : null;
+        }
     }
 
-    private void UpdateReferenceTranslationButton()
+    private static void UpdateFilePath(System.Windows.Controls.TextBlock textBlock, string path)
     {
-        if (ReferenceTranslationButton == null) return;
-        ReferenceTranslationButton.Content = _hasReferenceTranslation
-            ? "清除参考翻译"
-            : "载入参考翻译文件";
-        ReferenceTranslationButton.Appearance = _hasReferenceTranslation
-            ? ControlAppearance.Caution
-            : ControlAppearance.Secondary;
+        textBlock.ToolTip = string.IsNullOrEmpty(path) ? null : path;
+        textBlock.Text = CompactPath(path);
+
+        string CompactPath(string fullPath)
+        {
+            if (string.IsNullOrEmpty(fullPath) || Fits(fullPath)) return fullPath;
+
+            var root = Path.GetPathRoot(fullPath) ?? string.Empty;
+            // 从前向后省略目录，优先保留完整文件名及末尾目录。
+            for (var i = root.Length; i < fullPath.Length; i++)
+            {
+                if (fullPath[i] is not ('\\' or '/')) continue;
+                var candidate = root + ".." + fullPath[i..];
+                if (Fits(candidate)) return candidate;
+            }
+
+            // 文件名本身过长时仍从中间省略，保留路径开头和扩展名。
+            for (var keep = fullPath.Length - 1; keep > 0; keep--)
+            {
+                var prefixLength = Math.Min(root.Length, keep / 2);
+                var candidate = fullPath[..prefixLength] + ".." + fullPath[^(keep - prefixLength)..];
+                if (Fits(candidate)) return candidate;
+            }
+
+            return "..";
+        }
+
+        bool Fits(string text)
+        {
+            var formatted = new FormattedText(text, CultureInfo.CurrentUICulture, textBlock.FlowDirection,
+                new Typeface(textBlock.FontFamily, textBlock.FontStyle, textBlock.FontWeight, textBlock.FontStretch),
+                textBlock.FontSize, Brushes.Black, VisualTreeHelper.GetDpi(textBlock).PixelsPerDip);
+            return formatted.WidthIncludingTrailingWhitespace <= textBlock.MaxWidth;
+        }
     }
 
     private static async Task<bool> ConfirmReplaceCurrentContentAsync()
@@ -230,7 +277,7 @@ public partial class TranslatePage : UserControl
 
         var dialog = new SaveFileDialog(
             dialogService.GetDialogHostEx() ?? throw new InvalidOperationException(),
-            _scriptPath, _translationPath);
+            ViewModel.ScriptPath, ViewModel.TranslationPath);
         var token = CancellationToken.None;
         var dialogResult = await dialogService.ShowAsync(dialog, token);
         if (dialogResult != ContentDialogResult.Primary) return;

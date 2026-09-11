@@ -1,10 +1,76 @@
 using SekaiToolsBase.Story;
 using SekaiToolsBase.Story.StoryEvent;
+using SekaiToolsBase.GameScript;
+using SekaiToolsBase.Story.Translation;
 
 namespace SekaiToolsGUI.ViewModel.Translate;
 
 public class TranslatePageModel : ViewModelBase
 {
+    private GameScript? _loadedScript;
+    private Story? _referenceStory;
+
+    public string ScriptPath
+    {
+        get => GetProperty(string.Empty);
+        private set { SetProperty(value); OnPropertyChanged(nameof(HasScript)); }
+    }
+
+    public string TranslationPath
+    {
+        get => GetProperty(string.Empty);
+        private set { SetProperty(value); OnPropertyChanged(nameof(HasTranslation)); }
+    }
+
+    public string ReferenceTranslationPath
+    {
+        get => GetProperty(string.Empty);
+        private set { SetProperty(value); OnPropertyChanged(nameof(HasReferenceTranslation)); }
+    }
+
+    public bool HasScript => !string.IsNullOrEmpty(ScriptPath);
+    public bool HasTranslation => !string.IsNullOrEmpty(TranslationPath);
+    public bool HasReferenceTranslation => !string.IsNullOrEmpty(ReferenceTranslationPath);
+
+    public void LoadScript(GameScript script, string path)
+    {
+        var story = new Story(script, new TranslationData(null));
+        Clear();
+        _loadedScript = script;
+        Story = story;
+        ScriptPath = path;
+    }
+
+    public void LoadTranslation(TranslationData translation, string path)
+    {
+        var script = _loadedScript ?? throw new InvalidOperationException("请先载入剧本");
+        Story = new Story(script, translation);
+        if (_referenceStory != null)
+            ApplyReference(_referenceStory);
+        TranslationPath = path;
+    }
+
+    public void LoadReferenceTranslation(TranslationData translation, string path)
+    {
+        var script = _loadedScript ?? throw new InvalidOperationException("请先载入剧本");
+        var reference = new Story(script, translation);
+        ApplyReference(reference);
+        _referenceStory = reference;
+        ReferenceTranslationPath = path;
+    }
+
+    public bool IsTranslationApplicable(TranslationData translation) =>
+        _loadedScript != null && translation.IsApplicable(_loadedScript);
+
+    public void ClearTranslation()
+    {
+        if (_loadedScript == null) return;
+        Story = new Story(_loadedScript, new TranslationData(null));
+        if (_referenceStory != null)
+            ApplyReference(_referenceStory);
+        TranslationPath = string.Empty;
+    }
+
     public bool IsEmpty => Story.Events.Length == 0;
 
     public Story Story
@@ -53,6 +119,11 @@ public class TranslatePageModel : ViewModelBase
     public void Clear()
     {
         Story = Story.Empty();
+        _loadedScript = null;
+        _referenceStory = null;
+        ScriptPath = string.Empty;
+        TranslationPath = string.Empty;
+        ReferenceTranslationPath = string.Empty;
     }
 
     private void ClearEventRegisters()
@@ -133,6 +204,8 @@ public class TranslatePageModel : ViewModelBase
 
     public void ClearReference()
     {
+        _referenceStory = null;
+        ReferenceTranslationPath = string.Empty;
         foreach (var line in Events)
             switch (line)
             {

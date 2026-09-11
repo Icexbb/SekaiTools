@@ -9,7 +9,7 @@
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:control="clr-namespace:SekaiToolsGUI.Control"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="800" d:Background="White"
+             d:DesignHeight="960" d:DesignWidth="1280" d:Background="White"
              d:DataContext="{d:DesignInstance translate:TranslatePageModel, IsDesignTimeCreatable=True}">
     <Grid Margin="8">
         <Grid.RowDefinitions>
@@ -21,11 +21,12 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <ui:Card Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,8"
-                 Padding="14,10" VerticalContentAlignment="Center"
+                 Padding="15,10,15,5" VerticalContentAlignment="Center"
                  HorizontalAlignment="Stretch">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
@@ -38,11 +39,11 @@
                     <StackPanel Orientation="Horizontal">
                         <ui:Button Margin="0,0,8,0" Click="LoadFileButton_OnClick"
                                    Name="LoadScriptButton" Content="载入剧本" />
-                        <ui:Button Margin="0,0,8,0" Click="LoadTranslationButton_OnClick"
-                                   IsEnabled="{c:Binding Path='Events.Length!=0'}"
+                        <ui:Button Name="LoadTranslationButton" Margin="0,0,8,0" Click="LoadTranslationButton_OnClick"
+                                   IsEnabled="{Binding HasScript}"
                                    Content="载入翻译文件" />
                         <ui:Button Name="ReferenceTranslationButton" Click="LoadReviewButton_OnClick"
-                                   IsEnabled="{c:Binding Path='Events.Length!=0'}"
+                                   IsEnabled="{Binding HasScript}"
                                    Content="载入参考翻译文件" />
                         <control:Popover x:Name="SpecialCharPopover" Margin="8,0,0,0"
                                          Padding="0" StaysOpen="False">
@@ -57,11 +58,31 @@
                         </control:Popover>
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="任务信息" VerticalAlignment="Top" />
+                    <StackPanel VerticalAlignment="Top" Margin="10,0,0,0">
+                        <StackPanel VerticalAlignment="Top" Orientation="Horizontal">
+                            <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="剧本文件：" />
+                            <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" MaxWidth="250"
+                                       Name="TextBlockScriptFile" />
+                        </StackPanel>
+                        <StackPanel VerticalAlignment="Top" Orientation="Horizontal">
+                            <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="翻译文件：" />
+                            <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" MaxWidth="250"
+                                       Name="TextBlockTranslation" />
+                        </StackPanel>
+                        <StackPanel VerticalAlignment="Top" Orientation="Horizontal">
+                            <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="参考文件：" />
+                            <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" MaxWidth="250"
+                                       Name="TextBlockTranslationReference" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="3" HorizontalAlignment="Right">
                     <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="任务控制" />
                     <StackPanel Orientation="Horizontal">
                         <ui:Button Margin="0,0,8,0" Click="ResetButton_OnClick" Name="ResetButton"
-                                   Content="重置" IsEnabled="{c:Binding Path='Events.Length!=0'}" />
+                                   Content="重置" IsEnabled="{Binding HasScript}" />
                         <ui:Button Click="SaveButton_OnClick" Name="SaveButton" Content="保存"
                                    Appearance="Primary" IsEnabled="{c:Binding Path='Events.Length!=0'}" />
                     </StackPanel>
