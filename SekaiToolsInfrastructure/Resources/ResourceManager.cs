@@ -192,13 +192,13 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
         var filename = EnsurePathWithinType(type, Path.Combine(BasePath, resource.Path));
         var fileDir = Path.GetDirectoryName(filename);
         if (fileDir != null && !Directory.Exists(fileDir)) Directory.CreateDirectory(fileDir);
-        if (CheckResourceFile(type, resource)) return;
+        if (await Task.Run(() => CheckResourceFile(type, resource), cancellationToken)) return;
 
         await downloadLimiter.WaitAsync(cancellationToken);
         var temporaryFilename = filename + $".{Guid.NewGuid():N}.tmp";
         try
         {
-            if (CheckResourceFile(type, resource)) return;
+            if (await Task.Run(() => CheckResourceFile(type, resource), cancellationToken)) return;
         var fileUrl = ResourceServerUrl + resource.Path;
 
         Console.WriteLine($"Downloading {fileUrl}");
