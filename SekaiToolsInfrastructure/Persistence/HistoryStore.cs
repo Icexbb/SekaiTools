@@ -1,4 +1,5 @@
 using System.Text.Json;
+using SekaiToolsCore;
 using SekaiToolsCore.Process;
 using SekaiToolsInfrastructure.Resources;
 
@@ -24,6 +25,8 @@ public static class HistoryStore
 
     public static void Add(ProcessingState state)
     {
+        if (!IsCompleted(state)) return;
+
         var dir = HistoryDir;
         if (!Directory.Exists(dir))
             Directory.CreateDirectory(dir);
@@ -64,7 +67,7 @@ public static class HistoryStore
             {
                 var json = File.ReadAllText(file);
                 var entry = JsonSerializer.Deserialize<HistoryEntry>(json);
-                if (entry != null)
+                if (entry != null && IsCompleted(entry.State))
                     result.Add(entry);
             }
             catch
@@ -73,6 +76,22 @@ public static class HistoryStore
             }
 
         return result;
+    }
+
+    public static bool IsCompleted(ProcessingState state) => state.StopReason == ProcessStopReason.Completed;
+
+    public static void Clear()
+    {
+        if (!Directory.Exists(HistoryDir)) return;
+        foreach (var file in Directory.EnumerateFiles(HistoryDir, "*.json"))
+            try
+            {
+                File.Delete(file);
+            }
+            catch
+            {
+                // ignore cleanup failures
+            }
     }
 
     private static void PruneIfNeeded()

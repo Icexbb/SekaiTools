@@ -8,8 +8,9 @@
                   mc:Ignorable="d"
                   ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
                   ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                  IsPrimaryButtonEnabled="False" DefaultButton="Close"
-                  Title="历史记录" CloseButtonText="关闭">
+                  IsPrimaryButtonEnabled="False" IsSecondaryButtonEnabled="True"
+                  DefaultButton="Close" Title="历史记录"
+                  SecondaryButtonText="清除历史记录" CloseButtonText="关闭">
     <ui:ContentDialog.Resources>
         <!-- ReSharper disable once Xaml.StaticResourceNotResolved -->
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"

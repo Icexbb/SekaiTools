@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using SekaiToolsCore;
 using SekaiToolsCore.Abstractions;
 using SekaiToolsCore.Process;
 using SekaiToolsInfrastructure.Resources;
@@ -37,6 +38,19 @@ public static class ProgressStore
     public static void Save(string saveKey, ProcessingState state)
     {
         SaveToPath(GetSavePath(saveKey), state);
+        DeleteOtherProgressFiles(saveKey);
+    }
+
+    internal static bool IsIncomplete(ProcessingState state) => state.StopReason != ProcessStopReason.Completed;
+
+    internal static List<(string SaveKey, ProcessingState State, DateTime LastWriteTime)> SelectLatestIncomplete(
+        IEnumerable<(string SaveKey, ProcessingState State, DateTime LastWriteTime)> entries)
+    {
+        var latest = entries
+            .Where(entry => IsIncomplete(entry.State))
+            .OrderByDescending(entry => entry.LastWriteTime)
+            .FirstOrDefault();
+        return latest.SaveKey == null ? [] : [latest];
     }
 
     internal static void SaveToPath(string path, ProcessingState state)
@@ -80,18 +94,41 @@ public static class ProgressStore
 
     public static List<(string SaveKey, ProcessingState State)> EnumerateProgressFiles()
     {
-        var result = new List<(string, ProcessingState)>();
-        if (!Directory.Exists(ProgressDir)) return result;
+        var entries = new List<(string SaveKey, ProcessingState State, DateTime LastWriteTime)>();
+        if (!Directory.Exists(ProgressDir)) return [];
 
         foreach (var file in Directory.EnumerateFiles(ProgressDir, "*.json"))
         {
             var key = Path.GetFileNameWithoutExtension(file);
             var state = Load(key);
             if (state != null)
-                result.Add((key, state));
+            {
+                if (IsIncomplete(state))
+                    entries.Add((key, state, File.GetLastWriteTimeUtc(file)));
+                else
+                    Delete(key);
+            }
         }
 
-        return result;
+        return SelectLatestIncomplete(entries)
+            .Select(entry => (entry.SaveKey, entry.State))
+            .ToList();
+    }
+
+    private static void DeleteOtherProgressFiles(string saveKey)
+    {
+        if (!Directory.Exists(ProgressDir)) return;
+        var currentPath = GetSavePath(saveKey);
+        foreach (var file in Directory.EnumerateFiles(ProgressDir, "*.json"))
+            if (!string.Equals(Path.GetFullPath(file), Path.GetFullPath(currentPath), StringComparison.OrdinalIgnoreCase))
+                try
+                {
+                    File.Delete(file);
+                }
+                catch
+                {
+                    // ignore stale progress cleanup failures
+                }
     }
 }
 
@@ -106,6 +143,11 @@ public sealed class ProcessingStatePersistence : IProcessingStatePersistence
     public void SaveProgress(string saveKey, ProcessingState state)
     {
         ProgressStore.Save(saveKey, state);
+    }
+
+    public void DeleteProgress(string saveKey)
+    {
+        ProgressStore.Delete(saveKey);
     }
 
     public void AddHistory(ProcessingState state)

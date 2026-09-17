@@ -150,10 +150,6 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
                 ViewModel.TranslateFilePath = state.TranslateFilePath;
                 StartProcess(saveKey, state);
             }
-            else
-            {
-                ProgressStore.Delete(saveKey);
-            }
 
             return;
         }
@@ -162,7 +158,10 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     private async Task ShowHistoryDialogAsync()
     {
         var entries = HistoryStore.LoadAll();
-        if (entries.Count == 0)
+        var unfinished = ProgressStore.EnumerateProgressFiles()
+            .Select(item => new HistoryEntry { Timestamp = "最近一次未完成", State = item.State })
+            .FirstOrDefault();
+        if (entries.Count == 0 && unfinished == null)
         {
             SnackService.Show("提示", "暂无历史记录", ControlAppearance.Info,
                 new SymbolIcon(SymbolRegular.Info24), new TimeSpan(0, 0, 3));
@@ -171,10 +170,39 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
 
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
         var dialog = new HistoryDialog(dialogService.GetDialogHostEx() ?? throw new InvalidOperationException(),
-            entries);
+            entries, unfinished);
         var result = await dialogService.ShowAsync(dialog, CancellationToken);
 
-        if (result == ContentDialogResult.Primary && dialog.SelectedEntry != null)
+        if (result == ContentDialogResult.Secondary)
+        {
+            var clearResult = await dialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
+            {
+                Title = "清除已完成历史记录？",
+                Content = "此操作不可恢复，但不会删除未完成任务。",
+                PrimaryButtonText = "清除",
+                CloseButtonText = "取消"
+            }, CancellationToken);
+            if (clearResult == ContentDialogResult.Primary)
+            {
+                HistoryStore.Clear();
+                SnackService.Show("已清除", "已完成历史记录已清除，未完成任务仍保留。",
+                    ControlAppearance.Success, new SymbolIcon(SymbolRegular.Delete24), TimeSpan.FromSeconds(3));
+            }
+
+            return;
+        }
+
+        if (result == ContentDialogResult.Primary && dialog.SelectedUnfinishedEntry != null)
+        {
+            var state = dialog.SelectedUnfinishedEntry.State;
+            ViewModel.VideoFilePath = state.VideoFilePath;
+            ViewModel.ScriptFilePath = state.ScriptFilePath;
+            ViewModel.TranslateFilePath = state.TranslateFilePath;
+            var saveKey = ProgressStore.GetSaveKey(state.VideoFilePath, state.ScriptFilePath,
+                state.TranslateFilePath);
+            StartProcess(saveKey, state);
+        }
+        else if (result == ContentDialogResult.Primary && dialog.SelectedEntry != null)
         {
             LinePanel.Children.Clear();
             EventTimelineEditor.ClearSelection();
@@ -766,29 +794,12 @@ public partial class SubtitlePage
         var result = await dialogService.ShowSimpleDialogAsync(
             new SimpleContentDialogCreateOptions
             {
-                Title = "恢复进度",
-                Content = "检测到未完成的处理进度，是否继续？",
+                Title = "恢复未完成任务",
+                Content = "检测到上一次未完成的处理任务，是否继续？选择“暂不恢复”不会删除进度。",
                 PrimaryButtonText = "继续",
-                CloseButtonText = "取消"
+                CloseButtonText = "暂不恢复"
             }, CancellationToken);
-        if (result == ContentDialogResult.None)
-            foreach (var (saveKey, _) in ProgressStore.EnumerateProgressFiles())
-                ProgressStore.Delete(saveKey);
-
         return result;
-    }
-
-    private async Task ShowResumeDialogAsync(string saveKey)
-    {
-        var result = await ShowResumeDialogAsync();
-        if (result != ContentDialogResult.Primary)
-            return;
-
-        var resumeState = ProgressStore.Load(saveKey);
-        if (resumeState == null)
-            ProgressStore.Delete(saveKey);
-
-        StartProcess(saveKey, resumeState);
     }
 
     private void StartProcess(string saveKey, ProcessingState? resumeState)

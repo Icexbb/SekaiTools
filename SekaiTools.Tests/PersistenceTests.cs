@@ -1,12 +1,48 @@
 using System.Reflection;
 using System.Text.Json;
 using SekaiDataFetch.List;
+using SekaiToolsCore;
 using SekaiToolsCore.Process;
 
 namespace SekaiTools.Tests;
 
 public class PersistenceTests
 {
+    [Fact]
+    public void 历史记录只接受已完成任务()
+    {
+        Assert.True(HistoryStore.IsCompleted(new ProcessingState
+        {
+            StopReason = ProcessStopReason.Completed
+        }));
+        Assert.False(HistoryStore.IsCompleted(new ProcessingState
+        {
+            StopReason = ProcessStopReason.Canceled
+        }));
+        Assert.False(HistoryStore.IsCompleted(new ProcessingState
+        {
+            StopReason = ProcessStopReason.None
+        }));
+    }
+
+    [Fact]
+    public void 未完成进度只保留最后一条()
+    {
+        var first = new ProcessingState { StopReason = ProcessStopReason.Canceled, FrameIndex = 10 };
+        var latest = new ProcessingState { StopReason = ProcessStopReason.EndOfStream, FrameIndex = 20 };
+        var completed = new ProcessingState { StopReason = ProcessStopReason.Completed, FrameIndex = 30 };
+
+        var result = ProgressStore.SelectLatestIncomplete([
+            ("first", first, new DateTime(2026, 1, 1)),
+            ("latest", latest, new DateTime(2026, 1, 2)),
+            ("completed", completed, new DateTime(2026, 1, 3))
+        ]);
+
+        var item = Assert.Single(result);
+        Assert.Equal("latest", item.SaveKey);
+        Assert.Equal(20, item.State.FrameIndex);
+    }
+
     [Fact]
     public void 进度保存会完整替换目标文件并清理临时文件()
     {

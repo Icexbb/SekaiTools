@@ -582,7 +582,12 @@ public class VideoProcessor : IDisposable
 
         var finalState = CaptureState();
         if (_saveKey != null)
-            QueueProgressSave(_saveKey, finalState);
+        {
+            if (StopReason == ProcessStopReason.Completed)
+                _persistence.DeleteProgress(_saveKey);
+            else
+                QueueProgressSave(_saveKey, finalState);
+        }
         WaitForProgressSave();
 
         frame.Dispose();
@@ -596,7 +601,7 @@ public class VideoProcessor : IDisposable
             Logger.Log($"匹配诊断: {diagnostic.Matcher}[{diagnostic.TargetIndex}] " +
                        $"帧={diagnostic.FrameIndex}, {diagnostic.Reason}", ExtLogLevel.Warning);
 
-        if (ResultReport.CanExport)
+        if (StopReason == ProcessStopReason.Completed && ResultReport.CanExport)
             _persistence.AddHistory(finalState);
 
         return;

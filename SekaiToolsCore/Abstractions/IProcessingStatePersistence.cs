@@ -9,5 +9,7 @@ public interface IProcessingStatePersistence
 {
     void SaveProgress(string saveKey, ProcessingState state);
 
+    void DeleteProgress(string saveKey);
+
     void AddHistory(ProcessingState state);
 }
