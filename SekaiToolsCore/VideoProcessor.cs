@@ -63,7 +63,6 @@ public class VideoProcessor : IDisposable
     private readonly ProcessingPerformanceMetrics _performanceMetrics = new();
     private readonly IProcessingStatePersistence _persistence;
     private readonly object _progressSaveLock = new();
-    private readonly int _saveInterval = 300;
     private readonly string _scriptPath;
     private readonly ProcessingStateMetadata _stateMetadata;
     private readonly string _translatePath;
@@ -71,7 +70,8 @@ public class VideoProcessor : IDisposable
     private int _consecutiveExceptionCount;
     private bool _disposed;
     private bool _frameSetJustCompleted;
-    private int _framesSinceLastSave;
+    private int _nextProgressSaveFrame = ProgressSavePolicy.InitialInterval;
+    private int _lastProgressSaveFrame;
     private volatile bool _isProcessing;
     private long _lastFpsCallbackTime;
 
@@ -267,7 +267,8 @@ public class VideoProcessor : IDisposable
         if (state.Marker != null)
             MarkerMatcher?.RestoreState(state.Marker);
 
-        _framesSinceLastSave = 0;
+        _lastProgressSaveFrame = state.FrameIndex;
+        _nextProgressSaveFrame = ProgressSavePolicy.GetNextFrame(state.FrameIndex);
     }
 
     public void ReplayFinishedCallbacks(
@@ -325,6 +326,9 @@ public class VideoProcessor : IDisposable
         _lastProgressCallbackTime = 0;
         _lastFpsCallbackTime = 0;
         _performanceMetrics.Reset();
+        _lastProgressSaveFrame = 0;
+        _nextProgressSaveFrame = ProgressSavePolicy.InitialInterval;
+        _frameSetJustCompleted = false;
 
         var cap = Capture;
         if (cap != null)
@@ -529,7 +533,7 @@ public class VideoProcessor : IDisposable
                 _consecutiveExceptionCount = 0;
 
                 // 定期保存进度
-                TrySaveProgress();
+                TrySaveProgress(frameIndex);
             }
             catch (OperationCanceledException)
             {
@@ -606,15 +610,16 @@ public class VideoProcessor : IDisposable
 
         return;
 
-        void TrySaveProgress()
+        void TrySaveProgress(int frameIndex)
         {
             if (_saveKey == null) return;
-            _framesSinceLastSave++;
-
-            if (_framesSinceLastSave >= _saveInterval || _frameSetJustCompleted)
+            var shouldSave = ProgressSavePolicy.ShouldSave(
+                frameIndex, _nextProgressSaveFrame, _lastProgressSaveFrame, _frameSetJustCompleted);
+            _frameSetJustCompleted = false;
+            if (shouldSave)
             {
-                _framesSinceLastSave = 0;
-                _frameSetJustCompleted = false;
+                _lastProgressSaveFrame = frameIndex;
+                _nextProgressSaveFrame = ProgressSavePolicy.GetNextFrame(frameIndex);
                 var snapshot = CaptureState();
                 var key = _saveKey;
                 QueueProgressSave(key, snapshot);
