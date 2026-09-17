@@ -1,4 +1,5 @@
 using System.Net;
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -42,7 +43,9 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
         { ResourceType.VideoProcess, "videoProcess" }
     };
 
-    private static readonly Dictionary<ResourceType, Resource[]> ResourceFileList = new();
+    private static readonly ConcurrentDictionary<ResourceType, Resource[]> ResourceFileList = new();
+    private static readonly ConcurrentDictionary<ResourceType, SemaphoreSlim> ResourceLocks = new();
+    private const int MaxConcurrentDownloads = 3;
     private static string ResourceServerUrl => NetworkEndpoints.Current.Resources.BaseUrl;
 
     public static ResourceManager Instance { get; } = new();
@@ -82,13 +85,13 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
         };
     }
 
-    private async Task<HttpResponseMessage> Download(string url)
+    private async Task<HttpResponseMessage> Download(string url, CancellationToken cancellationToken)
     {
         using var client = new HttpClient(GetHttpHandler())
         {
             Timeout = TimeSpan.FromSeconds(30)
         };
-        var response = await client.GetAsync(url);
+        var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         response.EnsureSuccessStatusCode();
         return response;
     }
@@ -102,18 +105,38 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
         return File.Exists(filename) ? filename : throw new FileNotFoundException($"{filename} not found");
     }
 
-    public async Task<bool> CheckResource(ResourceType type)
+    public async Task<bool> CheckResource(ResourceType type, CancellationToken cancellationToken = default)
     {
-        var fileList = await GetFileList(type);
-        return fileList.All(file => CheckResourceFile(type, file));
+        var fileList = await GetFileList(type, cancellationToken);
+        return await Task.Run(() => fileList.All(file =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return CheckResourceFile(type, file);
+        }), cancellationToken);
     }
 
     private static bool CheckResourceFile(ResourceType type, Resource file)
     {
         var filename = EnsurePathWithinType(type, Path.Combine(BasePath, file.Path));
-        if (!File.Exists(filename)) return false;
-        return file.Size == new FileInfo(filename).Length &&
-               string.Equals(file.Md5, CalculateMd5(filename), StringComparison.CurrentCultureIgnoreCase);
+        return IsResourceValid(filename, file);
+    }
+
+    public static bool IsResourceValid(string filename, Resource resource)
+    {
+        try
+        {
+            return File.Exists(filename) &&
+                   resource.Size == new FileInfo(filename).Length &&
+                   string.Equals(resource.Md5, CalculateMd5(filename), StringComparison.OrdinalIgnoreCase);
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
     }
 
     private static string CalculateMd5(string filename)
@@ -131,15 +154,24 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
         return sb.ToString();
     }
 
-    public async Task EnsureResource(ResourceType type)
+    public async Task EnsureResource(ResourceType type, CancellationToken cancellationToken = default)
     {
         if (!ResourceTypePathMap.TryGetValue(type, out var typeDir))
             throw new ArgumentException($"ResourceType {type} not mapped");
 
-        var fileList = await GetFileList(type);
-
-        var tasks = fileList.Select<Resource, Task>(file => EnsureResourceFile(type, file)).ToArray();
-        foreach (var task in tasks) await task;
+        var resourceLock = ResourceLocks.GetOrAdd(type, static _ => new SemaphoreSlim(1, 1));
+        await resourceLock.WaitAsync(cancellationToken);
+        try
+        {
+            var fileList = await GetFileList(type, cancellationToken);
+            using var downloadLimiter = new SemaphoreSlim(MaxConcurrentDownloads, MaxConcurrentDownloads);
+            var tasks = fileList.Select(file => EnsureResourceFile(type, file, downloadLimiter, cancellationToken)).ToArray();
+            await Task.WhenAll(tasks);
+        }
+        finally
+        {
+            resourceLock.Release();
+        }
 
         // delete files do not exist in the resource list
         // foreach (var file in Directory.GetFiles(Path.Combine(BasePath, typeDir)))
@@ -151,21 +183,50 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
         // }
     }
 
-    private async Task EnsureResourceFile(ResourceType type, Resource resource)
+    private async Task EnsureResourceFile(
+        ResourceType type,
+        Resource resource,
+        SemaphoreSlim downloadLimiter,
+        CancellationToken cancellationToken)
     {
         var filename = EnsurePathWithinType(type, Path.Combine(BasePath, resource.Path));
         var fileDir = Path.GetDirectoryName(filename);
         if (fileDir != null && !Directory.Exists(fileDir)) Directory.CreateDirectory(fileDir);
         if (CheckResourceFile(type, resource)) return;
 
-        if (File.Exists(filename)) File.Delete(filename);
+        await downloadLimiter.WaitAsync(cancellationToken);
+        var temporaryFilename = filename + $".{Guid.NewGuid():N}.tmp";
+        try
+        {
+            if (CheckResourceFile(type, resource)) return;
         var fileUrl = ResourceServerUrl + resource.Path;
 
         Console.WriteLine($"Downloading {fileUrl}");
-        using var response = await Download(fileUrl);
-        var fileBytes = await response.Content.ReadAsByteArrayAsync();
-        await File.WriteAllBytesAsync(filename, fileBytes);
-        Console.WriteLine($"Download completed: {filename}");
+            using var response = await Download(fileUrl, cancellationToken);
+            await using (var source = await response.Content.ReadAsStreamAsync(cancellationToken))
+            await using (var target = new FileStream(temporaryFilename, FileMode.CreateNew, FileAccess.Write, FileShare.None, 64 * 1024, useAsync: true))
+            {
+                await source.CopyToAsync(target, cancellationToken);
+            }
+
+            if (!IsResourceValid(temporaryFilename, resource))
+                throw new InvalidDataException($"资源校验失败: {resource.Path}");
+
+            File.Move(temporaryFilename, filename, true);
+            Console.WriteLine($"Download completed: {filename}");
+        }
+        finally
+        {
+            downloadLimiter.Release();
+            try
+            {
+                if (File.Exists(temporaryFilename)) File.Delete(temporaryFilename);
+            }
+            catch (IOException)
+            {
+                // 清理失败不覆盖下载或取消的原始错误。
+            }
+        }
     }
 
     private static string NormalizePath(string path)
@@ -191,7 +252,7 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
         return candidate;
     }
 
-    private async Task<Resource[]> GetFileList(ResourceType type)
+    private async Task<Resource[]> GetFileList(ResourceType type, CancellationToken cancellationToken = default)
     {
         if (ResourceFileList.TryGetValue(type, out var resources)) return resources;
 
@@ -202,8 +263,8 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
 
         Console.WriteLine($"Downloading {fileListUrl}");
 
-        using var response = await Download(fileListUrl);
-        var fileListJson = await response.Content.ReadAsStringAsync();
+        using var response = await Download(fileListUrl, cancellationToken);
+        var fileListJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
         var fileList = JsonSerializer.Deserialize<Resource[]>(fileListJson, new JsonSerializerOptions
         {

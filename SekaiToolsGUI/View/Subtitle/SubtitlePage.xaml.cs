@@ -697,11 +697,25 @@ public partial class SubtitlePage
         if (await ResourceManager.Instance.CheckResource(ResourceType.VideoProcess)) return;
 
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-        var dialog = new RefreshWaitDialog("正在刷新下载源数据");
-        var source = new CancellationTokenSource();
-        _ = dialogService.ShowAsync(dialog, source.Token);
-        await ResourceManager.Instance.EnsureResource(ResourceType.VideoProcess);
-        await source.CancelAsync();
+        var dialog = new RefreshWaitDialog("正在准备字幕识别资源");
+        using var source = new CancellationTokenSource();
+        var dialogTask = dialogService.ShowAsync(dialog, source.Token);
+        try
+        {
+            await ResourceManager.Instance.EnsureResource(ResourceType.VideoProcess, source.Token);
+        }
+        finally
+        {
+            await source.CancelAsync();
+            try
+            {
+                await dialogTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // 对话框由取消令牌关闭。
+            }
+        }
     }
 
     private void StopProcess()

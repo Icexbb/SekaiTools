@@ -9,6 +9,7 @@ public sealed class VideoSuppressionQueue : IDisposable
         new UnboundedChannelOptions { SingleReader = true });
     private readonly CancellationTokenSource _shutdown = new();
     private readonly Func<VideoSuppressionOptions, Action<VideoSuppressionProgress>, CancellationToken, Task> _run;
+    private int _disposed;
 
     public VideoSuppressionQueue(Func<VideoSuppressionOptions, Action<VideoSuppressionProgress>, CancellationToken, Task> run)
     {
@@ -47,8 +48,22 @@ public sealed class VideoSuppressionQueue : IDisposable
         }
     }
 
+    public async Task DisposeAsync(TimeSpan timeout)
+    {
+        Dispose();
+        try
+        {
+            await Completion.WaitAsync(timeout).ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            // 应用关闭不应因单个外部进程卡住而阻塞 UI。
+        }
+    }
+
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         _jobs.Writer.TryComplete();
         _shutdown.Cancel();
     }

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.ComponentModel;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -28,12 +29,14 @@ namespace SekaiToolsGUI;
 public partial class MainWindow : FluentWindow
 {
     private object? _currentNavigatedPage;
+    private bool _navigationGuard;
+    private bool _closeConfirmed;
 
     public MainWindow()
     {
         InitializeComponent();
         DataContext = new MainWindowViewModel();
-        Closed += (sender, args) => { SuppressPage.DisposeSuppressor(); };
+        Closing += MainWindow_OnClosing;
         ContentRendered += (sender, args) => { CheckUpdate(); };
         TaskbarItemInfo = new TaskbarItemInfo();
         SetWindowTitle("");
@@ -92,6 +95,48 @@ public partial class MainWindow : FluentWindow
     private void NavigationView_Debug()
     {
         NavigationView.Navigate(typeof(TranslatePage));
+    }
+
+    private async void NavigationView_OnNavigating(NavigationView sender, NavigatingCancelEventArgs args)
+    {
+        if (_navigationGuard || _currentNavigatedPage is not TranslatePage translatePage || !translatePage.ViewModel.IsDirty)
+            return;
+
+        var pageType = args.Page switch
+        {
+            Type type => type,
+            object page => page.GetType(),
+            _ => null
+        };
+        if (pageType == null) return;
+
+        args.Cancel = true;
+        if (!await translatePage.ConfirmNavigationAsync()) return;
+
+        _navigationGuard = true;
+        try
+        {
+            sender.Navigate(pageType);
+        }
+        finally
+        {
+            _navigationGuard = false;
+        }
+    }
+
+    private async void MainWindow_OnClosing(object? sender, CancelEventArgs e)
+    {
+        if (_closeConfirmed) return;
+
+        e.Cancel = true;
+        if (_currentNavigatedPage is TranslatePage translatePage && !await translatePage.ConfirmCloseAsync())
+            return;
+
+        _closeConfirmed = true;
+        SetWindowTitle("正在停止任务");
+        SetTaskbarProgressState(TaskbarItemProgressState.Indeterminate, 0);
+        await SuppressPage.DisposeSuppressorAsync();
+        Close();
     }
 
     private void NavigationView_OnNavigated(NavigationView sender, NavigatedEventArgs args)

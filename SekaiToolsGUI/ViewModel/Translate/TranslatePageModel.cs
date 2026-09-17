@@ -32,6 +32,14 @@ public class TranslatePageModel : ViewModelBase
     public bool HasTranslation => !string.IsNullOrEmpty(TranslationPath);
     public bool HasReferenceTranslation => !string.IsNullOrEmpty(ReferenceTranslationPath);
 
+    public bool IsDirty
+    {
+        get => GetProperty(false);
+        private set => SetProperty(value);
+    }
+
+    public void MarkSaved() => IsDirty = false;
+
     public void LoadScript(GameScript script, string path)
     {
         var story = new Story(script, new TranslationData(null));
@@ -39,6 +47,7 @@ public class TranslatePageModel : ViewModelBase
         _loadedScript = script;
         Story = story;
         ScriptPath = path;
+        MarkSaved();
     }
 
     public void LoadTranslation(TranslationData translation, string path)
@@ -48,6 +57,7 @@ public class TranslatePageModel : ViewModelBase
         if (_referenceStory != null)
             ApplyReference(_referenceStory);
         TranslationPath = path;
+        MarkSaved();
     }
 
     public void LoadReferenceTranslation(TranslationData translation, string path)
@@ -69,6 +79,7 @@ public class TranslatePageModel : ViewModelBase
         if (_referenceStory != null)
             ApplyReference(_referenceStory);
         TranslationPath = string.Empty;
+        MarkSaved();
     }
 
     public bool IsEmpty => Story.Events.Length == 0;
@@ -124,6 +135,7 @@ public class TranslatePageModel : ViewModelBase
         ScriptPath = string.Empty;
         TranslationPath = string.Empty;
         ReferenceTranslationPath = string.Empty;
+        MarkSaved();
     }
 
     private void ClearEventRegisters()
@@ -144,6 +156,7 @@ public class TranslatePageModel : ViewModelBase
     private void OnLineDialogModelOnCharacterTranslateChanged(object? sender, EventArgs args)
     {
         if (sender is not LineDialogModel changedLine) return;
+        IsDirty = true;
         changedLine.CharacterTranslateChangedEnabled = false; // 防止递归调用
 
         // 当角色名称翻译发生变化时，更新所有 LineDialogModel 的 Check
@@ -162,6 +175,7 @@ public class TranslatePageModel : ViewModelBase
     private void OnLineEffectModelOnContentTranslateChanged(object? sender, EventArgs args)
     {
         if (sender is not LineEffectModel changedLine) return;
+        IsDirty = true;
         changedLine.ContentTranslateChangedEnabled = false;
         foreach (var line in Events.OfType<LineEffectModel>())
         {

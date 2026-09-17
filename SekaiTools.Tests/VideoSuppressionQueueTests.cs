@@ -88,4 +88,23 @@ public class VideoSuppressionQueueTests
         Assert.Equal(VideoSuppressionState.Cancelled, job.Progress.State);
         Assert.Throws<ObjectDisposedException>(() => queue.Enqueue(Job("late")));
     }
+
+    [Fact]
+    public async Task AsyncDisposalWaitsForCancellationWithoutBlockingCaller()
+    {
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var queue = new VideoSuppressionQueue(async (_, _, token) =>
+        {
+            entered.SetResult();
+            await Task.Delay(Timeout.Infinite, token);
+        });
+
+        queue.Enqueue(Job("running"));
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var disposeTask = queue.DisposeAsync(TimeSpan.FromSeconds(2));
+        Assert.False(disposeTask.IsCompletedSuccessfully);
+        await disposeTask;
+        Assert.True(queue.Completion.IsCompleted);
+    }
 }

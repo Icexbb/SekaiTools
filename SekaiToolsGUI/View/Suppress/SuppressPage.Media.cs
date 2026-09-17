@@ -71,9 +71,8 @@ public partial class SuppressPage
             mainWindow.SetTaskbarProgressState(TaskbarItemProgressState.None, 0);
     }
 
-    internal static void DisposeSuppressor()
+    internal static Task DisposeSuppressorAsync()
     {
-        Queue.Dispose();
-        Queue.Completion.GetAwaiter().GetResult();
+        return Queue.DisposeAsync(TimeSpan.FromSeconds(8));
     }
 }

@@ -251,8 +251,11 @@ public partial class TranslatePage : UserControl
         }
     }
 
-    private static async Task<bool> ConfirmReplaceCurrentContentAsync()
+    private async Task<bool> ConfirmReplaceCurrentContentAsync()
     {
+        if (ViewModel.IsDirty)
+            return await ConfirmUnsavedChangesAsync("替换当前内容？");
+
         var dialogService = ((MainWindow)Application.Current.MainWindow!).WindowContentDialogService;
         var result = await dialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
         {
@@ -264,13 +267,45 @@ public partial class TranslatePage : UserControl
         return result == ContentDialogResult.Primary;
     }
 
-    private async void SaveButton_OnClick(object sender, RoutedEventArgs e)
+    public Task<bool> ConfirmNavigationAsync() => ConfirmUnsavedChangesAsync("离开翻译页面？");
+
+    public Task<bool> ConfirmCloseAsync() => ConfirmUnsavedChangesAsync("退出程序？");
+
+    private async Task<bool> ConfirmUnsavedChangesAsync(string title)
+    {
+        if (!ViewModel.IsDirty) return true;
+
+        var dialogService = ((MainWindow)Application.Current.MainWindow!).WindowContentDialogService;
+        var result = await dialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
+        {
+            Title = title,
+            Content = "当前翻译有未保存的修改。",
+            PrimaryButtonText = "保存",
+            SecondaryButtonText = "不保存",
+            CloseButtonText = "取消"
+        }, CancellationToken.None);
+
+        return result switch
+        {
+            ContentDialogResult.Primary => await SaveAsync(),
+            ContentDialogResult.Secondary => DiscardChanges(),
+            _ => false
+        };
+
+        bool DiscardChanges()
+        {
+            ViewModel.MarkSaved();
+            return true;
+        }
+    }
+
+    public async Task<bool> SaveAsync()
     {
         if (ViewModel.IsEmpty)
         {
             SnackbarService.Show("错误", "请先载入剧本", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
-            return;
+            return false;
         }
 
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
@@ -280,19 +315,37 @@ public partial class TranslatePage : UserControl
             ViewModel.ScriptPath, ViewModel.TranslationPath);
         var token = CancellationToken.None;
         var dialogResult = await dialogService.ShowAsync(dialog, token);
-        if (dialogResult != ContentDialogResult.Primary) return;
+        if (dialogResult != ContentDialogResult.Primary) return false;
         var fileName = dialog.ViewModel.FileName;
 
 
-        var content = ExportTranslation();
-        await File.WriteAllTextAsync(fileName, content, token);
+        try
+        {
+            var content = ExportTranslation();
+            await File.WriteAllTextAsync(fileName, content, token);
+            ViewModel.MarkSaved();
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"翻译保存失败: {ex.Message}", LogLevel.Error);
+            SnackbarService.Show("错误", $"保存失败: {ex.Message}", ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.Dismiss24), TimeSpan.FromSeconds(5));
+            return false;
+        }
 
         var snackService = (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
-        snackService.Show("成功", "翻译文件文件已保存", ControlAppearance.Success,
+        snackService.Show("成功", "翻译文件已保存", ControlAppearance.Success,
             new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
-        ShowFile(fileName);
+        try
+        {
+            ShowFile(fileName);
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"打开保存位置失败: {ex.Message}", LogLevel.Warning);
+        }
 
-        return;
+        return true;
 
         void ShowFile(string path)
         {
@@ -312,6 +365,11 @@ public partial class TranslatePage : UserControl
     private void SpecialCharButton_OnClick(object sender, RoutedEventArgs e)
     {
         SpecialCharPopover.Open();
+    }
+
+    private async void SaveButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await SaveAsync();
     }
 
     private void SpecialCharacters_OnCustomCharacterAdding(object? sender, EventArgs e)
