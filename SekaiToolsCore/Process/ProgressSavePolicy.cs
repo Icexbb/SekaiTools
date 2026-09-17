@@ -7,12 +7,10 @@ internal static class ProgressSavePolicy
 {
     public const int InitialInterval = 300;
     public const int MinimumCompletionInterval = 30;
-    private const int MaximumInterval = 60_000;
-
     public static int GetNextFrame(int currentFrame)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(currentFrame);
-        var interval = Math.Clamp(currentFrame, InitialInterval, MaximumInterval);
+        var interval = Math.Max(currentFrame, InitialInterval);
         return currentFrame > int.MaxValue - interval
             ? int.MaxValue
             : currentFrame + interval;

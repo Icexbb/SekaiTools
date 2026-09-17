@@ -11,6 +11,7 @@ public sealed class ProgressSavePolicyTests
         Assert.Equal(300, ProgressSavePolicy.GetNextFrame(0));
         Assert.Equal(600, ProgressSavePolicy.GetNextFrame(300));
         Assert.Equal(1200, ProgressSavePolicy.GetNextFrame(600));
+        Assert.Equal(240_000, ProgressSavePolicy.GetNextFrame(120_000));
     }
 
     [Fact]
