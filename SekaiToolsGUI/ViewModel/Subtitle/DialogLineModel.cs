@@ -125,14 +125,35 @@ public class DialogLineModel : ViewModelBase
     public string ContentPart1
     {
         get => GetProperty("");
-        private set => SetProperty(value);
+        private set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(ContentPart1Length));
+        }
     }
+
 
     public string ContentPart2
     {
         get => GetProperty("");
-        private set => SetProperty(value);
+        private set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(ContentPart2Length));
+        }
     }
+
+    public double ContentPart1Length => CalculateContentLength(ContentPart1);
+
+    public double ContentPart2Length => CalculateContentLength(ContentPart2);
+
+    private static double CalculateContentLength(string content) =>
+        content.Sum(character => character switch
+        {
+            '.' => 0.3,
+            _ when char.IsAscii(character) => 0.5,
+            _ => 1,
+        });
 
 
     public string PromptWarning
