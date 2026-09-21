@@ -6,6 +6,7 @@
                   xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                   xmlns:components="clr-namespace:SekaiToolsGUI.View.Suppress.Components"
                   xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
+                  xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
                   mc:Ignorable="d"
                   ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
                   ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
@@ -19,9 +20,11 @@
     </ui:ContentDialog.Resources>
     <ui:ContentDialog.Content>
         <StackPanel>
-            <TextBlock Text="填写参数后加入队列，任务将按顺序自动处理。" Margin="0,0,0,12" TextWrapping="Wrap" />
-            <components:SuppressTaskSettings x:Name="TaskSettings" />
+            <ScrollViewer>
+                <components:SuppressTaskSettings x:Name="TaskSettings" />
+            </ScrollViewer>
             <TextBlock Text="{Binding SubmissionError}"
+                       Visibility="{calcBinding:Binding 'SubmissionError.Length!=0', FalseToVisibility=Collapsed}"
                        TextWrapping="Wrap" Margin="0,8,0,0"
                        Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                        TextAlignment="Center" HorizontalAlignment="Stretch" />
