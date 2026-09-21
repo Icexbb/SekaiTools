@@ -7,15 +7,9 @@
              xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
              mc:Ignorable="d" d:DesignWidth="600"
              d:DataContext="{d:DesignInstance suppress:SuppressionJobModel, IsDesignTimeCreatable=True}">
-    <StackPanel>
-        <Grid Margin="5">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="100" />
-            </Grid.RowDefinitions>
-            <Grid Grid.Row="0">
+    <ui:Card Padding="0" BorderBrush="Transparent" Background="Transparent">
+        <StackPanel>
+            <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
@@ -23,34 +17,38 @@
                 <StackPanel>
                     <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
                                ToolTip="{Binding SourceVideo}" />
-                    <TextBlock Text="{Binding OutputPath}" TextTrimming="CharacterEllipsis"
+                    <TextBlock Text="{Binding OutputPath}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"
                                ToolTip="{Binding OutputPath}"
                                Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
-                </StackPanel>
-                <TextBlock Grid.Column="1" Text="{Binding Progress.Status}" FontWeight="SemiBold" />
-            </Grid>
-            <TextBlock Grid.Row="1" Text="{Binding EncodingDescription}" Margin="0,6,0,0"
-                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-            <Grid Grid.Row="2">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <ProgressBar Grid.Row="0" Value="{Binding Progress.Fraction, Mode=OneWay}" Maximum="1"
-                             IsIndeterminate="{Binding IsPreparing, Mode=OneWay}" Height="6" Margin="0,6" />
-                <Grid Grid.Row="1" Margin="0,4,0,8">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <ui:TextBlock Text="{Binding Progress.Fraction, StringFormat={}{0:P1}}" Margin="0,0,12,0" />
-                        <ui:TextBlock Text="{Binding Progress.FramesPerSecond, StringFormat={}{0:F1} FPS}" />
+                    <TextBlock Text="{Binding EncodingDescription}" Margin="0,3,0,0"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,3,0,0">
+                        <TextBlock Text="{Binding Progress.Fraction, StringFormat={}{0:P1}}" Margin="0,0,12,0" />
+                        <TextBlock Text="{Binding Progress.FramesPerSecond, StringFormat={}{0:F1} FPS}" />
                     </StackPanel>
-                    <ui:Button Content="取消" HorizontalAlignment="Right" Click="CancelJob_OnClick"
-                               IsEnabled="{Binding CanCancel, Mode=OneWay}" />
+                </StackPanel>
+                <Grid Grid.Column="1" Margin="10,0,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="{Binding Progress.Status}" FontWeight="SemiBold"
+                               HorizontalAlignment="Right" />
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <ui:Button Content="取消" Click="CancelJob_OnClick"
+                                   IsEnabled="{Binding CanCancel}" />
+                    </StackPanel>
                 </Grid>
             </Grid>
-                <TextBox x:Name="LogTextBox" Grid.Row="3" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True"
+            <StackPanel>
+                <ProgressBar Value="{Binding Progress.Fraction, Mode=OneWay}" Maximum="1"
+                             IsIndeterminate="{Binding IsPreparing, Mode=OneWay}" Height="6" Margin="0,6" />
+                <TextBox x:Name="LogTextBox" Height="150" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True"
                          FontFamily="Consolas" FontSize="12" TextWrapping="NoWrap"
                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
                          Loaded="LogTextBox_OnLoaded" TextChanged="LogTextBox_OnTextChanged" />
-        </Grid>
-    </StackPanel>
+            </StackPanel>
+        </StackPanel>
+    </ui:Card>
 </UserControl>
