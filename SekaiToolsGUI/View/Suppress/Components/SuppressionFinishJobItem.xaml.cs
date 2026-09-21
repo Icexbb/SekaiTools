@@ -27,4 +27,10 @@ public partial class SuppressionFinishJobItem : UserControl
     {
         RemoveRequested?.Invoke(this, EventArgs.Empty);
     }
+
+    private void ShowLogButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        StackPanelLog.Visibility =
+            StackPanelLog.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+    }
 }

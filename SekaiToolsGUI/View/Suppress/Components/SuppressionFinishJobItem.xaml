@@ -6,71 +6,69 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:media="clr-namespace:SekaiToolsMedia;assembly=SekaiToolsMedia"
              xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
-             mc:Ignorable="d" d:DesignWidth="400"
+             mc:Ignorable="d" d:DesignWidth="500"
              d:DataContext="{d:DesignInstance suppress:SuppressionJobModel, IsDesignTimeCreatable=True}">
-    <ui:CardExpander Margin="0,0,10,6">
-        <ui:CardExpander.Style>
-            <Style TargetType="ui:CardExpander" BasedOn="{StaticResource {x:Type ui:CardExpander}}">
+    <ui:Card Margin="0,0,10,6">
+        <ui:Card.Style>
+            <Style TargetType="ui:Card" BasedOn="{StaticResource {x:Type ui:Card}}">
                 <Setter Property="BorderThickness" Value="2" />
                 <Setter Property="BorderBrush" Value="LightGreen" />
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding Progress.State}" Value="{x:Static media:VideoSuppressionState.Cancelled}">
+                    <DataTrigger Binding="{Binding Progress.State}"
+                                 Value="{x:Static media:VideoSuppressionState.Cancelled}">
                         <Setter Property="BorderBrush" Value="LightGray" />
                     </DataTrigger>
-                    <DataTrigger Binding="{Binding Progress.State}" Value="{x:Static media:VideoSuppressionState.Failed}">
+                    <DataTrigger Binding="{Binding Progress.State}"
+                                 Value="{x:Static media:VideoSuppressionState.Failed}">
                         <Setter Property="BorderBrush" Value="LightPink" />
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
-        </ui:CardExpander.Style>
-        <ui:CardExpander.Header>
-            <StackPanel Margin="0,0,10,0">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
-                                   ToolTip="{Binding SourceVideo}" />
-                        <TextBlock Text="{Binding OutputPath}" TextTrimming="CharacterEllipsis"
-                                   ToolTip="{Binding OutputPath}"
-                                   Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+        </ui:Card.Style>
+        <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                               ToolTip="{Binding SourceVideo}" />
+                    <TextBlock Text="{Binding OutputPath}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"
+                               ToolTip="{Binding OutputPath}"
+                               Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="{Binding EncodingDescription}" Margin="0,3,0,0"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,3,0,0">
+                        <TextBlock Text="{Binding Progress.Fraction, StringFormat={}{0:P1}}"
+                                   Margin="0,0,12,0" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Progress.FramesPerSecond, StringFormat={}{0:F1} FPS}"
+                                   Margin="0,0,12,0" VerticalAlignment="Center" />
                     </StackPanel>
-                    <TextBlock Grid.Column="1" Text="{Binding Progress.Status}" FontWeight="SemiBold" />
-                </Grid>
-                <TextBlock Text="{Binding EncodingDescription}" Margin="0,6,0,0"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                <ProgressBar Value="{Binding Progress.Fraction, Mode=OneWay}" Maximum="1"
-                             Height="6" Margin="0,6" />
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <ui:TextBlock Text="{Binding Progress.Fraction, StringFormat={}{0:P1}}"
-                                      Margin="0,0,12,0" VerticalAlignment="Center" />
-                        <ui:TextBlock Text="{Binding Progress.FramesPerSecond, StringFormat={}{0:F1} FPS}"
-                                      Margin="0,0,12,0" VerticalAlignment="Center" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+
+                </StackPanel>
+                <Grid Grid.Column="1" Margin="10,0,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="{Binding Progress.Status}" FontWeight="SemiBold"
+                               HorizontalAlignment="Right" />
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
                         <ui:Button Content="显示结果" Click="ShowFileButton_OnClick"
                                    IsEnabled="{Binding IsCompleted}" />
                         <ui:Button Content="移除" Click="RemoveButton_OnClick" Margin="10,0,0,0" />
+                        <ui:Button Content="显示日志" Click="ShowLogButton_OnClick" Margin="10,0,0,0" />
                     </StackPanel>
                 </Grid>
-            </StackPanel>
-        </ui:CardExpander.Header>
-        <ui:CardExpander.Content>
-            <StackPanel>
-                <TextBlock Text="处理日志 · 可选中复制" Margin="0,0,0,8"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                <TextBox Height="200" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True"
-                         FontFamily="Consolas" FontSize="12" TextWrapping="NoWrap"
+            </Grid>
+            <StackPanel Name="StackPanelLog" Visibility="Visible">
+                <Separator Margin="0,3,0,3" />
+                <TextBox Height="150" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True"
+                         FontSize="12" TextWrapping="NoWrap"
                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" />
             </StackPanel>
-        </ui:CardExpander.Content>
-    </ui:CardExpander>
+        </StackPanel>
+    </ui:Card>
 </UserControl>
