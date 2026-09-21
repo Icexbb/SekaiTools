@@ -5,43 +5,72 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
+             xmlns:dd="clr-namespace:GongSolutions.Wpf.DragDrop;assembly=GongSolutions.WPF.DragDrop"
              xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
              mc:Ignorable="d" d:DesignWidth="400"
              d:DataContext="{d:DesignInstance suppress:SuppressionJobModel, IsDesignTimeCreatable=True}">
-    <ui:Card x:Name="Control" Padding="10" Margin="0,0,10,6"
-             PreviewMouseLeftButtonDown="Control_OnPreviewMouseLeftButtonDown"
-             PreviewMouseMove="Control_OnPreviewMouseMove">
-        <StackPanel>
+    <UserControl.Resources>
+        <DataTemplate x:Key="SuppressionQueueDragPreviewTemplate">
+            <ui:Card Padding="10" MinWidth="320" Opacity="0.88">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
-                                   ToolTip="{Binding SourceVideo}" />
-                        <TextBlock Text="{Binding OutputPath}" TextTrimming="CharacterEllipsis"
-                                   ToolTip="{Binding OutputPath}"
-                                   Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+                    <ui:SymbolIcon Grid.Column="0" Symbol="LineHorizontal320"
+                                   VerticalAlignment="Center" Margin="0,0,10,0" />
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding OutputPath}" Margin="0,3,0,0"
+                                   TextTrimming="CharacterEllipsis"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Text="{Binding EncodingDescription}" Margin="0,3,0,0"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </StackPanel>
-                    <TextBlock Grid.Column="1" Text="等待中" FontWeight="SemiBold" />
                 </Grid>
-                <TextBlock Text="{Binding EncodingDescription}" Margin="0,6,0,0"
+            </ui:Card>
+        </DataTemplate>
+    </UserControl.Resources>
+    <ui:Card Padding="10" Margin="0,0,10,6">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Stretch"
+                  dd:DragDrop.IsDragSource="True"
+                  dd:DragDrop.UseDefaultDragAdorner="True"
+                  dd:DragDrop.DragAdornerTemplate="{StaticResource SuppressionQueueDragPreviewTemplate}"
+                  dd:DragDrop.UseVisualSourceItemSizeForDragAdorner="True"
+                  dd:DragDrop.DragMouseAnchorPoint="0.05,0.5"
+                  Cursor="SizeNS" ToolTip="拖动调整队列顺序">
+                <ui:SymbolIcon Symbol="LineHorizontal320" Name="IconDragSort" VerticalAlignment="Center" />
+            </Grid>
+            <StackPanel Grid.Column="1">
+                <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                           ToolTip="{Binding SourceVideo}" />
+                <TextBlock Text="{Binding OutputPath}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"
+                           ToolTip="{Binding OutputPath}"
+                           Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock Text="{Binding EncodingDescription}" Margin="0,3,0,0"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                <Grid Margin="0,6,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBlock Grid.Column="0" Text="等待执行" VerticalAlignment="Center" />
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <ui:Button Content="开始执行" Click="StartExecuteButton_OnClick"
-                                   Visibility="{c:Binding CanStart, FalseToVisibility=Collapsed}" />
-                        <ui:Button Content="取消" Click="CancelJob_OnClick"
-                                   IsEnabled="{Binding CanCancel}" Margin="10,0,0,0" />
-                    </StackPanel>
-                </Grid>
-        </StackPanel>
+            </StackPanel>
+            <Grid Grid.Column="2" Margin="10,0,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="等待中" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <ui:Button Content="开始执行" Click="StartExecuteButton_OnClick"
+                               Visibility="{c:Binding CanStart, FalseToVisibility=Collapsed}" />
+                    <ui:Button Content="取消" Click="CancelJob_OnClick"
+                               IsEnabled="{Binding CanCancel}" Margin="10,0,0,0" />
+                </StackPanel>
+            </Grid>
+        </Grid>
     </ui:Card>
 </UserControl>

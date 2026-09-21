@@ -5,11 +5,12 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:dd="clr-namespace:GongSolutions.Wpf.DragDrop;assembly=GongSolutions.WPF.DragDrop"
              xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
              xmlns:components="clr-namespace:SekaiToolsGUI.View.Suppress.Components"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance suppress:SuppressPageModel, IsDesignTimeCreatable=True}"
-            d:DesignWidth="800" d:Background="White">
+             d:DesignWidth="800" d:Background="White">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -87,7 +88,9 @@
                         </StackPanel>
                         <ui:PassiveScrollViewer Grid.Row="1" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
                             <ItemsControl x:Name="PendingJobsList" ItemsSource="{Binding PendingJobs}"
-                                          AllowDrop="True" DragOver="PendingJobs_OnDragOver" Drop="PendingJobs_OnDrop">
+                                          AllowDrop="True"
+                                          dd:DragDrop.IsDropTarget="True"
+                                          dd:DragDrop.ShowAlwaysDropTargetAdorner="True">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <components:SuppressionQueueJobItem StartRequested="StartJobItem_OnStartRequested" />

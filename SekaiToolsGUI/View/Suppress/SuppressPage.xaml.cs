@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using GongSolutions.Wpf.DragDrop;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 using SekaiToolsGUI.Interface;
@@ -12,6 +13,7 @@ using SekaiToolsMedia;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
+using GongDragDrop = GongSolutions.Wpf.DragDrop.DragDrop;
 
 namespace SekaiToolsGUI.View.Suppress;
 
@@ -23,6 +25,7 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     {
         DataContext = SuppressPageModel.Instance;
         InitializeComponent();
+        GongDragDrop.SetDropHandler(PendingJobsList, new PendingJobsDropHandler(ViewModel.PendingJobs));
 
     }
 
@@ -138,43 +141,45 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
             ViewModel.CompletedJobs.Remove(job);
     }
 
-    private void PendingJobs_OnDrop(object sender, DragEventArgs e)
+    private sealed class PendingJobsDropHandler : IDropTarget
     {
-        if (e.Data.GetData(typeof(SuppressionJobModel)) is not SuppressionJobModel source ||
-            !ViewModel.PendingJobs.Contains(source)) return;
+        private readonly System.Collections.ObjectModel.ObservableCollection<SuppressionJobModel> _jobs;
 
-        var targetItem = FindVisualParent<SuppressionQueueJobItem>(e.OriginalSource as DependencyObject);
-        var target = targetItem?.DataContext as SuppressionJobModel;
-        var newIndex = target == null ? ViewModel.PendingJobs.Count : ViewModel.PendingJobs.IndexOf(target);
-        if (target != null && targetItem != null && e.GetPosition(targetItem).Y > targetItem.ActualHeight / 2) newIndex++;
-
-        var oldIndex = ViewModel.PendingJobs.IndexOf(source);
-        if (oldIndex < 0) return;
-        if (oldIndex < newIndex) newIndex--;
-        if (oldIndex == newIndex) return;
-        ViewModel.PendingJobs.Move(oldIndex, Math.Clamp(newIndex, 0, ViewModel.PendingJobs.Count - 1));
-        e.Handled = true;
-    }
-
-    private void PendingJobs_OnDragOver(object sender, DragEventArgs e)
-    {
-        if (e.Data.GetData(typeof(SuppressionJobModel)) is SuppressionJobModel job &&
-            ViewModel.PendingJobs.Contains(job))
+        public PendingJobsDropHandler(
+            System.Collections.ObjectModel.ObservableCollection<SuppressionJobModel> jobs)
         {
-            e.Effects = DragDropEffects.Move;
-            e.Handled = true;
-        }
-    }
-
-    private static T? FindVisualParent<T>(DependencyObject? child) where T : DependencyObject
-    {
-        while (child != null)
-        {
-            if (child is T result) return result;
-            child = System.Windows.Media.VisualTreeHelper.GetParent(child);
+            _jobs = jobs;
         }
 
-        return null;
+        public void DragOver(IDropInfo dropInfo)
+        {
+            if (dropInfo.Data is SuppressionJobModel job &&
+                _jobs.Contains(job) &&
+                (dropInfo.TargetItem == null || dropInfo.TargetItem is SuppressionJobModel))
+            {
+                dropInfo.Effects = DragDropEffects.Move;
+                dropInfo.DropTargetAdorner = DropTargetAdorners.Insert;
+                return;
+            }
+
+            dropInfo.Effects = DragDropEffects.None;
+            dropInfo.DropTargetAdorner = null;
+        }
+
+        public void Drop(IDropInfo dropInfo)
+        {
+            if (_jobs.Count < 2 || dropInfo.Data is not SuppressionJobModel job) return;
+
+            var sourceIndex = _jobs.IndexOf(job);
+            if (sourceIndex < 0) return;
+
+            var targetIndex = Math.Clamp(dropInfo.InsertIndex, 0, _jobs.Count);
+            if (sourceIndex < targetIndex) targetIndex--;
+            targetIndex = Math.Clamp(targetIndex, 0, _jobs.Count - 1);
+
+            if (sourceIndex != targetIndex)
+                _jobs.Move(sourceIndex, targetIndex);
+        }
     }
 
 }

@@ -155,9 +155,9 @@ public partial class MainWindow : FluentWindow
 
             // Let the current Closing event finish before requesting the
             // actual close. The second Closing event is allowed by the flag.
-            Dispatcher.BeginInvoke(
-                System.Windows.Threading.DispatcherPriority.ApplicationIdle,
-                new Action(Close));
+            await Dispatcher.InvokeAsync(
+                Close,
+                System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         }
         catch
         {
