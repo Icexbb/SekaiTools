@@ -11,8 +11,7 @@ namespace SekaiToolsGUI.View.Subtitle.Components;
 
 public partial class QuickEditDialog : ContentDialog
 {
-    public QuickEditDialog(DialogBaseFrameSet dialogBase)
-        : this(dialogBase.Data, dialogBase.Data.BodyOriginal.LineCount() == 3, dialogBase.UseSeparator)
+    public QuickEditDialog(DialogBaseFrameSet dialogBase) : this(dialogBase.Data)
     {
     }
 
@@ -24,11 +23,10 @@ public partial class QuickEditDialog : ContentDialog
     {
     }
 
-    private QuickEditDialog(BaseStoryEvent storyEvent, bool canReturn = false, bool useReturn = false)
+    private QuickEditDialog(BaseStoryEvent storyEvent)
     {
-        DataContext = new QuickEditDialogModel(storyEvent, canReturn, useReturn);
+        DataContext = new QuickEditDialogModel(storyEvent);
         InitializeComponent();
-        SwitchCanReturn.Visibility = ViewModel.CanReturn ? Visibility.Visible : Visibility.Collapsed;
     }
 
     public QuickEditDialogModel ViewModel => (QuickEditDialogModel)DataContext;

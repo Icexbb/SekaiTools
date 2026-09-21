@@ -23,7 +23,7 @@ public class DialogTimingCheckTests
     public void 分行对话分别检查每段时长()
     {
         var set = CreateSet("一二三四五六七八九十", 10);
-        set.UseSeparator = true;
+        set.SeparatorEnabled = true;
         set.SetSeparator(2, 5);
 
         var issue = Assert.Single(DialogTimingCheck.GetIssues(set, 80));

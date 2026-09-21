@@ -17,24 +17,13 @@
                TargetType="{x:Type local:QuickEditDialog}" />
     </ui:ContentDialog.Resources>
     <ui:ContentDialog.Title>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="字幕文本快速调整" />
-            <ui:ToggleSwitch
-                Grid.Column="1" Name="SwitchCanReturn" OnContent="换行" OffContent="不换行"
-                Margin="10,0"
-                IsChecked="{Binding UseReturn}"
-                HorizontalAlignment="Right" />
-        </Grid>
+        字幕文本快速调整
     </ui:ContentDialog.Title>
     <ui:ContentDialog.Content>
         <StackPanel>
             <TextBlock Name="TextBlockOriginal" Margin="10"
                        Text="{Binding ContentOriginal}" TextWrapping="Wrap" />
-            <TextBox MaxLines="2" Height="55" Name="TextBoxTranslated" TextWrapping="NoWrap"
+            <TextBox MaxLines="3" Height="55" Name="TextBoxTranslated" TextWrapping="NoWrap" MinWidth="500"
                      PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"
                      AcceptsReturn="True"
                      Text="{Binding Path=ContentTranslated, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />

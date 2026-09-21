@@ -19,7 +19,7 @@ public static class DialogTimingCheck
         if (charTime <= 0 || set.Frames.Count == 0) return [];
 
         var content = set.Data.FinalContent.TrimAll();
-        if (!set.UseSeparator) return CheckLine("本行", content, set.Frames.Count, set.Fps.Fps(), charTime);
+        if (!set.SeparatorEnabled) return CheckLine("本行", content, set.Frames.Count, set.Fps.Fps(), charTime);
 
         var separatorIndex = set.Separate.SeparatorContentIndex;
         if (separatorIndex <= 0 || separatorIndex >= content.Length) separatorIndex = content.Length / 2;

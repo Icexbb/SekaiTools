@@ -5,7 +5,7 @@ namespace SekaiToolsGUI.ViewModel.Subtitle;
 
 public class QuickEditDialogModel : ViewModelBase
 {
-    public QuickEditDialogModel(BaseStoryEvent storyEvent, bool canReturn = false, bool useReturn = false)
+    public QuickEditDialogModel(BaseStoryEvent storyEvent)
     {
         ContentOriginal = storyEvent.BodyOriginal;
         ContentTranslated = storyEvent.BodyTranslated;
@@ -17,9 +17,6 @@ public class QuickEditDialogModel : ViewModelBase
 
         if (ContentTranslated.LineCount() == 3)
             ContentTranslated = ContentTranslated.Replace("\n", "");
-
-        CanReturn = canReturn;
-        UseReturn = CanReturn && useReturn;
     }
 
     public string ContentOriginal
@@ -31,14 +28,6 @@ public class QuickEditDialogModel : ViewModelBase
     public string ContentTranslated
     {
         get => GetProperty("");
-        set => SetProperty(value);
-    }
-
-    public bool CanReturn { get; }
-
-    public bool UseReturn
-    {
-        get => GetProperty(false);
         set => SetProperty(value);
     }
 }

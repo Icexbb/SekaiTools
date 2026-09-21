@@ -405,7 +405,7 @@ public class DialogTemplateMatcher(
             FrameSets = Set.Select(d => new DialogFrameSetDto
             {
                 Finished = d.Finished,
-                UseSeparator = d.UseSeparator,
+                UseSeparator = d.SeparatorEnabled,
                 SeparateFrame = d.Separate.SeparateFrame,
                 SeparatorContentIndex = d.Separate.SeparatorContentIndex,
                 Frames = d.Frames.Select(f => new FrameResultDto(f.Index, f.Point.X, f.Point.Y)).ToList()
@@ -427,7 +427,7 @@ public class DialogTemplateMatcher(
             var src = state.FrameSets[i];
             var dst = Set[i];
             dst.Finished = src.Finished;
-            dst.UseSeparator = src.UseSeparator;
+            dst.SeparatorEnabled = src.UseSeparator;
             dst.SetSeparator(src.SeparateFrame, src.SeparatorContentIndex);
             dst.Frames.Clear();
             foreach (var f in src.Frames)

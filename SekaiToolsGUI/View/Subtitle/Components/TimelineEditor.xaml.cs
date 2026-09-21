@@ -65,7 +65,7 @@ public sealed class TimelineEventSelection(
 
     public bool HasSeparator => FrameSet is DialogBaseFrameSet
     {
-        UseSeparator: true
+        SeparatorEnabled: true
     } dialog && dialog.EndIndex() - dialog.StartIndex() >= 2;
 
     public int SeparateFrame => FrameSet is DialogBaseFrameSet dialog
@@ -78,7 +78,7 @@ public sealed class TimelineEventSelection(
         {
             case DialogBaseFrameSet dialog:
                 dialog.SetFrameRange(startFrame, endFrame);
-                if (dialog.UseSeparator && endFrame - startFrame >= 2)
+                if (dialog.SeparatorEnabled && endFrame - startFrame >= 2)
                     dialog.SetSeparator(
                         Math.Clamp(dialog.Separate.SeparateFrame, startFrame + 1, endFrame - 1),
                         dialog.Separate.SeparatorContentIndex);
@@ -99,7 +99,7 @@ public sealed class TimelineEventSelection(
 
     public void SetSeparateFrame(int separateFrame)
     {
-        if (FrameSet is not DialogBaseFrameSet { UseSeparator: true } dialog)
+        if (FrameSet is not DialogBaseFrameSet { SeparatorEnabled: true } dialog)
             return;
 
         var minimum = dialog.StartIndex() + 1;
@@ -576,10 +576,10 @@ public partial class TimelineEditor : UserControl
                 _dragOriginalEnd,
                 selection.StartFrame,
                 selection.EndFrame,
-                selection.FrameSet is DialogBaseFrameSet { UseSeparator: true }
+                selection.FrameSet is DialogBaseFrameSet { SeparatorEnabled: true }
                     ? _dragOriginalSeparateFrame
                     : null,
-                selection.FrameSet is DialogBaseFrameSet { UseSeparator: true }
+                selection.FrameSet is DialogBaseFrameSet { SeparatorEnabled: true }
                     ? selection.SeparateFrame
                     : null));
             UpdateUndoState();
@@ -1193,7 +1193,7 @@ public partial class TimelineEditor : UserControl
 
         var oldStart = _selection.StartFrame;
         var oldEnd = _selection.EndFrame;
-        var usesSeparator = _selection.FrameSet is DialogBaseFrameSet { UseSeparator: true };
+        var usesSeparator = _selection.FrameSet is DialogBaseFrameSet { SeparatorEnabled: true };
         int? oldSeparateFrame = usesSeparator ? _selection.SeparateFrame : null;
         if (oldStart == start && oldEnd == end)
         {

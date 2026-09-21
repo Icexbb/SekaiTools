@@ -26,7 +26,7 @@ public partial class DialogBaseFrameSet : BaseFrameSet
     {
         Data = data;
         Fps = fps;
-        UseSeparator = NeedSetSeparator;
+        SeparatorEnabled = SeparatorNeeded;
 
         #region InitSeparatorContentIndex
 
@@ -56,10 +56,10 @@ public partial class DialogBaseFrameSet : BaseFrameSet
 
     public bool IsJitter => Data.Shake;
 
-    public bool NeedSetSeparator => Data.BodyTranslated != string.Empty &&
+    public bool SeparatorNeeded => Data.BodyTranslated != string.Empty &&
                                     Data.BodyOriginal.LineCount() == 3;
 
-    public bool UseSeparator { get; set; }
+    public bool SeparatorEnabled { get; set; }
 
     public void InitSeparator()
     {

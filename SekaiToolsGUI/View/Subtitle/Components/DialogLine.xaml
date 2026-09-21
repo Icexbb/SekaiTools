@@ -8,7 +8,6 @@
              xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
              mc:Ignorable="d" d:DesignWidth="760"
              d:DataContext="{d:DesignInstance subtitle:DialogLineModel, IsDesignTimeCreatable=False}"
-             PreviewMouseLeftButtonDown="DialogLine_OnPreviewMouseLeftButtonDown"
              HorizontalAlignment="Stretch">
     <UserControl.Resources>
         <Style x:Key="SpeakerColorBorderStyle" TargetType="{x:Type Border}">
@@ -103,13 +102,20 @@
                             </Grid.ColumnDefinitions>
                             <ui:TextBlock Text="{Binding TranslatedContent, Mode=OneWay}"
                                           TextWrapping="NoWrap" />
-                            <ui:Button Grid.Column="1" FontSize="12" Padding="6,4" Click="QuickEditBtn_OnClick"> 修改 </ui:Button>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <ui:Button FontSize="12" Padding="6,4" Margin="0,0,8,0" Click="SeparateBtn_OnClick"
+                                           Visibility="{c:Binding SeparatorUsable,FalseToVisibility=Collapsed}"
+                                           Appearance="{Binding SeparatorEnabled,Converter={StaticResource BoolToAppearancePriOrSec}}">
+                                    分行
+                                </ui:Button>
+                                <ui:Button FontSize="12" Padding="6,4" Click="QuickEditBtn_OnClick"> 修改 </ui:Button>
+                            </StackPanel>
                         </Grid>
                     </StackPanel>
                 </ui:Card>
 
                 <!-- 长文本分割设置默认收入抽屉，点击标题展开 -->
-                <Expander Name="PanelSeparator" Margin="0,8,0,0" IsExpanded="False">
+                <Expander Name="PanelSeparator" Visibility="{c:Binding 'SeparatorUsable and SeparatorEnabled'}" Margin="0,8,0,0" IsExpanded="True">
                     <Expander.Header>
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="TextContinuous24" Margin="0,0,6,0" />
@@ -126,8 +132,8 @@
                         <TextBlock Margin="10,6" TextWrapping="WrapWithOverflow" TextAlignment="Center">
                             <TextBlock.Text>
                                 <MultiBinding StringFormat="{}{0} / {1}">
-                                    <Binding Path="ContentPart1" Mode="OneWay" />
-                                    <Binding Path="ContentPart2" Mode="OneWay" />
+                                    <Binding Path="SeparatedContentPart1" Mode="OneWay" />
+                                    <Binding Path="SeparatedContentPart2" Mode="OneWay" />
                                 </MultiBinding>
                             </TextBlock.Text>
                         </TextBlock>
@@ -137,11 +143,11 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Margin="5" Text="{Binding ContentPart1Length}" />
+                            <TextBlock Grid.Column="0" Margin="5" Text="{Binding SeparatedContentPart1Length}" />
                             <Slider Grid.Column="1" Minimum="1" VerticalAlignment="Center"
                                     Maximum="{Binding SeparatorContentIndexLimit}"
                                     Value="{Binding SeparatorContentIndex}" />
-                            <TextBlock Grid.Column="2" Margin="5" Text="{Binding ContentPart2Length}" />
+                            <TextBlock Grid.Column="2" Margin="5" Text="{Binding SeparatedContentPart2Length}" />
                         </Grid>
 
                         <Separator Margin="0,8" />

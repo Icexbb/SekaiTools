@@ -18,7 +18,6 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
         set.InitSeparator();
         DataContext = new DialogLineModel(set, CharTime);
         InitializeComponent();
-        CheckLineExpander();
     }
 
     private int CharTime => SettingPageModel.Instance.TypewriterCharTime;
@@ -45,7 +44,7 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
     {
         Dispatcher.Invoke(() =>
         {
-            PanelSeparator.Visibility = ViewModel.UseSeparator ? Visibility.Visible : Visibility.Collapsed;
+            PanelSeparator.Visibility = ViewModel.SeparatorEnabled ? Visibility.Visible : Visibility.Collapsed;
         });
     }
 
@@ -74,13 +73,15 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
         ViewModel.TranslatedContent = dialog.ViewModel.ContentTranslated;
 
         DataContext = new DialogLineModel(set, CharTime);
-        ViewModel.UseSeparator = dialog.ViewModel.UseReturn;
         if (edited.Contains('\n'))
         {
             var parts = edited.Split('\n');
             ViewModel.SeparatorContentIndex = parts[0].Length;
         }
+    }
 
-        CheckLineExpander();
+    private void SeparateBtn_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.SeparatorEnabled = !ViewModel.SeparatorEnabled;
     }
 }

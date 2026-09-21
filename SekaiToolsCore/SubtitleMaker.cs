@@ -228,13 +228,13 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             var dialogEvents = new List<SubtitleEvent>();
             var dialogMarker = $"-----  {dialogIndex:000}  -----";
             var timingIssues = DialogTimingCheck.GetIssues(set, TypewriterSetting.CharTime);
-            var eventTimingWarning = set.UseSeparator || timingIssues.Count == 0
+            var eventTimingWarning = set.SeparatorEnabled || timingIssues.Count == 0
                 ? string.Empty
                 : $"  [问题：{timingIssues[0].Warning}，请手动排查]";
             dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  Start{eventTimingWarning}",
                 set.StartTime(), set.EndTime(), "Screen"));
 
-            if (set.UseSeparator)
+            if (set.SeparatorEnabled)
             {
                 var items = SeparateDialogSet(set);
                 dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  Line 1 ↓{GetLineTimingWarning("第一行")}",

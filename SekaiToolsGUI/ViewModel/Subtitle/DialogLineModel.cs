@@ -14,7 +14,6 @@ public class DialogLineModel : ViewModelBase
 
     public DialogLineModel(DialogBaseFrameSet set, int charTime = 80)
     {
-        // set.Data.BodyTranslated = set.Data.BodyTranslated.Replace("...", "…");
         Set = set;
         _speakerPalette = SpeakerColorConfig.Get(set.Data.CharacterId);
         RawContent = set.Data.BodyOriginal;
@@ -22,8 +21,9 @@ public class DialogLineModel : ViewModelBase
         FrameRate = set.Fps;
         _charTime = charTime;
 
-        UseSeparator = set.NeedSetSeparator;
-        if (set.NeedSetSeparator)
+        SeparatorEnabled = set.SeparatorNeeded;
+        SeparatorUsable = set.SeparatorNeeded;
+        if (set.SeparatorNeeded)
         {
             SeparateFrame = set.Separate.SeparateFrame;
             SeparatorContentIndex = set.Separate.SeparatorContentIndex;
@@ -80,13 +80,19 @@ public class DialogLineModel : ViewModelBase
 
     public int SeparatorContentIndexLimit => Set.Data.BodyTranslated.TrimAll().Length - 1;
 
-    public bool UseSeparator
+    public bool SeparatorUsable
+    {
+        get => GetProperty(false);
+        set => SetProperty(value);
+    }
+
+    public bool SeparatorEnabled
     {
         get => GetProperty(false);
         set
         {
             SetProperty(value);
-            Set.UseSeparator = value;
+            Set.SeparatorEnabled = value;
             SetPromptWarning();
         }
     }
@@ -115,37 +121,37 @@ public class DialogLineModel : ViewModelBase
         set
         {
             SetProperty(value);
-            ContentPart1 = Set.Data.BodyTranslated.TrimAll()[..value];
-            ContentPart2 = Set.Data.BodyTranslated.TrimAll()[value..];
+            SeparatedContentPart1 = Set.Data.BodyTranslated.TrimAll()[..value];
+            SeparatedContentPart2 = Set.Data.BodyTranslated.TrimAll()[value..];
             SetPromptWarning();
             Set.SetSeparator(SeparateFrame, SeparatorContentIndex);
         }
     }
 
-    public string ContentPart1
+    public string SeparatedContentPart1
     {
         get => GetProperty("");
         private set
         {
             SetProperty(value);
-            OnPropertyChanged(nameof(ContentPart1Length));
+            OnPropertyChanged(nameof(SeparatedContentPart1Length));
         }
     }
 
 
-    public string ContentPart2
+    public string SeparatedContentPart2
     {
         get => GetProperty("");
         private set
         {
             SetProperty(value);
-            OnPropertyChanged(nameof(ContentPart2Length));
+            OnPropertyChanged(nameof(SeparatedContentPart2Length));
         }
     }
 
-    public double ContentPart1Length => CalculateContentLength(ContentPart1);
+    public double SeparatedContentPart1Length => CalculateContentLength(SeparatedContentPart1);
 
-    public double ContentPart2Length => CalculateContentLength(ContentPart2);
+    public double SeparatedContentPart2Length => CalculateContentLength(SeparatedContentPart2);
 
     private static double CalculateContentLength(string content) =>
         content.Sum(character => character switch
@@ -162,9 +168,10 @@ public class DialogLineModel : ViewModelBase
         private set => SetProperty(value);
     }
 
+
     public void RefreshTiming()
     {
-        if (Set.UseSeparator)
+        if (Set.SeparatorEnabled)
         {
             SetProperty(Set.Separate.SeparateFrame, nameof(SeparateFrame));
             SeparateTime = new ProcessFrame(Set.Separate.SeparateFrame, FrameRate).StartTime();
@@ -182,6 +189,7 @@ public class DialogLineModel : ViewModelBase
 
     private void SetPromptWarning()
     {
-        PromptWarning = string.Join("；", DialogTimingCheck.GetIssues(Set, _charTime).Select(x => x.Warning));
+        PromptWarning = string.Join("；", DialogTimingCheck.GetIssues(Set, _charTime)
+            .Select(x => x.Warning));
     }
 }
