@@ -90,8 +90,26 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
             var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService
                                 ?? throw new InvalidOperationException("内容对话框服务不可用");
             var dialog = new SuppressionTaskDialog(
-                dialogService.GetDialogHostEx() ?? throw new InvalidOperationException("内容对话框宿主不可用"), EnqueueSuppression);
-            await dialogService.ShowAsync(dialog, CancellationToken.None);
+                dialogService.GetDialogHostEx() ?? throw new InvalidOperationException("内容对话框宿主不可用"),
+                !ViewModel.HasRunningJob);
+            var result = await dialogService.ShowAsync(dialog, CancellationToken.None);
+            if (result != ContentDialogResult.Primary) return;
+
+            var overwriteExisting = dialog.ViewModel.OutputExists;
+            if (overwriteExisting)
+            {
+                var overwriteResult = await dialogService.ShowSimpleDialogAsync(
+                    new SimpleContentDialogCreateOptions
+                    {
+                        Title = "覆盖已有输出文件？",
+                        Content = $"输出文件已存在：\n{dialog.ViewModel.OutputPath}\n\n继续执行将覆盖该文件。",
+                        PrimaryButtonText = "继续覆盖",
+                        CloseButtonText = "取消"
+                    }, CancellationToken.None);
+                if (overwriteResult != ContentDialogResult.Primary) return;
+            }
+
+            EnqueueSuppression(dialog.ViewModel.ToOptions(overwriteExisting), dialog.AutoStart);
         }
         catch (Exception exc)
         {
@@ -104,10 +122,59 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 
     private void ClearButton_OnClick(object sender, RoutedEventArgs e)
     {
-        foreach (var job in ViewModel.Jobs.Where(x => x.Progress.State is VideoSuppressionState.Completed
-                     or VideoSuppressionState.Cancelled or VideoSuppressionState.Failed).ToList())
-            ViewModel.Jobs.Remove(job);
-        if (ViewModel.Jobs.Count == 0) ClearTaskbarProgress();
+        ViewModel.ClearCompleted();
+        if (!ViewModel.HasRunningJob) ClearTaskbarProgress();
+    }
+
+    private void StartJobItem_OnStartRequested(object? sender, EventArgs e)
+    {
+        if (sender is SuppressionQueueJobItem { DataContext: SuppressionJobModel job })
+            StartJob(job);
+    }
+
+    private void RemoveFinishedJob_OnRemoveRequested(object? sender, EventArgs e)
+    {
+        if (sender is SuppressionFinishJobItem { DataContext: SuppressionJobModel job })
+            ViewModel.CompletedJobs.Remove(job);
+    }
+
+    private void PendingJobs_OnDrop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetData(typeof(SuppressionJobModel)) is not SuppressionJobModel source ||
+            !ViewModel.PendingJobs.Contains(source)) return;
+
+        var targetItem = FindVisualParent<SuppressionQueueJobItem>(e.OriginalSource as DependencyObject);
+        var target = targetItem?.DataContext as SuppressionJobModel;
+        var newIndex = target == null ? ViewModel.PendingJobs.Count : ViewModel.PendingJobs.IndexOf(target);
+        if (target != null && targetItem != null && e.GetPosition(targetItem).Y > targetItem.ActualHeight / 2) newIndex++;
+
+        var oldIndex = ViewModel.PendingJobs.IndexOf(source);
+        if (oldIndex < 0) return;
+        if (oldIndex < newIndex) newIndex--;
+        if (oldIndex == newIndex) return;
+        ViewModel.PendingJobs.Move(oldIndex, Math.Clamp(newIndex, 0, ViewModel.PendingJobs.Count - 1));
+        e.Handled = true;
+    }
+
+    private void PendingJobs_OnDragOver(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetData(typeof(SuppressionJobModel)) is SuppressionJobModel job &&
+            ViewModel.PendingJobs.Contains(job))
+        {
+            e.Effects = DragDropEffects.Move;
+            e.Handled = true;
+        }
+    }
+
+    private static T? FindVisualParent<T>(DependencyObject? child) where T : DependencyObject
+    {
+        while (child != null)
+        {
+            if (child is T result) return result;
+            child = System.Windows.Media.VisualTreeHelper.GetParent(child);
+        }
+
+        return null;
     }
 
 }

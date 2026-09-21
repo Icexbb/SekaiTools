@@ -9,7 +9,7 @@
              xmlns:components="clr-namespace:SekaiToolsGUI.View.Suppress.Components"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance suppress:SuppressPageModel, IsDesignTimeCreatable=True}"
-             d:DesignHeight="600" d:DesignWidth="800" d:Background="White">
+            d:DesignWidth="800" d:Background="White">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -19,6 +19,7 @@
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
@@ -33,9 +34,13 @@
                                Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}"
                                Visibility="{c:Binding 'ResourcePreparationError.Length!=0', FalseToVisibility=Collapsed}" />
                 </StackPanel>
+                    <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                    <CheckBox Content="自动执行队列" Name="CheckBoxQueue"
+                              IsChecked="{Binding AutoRunQueue, Mode=TwoWay}" />
+                </StackPanel>
 
 
-                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right">
                     <ui:Button Content="创建任务" Click="CreateTask_OnClick"
                                IsEnabled="{Binding ResourcesReady}" Appearance="Primary" />
                     <ui:Button Content="清除已结束任务" IsEnabled="{Binding CanClear}" Click="ClearButton_OnClick"
@@ -51,26 +56,66 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <!--任务列表-->
-            <ui:PassiveScrollViewer Grid.Row="1" Margin="0,8,0,0"
-                                    VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
-                <ItemsControl ItemsSource="{Binding Jobs}" HorizontalContentAlignment="Stretch">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <components:SuppressionJobItem />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ui:PassiveScrollViewer>
-            <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
-                        Visibility="{c:Binding 'Jobs.Count==0', FalseToVisibility=Collapsed}">
-                <TextBlock Text="还没有压制任务" HorizontalAlignment="Center" FontSize="18"
-                           Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-                <TextBlock Text="点击上方“创建任务”，选择视频并设置输出参数。" Margin="0,18,0,0"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                <ui:Button Content="创建任务" Click="CreateTask_OnClick" HorizontalAlignment="Center" Margin="0,20,0,0"
-                           IsEnabled="{Binding ResourcesReady}" Appearance="Primary" />
-            </StackPanel>
+
+            <ui:Card Grid.Row="0" Padding="12" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="正在执行的任务" FontSize="18" FontWeight="SemiBold" />
+                    <TextBlock Text="当前没有正在执行的任务" HorizontalAlignment="Center" Margin="0,14,0,4"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Visibility="{c:Binding !HasRunningJob, FalseToVisibility=Collapsed}" />
+                    <Grid Visibility="{c:Binding HasRunningJob, FalseToVisibility=Collapsed}">
+                        <components:SuppressionExecutingJobItem DataContext="{Binding RunningJob}" Margin="0,12,0,0" />
+                    </Grid>
+                </StackPanel>
+            </ui:Card>
+
+            <Grid Grid.Row="1" MinHeight="200">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ui:Card Grid.Column="0" Padding="10" Margin="0,0,5,0" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
+                    <Grid VerticalAlignment="Stretch">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" >
+                            <TextBlock Text="未执行的任务列表" FontSize="18" FontWeight="SemiBold" />
+                            <TextBlock Text="可拖动排序" Margin="5,3,0,8" VerticalAlignment="Bottom"
+                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                        <ui:PassiveScrollViewer Grid.Row="1" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
+                            <ItemsControl x:Name="PendingJobsList" ItemsSource="{Binding PendingJobs}"
+                                          AllowDrop="True" DragOver="PendingJobs_OnDragOver" Drop="PendingJobs_OnDrop">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <components:SuppressionQueueJobItem StartRequested="StartJobItem_OnStartRequested" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ui:PassiveScrollViewer>
+                    </Grid>
+                </ui:Card>
+                <ui:Card Grid.Column="1" Padding="10" Margin="5,0,0,0" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
+                    <Grid VerticalAlignment="Stretch">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="已完成的任务列表" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <ui:PassiveScrollViewer Grid.Row="1" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
+                            <ItemsControl ItemsSource="{Binding CompletedJobs}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <components:SuppressionFinishJobItem RemoveRequested="RemoveFinishedJob_OnRemoveRequested" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ui:PassiveScrollViewer>
+                    </Grid>
+                </ui:Card>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>

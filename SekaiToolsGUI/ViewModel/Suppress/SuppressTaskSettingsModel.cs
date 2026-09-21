@@ -51,7 +51,6 @@ public sealed class SuppressTaskSettingsModel : ViewModelBase
         set
         {
             SetProperty(value);
-            OverwriteExisting = false;
             UpdateConfigStatus();
         }
     }
@@ -81,11 +80,6 @@ public sealed class SuppressTaskSettingsModel : ViewModelBase
     public bool UseCustomCrf => QualityPreset == VideoQualityPreset.Custom;
 
     public bool OutputExists => File.Exists(OutputPath);
-    public bool OverwriteExisting
-    {
-        get => GetProperty(false);
-        set { SetProperty(value); OnPropertyChanged(nameof(CanSubmit)); }
-    }
     public string SubmissionError
     {
         get => GetProperty("");
@@ -96,8 +90,7 @@ public sealed class SuppressTaskSettingsModel : ViewModelBase
                              && (string.IsNullOrWhiteSpace(SourceSubtitle) || File.Exists(SourceSubtitle))
                              && !string.IsNullOrWhiteSpace(OutputPath)
                              && Directory.Exists(Path.GetDirectoryName(OutputPath))
-                             && !PathsEqual(SourceVideo, OutputPath)
-                             && (!OutputExists || OverwriteExisting);
+                             && !PathsEqual(SourceVideo, OutputPath);
 
     public string ConfigError
     {
@@ -114,12 +107,12 @@ public sealed class SuppressTaskSettingsModel : ViewModelBase
         }
     }
 
-    public VideoSuppressionOptions ToOptions() => new(
+    public VideoSuppressionOptions ToOptions(bool overwriteExisting = false) => new(
         SourceVideo,
         SourceSubtitle,
         OutputPath,
         new X264EncodingSettings(QualityPreset, SpeedPreset, SuppressCrf),
-        SourceFrameCount, OverwriteExisting);
+        SourceFrameCount, overwriteExisting);
 
     private void UpdateConfigStatus()
     {

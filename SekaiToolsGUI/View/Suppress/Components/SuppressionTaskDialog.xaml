@@ -21,21 +21,12 @@
         <StackPanel>
             <TextBlock Text="填写参数后加入队列，任务将按顺序自动处理。" Margin="0,0,0,12" TextWrapping="Wrap" />
             <components:SuppressTaskSettings x:Name="TaskSettings" />
-            <CheckBox Content="允许在压制成功后覆盖已有输出文件" IsChecked="{Binding OverwriteExisting, Mode=TwoWay}"
-                      Margin="0,12,0,0">
-                <CheckBox.Style>
-                    <Style TargetType="CheckBox">
-                        <Setter Property="Visibility" Value="Collapsed" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding OutputExists}" Value="True">
-                                <Setter Property="Visibility" Value="Visible" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </CheckBox.Style>
-            </CheckBox>
-            <TextBlock Text="{Binding SubmissionError}" TextWrapping="Wrap" Margin="0,8,0,0"
-                       Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
+            <TextBlock Text="{Binding SubmissionError}"
+                       TextWrapping="Wrap" Margin="0,8,0,0"
+                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                       TextAlignment="Center" HorizontalAlignment="Stretch" />
+            <CheckBox Content="添加后自动开始执行任务" Name="CheckBoxAutoStart"
+                      HorizontalAlignment="Center" />
         </StackPanel>
     </ui:ContentDialog.Content>
 </ui:ContentDialog>

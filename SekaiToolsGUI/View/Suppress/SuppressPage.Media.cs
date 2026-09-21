@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Shell;
 using SekaiToolsGUI.Service;
+using SekaiToolsGUI.ViewModel.Suppress;
 using SekaiToolsMedia;
 
 namespace SekaiToolsGUI.View.Suppress;
@@ -15,28 +16,57 @@ public partial class SuppressPage
         await suppressor.SuppressAsync(options, token);
     });
 
-    private void EnqueueSuppression(VideoSuppressionOptions options)
+    private void EnqueueSuppression(VideoSuppressionOptions options, bool autoStart)
     {
         options.Validate();
         var output = System.IO.Path.GetFullPath(options.OutputPath);
-        if (ViewModel.Jobs.Any(x => (x.CanCancel || x.Progress.State == VideoSuppressionState.Cancelling) &&
-                string.Equals(System.IO.Path.GetFullPath(x.OutputPath), output, StringComparison.OrdinalIgnoreCase)))
+        if (ViewModel.PendingJobs.Any(x =>
+                string.Equals(System.IO.Path.GetFullPath(x.OutputPath), output, StringComparison.OrdinalIgnoreCase)) ||
+            (ViewModel.RunningJob != null &&
+             string.Equals(System.IO.Path.GetFullPath(ViewModel.RunningJob.OutputPath), output, StringComparison.OrdinalIgnoreCase)))
             throw new InvalidOperationException("队列中已有任务使用此输出路径，请选择其他路径。");
 
         var job = new VideoSuppressionJob(options);
-        var model = new SekaiToolsGUI.ViewModel.Suppress.SuppressionJobModel(job);
+        var model = new SuppressionJobModel(job);
         job.ProgressChanged += progress =>
         {
             var dispatcher = Application.Current.Dispatcher;
             if (dispatcher.HasShutdownStarted) return;
             dispatcher.BeginInvoke(() =>
             {
+                var wasRunning = ReferenceEquals(ViewModel.RunningJob, model);
                 model.Progress = progress;
                 ApplyTaskbarProgress(progress);
+                if (wasRunning && model.IsFinished) StartNextQueuedJob();
             });
         };
-        Queue.Enqueue(job);
-        ViewModel.Jobs.Add(model);
+        ViewModel.AddPending(model);
+        if (autoStart) StartJob(model);
+    }
+
+    internal void StartJob(SuppressionJobModel model)
+    {
+        if (!ViewModel.TryStart(model)) return;
+
+        try
+        {
+            Queue.Enqueue(model.Job);
+        }
+        catch (Exception ex)
+        {
+            model.Progress = model.Progress with
+            {
+                State = VideoSuppressionState.Failed,
+                Log = $"压制失败：{ex.Message}"
+            };
+        }
+    }
+
+    private void StartNextQueuedJob()
+    {
+        if (!ViewModel.AutoRunQueue || ViewModel.HasRunningJob) return;
+        var next = ViewModel.PendingJobs.FirstOrDefault();
+        if (next != null) StartJob(next);
     }
 
     private static void ApplyTaskbarProgress(VideoSuppressionProgress progress)

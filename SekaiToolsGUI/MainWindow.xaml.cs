@@ -30,6 +30,7 @@ public partial class MainWindow : FluentWindow
 {
     private object? _currentNavigatedPage;
     private bool _navigationGuard;
+    private bool _closeInProgress;
     private bool _closeConfirmed;
 
     public MainWindow()
@@ -128,15 +129,42 @@ public partial class MainWindow : FluentWindow
     {
         if (_closeConfirmed) return;
 
-        e.Cancel = true;
-        if (_currentNavigatedPage is TranslatePage translatePage && !await translatePage.ConfirmCloseAsync())
+        // Keep the initial close cancelled while asynchronous cleanup runs.
+        // WPF raises Closing synchronously, so a direct Close() after await
+        // can re-enter Window's closing state and throw.
+        if (_closeInProgress)
+        {
+            e.Cancel = true;
             return;
+        }
 
-        _closeConfirmed = true;
-        SetWindowTitle("正在停止任务");
-        SetTaskbarProgressState(TaskbarItemProgressState.Indeterminate, 0);
-        await SuppressPage.DisposeSuppressorAsync();
-        Close();
+        _closeInProgress = true;
+        e.Cancel = true;
+        try
+        {
+            if (_currentNavigatedPage is TranslatePage translatePage && !await translatePage.ConfirmCloseAsync())
+            {
+                _closeInProgress = false;
+                return;
+            }
+
+            _closeConfirmed = true;
+            SetWindowTitle("正在停止任务");
+            SetTaskbarProgressState(TaskbarItemProgressState.Indeterminate, 0);
+            await SuppressPage.DisposeSuppressorAsync();
+
+            // Let the current Closing event finish before requesting the
+            // actual close. The second Closing event is allowed by the flag.
+            Dispatcher.BeginInvoke(
+                System.Windows.Threading.DispatcherPriority.ApplicationIdle,
+                new Action(Close));
+        }
+        catch
+        {
+            _closeInProgress = false;
+            _closeConfirmed = false;
+            throw;
+        }
     }
 
     private void NavigationView_OnNavigated(NavigationView sender, NavigatedEventArgs args)
