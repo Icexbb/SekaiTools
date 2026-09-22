@@ -6,7 +6,7 @@
     xmlns:components="clr-namespace:SekaiToolsGUI.View.Setting.Components"
     ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
     ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-    Title="字体选择" MinWidth="500" DialogWidth="500"
+    Title="字体选择"
     IsPrimaryButtonEnabled="True" DefaultButton="Primary" PrimaryButtonText="确认" CloseButtonText="取消">
     <ui:ContentDialog.Resources>
         <!-- ReSharper disable once Xaml.StaticResourceNotResolved -->
@@ -14,6 +14,84 @@
                TargetType="{x:Type components:FontSelectDialog}" />
     </ui:ContentDialog.Resources>
     <ui:ContentDialog.Content>
-        <ComboBox Name="BoxFontName" SelectionChanged="BoxFontName_OnSelectionChanged" />
+        <StackPanel>
+            <ui:TextBox Name="BoxFontFilter"
+                        PlaceholderEnabled="True"
+                        PlaceholderText="输入字体名称筛选"
+                        ClearButtonEnabled="True"
+                        TextChanged="BoxFontFilter_OnTextChanged" />
+            <ScrollViewer Height="500" MinWidth="640">
+                <ListBox Name="FontListBox" Margin="0,12,0,0"
+                         SelectionChanged="FontListBox_OnSelectionChanged"
+                         BorderThickness="0" Width="640"
+                         Background="Transparent"
+                         HorizontalContentAlignment="Stretch"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ListBox.Resources>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Margin" Value="0,0,8,8" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="ItemBorder" Width="204" MinHeight="96"
+                                                Padding="12,10"
+                                                Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="6">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="ItemBorder" Property="Background"
+                                                        Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="ItemBorder" Property="Background"
+                                                        Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                                                <Setter TargetName="ItemBorder" Property="BorderBrush"
+                                                        Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                                <Setter TargetName="ItemBorder" Property="BorderThickness" Value="2" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.Resources>
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock FontFamily="{Binding}"
+                                           FontSize="24"
+                                           Text="Aa 中文 123"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding}" />
+                                <TextBlock Margin="0,8,0,0"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           Text="{Binding}"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </ScrollViewer>
+            <ui:TextBlock Name="NoFontResultText"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                          Text="没有匹配的字体"
+                          Visibility="Collapsed" />
+        </StackPanel>
     </ui:ContentDialog.Content>
 </ui:ContentDialog>

@@ -87,26 +87,26 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
 
     private async void ChooseDialogFont(object sender, RoutedEventArgs e)
     {
-        var font = await OpenFontDialog();
+        var font = await OpenFontDialog(ViewModel.DialogFontFamily);
         if (font != "") ViewModel.DialogFontFamily = font;
     }
 
     private async void ChooseBannerFont(object sender, RoutedEventArgs e)
     {
-        var font = await OpenFontDialog();
+        var font = await OpenFontDialog(ViewModel.BannerFontFamily);
         if (font != "") ViewModel.BannerFontFamily = font;
     }
 
     private async void ChooseMarkerFont(object sender, RoutedEventArgs e)
     {
-        var font = await OpenFontDialog();
+        var font = await OpenFontDialog(ViewModel.MarkerFontFamily);
         if (font != "") ViewModel.MarkerFontFamily = font;
     }
 
-    private async Task<string> OpenFontDialog()
+    private async Task<string> OpenFontDialog(string currentFontFamily)
     {
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-        var dialog = new FontSelectDialog(ViewModel.DialogFontFamily);
+        var dialog = new FontSelectDialog(currentFontFamily);
         var token = CancellationToken.None;
         var dialogResult = await dialogService.ShowAsync(dialog, token);
         return dialogResult != ContentDialogResult.Primary ? "" : dialog.FontName;
