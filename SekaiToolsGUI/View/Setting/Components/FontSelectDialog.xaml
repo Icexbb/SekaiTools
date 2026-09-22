@@ -6,28 +6,43 @@
     xmlns:components="clr-namespace:SekaiToolsGUI.View.Setting.Components"
     ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
     ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    Loaded="FontSelectDialog_OnLoaded"
     Title="字体选择"
-    IsPrimaryButtonEnabled="True" DefaultButton="Primary" PrimaryButtonText="确认" CloseButtonText="取消">
+    IsPrimaryButtonEnabled="False" DefaultButton="Primary" PrimaryButtonText="确认" CloseButtonText="取消">
     <ui:ContentDialog.Resources>
         <!-- ReSharper disable once Xaml.StaticResourceNotResolved -->
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"
                TargetType="{x:Type components:FontSelectDialog}" />
     </ui:ContentDialog.Resources>
     <ui:ContentDialog.Content>
-        <StackPanel>
-            <ui:TextBox Name="BoxFontFilter"
+        <Grid MinWidth="640">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="500" />
+            </Grid.RowDefinitions>
+
+            <ui:TextBox Grid.Row="0" Name="BoxFontFilter"
                         PlaceholderEnabled="True"
-                        PlaceholderText="输入字体名称筛选"
+                        PlaceholderText="输入字体名称或变体筛选"
                         ClearButtonEnabled="True"
                         TextChanged="BoxFontFilter_OnTextChanged" />
-            <ScrollViewer Height="500" MinWidth="640">
-                <ListBox Name="FontListBox" Margin="0,12,0,0"
+
+            <ui:TextBlock Grid.Row="1" Margin="2,8,2,6"
+                          Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                          Text="选择字体变体；设定值会包含字重名称" />
+
+            <Grid Grid.Row="2">
+                <ListBox Name="FontListBox"
+                         Visibility="Collapsed"
                          SelectionChanged="FontListBox_OnSelectionChanged"
-                         BorderThickness="0" Width="640"
+                         BorderThickness="0"
                          Background="Transparent"
-                         HorizontalContentAlignment="Stretch"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.CanContentScroll="True"
+                         VirtualizingPanel.IsVirtualizing="True"
+                         VirtualizingPanel.VirtualizationMode="Recycling">
                     <ListBox.Resources>
                         <Style TargetType="ListBoxItem">
                             <Setter Property="Padding" Value="0" />
@@ -37,7 +52,7 @@
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="ListBoxItem">
-                                        <Border x:Name="ItemBorder" Width="204" MinHeight="96"
+                                        <Border x:Name="ItemBorder" MinHeight="78"
                                                 Padding="12,10"
                                                 Background="{DynamicResource ControlFillColorSecondaryBrush}"
                                                 BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
@@ -65,33 +80,54 @@
                     </ListBox.Resources>
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <WrapPanel />
+                            <VirtualizingStackPanel />
                         </ItemsPanelTemplate>
                     </ListBox.ItemsPanel>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel>
-                                <TextBlock FontFamily="{Binding}"
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="270" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           FontFamily="{Binding FamilyName}"
+                                           FontWeight="{Binding FontWeight}"
+                                           FontStyle="{Binding FontStyle}"
+                                           FontStretch="{Binding FontStretch}"
                                            FontSize="24"
                                            Text="Aa 中文 123"
                                            TextTrimming="CharacterEllipsis"
-                                           ToolTip="{Binding}" />
-                                <TextBlock Margin="0,8,0,0"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           Text="{Binding}"
-                                           TextTrimming="CharacterEllipsis"
-                                           ToolTip="{Binding}" />
-                            </StackPanel>
+                                           ToolTip="{Binding FamilyName}" />
+                                <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock FontWeight="SemiBold"
+                                               Text="{Binding FamilyName}"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding FamilyName}" />
+                                    <TextBlock Margin="0,4,0,0"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Text="{Binding VariantName}"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding VariantName}" />
+                                </StackPanel>
+                            </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-            </ScrollViewer>
-            <ui:TextBlock Name="NoFontResultText"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Center"
-                          Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                          Text="没有匹配的字体"
-                          Visibility="Collapsed" />
-        </StackPanel>
+
+                <ui:TextBlock Name="FontLoadingText"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                              Text="正在加载字体列表…" />
+
+                <ui:TextBlock Name="NoFontResultText"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                              Text="没有匹配的字体"
+                              Visibility="Collapsed" />
+            </Grid>
+        </Grid>
     </ui:ContentDialog.Content>
 </ui:ContentDialog>
