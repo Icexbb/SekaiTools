@@ -65,7 +65,7 @@
                         HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                         Name="ContentCard" />
         <ui:Card Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"
-                 VerticalContentAlignment="Top" Padding="0" Margin="10,0,0,0"
+                 VerticalContentAlignment="Stretch" Padding="0" Margin="10,0,0,0"
                  VerticalAlignment="Stretch" Width="200">
             <ui:Card.Content>
                 <Grid>
@@ -79,7 +79,7 @@
                                       Text="下载列表 (0)"
                                       TextAlignment="Center" VerticalAlignment="Center" />
                     </Grid>
-                    <Grid Grid.Row="2" VerticalAlignment="Stretch">
+                    <Grid Grid.Row="1" VerticalAlignment="Stretch">
                         <ScrollViewer VerticalScrollBarVisibility="Auto"
                                       HorizontalScrollBarVisibility="Disabled">
                             <ItemsControl VerticalAlignment="Top"
@@ -97,7 +97,7 @@
                                        HorizontalAlignment="Center" />
                         </StackPanel>
                     </Grid>
-                    <Grid Grid.Row="1" Margin="0,0,0,10">
+                    <Grid Grid.Row="2" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
