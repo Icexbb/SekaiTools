@@ -65,7 +65,6 @@ public partial class CardStoryTab : UserControl, IRefreshable
 
     private void RefreshItems()
     {
-        if (CardStory.Data.Count == 0) return;
         if (CharacterComboBox.SelectedIndex < 0) CharacterComboBox.SelectedIndex = 0;
 
         var characterId = CharacterComboBox.SelectedItem is CharacterComboBoxItem character

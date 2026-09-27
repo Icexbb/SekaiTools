@@ -91,7 +91,6 @@ partial class ActionStoryTab
 {
     private void RefreshItems()
     {
-        if (ActionStory.Data.Count == 0) return;
 
         var data = ActionStory.Data.Select(item => (AreaStorySet)item.Clone()).ToList();
         data.Sort((x, y) => _currentDirection * x.ActionSet.Id.CompareTo(y.ActionSet.Id));

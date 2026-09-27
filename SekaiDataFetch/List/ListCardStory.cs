@@ -57,6 +57,7 @@ public class ListCardStory : BaseListStory
 
     private void GetData(ICollection<CardEpisode> cardEpisodes, ICollection<Card> cards)
     {
+        var stories = new List<CardStorySet>();
         foreach (var card in cards)
         {
             var firstPart = cardEpisodes.FirstOrDefault(episode =>
@@ -65,9 +66,11 @@ public class ListCardStory : BaseListStory
                 episode.CardId == card.Id && episode.CardEpisodePartType == "second_part");
 
             if (firstPart == null || secondPart == null) continue;
-            Data.Add(new CardStorySet(card, firstPart, secondPart));
+            stories.Add(new CardStorySet(card, firstPart, secondPart));
         }
 
-        Data.Sort((a, b) => a.Card.Id.CompareTo(b.Card.Id));
+        stories.Sort((a, b) => a.Card.Id.CompareTo(b.Card.Id));
+        Data.Clear();
+        Data.AddRange(stories);
     }
 }

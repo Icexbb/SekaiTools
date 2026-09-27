@@ -69,6 +69,7 @@ public class ListActionStory : BaseListStory
 
     private void GetData(ActionSet[] actionSets, Area[] areas, Character2d[] character2ds)
     {
+        var stories = new List<AreaStorySet>();
         foreach (var actionSet in actionSets)
         {
             var area = areas.FirstOrDefault(area => area.Id == actionSet.AreaId);
@@ -81,9 +82,11 @@ public class ListActionStory : BaseListStory
                     .ToArray()
             };
 
-            Data.Add(data);
+            stories.Add(data);
         }
 
+        Data.Clear();
+        Data.AddRange(stories);
         Areas = areas.Select(area => (Area)area.Clone()).ToList();
         Character2ds = character2ds.Select(character2d => (Character2d)character2d.Clone()).ToList();
     }
