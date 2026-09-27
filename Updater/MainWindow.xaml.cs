@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.IO;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -17,7 +16,7 @@ public partial class MainWindow : Window
 {
     private string? _errorText;
 
-    private ProxyConfig? _proxyConfig;
+    private UpdateProxySettings? _proxyConfig;
 
     public MainWindow()
     {
@@ -33,54 +32,15 @@ public partial class MainWindow : Window
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Data", "setting.json");
 
-    private ProxyConfig GetProxyConfig()
+    private UpdateProxySettings GetProxyConfig()
     {
-        if (_proxyConfig != null) return _proxyConfig;
-        try
-        {
-            _proxyConfig = LoadProxySettings();
-        }
-        catch (FileNotFoundException)
-        {
-        }
-        catch (DirectoryNotFoundException)
-        {
-        }
-
-        return _proxyConfig ??= new ProxyConfig(0, "127.0.0.1", 1080);
-    }
-
-    private static ProxyConfig LoadProxySettings()
-    {
-        var json = File.ReadAllText(SettingFilePath);
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-        return new ProxyConfig(
-            root.TryGetProperty("ProxyType", out var t) ? t.GetInt32() : 0,
-            root.TryGetProperty("ProxyHost", out var h) ? h.GetString() ?? "127.0.0.1" : "127.0.0.1",
-            root.TryGetProperty("ProxyPort", out var p) ? p.GetInt32() : 1080
-        );
+        return _proxyConfig ??= UpdateProxySettings.Load(
+            Environment.GetEnvironmentVariable(UpdateProxySettings.EnvironmentVariable), SettingFilePath);
     }
 
     private HttpClient CreateHttpClient()
     {
-        var config = GetProxyConfig();
-        HttpMessageHandler handler = config.Type switch
-        {
-            0 => new HttpClientHandler(), // None
-            1 => new HttpClientHandler // HTTP
-            {
-                Proxy = new WebProxy(new Uri($"http://{config.Host}:{config.Port}")),
-                UseProxy = true
-            },
-            2 => new SocketsHttpHandler // Socks5 → HTTP CONNECT (WebProxy 不支持真正的 SOCKS5)
-            {
-                Proxy = new WebProxy(new Uri($"http://{config.Host}:{config.Port}")),
-                UseProxy = true
-            },
-            _ => new HttpClientHandler()
-        };
-        return new HttpClient(handler);
+        return new HttpClient(GetProxyConfig().CreateHandler());
     }
 
 
@@ -307,5 +267,4 @@ public partial class MainWindow : Window
         }
     }
 
-    private sealed record ProxyConfig(int Type, string Host, int Port);
 }

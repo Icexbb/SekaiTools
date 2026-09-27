@@ -323,9 +323,9 @@ partial class MainWindow
                 {
                     Proxy = new WebProxy(new Uri($"http://{proxyInfo.Host}:{proxyInfo.Port}")), UseProxy = true
                 },
-                Proxy.Type.Socks5 => new SocketsHttpHandler // 实际是 HTTP CONNECT，WebProxy 不支持真正的 SOCKS5
+                Proxy.Type.Socks5 => new SocketsHttpHandler
                 {
-                    Proxy = new WebProxy(new Uri($"http://{proxyInfo.Host}:{proxyInfo.Port}")), UseProxy = true
+                    Proxy = new WebProxy(new UriBuilder("socks5", proxyInfo.Host, proxyInfo.Port).Uri), UseProxy = true
                 },
                 _ => throw new ArgumentOutOfRangeException()
             };
@@ -336,11 +336,21 @@ partial class MainWindow
     {
         var updaterPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Updater.exe");
         if (File.Exists(updaterPath))
-            Process.Start(new ProcessStartInfo
+        {
+            var settings = SettingPageModel.Instance;
+            var startInfo = new ProcessStartInfo
             {
                 FileName = updaterPath,
-                UseShellExecute = true
+                UseShellExecute = false
+            };
+            startInfo.Environment["SEKAI_TOOLS_UPDATE_PROXY"] = JsonSerializer.Serialize(new
+            {
+                settings.ProxyType,
+                settings.ProxyHost,
+                settings.ProxyPort
             });
+            Process.Start(startInfo);
+        }
         else
             MessageBox.Show("检测到新版本，但 Updater.exe 不存在！", "更新失败", MessageBoxButton.OK, MessageBoxImage.Error);
     }
