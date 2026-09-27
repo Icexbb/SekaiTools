@@ -45,6 +45,9 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     private static ISnackbarService SnackService =>
         ((MainWindow)Application.Current.MainWindow!).WindowSnackbarService;
 
+    private static ISnackbarService QueueSnackService =>
+        ((MainWindow)Application.Current.MainWindow!).WindowInAppSnackbarService;
+
     public DownloadPageModel ViewModel => DownloadPageModel.Instance;
 
 
@@ -61,7 +64,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         {
             if (DownloadItemBox.Items.OfType<DownloadTask>().Any(item => item.Url == url))
             {
-                SnackService.Show("已在下载列表中", tag, ControlAppearance.Info,
+                QueueSnackService.Show("已在下载列表中", tag, ControlAppearance.Info,
                     new SymbolIcon(SymbolRegular.Info24), TimeSpan.FromSeconds(2));
                 return false;
             }
@@ -70,7 +73,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
             task.RemoveRequested += DownloadTask_OnRemoveRequested;
             DownloadItemBox.Items.Add(task);
             UpdateTaskListState();
-            SnackService.Show("已加入下载列表", tag, ControlAppearance.Success,
+            QueueSnackService.Show("已加入下载列表", tag, ControlAppearance.Success,
                 new SymbolIcon(SymbolRegular.AddCircle24), TimeSpan.FromSeconds(2));
             return true;
         });
@@ -104,7 +107,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
                 added++;
             }
             UpdateTaskListState();
-            SnackService.Show("批量加入完成", $"已加入 {added} 条，跳过重复 {skipped} 条。", ControlAppearance.Info,
+            QueueSnackService.Show("批量加入完成", $"已加入 {added} 条，跳过重复 {skipped} 条。", ControlAppearance.Info,
                 new SymbolIcon(SymbolRegular.Info24), TimeSpan.FromSeconds(4));
         });
     }

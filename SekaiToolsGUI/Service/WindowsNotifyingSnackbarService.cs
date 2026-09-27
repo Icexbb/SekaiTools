@@ -7,6 +7,8 @@ public sealed class WindowsNotifyingSnackbarService : ISnackbarService
 {
     private readonly SnackbarService _snackbarService = new();
 
+    public ISnackbarService InAppService => _snackbarService;
+
     public TimeSpan DefaultTimeOut
     {
         get => _snackbarService.DefaultTimeOut;

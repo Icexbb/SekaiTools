@@ -43,10 +43,13 @@ public partial class MainWindow : FluentWindow
         SetWindowTitle("");
     }
 
-    public ISnackbarService WindowSnackbarService { get; } = new WindowsNotifyingSnackbarService
+    private readonly WindowsNotifyingSnackbarService _windowSnackbarService = new()
     {
         DefaultTimeOut = TimeSpan.FromSeconds(3)
     };
+
+    public ISnackbarService WindowSnackbarService => _windowSnackbarService;
+    public ISnackbarService WindowInAppSnackbarService => _windowSnackbarService.InAppService;
 
     public IContentDialogService WindowContentDialogService { get; } = new ContentDialogService();
 
