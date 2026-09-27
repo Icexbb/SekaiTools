@@ -74,6 +74,12 @@ public partial class ActionStoryItem : UserControl
 
         TextId.Text = $"# {areaStorySet.ActionSet.Id}";
         TextKey.Text = $"{areaStorySet.ActionSet.ScenarioId}";
-        TextArea.Text = areaStorySet.AreaName;
+        TextArea.Text = $"{areaStorySet.AreaName} · {areaStorySet.TypeName} · {areaStorySet.BatchName}";
+        var activityDetails = new List<string>();
+        if (areaStorySet.ReleaseActivity is { } release) activityDetails.Add($"解锁：{release.DisplayName}");
+        if (areaStorySet.AdditionActivity is { } addition) activityDetails.Add($"追加（推断）：第 {addition.Number} 期");
+        TextActivity.Text = string.Join(" · ", activityDetails);
+        TextActivity.Visibility = activityDetails.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+        TextArea.ToolTip = $"归档日期（UTC+9）：{areaStorySet.ArchiveDate ?? "未设置"}，不代表首次追加日期";
     }
 }

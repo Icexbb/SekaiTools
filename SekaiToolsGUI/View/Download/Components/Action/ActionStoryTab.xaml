@@ -81,6 +81,22 @@
                     <ui:SymbolIcon Symbol="ArrowSortDownLines24" />
                 </ui:Button>
             </Grid>
+            <WrapPanel Margin="5,8,5,4">
+                <TextBlock Text="筛选方式" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <ComboBox x:Name="ModeBox" Width="165" SelectedIndex="0" Margin="0,0,8,4"
+                          SelectionChanged="Mode_OnSelectionChanged" AutomationProperties.Name="地图对话筛选方式">
+                    <ComboBoxItem Content="全部对话" />
+                    <ComboBoxItem Content="活动解锁" />
+                    <ComboBoxItem Content="活动追加（推断）" />
+                    <ComboBoxItem Content="对话类型" />
+                    <ComboBoxItem Content="更新批次" />
+                    <ComboBoxItem Content="归档日期（UTC+9）" />
+                </ComboBox>
+                <ComboBox x:Name="ValueBox" MinWidth="220" MaxWidth="420" Margin="0,0,0,4"
+                          DisplayMemberPath="Name" SelectionChanged="Value_OnSelectionChanged"
+                          AutomationProperties.Name="地图对话筛选值" />
+            </WrapPanel>
+            <TextBlock x:Name="FilterHint" Margin="5,0,5,4" TextWrapping="Wrap" />
             <WrapPanel Margin="5,8,5,4" VerticalAlignment="Center">
                 <TextBlock Text="对话 ID" VerticalAlignment="Center" Margin="0,0,8,0" />
                 <TextBox x:Name="MinimumIdBox" Width="95" ToolTip="起始 ID（包含），留空表示不限"

@@ -15,6 +15,7 @@ namespace SekaiToolsGUI.View.Download.Components.Action;
 public partial class ActionStoryTab : UserControl, IRefreshable
 {
     private int _currentDirection = 1;
+    private bool _updatingFilterValues;
 
     public ActionStoryTab()
     {
@@ -33,6 +34,7 @@ public partial class ActionStoryTab : UserControl, IRefreshable
         ActionStory.SetProxy(SettingPageModel.Instance.GetProxy());
         await ActionStory.Refresh(progress);
         InitializeAreas();
+        InitializeFilterValues();
         RefreshItems();
     }
 
@@ -48,6 +50,7 @@ public partial class ActionStoryTab : UserControl, IRefreshable
     private void ActionStoryTab_OnLoaded(object sender, RoutedEventArgs e)
     {
         InitializeAreas();
+        InitializeFilterValues();
         if (CharacterComboBox.SelectedIndex < 0) CharacterComboBox.SelectedIndex = 0;
         RefreshItems();
     }
@@ -86,6 +89,76 @@ public partial class ActionStoryTab : UserControl, IRefreshable
         _currentDirection *= -1;
         RefreshItems();
     }
+
+    private ActionStoryFilterMode FilterMode => ModeBox == null ? ActionStoryFilterMode.All : ModeBox.SelectedIndex switch
+    {
+        1 => ActionStoryFilterMode.ReleaseActivity,
+        2 => ActionStoryFilterMode.AdditionActivity,
+        3 => ActionStoryFilterMode.Type,
+        4 => ActionStoryFilterMode.Batch,
+        5 => ActionStoryFilterMode.ArchiveDate,
+        _ => ActionStoryFilterMode.All
+    };
+
+    private void Mode_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        InitializeFilterValues(preserveSelection: false);
+        RefreshItems();
+    }
+
+    private void Value_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_updatingFilterValues) RefreshItems();
+    }
+
+    private void InitializeFilterValues(bool preserveSelection = true)
+    {
+        if (ValueBox == null || FilterHint == null) return;
+        var previous = preserveSelection ? (ValueBox.SelectedItem as ActionFilterOption)?.Value : null;
+        var data = ActionStory.Data;
+        IEnumerable<ActionFilterOption> values = FilterMode switch
+        {
+            ActionStoryFilterMode.ReleaseActivity => data.Select(story => story.ReleaseActivity).OfType<ActionStoryActivity>()
+                .DistinctBy(activity => activity.Id).OrderByDescending(activity => activity.Number)
+                .Select(activity => new ActionFilterOption(activity.Id.ToString(), activity.DisplayName))
+                .Append(new("unknown", "无活动关联／未归类")),
+            ActionStoryFilterMode.AdditionActivity => data.Select(story => story.AdditionActivity).OfType<ActionStoryActivity>()
+                .DistinctBy(activity => activity.Id).OrderByDescending(activity => activity.Number)
+                .Select(activity => new ActionFilterOption(activity.Id.ToString(), activity.DisplayName + " · 推断"))
+                .Append(new("unknown", "初始／特殊批次／未归类")),
+            ActionStoryFilterMode.Type => data.DistinctBy(story => story.ActionSet.ActionSetType)
+                .OrderBy(story => story.ActionSet.ActionSetType)
+                .Select(story => new ActionFilterOption(story.ActionSet.ActionSetType, story.TypeName)),
+            ActionStoryFilterMode.Batch => data.DistinctBy(story => story.BatchKey).OrderByDescending(story => story.BatchKey)
+                .Select(story => new ActionFilterOption(story.BatchKey, story.BatchName)),
+            ActionStoryFilterMode.ArchiveDate => data.Select(story => story.ArchiveDate).OfType<string>()
+                .Distinct().OrderDescending().Select(date => new ActionFilterOption(date, date))
+                .Append(new("unknown", "未设置归档日期")),
+            _ => []
+        };
+        var options = new[] { new ActionFilterOption(null, "全部") }.Concat(values).ToArray();
+        _updatingFilterValues = true;
+        try
+        {
+            ValueBox.ItemsSource = options;
+            ValueBox.SelectedItem = options.FirstOrDefault(option => option.Value == previous) ?? options[0];
+            ValueBox.Visibility = FilterMode == ActionStoryFilterMode.All ? Visibility.Collapsed : Visibility.Visible;
+        }
+        finally
+        {
+            _updatingFilterValues = false;
+        }
+        FilterHint.Text = FilterMode switch
+        {
+            ActionStoryFilterMode.AdditionActivity => "追加活动按对话 ID 和已知解锁活动推断，可能与实际追加批次不同；特殊批次请使用“更新批次”。",
+            ActionStoryFilterMode.ReleaseActivity => "按剧情章节解锁条件关联活动；期数按有剧情的活动顺序排列。",
+            ActionStoryFilterMode.Batch => "每月、愚人节及周年按剧本命名归类，未知命名保留在“其他更新／未归类”。",
+            ActionStoryFilterMode.ArchiveDate => "归档日期按 UTC+9 显示，不代表首次追加日期；原始数据可能含默认占位日期。",
+            _ => "所有筛选条件取交集；ID 范围留空表示不限。"
+        };
+        if (!ActionStory.ActivityMetadataAvailable)
+            FilterHint.Text += " 活动数据未就绪或不可用，可刷新列表重试；基础筛选仍可使用。";
+    }
 }
 
 partial class ActionStoryTab
@@ -106,7 +179,8 @@ partial class ActionStoryTab
         }
 
         var filter = new ActionStoryFilter((BoxType.SelectedItem as AreaFilterOption)?.Id,
-            (CharacterComboBox.SelectedItem as CharacterComboBoxItem)?.Value ?? 0, minimum, maximum);
+            (CharacterComboBox.SelectedItem as CharacterComboBoxItem)?.Value ?? 0, minimum, maximum,
+            FilterMode, (ValueBox?.SelectedItem as ActionFilterOption)?.Value);
         var data = ActionStory.Data.Where(filter.Matches);
         ViewModel.EventStories = (_currentDirection == 1
             ? data.OrderBy(item => item.ActionSet.Id)

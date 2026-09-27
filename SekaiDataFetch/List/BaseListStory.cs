@@ -12,9 +12,10 @@ public class CachePathAttribute(string key) : Attribute
 }
 
 [AttributeUsage(AttributeTargets.Property)]
-public class SourcePathAttribute(string key) : Attribute
+public class SourcePathAttribute(string key, bool optional = false) : Attribute
 {
     public string Key { get; } = key;
+    public bool Optional { get; } = optional;
 }
 
 public abstract class BaseListStory
@@ -82,18 +83,27 @@ public abstract class BaseListStory
             .Where(x => x.Attr is { Key.Length: > 0 })
             .ToDictionary(x => x.Attr?.Key!, x => x.Prop.GetValue(null) as string);
 
+        var optionalKeys = type.GetProperties(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+            .Select(p => p.GetCustomAttribute<SourcePathAttribute>())
+            .Where(attribute => attribute is { Optional: true }).Select(attribute => attribute!.Key).ToHashSet();
+
         var keys = sourceProps.Keys.Intersect(cacheFields.Keys)
             .Where(key => sourceProps[key] != null && cacheFields[key] != null).ToArray();
         var progressLock = new object();
         var completed = new HashSet<string>();
-        void Report(ListRefreshStage stage, string? completedKey = null)
+        var unavailable = new HashSet<string>();
+        void Report(ListRefreshStage stage, string? completedKey = null, bool failed = false)
         {
             if (progress == null) return;
             lock (progressLock)
             {
-                if (completedKey != null) completed.Add(completedKey);
+                if (completedKey != null)
+                {
+                    if (failed) unavailable.Add(completedKey);
+                    else completed.Add(completedKey);
+                }
                 progress.Report(new ListRefreshProgress(stage, keys.Select(key =>
-                    new ListRefreshFileProgress(Path.GetFileName(cacheFields[key]!), completed.Contains(key)))
+                    new ListRefreshFileProgress(Path.GetFileName(cacheFields[key]!), completed.Contains(key), unavailable.Contains(key)))
                     .ToArray()));
             }
         }
@@ -102,24 +112,35 @@ public abstract class BaseListStory
         var tasks = keys
             .Select(async key =>
             {
-                var sourceValue = sourceProps[key];
-                var cachePath = cacheFields[key];
-                if (sourceValue != null && cachePath != null)
+                var sourceValue = sourceProps[key]!;
+                var cachePath = cacheFields[key]!;
+                try
                 {
                     var content = await Fetcher.Fetch(sourceValue);
                     using var _ = JsonDocument.Parse(content);
                     Report(ListRefreshStage.Downloading, key);
-                    return (CachePath: cachePath, Content: content);
+                    return (CachePath: cachePath, Content: (string?)content);
                 }
-
-                return (CachePath: null, Content: null);
+                catch (Exception exception) when (optionalKeys.Contains(key) &&
+                    exception is HttpRequestException or TaskCanceledException or JsonException)
+                {
+                    Logger.Log($"{type.Name} optional data {key} unavailable: {exception.Message}",
+                        Microsoft.Extensions.Logging.LogLevel.Warning);
+                    Report(ListRefreshStage.Downloading, key, true);
+                    return (CachePath: cachePath, Content: (string?)null);
+                }
             }).ToArray();
 
         var downloads = await Task.WhenAll(tasks);
         Report(ListRefreshStage.Saving);
         foreach (var (cachePath, content) in downloads)
         {
-            if (cachePath == null || content == null) continue;
+            if (content == null)
+            {
+                // Do not reuse metadata from a previous source after this source failed.
+                if (File.Exists(cachePath)) File.Delete(cachePath);
+                continue;
+            }
             var directory = Path.GetDirectoryName(cachePath)
                             ?? throw new InvalidDataException($"缓存路径无效: {cachePath}");
             Directory.CreateDirectory(directory);

@@ -11,7 +11,6 @@
     <ui:CardAction HorizontalAlignment="Stretch" Click="ButtonBase_OnClick" Padding="10,8">
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
@@ -21,9 +20,10 @@
                               Margin="0,0,10,0" />
                 <ui:TextBlock Name="TextKey" Text="Key" VerticalAlignment="Center" />
                 </StackPanel>
-                <TextBlock x:Name="TextArea" Margin="0,4,0,0" />
+                <TextBlock x:Name="TextArea" Margin="0,4,0,0" TextWrapping="Wrap" />
+                <TextBlock x:Name="TextActivity" Margin="0,4,0,0" TextWrapping="Wrap" />
             </StackPanel>
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Name="Icons" Margin="10,0" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Name="Icons" Margin="10,0" />
         </Grid>
 
     </ui:CardAction>
