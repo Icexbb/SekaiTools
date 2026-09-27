@@ -11,12 +11,29 @@
                   d:DataContext="{d:DesignInstance vmg:RefreshWaitDialogModel, IsDesignTimeCreatable=True}"
                   IsFooterVisible="False">
     <ui:ContentDialog.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <!-- ReSharper disable once Xaml.StaticResourceNotResolved -->
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"
                TargetType="{x:Type general:RefreshWaitDialog}" />
     </ui:ContentDialog.Resources>
-    <StackPanel HorizontalAlignment="Center">
-        <TextBlock HorizontalAlignment="Stretch" Margin="10" Text="{Binding Message }" />
-        <ui:ProgressRing IsIndeterminate="True" />
+    <StackPanel MinWidth="320" MaxWidth="480">
+        <TextBlock Margin="0,0,0,12" Text="{Binding Message}" TextWrapping="Wrap" />
+        <ui:ProgressRing IsIndeterminate="True">
+            <ui:ProgressRing.Style>
+                <Style TargetType="ui:ProgressRing">
+                    <Setter Property="Visibility" Value="Visible" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding HasProgress}" Value="True">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ui:ProgressRing.Style>
+        </ui:ProgressRing>
+        <StackPanel Visibility="{Binding HasProgress, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <ProgressBar Minimum="0" Maximum="100" Height="6" Value="{Binding Percentage}" />
+            <TextBlock Margin="0,8,0,12" Text="{Binding ProgressText}" />
+            <TextBlock Text="{Binding FileDetails}" TextWrapping="Wrap" />
+        </StackPanel>
     </StackPanel>
 </ui:ContentDialog>

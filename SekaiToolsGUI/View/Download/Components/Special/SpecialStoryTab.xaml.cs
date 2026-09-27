@@ -17,12 +17,12 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
 
     private ListSpecialStory ListSpecialStory => ListSpecialStory.Instance;
 
-    public async Task Refresh()
+    public async Task Refresh(IProgress<ListRefreshProgress>? progress = null)
     {
         SpecialStoryTypeSelector.IsEnabled = false;
         ListSpecialStory.SetSource(GetSourceType());
         ListSpecialStory.SetProxy(SettingPageModel.Instance.GetProxy());
-        await ListSpecialStory.Refresh();
+        await ListSpecialStory.Refresh(progress);
         RefreshCombo();
         SpecialStoryTypeSelector.IsEnabled = true;
     }

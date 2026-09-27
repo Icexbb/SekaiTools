@@ -24,14 +24,14 @@ public partial class CardStoryTab : UserControl, IRefreshable
     private CardStoryTabModel ViewModel => (CardStoryTabModel)DataContext;
     private ListCardStory CardStory => ListCardStory.Instance;
 
-    public async Task Refresh()
+    public async Task Refresh(IProgress<ListRefreshProgress>? progress = null)
     {
         FilterContainer.IsEnabled = false;
         try
         {
             CardStory.SetSource(GetSourceType());
             CardStory.SetProxy(SettingPageModel.Instance.GetProxy());
-            await CardStory.Refresh();
+            await CardStory.Refresh(progress);
             RefreshItems();
         }
         finally

@@ -25,11 +25,11 @@ public partial class EventStoryTab : UserControl, IRefreshable
     private EventStoryTabModel ViewModel => (EventStoryTabModel)DataContext;
     private ListEventStory ListEventStory => ListEventStory.Instance;
 
-    public async Task Refresh()
+    public async Task Refresh(IProgress<ListRefreshProgress>? progress = null)
     {
         ListEventStory.SetSource(GetSourceType());
         ListEventStory.SetProxy(SettingPageModel.Instance.GetProxy());
-        await ListEventStory.Refresh();
+        await ListEventStory.Refresh(progress);
         RefreshItems();
     }
 

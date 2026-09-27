@@ -18,14 +18,14 @@ public partial class UnitStoryTab : UserControl, IRefreshable
 
     private ListUnitStory ListUnitStory => ListUnitStory.Instance;
 
-    public async Task Refresh()
+    public async Task Refresh(IProgress<ListRefreshProgress>? progress = null)
     {
         UnitComboBox.IsEnabled = false;
         try
         {
             ListUnitStory.SetSource(GetSourceType());
             ListUnitStory.SetProxy(SettingPageModel.Instance.GetProxy());
-            await ListUnitStory.Refresh();
+            await ListUnitStory.Refresh(progress);
             RefreshItems();
         }
         finally

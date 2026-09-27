@@ -27,11 +27,11 @@ public partial class ActionStoryTab : UserControl, IRefreshable
     private ListActionStory ActionStory => ListActionStory.Instance;
 
 
-    public async Task Refresh()
+    public async Task Refresh(IProgress<ListRefreshProgress>? progress = null)
     {
         ActionStory.SetSource(GetSourceType());
         ActionStory.SetProxy(SettingPageModel.Instance.GetProxy());
-        await ActionStory.Refresh();
+        await ActionStory.Refresh(progress);
         InitializeAreas();
         RefreshItems();
     }

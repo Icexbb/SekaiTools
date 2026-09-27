@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.Logging;
 using SekaiDataFetch;
+using SekaiDataFetch.List;
 using SekaiDataFetch.Source;
 using SekaiToolsConfiguration;
 using SekaiToolsGUI.Interface;
@@ -256,7 +257,8 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         _ = dialogService.ShowAsync(dialog, source.Token);
         try
         {
-            await refreshable.Refresh();
+            var progress = new Progress<ListRefreshProgress>(dialog.UpdateProgress);
+            await refreshable.Refresh(progress);
         }
         catch (Exception exception)
         {

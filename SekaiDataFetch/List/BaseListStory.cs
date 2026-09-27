@@ -60,7 +60,7 @@ public abstract class BaseListStory
 
     protected abstract void Load();
 
-    public async Task Refresh()
+    public async Task Refresh(IProgress<ListRefreshProgress>? progress = null)
     {
         var type = GetType();
 
@@ -82,7 +82,24 @@ public abstract class BaseListStory
             .Where(x => x.Attr is { Key.Length: > 0 })
             .ToDictionary(x => x.Attr?.Key!, x => x.Prop.GetValue(null) as string);
 
-        var tasks = sourceProps.Keys.Intersect(cacheFields.Keys)
+        var keys = sourceProps.Keys.Intersect(cacheFields.Keys)
+            .Where(key => sourceProps[key] != null && cacheFields[key] != null).ToArray();
+        var progressLock = new object();
+        var completed = new HashSet<string>();
+        void Report(ListRefreshStage stage, string? completedKey = null)
+        {
+            if (progress == null) return;
+            lock (progressLock)
+            {
+                if (completedKey != null) completed.Add(completedKey);
+                progress.Report(new ListRefreshProgress(stage, keys.Select(key =>
+                    new ListRefreshFileProgress(Path.GetFileName(cacheFields[key]!), completed.Contains(key)))
+                    .ToArray()));
+            }
+        }
+
+        Report(ListRefreshStage.Downloading);
+        var tasks = keys
             .Select(async key =>
             {
                 var sourceValue = sourceProps[key];
@@ -91,6 +108,7 @@ public abstract class BaseListStory
                 {
                     var content = await Fetcher.Fetch(sourceValue);
                     using var _ = JsonDocument.Parse(content);
+                    Report(ListRefreshStage.Downloading, key);
                     return (CachePath: cachePath, Content: content);
                 }
 
@@ -98,6 +116,7 @@ public abstract class BaseListStory
             }).ToArray();
 
         var downloads = await Task.WhenAll(tasks);
+        Report(ListRefreshStage.Saving);
         foreach (var (cachePath, content) in downloads)
         {
             if (cachePath == null || content == null) continue;
@@ -119,6 +138,8 @@ public abstract class BaseListStory
 
         Logger.Log($"{type.Name} data refreshed from sources: {string.Join(", ", sourceProps.Keys)}");
 
+        Report(ListRefreshStage.Loading);
         Load();
+        Report(ListRefreshStage.Completed);
     }
 }
