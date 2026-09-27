@@ -16,7 +16,7 @@
             </Grid.ColumnDefinitions>
             <StackPanel VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal">
-                <ui:TextBlock Name="TextId" Text="# 1" VerticalAlignment="Center" FontWeight="DemiBold"
+                <ui:TextBlock Name="TextId" Text="ID 11 · TalkId 0001" VerticalAlignment="Center" FontWeight="DemiBold"
                               Margin="0,0,10,0" />
                 <ui:TextBlock Name="TextKey" Text="Key" VerticalAlignment="Center" />
                 </StackPanel>

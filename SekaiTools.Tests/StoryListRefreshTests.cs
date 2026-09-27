@@ -66,6 +66,33 @@ public class StoryListRefreshTests
         Assert.Empty(list.Character2ds);
     }
 
+    [Fact]
+    public void ActionTalkIdsMatchGlobalNormalAndSpecialSequencesBeforeAreaFiltering()
+    {
+        var list = (ListActionStory)RuntimeHelpers.GetUninitializedObject(typeof(ListActionStory));
+        list.Data = [];
+        var actions = new[]
+        {
+            new ActionSet { Id = 2, AreaId = 1, ScenarioId = "op_02area" },
+            new ActionSet { Id = 11, AreaId = -1, ScenarioId = "normal", ActionSetType = "normal" },
+            new ActionSet { Id = 20, AreaId = 1, ScenarioId = "areatalk_monthly2106_001", ActionSetType = "normal" },
+            new ActionSet { Id = 30, AreaId = -1, ScenarioId = "limited", ActionSetType = "limited" },
+            new ActionSet { Id = 40, AreaId = 1, ScenarioId = "piapro", ActionSetType = "piapro" },
+            new ActionSet { Id = 50, AreaId = 1, ScenarioId = "areatalk_3rdaniv_001", ActionSetType = "normal" },
+            new ActionSet { Id = 60, AreaId = 1, ScenarioId = "none", ActionSetType = "normal" },
+            new ActionSet { Id = 70, AreaId = 1, ScenarioId = "last", ActionSetType = "normal" }
+        };
+
+        void Reload() => InvokeGetData(list, actions, new[] { new Area { Id = 1 } }, Array.Empty<Character2d>());
+        Reload();
+        Reload();
+
+        Assert.Equal(new string?[] { null, "0002", "S0002", "0003", null, "0004" },
+            list.Data.Select(story => story.TalkId));
+        Assert.Equal(new[] { 2, 20, 40, 50, 60, 70 }, list.Data.Select(story => story.ActionSet.Id));
+        Assert.Equal("S0002", ((AreaStorySet)list.Data[2].Clone()).TalkId);
+    }
+
     private static void InvokeGetData(object list, params object[] arguments)
     {
         list.GetType().GetMethod("GetData", BindingFlags.Instance | BindingFlags.NonPublic)!

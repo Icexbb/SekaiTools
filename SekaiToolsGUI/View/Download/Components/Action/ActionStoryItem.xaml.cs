@@ -72,7 +72,7 @@ public partial class ActionStoryItem : UserControl
                 Icons.Children.Add(icon);
             }
 
-        TextId.Text = $"# {areaStorySet.ActionSet.Id}";
+        TextId.Text = $"ID {areaStorySet.ActionSet.Id} · TalkId {areaStorySet.TalkId ?? "未编号"}";
         TextKey.Text = $"{areaStorySet.ActionSet.ScenarioId}";
         TextArea.Text = $"{areaStorySet.AreaName} · {areaStorySet.TypeName} · {areaStorySet.BatchName}";
         var activityDetails = new List<string>();

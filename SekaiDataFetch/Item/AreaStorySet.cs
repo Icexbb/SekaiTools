@@ -7,6 +7,7 @@ public class AreaStorySet(ActionSet actionSet) : ICloneable
     public ActionSet ActionSet { get; } = actionSet;
     public string ScenarioId { get; } = actionSet.ScenarioId;
     public int Group { get; } = actionSet.Id / 100;
+    public string? TalkId { get; init; }
 
     public int[] CharacterIds { get; set; } = [];
     public string AreaName { get; set; } = "";
@@ -30,6 +31,7 @@ public class AreaStorySet(ActionSet actionSet) : ICloneable
     {
         return new AreaStorySet(ActionSet)
         {
+            TalkId = TalkId,
             CharacterIds = CharacterIds,
             AreaName = AreaName,
             ReleaseActivity = ReleaseActivity,

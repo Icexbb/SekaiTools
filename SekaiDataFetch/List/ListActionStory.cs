@@ -83,13 +83,25 @@ public class ListActionStory : BaseListStory
     private void GetData(ActionSet[] actionSets, Area[] areas, Character2d[] character2ds)
     {
         var stories = new List<AreaStorySet>();
+        var normalCount = 0;
+        var specialCount = 0;
         foreach (var actionSet in actionSets)
         {
+            // Match PRSK_Editor: count the full source sequence before filtering by area.
+            string? talkId = null;
+            if (!string.IsNullOrEmpty(actionSet.ScenarioId) && actionSet.ScenarioId != "none")
+            {
+                if (actionSet.ActionSetType == "normal")
+                    talkId = (++normalCount).ToString("D4", System.Globalization.CultureInfo.InvariantCulture);
+                else if (!string.IsNullOrEmpty(actionSet.ActionSetType) && actionSet.ActionSetType != "none")
+                    talkId = "S" + (++specialCount).ToString("D4", System.Globalization.CultureInfo.InvariantCulture);
+            }
             var area = areas.FirstOrDefault(area => area.Id == actionSet.AreaId);
             if (area == null) continue;
             if (actionSet.ScenarioId == "") continue;
             var data = new AreaStorySet(actionSet)
             {
+                TalkId = talkId,
                 AreaName = area.AreaName,
                 CharacterIds = actionSet.CharacterIds
                     .Select(id => character2ds.First(c2d => c2d.Id == id).CharacterId)
