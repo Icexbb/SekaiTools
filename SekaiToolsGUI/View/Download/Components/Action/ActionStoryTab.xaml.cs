@@ -54,8 +54,9 @@ public partial class ActionStoryTab : UserControl, IRefreshable
 
     public void InitializeAreas()
     {
-        ViewModel.Areas = ActionStory.Areas.ToArray();
-        BoxType.SelectedIndex = 0;
+        var selectedId = (BoxType.SelectedItem as AreaFilterOption)?.Id;
+        ViewModel.Areas = [new(null, "全部地点"), .. ActionStory.Areas.Select(area => new AreaFilterOption(area.Id, area.AreaName))];
+        BoxType.SelectedItem = ViewModel.Areas.FirstOrDefault(area => area.Id == selectedId) ?? ViewModel.Areas[0];
         RefreshItems();
     }
 
@@ -91,18 +92,48 @@ partial class ActionStoryTab
 {
     private void RefreshItems()
     {
+        if (MinimumIdBox == null || MaximumIdBox == null || ResultText == null || AddFilteredButton == null) return;
+        var validMinimum = TryReadId(MinimumIdBox.Text, out var minimum);
+        var validMaximum = TryReadId(MaximumIdBox.Text, out var maximum);
+        var valid = validMinimum && validMaximum;
+        valid = valid && (!minimum.HasValue || !maximum.HasValue || minimum <= maximum);
+        if (!valid)
+        {
+            ViewModel.EventStories = [];
+            ResultText.Text = "请输入正整数 ID，且起始 ID 不大于结束 ID";
+            AddFilteredButton.IsEnabled = false;
+            return;
+        }
 
-        var data = ActionStory.Data.Select(item => (AreaStorySet)item.Clone()).ToList();
-        data.Sort((x, y) => _currentDirection * x.ActionSet.Id.CompareTo(y.ActionSet.Id));
-        ViewModel.EventStories = data.Where(JudgeVisibility).ToArray();
+        var filter = new ActionStoryFilter((BoxType.SelectedItem as AreaFilterOption)?.Id,
+            (CharacterComboBox.SelectedItem as CharacterComboBoxItem)?.Value ?? 0, minimum, maximum);
+        var data = ActionStory.Data.Where(filter.Matches);
+        ViewModel.EventStories = (_currentDirection == 1
+            ? data.OrderBy(item => item.ActionSet.Id)
+            : data.OrderByDescending(item => item.ActionSet.Id)).ToArray();
+        ResultText.Text = $"符合条件：{ViewModel.EventStories.Length} 条";
+        AddFilteredButton.IsEnabled = ViewModel.EventStories.Length > 0;
     }
 
-    private bool JudgeVisibility(AreaStorySet data)
+    private static bool TryReadId(string text, out int? value)
     {
-        if (BoxType.SelectedItem is not Area selectedArea || selectedArea.Id != data.ActionSet.AreaId)
-            return false;
+        value = null;
+        if (string.IsNullOrWhiteSpace(text)) return true;
+        if (!int.TryParse(text, out var id) || id <= 0) return false;
+        value = id;
+        return true;
+    }
 
-        return CharacterComboBox.SelectedItem is not CharacterComboBoxItem character || character.Value == 0 ||
-               data.CharacterIds.Contains(character.Value);
+    private void IdRange_OnTextChanged(object sender, TextChangedEventArgs e) => RefreshItems();
+
+    private void AddFiltered_OnClick(object sender, RoutedEventArgs e)
+    {
+        DependencyObject? parent = this;
+        while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
+        if (parent is not DownloadPage page) return;
+        SourceList.Instance.SourceData = page.GetSourceType();
+        var sourceName = page.GetSourceType().SourceName;
+        page.AddTasks(ViewModel.EventStories.Select(story =>
+            ($"{sourceName}|ActionSet|{story.ActionSet.Id}-{story.ActionSet.ScriptId}", SourceList.Instance.ActionSet(story))));
     }
 }

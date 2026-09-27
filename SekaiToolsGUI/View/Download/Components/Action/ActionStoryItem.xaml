@@ -15,10 +15,13 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <StackPanel VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
                 <ui:TextBlock Name="TextId" Text="# 1" VerticalAlignment="Center" FontWeight="DemiBold"
                               Margin="0,0,10,0" />
                 <ui:TextBlock Name="TextKey" Text="Key" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock x:Name="TextArea" Margin="0,4,0,0" />
             </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal" Name="Icons" Margin="10,0" />
         </Grid>

@@ -84,6 +84,31 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         UpdateTaskListState();
     }
 
+    public void AddTasks(IEnumerable<(string Tag, string Url)> candidates)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            var urls = DownloadItemBox.Items.OfType<DownloadTask>().Select(task => task.Url).ToHashSet();
+            var added = 0;
+            var skipped = 0;
+            foreach (var (tag, url) in candidates)
+            {
+                if (!urls.Add(url))
+                {
+                    skipped++;
+                    continue;
+                }
+                var task = new DownloadTask(tag, url);
+                task.RemoveRequested += DownloadTask_OnRemoveRequested;
+                DownloadItemBox.Items.Add(task);
+                added++;
+            }
+            UpdateTaskListState();
+            SnackService.Show("批量加入完成", $"已加入 {added} 条，跳过重复 {skipped} 条。", ControlAppearance.Info,
+                new SymbolIcon(SymbolRegular.Info24), TimeSpan.FromSeconds(4));
+        });
+    }
+
     private void UpdateTaskListState()
     {
         var tasks = DownloadItemBox.Items.OfType<DownloadTask>().ToArray();

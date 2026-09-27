@@ -81,6 +81,17 @@
                     <ui:SymbolIcon Symbol="ArrowSortDownLines24" />
                 </ui:Button>
             </Grid>
+            <WrapPanel Margin="5,8,5,4" VerticalAlignment="Center">
+                <TextBlock Text="对话 ID" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBox x:Name="MinimumIdBox" Width="95" ToolTip="起始 ID（包含），留空表示不限"
+                         AutomationProperties.Name="起始对话 ID" TextChanged="IdRange_OnTextChanged" />
+                <TextBlock Text="至" VerticalAlignment="Center" Margin="8,0" />
+                <TextBox x:Name="MaximumIdBox" Width="95" ToolTip="结束 ID（包含），留空表示不限"
+                         AutomationProperties.Name="结束对话 ID" TextChanged="IdRange_OnTextChanged" />
+                <ui:Button x:Name="AddFilteredButton" Margin="12,0,0,0" Content="全部加入下载列表"
+                           IsEnabled="False" Click="AddFiltered_OnClick" />
+            </WrapPanel>
+            <TextBlock x:Name="ResultText" Margin="5,4,5,8" TextWrapping="Wrap" />
         </StackPanel>
         <ListView Grid.Row="1" ItemsSource="{Binding EventStories}"
                   BorderBrush="Transparent"

@@ -77,6 +77,7 @@ public class ListActionStory : BaseListStory
             if (actionSet.ScenarioId == "") continue;
             var data = new AreaStorySet(actionSet)
             {
+                AreaName = area.AreaName,
                 CharacterIds = actionSet.CharacterIds
                     .Select(id => character2ds.First(c2d => c2d.Id == id).CharacterId)
                     .ToArray()

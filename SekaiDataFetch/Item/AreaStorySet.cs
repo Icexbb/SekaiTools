@@ -9,13 +9,15 @@ public class AreaStorySet(ActionSet actionSet) : ICloneable
     public int Group { get; } = actionSet.Id / 100;
 
     public int[] CharacterIds { get; set; } = [];
+    public string AreaName { get; set; } = "";
 
 
     public object Clone()
     {
         return new AreaStorySet(ActionSet)
         {
-            CharacterIds = CharacterIds
+            CharacterIds = CharacterIds,
+            AreaName = AreaName
         };
     }
 }

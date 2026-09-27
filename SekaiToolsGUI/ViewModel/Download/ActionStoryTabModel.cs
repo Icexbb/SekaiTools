@@ -11,9 +11,9 @@ public class ActionStoryTabModel : ViewModelBase
         set => SetProperty(value);
     }
 
-    public Area[] Areas
+    public AreaFilterOption[] Areas
     {
-        get => GetProperty<Area[]>([]);
+        get => GetProperty<AreaFilterOption[]>([]);
         set => SetProperty(value);
     }
 

@@ -74,5 +74,6 @@ public partial class ActionStoryItem : UserControl
 
         TextId.Text = $"# {areaStorySet.ActionSet.Id}";
         TextKey.Text = $"{areaStorySet.ActionSet.ScenarioId}";
+        TextArea.Text = areaStorySet.AreaName;
     }
 }
