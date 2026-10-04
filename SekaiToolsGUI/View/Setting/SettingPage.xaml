@@ -16,15 +16,28 @@
         </Grid.RowDefinitions>
         <ScrollViewer Grid.Row="0">
             <StackPanel Margin="10">
-                <ui:CardControl Margin="0,0,0,8">
-                    <ui:CardControl.Header>
+                <ui:CardExpander Margin="0,0,0,8" IsExpanded="False" ContentPadding="0">
+                    <ui:CardExpander.Header>
                         <StackPanel>
-                            <ui:TextBlock FontTypography="Body" Text="后台灰度预处理（实验）" />
-                            <ui:TextBlock Text="增加帧缓存内存；部分视频可能受益，新任务生效" />
+                            <ui:TextBlock FontTypography="Body" Text="实验性功能" />
+                            <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                          Text="展开查看实验性功能设置" />
                         </StackPanel>
-                    </ui:CardControl.Header>
-                    <CheckBox IsChecked="{Binding RecognitionPrepareGray,Mode=TwoWay}" Content="启用" />
-                </ui:CardControl>
+                    </ui:CardExpander.Header>
+                    <StackPanel>
+                        <ui:CardControl>
+                            <ui:CardControl.Header>
+                                <StackPanel>
+                                    <ui:TextBlock FontTypography="Body" Text="后台灰度预处理" />
+                                    <ui:TextBlock TextWrapping="Wrap"
+                                                  Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                                  Text="增加帧缓存内存；部分视频可能受益，新任务生效" />
+                                </StackPanel>
+                            </ui:CardControl.Header>
+                            <CheckBox IsChecked="{Binding RecognitionPrepareGray,Mode=TwoWay}" Content="启用" />
+                        </ui:CardControl>
+                    </StackPanel>
+                </ui:CardExpander>
                 <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Memory16}">
                     <ui:CardControl.Header>
                         <StackPanel>
