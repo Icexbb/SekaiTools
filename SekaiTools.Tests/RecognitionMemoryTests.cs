@@ -13,6 +13,62 @@ namespace SekaiTools.Tests;
 public class RecognitionMemoryTests
 {
     [Fact]
+    public async Task PreloaderPublishesUpcomingTemplatesAndPreservesMarkerPixels()
+    {
+        using var fonts = new TestFonts();
+        var size = new Size(1920, 1080);
+        using var manager = new TemplateManager(size, fonts);
+        using var expectedManager = new TemplateManager(size, fonts);
+        using var stop = new CancellationTokenSource();
+        using var preloader = new TemplatePreloader(manager, new TemplateManager(size, fonts), manager.GetFontSize(),
+            [new SekaiToolsBase.Story.StoryEvent.DialogStoryEvent(0, "ABCDE", 1, "ABCD", false, false)],
+            [new SekaiToolsBase.Story.StoryEvent.BannerStoryEvent("Hi", 0)],
+            [new SekaiToolsBase.Story.StoryEvent.MarkerStoryEvent("MV", 0)], stop.Token);
+        preloader.Request(0, 0, 0);
+        // Foreground demand may race with publishing the same template.
+        var foreground = Task.Run(() => manager.GetMatchTemplate(TemplateUsage.DialogContent, "A"));
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (!manager.HasMatchTemplate(TemplateUsage.MarkerContent, "V", true))
+        {
+            Assert.True(DateTime.UtcNow < deadline, "Preloader did not publish");
+            await Task.Delay(10);
+        }
+        preloader.Dispose();
+        var banner = manager.GetMatchTemplate(TemplateUsage.BannerContent, "Hi");
+        var expectedBanner = expectedManager.GetMatchTemplate(TemplateUsage.BannerContent, "Hi");
+        Assert.Equal(0d, CvInvoke.Norm(expectedBanner.Gray, banner.Gray, NormType.L1));
+        Assert.Equal(0d, CvInvoke.Norm(expectedBanner.Alpha, banner.Alpha, NormType.L1));
+        Assert.Same(await foreground, manager.GetMatchTemplate(TemplateUsage.DialogContent, "A"));
+        foreach (var text in new[] { "A", "AB", "ABC" })
+        {
+            var actual = manager.GetMatchTemplate(TemplateUsage.DialogContent, text);
+            var expected = expectedManager.GetMatchTemplate(TemplateUsage.DialogContent, text);
+            Assert.Equal(0d, CvInvoke.Norm(expected.Gray, actual.Gray, NormType.L1));
+            Assert.Equal(0d, CvInvoke.Norm(expected.Alpha, actual.Alpha, NormType.L1));
+        }
+        using var source = expectedManager.CreateTemplate(TemplateUsage.MarkerContent, "MV");
+        using var resized = new Mat();
+        CvInvoke.Resize(source, resized, new Size((int)(source.Width * 0.9), (int)(source.Height * 0.9)));
+        using var expectedMarker = new GaMat(resized);
+        var marker = manager.GetMarkerMatchTemplate("MV");
+        Assert.Equal(0d, CvInvoke.Norm(expectedMarker.Gray, marker.Gray, NormType.L1));
+        Assert.Equal(0d, CvInvoke.Norm(expectedMarker.Alpha, marker.Alpha, NormType.L1));
+    }
+
+    [Fact]
+    public void DuplicatePreparedPublicationKeepsExistingOwnerAndDisposesCandidate()
+    {
+        using var fonts = new TestFonts();
+        using var manager = new TemplateManager(new Size(1920, 1080), fonts);
+        var existing = manager.GetMatchTemplate(TemplateUsage.DialogContent, "ABC");
+        using var source = manager.CreateTemplate(TemplateUsage.DialogContent, "ABC");
+        var duplicate = new GaMat(source);
+        Assert.Same(existing, manager.Publish(TemplateUsage.DialogContent, "ABC", duplicate, false));
+        Assert.Equal(IntPtr.Zero, duplicate.Gray.Ptr);
+        Assert.NotEqual(IntPtr.Zero, existing.Gray.Ptr);
+    }
+
+    [Fact]
     public void DialogReferencesReusePrefixTemplatesWithoutOwningThem()
     {
         using var fonts = new TestFonts();

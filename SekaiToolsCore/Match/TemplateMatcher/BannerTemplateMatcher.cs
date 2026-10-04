@@ -42,7 +42,7 @@ public class BannerTemplateMatcher(
         return templateManager.GetMatchTemplate(TemplateUsage.BannerContent, content);
     }
 
-    private static string TrimContent(string content)
+    internal static string TrimContent(string content)
     {
         var trimmed = "";
         var len = 0D;

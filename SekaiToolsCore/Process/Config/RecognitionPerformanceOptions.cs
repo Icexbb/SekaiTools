@@ -21,7 +21,8 @@ public sealed record RecognitionPerformanceOptions
         // Leave headroom for the existing decoder, matchers, UI and other applications.
         var budget = Math.Min((long)cap * 1024 * 1024, availableBytes / 4);
         var frameBytes = checked((long)width * height * (PrepareGrayFrames ? 4 : 3));
-        var count = Math.Max(0, budget - 64L * 1024 * 1024) / frameBytes;
+        var reserveMiB = Mode == RecognitionPerformanceMode.MemorySaving ? 64 : 96;
+        var count = Math.Max(0, budget - reserveMiB * 1024L * 1024) / frameBytes;
         var maxFrames = Mode switch
         {
             RecognitionPerformanceMode.MemorySaving => 4,

@@ -431,6 +431,9 @@ public class VideoProcessor : IDisposable
             (int)capture.Get(CapProp.FrameWidth), (int)capture.Get(CapProp.FrameHeight),
             BufferedVideoReader.AvailableMemoryBytes());
         using var reader = new BufferedVideoReader(capture, capacity, token, _config.PerformanceOptions.PrepareGrayFrames);
+        using var preloader = capacity > 0 && _config.PerformanceOptions.Mode != RecognitionPerformanceMode.MemorySaving
+            ? Creator.CreatePreloader(token) : null;
+        preloader?.Request(DialogMatcher.LastNotProcessedIndex(), BannerMatcher.LastNotProcessedIndex(), MarkerMatcher.LastNotProcessedIndex());
         Logger.Log($"识别性能模式: {_config.PerformanceOptions.Mode}, 帧缓冲容量={capacity}");
 
         var avgDuration = 0d;
@@ -564,6 +567,7 @@ public class VideoProcessor : IDisposable
                 _consecutiveExceptionCount = 0;
 
                 // 定期保存进度
+                preloader?.Request(DialogMatcher.LastNotProcessedIndex(), BannerMatcher.LastNotProcessedIndex(), MarkerMatcher.LastNotProcessedIndex());
                 TrySaveProgress(frameIndex);
             }
             catch (OperationCanceledException)
@@ -602,6 +606,7 @@ public class VideoProcessor : IDisposable
         // 循环正常退出代表所有匹配器均已完成。先确定终止状态，再发送最终进度，
         // 避免取消或失败任务被错误显示为 100%。
         reader.Dispose();
+        preloader?.Dispose();
         if (StopReason == ProcessStopReason.None)
             StopReason = ProcessStopReason.Completed;
 

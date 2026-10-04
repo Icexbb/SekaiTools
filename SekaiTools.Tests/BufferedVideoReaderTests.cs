@@ -86,7 +86,7 @@ public class BufferedVideoReaderTests
     [InlineData(1920, 1080, 0, 0)]
     [InlineData(3840, 2160, 256, 0)]
     [InlineData(1920, 1080, 4096, 16)]
-    [InlineData(3840, 2160, 4096, 14)]
+    [InlineData(3840, 2160, 4096, 13)]
     public void AutomaticBudgetLimitsFrameCount(int width, int height, int availableMiB, int expected)
     {
         Assert.Equal(expected, new RecognitionPerformanceOptions { PrepareGrayFrames = true }.GetFrameCapacity(

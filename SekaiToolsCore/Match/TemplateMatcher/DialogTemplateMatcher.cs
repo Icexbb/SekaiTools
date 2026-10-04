@@ -112,22 +112,20 @@ public class DialogTemplateMatcher(
                 };
         }
 
-        static string TrimTemplateContent(string origin, int maxLen = 3)
+    }
+
+    internal static string TrimTemplateContent(string origin, int maxLen = 3)
+    {
+        var trimmed = "";
+        var len = 0D;
+        foreach (var c in origin)
         {
-            var trimmed = "";
-            var len = 0D;
-            foreach (var c in origin)
-            {
-                trimmed += c;
-                len += char.IsAscii(c) ? 0.5 : 1;
-                if (len >= maxLen) break;
-            }
-
-            if (trimmed.Contains('・'))
-                trimmed = trimmed[..trimmed.IndexOf('・')];
-
-            return trimmed;
+            trimmed += c;
+            len += char.IsAscii(c) ? 0.5 : 1;
+            if (len >= maxLen) break;
         }
+        if (trimmed.Contains('・')) trimmed = trimmed[..trimmed.IndexOf('・')];
+        return trimmed;
     }
 
     private MatchStatus DialogMatchContent(FrameMatchContext frame, DialogBaseFrameSet dialogBase, Point point,
@@ -212,16 +210,16 @@ public class DialogTemplateMatcher(
 
     internal (GaMat First, GaMat Second, GaMat Third) GetContentTemplates(string content)
     {
-            if (_contentTemplates.TryGetValue(content, out var cached)) return cached;
-            var dialogBody1 = content[..Math.Min(1, content.Length)];
-            var dialogBody2 = content[..Math.Min(2, content.Length)];
-            var dialogBody3 = content[..Math.Min(3, content.Length)];
-            var template1 = templateManager.GetMatchTemplate(TemplateUsage.DialogContent, dialogBody1);
-            var template2 = templateManager.GetMatchTemplate(TemplateUsage.DialogContent, dialogBody2);
-            var template3 = templateManager.GetMatchTemplate(TemplateUsage.DialogContent, dialogBody3);
-            var result = (template1, template2, template3);
-            _contentTemplates.Add(content, result);
-            return result;
+        if (_contentTemplates.TryGetValue(content, out var cached)) return cached;
+        var dialogBody1 = content[..Math.Min(1, content.Length)];
+        var dialogBody2 = content[..Math.Min(2, content.Length)];
+        var dialogBody3 = content[..Math.Min(3, content.Length)];
+        var template1 = templateManager.GetMatchTemplate(TemplateUsage.DialogContent, dialogBody1);
+        var template2 = templateManager.GetMatchTemplate(TemplateUsage.DialogContent, dialogBody2);
+        var template3 = templateManager.GetMatchTemplate(TemplateUsage.DialogContent, dialogBody3);
+        var result = (template1, template2, template3);
+        _contentTemplates.Add(content, result);
+        return result;
     }
 
     public int DebugSetFinishedUntilContains(string targetString, string? speaker = null)

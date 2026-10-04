@@ -27,14 +27,10 @@ public class MarkerTemplateMatcher(
     private readonly FiniteLookaheadTracker _lookaheadTracker = new();
     private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
     private readonly AdaptiveSearchScheduler _searchScheduler = new();
-    private readonly Dictionary<string, GaMat> _templates = new();
     private MatchStatus _status;
 
     public void Dispose()
     {
-        foreach (var template in _templates.Values)
-            template.Dispose();
-        _templates.Clear();
         _searchScheduler.Dispose();
     }
 
@@ -45,16 +41,7 @@ public class MarkerTemplateMatcher(
 
     private GaMat GetTemplate(string content)
     {
-        if (_templates.TryGetValue(content, out var template))
-            return template;
-
-        using var source = templateManager.CreateTemplate(TemplateUsage.MarkerContent, content);
-        const double resizeRatio = 0.90;
-        using var resized = new Mat();
-        CvInvoke.Resize(source, resized,
-            new Size((int)(source.Width * resizeRatio), (int)(source.Height * resizeRatio)));
-        _templates.Add(content, new GaMat(resized));
-        return _templates[content];
+        return templateManager.GetMarkerMatchTemplate(content);
     }
 
     private MatchResult MarkerMatch(FrameMatchContext frame, string text, int frameIndex = -1)

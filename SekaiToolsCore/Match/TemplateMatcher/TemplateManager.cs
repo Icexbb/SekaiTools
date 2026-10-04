@@ -25,6 +25,8 @@ public class TemplateManager(
     private const string DbFontBase = "FOT-RodinNTLGPro-DB.otf";
     private const string EbFontBase = "FOT-RodinNTLGPro-EB.otf";
     private readonly Dictionary<TemplateUsage, Dictionary<string, GaMat>?> _matchTemplate = new();
+    private readonly object _matchLock = new();
+    private readonly Dictionary<string, GaMat> _markerTemplates = new(StringComparer.Ordinal);
 
     private readonly Dictionary<TemplateUsage, Dictionary<string, Mat>?> _template = new();
     private SKTypeface? _dbTypeface;
@@ -43,6 +45,8 @@ public class TemplateManager(
         }
 
         _matchTemplate.Clear();
+        foreach (var template in _markerTemplates.Values) template.Dispose();
+        _markerTemplates.Clear();
 
         _menuSign?.Dispose();
         _menuSign = null;
@@ -232,6 +236,7 @@ public class TemplateManager(
         var extendPixel = (int)(fontSize / 16f);
         var extendSize = new Size(cropped.Width + extendPixel * 2, cropped.Height + extendPixel * 2);
         var expandedMat = new Mat(extendSize, cropped.Depth, cropped.NumberOfChannels);
+        expandedMat.SetTo(new MCvScalar(0));
         const int bannerGrayScale = 80;
         using (var contentRegion = new Mat(expandedMat,
                    new Rectangle(extendPixel, extendPixel, cropped.Width, cropped.Height)))
@@ -257,16 +262,43 @@ public class TemplateManager(
 
     public GaMat GetMatchTemplate(TemplateUsage usage, string text)
     {
-        var usageDict = _matchTemplate.GetValueOrDefault(usage);
-        if (usageDict == null)
-            _matchTemplate[usage] = usageDict = new Dictionary<string, GaMat>();
-
-        if (usageDict.TryGetValue(text, out var template))
-            return template;
-
+        lock (_matchLock)
+            if (_matchTemplate.GetValueOrDefault(usage)?.TryGetValue(text, out var cached) == true) return cached;
         using var source = CreateTemplate(usage, text);
-        template = new GaMat(source);
-        usageDict[text] = template;
-        return template;
+        return Publish(usage, text, new GaMat(source), false);
+    }
+
+    internal GaMat CreateMarkerMatchTemplate(string text)
+    {
+        using var source = CreateTemplate(TemplateUsage.MarkerContent, text);
+        using var resized = new Mat();
+        CvInvoke.Resize(source, resized, new Size((int)(source.Width * 0.90), (int)(source.Height * 0.90)));
+        return new GaMat(resized);
+    }
+
+    internal GaMat GetMarkerMatchTemplate(string text)
+    {
+        lock (_matchLock)
+            if (_markerTemplates.TryGetValue(text, out var cached)) return cached;
+        return Publish(TemplateUsage.MarkerContent, text, CreateMarkerMatchTemplate(text), true);
+    }
+
+    internal bool HasMatchTemplate(TemplateUsage usage, string text, bool marker)
+    {
+        lock (_matchLock)
+            return marker ? _markerTemplates.ContainsKey(text)
+                : _matchTemplate.GetValueOrDefault(usage)?.ContainsKey(text) == true;
+    }
+
+    internal GaMat Publish(TemplateUsage usage, string text, GaMat candidate, bool marker)
+    {
+        lock (_matchLock)
+        {
+            var cache = marker ? _markerTemplates : _matchTemplate.GetValueOrDefault(usage);
+            if (cache == null) _matchTemplate[usage] = cache = new Dictionary<string, GaMat>(StringComparer.Ordinal);
+            if (cache.TryGetValue(text, out var existing)) { candidate.Dispose(); return existing; }
+            cache.Add(text, candidate);
+            return candidate;
+        }
     }
 }

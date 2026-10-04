@@ -7,9 +7,11 @@ namespace SekaiToolsCore.Match.TemplateMatcher;
 
 public class TemplateMatcherCreator : IDisposable
 {
+    private readonly ITemplateResourceProvider _resources;
     public TemplateMatcherCreator(Config config, ITemplateResourceProvider resourceProvider)
     {
         Config = config;
+        _resources = resourceProvider;
         VInfo = new VideoInfo(Config.VideoFilePath);
         Story = SekaiStory.FromFile(Config.ScriptFilePath, Config.TranslateFilePath);
 
@@ -24,6 +26,10 @@ public class TemplateMatcherCreator : IDisposable
     public FrameRate FrameRate => VInfo.Fps;
     private TemplateManager Manager { get; }
     public TemplateMatchCachePool CachePool { get; }
+
+    internal TemplatePreloader CreatePreloader(CancellationToken token) => new(Manager,
+        new TemplateManager(VInfo.Resolution, _resources), Manager.GetFontSize(),
+        Story.Dialogs().ToArray(), Story.Banners().ToArray(), Story.Markers().ToArray(), token);
 
     public void Dispose()
     {
