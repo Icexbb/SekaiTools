@@ -38,6 +38,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
 {
     private bool _shortLayout;
     private bool _isResetting;
+    private readonly DispatcherBatchQueue _resultQueue;
 
     private void SubtitlePage_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
@@ -53,6 +54,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     {
         DataContext = new SubtitlePageModel();
         InitializeComponent();
+        _resultQueue = new DispatcherBatchQueue(Dispatcher, () => EventTimelineEditor.DeferRendering());
         SubscribeFpsChange();
         SubscribeProgressChange();
     }
@@ -365,6 +367,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
         try
         {
             await processor.StopProcessAsync();
+            await _resultQueue.FlushAsync();
         }
         catch (Exception exception)
         {
@@ -476,7 +479,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
 
     private void LinePanel_AddDialogLine(DialogBaseFrameSet set)
     {
-        Dispatcher.Invoke(() =>
+        _resultQueue.Enqueue(() =>
         {
             var needScroll = Math.Abs(LineViewer.ScrollableHeight - LineViewer.VerticalOffset) < 1;
             var line = new DialogLine(set)
@@ -500,7 +503,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
 
     private void LinePanel_AddBannerLine(BannerBaseFrameSet set)
     {
-        Dispatcher.Invoke(() =>
+        _resultQueue.Enqueue(() =>
         {
             var needScroll = Math.Abs(LineViewer.ScrollableHeight - LineViewer.VerticalOffset) < 1;
 
@@ -524,7 +527,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
 
     private void LinePanel_AddMarkerLine(MarkerBaseFrameSet set)
     {
-        Dispatcher.Invoke(() =>
+        _resultQueue.Enqueue(() =>
         {
             var needScroll = Math.Abs(LineViewer.ScrollableHeight - LineViewer.VerticalOffset) < 1;
 
@@ -890,6 +893,7 @@ public partial class SubtitlePage
                 {
                     OnTaskFinished = () =>
                     {
+                        _resultQueue.FlushAsync().GetAwaiter().GetResult();
                         ReleaseSubtitlePowerRequest();
                         Dispatcher.Invoke(() =>
                         {

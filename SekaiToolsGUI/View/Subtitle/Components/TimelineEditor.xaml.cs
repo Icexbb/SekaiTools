@@ -1366,6 +1366,7 @@ public partial class TimelineEditor : UserControl
 
     private void RenderTimeline()
     {
+        if (_renderBatchDepth > 0) { _renderPending = true; return; }
         if (TimelineCanvas == null)
             return;
 
@@ -1993,4 +1994,23 @@ public partial class TimelineEditor : UserControl
         int? NewSeparateFrame = null);
 
     private sealed record TimelineHitRegion(TimelineEventSelection Selection, Rect Bounds);
+
+    private int _renderBatchDepth;
+    private bool _renderPending;
+    internal IDisposable DeferRendering()
+    {
+        _renderBatchDepth++;
+        return new RenderBatch(this);
+    }
+    private sealed class RenderBatch(TimelineEditor owner) : IDisposable
+    {
+        private TimelineEditor? _owner = owner;
+        public void Dispose()
+        {
+            var editor = Interlocked.Exchange(ref _owner, null);
+            if (editor == null || --editor._renderBatchDepth != 0 || !editor._renderPending) return;
+            editor._renderPending = false;
+            editor.RenderTimeline();
+        }
+    }
 }
