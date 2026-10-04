@@ -4,6 +4,7 @@ namespace SekaiToolsGUI.ViewModel.Download;
 
 public class DownloadPageModel : ViewModelBase
 {
+    private readonly SourceData[] _defaultSources = SekaiDataFetch.Source.SourceData.Default;
     public static DownloadPageModel Instance { get; } = new();
 
     public int CurrentSourceIndex
@@ -16,7 +17,7 @@ public class DownloadPageModel : ViewModelBase
 
     public SourceData[] SourceData
     {
-        get => GetProperty(Array.Empty<SourceData>());
+        get => GetProperty(_defaultSources);
         set => SetProperty(value);
     }
 }

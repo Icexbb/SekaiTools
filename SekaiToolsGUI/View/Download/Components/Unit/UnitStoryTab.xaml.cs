@@ -13,7 +13,6 @@ public partial class UnitStoryTab : UserControl, IRefreshable
     public UnitStoryTab()
     {
         InitializeComponent();
-        UnitComboBox.SelectedIndex = 0;
     }
 
     private ListUnitStory ListUnitStory => ListUnitStory.Instance;
@@ -62,7 +61,7 @@ public partial class UnitStoryTab : UserControl, IRefreshable
     private void UnitStoryTab_OnLoaded(object sender, RoutedEventArgs e)
     {
         if (UnitComboBox.SelectedIndex < 0) UnitComboBox.SelectedIndex = 0;
-        RefreshItems();
+        else RefreshItems();
     }
 
     private SourceData GetSourceType()

@@ -42,7 +42,7 @@
                     </ComboBox>
                 </StackPanel>
 
-                <Button Grid.Column="2" VerticalAlignment="Bottom"
+                <Button x:Name="RefreshButton" Grid.Column="2" VerticalAlignment="Bottom"
                         Content="刷新当前列表" Click="ButtonRefresh_OnClick" />
             </Grid>
             <ui:Card Margin="0,0,0,5" Padding="5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
@@ -64,6 +64,10 @@
                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                         HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                         Name="ContentCard" />
+        <Grid x:Name="LoadingPanel" Grid.Column="0" Grid.Row="1" Visibility="Collapsed">
+            <TextBlock x:Name="LoadingMessage" Text="正在加载剧情列表…"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" />
+        </Grid>
         <ui:Card Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"
                  VerticalContentAlignment="Stretch" Padding="0" Margin="10,0,0,0"
                  VerticalAlignment="Stretch" Width="200">

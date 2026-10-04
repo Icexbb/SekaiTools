@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using Microsoft.Extensions.Logging;
 using SekaiDataFetch;
 using SekaiDataFetch.List;
@@ -27,20 +28,16 @@ namespace SekaiToolsGUI.View.Download;
 public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 {
     private static Task? _sourceListInitializationTask;
+    private readonly Dictionary<int, UserControl> _storyTabs = new();
+    private readonly Dictionary<int, Task> _storyInitializationTasks = new();
+    private int _selectionVersion;
 
     public DownloadPage()
     {
         InitializeComponent();
         DataContext = ViewModel;
         BoxStoryType.SelectedIndex = 0;
-        StoryTypeSelector_OnSelected(null!, null!);
     }
-
-    private UnitStoryTab UnitStoryTab { get; } = new();
-    private EventStoryTab EventStoryTab { get; } = new();
-    private SpecialStoryTab SpecialStoryTab { get; } = new();
-    private CardStoryTab CardStoryTab { get; } = new();
-    private ActionStoryTab ActionStoryTab { get; } = new();
 
     private static ISnackbarService SnackService =>
         ((MainWindow)Application.Current.MainWindow!).WindowSnackbarService;
@@ -53,6 +50,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 
     public async void OnNavigatedTo()
     {
+        await Dispatcher.Yield(DispatcherPriority.Background);
         _sourceListInitializationTask ??= InitDownloadSourceAsync();
         await _sourceListInitializationTask;
     }
@@ -121,21 +119,78 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         DownloadButton.IsEnabled = tasks.Any(task => !task.Downloaded);
     }
 
-    private void StoryTypeSelector_OnSelected(object sender, SelectionChangedEventArgs e)
+    private async void StoryTypeSelector_OnSelected(object sender, SelectionChangedEventArgs e)
     {
-        SelectIndex(BoxStoryType.SelectedIndex);
+        await SelectIndexAsync(BoxStoryType.SelectedIndex);
     }
 
-    private void SelectIndex(int index)
+    private async Task SelectIndexAsync(int index)
     {
-        ContentCard.Content = index switch
+        if (ContentCard == null || index is < 0 or > 4) return;
+        var version = ++_selectionVersion;
+        if (_storyTabs.TryGetValue(index, out var existing))
         {
-            0 => UnitStoryTab,
-            1 => EventStoryTab,
-            2 => SpecialStoryTab,
-            3 => CardStoryTab,
-            4 => ActionStoryTab,
-            _ => null
+            ContentCard.Content = existing;
+            LoadingPanel.Visibility = Visibility.Collapsed;
+            RefreshButton.IsEnabled = true;
+            return;
+        }
+
+        ContentCard.Content = null;
+        LoadingMessage.Text = "正在加载剧情列表…";
+        LoadingPanel.Visibility = Visibility.Visible;
+        RefreshButton.IsEnabled = false;
+        try
+        {
+            // Render the page shell before reading caches or constructing the selected tab.
+            await Dispatcher.Yield(DispatcherPriority.Background);
+            if (version != _selectionVersion) return;
+            if (!_storyInitializationTasks.TryGetValue(index, out var initialization))
+            {
+                initialization = Task.Run(() => InitializeStoryData(index));
+                _storyInitializationTasks.Add(index, initialization);
+            }
+            await initialization;
+            if (version != _selectionVersion) return;
+
+            // WPF controls stay on the UI thread; only non-UI cache loading runs in the worker.
+            var tab = index switch
+            {
+                0 => (UserControl)new UnitStoryTab(),
+                1 => new EventStoryTab(),
+                2 => new SpecialStoryTab(),
+                3 => new CardStoryTab(),
+                4 => new ActionStoryTab(),
+                _ => throw new ArgumentOutOfRangeException(nameof(index))
+            };
+            _storyTabs.Add(index, tab);
+            ContentCard.Content = tab;
+            LoadingPanel.Visibility = Visibility.Collapsed;
+        }
+        catch (Exception exception)
+        {
+            _storyInitializationTasks.Remove(index);
+            Log.Logger.LogError(exception, "Download story tab {Index} initialization failed", index);
+            if (version == _selectionVersion)
+                LoadingMessage.Text = "列表加载失败，请点击“刷新当前列表”重试。";
+        }
+        finally
+        {
+            if (version == _selectionVersion) RefreshButton.IsEnabled = true;
+        }
+    }
+
+    private static void InitializeStoryData(int index)
+    {
+        // Accessing the singleton first loads and parses its local JSON cache.
+        _ = index switch
+        {
+            0 => (BaseListStory)ListUnitStory.Instance,
+            1 => ListEventStory.Instance,
+            2 => ListSpecialStory.Instance,
+            3 => ListCardStory.Instance,
+            4 => ListActionStory.Instance,
+            _ => throw new ArgumentOutOfRangeException(nameof(index))
         };
     }
 
@@ -258,8 +313,11 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         {
             // structure : {data:SourceData[],keyword:string}
             var sourceListJson = await Fetcher.Instance.Fetch(sourceListUrl);
-            var sourceListDoc = JsonDocument.Parse(sourceListJson);
-            var sourceList = sourceListDoc.RootElement.Deserialize<SourceData[]>()!;
+            var sourceList = await Task.Run(() =>
+            {
+                var sources = JsonSerializer.Deserialize<SourceData[]>(sourceListJson);
+                return sources is { Length: > 0 } ? sources : throw new InvalidDataException("数据源列表为空。");
+            });
             ViewModel.SourceData = sourceList;
         }
         catch (Exception e)
@@ -274,7 +332,11 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 
     private async void ButtonRefresh_OnClick(object sender, RoutedEventArgs e)
     {
-        if (ContentCard.Content is not IRefreshable refreshable) return;
+        if (ContentCard.Content is not IRefreshable refreshable)
+        {
+            await SelectIndexAsync(BoxStoryType.SelectedIndex);
+            return;
+        }
 
         var button = (Button)sender;
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
