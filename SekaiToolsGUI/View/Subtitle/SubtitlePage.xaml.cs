@@ -37,6 +37,7 @@ namespace SekaiToolsGUI.View.Subtitle;
 public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
 {
     private bool _shortLayout;
+    private bool _isResetting;
 
     private void SubtitlePage_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
@@ -318,6 +319,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
 
     private async void ResetButton_OnClick(object sender, RoutedEventArgs e)
     {
+        if (_isResetting) return;
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
         var result = await dialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
         {
@@ -328,17 +330,52 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
         }, CancellationToken.None);
         if (result != ContentDialogResult.Primary) return;
 
-        StopProcess();
-        (Application.Current.MainWindow as MainWindow)?.SetWindowTitle("");
-        SetTaskbarProgressState(TaskbarItemProgressState.None, 0);
-        VideoProcessor?.Dispose();
-        VideoProcessor = null;
-        ViewModel.Reset();
-        LinePanel.Children.Clear();
-        EventTimelineEditor.ClearSelection();
-        TextBlockProgression.Text = "";
-        TextBlockFps.Text = "";
-        ProgressBarProgression.Value = 0;
+        await ResetCurrentTaskAsync();
+    }
+
+    internal async Task ResetCurrentTaskAsync()
+    {
+        if (_isResetting) return;
+        _isResetting = true;
+        try
+        {
+            await ReleaseProcessorAsync();
+            (Application.Current.MainWindow as MainWindow)?.SetWindowTitle("");
+            SetTaskbarProgressState(TaskbarItemProgressState.None, 0);
+            ViewModel.Reset();
+            LinePanel.Children.Clear();
+            EventTimelineEditor.ClearSelection();
+            TextBlockProgression.Text = "";
+            TextBlockFps.Text = "";
+            TextBlockEta.Text = "";
+            ProgressBarProgression.Value = 0;
+            await TaskMemoryCleanup.AfterResetAsync(Dispatcher);
+        }
+        finally
+        {
+            _isResetting = false;
+        }
+    }
+
+    private async Task ReleaseProcessorAsync()
+    {
+        var processor = VideoProcessor;
+        if (processor == null) return;
+        try
+        {
+            await processor.StopProcessAsync();
+        }
+        catch (Exception exception)
+        {
+            Logger.Log($"重置时处理任务异常结束: {exception}", LogLevel.Error);
+        }
+        finally
+        {
+            processor.Dispose();
+            VideoProcessor = null;
+            // Do not retain the disposed task graph across the reset's GC await.
+            processor = null;
+        }
     }
 
     private void StopButton_OnClick(object sender, RoutedEventArgs e)
@@ -356,6 +393,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
 
     private void StartButton_OnClick(object sender, EventArgs arg)
     {
+        if (_isResetting) return;
         try
         {
             if (!CheckConfig()) return;

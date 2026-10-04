@@ -166,6 +166,10 @@ public class VideoProcessor : IDisposable
         BannerMatcher?.Dispose();
         MarkerMatcher?.Dispose();
         Creator?.Dispose();
+        Capture = null;
+        ProcessingTask = null;
+        _previewChannel = null;
+        _previewConsumerTask = null;
         _disposed = true;
     }
 
@@ -355,6 +359,10 @@ public class VideoProcessor : IDisposable
             }
             finally
             {
+                // Process may exit through a callback or persistence exception before
+                // its normal capture cleanup. Always release the decoder here.
+                Capture?.Dispose();
+                Capture = null;
                 _isProcessing = false;
                 Callbacks.OnTaskFinished();
             }
@@ -364,6 +372,20 @@ public class VideoProcessor : IDisposable
     public void StopProcess()
     {
         TokenSource?.Cancel();
+    }
+
+    public async Task StopProcessAsync()
+    {
+        StopProcess();
+        try
+        {
+            if (ProcessingTask is { } task)
+                await task.ConfigureAwait(false);
+        }
+        finally
+        {
+            await WaitForProgressSaveAsync().ConfigureAwait(false);
+        }
     }
 
     private void Process(CancellationToken token)
@@ -379,7 +401,7 @@ public class VideoProcessor : IDisposable
         var capture = Capture;
         var frameRate = capture.Get(CapProp.Fps);
         var previewInterval = Math.Max(1, (int)Math.Round(frameRate / 5d));
-        var frame = new Mat();
+        using var frame = new Mat();
         using var matchFrameA = new FrameMatchContext();
         using var matchFrameB = new FrameMatchContext();
         FrameMatchContext? previousMatchFrame = null;
@@ -594,7 +616,6 @@ public class VideoProcessor : IDisposable
         }
         WaitForProgressSave();
 
-        frame.Dispose();
         capture.Dispose();
         if (ReferenceEquals(Capture, capture))
             Capture = null;
@@ -709,6 +730,11 @@ public class VideoProcessor : IDisposable
 
     private void WaitForProgressSave()
     {
+        WaitForProgressSaveAsync().GetAwaiter().GetResult();
+    }
+
+    private async Task WaitForProgressSaveAsync()
+    {
         Task saveTask;
         lock (_progressSaveLock)
         {
@@ -717,7 +743,7 @@ public class VideoProcessor : IDisposable
 
         try
         {
-            saveTask.GetAwaiter().GetResult();
+            await saveTask.ConfigureAwait(false);
         }
         catch (Exception e)
         {

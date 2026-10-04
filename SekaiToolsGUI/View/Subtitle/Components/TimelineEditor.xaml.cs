@@ -288,6 +288,7 @@ public partial class TimelineEditor : UserControl
     public void ClearSelection()
     {
         StopPlayback();
+        DisposePlaybackWindow();
         _mediaPath = null;
         ViewModel.HasMediaSource = false;
         _selection = null;

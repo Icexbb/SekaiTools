@@ -1,0 +1,100 @@
+using System.Drawing;
+using System.Reflection;
+using System.Text.Json;
+using Emgu.CV;
+using Emgu.CV.CvEnum;
+using Emgu.CV.Structure;
+using SekaiToolsCore;
+using SekaiToolsCore.Abstractions;
+using SekaiToolsCore.Process;
+using SekaiToolsCore.Process.Config;
+
+namespace SekaiTools.Tests;
+
+public class VideoProcessorLifecycleTests
+{
+    [Fact]
+    public async Task StopWaitsForWorkerAndFinishedCallbackBeforeDisposal()
+    {
+        using var fixture = new Fixture();
+        using var gate = new ManualResetEventSlim();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var finished = false;
+        using var processor = fixture.Create(new VideoProcessCallbacks
+        {
+            OnTaskStarted = () => { started.SetResult(); gate.Wait(TimeSpan.FromSeconds(10)); },
+            OnTaskFinished = () => finished = true
+        });
+        processor.StartProcess();
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var stop = processor.StopProcessAsync();
+        try { Assert.False(stop.IsCompleted); }
+        finally { gate.Set(); }
+        await stop.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.True(finished);
+        Assert.Equal(ProcessStopReason.Canceled, processor.StopReason);
+        processor.Dispose();
+    }
+
+    [Fact]
+    public async Task CallbackFailureStillReleasesDecoder()
+    {
+        using var fixture = new Fixture();
+        var finished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Exception? reported = null;
+        using var processor = fixture.Create(new VideoProcessCallbacks
+        {
+            OnProgress = _ => throw new InvalidOperationException("Injected callback failure"),
+            OnException = e => reported = e,
+            OnTaskFinished = () => finished.SetResult()
+        });
+        var captureProperty = typeof(VideoProcessor).GetProperty("Capture", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var decoder = (VideoCapture)captureProperty.GetValue(processor)!;
+        processor.StartProcess();
+        await finished.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await processor.StopProcessAsync();
+        Assert.IsType<InvalidOperationException>(reported);
+        Assert.Equal(ProcessStopReason.UnexpectedError, processor.StopReason);
+        Assert.Equal(IntPtr.Zero, decoder.Ptr);
+        Assert.Null(captureProperty.GetValue(processor));
+    }
+
+    private sealed class Fixture : ITemplateResourceProvider, IProcessingStatePersistence, IDisposable
+    {
+        private readonly string _directory = Path.Combine(Path.GetTempPath(), "SekaiTools-lifecycle-" + Guid.NewGuid().ToString("N"));
+        private string VideoPath => Path.Combine(_directory, "input.avi");
+        private string ScriptPath => Path.Combine(_directory, "story.json");
+        private string MenuPath => Path.Combine(_directory, "menu.png");
+
+        public Fixture()
+        {
+            Directory.CreateDirectory(_directory);
+            using (var frame = new Mat(90, 160, DepthType.Cv8U, 3))
+            using (var writer = new VideoWriter(VideoPath, VideoWriter.Fourcc('M', 'J', 'P', 'G'), 30, new Size(160, 90), true))
+            {
+                Assert.True(writer.IsOpened);
+                frame.SetTo(new MCvScalar(20, 40, 60));
+                for (var i = 0; i < 4; i++) writer.Write(frame);
+            }
+            using (var menu = new Mat(32, 32, DepthType.Cv8U, 4))
+            {
+                menu.SetTo(new MCvScalar(20, 20, 20, 255));
+                CvInvoke.Rectangle(menu, new Rectangle(8, 5, 12, 10), new MCvScalar(255, 255, 255, 255), -1);
+                CvInvoke.Imwrite(MenuPath, menu);
+            }
+            File.WriteAllText(ScriptPath, JsonSerializer.Serialize(new SekaiToolsBase.GameScript.GameScript { Snippets = [], TalkData = [], SpecialEffectData = [] }));
+        }
+        public VideoProcessor Create(VideoProcessCallbacks callbacks) => new(new Config(VideoPath, ScriptPath, ""), callbacks, this, this);
+        public string GetVideoProcessResourcePath(string fileName) => MenuPath;
+        public void SaveProgress(string key, ProcessingState state) { }
+        public void DeleteProgress(string key) { }
+        public void AddHistory(ProcessingState state) { }
+        public void Dispose()
+        {
+            File.Delete(VideoPath);
+            File.Delete(ScriptPath);
+            File.Delete(MenuPath);
+            Directory.Delete(_directory);
+        }
+    }
+}
