@@ -16,53 +16,6 @@
         </Grid.RowDefinitions>
         <ScrollViewer Grid.Row="0">
             <StackPanel Margin="10">
-                <ui:CardExpander Margin="0,0,0,8" IsExpanded="False" ContentPadding="0">
-                    <ui:CardExpander.Header>
-                        <StackPanel>
-                            <ui:TextBlock FontTypography="Body" Text="实验性功能" />
-                            <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                          Text="展开查看实验性功能设置" />
-                        </StackPanel>
-                    </ui:CardExpander.Header>
-                    <StackPanel>
-                        <ui:CardControl>
-                            <ui:CardControl.Header>
-                                <StackPanel>
-                                    <ui:TextBlock FontTypography="Body" Text="后台灰度预处理" />
-                                    <ui:TextBlock TextWrapping="Wrap"
-                                                  Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                                  Text="增加帧缓存内存；部分视频可能受益，新任务生效" />
-                                </StackPanel>
-                            </ui:CardControl.Header>
-                            <CheckBox IsChecked="{Binding RecognitionPrepareGray,Mode=TwoWay}" Content="启用" />
-                        </ui:CardControl>
-                    </StackPanel>
-                </ui:CardExpander>
-                <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Memory16}">
-                    <ui:CardControl.Header>
-                        <StackPanel>
-                            <ui:TextBlock FontTypography="Body" Text="视频识别性能" />
-                            <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                          Text="内存充足时提前解码；新任务生效" />
-                        </StackPanel>
-                    </ui:CardControl.Header>
-                    <ComboBox MinWidth="160" SelectedIndex="{Binding RecognitionPerformanceMode,Mode=TwoWay}">
-                        <ComboBoxItem Content="节省内存" />
-                        <ComboBoxItem Content="自动" />
-                        <ComboBoxItem Content="高性能" />
-                    </ComboBox>
-                </ui:CardControl>
-                <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon DataUsageSettings20}">
-                    <ui:CardControl.Header>
-                        <StackPanel>
-                            <ui:TextBlock FontTypography="Body" Text="高性能缓存预算（MiB）" />
-                            <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                          Text="128–4096；按可用内存和视频分辨率限制实际分配" />
-                        </StackPanel>
-                    </ui:CardControl.Header>
-                    <ui:NumberBox Width="160" Minimum="128" Maximum="4096" SmallChange="128" LargeChange="512"
-                                  Value="{Binding RecognitionMemoryBudgetMiB,Mode=TwoWay}" ClearButtonEnabled="False" />
-                </ui:CardControl>
                 <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Color24}">
                     <ui:CardControl.Header>
                         <Grid>
@@ -150,7 +103,6 @@
                                       ClearButtonEnabled="False" />
                     </StackPanel>
                 </ui:CardControl>
-
                 <ui:CardExpander Margin="0,0,0,8" Icon="{ui:SymbolIcon TextFont24}" ContentPadding="0">
                     <ui:CardExpander.Header>
                         <Grid>
@@ -207,7 +159,6 @@
                     </ui:CardExpander.Content>
 
                 </ui:CardExpander>
-
                 <ui:CardExpander Margin="0,0,0,8" Icon="{ui:SymbolIcon CommentNote24}" ContentPadding="0">
                     <ui:CardExpander.Header>
                         <Grid>
@@ -341,6 +292,53 @@
                             </ListBox.ItemTemplate>
                         </ListBox>
                     </Grid>
+                </ui:CardExpander>
+                <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Memory16}">
+                    <ui:CardControl.Header>
+                        <StackPanel>
+                            <ui:TextBlock FontTypography="Body" Text="视频识别性能" />
+                            <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                          Text="内存充足时提前解码；新任务生效" />
+                        </StackPanel>
+                    </ui:CardControl.Header>
+                    <ComboBox MinWidth="160" SelectedIndex="{Binding RecognitionPerformanceMode,Mode=TwoWay}">
+                        <ComboBoxItem Content="节省内存" />
+                        <ComboBoxItem Content="自动" />
+                        <ComboBoxItem Content="高性能" />
+                    </ComboBox>
+                </ui:CardControl>
+                <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon DataUsageSettings20}">
+                    <ui:CardControl.Header>
+                        <StackPanel>
+                            <ui:TextBlock FontTypography="Body" Text="高性能缓存预算（MiB）" />
+                            <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                          Text="128–4096；按可用内存和视频分辨率限制实际分配" />
+                        </StackPanel>
+                    </ui:CardControl.Header>
+                    <ui:NumberBox Width="160" Minimum="128" Maximum="4096" SmallChange="128" LargeChange="512"
+                                  Value="{Binding RecognitionMemoryBudgetMiB,Mode=TwoWay}" ClearButtonEnabled="False" />
+                </ui:CardControl>
+                <ui:CardExpander Margin="0,0,0,8" Icon="{ui:SymbolIcon Beaker24}" IsExpanded="False" ContentPadding="0">
+                    <ui:CardExpander.Header>
+                        <StackPanel>
+                            <ui:TextBlock FontTypography="Body" Text="实验性功能" />
+                            <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                          Text="展开查看实验性功能设置" />
+                        </StackPanel>
+                    </ui:CardExpander.Header>
+                    <StackPanel>
+                        <ui:CardControl>
+                            <ui:CardControl.Header>
+                                <StackPanel>
+                                    <ui:TextBlock FontTypography="Body" Text="后台灰度预处理" />
+                                    <ui:TextBlock TextWrapping="Wrap"
+                                                  Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                                  Text="增加帧缓存内存；部分视频可能受益，新任务生效" />
+                                </StackPanel>
+                            </ui:CardControl.Header>
+                            <CheckBox IsChecked="{Binding RecognitionPrepareGray,Mode=TwoWay}" Content="启用" />
+                        </ui:CardControl>
+                    </StackPanel>
                 </ui:CardExpander>
                 <ui:CardExpander ContentPadding="0"
                                  Icon="{ui:ImageIcon 'pack://application:,,,/Resource/icon.png', Width=28, Height=28}">

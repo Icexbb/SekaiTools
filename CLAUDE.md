@@ -97,6 +97,12 @@ dotnet test SekaiTools.sln
 
 页面实现 `IAppPage<object>` 接口，通过 `OnNavigatedTo()` 进行初始化。自定义的 `ViewModelBase` 将属性值存储在 `Dictionary<string, object>` 中，而非单独的字段。
 
+### 图标适配规范
+
+新增或调整界面功能时，必须同步适配图标，包括设置卡片（`CardControl`、`CardExpander`）、导航项和需要图标的操作入口。优先从 Microsoft Fluent System Icons 中选择与功能语义一致的图标，并确认当前 WPF-UI 版本支持对应的 `SymbolRegular` 或 `SymbolFilled` 成员。
+
+同层级图标保持统一的线条风格、显示尺寸和间距，使用控件默认或主题资源前景色，以适配明暗主题与系统缩放。通过构建和相应界面验证确认图标能够正确加载、显示。实验性功能分组统一使用 `Beaker24`（烧杯）图标。
+
 ### 程序集加载与发布整理
 
 发布时，MSBuild 目标 `OrganizeOutput` 将非核心 DLL（除 `SekaiToolsGUI.dll` 和 `Updater.exe` 外）移至 `libs/` 子目录，并删除 x86/win-arm64/browser 等多余运行时及所有 PDB 文件。
