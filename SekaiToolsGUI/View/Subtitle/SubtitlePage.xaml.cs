@@ -36,6 +36,18 @@ namespace SekaiToolsGUI.View.Subtitle;
 
 public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
 {
+    private bool _shortLayout;
+
+    private void SubtitlePage_OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var shortLayout = e.NewSize.Height < 700;
+        if (shortLayout && !_shortLayout && EventTimelineEditor != null)
+            EventTimelineEditor.ViewModel.ShowTimeLine = false;
+        if (TimelineViewport != null)
+            TimelineViewport.MaxHeight = shortLayout ? Math.Max(60, e.NewSize.Height - 330) : double.PositiveInfinity;
+        _shortLayout = shortLayout;
+    }
+
     public SubtitlePage()
     {
         DataContext = new SubtitlePageModel();

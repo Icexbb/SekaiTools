@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
              mc:Ignorable="d" d:DesignWidth="600"
@@ -44,10 +45,21 @@
             <StackPanel>
                 <ProgressBar Value="{Binding Progress.Fraction, Mode=OneWay}" Maximum="1"
                              IsIndeterminate="{Binding IsPreparing, Mode=OneWay}" Height="6" Margin="0,6" />
-                <TextBox x:Name="LogTextBox" Height="150" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True"
+                <TextBox x:Name="LogTextBox" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True"
                          FontFamily="Consolas" FontSize="12" TextWrapping="NoWrap"
                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                         Loaded="LogTextBox_OnLoaded" TextChanged="LogTextBox_OnTextChanged" />
+                         Loaded="LogTextBox_OnLoaded" TextChanged="LogTextBox_OnTextChanged">
+                    <TextBox.Style>
+                        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                            <Setter Property="Height" Value="150" />
+                            <Style.Triggers>
+                                <Trigger Property="layout:AdaptiveLayout.IsShort" Value="True">
+                                    <Setter Property="Height" Value="70" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
             </StackPanel>
         </StackPanel>
     </ui:Card>

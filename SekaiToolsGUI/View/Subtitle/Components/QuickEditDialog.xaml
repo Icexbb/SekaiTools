@@ -5,6 +5,8 @@
                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                   xmlns:local="clr-namespace:SekaiToolsGUI.View.Subtitle.Components"
                   xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                  xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
+                  layout:AdaptiveLayout.FitDialog="True"
                   xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
                   mc:Ignorable="d"
                   ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"

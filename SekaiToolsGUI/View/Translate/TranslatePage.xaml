@@ -8,6 +8,8 @@
              xmlns:translate="clr-namespace:SekaiToolsGUI.ViewModel.Translate"
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:control="clr-namespace:SekaiToolsGUI.Control"
+             xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
+             layout:AdaptiveLayout.MonitorSize="True"
              mc:Ignorable="d"
              d:DesignHeight="960" d:DesignWidth="1280" d:Background="White"
              d:DataContext="{d:DesignInstance translate:TranslatePageModel, IsDesignTimeCreatable=True}">
@@ -23,18 +25,13 @@
         <ui:Card Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,8"
                  Padding="15,10,15,5" VerticalContentAlignment="Center"
                  HorizontalAlignment="Stretch">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+            <WrapPanel>
+
+                <StackPanel Margin="0,0,16,8">
                     <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="在线载入" />
                     <ui:Button Content="前往数据下载" Click="OpenDownloadPageButton_OnClick" />
                 </StackPanel>
-                <StackPanel Grid.Column="1">
+                <StackPanel Margin="0,0,16,8">
                     <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="本地载入" />
                     <StackPanel Orientation="Horizontal">
                         <ui:Button Margin="0,0,8,0" Click="LoadFileButton_OnClick"
@@ -58,8 +55,17 @@
                         </control:Popover>
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="任务信息" VerticalAlignment="Top" />
+                <Expander Header="任务信息" Margin="0,0,16,8" VerticalAlignment="Top">
+                    <Expander.Style>
+                        <Style TargetType="Expander" BasedOn="{StaticResource {x:Type Expander}}">
+                            <Setter Property="IsExpanded" Value="True" />
+                            <Style.Triggers>
+                                <Trigger Property="layout:AdaptiveLayout.IsNarrow" Value="True">
+                                    <Setter Property="IsExpanded" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Expander.Style>
                     <StackPanel VerticalAlignment="Top" Margin="10,0,0,0">
                         <StackPanel VerticalAlignment="Top" Orientation="Horizontal">
                             <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="剧本文件：" />
@@ -77,8 +83,8 @@
                                        Name="TextBlockTranslationReference" />
                         </StackPanel>
                     </StackPanel>
-                </StackPanel>
-                <StackPanel Grid.Column="3" HorizontalAlignment="Right">
+                </Expander>
+                <StackPanel Margin="0,0,0,8">
                     <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="任务控制" />
                     <StackPanel Orientation="Horizontal">
                         <ui:Button Margin="0,0,8,0" Click="ResetButton_OnClick" Name="ResetButton"
@@ -87,7 +93,7 @@
                                    Appearance="Primary" IsEnabled="{c:Binding Path='Events.Length!=0'}" />
                     </StackPanel>
                 </StackPanel>
-            </Grid>
+            </WrapPanel>
         </ui:Card>
         <!-- <ui:Card Grid.Column="1" Margin="5,0,0,0"  -->
         <!--          Grid.Row="1" Name="TranslateContainer" -->

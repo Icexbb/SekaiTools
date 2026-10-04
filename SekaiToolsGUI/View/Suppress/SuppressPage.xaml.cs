@@ -34,6 +34,33 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 
     public SuppressPageModel ViewModel => (SuppressPageModel)DataContext;
 
+    private void QueueLayout_OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (QueueTabs == null) return;
+        var narrow = e.NewSize.Width < 1100;
+        if (narrow == (QueueTabs.Visibility == Visibility.Visible)) return;
+        // Move the existing controls instead of duplicating queue state or drag/drop handlers.
+        if (narrow)
+        {
+            QueueColumns.Children.Remove(PendingCard);
+            QueueColumns.Children.Remove(CompletedCard);
+            PendingTab.Content = PendingCard;
+            CompletedTab.Content = CompletedCard;
+            PendingCard.Margin = CompletedCard.Margin = new Thickness(0);
+        }
+        else
+        {
+            PendingTab.Content = null;
+            CompletedTab.Content = null;
+            QueueColumns.Children.Add(PendingCard);
+            QueueColumns.Children.Add(CompletedCard);
+            PendingCard.Margin = new Thickness(0, 0, 5, 0);
+            CompletedCard.Margin = new Thickness(5, 0, 0, 0);
+        }
+        QueueTabs.Visibility = narrow ? Visibility.Visible : Visibility.Collapsed;
+        QueueColumns.Visibility = narrow ? Visibility.Collapsed : Visibility.Visible;
+    }
+
     public async void OnNavigatedTo()
     {
         if (ViewModel.ResourcesReady || _preparingResources) return;

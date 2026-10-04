@@ -8,6 +8,7 @@ public partial class TimelinePlaybackWindow : Window
     public TimelinePlaybackWindow()
     {
         InitializeComponent();
+        SekaiToolsGUI.Service.WindowWorkArea.Attach(this);
         Owner = Application.Current.MainWindow;
     }
 

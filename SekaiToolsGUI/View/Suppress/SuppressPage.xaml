@@ -8,6 +8,8 @@
              xmlns:dd="clr-namespace:GongSolutions.Wpf.DragDrop;assembly=GongSolutions.WPF.DragDrop"
              xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
              xmlns:components="clr-namespace:SekaiToolsGUI.View.Suppress.Components"
+             xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
+             layout:AdaptiveLayout.MonitorSize="True"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance suppress:SuppressPageModel, IsDesignTimeCreatable=True}"
              d:DesignWidth="800" d:Background="White">
@@ -70,54 +72,60 @@
                 </StackPanel>
             </ui:Card>
 
-            <Grid Grid.Row="1" MinHeight="200">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <ui:Card Grid.Column="0" Padding="10" Margin="0,0,5,0" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
-                    <Grid VerticalAlignment="Stretch">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" Orientation="Horizontal" >
-                            <TextBlock Text="未执行的任务列表" FontSize="18" FontWeight="SemiBold" />
-                            <TextBlock Text="可拖动排序" Margin="5,3,0,8" VerticalAlignment="Bottom"
-                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        </StackPanel>
-                        <ui:PassiveScrollViewer Grid.Row="1" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
-                            <ItemsControl x:Name="PendingJobsList" ItemsSource="{Binding PendingJobs}"
-                                          AllowDrop="True"
-                                          dd:DragDrop.IsDropTarget="True"
-                                          dd:DragDrop.ShowAlwaysDropTargetAdorner="True">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <components:SuppressionQueueJobItem StartRequested="StartJobItem_OnStartRequested" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ui:PassiveScrollViewer>
-                    </Grid>
-                </ui:Card>
-                <ui:Card Grid.Column="1" Padding="10" Margin="5,0,0,0" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
-                    <Grid VerticalAlignment="Stretch">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Text="已完成的任务列表" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8" />
-                        <ui:PassiveScrollViewer Grid.Row="1" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
-                            <ItemsControl ItemsSource="{Binding CompletedJobs}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <components:SuppressionFinishJobItem RemoveRequested="RemoveFinishedJob_OnRemoveRequested" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ui:PassiveScrollViewer>
-                    </Grid>
-                </ui:Card>
+            <Grid Grid.Row="1" MinHeight="120" SizeChanged="QueueLayout_OnSizeChanged">
+                <TabControl x:Name="QueueTabs" Visibility="Collapsed">
+                    <TabItem x:Name="PendingTab" Header="未执行的任务" />
+                    <TabItem x:Name="CompletedTab" Header="已完成的任务" />
+                </TabControl>
+                <Grid x:Name="QueueColumns">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:Card x:Name="PendingCard" Grid.Column="0" Padding="10" Margin="0,0,5,0" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+                        <Grid VerticalAlignment="Stretch">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" >
+                                <TextBlock Text="未执行的任务列表" FontSize="18" FontWeight="SemiBold" />
+                                <TextBlock Text="可拖动排序" Margin="5,3,0,8" VerticalAlignment="Bottom"
+                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                            <ui:PassiveScrollViewer Grid.Row="1" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+                                <ItemsControl x:Name="PendingJobsList" ItemsSource="{Binding PendingJobs}"
+                                              AllowDrop="True"
+                                              dd:DragDrop.IsDropTarget="True"
+                                              dd:DragDrop.ShowAlwaysDropTargetAdorner="True">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <components:SuppressionQueueJobItem StartRequested="StartJobItem_OnStartRequested" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ui:PassiveScrollViewer>
+                        </Grid>
+                    </ui:Card>
+                    <ui:Card x:Name="CompletedCard" Grid.Column="1" Padding="10" Margin="5,0,0,0" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+                        <Grid VerticalAlignment="Stretch">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="已完成的任务列表" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8" />
+                            <ui:PassiveScrollViewer Grid.Row="1" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+                                <ItemsControl ItemsSource="{Binding CompletedJobs}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <components:SuppressionFinishJobItem RemoveRequested="RemoveFinishedJob_OnRemoveRequested" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ui:PassiveScrollViewer>
+                        </Grid>
+                    </ui:Card>
+                </Grid>
             </Grid>
         </Grid>
     </Grid>

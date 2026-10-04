@@ -36,6 +36,7 @@ public partial class MainWindow : FluentWindow
     public MainWindow()
     {
         InitializeComponent();
+        WindowWorkArea.Attach(this);
         DataContext = new MainWindowViewModel();
         Closing += MainWindow_OnClosing;
         ContentRendered += (sender, args) => { CheckUpdate(); };

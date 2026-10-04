@@ -16,6 +16,7 @@ public partial class ErrorDialog : FluentWindow
     public ErrorDialog(Exception exception, string source, bool isTerminating)
     {
         InitializeComponent();
+        WindowWorkArea.Attach(this);
 
         _exception = exception;
         _report = ErrorReportBuilder.Build(exception, source, DateTimeOffset.Now);

@@ -8,10 +8,13 @@
              xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
              xmlns:components="clr-namespace:SekaiToolsGUI.View.Subtitle.Components"
+             xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
+             layout:AdaptiveLayout.MonitorSize="True"
              mc:Ignorable="d"
              d:Background="White"
              d:DesignWidth="800"
              PreviewKeyDown="SubtitlePage_OnPreviewKeyDown"
+             SizeChanged="SubtitlePage_OnSizeChanged"
              d:DataContext="{d:DesignInstance subtitle:SubtitlePageModel, IsDesignTimeCreatable=True}">
     <Grid Margin="10">
         <!--任务前-->
@@ -249,9 +252,18 @@
                 <ui:Card Grid.Column="1"
                          Margin="5,0,0,0"
                          Padding="5,5"
-                         Height="{Binding RelativeSource= {RelativeSource Mode=FindAncestor, AncestorType=Grid}, Path=ActualHeight}"
                          VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                          VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                    <ui:Card.Style>
+                        <Style TargetType="ui:Card" BasedOn="{StaticResource {x:Type ui:Card}}">
+                            <Setter Property="Height" Value="200" />
+                            <Style.Triggers>
+                                <Trigger Property="layout:AdaptiveLayout.IsShort" Value="True">
+                                    <Setter Property="Height" Value="120" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:Card.Style>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -285,7 +297,7 @@
                 </ui:Card>
             </Grid>
             <!--事件列表-->
-            <Grid Grid.Row="1" VerticalAlignment="Stretch" MinHeight="200">
+            <Grid Grid.Row="1" VerticalAlignment="Stretch" MinHeight="120">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -294,93 +306,94 @@
                 <ui:Card Grid.Column="0" Padding="5" Margin="0,0,5,0"
                          VerticalAlignment="Stretch"
                          VerticalContentAlignment="Stretch">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Top" Width="55">
-                            <ui:Button Click="DialogFilterBtn_OnClick" Margin="0" HorizontalAlignment="Stretch"
-                                       Padding="2"
-                                       Appearance="{Binding ShowDialog,Converter={StaticResource BoolToAppearancePriOrSec} }">
-                                <StackPanel>
-                                    <TextBlock TextAlignment="Center" Text="对话" />
-                                    <TextBlock TextAlignment="Center" FontSize="10">
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="{}{0}/{1}">
-                                                <Binding Path="DialogCurrent" Mode="OneWay" />
-                                                <Binding Path="DialogTotal" Mode="OneWay" />
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Top" Width="55">
+                                <ui:Button Click="DialogFilterBtn_OnClick" Margin="0" HorizontalAlignment="Stretch"
+                                           Padding="2"
+                                           Appearance="{Binding ShowDialog,Converter={StaticResource BoolToAppearancePriOrSec} }">
+                                    <StackPanel>
+                                        <TextBlock TextAlignment="Center" Text="对话" />
+                                        <TextBlock TextAlignment="Center" FontSize="10">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="{}{0}/{1}">
+                                                    <Binding Path="DialogCurrent" Mode="OneWay" />
+                                                    <Binding Path="DialogTotal" Mode="OneWay" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
 
-                                    <ui:Button Click="DialogFilterLine1Btn_OnClick" Margin="0,2"
-                                               HorizontalAlignment="Stretch"
-                                               Padding="2"
-                                               Appearance="{Binding ShowDialogLine1,Converter={StaticResource BoolToAppearancePriOrSec}}"
-                                               Content="单行" />
-                                    <ui:Button Click="DialogFilterLine2Btn_OnClick" Margin="0,2"
-                                               HorizontalAlignment="Stretch"
-                                               Padding="2"
-                                               Appearance="{Binding ShowDialogLine2,Converter={StaticResource BoolToAppearancePriOrSec}}"
-                                               Content="双行" />
-                                    <ui:Button Click="DialogFilterLine3Btn_OnClick" Margin="0,2"
-                                               HorizontalAlignment="Stretch"
-                                               Padding="2"
-                                               Appearance="{Binding ShowDialogLine3,Converter={StaticResource BoolToAppearancePriOrSec}}"
-                                               Content="三行" />
-                                </StackPanel>
-                            </ui:Button>
-                            <ui:Button Click="BannerFilterBtn_OnClick" Margin="0,5" HorizontalAlignment="Stretch"
-                                       Padding="2"
-                                       Appearance="{Binding ShowBanner,Converter={StaticResource BoolToAppearancePriOrSec}}">
+                                        <ui:Button Click="DialogFilterLine1Btn_OnClick" Margin="0,2"
+                                                   HorizontalAlignment="Stretch"
+                                                   Padding="2"
+                                                   Appearance="{Binding ShowDialogLine1,Converter={StaticResource BoolToAppearancePriOrSec}}"
+                                                   Content="单行" />
+                                        <ui:Button Click="DialogFilterLine2Btn_OnClick" Margin="0,2"
+                                                   HorizontalAlignment="Stretch"
+                                                   Padding="2"
+                                                   Appearance="{Binding ShowDialogLine2,Converter={StaticResource BoolToAppearancePriOrSec}}"
+                                                   Content="双行" />
+                                        <ui:Button Click="DialogFilterLine3Btn_OnClick" Margin="0,2"
+                                                   HorizontalAlignment="Stretch"
+                                                   Padding="2"
+                                                   Appearance="{Binding ShowDialogLine3,Converter={StaticResource BoolToAppearancePriOrSec}}"
+                                                   Content="三行" />
+                                    </StackPanel>
+                                </ui:Button>
+                                <ui:Button Click="BannerFilterBtn_OnClick" Margin="0,5" HorizontalAlignment="Stretch"
+                                           Padding="2"
+                                           Appearance="{Binding ShowBanner,Converter={StaticResource BoolToAppearancePriOrSec}}">
 
-                                <StackPanel>
-                                    <TextBlock TextAlignment="Center" Text="横幅" />
-                                    <TextBlock TextAlignment="Center" FontSize="10">
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="{}{0}/{1}">
-                                                <Binding Path="BannerCurrent" Mode="OneWay" />
-                                                <Binding Path="BannerTotal" Mode="OneWay" />
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                </StackPanel>
-                            </ui:Button>
-                            <ui:Button Click="MarkerFilterBtn_OnClick" Margin="0" HorizontalAlignment="Stretch"
-                                       Padding="2"
-                                       Appearance="{Binding ShowMarker,Converter={StaticResource BoolToAppearancePriOrSec}}">
-                                <StackPanel>
-                                    <TextBlock TextAlignment="Center" Text="标签" />
-                                    <TextBlock TextAlignment="Center" FontSize="10">
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="{}{0}/{1}">
-                                                <Binding Path="MarkerCurrent" Mode="OneWay" />
-                                                <Binding Path="MarkerTotal" Mode="OneWay" />
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                </StackPanel>
-                            </ui:Button>
-                        </StackPanel>
-                        <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Bottom">
-                            <ui:Button Click="BackToTopBtn_OnClick"
-                                       ToolTip="滚动到事件列表顶部"
-                                       AutomationProperties.Name="滚动到事件列表顶部">
-                                <ui:SymbolIcon Symbol="ArrowUp28" />
-                            </ui:Button>
-                            <ui:Button Click="BackToBottomBtn_OnClick"
-                                       ToolTip="滚动到事件列表底部"
-                                       AutomationProperties.Name="滚动到事件列表底部">
-                                <ui:SymbolIcon Symbol="ArrowDown28" />
-                            </ui:Button>
-                        </StackPanel>
-                    </Grid>
-
+                                    <StackPanel>
+                                        <TextBlock TextAlignment="Center" Text="横幅" />
+                                        <TextBlock TextAlignment="Center" FontSize="10">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="{}{0}/{1}">
+                                                    <Binding Path="BannerCurrent" Mode="OneWay" />
+                                                    <Binding Path="BannerTotal" Mode="OneWay" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </ui:Button>
+                                <ui:Button Click="MarkerFilterBtn_OnClick" Margin="0" HorizontalAlignment="Stretch"
+                                           Padding="2"
+                                           Appearance="{Binding ShowMarker,Converter={StaticResource BoolToAppearancePriOrSec}}">
+                                    <StackPanel>
+                                        <TextBlock TextAlignment="Center" Text="标签" />
+                                        <TextBlock TextAlignment="Center" FontSize="10">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="{}{0}/{1}">
+                                                    <Binding Path="MarkerCurrent" Mode="OneWay" />
+                                                    <Binding Path="MarkerTotal" Mode="OneWay" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </ui:Button>
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                                <ui:Button Click="BackToTopBtn_OnClick"
+                                           ToolTip="滚动到事件列表顶部"
+                                           AutomationProperties.Name="滚动到事件列表顶部">
+                                    <ui:SymbolIcon Symbol="ArrowUp28" />
+                                </ui:Button>
+                                <ui:Button Click="BackToBottomBtn_OnClick"
+                                           ToolTip="滚动到事件列表底部"
+                                           AutomationProperties.Name="滚动到事件列表底部">
+                                    <ui:SymbolIcon Symbol="ArrowDown28" />
+                                </ui:Button>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
                 </ui:Card>
                 <!--事件列表-->
-                <ui:Card Grid.Column="1" MinWidth="300" MinHeight="300" VerticalAlignment="Stretch"
+                <ui:Card Grid.Column="1" MinWidth="300" MinHeight="120" VerticalAlignment="Stretch"
                          VerticalContentAlignment="Stretch" Padding="0">
                     <ui:PassiveScrollViewer
                         Name="LineViewer" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
@@ -390,9 +403,11 @@
                 </ui:Card>
             </Grid>
             <!--时间轴-->
-            <components:TimelineEditor x:Name="EventTimelineEditor"
-                                       Grid.Row="2" Margin="0,6,0,0"
-                                       IsReadOnly="{Binding DataContext.IsRunning, ElementName=Root}" />
+            <ScrollViewer x:Name="TimelineViewport" Grid.Row="2" Margin="0,6,0,0"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <components:TimelineEditor x:Name="EventTimelineEditor"
+                                           IsReadOnly="{Binding DataContext.IsRunning, ElementName=Root}" />
+            </ScrollViewer>
         </Grid>
     </Grid>
 
