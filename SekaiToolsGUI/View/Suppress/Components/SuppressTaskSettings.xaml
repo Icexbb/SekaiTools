@@ -102,6 +102,18 @@
                             Value="{Binding SuppressCrf, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
             </ui:CardControl>
+            <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Settings24}">
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock FontTypography="Body" Text="编码线程数" />
+                        <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                      Text="0 为自动；高分辨率自动提高并行度" />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:NumberBox Width="120" Minimum="0" Maximum="128" SmallChange="1"
+                              Value="{Binding EncodingThreads, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              ToolTip="可调整线程数比较压制速度。更多线程会增加内存占用，速度也受字幕渲染影响。" />
+            </ui:CardControl>
             <TextBlock Text="{Binding ConfigError}" TextWrapping="Wrap" Margin="4,0,4,4"
                        Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}" TextAlignment="Center"
                        Visibility="{c:Binding 'ConfigError.Length!=0', FalseToVisibility=Collapsed}" />

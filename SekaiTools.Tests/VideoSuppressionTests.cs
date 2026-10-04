@@ -75,6 +75,51 @@ public class VideoSuppressionTests
         Assert.Throws<ArgumentOutOfRangeException>(settings.Validate);
     }
 
+    [Theory]
+    [InlineData(1080, 16, 0)]
+    [InlineData(720, 64, 0)]
+    [InlineData(0, 16, 0)]
+    [InlineData(2160, 1, 0)]
+    [InlineData(1440, 16, 32)]
+    [InlineData(2160, 16, 32)]
+    [InlineData(2160, 64, 67)]
+    [InlineData(4320, 128, 128)]
+    [InlineData(4320, int.MaxValue, 128)]
+    public void 自动编码线程按分辨率提高并行度并限制上限(int height, int processors, int expected)
+    {
+        Assert.Equal(expected, new X264EncodingSettings().GetThreadCount(height, processors));
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(129)]
+    public void 拒绝无效编码线程数(int threads)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new X264EncodingSettings(Threads: threads).Validate());
+    }
+
+    [Fact]
+    public void 手动线程数优先且只应用到输出视频编码()
+    {
+        var settings = new X264EncodingSettings(Threads: 48);
+        var options = CreateOptions() with { EncodingSettings = settings, SourceHeight = 2160 };
+        var arguments = VideoSuppressor.BuildFfmpegArguments(options, FfmpegAudioPlan.FromCodecs([]));
+
+        Assert.Equal(48, settings.GetThreadCount(720, 4));
+        AssertArgumentPair(arguments, "-threads:v", "48");
+        Assert.True(arguments.ToList().IndexOf("-threads:v") > arguments.ToList().LastIndexOf("-i"));
+        AssertArgumentPair(arguments, "-crf", "21");
+        AssertArgumentPair(arguments, "-preset", "medium");
+    }
+
+    [Fact]
+    public void 普通分辨率保留编码器自动线程选择()
+    {
+        var arguments = VideoSuppressor.BuildFfmpegArguments(
+            CreateOptions() with { SourceHeight = 1080 }, FfmpegAudioPlan.FromCodecs([]));
+        AssertArgumentPair(arguments, "-threads:v", "0");
+    }
+
     [Fact]
     public void Ffmpeg参数包含所选画质和速度预设()
     {

@@ -14,11 +14,13 @@ public sealed class SuppressTaskSettingsModel : ViewModelBase
         {
             SetProperty(value);
             SourceFrameCount = 0;
+            SourceHeight = 0;
             SourceSubtitle = "";
             if (File.Exists(value))
             {
                 using var capture = new VideoCapture(value);
                 SourceFrameCount = (int)capture.Get(CapProp.FrameCount);
+                SourceHeight = (int)capture.Get(CapProp.FrameHeight);
                 var guess = Path.ChangeExtension(value, ".ass");
                 if (File.Exists(guess)) SourceSubtitle = guess;
             }
@@ -33,6 +35,18 @@ public sealed class SuppressTaskSettingsModel : ViewModelBase
     {
         get => GetProperty(0);
         private set => SetProperty(value);
+    }
+
+    public int SourceHeight
+    {
+        get => GetProperty(0);
+        private set => SetProperty(value);
+    }
+
+    public int EncodingThreads
+    {
+        get => GetProperty(0);
+        set => SetProperty(value);
     }
 
     public string SourceSubtitle
@@ -111,8 +125,8 @@ public sealed class SuppressTaskSettingsModel : ViewModelBase
         SourceVideo,
         SourceSubtitle,
         OutputPath,
-        new X264EncodingSettings(QualityPreset, SpeedPreset, SuppressCrf),
-        SourceFrameCount, overwriteExisting);
+        new X264EncodingSettings(QualityPreset, SpeedPreset, SuppressCrf, EncodingThreads),
+        SourceFrameCount, overwriteExisting, SourceHeight);
 
     private void UpdateConfigStatus()
     {

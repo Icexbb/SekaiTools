@@ -6,7 +6,8 @@ public sealed record VideoSuppressionOptions(
     string OutputPath,
     X264EncodingSettings EncodingSettings,
     int SourceFrameCount = 0,
-    bool OverwriteExisting = false)
+    bool OverwriteExisting = false,
+    int SourceHeight = 0)
 {
     public void Validate()
     {

@@ -125,29 +125,33 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
                 _ when audioPlan.CopyAudio => $"检测到 {audioPlan.StreamCount} 条兼容音轨，将全部保留",
                 _ => $"检测到 {audioPlan.StreamCount} 条音轨，存在 MP4 不兼容编码，将全部转为 AAC"
             };
-            _totalFrames = GetFrameCount(options);
+            var (frameCount, sourceHeight) = GetVideoInfo(options);
+            _totalFrames = frameCount;
+            var threads = options.EncodingSettings.GetThreadCount(sourceHeight, Environment.ProcessorCount);
+            _status += threads > 0 ? $"\n编码线程数：{threads}" : "\n编码线程数：由 x264 自动选择";
             _vapourProcess = CreateVapourProcess(options);
             _ffmpegProcess = CreateFfmpegProcess(
-                options, audioPlan, ffmpegPath, outputTransaction.TemporaryPath);
+                options, audioPlan, ffmpegPath, outputTransaction.TemporaryPath, sourceHeight);
 
             if (!_vapourProcess.Start())
                 throw new InvalidOperationException("无法启动 VSPipe");
             if (!_ffmpegProcess.Start())
                 throw new InvalidOperationException("无法启动 FFmpeg");
 
+            using var cancellationRegistration = cancellationToken.Register(() =>
+            {
+                StopProcess(_vapourProcess);
+                StopProcess(_ffmpegProcess);
+            });
+
             State = VideoSuppressionState.Running;
             PublishProgress();
 
             await Task.WhenAll(
-                TransferPipeAsync(cancellationToken),
+                TransferPipeWithCleanupAsync(cancellationToken),
                 ReadFfmpegLogAsync(cancellationToken),
-                _vapourProcess.WaitForExitAsync(cancellationToken),
-                _ffmpegProcess.WaitForExitAsync(cancellationToken)).ConfigureAwait(false);
-
-            if (_vapourProcess.ExitCode != 0)
-                throw new InvalidOperationException($"VSPipe 异常退出，退出码: {_vapourProcess.ExitCode}");
-            if (_ffmpegProcess.ExitCode != 0)
-                throw new InvalidOperationException($"FFmpeg 异常退出，退出码: {_ffmpegProcess.ExitCode}");
+                WaitForSuccessfulExitAsync(_vapourProcess, "VSPipe", cancellationToken),
+                WaitForSuccessfulExitAsync(_ffmpegProcess, "FFmpeg", cancellationToken)).ConfigureAwait(false);
 
             outputTransaction.Commit();
             _processedFrames = _totalFrames;
@@ -213,7 +217,8 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
         VideoSuppressionOptions options,
         FfmpegAudioPlan audioPlan,
         string ffmpegPath,
-        string outputPath)
+        string outputPath,
+        int sourceHeight)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -224,7 +229,7 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
             RedirectStandardError = true,
             StandardErrorEncoding = Encoding.UTF8
         };
-        foreach (var argument in BuildFfmpegArguments(options, audioPlan, outputPath))
+        foreach (var argument in BuildFfmpegArguments(options, audioPlan, outputPath, sourceHeight))
             startInfo.ArgumentList.Add(argument);
         return new Process { StartInfo = startInfo };
     }
@@ -232,7 +237,8 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
     internal static IReadOnlyList<string> BuildFfmpegArguments(
         VideoSuppressionOptions options,
         FfmpegAudioPlan audioPlan,
-        string? outputPath = null)
+        string? outputPath = null,
+        int sourceHeight = 0)
     {
         var arguments = new List<string>
         {
@@ -248,16 +254,46 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
             arguments.Add("192k");
         }
 
+        var threads = options.EncodingSettings.GetThreadCount(
+            sourceHeight > 0 ? sourceHeight : options.SourceHeight, Environment.ProcessorCount);
+        arguments.Add("-threads:v");
+        arguments.Add(threads.ToString(CultureInfo.InvariantCulture));
+
         arguments.Add(outputPath ?? options.OutputPath);
         arguments.Add("-n");
         return arguments;
     }
 
-    private int GetFrameCount(VideoSuppressionOptions options)
+    private static (int FrameCount, int Height) GetVideoInfo(VideoSuppressionOptions options)
     {
-        if (options.SourceFrameCount > 0) return options.SourceFrameCount;
+        if (options.SourceFrameCount > 0 && options.SourceHeight > 0)
+            return (options.SourceFrameCount, options.SourceHeight);
         using var capture = new VideoCapture(options.SourceVideo);
-        return (int)capture.Get(CapProp.FrameCount);
+        return (options.SourceFrameCount > 0 ? options.SourceFrameCount : (int)capture.Get(CapProp.FrameCount),
+            options.SourceHeight > 0 ? options.SourceHeight : (int)capture.Get(CapProp.FrameHeight));
+    }
+
+    private async Task WaitForSuccessfulExitAsync(Process process, string name, CancellationToken cancellationToken)
+    {
+        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+        if (process.ExitCode == 0) return;
+        StopProcess(_vapourProcess);
+        StopProcess(_ffmpegProcess);
+        throw new InvalidOperationException($"{name} 异常退出，退出码: {process.ExitCode}");
+    }
+
+    private async Task TransferPipeWithCleanupAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await TransferPipeAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            StopProcess(_vapourProcess);
+            StopProcess(_ffmpegProcess);
+            throw;
+        }
     }
 
     private async Task TransferPipeAsync(CancellationToken cancellationToken)
