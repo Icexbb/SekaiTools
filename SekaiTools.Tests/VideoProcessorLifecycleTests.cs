@@ -13,6 +13,28 @@ namespace SekaiTools.Tests;
 
 public class VideoProcessorLifecycleTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task DisabledPreviewSkipsFrameDelivery(bool enabled)
+    {
+        using var fixture = new Fixture();
+        var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var previews = 0;
+        using var processor = fixture.Create(new VideoProcessCallbacks
+        {
+            IsPreviewEnabled = () => enabled,
+            OnFramePreviewImage = _ => Interlocked.Increment(ref previews),
+            OnTaskFinished = () => done.TrySetResult()
+        });
+        processor.StartProcess();
+        await done.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await processor.StopProcessAsync();
+        Assert.Equal(12, processor.Performance.FrameCount);
+        if (enabled) Assert.InRange(previews, 1, 2);
+        else Assert.Equal(0, previews);
+    }
+
     [Fact]
     public async Task CancellationSavesConsumedFrameInsteadOfPrefetchedPosition()
     {
@@ -104,7 +126,7 @@ public class VideoProcessorLifecycleTests
             {
                 Assert.True(writer.IsOpened);
                 frame.SetTo(new MCvScalar(20, 40, 60));
-                for (var i = 0; i < 4; i++) writer.Write(frame);
+                for (var i = 0; i < 12; i++) writer.Write(frame);
             }
             using (var menu = new Mat(32, 32, DepthType.Cv8U, 4))
             {

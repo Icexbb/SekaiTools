@@ -39,6 +39,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     private bool _shortLayout;
     private bool _isResetting;
     private readonly DispatcherBatchQueue _resultQueue;
+    private bool _previewEnabled;
 
     private void SubtitlePage_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
@@ -54,6 +55,12 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
     {
         DataContext = new SubtitlePageModel();
         InitializeComponent();
+        _previewEnabled = ViewModel.ShowPreview;
+        ViewModel.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(SubtitlePageModel.ShowPreview))
+                Volatile.Write(ref _previewEnabled, ViewModel.ShowPreview);
+        };
         _resultQueue = new DispatcherBatchQueue(Dispatcher, () => EventTimelineEditor.DeferRendering());
         SubscribeFpsChange();
         SubscribeProgressChange();
@@ -999,6 +1006,7 @@ public partial class SubtitlePage
                                 ViewModel.FramePreviewImage = frame.ToBitmapSource();
                         });
                     },
+                    IsPreviewEnabled = () => Volatile.Read(ref _previewEnabled),
                     OnNewDialog = LinePanel_AddDialogLine,
                     OnNewBanner = LinePanel_AddBannerLine,
                     OnNewMarker = LinePanel_AddMarkerLine,

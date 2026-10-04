@@ -23,6 +23,7 @@ public class VideoProcessCallbacks
     public Action OnTaskStarted { get; set; } = () => { };
     public Action OnTaskFinished { get; set; } = () => { };
     public Action<Mat> OnFramePreviewImage { get; set; } = mat => { };
+    public Func<bool> IsPreviewEnabled { get; set; } = () => true;
 
     public Action<DialogBaseFrameSet> OnNewDialog { get; set; } = dialog => { };
 
@@ -504,7 +505,7 @@ public class VideoProcessor : IDisposable
                 // 节流进度回调（200ms）
                 EmitProgressIfNeeded(progress);
 
-                if (frameIndex % previewInterval == 0)
+                if (Callbacks.IsPreviewEnabled() && frameIndex % previewInterval == 0)
                 {
                     var previewFrame = FramePreview.Create(frame);
                     EnqueueLatestPreview(previewFrame);
