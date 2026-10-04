@@ -27,10 +27,14 @@ public class DialogTemplateMatcher(
     private readonly AdaptiveSearchScheduler _searchScheduler = new();
     private Point _nameTagPosition;
     private MatchStatus _status;
+    private readonly Dictionary<string, GaMat> _nameTemplates = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, (GaMat First, GaMat Second, GaMat Third)> _contentTemplates = new(StringComparer.Ordinal);
 
     public void Dispose()
     {
         _searchScheduler.Dispose();
+        _nameTemplates.Clear();
+        _contentTemplates.Clear();
     }
 
     public int LastNotProcessedIndex()
@@ -48,7 +52,8 @@ public class DialogTemplateMatcher(
         var content = dialogBase.Data.CharacterOriginal;
         if (string.IsNullOrWhiteSpace(content)) return Point.Empty;
         var contentLen = content.Length;
-        var template = GetNameTag(TrimTemplateContent(content));
+        if (!_nameTemplates.TryGetValue(content, out var template))
+            _nameTemplates[content] = template = GetNameTag(TrimTemplateContent(content));
         var res = LocalMatch(frame, template,
             dialogBase.Data.Shake
                 ? config.MatchingThreshold.DialogNametagSpecial
@@ -131,10 +136,7 @@ public class DialogTemplateMatcher(
     {
         var content = dialogBase.Data.BodyOriginal;
         if (point.IsEmpty || string.IsNullOrEmpty(content)) return MatchStatus.DialogNotMatched;
-        var charTemplates = GetDialogInd();
-        var template1 = charTemplates[0];
-        var template2 = charTemplates[1];
-        var template3 = charTemplates[2];
+        var (template1, template2, template3) = GetContentTemplates(content);
 
         bool matchRes;
         var matchingThreshold = dialogBase.Data.Shake
@@ -206,16 +208,20 @@ public class DialogTemplateMatcher(
             return result.IsMatch(EffectiveThreshold(threshold, IsStatusMatched(lastStatus)));
         }
 
-        List<GaMat> GetDialogInd()
-        {
+    }
+
+    internal (GaMat First, GaMat Second, GaMat Third) GetContentTemplates(string content)
+    {
+            if (_contentTemplates.TryGetValue(content, out var cached)) return cached;
             var dialogBody1 = content[..Math.Min(1, content.Length)];
             var dialogBody2 = content[..Math.Min(2, content.Length)];
             var dialogBody3 = content[..Math.Min(3, content.Length)];
             var template1 = templateManager.GetMatchTemplate(TemplateUsage.DialogContent, dialogBody1);
             var template2 = templateManager.GetMatchTemplate(TemplateUsage.DialogContent, dialogBody2);
             var template3 = templateManager.GetMatchTemplate(TemplateUsage.DialogContent, dialogBody3);
-            return [template1, template2, template3];
-        }
+            var result = (template1, template2, template3);
+            _contentTemplates.Add(content, result);
+            return result;
     }
 
     public int DebugSetFinishedUntilContains(string targetString, string? speaker = null)

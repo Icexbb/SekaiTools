@@ -12,6 +12,34 @@ namespace SekaiTools.Tests;
 
 public class RecognitionMemoryTests
 {
+    [Fact]
+    public void DialogReferencesReusePrefixTemplatesWithoutOwningThem()
+    {
+        using var fonts = new TestFonts();
+        using var manager = new TemplateManager(new Size(1920, 1080), fonts);
+        var path = Path.Combine(Path.GetTempPath(), $"SekaiTools-dialog-{Guid.NewGuid():N}.avi");
+        try
+        {
+            using (var writer = new VideoWriter(path, VideoWriter.Fourcc('M', 'J', 'P', 'G'), 30, new Size(160, 90), true))
+            using (var image = new Mat(90, 160, DepthType.Cv8U, 3))
+            {
+                image.SetTo(new MCvScalar(20));
+                writer.Write(image);
+            }
+            using var matcher = new DialogTemplateMatcher(new VideoInfo(path), new SekaiToolsBase.Story.Story(), manager, new TemplateMatchCachePool(), null!);
+            var templates = matcher.GetContentTemplates("Recognition");
+            var again = matcher.GetContentTemplates("Recognition");
+            Assert.Same(templates.First, again.First);
+            Assert.Same(templates.Second, manager.GetMatchTemplate(TemplateUsage.DialogContent, "Re"));
+            Assert.Same(templates.Third, manager.GetMatchTemplate(TemplateUsage.DialogContent, "Rec"));
+            var shortText = matcher.GetContentTemplates("R");
+            Assert.Same(shortText.First, shortText.Third);
+            matcher.Dispose();
+            Assert.NotEqual(IntPtr.Zero, templates.First.Gray.Ptr);
+        }
+        finally { File.Delete(path); }
+    }
+
     [Theory]
     [InlineData(3840, 2160, 960, 540)]
     [InlineData(1920, 1080, 960, 540)]
