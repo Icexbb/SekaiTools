@@ -5,6 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>default</LangVersion>
         <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <RootNamespace>SekaiToolsCore</RootNamespace>
         <Configurations>Debug;Release</Configurations>
         <Platforms>AnyCPU;x64</Platforms>

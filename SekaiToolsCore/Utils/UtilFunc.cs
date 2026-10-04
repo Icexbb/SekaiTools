@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Numerics;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -88,27 +89,25 @@ public static class UtilFunc
         return new Size((int)(size.Width * ratio), (int)(size.Height * ratio));
     }
 
-    public static void MatRemoveErrorInf(this Mat mat)
+    public static unsafe void MatRemoveErrorInf(this Mat mat)
     {
-        using Mat positiveInf = new(mat.Size, mat.Depth, 1);
-        using Mat negativeInf = new(mat.Size, mat.Depth, 1);
-
-        positiveInf.SetTo(new MCvScalar(float.PositiveInfinity));
-        negativeInf.SetTo(new MCvScalar(float.NegativeInfinity));
-
-        using (var mask = new Mat(mat.Size, mat.Depth, 1))
+        if (mat.Depth != DepthType.Cv32F || mat.NumberOfChannels != 1)
+            throw new ArgumentException("匹配分数必须为单通道 float32", nameof(mat));
+        var limit = new Vector<float>(float.MaxValue);
+        for (var row = 0; row < mat.Rows; row++)
         {
-            CvInvoke.Compare(mat, positiveInf, mask, CmpType.GreaterEqual);
-            mat.SetTo(new MCvScalar(0), mask);
+            var scores = new Span<float>((byte*)mat.DataPointer + (long)row * mat.Step, mat.Cols);
+            var column = 0;
+            if (Vector.IsHardwareAccelerated)
+                for (; column <= scores.Length - Vector<float>.Count; column += Vector<float>.Count)
+                {
+                    var values = new Vector<float>(scores.Slice(column));
+                    var finite = Vector.LessThanOrEqual(Vector.Abs(values), limit);
+                    Vector.ConditionalSelect(finite, values, Vector<float>.Zero).CopyTo(scores.Slice(column));
+                }
+            for (; column < scores.Length; column++)
+                if (!float.IsFinite(scores[column])) scores[column] = 0;
         }
-
-        using (var mask = new Mat(mat.Size, mat.Depth, 1))
-        {
-            CvInvoke.Compare(mat, negativeInf, mask, CmpType.LessEqual);
-            mat.SetTo(new MCvScalar(0), mask);
-        }
-
-        CvInvoke.PatchNaNs(mat);
     }
 
     public static IEnumerable<string> GetFontFamilyNames()
