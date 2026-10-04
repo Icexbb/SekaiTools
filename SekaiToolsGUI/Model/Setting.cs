@@ -21,6 +21,7 @@ public struct Setting
     public int ProxyPort { get; init; } = 1080;
     public int RecognitionPerformanceMode { get; init; } = 1;
     public int RecognitionMemoryBudgetMiB { get; init; } = 2048;
+    public bool RecognitionPrepareGray { get; init; }
 
     public int TypewriterFadeTime { get; init; } = 50;
     public int TypewriterCharTime { get; init; } = 80;
@@ -75,6 +76,7 @@ public struct Setting
             ProxyPort = model.ProxyPort,
             RecognitionPerformanceMode = model.RecognitionPerformanceMode,
             RecognitionMemoryBudgetMiB = model.RecognitionMemoryBudgetMiB,
+            RecognitionPrepareGray = model.RecognitionPrepareGray,
 
             TypewriterFadeTime = model.TypewriterFadeTime,
             TypewriterCharTime = model.TypewriterCharTime,

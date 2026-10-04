@@ -13,13 +13,13 @@ public sealed class BufferedVideoReader : IDisposable
     private readonly VideoCapture _capture;
     private readonly CancellationTokenSource _stop;
     private readonly Channel<DecodedVideoFrame>? _frames;
-    private readonly ConcurrentQueue<Mat> _free = new();
-    private readonly List<Mat> _buffers = [];
+    private readonly ConcurrentQueue<FrameBuffer> _free = new();
+    private readonly List<FrameBuffer> _buffers = [];
     private readonly SemaphoreSlim _slots;
     private readonly Task? _producer;
     private bool _disposed;
 
-    public BufferedVideoReader(VideoCapture capture, int capacity, CancellationToken token)
+    public BufferedVideoReader(VideoCapture capture, int capacity, CancellationToken token, bool prepareGray = true)
     {
         _capture = capture;
         _stop = CancellationTokenSource.CreateLinkedTokenSource(token);
@@ -28,7 +28,7 @@ public sealed class BufferedVideoReader : IDisposable
         _slots = new SemaphoreSlim(count, count);
         for (var i = 0; i < count; i++)
         {
-            var buffer = new Mat();
+            var buffer = new FrameBuffer(prepareGray && Capacity > 0);
             _buffers.Add(buffer);
             _free.Enqueue(buffer);
         }
@@ -53,16 +53,30 @@ public sealed class BufferedVideoReader : IDisposable
         return Decode(buffer!);
     }
 
-    private DecodedVideoFrame Decode(Mat buffer)
+    private DecodedVideoFrame Decode(FrameBuffer buffer)
     {
         try
         {
             var start = Stopwatch.GetTimestamp();
             var opened = _capture.IsOpened;
-            var succeeded = opened && _capture.Read(buffer);
+            var succeeded = opened && _capture.Read(buffer.Image);
             var duration = Stopwatch.GetElapsedTime(start);
-            return new DecodedVideoFrame(buffer, succeeded, _capture.IsOpened,
-                (int)_capture.Get(CapProp.PosFrames), _capture.Get(CapProp.PosMsec), duration, Return);
+            start = Stopwatch.GetTimestamp();
+            if (succeeded && buffer.Gray != null)
+                CvInvoke.CvtColor(buffer.Image, buffer.Gray, ColorConversion.Bgr2Gray);
+            var preprocessDuration = buffer.Gray != null ? Stopwatch.GetElapsedTime(start) : TimeSpan.Zero;
+            return new DecodedVideoFrame(buffer.Image, succeeded, _capture.IsOpened,
+                (int)_capture.Get(CapProp.PosFrames), _capture.Get(CapProp.PosMsec), duration, _ => Return(buffer))
+            {
+                PreparedGray = buffer.Gray,
+                PreprocessDuration = preprocessDuration,
+                ExchangeGray = replacement =>
+                {
+                    var previous = buffer.Gray!;
+                    buffer.Gray = replacement;
+                    return previous;
+                }
+            };
         }
         catch
         {
@@ -95,7 +109,7 @@ public sealed class BufferedVideoReader : IDisposable
         finally { _frames!.Writer.TryComplete(error); }
     }
 
-    private void Return(Mat frame)
+    private void Return(FrameBuffer frame)
     {
         _free.Enqueue(frame);
         _slots.Release();
@@ -135,6 +149,13 @@ public sealed class BufferedVideoReader : IDisposable
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GlobalMemoryStatusEx(ref MemoryStatus status);
+
+    private sealed class FrameBuffer(bool prepareGray) : IDisposable
+    {
+        internal Mat Image { get; } = new();
+        internal Mat? Gray { get; set; } = prepareGray ? new Mat() : null;
+        public void Dispose() { Image.Dispose(); Gray?.Dispose(); }
+    }
 }
 
 public sealed class DecodedVideoFrame(Mat image, bool succeeded, bool captureOpened,
@@ -147,5 +168,14 @@ public sealed class DecodedVideoFrame(Mat image, bool succeeded, bool captureOpe
     public int FrameIndex { get; } = frameIndex;
     public double Timecode { get; } = timecode;
     public TimeSpan DecodeDuration { get; } = decodeDuration;
+    public Mat? PreparedGray { get; internal set; }
+    public TimeSpan PreprocessDuration { get; internal init; }
+    internal Func<Mat, Mat>? ExchangeGray { get; init; }
+    internal Mat TakeGray(Mat replacement)
+    {
+        var result = ExchangeGray!(replacement);
+        PreparedGray = replacement;
+        return result;
+    }
     public void Dispose() => Interlocked.Exchange(ref _release, null)?.Invoke(Image);
 }

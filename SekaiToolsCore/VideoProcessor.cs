@@ -429,7 +429,7 @@ public class VideoProcessor : IDisposable
         var capacity = _config.PerformanceOptions.GetFrameCapacity(
             (int)capture.Get(CapProp.FrameWidth), (int)capture.Get(CapProp.FrameHeight),
             BufferedVideoReader.AvailableMemoryBytes());
-        using var reader = new BufferedVideoReader(capture, capacity, token);
+        using var reader = new BufferedVideoReader(capture, capacity, token, _config.PerformanceOptions.PrepareGrayFrames);
         Logger.Log($"识别性能模式: {_config.PerformanceOptions.Mode}, 帧缓冲容量={capacity}");
 
         var avgDuration = 0d;
@@ -491,11 +491,13 @@ public class VideoProcessor : IDisposable
                 var matchFrame = useFirstMatchFrame ? matchFrameA : matchFrameB;
                 var backcheckFrame = previousMatchFrame;
                 var backcheckFrameIndex = previousMatchFrameIndex;
-                matchFrame.Update(frame);
+                if (decoded.PreparedGray != null) matchFrame.UpdatePrepared(decoded);
+                else matchFrame.Update(frame);
                 useFirstMatchFrame = !useFirstMatchFrame;
                 previousMatchFrame = matchFrame;
                 previousMatchFrameIndex = frameIndex;
-                _performanceMetrics.Record(ProcessingStage.Preprocess, Stopwatch.GetElapsedTime(preprocessStart));
+                _performanceMetrics.Record(ProcessingStage.Preprocess,
+                    Stopwatch.GetElapsedTime(preprocessStart) + decoded.PreprocessDuration);
                 _performanceMetrics.RecordFrame();
                 var progress = frameCount > 0 ? frameIndex / frameCount : 0;
 

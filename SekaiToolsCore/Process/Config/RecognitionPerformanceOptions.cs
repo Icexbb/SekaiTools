@@ -7,6 +7,7 @@ public sealed record RecognitionPerformanceOptions
     public RecognitionPerformanceMode Mode { get; init; } = RecognitionPerformanceMode.Automatic;
     public int MemoryBudgetMiB { get; init; } = 2048;
     public bool EnableFramePrefetch { get; init; } = true;
+    public bool PrepareGrayFrames { get; init; }
 
     public int GetFrameCapacity(int width, int height, long availableBytes)
     {
@@ -19,7 +20,7 @@ public sealed record RecognitionPerformanceOptions
         };
         // Leave headroom for the existing decoder, matchers, UI and other applications.
         var budget = Math.Min((long)cap * 1024 * 1024, availableBytes / 4);
-        var frameBytes = checked((long)width * height * 3);
+        var frameBytes = checked((long)width * height * (PrepareGrayFrames ? 4 : 3));
         var count = Math.Max(0, budget - 64L * 1024 * 1024) / frameBytes;
         var maxFrames = Mode switch
         {

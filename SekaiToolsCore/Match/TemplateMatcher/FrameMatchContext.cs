@@ -20,7 +20,7 @@ public sealed class FrameMatchContext : IDisposable
         Gray = new Mat();
     }
 
-    public Mat Gray { get; }
+    public Mat Gray { get; private set; }
     public Size Size => Gray.Size;
 
     public void Dispose()
@@ -79,6 +79,14 @@ public sealed class FrameMatchContext : IDisposable
         CvInvoke.Resize(source, scaled, new Size(width, height), interpolation: interpolation);
         _validRegions.Add(key);
         return scaled;
+    }
+
+    internal void UpdatePrepared(SekaiToolsCore.Process.DecodedVideoFrame frame)
+    {
+        if (_retainedRegionBytes > 16L * 1024 * 1024) ClearScaledRegions();
+        _validRegions.Clear();
+        // Exchange owned Mat headers instead of copying full-frame pixels.
+        Gray = frame.TakeGray(Gray);
     }
 
     internal MatchResultLease RentMatchResult(Size image, Size template, bool refinement = false)

@@ -35,6 +35,9 @@ public class BufferedVideoReaderTests
                 Assert.Equal(i + 1, actual.FrameIndex);
                 Assert.Equal(expected.Timecode, actual.Timecode);
                 Assert.Equal(0d, CvInvoke.Norm(expected.Image, actual.Image, NormType.L1));
+                using var gray = new Mat();
+                CvInvoke.CvtColor(expected.Image, gray, ColorConversion.Bgr2Gray);
+                Assert.Equal(0d, CvInvoke.Norm(gray, actual.PreparedGray!, NormType.L1));
                 frames.Add(actual.Image);
             }
             using var end = buffered.Read();
@@ -42,6 +45,28 @@ public class BufferedVideoReaderTests
         }
         finally { buffered.Dispose(); }
         Assert.All(frames, frame => Assert.Equal(IntPtr.Zero, frame.Ptr));
+    }
+
+    [Fact]
+    public void PreparedGrayExchangePreservesPreviousFrameWithoutPixelCopy()
+    {
+        using var video = new VideoFixture();
+        using var capture = new VideoCapture(video.Path);
+        using var first = new FrameMatchContext();
+        using var second = new FrameMatchContext();
+        using var previous = new Mat();
+        using var reader = new BufferedVideoReader(capture, 2, CancellationToken.None);
+        for (var index = 0; index < 8; index++)
+        {
+            using var frame = reader.Read();
+            var target = index % 2 == 0 ? first : second;
+            var old = index % 2 == 0 ? second : first;
+            var pointer = frame.PreparedGray!.DataPointer;
+            target.UpdatePrepared(frame);
+            Assert.Equal(pointer, target.Gray.DataPointer);
+            if (index > 0) Assert.Equal(0d, CvInvoke.Norm(previous, old.Gray, NormType.L1));
+            target.Gray.CopyTo(previous);
+        }
     }
 
     [Fact]
@@ -61,10 +86,10 @@ public class BufferedVideoReaderTests
     [InlineData(1920, 1080, 0, 0)]
     [InlineData(3840, 2160, 256, 0)]
     [InlineData(1920, 1080, 4096, 16)]
-    [InlineData(3840, 2160, 4096, 16)]
+    [InlineData(3840, 2160, 4096, 14)]
     public void AutomaticBudgetLimitsFrameCount(int width, int height, int availableMiB, int expected)
     {
-        Assert.Equal(expected, new RecognitionPerformanceOptions().GetFrameCapacity(
+        Assert.Equal(expected, new RecognitionPerformanceOptions { PrepareGrayFrames = true }.GetFrameCapacity(
             width, height, (long)availableMiB * 1024 * 1024));
     }
 
