@@ -55,7 +55,7 @@ public static class TemplateMatcher
             return MatchNoCacheScaled(frame, region, tmp, templateLayer, scale, matchingType, memberName);
 
         using var image = frame.CreateGrayRoi(region);
-        return MatchNoCacheFull(image, templateLayer, scale, matchingType, memberName);
+        return MatchNoCacheFull(frame, image, templateLayer, scale, matchingType, memberName);
     }
 
     private static TemplateMatchResult MatchNoCacheScaled(FrameMatchContext frame, Rectangle region, GaMat tmp,
@@ -64,7 +64,8 @@ public static class TemplateMatcher
         var imgSmall = frame.GetScaledGrayRoi(region, SearchDownscaleDivisor, SearchInterpolation);
         var templateLayer = tmp.GetScaledLayer(scale, SearchDownscaleDivisor);
 
-        using var matchResult = new Mat();
+        using var resultLease = frame.RentMatchResult(imgSmall.Size, templateLayer.Size);
+        var matchResult = resultLease.Image;
         CvInvoke.MatchTemplate(imgSmall, templateLayer.Gray, matchResult, matchingType, templateLayer.Alpha);
         matchResult.MatRemoveErrorInf();
         double maxVal = 0, minVal = 0;
@@ -94,7 +95,8 @@ public static class TemplateMatcher
                 refinementRegion.Width,
                 refinementRegion.Height);
             using var refinementImage = frame.CreateGrayRoi(frameRefinementRegion);
-            using var refinementResult = new Mat();
+            using var refinementLease = frame.RentMatchResult(refinementImage.Size, fullTemplateLayer.Size, true);
+            var refinementResult = refinementLease.Image;
             CvInvoke.MatchTemplate(refinementImage, fullTemplateLayer.Gray, refinementResult, matchingType,
                 fullTemplateLayer.Alpha);
             refinementResult.MatRemoveErrorInf();
@@ -113,11 +115,12 @@ public static class TemplateMatcher
         return new TemplateMatchResult(maxVal, minVal, maxLoc, minLoc) { Scale = scale };
     }
 
-    private static TemplateMatchResult MatchNoCacheFull(Mat img, GaMatLayer templateLayer, double scale,
+    private static TemplateMatchResult MatchNoCacheFull(FrameMatchContext frame, Mat img, GaMatLayer templateLayer, double scale,
         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
         string memberName = "")
     {
-        using var matchResult = new Mat();
+        using var resultLease = frame.RentMatchResult(img.Size, templateLayer.Size);
+        var matchResult = resultLease.Image;
         CvInvoke.MatchTemplate(img, templateLayer.Gray, matchResult, matchingType, templateLayer.Alpha);
         matchResult.MatRemoveErrorInf();
         double maxVal = 0, minVal = 0;

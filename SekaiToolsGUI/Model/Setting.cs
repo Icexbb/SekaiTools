@@ -19,6 +19,8 @@ public struct Setting
     public int ProxyType { get; init; } = 0;
     public string ProxyHost { get; init; } = "127.0.0.1";
     public int ProxyPort { get; init; } = 1080;
+    public int RecognitionPerformanceMode { get; init; } = 1;
+    public int RecognitionMemoryBudgetMiB { get; init; } = 2048;
 
     public int TypewriterFadeTime { get; init; } = 50;
     public int TypewriterCharTime { get; init; } = 80;
@@ -71,6 +73,8 @@ public struct Setting
             ProxyType = model.ProxyType,
             ProxyHost = model.ProxyHost,
             ProxyPort = model.ProxyPort,
+            RecognitionPerformanceMode = model.RecognitionPerformanceMode,
+            RecognitionMemoryBudgetMiB = model.RecognitionMemoryBudgetMiB,
 
             TypewriterFadeTime = model.TypewriterFadeTime,
             TypewriterCharTime = model.TypewriterCharTime,

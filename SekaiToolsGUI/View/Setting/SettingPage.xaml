@@ -16,6 +16,31 @@
         </Grid.RowDefinitions>
         <ScrollViewer Grid.Row="0">
             <StackPanel Margin="10">
+                <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Memory16}">
+                    <ui:CardControl.Header>
+                        <StackPanel>
+                            <ui:TextBlock FontTypography="Body" Text="视频识别性能" />
+                            <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                          Text="内存充足时提前解码；新任务生效" />
+                        </StackPanel>
+                    </ui:CardControl.Header>
+                    <ComboBox MinWidth="160" SelectedIndex="{Binding RecognitionPerformanceMode,Mode=TwoWay}">
+                        <ComboBoxItem Content="节省内存" />
+                        <ComboBoxItem Content="自动" />
+                        <ComboBoxItem Content="高性能" />
+                    </ComboBox>
+                </ui:CardControl>
+                <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon DataUsageSettings20}">
+                    <ui:CardControl.Header>
+                        <StackPanel>
+                            <ui:TextBlock FontTypography="Body" Text="高性能缓存预算（MiB）" />
+                            <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                          Text="128–4096；按可用内存和视频分辨率限制实际分配" />
+                        </StackPanel>
+                    </ui:CardControl.Header>
+                    <ui:NumberBox Width="160" Minimum="128" Maximum="4096" SmallChange="128" LargeChange="512"
+                                  Value="{Binding RecognitionMemoryBudgetMiB,Mode=TwoWay}" ClearButtonEnabled="False" />
+                </ui:CardControl>
                 <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Color24}">
                     <ui:CardControl.Header>
                         <Grid>

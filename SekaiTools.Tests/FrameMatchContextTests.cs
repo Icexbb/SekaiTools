@@ -31,12 +31,15 @@ public class FrameMatchContextTests
         using var source = new Mat(20, 20, DepthType.Cv8U, 3);
         using var context = new FrameMatchContext();
         var region = new Rectangle(0, 0, 10, 10);
+        source.SetTo(new MCvScalar(10, 10, 10));
         context.Update(source);
         var first = context.GetScaledGrayRoi(region, 2, Inter.Area);
 
+        source.SetTo(new MCvScalar(90, 90, 90));
         context.Update(source);
         var second = context.GetScaledGrayRoi(region, 2, Inter.Area);
 
-        Assert.NotSame(first, second);
+        Assert.Same(first, second);
+        Assert.Equal(90, CvInvoke.Mean(second).V0);
     }
 }

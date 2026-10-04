@@ -244,7 +244,8 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
                 settings.GetStyleFontConfig(),
                 settings.GetExportStyleConfig(),
                 settings.GetTypewriterSetting(),
-                GetMatchingThreshold()
+                GetMatchingThreshold(),
+                settings.GetRecognitionPerformanceOptions()
             ), new VideoProcessCallbacks
             {
                 OnNewDialog = LinePanel_AddDialogLine,
@@ -883,7 +884,8 @@ public partial class SubtitlePage
                     settings.GetStyleFontConfig(),
                     settings.GetExportStyleConfig(),
                     settings.GetTypewriterSetting(),
-                    GetMatchingThreshold()
+                    GetMatchingThreshold(),
+                    settings.GetRecognitionPerformanceOptions()
                 ), new VideoProcessCallbacks
                 {
                     OnTaskFinished = () =>

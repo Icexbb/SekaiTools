@@ -5,6 +5,20 @@ namespace SekaiTools.Tests;
 public class ProcessingPerformanceMetricsTests
 {
     [Fact]
+    public void AverageUsesWallTimeWhenStagesOverlap()
+    {
+        var metrics = new ProcessingPerformanceMetrics();
+        metrics.Record(ProcessingStage.Decode, TimeSpan.FromMilliseconds(10));
+        metrics.Record(ProcessingStage.Match, TimeSpan.FromMilliseconds(10));
+        metrics.RecordElapsed(TimeSpan.FromMilliseconds(12));
+        metrics.RecordFrame();
+        Assert.Equal(12, metrics.Snapshot().AverageMillisecondsPerFrame);
+        Assert.Equal(TimeSpan.FromMilliseconds(20), metrics.Snapshot().MeasuredTime);
+        metrics.Reset();
+        Assert.Equal(TimeSpan.Zero, metrics.Snapshot().ElapsedTime);
+    }
+
+    [Fact]
     public void Snapshot_AggregatesStagesAndFrames()
     {
         var metrics = new ProcessingPerformanceMetrics();

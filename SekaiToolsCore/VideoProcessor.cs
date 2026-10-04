@@ -69,6 +69,7 @@ public class VideoProcessor : IDisposable
     private readonly string _videoPath;
     private int _consecutiveExceptionCount;
     private bool _disposed;
+    private int _processedFrameIndex;
     private bool _frameSetJustCompleted;
     private int _nextProgressSaveFrame = ProgressSavePolicy.InitialInterval;
     private int _lastProgressSaveFrame;
@@ -272,6 +273,7 @@ public class VideoProcessor : IDisposable
             MarkerMatcher?.RestoreState(state.Marker);
 
         _lastProgressSaveFrame = state.FrameIndex;
+        _processedFrameIndex = state.FrameIndex;
         _nextProgressSaveFrame = ProgressSavePolicy.GetNextFrame(state.FrameIndex);
     }
 
@@ -309,8 +311,8 @@ public class VideoProcessor : IDisposable
 
     private int GetCurrentFrameIndex()
     {
-        if (Capture == null || Capture.Ptr == IntPtr.Zero) return 0;
-        return (int)Capture.Get(CapProp.PosFrames);
+        // The decoder can be ahead of recognition when prefetching.
+        return _processedFrameIndex;
     }
 
     public void StartProcess()
@@ -340,6 +342,7 @@ public class VideoProcessor : IDisposable
                 $"开始视频处理: {(int)cap.Get(CapProp.FrameWidth)}x{(int)cap.Get(CapProp.FrameHeight)}, {(int)cap.Get(CapProp.FrameCount)}帧, {cap.Get(CapProp.Fps):F2}fps");
         ProcessingTask = Task.Run(() =>
         {
+            var processingStart = Stopwatch.GetTimestamp();
             try
             {
                 Callbacks.OnTaskStarted();
@@ -364,6 +367,7 @@ public class VideoProcessor : IDisposable
                 Capture?.Dispose();
                 Capture = null;
                 _isProcessing = false;
+                _performanceMetrics.RecordElapsed(Stopwatch.GetElapsedTime(processingStart));
                 Callbacks.OnTaskFinished();
             }
         });
@@ -390,6 +394,7 @@ public class VideoProcessor : IDisposable
 
     private void Process(CancellationToken token)
     {
+        var processingStart = Stopwatch.GetTimestamp();
         if (Capture == null || Capture.Ptr == IntPtr.Zero ||
             DialogMatcher == null || ContentMatcher == null ||
             BannerMatcher == null || MarkerMatcher == null)
@@ -401,7 +406,6 @@ public class VideoProcessor : IDisposable
         var capture = Capture;
         var frameRate = capture.Get(CapProp.Fps);
         var previewInterval = Math.Max(1, (int)Math.Round(frameRate / 5d));
-        using var frame = new Mat();
         using var matchFrameA = new FrameMatchContext();
         using var matchFrameB = new FrameMatchContext();
         FrameMatchContext? previousMatchFrame = null;
@@ -421,9 +425,15 @@ public class VideoProcessor : IDisposable
         _previewConsumerTask = StartPreviewConsumer(_previewChannel, token);
 
         ApplyDebugConfig(capture, DialogMatcher);
+        _processedFrameIndex = (int)capture.Get(CapProp.PosFrames);
+        var capacity = _config.PerformanceOptions.GetFrameCapacity(
+            (int)capture.Get(CapProp.FrameWidth), (int)capture.Get(CapProp.FrameHeight),
+            BufferedVideoReader.AvailableMemoryBytes());
+        using var reader = new BufferedVideoReader(capture, capacity, token);
+        Logger.Log($"识别性能模式: {_config.PerformanceOptions.Mode}, 帧缓冲容量={capacity}");
 
         var avgDuration = 0d;
-        var frameIndex = 0;
+        var frameIndex = _processedFrameIndex;
         var readRetryCount = 0;
         while (true)
         {
@@ -437,20 +447,15 @@ public class VideoProcessor : IDisposable
                     break;
                 }
 
-                if (capture is not { IsOpened: true })
-                {
-                    StopReason = ProcessStopReason.CaptureError;
-                    break;
-                }
-
-                var decodeStart = Stopwatch.GetTimestamp();
-                var readSucceeded = capture.Read(frame);
-                _performanceMetrics.Record(ProcessingStage.Decode, Stopwatch.GetElapsedTime(decodeStart));
+                using var decoded = reader.Read();
+                var frame = decoded.Image;
+                var readSucceeded = decoded.Succeeded;
+                _performanceMetrics.Record(ProcessingStage.Decode, decoded.DecodeDuration);
                 if (!readSucceeded)
                 {
                     var action = VideoReadFailureClassifier.Classify(
-                        capture.IsOpened,
-                        capture.Get(CapProp.PosFrames),
+                        decoded.CaptureOpened,
+                        decoded.FrameIndex,
                         frameCount,
                         readRetryCount,
                         MaxReadRetries);
@@ -478,8 +483,9 @@ public class VideoProcessor : IDisposable
 
                 readRetryCount = 0;
 
-                frameIndex = (int)capture.Get(CapProp.PosFrames);
-                Creator.FrameRate.RecordTimecode(Math.Max(0, frameIndex - 1), capture.Get(CapProp.PosMsec));
+                frameIndex = decoded.FrameIndex;
+                _processedFrameIndex = frameIndex;
+                Creator.FrameRate.RecordTimecode(Math.Max(0, frameIndex - 1), decoded.Timecode);
                 Creator.CachePool.SetFrameIndex(frameIndex);
                 var preprocessStart = Stopwatch.GetTimestamp();
                 var matchFrame = useFirstMatchFrame ? matchFrameA : matchFrameB;
@@ -562,6 +568,10 @@ public class VideoProcessor : IDisposable
                 StopReason = ProcessStopReason.Canceled;
                 break;
             }
+            catch (ChannelClosedException exception)
+            {
+                throw new InvalidOperationException("视频预读任务异常结束", exception.InnerException ?? exception);
+            }
             catch (Exception e)
             {
                 // 异常熔断：连续异常超过阈值则退出
@@ -588,6 +598,7 @@ public class VideoProcessor : IDisposable
 
         // 循环正常退出代表所有匹配器均已完成。先确定终止状态，再发送最终进度，
         // 避免取消或失败任务被错误显示为 100%。
+        reader.Dispose();
         if (StopReason == ProcessStopReason.None)
             StopReason = ProcessStopReason.Completed;
 
@@ -621,6 +632,7 @@ public class VideoProcessor : IDisposable
             Capture = null;
 
         Logger.Log($"视频处理结束: {StopReason}, 当前帧={frameIndex}, 总帧={frameCount}");
+        _performanceMetrics.RecordElapsed(Stopwatch.GetElapsedTime(processingStart));
         Logger.Log($"视频处理性能: {Performance}");
         foreach (var diagnostic in Diagnostics)
             Logger.Log($"匹配诊断: {diagnostic.Matcher}[{diagnostic.TargetIndex}] " +

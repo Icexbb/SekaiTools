@@ -21,6 +21,23 @@ public partial class SettingPageModel : ViewModelBase
     }
 
     public static SettingPageModel Instance { get; } = new();
+    public int RecognitionPerformanceMode
+    {
+        get => GetProperty(1);
+        set => SetProperty(Math.Clamp(value, 0, 2));
+    }
+
+    public int RecognitionMemoryBudgetMiB
+    {
+        get => GetProperty(2048);
+        set => SetProperty(Math.Clamp(value, 128, 4096));
+    }
+
+    public RecognitionPerformanceOptions GetRecognitionPerformanceOptions() => new()
+    {
+        Mode = (RecognitionPerformanceMode)RecognitionPerformanceMode,
+        MemoryBudgetMiB = RecognitionMemoryBudgetMiB
+    };
 
     public int CurrentApplicationTheme
     {
@@ -267,6 +284,8 @@ partial class SettingPageModel
             ProxyType = Model.Setting.Default.ProxyType;
             ProxyHost = Model.Setting.Default.ProxyHost;
             ProxyPort = Model.Setting.Default.ProxyPort;
+            RecognitionPerformanceMode = Model.Setting.Default.RecognitionPerformanceMode;
+            RecognitionMemoryBudgetMiB = Model.Setting.Default.RecognitionMemoryBudgetMiB;
 
             TypewriterFadeTime = Model.Setting.Default.TypewriterFadeTime;
             TypewriterCharTime = Model.Setting.Default.TypewriterCharTime;
@@ -313,6 +332,8 @@ partial class SettingPageModel
             ProxyType = setting.ProxyType;
             ProxyHost = setting.ProxyHost;
             ProxyPort = setting.ProxyPort;
+            RecognitionPerformanceMode = setting.RecognitionPerformanceMode;
+            RecognitionMemoryBudgetMiB = setting.RecognitionMemoryBudgetMiB;
 
             TypewriterFadeTime = setting.TypewriterFadeTime;
             TypewriterCharTime = setting.TypewriterCharTime;

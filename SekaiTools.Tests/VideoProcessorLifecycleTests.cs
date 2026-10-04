@@ -14,6 +14,36 @@ namespace SekaiTools.Tests;
 public class VideoProcessorLifecycleTests
 {
     [Fact]
+    public async Task CancellationSavesConsumedFrameInsteadOfPrefetchedPosition()
+    {
+        using var fixture = new Fixture();
+        var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var reachedFrame = 0;
+        Exception? error = null;
+        VideoProcessor? current = null;
+        using var processor = fixture.Create(new VideoProcessCallbacks
+        {
+            OnProgress = _ =>
+            {
+                if (reachedFrame != 0) return;
+                reachedFrame = current!.CaptureState().FrameIndex;
+                current.StopProcess();
+            },
+            OnTaskFinished = () => done.TrySetResult(),
+            OnException = e => error = e
+        });
+        current = processor;
+        processor.StartProcess();
+        await done.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await processor.StopProcessAsync();
+        Assert.Null(error);
+        Assert.Equal(1, reachedFrame);
+        Assert.Equal(1, processor.CaptureState().FrameIndex);
+        Assert.Single(processor.CaptureState().Timecodes);
+        Assert.Equal(ProcessStopReason.Canceled, processor.StopReason);
+    }
+
+    [Fact]
     public async Task StopWaitsForWorkerAndFinishedCallbackBeforeDisposal()
     {
         using var fixture = new Fixture();

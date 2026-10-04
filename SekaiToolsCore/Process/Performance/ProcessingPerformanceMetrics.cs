@@ -13,10 +13,11 @@ public sealed record ProcessingPerformanceSnapshot(
     TimeSpan PreprocessTime,
     TimeSpan MatchTime)
 {
+    public TimeSpan ElapsedTime { get; init; }
     public TimeSpan MeasuredTime => DecodeTime + PreprocessTime + MatchTime;
 
     public double AverageMillisecondsPerFrame => FrameCount > 0
-        ? MeasuredTime.TotalMilliseconds / FrameCount
+        ? (ElapsedTime > TimeSpan.Zero ? ElapsedTime : MeasuredTime).TotalMilliseconds / FrameCount
         : 0;
 
     public override string ToString()
@@ -34,6 +35,9 @@ public sealed class ProcessingPerformanceMetrics
     private long _frameCount;
     private long _matchTicks;
     private long _preprocessTicks;
+    private long _elapsedTicks;
+
+    internal void RecordElapsed(TimeSpan elapsed) => Interlocked.Exchange(ref _elapsedTicks, elapsed.Ticks);
 
     internal void Record(ProcessingStage stage, TimeSpan elapsed)
     {
@@ -64,6 +68,7 @@ public sealed class ProcessingPerformanceMetrics
         Interlocked.Exchange(ref _frameCount, 0);
         Interlocked.Exchange(ref _decodeTicks, 0);
         Interlocked.Exchange(ref _preprocessTicks, 0);
+        Interlocked.Exchange(ref _elapsedTicks, 0);
         Interlocked.Exchange(ref _matchTicks, 0);
     }
 
@@ -73,6 +78,9 @@ public sealed class ProcessingPerformanceMetrics
             Interlocked.Read(ref _frameCount),
             TimeSpan.FromTicks(Interlocked.Read(ref _decodeTicks)),
             TimeSpan.FromTicks(Interlocked.Read(ref _preprocessTicks)),
-            TimeSpan.FromTicks(Interlocked.Read(ref _matchTicks)));
+            TimeSpan.FromTicks(Interlocked.Read(ref _matchTicks)))
+        {
+            ElapsedTime = TimeSpan.FromTicks(Interlocked.Read(ref _elapsedTicks))
+        };
     }
 }

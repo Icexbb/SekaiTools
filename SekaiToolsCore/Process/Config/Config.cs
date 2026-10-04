@@ -9,7 +9,8 @@ public class Config
         StyleFontConfig styleFontConfig = default,
         ExportStyleConfig exportStyleConfig = default,
         TypewriterSetting typerSetting = default,
-        MatchingThreshold? matchingThreshold = null
+        MatchingThreshold? matchingThreshold = null,
+        RecognitionPerformanceOptions? performanceOptions = null
     )
     {
         if (!Path.Exists(videoFilePath))
@@ -28,6 +29,7 @@ public class Config
 
         TyperSetting = typerSetting;
         MatchingThreshold = matchingThreshold ?? new MatchingThreshold();
+        PerformanceOptions = performanceOptions ?? new RecognitionPerformanceOptions();
     }
 
     public string VideoFilePath { get; }
@@ -37,6 +39,7 @@ public class Config
     public TypewriterSetting TyperSetting { get; }
 
     public MatchingThreshold MatchingThreshold { get; }
+    public RecognitionPerformanceOptions PerformanceOptions { get; }
 
     public StyleFontConfig StyleFontConfig { get; }
 
