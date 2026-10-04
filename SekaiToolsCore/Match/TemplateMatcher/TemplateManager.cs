@@ -1,5 +1,4 @@
 using System.Drawing;
-using System.Runtime.InteropServices;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -143,13 +142,15 @@ public class TemplateManager(
 
     private static Mat SkBitmapToMat(SKBitmap bitmap)
     {
-        var mat = new Mat(bitmap.Height, bitmap.Width, DepthType.Cv8U, 4);
-        var pixels = bitmap.GetPixelSpan().ToArray();
-        Marshal.Copy(pixels, 0, mat.DataPointer, pixels.Length);
-        return mat;
+        // Copy directly from Skia's native pixels. The clone owns its storage and
+        // survives the bitmap without allocating another full-size managed array.
+        using var view = new Mat(bitmap.Height, bitmap.Width, DepthType.Cv8U, 4,
+            bitmap.GetPixels(), bitmap.RowBytes);
+        return view.Clone();
     }
 
-    private Mat CreateImageWithText(TemplateUsage usage, string text)
+    /// <summary>Creates an uncached image. The caller owns and disposes the returned Mat.</summary>
+    public Mat CreateTemplate(TemplateUsage usage, string text)
     {
         using var font = usage switch
         {
@@ -223,20 +224,22 @@ public class TemplateManager(
         canvas.Flush();
 
         using var mat = SkBitmapToMat(bitmap);
-        var cropped = CropZero(mat);
+        using var cropped = CropZero(mat);
 
-        if (usage != TemplateUsage.BannerContent) return cropped;
+        // A ROI otherwise keeps the entire oversized text canvas alive.
+        if (usage != TemplateUsage.BannerContent) return cropped.Clone();
 
         var extendPixel = (int)(fontSize / 16f);
         var extendSize = new Size(cropped.Width + extendPixel * 2, cropped.Height + extendPixel * 2);
         var expandedMat = new Mat(extendSize, cropped.Depth, cropped.NumberOfChannels);
         const int bannerGrayScale = 80;
-        cropped.CopyTo(new Mat(expandedMat, new Rectangle(extendPixel, extendPixel, cropped.Width, cropped.Height)));
+        using (var contentRegion = new Mat(expandedMat,
+                   new Rectangle(extendPixel, extendPixel, cropped.Width, cropped.Height)))
+            cropped.CopyTo(contentRegion);
 
         using var bgMat = new Mat(expandedMat.Size, expandedMat.Depth, expandedMat.NumberOfChannels);
         bgMat.SetTo(new MCvScalar(bannerGrayScale, bannerGrayScale, bannerGrayScale, 255));
         CvInvoke.BitwiseOr(bgMat, expandedMat, expandedMat);
-        cropped.Dispose();
         return expandedMat;
     }
 
@@ -247,7 +250,7 @@ public class TemplateManager(
 
         if (usageDict.TryGetValue(text, out var template)) return template;
 
-        var mat = CreateImageWithText(usage, text);
+        var mat = CreateTemplate(usage, text);
         usageDict[text] = mat;
         return mat;
     }
@@ -261,7 +264,8 @@ public class TemplateManager(
         if (usageDict.TryGetValue(text, out var template))
             return template;
 
-        template = new GaMat(GetTemplate(usage, text));
+        using var source = CreateTemplate(usage, text);
+        template = new GaMat(source);
         usageDict[text] = template;
         return template;
     }

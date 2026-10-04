@@ -75,15 +75,9 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
     #region Dialog
 
-    private GaMat GetNameTag(string name)
-    {
-        return new GaMat(templateManager.GetTemplate(TemplateUsage.DialogNameTag, name));
-    }
-
     private int GetNameTagWidth(string name)
     {
-        using var nameTag = GetNameTag(name);
-        return nameTag.Size.Width;
+        return templateManager.GetMatchTemplate(TemplateUsage.DialogNameTag, name).Size.Width;
     }
 
     private static Queue<char> FormatDialogBodyArr(string body)

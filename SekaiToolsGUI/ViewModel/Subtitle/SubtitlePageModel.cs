@@ -1,13 +1,21 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Media;
-using Emgu.CV;
-using Emgu.CV.CvEnum;
+using System.Windows.Media.Imaging;
 
 namespace SekaiToolsGUI.ViewModel.Subtitle;
 
 public class SubtitlePageModel : ViewModelBase
 {
+    private static readonly ImageSource EmptyFramePreview = CreateEmptyFramePreview();
+
+    private static ImageSource CreateEmptyFramePreview()
+    {
+        var image = BitmapSource.Create(100, 100, 96, 96, PixelFormats.Bgra32, null, new byte[40000], 400);
+        image.Freeze();
+        return image;
+    }
+
     public string VideoFilePath
     {
         get => GetProperty("");
@@ -69,7 +77,7 @@ public class SubtitlePageModel : ViewModelBase
 
     public ImageSource FramePreviewImage
     {
-        get => GetProperty<ImageSource>(Mat.Zeros(100, 100, DepthType.Cv8U, 4).ToBitmapSource());
+        get => GetProperty(EmptyFramePreview);
         set => SetProperty(value);
     }
 
@@ -299,7 +307,7 @@ public class SubtitlePageModel : ViewModelBase
         IsPartial = false;
         IsCanceling = false;
         HasNotStarted = true;
-        FramePreviewImage = Mat.Zeros(100, 100, DepthType.Cv8U, 4).ToBitmapSource();
+        FramePreviewImage = EmptyFramePreview;
 
         DialogTotal = 100;
         DialogCurrent = 0;

@@ -48,7 +48,7 @@ public class MarkerTemplateMatcher(
         if (_templates.TryGetValue(content, out var template))
             return template;
 
-        var source = templateManager.GetTemplate(TemplateUsage.MarkerContent, content);
+        using var source = templateManager.CreateTemplate(TemplateUsage.MarkerContent, content);
         const double resizeRatio = 0.90;
         using var resized = new Mat();
         CvInvoke.Resize(source, resized,

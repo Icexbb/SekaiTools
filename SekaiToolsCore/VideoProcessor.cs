@@ -476,7 +476,7 @@ public class VideoProcessor : IDisposable
 
                 if (frameIndex % previewInterval == 0)
                 {
-                    var previewFrame = frame.Clone();
+                    var previewFrame = FramePreview.Create(frame);
                     EnqueueLatestPreview(previewFrame);
                 }
 
