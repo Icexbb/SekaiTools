@@ -168,6 +168,7 @@ public partial class TimelineEditor : UserControl
     private CancellationTokenSource? _videoPlaybackCancellation;
     private TimelineFramePreviewLoader? _videoPlaybackLoader;
     private TimelinePlaybackWindow? _videoPlaybackWindow;
+    private Action<ImageSource>? _inlineVideoFrame;
     private double _viewStartMilliseconds;
     private AudioWaveformEnvelope? _waveform;
     private CancellationTokenSource? _waveformCancellation;
@@ -873,14 +874,14 @@ public partial class TimelineEditor : UserControl
         StopPlayback();
     }
 
-    public Task PreviewEventVideoAsync(string videoPath, TimelineEventSelection selection)
+    public Task PreviewEventVideoAsync(string videoPath, TimelineEventSelection selection, Action<ImageSource> showFrame)
     {
         SelectEvent(selection);
         _mediaPath = videoPath;
-        return StartPlaybackAsync(PlaybackMode.Video, requireFeatureSwitch: false);
+        return StartPlaybackAsync(PlaybackMode.Video, requireFeatureSwitch: false, showFrame);
     }
 
-    private async Task StartPlaybackAsync(PlaybackMode mode, bool requireFeatureSwitch = true)
+    private async Task StartPlaybackAsync(PlaybackMode mode, bool requireFeatureSwitch = true, Action<ImageSource>? showFrame = null)
     {
         if (requireFeatureSwitch && !GeneralFunctionSwitch.EventPlayBack)
             return;
@@ -902,6 +903,7 @@ public partial class TimelineEditor : UserControl
         StopPlayback(
             keepVideoPreview: mode == PlaybackMode.Video &&
                               _videoPlaybackWindow?.IsVisible == true);
+        _inlineVideoFrame = showFrame;
         _playbackMode = mode;
         _playbackVersion++;
         _playbackStart = TimeSpan.FromMilliseconds(startMilliseconds);
@@ -911,14 +913,17 @@ public partial class TimelineEditor : UserControl
 
         if (mode == PlaybackMode.Video)
         {
-            var playbackWindow = GetOrCreatePlaybackWindow();
-            playbackWindow.Title = $"事件预览 · {_selection.EventNumber} {_selection.EventType}";
-            if (!playbackWindow.IsVisible)
-                playbackWindow.Show();
-            if (playbackWindow.WindowState == WindowState.Minimized)
-                playbackWindow.WindowState = WindowState.Normal;
-            playbackWindow.Activate();
-            playbackWindow.PlaybackImageElement.Source = null;
+            if (_inlineVideoFrame == null)
+            {
+                var playbackWindow = GetOrCreatePlaybackWindow();
+                playbackWindow.Title = $"事件预览 · {_selection.EventNumber} {_selection.EventType}";
+                if (!playbackWindow.IsVisible)
+                    playbackWindow.Show();
+                if (playbackWindow.WindowState == WindowState.Minimized)
+                    playbackWindow.WindowState = WindowState.Normal;
+                playbackWindow.Activate();
+                playbackWindow.PlaybackImageElement.Source = null;
+            }
 
             var playbackVersion = _playbackVersion;
             var cancellation = new CancellationTokenSource();
@@ -941,7 +946,7 @@ public partial class TimelineEditor : UserControl
                     return;
                 }
 
-                playbackWindow.PlaybackImageElement.Source = firstFrame;
+                ShowVideoPlaybackFrame(firstFrame);
                 _lastVideoFrame = _selection.StartFrame;
             }
             catch (OperationCanceledException)
@@ -1031,7 +1036,7 @@ public partial class TimelineEditor : UserControl
             _selection == null ||
             _videoPlaybackLoader == null ||
             _videoPlaybackCancellation == null ||
-            _videoPlaybackWindow == null)
+            (_inlineVideoFrame == null && _videoPlaybackWindow == null))
             return;
 
         var frame = Math.Clamp(
@@ -1053,8 +1058,8 @@ public partial class TimelineEditor : UserControl
                 playbackVersion == _playbackVersion &&
                 _playbackMode == PlaybackMode.Video &&
                 ReferenceEquals(loader, _videoPlaybackLoader) &&
-                _videoPlaybackWindow != null)
-                _videoPlaybackWindow.PlaybackImageElement.Source = source;
+                (_inlineVideoFrame != null || _videoPlaybackWindow != null))
+                ShowVideoPlaybackFrame(source);
         }
         catch (OperationCanceledException)
         {
@@ -1067,6 +1072,12 @@ public partial class TimelineEditor : UserControl
             if (playbackVersion == _playbackVersion)
                 _videoFrameLoading = false;
         }
+    }
+
+    private void ShowVideoPlaybackFrame(ImageSource source)
+    {
+        if (_inlineVideoFrame != null) _inlineVideoFrame(source);
+        else if (_videoPlaybackWindow != null) _videoPlaybackWindow.PlaybackImageElement.Source = source;
     }
 
     private void UpdatePlaybackStatus(TimeSpan position)
@@ -1087,6 +1098,7 @@ public partial class TimelineEditor : UserControl
 
     private void StopPlayback(string status = "", bool keepVideoPreview = false)
     {
+        _inlineVideoFrame = null;
         _playbackMode = PlaybackMode.None;
         _playbackVersion++;
         _playbackTimer.Stop();
