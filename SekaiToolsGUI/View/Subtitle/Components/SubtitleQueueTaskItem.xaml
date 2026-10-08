@@ -15,15 +15,30 @@
             </ui:Card>
         </DataTemplate>
     </UserControl.Resources>
-    <Border Padding="10" Margin="0,0,6,6" CornerRadius="8"
+    <Border x:Name="TaskBorder" Padding="10" Margin="0,0,6,6" CornerRadius="8"
             Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
         <Border.Style>
             <Style TargetType="Border">
-                <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
-                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorNeutralBrush}" />
+                <Setter Property="BorderThickness" Value="2" />
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                        <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                        <Setter Property="BorderThickness" Value="3" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding State.IsRunning}" Value="True">
+                        <Setter Property="BorderBrush" Value="DodgerBlue" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding State.IsFinished}" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding State.IsCanceled}" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding State.IsFailed}" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding State.IsPartial}" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}" />
                     </DataTrigger>
                 </Style.Triggers>
             </Style>

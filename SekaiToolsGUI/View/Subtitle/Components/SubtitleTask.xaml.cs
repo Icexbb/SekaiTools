@@ -138,7 +138,7 @@ public partial class SubtitleTask : UserControl
             ViewModel.MarkerTotal = VideoProcessor.ContentLength.Marker;
             ViewModel.HasNotStarted = false;
             var resultReport = VideoProcessor.ResultReport;
-            var isPartial = resultReport.Outcome != ProcessingOutcome.Complete;
+            var isPartial = resultReport.Outcome != ProcessingOutcome.Complete || !resultReport.CanExport;
             ViewModel.IsFinished = !isPartial;
             ViewModel.IsCanceled = state.StopReason == ProcessStopReason.Canceled;
             ViewModel.IsFailed = isPartial && !ViewModel.IsCanceled && !resultReport.CanExport;
@@ -616,7 +616,8 @@ public partial class SubtitleTask
                                     ControlAppearance.Info,
                                     new SymbolIcon(SymbolRegular.Info24), new TimeSpan(0, 0, 4));
                             }
-                            else if (stopReason == ProcessStopReason.Completed)
+                            else if (stopReason == ProcessStopReason.Completed &&
+                                     resultReport is { Outcome: ProcessingOutcome.Complete, CanExport: true })
                             {
                                 ViewModel.IsFinished = true;
                                 ProcessView.ProgressBarProgression.Value = 1;
@@ -649,6 +650,7 @@ public partial class SubtitleTask
                                     ProcessView.ProgressBarProgression.Value);
                                 var errorMsg = stopReason switch
                                 {
+                                    ProcessStopReason.Completed => "未识别到可导出的字幕事件",
                                     ProcessStopReason.ReadFailed => "视频读帧失败",
                                     ProcessStopReason.ExceptionThreshold => "异常过多，自动中止",
                                     ProcessStopReason.CaptureError => "视频捕获设备出错",
