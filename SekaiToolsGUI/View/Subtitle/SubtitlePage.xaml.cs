@@ -1,6 +1,8 @@
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Shell;
 using GongSolutions.Wpf.DragDrop;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
@@ -24,6 +26,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
     private bool _preparingResources;
     private bool _checkedSavedProgress;
     private bool _closing;
+    private SubtitlePageModel? _selectedState;
 
     public SubtitlePage()
     {
@@ -37,6 +40,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
             ShowError("字幕任务失败", exception);
         };
         DataContext = new SubtitleQueuePageModel(_queue);
+        ViewModel.PropertyChanged += QueuePageModel_OnPropertyChanged;
         InitializeComponent();
         GongDragDrop.SetDropHandler(PendingTasksList, new PendingTasksDropHandler(_queue));
         _instance = this;
@@ -50,6 +54,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
 
     public async void OnNavigatedTo()
     {
+        RefreshSelectedTaskWindowState();
         if (_preparingResources || _closing || ViewModel.ResourcesReady) return;
         _preparingResources = true;
         try
@@ -125,12 +130,45 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
         catch (Exception exception) { ShowError("字幕队列异常", exception); }
     }
 
-    private async Task RunTaskAsync(SubtitleQueueTaskModel task)
+    private static Task RunTaskAsync(SubtitleQueueTaskModel task) => task.Control.RunAsync(task.SavedState);
+
+    private void QueuePageModel_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        var control = task.Control;
-        control.IsQueueActive = true;
-        try { await control.RunAsync(task.SavedState); }
-        finally { control.IsQueueActive = false; }
+        if (e.PropertyName != nameof(SubtitleQueuePageModel.SelectedTask)) return;
+        if (_selectedState != null) _selectedState.PropertyChanged -= SelectedTaskState_OnPropertyChanged;
+        _selectedState = ViewModel.SelectedTask?.State;
+        if (_selectedState != null) _selectedState.PropertyChanged += SelectedTaskState_OnPropertyChanged;
+        RefreshSelectedTaskWindowState();
+    }
+
+    private void SelectedTaskState_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(SubtitlePageModel.Progress) or nameof(SubtitlePageModel.RunningStatus)
+            or nameof(SubtitlePageModel.VideoFileName))
+            RefreshSelectedTaskWindowState();
+    }
+
+    private void RefreshSelectedTaskWindowState()
+    {
+        if (_closing || Application.Current.MainWindow is not MainWindow window) return;
+        var task = ViewModel.SelectedTask;
+        if (task == null)
+        {
+            window.SetWindowTitle("");
+            window.SetTaskbarProgressState(TaskbarItemProgressState.None, 0);
+            return;
+        }
+
+        var state = task.State;
+        window.SetWindowTitle($"{task.Status} - {task.VideoName}");
+        var progressState = state.IsCanceled || state.IsPartial ? TaskbarItemProgressState.Paused
+            : state.IsFinished ? TaskbarItemProgressState.Normal
+            : state.IsFailed ? TaskbarItemProgressState.Error
+            : state.IsCanceling ? TaskbarItemProgressState.Paused
+            : state.IsRunning ? TaskbarItemProgressState.Normal
+            : TaskbarItemProgressState.None;
+        window.SetTaskbarProgressState(progressState,
+            state.IsFinished ? 1 : progressState == TaskbarItemProgressState.None ? 0 : state.Progress);
     }
 
     private async void HistoryButton_OnClick(object sender, RoutedEventArgs e)
@@ -186,6 +224,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
         task.Control.CanDeleteSavedProgress = () => !task.IsHistory && !_queue.PendingTasks
             .Concat(_queue.ProcessingTasks).Any(other => SameMaterials(other.State, task.State));
         ViewModel.SelectedTask = task;
+        RefreshSelectedTaskWindowState();
     }
 
     private void TaskItem_OnSelected(object? sender, EventArgs e)
@@ -240,6 +279,10 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
     {
         if (_instance is not { } page) return;
         page._closing = true;
+        page.ViewModel.PropertyChanged -= page.QueuePageModel_OnPropertyChanged;
+        if (page._selectedState != null)
+            page._selectedState.PropertyChanged -= page.SelectedTaskState_OnPropertyChanged;
+        page._selectedState = null;
         var stopped = page._queue.StopAsync();
         foreach (var task in page._queue.ProcessingTasks) task.CreatedControl?.RequestStop();
         await stopped;

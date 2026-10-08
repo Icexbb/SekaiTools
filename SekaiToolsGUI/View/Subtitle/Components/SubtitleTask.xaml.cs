@@ -6,7 +6,6 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Shell;
 using Emgu.CV;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
@@ -35,7 +34,6 @@ public partial class SubtitleTask : UserControl
     private readonly DispatcherBatchQueue _resultQueue;
     private bool _previewEnabled;
     private bool _disposed;
-    internal bool IsQueueActive { get; set; }
     internal Func<bool>? CanDeleteSavedProgress { get; set; }
     public event EventHandler? RemoveRequested;
 
@@ -59,7 +57,6 @@ public partial class SubtitleTask : UserControl
     }
 
     internal void RequestStop() => VideoProcessor?.StopProcess();
-
     internal async Task DisposeAsync()
     {
         if (_disposed) return;
@@ -150,9 +147,6 @@ public partial class SubtitleTask : UserControl
             ProcessView.ProgressBarProgression.Maximum = 1;
             ViewModel.Progress = ProcessView.ProgressBarProgression.Value;
             ProcessView.TextBlockProgression.Text = $"{ProcessView.ProgressBarProgression.Value:P}";
-            SetVideoProcessWindowTitle(isPartial ? "部分完成" : "已完成");
-            SetTaskbarProgressState(isPartial ? TaskbarItemProgressState.Paused : TaskbarItemProgressState.Normal,
-                ProcessView.ProgressBarProgression.Value);
         }
         catch (Exception ex)
         {
@@ -163,8 +157,6 @@ public partial class SubtitleTask : UserControl
             ViewModel.IsPartial = false;
             ViewModel.IsFailed = true;
             ViewModel.HasNotStarted = false;
-            SetVideoProcessWindowTitle("处理失败");
-            SetTaskbarProgressState(TaskbarItemProgressState.Error, ProcessView.ProgressBarProgression.Value);
             SnackService.Show("错误", $"加载历史记录失败: {ex.Message}", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 5));
         }
@@ -193,8 +185,6 @@ public partial class SubtitleTask : UserControl
         try
         {
             await ReleaseProcessorAsync();
-            SetVideoProcessWindowTitle("");
-            SetTaskbarProgressState(TaskbarItemProgressState.None, 0);
             ViewModel.Reset();
             ProcessView.LinePanel.Children.Clear();
             ProcessView.EventTimelineEditor.ClearSelection();
@@ -235,8 +225,6 @@ public partial class SubtitleTask : UserControl
     private void StopButton_OnClick(object sender, RoutedEventArgs e)
     {
         StopProcess();
-        SetVideoProcessWindowTitle("正在取消");
-        SetTaskbarProgressState(TaskbarItemProgressState.Paused, ProcessView.ProgressBarProgression.Value);
         ViewModel.IsCanceling = true;
     }
 
@@ -493,19 +481,6 @@ public partial class SubtitleTask
         VideoProcessor?.StopProcess();
     }
 
-    private void SetVideoProcessWindowTitle(string status)
-    {
-        if (!IsQueueActive) return;
-        (Application.Current.MainWindow as MainWindow)?.SetWindowTitle(
-            $"{status} - {Path.GetFileName(ViewModel.VideoFilePath)}");
-    }
-
-    private void SetTaskbarProgressState(TaskbarItemProgressState state, double value)
-    {
-        if (!IsQueueActive) return;
-        (Application.Current.MainWindow as MainWindow)?.SetTaskbarProgressState(state, value);
-    }
-
     private static string BuildStaffLineText(SaveFileDialogModel model)
     {
         if (model.StaffLineTime <= 0) return string.Empty;
@@ -608,9 +583,6 @@ public partial class SubtitleTask
                             if (stopReason == ProcessStopReason.Canceled)
                             {
                                 ViewModel.IsCanceled = true;
-                                SetVideoProcessWindowTitle("已取消");
-                                SetTaskbarProgressState(TaskbarItemProgressState.Paused,
-                                    ProcessView.ProgressBarProgression.Value);
                                 Logger.Log("处理已由用户取消，可输出当前结果");
                                 SnackService.Show("提示", "处理已取消，可以输出当前结果进行人工复核",
                                     ControlAppearance.Info,
@@ -624,8 +596,6 @@ public partial class SubtitleTask
                                 ViewModel.Progress = 1;
                                 ProcessView.ProgressBarProgression.Maximum = 1;
                                 ProcessView.TextBlockProgression.Text = $"{1:P}";
-                                SetVideoProcessWindowTitle("已完成");
-                                SetTaskbarProgressState(TaskbarItemProgressState.Normal, 1);
                                 Logger.Log("处理成功完成");
                                 SnackService.Show("成功", "运行结束", ControlAppearance.Success,
                                     new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
@@ -633,9 +603,6 @@ public partial class SubtitleTask
                             else if (resultReport is { CanExport: true })
                             {
                                 ViewModel.IsPartial = true;
-                                SetVideoProcessWindowTitle("部分完成");
-                                SetTaskbarProgressState(TaskbarItemProgressState.Paused,
-                                    ProcessView.ProgressBarProgression.Value);
                                 Logger.Log($"处理部分完成: {resultReport.Summary}", LogLevel.Warning);
                                 SnackService.Show("警告",
                                     $"处理未完整结束，已识别 {resultReport.RecognizedTotal}/{resultReport.Total} 项，可输出当前结果进行人工复核",
@@ -645,9 +612,6 @@ public partial class SubtitleTask
                             else
                             {
                                 ViewModel.IsFailed = true;
-                                SetVideoProcessWindowTitle("处理失败");
-                                SetTaskbarProgressState(TaskbarItemProgressState.Error,
-                                    ProcessView.ProgressBarProgression.Value);
                                 var errorMsg = stopReason switch
                                 {
                                     ProcessStopReason.Completed => "未识别到可导出的字幕事件",
@@ -669,9 +633,6 @@ public partial class SubtitleTask
                     {
                         Dispatcher.Invoke(() =>
                         {
-                            SetVideoProcessWindowTitle("处理中");
-                            SetTaskbarProgressState(TaskbarItemProgressState.Normal,
-                                ProcessView.ProgressBarProgression.Value);
                             ViewModel.IsFinished = false;
                             ViewModel.IsCanceled = false;
                             ViewModel.IsFailed = false;
@@ -755,8 +716,6 @@ public partial class SubtitleTask
             ViewModel.IsPartial = false;
             ViewModel.IsFailed = true;
             ViewModel.HasNotStarted = false;
-            SetVideoProcessWindowTitle("处理失败");
-            SetTaskbarProgressState(TaskbarItemProgressState.Error, ProcessView.ProgressBarProgression.Value);
             Logger.Log($"初始化视频处理器失败: {ex.Message}", LogLevel.Error);
             SnackService.Show("错误", $"初始化视频处理器失败: {ex.Message}", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 5));
@@ -815,7 +774,6 @@ public partial class SubtitleTask
                     ViewModel.Progress = value;
                     ProcessView.ProgressBarProgression.Maximum = 1;
                     ProcessView.TextBlockProgression.Text = $"{value:P}";
-                    if (IsQueueActive) (Application.Current.MainWindow as MainWindow)?.SetTaskbarProgressValue(value);
                 });
             });
     }
