@@ -5,12 +5,10 @@ using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shell;
 using Emgu.CV;
 using Microsoft.Extensions.Logging;
-using Microsoft.Win32;
 using SekaiToolsBase;
 using SekaiToolsBase.SubStationAlpha;
 using SekaiToolsCore;
@@ -28,25 +26,18 @@ using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
 using MessageBox = Wpf.Ui.Controls.MessageBox;
 using SaveFileDialog = SekaiToolsGUI.View.Subtitle.Components.SaveFileDialog;
-using TextBox = System.Windows.Controls.TextBox;
 
 namespace SekaiToolsGUI.View.Subtitle.Components;
 
 public partial class SubtitleTask : UserControl
 {
-    private bool _shortLayout;
     private bool _isResetting;
     private readonly DispatcherBatchQueue _resultQueue;
     private bool _previewEnabled;
 
     private void SubtitleTask_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        var shortLayout = e.NewSize.Height < 700;
-        if (shortLayout && !_shortLayout && EventTimelineEditor != null)
-            EventTimelineEditor.ViewModel.ShowTimeLine = false;
-        if (TimelineViewport != null)
-            TimelineViewport.MaxHeight = shortLayout ? Math.Max(60, e.NewSize.Height - 330) : double.PositiveInfinity;
-        _shortLayout = shortLayout;
+        ProcessView?.UpdateViewport(e.NewSize.Height);
     }
 
     public SubtitleTask()
@@ -59,7 +50,7 @@ public partial class SubtitleTask : UserControl
             if (args.PropertyName == nameof(SubtitlePageModel.ShowPreview))
                 Volatile.Write(ref _previewEnabled, ViewModel.ShowPreview);
         };
-        _resultQueue = new DispatcherBatchQueue(Dispatcher, () => EventTimelineEditor.DeferRendering());
+        _resultQueue = new DispatcherBatchQueue(Dispatcher, () => ProcessView.EventTimelineEditor.DeferRendering());
         SubscribeFpsChange();
         SubscribeProgressChange();
     }
@@ -69,83 +60,6 @@ public partial class SubtitleTask : UserControl
         (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
 
     public SubtitlePageModel ViewModel => (SubtitlePageModel)DataContext;
-
-
-    private static string? SelectFile(object sender, RoutedEventArgs e, string filter)
-    {
-        var openFileDialog = new OpenFileDialog { Filter = filter };
-        var result = openFileDialog.ShowDialog();
-        return result == true ? openFileDialog.FileName : null;
-    }
-
-    private async Task SelectSameNameFile(string filename)
-    {
-        var fileExt = Path.GetExtension(filename).ToLower();
-
-        string[] videoExt = [".mp4", ".avi", ".mkv", ".webm", ".wmv"];
-        string[] jsonExt = [".json", ".asset"];
-        string[] txtExt = [".txt"];
-
-        if (videoExt.Contains(fileExt))
-        {
-            ViewModel.VideoFilePath = filename;
-
-            var translatePath = txtExt.Select(te => Path.ChangeExtension(filename, te)).FirstOrDefault(File.Exists);
-            var scriptPath = jsonExt.Select(se => Path.ChangeExtension(filename, se)).FirstOrDefault(File.Exists);
-
-            if (scriptPath == null && translatePath == null) return;
-
-            var dialogResult = await ShowDialog();
-            if (!dialogResult) return;
-            if (scriptPath != null) ViewModel.ScriptFilePath = scriptPath;
-            if (translatePath != null) ViewModel.TranslateFilePath = translatePath;
-        }
-        else if (jsonExt.Contains(fileExt))
-        {
-            ViewModel.ScriptFilePath = filename;
-
-            var videoPath = videoExt.Select(ve => Path.ChangeExtension(filename, ve)).FirstOrDefault(File.Exists);
-            var translatePath = txtExt.Select(te => Path.ChangeExtension(filename, te)).FirstOrDefault(File.Exists);
-
-            if (videoPath == null && translatePath == null) return;
-
-            var dialogResult = await ShowDialog();
-            if (!dialogResult) return;
-            if (videoPath != null) ViewModel.VideoFilePath = videoPath;
-            if (translatePath != null) ViewModel.TranslateFilePath = translatePath;
-        }
-        else if (txtExt.Contains(fileExt))
-        {
-            ViewModel.TranslateFilePath = filename;
-
-            var videoPath = videoExt.Select(ve => Path.ChangeExtension(filename, ve)).FirstOrDefault(File.Exists);
-            var scriptPath = jsonExt.Select(se => Path.ChangeExtension(filename, se)).FirstOrDefault(File.Exists);
-
-            if (videoPath == null && scriptPath == null) return;
-
-            var dialogResult = await ShowDialog();
-            if (!dialogResult) return;
-            if (videoPath != null) ViewModel.VideoFilePath = videoPath;
-            if (scriptPath != null) ViewModel.ScriptFilePath = scriptPath;
-        }
-
-        return;
-
-        async Task<bool> ShowDialog()
-        {
-            var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-            var token = new CancellationToken();
-            var dialogResult = await dialogService.ShowSimpleDialogAsync(
-                new SimpleContentDialogCreateOptions
-                {
-                    Title = "提示",
-                    Content = "在该文件处发现了同名的文件，是否自动引入作为处理文件？",
-                    PrimaryButtonText = "是",
-                    CloseButtonText = "否"
-                }, token);
-            return dialogResult == ContentDialogResult.Primary;
-        }
-    }
 
     private async Task CheckSavedProgressOnStartup()
     {
@@ -224,8 +138,8 @@ public partial class SubtitleTask : UserControl
         }
         else if (result == ContentDialogResult.Primary && dialog.SelectedEntry != null)
         {
-            LinePanel.Children.Clear();
-            EventTimelineEditor.ClearSelection();
+            ProcessView.LinePanel.Children.Clear();
+            ProcessView.EventTimelineEditor.ClearSelection();
             ViewModel.DialogCurrent = 0;
             ViewModel.BannerCurrent = 0;
             ViewModel.MarkerCurrent = 0;
@@ -276,14 +190,14 @@ public partial class SubtitleTask : UserControl
             ViewModel.IsFinished = !isPartial;
             ViewModel.IsPartial = isPartial;
             var frameCount = state.Metadata?.VideoInfo.FrameCount ?? 0;
-            ProgressBarProgression.Value = isPartial && frameCount > 0
+            ProcessView.ProgressBarProgression.Value = isPartial && frameCount > 0
                 ? Math.Clamp((double)state.FrameIndex / frameCount, 0, 1)
                 : 1;
-            ProgressBarProgression.Maximum = 1;
-            TextBlockProgression.Text = $"{ProgressBarProgression.Value:P}";
+            ProcessView.ProgressBarProgression.Maximum = 1;
+            ProcessView.TextBlockProgression.Text = $"{ProcessView.ProgressBarProgression.Value:P}";
             SetVideoProcessWindowTitle(isPartial ? "部分完成" : "已完成");
             SetTaskbarProgressState(isPartial ? TaskbarItemProgressState.Paused : TaskbarItemProgressState.Normal,
-                ProgressBarProgression.Value);
+                ProcessView.ProgressBarProgression.Value);
         }
         catch (Exception ex)
         {
@@ -295,34 +209,10 @@ public partial class SubtitleTask : UserControl
             ViewModel.IsFailed = true;
             ViewModel.HasNotStarted = false;
             SetVideoProcessWindowTitle("处理失败");
-            SetTaskbarProgressState(TaskbarItemProgressState.Error, ProgressBarProgression.Value);
+            SetTaskbarProgressState(TaskbarItemProgressState.Error, ProcessView.ProgressBarProgression.Value);
             SnackService.Show("错误", $"加载历史记录失败: {ex.Message}", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 5));
         }
-    }
-
-    private async void VideoFileBrowser_OnClick(object sender, RoutedEventArgs e)
-    {
-        var result = SelectFile(sender, e, "视频文件|*.mp4;*.avi;*.mkv;*.webm;*.wmv");
-        if (result == null) return;
-
-        await SelectSameNameFile(result);
-    }
-
-    private async void ScriptFileBrowser_OnClick(object sender, RoutedEventArgs e)
-    {
-        var result = SelectFile(sender, e, "剧情脚本文件|*.json;*.asset");
-        if (result == null) return;
-
-        await SelectSameNameFile(result);
-    }
-
-    private async void TranslationFileBrowser_OnClick(object sender, RoutedEventArgs e)
-    {
-        var result = SelectFile(sender, e, "剧情翻译文件|*.txt");
-        if (result == null) return;
-
-        await SelectSameNameFile(result);
     }
 
     private async void ResetButton_OnClick(object sender, RoutedEventArgs e)
@@ -351,12 +241,12 @@ public partial class SubtitleTask : UserControl
             (Application.Current.MainWindow as MainWindow)?.SetWindowTitle("");
             SetTaskbarProgressState(TaskbarItemProgressState.None, 0);
             ViewModel.Reset();
-            LinePanel.Children.Clear();
-            EventTimelineEditor.ClearSelection();
-            TextBlockProgression.Text = "";
-            TextBlockFps.Text = "";
-            TextBlockEta.Text = "";
-            ProgressBarProgression.Value = 0;
+            ProcessView.LinePanel.Children.Clear();
+            ProcessView.EventTimelineEditor.ClearSelection();
+            ProcessView.TextBlockProgression.Text = "";
+            ProcessView.TextBlockFps.Text = "";
+            ProcessView.TextBlockEta.Text = "";
+            ProcessView.ProgressBarProgression.Value = 0;
             await TaskMemoryCleanup.AfterResetAsync(Dispatcher);
         }
         finally
@@ -391,7 +281,7 @@ public partial class SubtitleTask : UserControl
     {
         StopProcess();
         SetVideoProcessWindowTitle("正在取消");
-        SetTaskbarProgressState(TaskbarItemProgressState.Paused, ProgressBarProgression.Value);
+        SetTaskbarProgressState(TaskbarItemProgressState.Paused, ProcessView.ProgressBarProgression.Value);
         ViewModel.IsCanceling = true;
     }
 
@@ -463,11 +353,11 @@ public partial class SubtitleTask : UserControl
     private void LinePanel_InsertInOriginalOrder(UIElement line, int eventIndex)
     {
         var insertionIndex = 0;
-        while (insertionIndex < LinePanel.Children.Count &&
-               GetLineEventIndex(LinePanel.Children[insertionIndex]) <= eventIndex)
+        while (insertionIndex < ProcessView.LinePanel.Children.Count &&
+               GetLineEventIndex(ProcessView.LinePanel.Children[insertionIndex]) <= eventIndex)
             insertionIndex++;
 
-        LinePanel.Children.Insert(insertionIndex, line);
+        ProcessView.LinePanel.Children.Insert(insertionIndex, line);
     }
 
     private static int GetLineEventIndex(UIElement line)
@@ -486,7 +376,7 @@ public partial class SubtitleTask : UserControl
     {
         _resultQueue.Enqueue(() =>
         {
-            var needScroll = Math.Abs(LineViewer.ScrollableHeight - LineViewer.VerticalOffset) < 1;
+            var needScroll = Math.Abs(ProcessView.LineViewer.ScrollableHeight - ProcessView.LineViewer.VerticalOffset) < 1;
             var line = new DialogLine(set)
             {
                 Margin = new Thickness(5, 5, 10, 5)
@@ -494,14 +384,14 @@ public partial class SubtitleTask : UserControl
             if (GeneralFunctionSwitch.EventTimeline)
             {
                 var timelineEvent = CreateTimelineEvent(line);
-                EventTimelineEditor.RegisterEvent(timelineEvent);
-                line.TimelineRequested += (_, _) => EventTimelineEditor.SelectEvent(timelineEvent);
+                ProcessView.EventTimelineEditor.RegisterEvent(timelineEvent);
+                line.TimelineRequested += (_, _) => ProcessView.EventTimelineEditor.SelectEvent(timelineEvent);
             }
 
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.DialogCurrent++;
-            RefreshContentVisibility();
-            if (needScroll) LineViewer.ScrollToEnd();
+            ProcessView.RefreshContentVisibility();
+            if (needScroll) ProcessView.LineViewer.ScrollToEnd();
         });
     }
 
@@ -510,7 +400,7 @@ public partial class SubtitleTask : UserControl
     {
         _resultQueue.Enqueue(() =>
         {
-            var needScroll = Math.Abs(LineViewer.ScrollableHeight - LineViewer.VerticalOffset) < 1;
+            var needScroll = Math.Abs(ProcessView.LineViewer.ScrollableHeight - ProcessView.LineViewer.VerticalOffset) < 1;
 
             var line = new BannerLine(set)
             {
@@ -519,14 +409,14 @@ public partial class SubtitleTask : UserControl
             if (GeneralFunctionSwitch.EventTimeline)
             {
                 var timelineEvent = CreateTimelineEvent(line);
-                EventTimelineEditor.RegisterEvent(timelineEvent);
-                line.TimelineRequested += (_, _) => EventTimelineEditor.SelectEvent(timelineEvent);
+                ProcessView.EventTimelineEditor.RegisterEvent(timelineEvent);
+                line.TimelineRequested += (_, _) => ProcessView.EventTimelineEditor.SelectEvent(timelineEvent);
             }
 
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.BannerCurrent++;
-            RefreshContentVisibility();
-            if (needScroll) LineViewer.ScrollToEnd();
+            ProcessView.RefreshContentVisibility();
+            if (needScroll) ProcessView.LineViewer.ScrollToEnd();
         });
     }
 
@@ -534,7 +424,7 @@ public partial class SubtitleTask : UserControl
     {
         _resultQueue.Enqueue(() =>
         {
-            var needScroll = Math.Abs(LineViewer.ScrollableHeight - LineViewer.VerticalOffset) < 1;
+            var needScroll = Math.Abs(ProcessView.LineViewer.ScrollableHeight - ProcessView.LineViewer.VerticalOffset) < 1;
 
             var line = new MarkerLine(set)
             {
@@ -543,14 +433,14 @@ public partial class SubtitleTask : UserControl
             if (GeneralFunctionSwitch.EventTimeline)
             {
                 var timelineEvent = CreateTimelineEvent(line);
-                EventTimelineEditor.RegisterEvent(timelineEvent);
-                line.TimelineRequested += (_, _) => EventTimelineEditor.SelectEvent(timelineEvent);
+                ProcessView.EventTimelineEditor.RegisterEvent(timelineEvent);
+                line.TimelineRequested += (_, _) => ProcessView.EventTimelineEditor.SelectEvent(timelineEvent);
             }
 
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.MarkerCurrent++;
-            RefreshContentVisibility();
-            if (needScroll) LineViewer.ScrollToEnd();
+            ProcessView.RefreshContentVisibility();
+            if (needScroll) ProcessView.LineViewer.ScrollToEnd();
         });
     }
 
@@ -611,8 +501,8 @@ public partial class SubtitleTask : UserControl
         var durationMilliseconds = fps > 0
             ? (int)Math.Ceiling(videoInfo.FrameCount * 1000d / fps)
             : 0;
-        EventTimelineEditor.SetVideoDuration(durationMilliseconds);
-        _ = EventTimelineEditor.LoadAudioWaveformAsync(videoInfo.Path);
+        ProcessView.EventTimelineEditor.SetVideoDuration(durationMilliseconds);
+        _ = ProcessView.EventTimelineEditor.LoadAudioWaveformAsync(videoInfo.Path);
     }
 
 
@@ -663,67 +553,6 @@ public partial class SubtitleTask : UserControl
         }
     }
 
-
-    private async void UIElement_OnDrop(object sender, DragEventArgs e)
-    {
-        var data = e.Data.GetData(DataFormats.FileDrop)!;
-        var fileName = ((Array)data).GetValue(0)!.ToString();
-        if (!File.Exists(fileName)) return;
-
-        await GetSameBaseFile(fileName);
-    }
-
-    private async Task GetSameBaseFile(string filename)
-    {
-        var fileExt = Path.GetExtension(filename).ToLower();
-        List<string> vExt = [".mp4", ".avi", ".mkv", ".webm", ".wmv"];
-        List<string> sExt = [".json", ".asset"];
-        List<string> tExt = [".txt"];
-        if (vExt.Contains(fileExt) || sExt.Contains(fileExt) || tExt.Contains(fileExt))
-            await SelectSameNameFile(filename);
-        else
-            SnackService.Show("错误", "文件格式不支持", ControlAppearance.Danger,
-                new SymbolIcon(SymbolRegular.DocumentError24),
-                new TimeSpan(0, 0, 3));
-    }
-
-    private void UIElement_OnDragEnter(object sender, DragEventArgs e)
-    {
-        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
-            ? DragDropEffects.Link
-            : DragDropEffects.None;
-    }
-
-
-    private void RefreshContentVisibility()
-    {
-        foreach (var child in LinePanel.Children)
-            switch (child)
-            {
-                case DialogLine dialogLine:
-                    var lineCount = dialogLine.ViewModel.RawContent.Split("\n").Length;
-                    dialogLine.Visibility = lineCount switch
-                    {
-                        1 => ViewModel is { ShowDialog: true, ShowDialogLine1: true }
-                            ? Visibility.Visible
-                            : Visibility.Collapsed,
-                        2 => ViewModel is { ShowDialog: true, ShowDialogLine2: true }
-                            ? Visibility.Visible
-                            : Visibility.Collapsed,
-                        3 => ViewModel is { ShowDialog: true, ShowDialogLine3: true }
-                            ? Visibility.Visible
-                            : Visibility.Collapsed,
-                        _ => dialogLine.Visibility
-                    };
-                    break;
-                case BannerLine bannerLine:
-                    bannerLine.Visibility = ViewModel.ShowBanner ? Visibility.Visible : Visibility.Collapsed;
-                    break;
-                case MarkerLine markerLine:
-                    markerLine.Visibility = ViewModel.ShowMarker ? Visibility.Visible : Visibility.Collapsed;
-                    break;
-            }
-    }
 }
 
 public partial class SubtitleTask
@@ -833,7 +662,7 @@ public partial class SubtitleTask
         List<BannerBaseFrameSet> bannerFrameSets = [];
         List<DialogBaseFrameSet> dialogFrameSets = [];
         List<MarkerBaseFrameSet> markerFrameSets = [];
-        foreach (var child in LinePanel.Children)
+        foreach (var child in ProcessView.LinePanel.Children)
             switch (child)
             {
                 case DialogLine dialogLine:
@@ -911,7 +740,7 @@ public partial class SubtitleTask
                                 ViewModel.IsCanceled = true;
                                 SetVideoProcessWindowTitle("已取消");
                                 SetTaskbarProgressState(TaskbarItemProgressState.Paused,
-                                    ProgressBarProgression.Value);
+                                    ProcessView.ProgressBarProgression.Value);
                                 Logger.Log("处理已由用户取消，可输出当前结果");
                                 SnackService.Show("提示", "处理已取消，可以输出当前结果进行人工复核",
                                     ControlAppearance.Info,
@@ -920,9 +749,9 @@ public partial class SubtitleTask
                             else if (stopReason == ProcessStopReason.Completed)
                             {
                                 ViewModel.IsFinished = true;
-                                ProgressBarProgression.Value = 1;
-                                ProgressBarProgression.Maximum = 1;
-                                TextBlockProgression.Text = $"{1:P}";
+                                ProcessView.ProgressBarProgression.Value = 1;
+                                ProcessView.ProgressBarProgression.Maximum = 1;
+                                ProcessView.TextBlockProgression.Text = $"{1:P}";
                                 SetVideoProcessWindowTitle("已完成");
                                 SetTaskbarProgressState(TaskbarItemProgressState.Normal, 1);
                                 Logger.Log("处理成功完成");
@@ -934,7 +763,7 @@ public partial class SubtitleTask
                                 ViewModel.IsPartial = true;
                                 SetVideoProcessWindowTitle("部分完成");
                                 SetTaskbarProgressState(TaskbarItemProgressState.Paused,
-                                    ProgressBarProgression.Value);
+                                    ProcessView.ProgressBarProgression.Value);
                                 Logger.Log($"处理部分完成: {resultReport.Summary}", LogLevel.Warning);
                                 SnackService.Show("警告",
                                     $"处理未完整结束，已识别 {resultReport.RecognizedTotal}/{resultReport.Total} 项，可输出当前结果进行人工复核",
@@ -946,7 +775,7 @@ public partial class SubtitleTask
                                 ViewModel.IsFailed = true;
                                 SetVideoProcessWindowTitle("处理失败");
                                 SetTaskbarProgressState(TaskbarItemProgressState.Error,
-                                    ProgressBarProgression.Value);
+                                    ProcessView.ProgressBarProgression.Value);
                                 var errorMsg = stopReason switch
                                 {
                                     ProcessStopReason.ReadFailed => "视频读帧失败",
@@ -960,7 +789,7 @@ public partial class SubtitleTask
                                     new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
                             }
 
-                            TextBlockEta.Text = "";
+                            ProcessView.TextBlockEta.Text = "";
                         });
                     },
                     OnTaskStarted = () =>
@@ -969,7 +798,7 @@ public partial class SubtitleTask
                         {
                             SetVideoProcessWindowTitle("处理中");
                             SetTaskbarProgressState(TaskbarItemProgressState.Normal,
-                                ProgressBarProgression.Value);
+                                ProcessView.ProgressBarProgression.Value);
                             ViewModel.IsFinished = false;
                             ViewModel.IsCanceled = false;
                             ViewModel.IsFailed = false;
@@ -1054,7 +883,7 @@ public partial class SubtitleTask
             ViewModel.IsFailed = true;
             ViewModel.HasNotStarted = false;
             SetVideoProcessWindowTitle("处理失败");
-            SetTaskbarProgressState(TaskbarItemProgressState.Error, ProgressBarProgression.Value);
+            SetTaskbarProgressState(TaskbarItemProgressState.Error, ProcessView.ProgressBarProgression.Value);
             Logger.Log($"初始化视频处理器失败: {ex.Message}", LogLevel.Error);
             SnackService.Show("错误", $"初始化视频处理器失败: {ex.Message}", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 5));
@@ -1088,8 +917,8 @@ public partial class SubtitleTask
             {
                 Dispatcher.BeginInvoke(() =>
                 {
-                    TextBlockFps.Text = $"FPS: {x.Fps}";
-                    TextBlockEta.Text = x.Eta.TotalMilliseconds > 1000 ? $"ETA: {x.Eta.Remains()}" : "";
+                    ProcessView.TextBlockFps.Text = $"FPS: {x.Fps}";
+                    ProcessView.TextBlockEta.Text = x.Eta.TotalMilliseconds > 1000 ? $"ETA: {x.Eta.Remains()}" : "";
                 });
             });
     }
@@ -1108,103 +937,12 @@ public partial class SubtitleTask
                 {
                     if (!ViewModel.IsRunning) return;
 
-                    ProgressBarProgression.Value = value;
-                    ProgressBarProgression.Maximum = 1;
-                    TextBlockProgression.Text = $"{value:P}";
+                    ProcessView.ProgressBarProgression.Value = value;
+                    ProcessView.ProgressBarProgression.Maximum = 1;
+                    ProcessView.TextBlockProgression.Text = $"{value:P}";
                     (Application.Current.MainWindow as MainWindow)?.SetTaskbarProgressValue(value);
                 });
             });
     }
 
-
-    private void Control_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
-    {
-        ViewModel.ShowPreview = false;
-    }
-
-    private void ShowPreviewButton_OnClick(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ShowPreview = true;
-    }
-
-    private void DialogFilterBtn_OnClick(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ShowDialog = !ViewModel.ShowDialog;
-        RefreshContentVisibility();
-    }
-
-    private void DialogFilterLine1Btn_OnClick(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ShowDialogLine1 = !ViewModel.ShowDialogLine1;
-        RefreshContentVisibility();
-        e.Handled = true;
-    }
-
-    private void DialogFilterLine2Btn_OnClick(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ShowDialogLine2 = !ViewModel.ShowDialogLine2;
-        RefreshContentVisibility();
-        e.Handled = true;
-    }
-
-    private void DialogFilterLine3Btn_OnClick(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ShowDialogLine3 = !ViewModel.ShowDialogLine3;
-        RefreshContentVisibility();
-        e.Handled = true;
-    }
-
-
-    private void BannerFilterBtn_OnClick(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ShowBanner = !ViewModel.ShowBanner;
-        RefreshContentVisibility();
-    }
-
-    private void MarkerFilterBtn_OnClick(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ShowMarker = !ViewModel.ShowMarker;
-        RefreshContentVisibility();
-    }
-
-    private void VideoFileBtn_OnClick(object sender, RoutedEventArgs e)
-    {
-        ExplorerHelper.OpenFolderAndFocus(ViewModel.VideoFilePath);
-    }
-
-    private void ScriptFileBtn_OnClick(object sender, RoutedEventArgs e)
-    {
-        ExplorerHelper.OpenFolderAndFocus(ViewModel.ScriptFilePath);
-    }
-
-    private void TranslateFileBtn_OnClick(object sender, RoutedEventArgs e)
-    {
-        ExplorerHelper.OpenFolderAndFocus(ViewModel.TranslateFilePath);
-    }
-
-    private void BackToTopBtn_OnClick(object sender, RoutedEventArgs e)
-    {
-        LineViewer.ScrollToTop();
-    }
-
-    private void PreviewToggleBtn_OnClick(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ShowPreview = !ViewModel.ShowPreview;
-    }
-
-    private void BackToBottomBtn_OnClick(object sender, RoutedEventArgs e)
-    {
-        LineViewer.ScrollToBottom();
-    }
-
-    private void SubtitleTask_OnPreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key != Key.Z ||
-            !Keyboard.Modifiers.HasFlag(ModifierKeys.Control) ||
-            Keyboard.FocusedElement is TextBox)
-            return;
-
-        if (GeneralFunctionSwitch.EventTimeline && EventTimelineEditor.Undo())
-            e.Handled = true;
-    }
 }
