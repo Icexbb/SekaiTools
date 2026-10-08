@@ -18,16 +18,6 @@
       "EventStoryTemplate": "event_story/{abName}/scenario/{scenarioId}.asset",
       "SpecialStoryTemplate": "scenario/special/{abName}/{scenarioId}.asset",
       "UnitStoryTemplate": "scenario/unitstory/{abName}/{scenarioId}.asset"
-    },
-    {
-      "SourceName": "Haruki NEO",
-      "SourceTemplate": "https://sekai-master-direct.haruki.seiunx.com/haruki-sekai-master/master/{type}.json",
-      "StorageBaseUrl": "https://production-sekai-assets.neo.bot.haruki.seiunx.com/jp-assets/",
-      "ActionSetTemplate": "startapp/scenario/actionset/{abName}/{scenarioId}.json",
-      "MemberStoryTemplate": "startapp/character/member/{abName}/{scenarioId}.json",
-      "EventStoryTemplate": "ondemand/event_story/{abName}/scenario/{scenarioId}.json",
-      "SpecialStoryTemplate": "startapp/scenario/special/{abName}/{scenarioId}.json",
-      "UnitStoryTemplate": "startapp/scenario/unitstory/{abName}/{scenarioId}.json"
     }
   ]
 }
