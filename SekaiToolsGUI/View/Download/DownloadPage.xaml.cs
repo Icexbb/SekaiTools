@@ -31,6 +31,8 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     private readonly Dictionary<int, UserControl> _storyTabs = new();
     private readonly Dictionary<int, Task> _storyInitializationTasks = new();
     private int _selectionVersion;
+    private int _sourceVersion;
+    private static readonly object StoryDataLock = new();
 
     public DownloadPage()
     {
@@ -147,7 +149,17 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
             if (version != _selectionVersion) return;
             if (!_storyInitializationTasks.TryGetValue(index, out var initialization))
             {
-                initialization = Task.Run(() => InitializeStoryData(index));
+                var selectedSource = BoxSource.SelectedItem as SourceData ?? ViewModel.CurrentSource;
+                var sourceVersion = _sourceVersion;
+                initialization = Task.Run(() =>
+                {
+                    lock (StoryDataLock)
+                    {
+                        if (sourceVersion != _sourceVersion) return;
+                        Fetcher.Instance.SetSource(selectedSource);
+                        InitializeStoryData(index).ReloadFromCache();
+                    }
+                });
                 _storyInitializationTasks.Add(index, initialization);
             }
             await initialization;
@@ -169,7 +181,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         }
         catch (Exception exception)
         {
-            _storyInitializationTasks.Remove(index);
+            if (version == _selectionVersion) _storyInitializationTasks.Remove(index);
             Log.Logger.LogError(exception, "Download story tab {Index} initialization failed", index);
             if (version == _selectionVersion)
                 LoadingMessage.Text = "列表加载失败，请点击“刷新当前列表”重试。";
@@ -180,10 +192,10 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         }
     }
 
-    private static void InitializeStoryData(int index)
+    private static BaseListStory InitializeStoryData(int index)
     {
         // Accessing the singleton first loads and parses its local JSON cache.
-        _ = index switch
+        return index switch
         {
             0 => (BaseListStory)ListUnitStory.Instance,
             1 => ListEventStory.Instance,
@@ -194,9 +206,14 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         };
     }
 
-    private void DownloadPage_OnLoaded(object sender, RoutedEventArgs e)
+    private async void SourceSelector_OnSelected(object sender, SelectionChangedEventArgs e)
     {
-        BoxSource.SelectedIndex = 0;
+        if (BoxSource.SelectedItem is not SourceData || ContentCard == null) return;
+        ++_selectionVersion;
+        ++_sourceVersion;
+        _storyTabs.Clear();
+        _storyInitializationTasks.Clear();
+        await SelectIndexAsync(BoxStoryType.SelectedIndex);
     }
 
     private async void DownloadButton_OnClick(object sender, RoutedEventArgs e)
@@ -326,7 +343,10 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
                 ControlAppearance.Danger, new SymbolIcon(SymbolRegular.CloudDismiss24), TimeSpan.FromSeconds(5));
             Log.Logger.LogError(e, "{TypeName} InitDownloadSource Error", nameof(DownloadPage));
             ViewModel.SourceData = SourceData.Default;
-            if (Debugger.IsAttached) throw;
+        }
+        finally
+        {
+            BoxSource.SelectedIndex = 0;
         }
     }
 
@@ -344,6 +364,8 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         using var source = new CancellationTokenSource();
 
         button.IsEnabled = false;
+        BoxSource.IsEnabled = false;
+        BoxStoryType.IsEnabled = false;
         _ = dialogService.ShowAsync(dialog, source.Token);
         try
         {
@@ -360,6 +382,8 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         finally
         {
             await source.CancelAsync();
+            BoxSource.IsEnabled = true;
+            BoxStoryType.IsEnabled = true;
             button.IsEnabled = true;
         }
     }

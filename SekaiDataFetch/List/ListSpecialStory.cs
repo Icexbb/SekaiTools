@@ -17,7 +17,7 @@ public class ListSpecialStory : BaseListStory
 
     [CachePath("specialStories")]
     private static string CachePathSpecialStories =>
-        Path.Combine(DataBaseDir, "Data", "cache", "specialStories.json");
+        Path.Combine(CacheDirectory, "specialStories.json");
 
     [SourcePath("specialStories")] private static string SourceSpecialStories => Fetcher.SourceList.SpecialStories;
 
@@ -26,6 +26,8 @@ public class ListSpecialStory : BaseListStory
 
     protected sealed override void Load()
     {
+        Data.Clear();
+
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathSpecialStories)!);
         if (!File.Exists(CachePathSpecialStories)) return;
 

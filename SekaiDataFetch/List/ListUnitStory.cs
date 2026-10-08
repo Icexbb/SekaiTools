@@ -17,7 +17,7 @@ public class ListUnitStory : BaseListStory
 
     [CachePath("unitStories")]
     private static string CachePathUnitStories =>
-        Path.Combine(DataBaseDir, "Data", "cache", "unitStories.json");
+        Path.Combine(CacheDirectory, "unitStories.json");
 
     [SourcePath("unitStories")] private static string SourceUnitStories => Fetcher.SourceList.UnitStories;
 
@@ -26,6 +26,8 @@ public class ListUnitStory : BaseListStory
 
     protected sealed override void Load()
     {
+        Data.Clear();
+
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathUnitStories)!);
         if (!File.Exists(CachePathUnitStories)) return;
 

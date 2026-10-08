@@ -6,7 +6,7 @@ namespace SekaiDataFetch.Source;
 public partial class SourceList(SourceData data)
 {
     public static SourceList Instance { get; } = new(SourceData.Default[0]);
-    public SourceData SourceData { private get; set; } = data;
+    public SourceData SourceData { get; set; } = data;
 
     public string ActionSets => SourceData.SourceTemplate.Replace("{type}", "actionSets");
     public string Events => SourceData.SourceTemplate.Replace("{type}", "events");

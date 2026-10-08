@@ -15,26 +15,26 @@ public class ListActionStory : BaseListStory
 
     [CachePath("areas")]
     private static string CachePathAreas =>
-        Path.Combine(DataBaseDir, "Data", "cache", "areas.json");
+        Path.Combine(CacheDirectory, "areas.json");
 
     [CachePath("actionSets")]
     private static string CachePathActionSets =>
-        Path.Combine(DataBaseDir, "Data", "cache", "actionSets.json");
+        Path.Combine(CacheDirectory, "actionSets.json");
 
     [CachePath("character2ds")]
     private static string CachePathCharacter2ds =>
-        Path.Combine(DataBaseDir, "Data", "cache", "character2ds.json");
+        Path.Combine(CacheDirectory, "character2ds.json");
 
     [SourcePath("areas")] private static string SourceAreas => Fetcher.SourceList.Areas;
     [SourcePath("actionSets")] private static string SourceActionSets => Fetcher.SourceList.ActionSets;
     [SourcePath("character2ds")] private static string SourceCharacter2ds => Fetcher.SourceList.Character2ds;
 
     [CachePath("releaseConditions")]
-    private static string CachePathReleaseConditions => Path.Combine(DataBaseDir, "Data", "cache", "releaseConditions.json");
+    private static string CachePathReleaseConditions => Path.Combine(CacheDirectory, "releaseConditions.json");
     [CachePath("eventStories")]
-    private static string CachePathEventStories => Path.Combine(DataBaseDir, "Data", "cache", "eventStories.json");
+    private static string CachePathEventStories => Path.Combine(CacheDirectory, "eventStories.json");
     [CachePath("gameEvents")]
-    private static string CachePathGameEvents => Path.Combine(DataBaseDir, "Data", "cache", "gameEvents.json");
+    private static string CachePathGameEvents => Path.Combine(CacheDirectory, "gameEvents.json");
     [SourcePath("releaseConditions", optional: true)] private static string SourceReleaseConditions => Fetcher.SourceList.ReleaseConditions;
     [SourcePath("eventStories", optional: true)] private static string SourceEventStories => Fetcher.SourceList.EventStories;
     [SourcePath("gameEvents", optional: true)] private static string SourceGameEvents => Fetcher.SourceList.Events;
@@ -50,6 +50,11 @@ public class ListActionStory : BaseListStory
 
     protected sealed override void Load()
     {
+        Data.Clear();
+        Areas.Clear();
+        Character2ds.Clear();
+        ActivityMetadataAvailable = false;
+
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathActionSets)!);
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathAreas)!);
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathCharacter2ds)!);

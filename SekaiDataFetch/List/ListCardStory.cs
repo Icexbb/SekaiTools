@@ -17,11 +17,11 @@ public class ListCardStory : BaseListStory
 
     [CachePath("cardEpisodes")]
     private static string CachePathCardEpisodes =>
-        Path.Combine(DataBaseDir, "Data", "cache", "cardEpisodes.json");
+        Path.Combine(CacheDirectory, "cardEpisodes.json");
 
     [CachePath("cards")]
     private static string CachePathCards =>
-        Path.Combine(DataBaseDir, "Data", "cache", "cards.json");
+        Path.Combine(CacheDirectory, "cards.json");
 
     [SourcePath("cardEpisodes")] private static string SourceCardEpisodes => Fetcher.SourceList.CardEpisodes;
     [SourcePath("cards")] private static string SourceCards => Fetcher.SourceList.Cards;
@@ -30,6 +30,8 @@ public class ListCardStory : BaseListStory
 
     protected sealed override void Load()
     {
+        Data.Clear();
+
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathCardEpisodes)!);
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathCards)!);
 

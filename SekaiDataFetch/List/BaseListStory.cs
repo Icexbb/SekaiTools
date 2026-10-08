@@ -59,6 +59,17 @@ public abstract class BaseListStory
         Logger.Log($"{GetType().Name} cache cleared");
     }
 
+    public static string GetCacheDirectory(SourceData source)
+    {
+        var identity = System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(source.SourceTemplate));
+        return Path.Combine(DataBaseDir, "Data", "cache", Convert.ToHexString(identity));
+    }
+
+    protected static string CacheDirectory => GetCacheDirectory(Fetcher.SourceList.SourceData);
+
+    public void ReloadFromCache() => Load();
+
     protected abstract void Load();
 
     public async Task Refresh(IProgress<ListRefreshProgress>? progress = null)

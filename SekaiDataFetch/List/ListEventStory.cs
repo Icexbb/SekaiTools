@@ -17,15 +17,15 @@ public class ListEventStory : BaseListStory
 
     [CachePath("eventStories")]
     private static string CachePathEventStories =>
-        Path.Combine(DataBaseDir, "Data", "cache", "eventStories.json");
+        Path.Combine(CacheDirectory, "eventStories.json");
 
     [CachePath("gameEvents")]
     private static string CachePathGameEvents =>
-        Path.Combine(DataBaseDir, "Data", "cache", "gameEvents.json");
+        Path.Combine(CacheDirectory, "gameEvents.json");
 
     [CachePath("worldBlooms")]
     private static string CachePathWorldBlooms =>
-        Path.Combine(DataBaseDir, "Data", "cache", "worldBlooms.json");
+        Path.Combine(CacheDirectory, "worldBlooms.json");
 
     [SourcePath("eventStories")] private static string SourceEventStories => Fetcher.SourceList.EventStories;
     [SourcePath("gameEvents")] private static string SourceGameEvents => Fetcher.SourceList.Events;
@@ -36,6 +36,8 @@ public class ListEventStory : BaseListStory
 
     protected sealed override void Load()
     {
+        Data.Clear();
+
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathEventStories)!);
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathGameEvents)!);
         Directory.CreateDirectory(Path.GetDirectoryName(CachePathWorldBlooms)!);
