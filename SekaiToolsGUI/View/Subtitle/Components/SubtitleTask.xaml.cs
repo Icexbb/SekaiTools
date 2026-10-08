@@ -266,6 +266,12 @@ public partial class SubtitleTask : UserControl
                 line.TimelineRequested += (_, _) => ProcessView.EventTimelineEditor.SelectEvent(timelineEvent);
             }
 
+            line.PreviewRequested += async (_, _) =>
+            {
+                if (_disposed || !ViewModel.CanPreviewLine) return;
+                await ProcessView.EventTimelineEditor.PreviewEventVideoAsync(
+                    ViewModel.VideoFilePath, CreateTimelineEvent(line));
+            };
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.DialogCurrent++;
             ProcessView.RefreshContentVisibility();

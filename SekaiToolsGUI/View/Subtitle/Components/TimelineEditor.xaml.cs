@@ -873,9 +873,16 @@ public partial class TimelineEditor : UserControl
         StopPlayback();
     }
 
-    private async Task StartPlaybackAsync(PlaybackMode mode)
+    public Task PreviewEventVideoAsync(string videoPath, TimelineEventSelection selection)
     {
-        if (!GeneralFunctionSwitch.EventPlayBack)
+        SelectEvent(selection);
+        _mediaPath = videoPath;
+        return StartPlaybackAsync(PlaybackMode.Video, requireFeatureSwitch: false);
+    }
+
+    private async Task StartPlaybackAsync(PlaybackMode mode, bool requireFeatureSwitch = true)
+    {
+        if (requireFeatureSwitch && !GeneralFunctionSwitch.EventPlayBack)
             return;
 
         if (_selection == null || string.IsNullOrWhiteSpace(_mediaPath) || !File.Exists(_mediaPath))

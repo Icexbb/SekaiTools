@@ -12,6 +12,7 @@ public sealed class SubtitleQueueTaskModel : ViewModelBase
     public SubtitleQueueTaskModel(SubtitlePageModel state, bool isHistory = false, ProcessingState? savedState = null)
     {
         State = state;
+        State.IsHistory = isHistory;
         IsHistory = isHistory;
         SavedState = savedState;
         State.PropertyChanged += StateChanged;

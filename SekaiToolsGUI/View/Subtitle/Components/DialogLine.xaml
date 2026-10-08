@@ -5,11 +5,13 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:components="clr-namespace:SekaiToolsGUI.View.Subtitle.Components"
              xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
              mc:Ignorable="d" d:DesignWidth="760"
              d:DataContext="{d:DesignInstance subtitle:DialogLineModel, IsDesignTimeCreatable=False}"
              HorizontalAlignment="Stretch">
     <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="PreviewVisibilityConverter" />
         <Style x:Key="SpeakerColorBorderStyle" TargetType="{x:Type Border}">
             <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
             <Style.Triggers>
@@ -75,17 +77,28 @@
                                        Visibility="{Binding ShakeVisibility}" />
                     </StackPanel>
 
-                    <TextBlock Grid.Column="1" VerticalAlignment="Center"
-                               FontFamily="Consolas"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}">
-                        <TextBlock.Text>
-                            <MultiBinding StringFormat="{}{0} → {1}　{2}">
-                                <Binding Path="StartTime" Mode="OneWay" />
-                                <Binding Path="EndTime" Mode="OneWay" />
-                                <Binding Path="EventDuration" Mode="OneWay" />
-                            </MultiBinding>
-                        </TextBlock.Text>
-                    </TextBlock>
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
+                        <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                                   FontFamily="Consolas"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="{}{0} → {1}　{2}">
+                                    <Binding Path="StartTime" Mode="OneWay" />
+                                    <Binding Path="EndTime" Mode="OneWay" />
+                                    <Binding Path="EventDuration" Mode="OneWay" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <ui:Button Name="LinePreviewBtn" FontSize="12" Padding="6,4" Click="LinePreviewBtn_OnClick"
+                                   IsEnabled="{Binding DataContext.CanPreviewLine, RelativeSource={RelativeSource AncestorType={x:Type components:SubtitleTask}}, FallbackValue=False}"
+                                   Visibility="{Binding IsEnabled, RelativeSource={RelativeSource Self}, Converter={StaticResource PreviewVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Play24" Margin="0,0,4,0" />
+                                <TextBlock Text="预览" />
+                            </StackPanel>
+                        </ui:Button>
+                    </StackPanel>
+
                 </Grid>
 
                 <!-- 原文与翻译同时展示；双击打开快速编辑 -->
@@ -115,7 +128,8 @@
                 </ui:Card>
 
                 <!-- 长文本分割设置默认收入抽屉，点击标题展开 -->
-                <Expander Name="PanelSeparator" Visibility="{c:Binding 'SeparatorUsable and SeparatorEnabled'}" Margin="0,8,0,0" IsExpanded="True">
+                <Expander Name="PanelSeparator" Visibility="{c:Binding 'SeparatorUsable and SeparatorEnabled'}"
+                          Margin="0,8,0,0" IsExpanded="True">
                     <Expander.Header>
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="TextContinuous24" Margin="0,0,6,0" />
@@ -143,11 +157,13 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Margin="5" Text="{Binding SeparatedContentPart1Length, StringFormat={}{0:0.#}}" />
+                            <TextBlock Grid.Column="0" Margin="5"
+                                       Text="{Binding SeparatedContentPart1Length, StringFormat={}{0:0.#}}" />
                             <Slider Grid.Column="1" Minimum="1" VerticalAlignment="Center"
                                     Maximum="{Binding SeparatorContentIndexLimit}"
                                     Value="{Binding SeparatorContentIndex}" />
-                            <TextBlock Grid.Column="2" Margin="5" Text="{Binding SeparatedContentPart2Length, StringFormat={}{0:0.#}}" />
+                            <TextBlock Grid.Column="2" Margin="5"
+                                       Text="{Binding SeparatedContentPart2Length, StringFormat={}{0:0.#}}" />
                         </Grid>
 
                         <Separator Margin="0,8" />

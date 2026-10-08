@@ -25,6 +25,7 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
     public DialogLineModel ViewModel => (DialogLineModel)DataContext;
 
     public event EventHandler? TimelineRequested;
+    public event EventHandler? PreviewRequested;
 
     public void RefreshTiming()
     {
@@ -83,5 +84,10 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
     private void SeparateBtn_OnClick(object sender, RoutedEventArgs e)
     {
         ViewModel.SeparatorEnabled = !ViewModel.SeparatorEnabled;
+    }
+
+    private void LinePreviewBtn_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (LinePreviewBtn.IsEnabled) PreviewRequested?.Invoke(this, EventArgs.Empty);
     }
 }
