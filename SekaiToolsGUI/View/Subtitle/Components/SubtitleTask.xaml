@@ -7,12 +7,7 @@
              layout:AdaptiveLayout.MonitorSize="True"
              SizeChanged="SubtitleTask_OnSizeChanged">
     <Grid Margin="10">
-        <components:SubtitleTaskSetup
-            Visibility="{calcBinding:Binding HasNotStarted,FalseToVisibility=Collapsed}"
-            StartRequested="StartButton_OnClick"
-            HistoryRequested="HistoryButton_OnClick" />
         <components:SubtitleTaskProcess x:Name="ProcessView"
-            Visibility="{calcBinding:Binding !HasNotStarted,FalseToVisibility=Collapsed}"
             StopRequested="StopButton_OnClick"
             OutputRequested="OutputButton_OnClick"
             ResetRequested="ResetButton_OnClick" />

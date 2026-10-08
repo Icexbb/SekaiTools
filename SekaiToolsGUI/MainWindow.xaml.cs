@@ -14,6 +14,7 @@ using SekaiToolsConfiguration;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.Service;
 using SekaiToolsGUI.View.Setting;
+using SekaiToolsGUI.View.Subtitle;
 using SekaiToolsGUI.View.Suppress;
 using SekaiToolsGUI.View.Translate;
 using SekaiToolsGUI.ViewModel;
@@ -156,6 +157,7 @@ public partial class MainWindow : FluentWindow
             SetWindowTitle("正在停止任务");
             SetTaskbarProgressState(TaskbarItemProgressState.Indeterminate, 0);
             await SuppressPage.DisposeSuppressorAsync();
+            await SubtitlePage.DisposeTasksAsync();
 
             // Let the current Closing event finish before requesting the
             // actual close. The second Closing event is allowed by the flag.

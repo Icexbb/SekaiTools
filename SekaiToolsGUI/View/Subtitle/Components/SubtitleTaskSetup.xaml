@@ -103,21 +103,9 @@
                            Content="浏览" Click="TranslationFileBrowser_OnClick" />
             </Grid>
         </ui:Card>
-        <Grid Margin="0,10,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="100" />
-            </Grid.ColumnDefinitions>
-            <ui:Button Grid.Column="0" Click="StartButton_OnClick"
-                       Margin="0,0,10,0" IsEnabled="{Binding CanStart}"
-                       ToolTip="{Binding StartHint}"
-                       ToolTipService.ShowOnDisabled="True"
-                       HorizontalAlignment="Stretch" Appearance="Primary" Content="开始" />
-
-            <ui:Button Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center"
-                       Content="历史记录" Click="HistoryButton_OnClick"
-                       IsEnabled="{Binding HasNotStarted}" />
-
-        </Grid>
+        <CheckBox Content="自动选择同名剧本、翻译或视频文件"
+                  IsChecked="{Binding AutoSelectSameNameFiles, Mode=TwoWay}" Margin="0,10,0,0" />
+        <TextBlock Text="加入队列后，任务将按列表顺序自动处理。" Margin="0,8,0,0"
+                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
     </StackPanel>
 </UserControl>

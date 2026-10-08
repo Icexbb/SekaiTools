@@ -34,15 +34,58 @@ public partial class SubtitleTask : UserControl
     private bool _isResetting;
     private readonly DispatcherBatchQueue _resultQueue;
     private bool _previewEnabled;
+    private bool _disposed;
+    internal bool IsQueueActive { get; set; }
+    internal Func<bool>? CanDeleteSavedProgress { get; set; }
+    public event EventHandler? RemoveRequested;
+
+    internal async Task RunAsync(ProcessingState? savedState)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (!ViewModel.CanStart || !File.Exists(ViewModel.VideoFilePath) ||
+            !File.Exists(ViewModel.ScriptFilePath) || !File.Exists(ViewModel.TranslateFilePath))
+            throw new FileNotFoundException("字幕任务的视频、剧本或翻译文件不存在");
+
+        ViewModel.HasNotStarted = false;
+        ViewModel.IsRunning = true;
+        try
+        {
+            StartProcess(ProgressStore.GetSaveKey(ViewModel.VideoFilePath, ViewModel.ScriptFilePath,
+                ViewModel.TranslateFilePath), savedState);
+            if (VideoProcessor != null) await VideoProcessor.WaitForCompletionAsync();
+            await _resultQueue.FlushAsync();
+        }
+        finally { ReleaseSubtitlePowerRequest(); }
+    }
+
+    internal void RequestStop() => VideoProcessor?.StopProcess();
+
+    internal async Task DisposeAsync()
+    {
+        if (_disposed) return;
+        await ReleaseProcessorAsync();
+        _disposed = true;
+        _fpsChangedSubscription?.Dispose();
+        _progressChangedSubscription?.Dispose();
+        _fpsChangedSubject?.Dispose();
+        _progressChangedSubject?.Dispose();
+        ReleaseSubtitlePowerRequest();
+        TokenSource?.Cancel();
+        TokenSource?.Dispose();
+        ProcessView.EventTimelineEditor.ClearSelection();
+        ProcessView.LinePanel.Children.Clear();
+    }
 
     private void SubtitleTask_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
         ProcessView?.UpdateViewport(e.NewSize.Height);
     }
 
-    public SubtitleTask()
+    public SubtitleTask() : this(new SubtitlePageModel()) { }
+
+    public SubtitleTask(SubtitlePageModel state)
     {
-        DataContext = new SubtitlePageModel();
+        DataContext = state;
         InitializeComponent();
         _previewEnabled = ViewModel.ShowPreview;
         ViewModel.PropertyChanged += (_, args) =>
@@ -61,98 +104,7 @@ public partial class SubtitleTask : UserControl
 
     public SubtitlePageModel ViewModel => (SubtitlePageModel)DataContext;
 
-    private async Task CheckSavedProgressOnStartup()
-    {
-        var progressFiles = ProgressStore.EnumerateProgressFiles();
-        foreach (var (saveKey, state) in progressFiles)
-        {
-            if (string.IsNullOrEmpty(state.VideoFilePath) ||
-                string.IsNullOrEmpty(state.ScriptFilePath) ||
-                string.IsNullOrEmpty(state.TranslateFilePath))
-                continue;
-            if (!File.Exists(state.VideoFilePath) ||
-                !File.Exists(state.ScriptFilePath) ||
-                !File.Exists(state.TranslateFilePath))
-                continue;
-
-            var result = await ShowResumeDialogAsync();
-
-            if (result == ContentDialogResult.Primary)
-            {
-                ViewModel.VideoFilePath = state.VideoFilePath;
-                ViewModel.ScriptFilePath = state.ScriptFilePath;
-                ViewModel.TranslateFilePath = state.TranslateFilePath;
-                StartProcess(saveKey, state);
-            }
-
-            return;
-        }
-    }
-
-    private async Task ShowHistoryDialogAsync()
-    {
-        var entries = HistoryStore.LoadAll();
-        var unfinished = ProgressStore.EnumerateProgressFiles()
-            .Select(item => new HistoryEntry { Timestamp = "最近一次未完成", State = item.State })
-            .FirstOrDefault();
-        if (entries.Count == 0 && unfinished == null)
-        {
-            SnackService.Show("提示", "暂无历史记录", ControlAppearance.Info,
-                new SymbolIcon(SymbolRegular.Info24), new TimeSpan(0, 0, 3));
-            return;
-        }
-
-        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-        var dialog = new HistoryDialog(dialogService.GetDialogHostEx() ?? throw new InvalidOperationException(),
-            entries, unfinished);
-        var result = await dialogService.ShowAsync(dialog, CancellationToken);
-
-        if (result == ContentDialogResult.Secondary)
-        {
-            var clearResult = await dialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
-            {
-                Title = "清除已完成历史记录？",
-                Content = "此操作不可恢复，但不会删除未完成任务。",
-                PrimaryButtonText = "清除",
-                CloseButtonText = "取消"
-            }, CancellationToken);
-            if (clearResult == ContentDialogResult.Primary)
-            {
-                HistoryStore.Clear();
-                SnackService.Show("已清除", "已完成历史记录已清除，未完成任务仍保留。",
-                    ControlAppearance.Success, new SymbolIcon(SymbolRegular.Delete24), TimeSpan.FromSeconds(3));
-            }
-
-            return;
-        }
-
-        if (result == ContentDialogResult.Primary && dialog.SelectedUnfinishedEntry != null)
-        {
-            var state = dialog.SelectedUnfinishedEntry.State;
-            ViewModel.VideoFilePath = state.VideoFilePath;
-            ViewModel.ScriptFilePath = state.ScriptFilePath;
-            ViewModel.TranslateFilePath = state.TranslateFilePath;
-            var saveKey = ProgressStore.GetSaveKey(state.VideoFilePath, state.ScriptFilePath,
-                state.TranslateFilePath);
-            StartProcess(saveKey, state);
-        }
-        else if (result == ContentDialogResult.Primary && dialog.SelectedEntry != null)
-        {
-            ProcessView.LinePanel.Children.Clear();
-            ProcessView.EventTimelineEditor.ClearSelection();
-            ViewModel.DialogCurrent = 0;
-            ViewModel.BannerCurrent = 0;
-            ViewModel.MarkerCurrent = 0;
-
-            var state = dialog.SelectedEntry.State;
-            ViewModel.VideoFilePath = state.VideoFilePath;
-            ViewModel.ScriptFilePath = state.ScriptFilePath;
-            ViewModel.TranslateFilePath = state.TranslateFilePath;
-            LoadHistoryState(state);
-        }
-    }
-
-    private void LoadHistoryState(ProcessingState state)
+    internal void LoadHistoryState(ProcessingState state)
     {
         var settings = SettingPageModel.Instance;
         try
@@ -188,7 +140,9 @@ public partial class SubtitleTask : UserControl
             var resultReport = VideoProcessor.ResultReport;
             var isPartial = resultReport.Outcome != ProcessingOutcome.Complete;
             ViewModel.IsFinished = !isPartial;
-            ViewModel.IsPartial = isPartial;
+            ViewModel.IsCanceled = state.StopReason == ProcessStopReason.Canceled;
+            ViewModel.IsFailed = isPartial && !ViewModel.IsCanceled && !resultReport.CanExport;
+            ViewModel.IsPartial = isPartial && !ViewModel.IsCanceled && !ViewModel.IsFailed;
             var frameCount = state.Metadata?.VideoInfo.FrameCount ?? 0;
             ProcessView.ProgressBarProgression.Value = isPartial && frameCount > 0
                 ? Math.Clamp((double)state.FrameIndex / frameCount, 0, 1)
@@ -221,14 +175,14 @@ public partial class SubtitleTask : UserControl
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
         var result = await dialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
         {
-            Title = "重置当前任务？",
+            Title = "移除当前任务？",
             Content = "当前处理结果和手动调整将从界面清除。",
-            PrimaryButtonText = "重置",
+            PrimaryButtonText = "移除",
             CloseButtonText = "取消"
         }, CancellationToken.None);
         if (result != ContentDialogResult.Primary) return;
 
-        await ResetCurrentTaskAsync();
+        RemoveRequested?.Invoke(this, EventArgs.Empty);
     }
 
     internal async Task ResetCurrentTaskAsync()
@@ -238,7 +192,7 @@ public partial class SubtitleTask : UserControl
         try
         {
             await ReleaseProcessorAsync();
-            (Application.Current.MainWindow as MainWindow)?.SetWindowTitle("");
+            SetVideoProcessWindowTitle("");
             SetTaskbarProgressState(TaskbarItemProgressState.None, 0);
             ViewModel.Reset();
             ProcessView.LinePanel.Children.Clear();
@@ -284,71 +238,6 @@ public partial class SubtitleTask : UserControl
         SetTaskbarProgressState(TaskbarItemProgressState.Paused, ProcessView.ProgressBarProgression.Value);
         ViewModel.IsCanceling = true;
     }
-
-    private async void HistoryButton_OnClick(object sender, RoutedEventArgs e)
-    {
-        await ShowHistoryDialogAsync();
-    }
-
-    private void StartButton_OnClick(object sender, EventArgs arg)
-    {
-        if (_isResetting) return;
-        try
-        {
-            if (!CheckConfig()) return;
-
-            var saveKey = ProgressStore.GetSaveKey(
-                ViewModel.VideoFilePath,
-                ViewModel.ScriptFilePath,
-                ViewModel.TranslateFilePath);
-
-            StartProcess(saveKey, null);
-        }
-        catch (Exception ex)
-        {
-            SnackService.Show("错误", $"启动处理失败: {ex.Message}", ControlAppearance.Danger,
-                new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 5));
-        }
-
-        return;
-
-        bool CheckConfig()
-        {
-            var vfp = ViewModel.VideoFilePath;
-            var sfp = ViewModel.ScriptFilePath;
-            var tfp = ViewModel.TranslateFilePath;
-            if (string.IsNullOrEmpty(vfp) || string.IsNullOrEmpty(sfp) || string.IsNullOrEmpty(tfp))
-            {
-                SnackService.Show("错误", "请填写完整的文件路径", ControlAppearance.Danger,
-                    new SymbolIcon(SymbolRegular.TextGrammarDismiss24), new TimeSpan(0, 0, 3));
-                return false;
-            }
-
-            if (!File.Exists(vfp))
-            {
-                SnackService.Show("错误", "视频文件不存在", ControlAppearance.Danger,
-                    new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
-                return false;
-            }
-
-            if (!File.Exists(sfp))
-            {
-                SnackService.Show("错误", "剧情脚本文件不存在", ControlAppearance.Danger,
-                    new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
-                return false;
-            }
-
-            if (!File.Exists(tfp))
-            {
-                SnackService.Show("错误", "剧情翻译文件不存在", ControlAppearance.Danger,
-                    new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
-                return false;
-            }
-
-            return true;
-        }
-    }
-
 
     private void LinePanel_InsertInOriginalOrder(UIElement line, int eventIndex)
     {
@@ -539,8 +428,13 @@ public partial class SubtitleTask : UserControl
 
             await File.WriteAllTextAsync(fileName, subtitle.ToString(), Encoding.UTF8, token);
 
-            ProgressStore.Delete(ProgressStore.GetSaveKey(
-                ViewModel.VideoFilePath, ViewModel.ScriptFilePath, ViewModel.TranslateFilePath));
+            if (CanDeleteSavedProgress?.Invoke() == true)
+            {
+                var saveKey = ProgressStore.GetSaveKey(ViewModel.VideoFilePath, ViewModel.ScriptFilePath,
+                    ViewModel.TranslateFilePath);
+                SubtitleQueueProgressStore.Delete(saveKey);
+                ProgressStore.Delete(saveKey);
+            }
 
             SnackService.Show("成功", "字幕文件已保存", ControlAppearance.Success,
                 new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
@@ -567,20 +461,7 @@ public partial class SubtitleTask
 
     private VideoProcessor? VideoProcessor { get; set; }
 
-    public async void OnNavigatedTo()
-    {
-        try
-        {
-            await CheckResource();
-            await CheckSavedProgressOnStartup();
-        }
-        catch (Exception e)
-        {
-            (Application.Current.MainWindow as MainWindow)?.OnCheckResourceFailed(e, OnNavigatedTo);
-        }
-    }
-
-    private async Task CheckResource()
+    internal static async Task EnsureResourcesAsync()
     {
         if (await ResourceManager.Instance.CheckResource(ResourceType.VideoProcess)) return;
 
@@ -613,12 +494,14 @@ public partial class SubtitleTask
 
     private void SetVideoProcessWindowTitle(string status)
     {
+        if (!IsQueueActive) return;
         (Application.Current.MainWindow as MainWindow)?.SetWindowTitle(
             $"{status} - {Path.GetFileName(ViewModel.VideoFilePath)}");
     }
 
-    private static void SetTaskbarProgressState(TaskbarItemProgressState state, double value)
+    private void SetTaskbarProgressState(TaskbarItemProgressState state, double value)
     {
+        if (!IsQueueActive) return;
         (Application.Current.MainWindow as MainWindow)?.SetTaskbarProgressState(state, value);
     }
 
@@ -688,20 +571,6 @@ public partial class SubtitleTask
         if (!File.Exists(thresholdData)) return new MatchingThreshold();
         var json = File.ReadAllText(thresholdData);
         return JsonSerializer.Deserialize<MatchingThreshold>(json);
-    }
-
-    private async Task<ContentDialogResult> ShowResumeDialogAsync()
-    {
-        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-        var result = await dialogService.ShowSimpleDialogAsync(
-            new SimpleContentDialogCreateOptions
-            {
-                Title = "恢复未完成任务",
-                Content = "检测到上一次未完成的处理任务，是否继续？选择“暂不恢复”不会删除进度。",
-                PrimaryButtonText = "继续",
-                CloseButtonText = "暂不恢复"
-            }, CancellationToken);
-        return result;
     }
 
     private void StartProcess(string saveKey, ProcessingState? resumeState)
@@ -854,7 +723,7 @@ public partial class SubtitleTask
                     OnFps = OnFpsChanged
                 },
                 ResourceManager.Instance,
-                ProcessingStatePersistence.Instance
+                SubtitleQueueProcessingStatePersistence.Instance
             );
 
             SetTimelineVideoDuration();
@@ -917,6 +786,7 @@ public partial class SubtitleTask
             {
                 Dispatcher.BeginInvoke(() =>
                 {
+                    if (_disposed) return;
                     ProcessView.TextBlockFps.Text = $"FPS: {x.Fps}";
                     ProcessView.TextBlockEta.Text = x.Eta.TotalMilliseconds > 1000 ? $"ETA: {x.Eta.Remains()}" : "";
                 });
@@ -935,12 +805,12 @@ public partial class SubtitleTask
             {
                 Dispatcher.BeginInvoke(() =>
                 {
-                    if (!ViewModel.IsRunning) return;
+                    if (_disposed || !ViewModel.IsRunning) return;
 
                     ProcessView.ProgressBarProgression.Value = value;
                     ProcessView.ProgressBarProgression.Maximum = 1;
                     ProcessView.TextBlockProgression.Text = $"{value:P}";
-                    (Application.Current.MainWindow as MainWindow)?.SetTaskbarProgressValue(value);
+                    if (IsQueueActive) (Application.Current.MainWindow as MainWindow)?.SetTaskbarProgressValue(value);
                 });
             });
     }

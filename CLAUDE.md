@@ -81,7 +81,7 @@ dotnet test SekaiTools.sln
 
 - **`SekaiToolsCore.Match.TemplateMatcher.TemplateMatcher`** — 基于 OpenCV 相关性的静态模板匹配，配合 `TemplateMatchCachePool` 按帧缓存结果以避免重复计算。
 
-- **`SekaiToolsInfrastructure.Persistence.ProgressStore`** — 进度持久化。`ProcessingState` DTO 捕获全部匹配器状态和帧位置，序列化为 JSON 存入 `~/SekaiTools/Progress/{hash}.json`。应用启动时 `OnNavigatedTo` 扫描进度文件，若对应文件仍存在则弹窗询问恢复。
+- **`SekaiToolsInfrastructure.Persistence.SubtitleQueueProgressStore`** — 字幕队列进度持久化。`ProcessingState` DTO 捕获全部匹配器状态和帧位置，各任务独立存入 `~/SekaiTools/SubtitleQueueProgress/{hash}.json`，推进下一项不会覆盖已取消任务的检查点。字幕页首次导航时询问是否将未完成任务加入队列恢复，并兼容旧 `ProgressStore` 的 `~/SekaiTools/Progress/{hash}.json`。
 
 - **`SekaiToolsInfrastructure.Persistence.HistoryStore`** — 历史记录（最多 100 条）。处理完成后保存完整 `ProcessingState` 到独立文件 `~/SekaiTools/History/{timestamp}_{hash}.json`，同 hash 自动去重保留最新。用户可通过 `HistoryDialog` (ContentDialog) 选择加载历史记录直接导出字幕。
 
@@ -94,6 +94,8 @@ dotnet test SekaiTools.sln
 ### MVVM 模式
 
 `MainWindow`（FluentWindow）使用 WPF-UI 的 `NavigationView`。`MainWindowViewModel` 定义导航项，映射到各页面类型。每个页面位于 `View/<页面名>/`，对应的 ViewModel 位于 `ViewModel/<页面名>/`。
+
+字幕页由 `SubtitleQueuePageModel` 管理选中任务，使用 `SequentialTaskQueue` 顺序推进普通任务；等待、处理中、已结束和历史任务分别显示在 `PassiveScrollViewer` 内的 `ItemsControl` 中，等待任务支持拖动排序。`SubtitleTaskSetup` 在添加任务的模态窗口中选择素材，右侧 `SubtitleTask` 仅承载 `SubtitleTaskProcess`，每个任务保留独立状态和时间轴。历史记录加入历史分组，仅加载已有结果，不自动执行。关闭主窗口时停止队列推进并等待当前处理器保存和退出。
 
 页面实现 `IAppPage<object>` 接口，通过 `OnNavigatedTo()` 进行初始化。自定义的 `ViewModelBase` 将属性值存储在 `Dictionary<string, object>` 中，而非单独的字段。
 

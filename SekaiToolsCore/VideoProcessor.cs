@@ -382,6 +382,11 @@ public class VideoProcessor : IDisposable
     public async Task StopProcessAsync()
     {
         StopProcess();
+        await WaitForCompletionAsync().ConfigureAwait(false);
+    }
+
+    public async Task WaitForCompletionAsync()
+    {
         try
         {
             if (ProcessingTask is { } task)

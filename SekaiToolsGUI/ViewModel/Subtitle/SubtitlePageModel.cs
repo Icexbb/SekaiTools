@@ -190,6 +190,12 @@ public class SubtitlePageModel : ViewModelBase
         set => SetProperty(value);
     }
 
+    public bool AutoSelectSameNameFiles
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
     public bool ShowTooLongOnly
     {
         get => GetProperty(false);
@@ -242,7 +248,7 @@ public class SubtitlePageModel : ViewModelBase
 
     public int DialogTotal
     {
-        get => GetProperty(100);
+        get => GetProperty(0);
         set => SetProperty(value);
     }
 
@@ -254,7 +260,7 @@ public class SubtitlePageModel : ViewModelBase
 
     public int BannerTotal
     {
-        get => GetProperty(100);
+        get => GetProperty(0);
         set => SetProperty(value);
     }
 
@@ -266,7 +272,7 @@ public class SubtitlePageModel : ViewModelBase
 
     public int MarkerTotal
     {
-        get => GetProperty(100);
+        get => GetProperty(0);
         set => SetProperty(value);
     }
 
@@ -309,11 +315,11 @@ public class SubtitlePageModel : ViewModelBase
         HasNotStarted = true;
         FramePreviewImage = EmptyFramePreview;
 
-        DialogTotal = 100;
+        DialogTotal = 0;
         DialogCurrent = 0;
-        BannerTotal = 100;
+        BannerTotal = 0;
         BannerCurrent = 0;
-        MarkerTotal = 100;
+        MarkerTotal = 0;
         MarkerCurrent = 0;
     }
 

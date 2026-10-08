@@ -9,20 +9,23 @@ namespace SekaiToolsGUI.View.Subtitle.Components;
 public partial class HistoryDialog : ContentDialog
 {
     public HistoryDialog(ContentDialogHost contentPresenter, IReadOnlyList<HistoryEntry> completedEntries,
-        HistoryEntry? unfinishedEntry) : base(contentPresenter)
+        IReadOnlyList<HistoryEntry> unfinishedEntries) : base(contentPresenter)
     {
         InitializeComponent();
 
-        if (unfinishedEntry != null)
+        if (unfinishedEntries.Count > 0)
         {
-            AddHeader("未完成任务（可继续恢复）");
-            var button = CreateEntryButton(unfinishedEntry, "最近一次未完成");
-            button.Click += (_, _) =>
+            AddHeader("未完成任务（作为历史结果查看）");
+            foreach (var unfinishedEntry in unfinishedEntries)
             {
-                SelectedUnfinishedEntry = unfinishedEntry;
-                Hide(ContentDialogResult.Primary);
-            };
-            HistoryItemsPanel.Children.Add(button);
+                var button = CreateEntryButton(unfinishedEntry, "未完成");
+                button.Click += (_, _) =>
+                {
+                    SelectedUnfinishedEntry = unfinishedEntry;
+                    Hide(ContentDialogResult.Primary);
+                };
+                HistoryItemsPanel.Children.Add(button);
+            }
         }
 
         if (completedEntries.Count > 0)

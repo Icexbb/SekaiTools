@@ -1,0 +1,20 @@
+<ui:ContentDialog x:Class="SekaiToolsGUI.View.Subtitle.Components.SubtitleTaskDialog"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                  xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
+                  xmlns:components="clr-namespace:SekaiToolsGUI.View.Subtitle.Components"
+                  layout:AdaptiveLayout.FitDialog="True"
+                  Title="添加字幕任务" PrimaryButtonText="加入队列" CloseButtonText="取消"
+                  DefaultButton="Primary" IsPrimaryButtonEnabled="{Binding CanStart}" MinWidth="520">
+    <ui:ContentDialog.Resources>
+        <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}" TargetType="components:SubtitleTaskDialog" />
+    </ui:ContentDialog.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel>
+            <components:SubtitleTaskSetup />
+            <TextBlock x:Name="ValidationError" Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                       TextWrapping="Wrap" Margin="0,8,0,0" />
+        </StackPanel>
+    </ScrollViewer>
+</ui:ContentDialog>

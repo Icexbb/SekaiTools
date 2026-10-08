@@ -19,6 +19,7 @@
     <ItemGroup>
         <Compile Include="..\Updater\UpdateProxySettings.cs" Link="Updater\UpdateProxySettings.cs"/>
         <Compile Include="..\SekaiToolsGUI\ViewModel\ViewModelBase.cs" Link="ViewModel\ViewModelBase.cs"/>
+        <Compile Include="..\SekaiToolsGUI\Service\SequentialTaskQueue.cs" Link="Service\SequentialTaskQueue.cs"/>
         <Compile Include="..\SekaiToolsGUI\ViewModel\Download\DownloadPageModel.cs" Link="ViewModel\DownloadPageModel.cs"/>
         <ProjectReference Include="..\SekaiToolsBase\SekaiToolsBase.csproj"/>
         <ProjectReference Include="..\SekaiToolsCore\SekaiToolsCore.csproj"/>

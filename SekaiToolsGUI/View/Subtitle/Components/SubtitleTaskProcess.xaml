@@ -129,7 +129,7 @@
                                 Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                                 Click="ResetButton_OnClick"
                                 IsEnabled="{Binding CanReset}"
-                                Content="重置" />
+                                Content="移除任务" />
                         </Grid>
                     </StackPanel>
                 </ui:Card>
@@ -292,7 +292,7 @@
         <ScrollViewer x:Name="TimelineViewport" Grid.Row="2" Margin="0,6,0,0"
                       VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <components:TimelineEditor x:Name="EventTimelineEditor"
-                                       IsReadOnly="{Binding DataContext.IsRunning, ElementName=Root}" />
+                                       IsReadOnly="{calcBinding:Binding 'IsRunning || HasNotStarted'}" />
         </ScrollViewer>
     </Grid>
 </UserControl>

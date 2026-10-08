@@ -16,17 +16,10 @@ public partial class SubtitleTaskSetup : UserControl
         InitializeComponent();
     }
 
-    public event RoutedEventHandler? StartRequested;
-    public event RoutedEventHandler? HistoryRequested;
-
     private SubtitlePageModel ViewModel => (SubtitlePageModel)DataContext;
 
     private static ISnackbarService SnackService =>
         (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
-
-    private void StartButton_OnClick(object sender, RoutedEventArgs e) => StartRequested?.Invoke(sender, e);
-
-    private void HistoryButton_OnClick(object sender, RoutedEventArgs e) => HistoryRequested?.Invoke(sender, e);
 
     private static string? SelectFile(object sender, RoutedEventArgs e, string filter)
     {
@@ -35,7 +28,7 @@ public partial class SubtitleTaskSetup : UserControl
         return result == true ? openFileDialog.FileName : null;
     }
 
-    private async Task SelectSameNameFile(string filename)
+    private void SelectSameNameFile(string filename)
     {
         var fileExt = Path.GetExtension(filename).ToLower();
 
@@ -52,8 +45,8 @@ public partial class SubtitleTaskSetup : UserControl
 
             if (scriptPath == null && translatePath == null) return;
 
-            var dialogResult = await ShowDialog();
-            if (!dialogResult) return;
+            var selectRelatedFiles = ViewModel.AutoSelectSameNameFiles;
+            if (!selectRelatedFiles) return;
             if (scriptPath != null) ViewModel.ScriptFilePath = scriptPath;
             if (translatePath != null) ViewModel.TranslateFilePath = translatePath;
         }
@@ -66,8 +59,8 @@ public partial class SubtitleTaskSetup : UserControl
 
             if (videoPath == null && translatePath == null) return;
 
-            var dialogResult = await ShowDialog();
-            if (!dialogResult) return;
+            var selectRelatedFiles = ViewModel.AutoSelectSameNameFiles;
+            if (!selectRelatedFiles) return;
             if (videoPath != null) ViewModel.VideoFilePath = videoPath;
             if (translatePath != null) ViewModel.TranslateFilePath = translatePath;
         }
@@ -80,71 +73,57 @@ public partial class SubtitleTaskSetup : UserControl
 
             if (videoPath == null && scriptPath == null) return;
 
-            var dialogResult = await ShowDialog();
-            if (!dialogResult) return;
+            var selectRelatedFiles = ViewModel.AutoSelectSameNameFiles;
+            if (!selectRelatedFiles) return;
             if (videoPath != null) ViewModel.VideoFilePath = videoPath;
             if (scriptPath != null) ViewModel.ScriptFilePath = scriptPath;
         }
 
         return;
 
-        async Task<bool> ShowDialog()
-        {
-            var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-            var token = new CancellationToken();
-            var dialogResult = await dialogService.ShowSimpleDialogAsync(
-                new SimpleContentDialogCreateOptions
-                {
-                    Title = "提示",
-                    Content = "在该文件处发现了同名的文件，是否自动引入作为处理文件？",
-                    PrimaryButtonText = "是",
-                    CloseButtonText = "否"
-                }, token);
-            return dialogResult == ContentDialogResult.Primary;
-        }
     }
 
-    private async void VideoFileBrowser_OnClick(object sender, RoutedEventArgs e)
+    private void VideoFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
         var result = SelectFile(sender, e, "视频文件|*.mp4;*.avi;*.mkv;*.webm;*.wmv");
         if (result == null) return;
 
-        await SelectSameNameFile(result);
+        SelectSameNameFile(result);
     }
 
-    private async void ScriptFileBrowser_OnClick(object sender, RoutedEventArgs e)
+    private void ScriptFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
         var result = SelectFile(sender, e, "剧情脚本文件|*.json;*.asset");
         if (result == null) return;
 
-        await SelectSameNameFile(result);
+        SelectSameNameFile(result);
     }
 
-    private async void TranslationFileBrowser_OnClick(object sender, RoutedEventArgs e)
+    private void TranslationFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
         var result = SelectFile(sender, e, "剧情翻译文件|*.txt");
         if (result == null) return;
 
-        await SelectSameNameFile(result);
+        SelectSameNameFile(result);
     }
 
-    private async void UIElement_OnDrop(object sender, DragEventArgs e)
+    private void UIElement_OnDrop(object sender, DragEventArgs e)
     {
-        var data = e.Data.GetData(DataFormats.FileDrop)!;
-        var fileName = ((Array)data).GetValue(0)!.ToString();
+        if (e.Data.GetData(DataFormats.FileDrop) is not string[] { Length: > 0 } files) return;
+        var fileName = files[0];
         if (!File.Exists(fileName)) return;
 
-        await GetSameBaseFile(fileName);
+        GetSameBaseFile(fileName);
     }
 
-    private async Task GetSameBaseFile(string filename)
+    private void GetSameBaseFile(string filename)
     {
         var fileExt = Path.GetExtension(filename).ToLower();
         List<string> vExt = [".mp4", ".avi", ".mkv", ".webm", ".wmv"];
         List<string> sExt = [".json", ".asset"];
         List<string> tExt = [".txt"];
         if (vExt.Contains(fileExt) || sExt.Contains(fileExt) || tExt.Contains(fileExt))
-            await SelectSameNameFile(filename);
+            SelectSameNameFile(filename);
         else
             SnackService.Show("错误", "文件格式不支持", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentError24),

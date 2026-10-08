@@ -1,6 +1,80 @@
 <UserControl x:Class="SekaiToolsGUI.View.Subtitle.SubtitlePage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
+             xmlns:dd="clr-namespace:GongSolutions.Wpf.DragDrop;assembly=GongSolutions.WPF.DragDrop"
              xmlns:components="clr-namespace:SekaiToolsGUI.View.Subtitle.Components">
-    <components:SubtitleTask x:Name="TaskComponent" />
+    <UserControl.Resources>
+        <DataTemplate x:Key="TaskItemTemplate">
+            <components:SubtitleQueueTaskItem Selected="TaskItem_OnSelected" RemoveRequested="TaskItem_OnRemoveRequested" />
+        </DataTemplate>
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,14,0,8" />
+        </Style>
+    </UserControl.Resources>
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260" MinWidth="220" />
+            <ColumnDefinition Width="*" MinWidth="420" />
+        </Grid.ColumnDefinitions>
+        <ui:Card Grid.Column="0" Padding="10" Margin="0,0,10,0"
+                 VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <ui:SymbolIcon Symbol="Video32" Margin="0,0,8,0" />
+                    <TextBlock Text="字幕任务" FontSize="18" FontWeight="SemiBold" />
+                </StackPanel>
+                <ui:PassiveScrollViewer Grid.Row="1" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                        HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="未开始任务 · 可拖动排序" />
+                        <ItemsControl x:Name="PendingTasksList" ItemsSource="{Binding Queue.PendingTasks}"
+                                      ItemTemplate="{StaticResource TaskItemTemplate}" AllowDrop="True"
+                                      dd:DragDrop.IsDropTarget="True" dd:DragDrop.ShowAlwaysDropTargetAdorner="True" />
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="正在进行任务" />
+                        <ItemsControl ItemsSource="{Binding Queue.ProcessingTasks}" ItemTemplate="{StaticResource TaskItemTemplate}" />
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="已完成任务" />
+                        <ItemsControl ItemsSource="{Binding Queue.FinishedTasks}" ItemTemplate="{StaticResource TaskItemTemplate}" />
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="历史任务" />
+                        <ItemsControl ItemsSource="{Binding Queue.HistoryTasks}" ItemTemplate="{StaticResource TaskItemTemplate}" />
+                    </StackPanel>
+                </ui:PassiveScrollViewer>
+                <Grid Grid.Row="2" Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:Button Grid.Column="0" Click="AddButton_OnClick" Appearance="Primary"
+                               IsEnabled="{Binding CanOpenDialog}" HorizontalAlignment="Stretch" Margin="0,0,4,0">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Add24" Margin="0,0,5,0" />
+                            <TextBlock Text="添加" />
+                        </StackPanel>
+                    </ui:Button>
+                    <ui:Button Grid.Column="1" Click="HistoryButton_OnClick" IsEnabled="{Binding CanOpenDialog}"
+                               HorizontalAlignment="Stretch" Margin="4,0,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="History24" Margin="0,0,5,0" />
+                            <TextBlock Text="历史" />
+                        </StackPanel>
+                    </ui:Button>
+                </Grid>
+            </Grid>
+        </ui:Card>
+        <Grid Grid.Column="1">
+            <TextBlock Text="添加任务，或从左侧选择任务查看处理结果"
+                       VerticalAlignment="Center" HorizontalAlignment="Center" TextWrapping="Wrap"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       Visibility="{c:Binding !HasSelection, FalseToVisibility=Collapsed}" />
+            <ContentControl Content="{Binding SelectedControl}" HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch" />
+        </Grid>
+    </Grid>
 </UserControl>

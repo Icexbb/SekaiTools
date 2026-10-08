@@ -13,6 +13,29 @@ namespace SekaiTools.Tests;
 
 public class VideoProcessorLifecycleTests
 {
+    [Fact]
+    public async Task WaitingForCompletionDoesNotCancelProcessing()
+    {
+        using var fixture = new Fixture();
+        using var gate = new ManualResetEventSlim();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var finished = false;
+        using var processor = fixture.Create(new VideoProcessCallbacks
+        {
+            OnTaskStarted = () => { started.SetResult(); gate.Wait(TimeSpan.FromSeconds(10)); },
+            OnTaskFinished = () => finished = true
+        });
+        processor.StartProcess();
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var completion = processor.WaitForCompletionAsync();
+        try { Assert.False(completion.IsCompleted); }
+        finally { gate.Set(); }
+        await completion.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.True(finished);
+        Assert.Equal(ProcessStopReason.EndOfStream, processor.StopReason);
+        Assert.Equal(12, processor.Performance.FrameCount);
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
