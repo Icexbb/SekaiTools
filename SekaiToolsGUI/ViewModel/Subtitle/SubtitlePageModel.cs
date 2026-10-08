@@ -160,6 +160,12 @@ public class SubtitlePageModel : ViewModelBase
     public bool CanReset => IsFinished || IsCanceled || IsPartial || IsFailed;
     public bool CanStop => IsRunning && !IsCanceling;
 
+    public double Progress
+    {
+        get => GetProperty(0d);
+        set => SetProperty(Math.Clamp(value, 0, 1));
+    }
+
     public bool CanStart => !string.IsNullOrWhiteSpace(VideoFilePath) &&
                             !string.IsNullOrWhiteSpace(ScriptFilePath) &&
                             !string.IsNullOrWhiteSpace(TranslateFilePath);
@@ -313,6 +319,7 @@ public class SubtitlePageModel : ViewModelBase
         IsPartial = false;
         IsCanceling = false;
         HasNotStarted = true;
+        Progress = 0;
         FramePreviewImage = EmptyFramePreview;
 
         DialogTotal = 0;

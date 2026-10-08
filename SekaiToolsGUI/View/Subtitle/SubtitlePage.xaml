@@ -34,15 +34,22 @@
                 <ui:PassiveScrollViewer Grid.Row="1" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
                                         HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource SectionHeader}" Text="未开始任务 · 可拖动排序" />
+                        <TextBlock Text="暂无任务，请点击下方“添加”按钮创建任务。" Margin="0,12,0,0"
+                                   TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="{c:Binding 'Queue.PendingTasks.Count + Queue.ProcessingTasks.Count + Queue.FinishedTasks.Count + Queue.HistoryTasks.Count == 0', FalseToVisibility=Collapsed}" />
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="未开始任务 · 可拖动排序"
+                                   Visibility="{c:Binding 'Queue.PendingTasks.Count > 0', FalseToVisibility=Collapsed}" />
                         <ItemsControl x:Name="PendingTasksList" ItemsSource="{Binding Queue.PendingTasks}"
                                       ItemTemplate="{StaticResource TaskItemTemplate}" AllowDrop="True"
                                       dd:DragDrop.IsDropTarget="True" dd:DragDrop.ShowAlwaysDropTargetAdorner="True" />
-                        <TextBlock Style="{StaticResource SectionHeader}" Text="正在进行任务" />
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="正在进行任务"
+                                   Visibility="{c:Binding 'Queue.ProcessingTasks.Count > 0', FalseToVisibility=Collapsed}" />
                         <ItemsControl ItemsSource="{Binding Queue.ProcessingTasks}" ItemTemplate="{StaticResource TaskItemTemplate}" />
-                        <TextBlock Style="{StaticResource SectionHeader}" Text="已完成任务" />
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="已完成任务"
+                                   Visibility="{c:Binding 'Queue.FinishedTasks.Count > 0', FalseToVisibility=Collapsed}" />
                         <ItemsControl ItemsSource="{Binding Queue.FinishedTasks}" ItemTemplate="{StaticResource TaskItemTemplate}" />
-                        <TextBlock Style="{StaticResource SectionHeader}" Text="历史任务" />
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="历史任务"
+                                   Visibility="{c:Binding 'Queue.HistoryTasks.Count > 0', FalseToVisibility=Collapsed}" />
                         <ItemsControl ItemsSource="{Binding Queue.HistoryTasks}" ItemTemplate="{StaticResource TaskItemTemplate}" />
                     </StackPanel>
                 </ui:PassiveScrollViewer>

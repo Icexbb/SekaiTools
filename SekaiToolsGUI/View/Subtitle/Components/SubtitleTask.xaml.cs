@@ -148,6 +148,7 @@ public partial class SubtitleTask : UserControl
                 ? Math.Clamp((double)state.FrameIndex / frameCount, 0, 1)
                 : 1;
             ProcessView.ProgressBarProgression.Maximum = 1;
+            ViewModel.Progress = ProcessView.ProgressBarProgression.Value;
             ProcessView.TextBlockProgression.Text = $"{ProcessView.ProgressBarProgression.Value:P}";
             SetVideoProcessWindowTitle(isPartial ? "部分完成" : "已完成");
             SetTaskbarProgressState(isPartial ? TaskbarItemProgressState.Paused : TaskbarItemProgressState.Normal,
@@ -619,6 +620,7 @@ public partial class SubtitleTask
                             {
                                 ViewModel.IsFinished = true;
                                 ProcessView.ProgressBarProgression.Value = 1;
+                                ViewModel.Progress = 1;
                                 ProcessView.ProgressBarProgression.Maximum = 1;
                                 ProcessView.TextBlockProgression.Text = $"{1:P}";
                                 SetVideoProcessWindowTitle("已完成");
@@ -808,6 +810,7 @@ public partial class SubtitleTask
                     if (_disposed || !ViewModel.IsRunning) return;
 
                     ProcessView.ProgressBarProgression.Value = value;
+                    ViewModel.Progress = value;
                     ProcessView.ProgressBarProgression.Maximum = 1;
                     ProcessView.TextBlockProgression.Text = $"{value:P}";
                     if (IsQueueActive) (Application.Current.MainWindow as MainWindow)?.SetTaskbarProgressValue(value);

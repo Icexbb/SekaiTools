@@ -48,8 +48,19 @@
                 <StackPanel>
                     <TextBlock Text="{Binding VideoName}" TextTrimming="CharacterEllipsis"
                                FontWeight="SemiBold" ToolTip="{Binding State.VideoFilePath}" />
-                    <TextBlock Text="{Binding Status}" Margin="0,5,0,0"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <Grid Margin="0,5,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Grid.Column="1" Text="{Binding State.Progress, StringFormat={}{0:P0}}"
+                                   Margin="5,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="{c:Binding State.IsRunning, FalseToVisibility=Collapsed}" />
+                    </Grid>
+                    <ProgressBar Height="4" Margin="0,6,0,0" Maximum="1" Value="{Binding State.Progress}"
+                                 Visibility="{c:Binding State.IsRunning, FalseToVisibility=Collapsed}" />
                 </StackPanel>
             </ui:Button>
             <ui:Button Grid.Column="2" Click="RemoveButton_OnClick" Appearance="Transparent" Padding="3"
