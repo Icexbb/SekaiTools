@@ -44,7 +44,7 @@
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom">
                     <Button x:Name="ClearCacheButton" Margin="0,0,8,0"
-                            ToolTip="清除当前数据源的所有列表缓存" Click="ButtonClearCache_OnClick">
+                            ToolTip="清除所有数据源的列表缓存" Click="ButtonClearCache_OnClick">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="Delete24" Margin="0,0,6,0" />
                             <TextBlock Text="清除缓存" />

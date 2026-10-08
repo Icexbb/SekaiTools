@@ -323,7 +323,6 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         if (!BoxSource.IsEnabled || !ClearCacheButton.IsEnabled) return;
         if (_sourceListInitializationTask != null) await _sourceListInitializationTask;
         if (!BoxSource.IsEnabled || !ClearCacheButton.IsEnabled) return;
-        if (BoxSource.SelectedItem is not SourceData selectedSource) return;
 
         var contentEnabled = ContentCard.IsEnabled;
         ClearCacheButton.IsEnabled = false;
@@ -344,16 +343,13 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
             {
                 lock (StoryDataLock)
                 {
-                    Fetcher.Instance.SetSource(selectedSource);
-                    for (var index = 0; index <= 4; index++)
-                    {
-                        var list = InitializeStoryData(index);
-                        list.ClearCache();
-                        list.ReloadFromCache();
-                    }
+                    var cacheDirectory = Path.GetFullPath(
+                        Path.Combine(BaseListStory.DataBaseDir, "Data", "cache"));
+                    if (Directory.Exists(cacheDirectory))
+                        Directory.Delete(cacheDirectory, recursive: true);
                 }
             });
-            SnackService.Show("缓存已清除", $"已清除 {selectedSource.SourceName} 的列表缓存，可点击“刷新当前列表”重新获取。",
+            SnackService.Show("缓存已清除", "已清除所有列表缓存，可点击“刷新当前列表”重新获取。",
                 ControlAppearance.Success, new SymbolIcon(SymbolRegular.Delete24), TimeSpan.FromSeconds(4));
         }
         catch (Exception exception)
