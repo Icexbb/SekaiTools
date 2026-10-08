@@ -17,21 +17,38 @@ public class SourceCacheTests
         UnitStoryTemplate = ""
     };
 
-    [Fact]
-    public void DifferentListSourcesHaveSeparateCachesEvenWithSameName()
+    [Theory]
+    [InlineData("Sekai Best")]
+    [InlineData("Haruki NEO")]
+    [InlineData("中文数据源")]
+    public void CacheDirectoryUsesSourceName(string name)
     {
-        var first = Source("same", "source-a/{type}.json");
-        var second = Source("same", "source-b/{type}.json");
-        Assert.NotEqual(BaseListStory.GetCacheDirectory(first), BaseListStory.GetCacheDirectory(second));
+        Assert.Equal(Path.Combine(BaseListStory.DataBaseDir, "Data", "cache", name),
+            BaseListStory.GetCacheDirectory(Source(name, "source/{type}.json")));
     }
 
     [Fact]
-    public void CacheIdentityIsStableAcrossReloadsAndDisplayNameChanges()
+    public void DifferentSourceNamesHaveSeparateCaches()
     {
-        var first = Source("original", "source/{type}.json");
-        var renamed = Source("renamed", "source/{type}.json");
-        Assert.Equal(BaseListStory.GetCacheDirectory(first), BaseListStory.GetCacheDirectory(renamed));
-        Assert.Equal(Path.Combine(BaseListStory.DataBaseDir, "Data", "cache"),
-            Path.GetDirectoryName(BaseListStory.GetCacheDirectory(first)));
+        Assert.NotEqual(BaseListStory.GetCacheDirectory(Source("first", "source/{type}.json")),
+            BaseListStory.GetCacheDirectory(Source("second", "source/{type}.json")));
+        Assert.Equal(BaseListStory.GetCacheDirectory(Source("same", "first/{type}.json")),
+            BaseListStory.GetCacheDirectory(Source("same", "second/{type}.json")));
+    }
+
+    [Theory]
+    [InlineData("../source", ".._source")]
+    [InlineData("a\\b", "a_b")]
+    [InlineData("a:b?*", "a_b__")]
+    [InlineData("..", "未命名数据源")]
+    [InlineData(" ", "未命名数据源")]
+    [InlineData("CON", "_CON")]
+    [InlineData("nul.json", "_nul.json")]
+    [InlineData("COM1", "_COM1")]
+    public void InvalidSourceNamesRemainInsideCacheDirectory(string name, string directory)
+    {
+        var path = BaseListStory.GetCacheDirectory(Source(name, "source/{type}.json"));
+        Assert.Equal(directory, Path.GetFileName(path));
+        Assert.Equal(Path.Combine(BaseListStory.DataBaseDir, "Data", "cache"), Path.GetDirectoryName(path));
     }
 }

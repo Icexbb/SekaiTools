@@ -61,9 +61,23 @@ public abstract class BaseListStory
 
     public static string GetCacheDirectory(SourceData source)
     {
-        var identity = System.Security.Cryptography.SHA256.HashData(
-            System.Text.Encoding.UTF8.GetBytes(source.SourceTemplate));
-        return Path.Combine(DataBaseDir, "Data", "cache", Convert.ToHexString(identity));
+        var invalidCharacters = Path.GetInvalidFileNameChars();
+        var name = new string(source.SourceName.Select(character =>
+            char.IsControl(character) || invalidCharacters.Contains(character) ||
+            "<>:\"/\\|?*".Contains(character) ? '_' : character).ToArray()).Trim().TrimEnd('.');
+        if (name.Length == 0) name = "未命名数据源";
+
+        // Windows reserves device names even when they have an extension.
+        var stem = name.Split('.')[0];
+        if (stem.Equals("CON", StringComparison.OrdinalIgnoreCase) ||
+            stem.Equals("PRN", StringComparison.OrdinalIgnoreCase) ||
+            stem.Equals("AUX", StringComparison.OrdinalIgnoreCase) ||
+            stem.Equals("NUL", StringComparison.OrdinalIgnoreCase) ||
+            System.Text.RegularExpressions.Regex.IsMatch(stem, @"^(COM|LPT)[1-9¹²³]$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            name = "_" + name;
+
+        return Path.Combine(DataBaseDir, "Data", "cache", name);
     }
 
     protected static string CacheDirectory => GetCacheDirectory(Fetcher.SourceList.SourceData);
