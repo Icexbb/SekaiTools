@@ -645,7 +645,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitlePageModel>
                 var endTime = $"{h}:{m:00}:{s:00}.{cs:00}";
                 var staffEvent = Event.Dialog(
                     $"{{\\an{dialog.ViewModel.StaffLinePosition}}}{staffText}",
-                    startTime, endTime, "Staff");
+                    startTime, endTime, "staff");
                 subtitle.Events.Insert(0, staffEvent);
             }
 

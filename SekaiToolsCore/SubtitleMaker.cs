@@ -203,7 +203,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
                 outline: outlineSize, shadow: 0, alignment: 7),
 
 
-            new("Staff", StyleFontConfig.DialogFontFamily, (int)(charaFontsize * 1.5),
+            new("staff", StyleFontConfig.DialogFontFamily, (int)(charaFontsize * 1.5),
                 outlineColor, outlineColour: white,
                 outline: outlineSize, shadow: outlineSize, alignment: 1)
         };
