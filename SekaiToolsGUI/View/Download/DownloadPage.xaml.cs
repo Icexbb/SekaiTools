@@ -318,6 +318,60 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         UpdateTaskListState();
     }
 
+    private async void ButtonClearCache_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (!BoxSource.IsEnabled || !ClearCacheButton.IsEnabled) return;
+        if (_sourceListInitializationTask != null) await _sourceListInitializationTask;
+        if (!BoxSource.IsEnabled || !ClearCacheButton.IsEnabled) return;
+        if (BoxSource.SelectedItem is not SourceData selectedSource) return;
+
+        var contentEnabled = ContentCard.IsEnabled;
+        ClearCacheButton.IsEnabled = false;
+        RefreshButton.IsEnabled = false;
+        BoxSource.IsEnabled = false;
+        BoxStoryType.IsEnabled = false;
+        ContentCard.IsEnabled = false;
+        ++_selectionVersion;
+        ++_sourceVersion;
+        _storyTabs.Clear();
+        _storyInitializationTasks.Clear();
+        ContentCard.Content = null;
+        LoadingMessage.Text = "正在清除列表缓存…";
+        LoadingPanel.Visibility = Visibility.Visible;
+        try
+        {
+            await Task.Run(() =>
+            {
+                lock (StoryDataLock)
+                {
+                    Fetcher.Instance.SetSource(selectedSource);
+                    for (var index = 0; index <= 4; index++)
+                    {
+                        var list = InitializeStoryData(index);
+                        list.ClearCache();
+                        list.ReloadFromCache();
+                    }
+                }
+            });
+            SnackService.Show("缓存已清除", $"已清除 {selectedSource.SourceName} 的列表缓存，可点击“刷新当前列表”重新获取。",
+                ControlAppearance.Success, new SymbolIcon(SymbolRegular.Delete24), TimeSpan.FromSeconds(4));
+        }
+        catch (Exception exception)
+        {
+            Log.Logger.LogError(exception, "{TypeName} ClearCache Error", nameof(DownloadPage));
+            SnackService.Show("清除缓存失败", exception.Message, ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.ErrorCircle24), TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            await SelectIndexAsync(BoxStoryType.SelectedIndex);
+            ContentCard.IsEnabled = contentEnabled;
+            BoxSource.IsEnabled = true;
+            BoxStoryType.IsEnabled = true;
+            ClearCacheButton.IsEnabled = true;
+        }
+    }
+
     public SourceData GetSourceType()
     {
         return ViewModel.CurrentSource;
@@ -366,6 +420,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         button.IsEnabled = false;
         BoxSource.IsEnabled = false;
         BoxStoryType.IsEnabled = false;
+        ClearCacheButton.IsEnabled = false;
         _ = dialogService.ShowAsync(dialog, source.Token);
         try
         {
@@ -382,6 +437,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         finally
         {
             await source.CancelAsync();
+            ClearCacheButton.IsEnabled = true;
             BoxSource.IsEnabled = true;
             BoxStoryType.IsEnabled = true;
             button.IsEnabled = true;

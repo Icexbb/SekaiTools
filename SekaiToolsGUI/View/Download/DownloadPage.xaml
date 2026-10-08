@@ -42,8 +42,21 @@
                     </ComboBox>
                 </StackPanel>
 
-                <Button x:Name="RefreshButton" Grid.Column="2" VerticalAlignment="Bottom"
-                        Content="刷新当前列表" Click="ButtonRefresh_OnClick" />
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom">
+                    <Button x:Name="ClearCacheButton" Margin="0,0,8,0"
+                            ToolTip="清除当前数据源的所有列表缓存" Click="ButtonClearCache_OnClick">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Delete24" Margin="0,0,6,0" />
+                            <TextBlock Text="清除缓存" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="RefreshButton" Click="ButtonRefresh_OnClick">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="ArrowSync24" Margin="0,0,6,0" />
+                            <TextBlock Text="刷新当前列表" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
             <ui:Card Margin="0,0,0,5" Padding="5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                 <control:SelectorBar x:Name="BoxStoryType" HorizontalAlignment="Stretch"
