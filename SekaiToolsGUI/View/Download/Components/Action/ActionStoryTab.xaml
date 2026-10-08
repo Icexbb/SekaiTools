@@ -98,14 +98,22 @@
             </WrapPanel>
             <TextBlock x:Name="FilterHint" Margin="5,0,5,4" TextWrapping="Wrap" />
             <WrapPanel Margin="5,8,5,4" VerticalAlignment="Center">
-                <TextBlock Text="对话 ID" VerticalAlignment="Center" Margin="0,0,8,0" />
-                <TextBox x:Name="MinimumIdBox" Width="95" ToolTip="起始 ID（包含），留空表示不限"
+                <TextBlock Text="对话索引" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <ComboBox x:Name="IdIndexBox" Width="110" SelectedIndex="0" Margin="0,0,8,0"
+                          SelectionChanged="IdIndex_OnSelectionChanged" AutomationProperties.Name="对话索引类型"
+                          ToolTip="ID 为原始数据编号；TalkId 为普通／特殊对话的顺序编号">
+                    <ComboBoxItem Content="ID" />
+                    <ComboBoxItem Content="TalkId" />
+                </ComboBox>
+                <TextBox x:Name="MinimumIdBox" Width="95" ToolTip="起始编号（包含），留空表示不限；TalkId 支持 0001 或 S0001"
                          AutomationProperties.Name="起始对话 ID" TextChanged="IdRange_OnTextChanged" />
                 <TextBlock Text="至" VerticalAlignment="Center" Margin="8,0" />
-                <TextBox x:Name="MaximumIdBox" Width="95" ToolTip="结束 ID（包含），留空表示不限"
+                <TextBox x:Name="MaximumIdBox" Width="95" ToolTip="结束编号（包含），留空表示不限；TalkId 支持 0001 或 S0001"
                          AutomationProperties.Name="结束对话 ID" TextChanged="IdRange_OnTextChanged" />
                 <ui:Button x:Name="AddFilteredButton" Margin="12,0,0,0" Content="全部加入下载列表"
-                           IsEnabled="False" Click="AddFiltered_OnClick" />
+                           IsEnabled="False" Click="AddFiltered_OnClick">
+                    <ui:Button.Icon><ui:SymbolIcon Symbol="AddCircle24" /></ui:Button.Icon>
+                </ui:Button>
             </WrapPanel>
             <TextBlock x:Name="ResultText" Margin="5,4,5,8" TextWrapping="Wrap" />
         </StackPanel>

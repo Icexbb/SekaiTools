@@ -166,37 +166,48 @@ partial class ActionStoryTab
     private void RefreshItems()
     {
         if (MinimumIdBox == null || MaximumIdBox == null || ResultText == null || AddFilteredButton == null) return;
-        var validMinimum = TryReadId(MinimumIdBox.Text, out var minimum);
-        var validMaximum = TryReadId(MaximumIdBox.Text, out var maximum);
+        var validMinimum = TryReadId(MinimumIdBox.Text, out var minimum, out var minimumSpecial);
+        var validMaximum = TryReadId(MaximumIdBox.Text, out var maximum, out var maximumSpecial);
         var valid = validMinimum && validMaximum;
+        valid = valid && (!minimum.HasValue || !maximum.HasValue || minimumSpecial == maximumSpecial);
         valid = valid && (!minimum.HasValue || !maximum.HasValue || minimum <= maximum);
         if (!valid)
         {
             ViewModel.EventStories = [];
-            ResultText.Text = "请输入正整数 ID，且起始 ID 不大于结束 ID";
+            ResultText.Text = IdIndex == ActionStoryIdIndex.TalkId
+                ? "请输入正整数 TalkId（可带 S 前缀），范围两端须同类且起始编号不大于结束编号"
+                : "请输入正整数 ID，且起始 ID 不大于结束 ID";
             AddFilteredButton.IsEnabled = false;
             return;
         }
 
         var filter = new ActionStoryFilter((BoxType.SelectedItem as AreaFilterOption)?.Id,
             (CharacterComboBox.SelectedItem as CharacterComboBoxItem)?.Value ?? 0, minimum, maximum,
-            FilterMode, (ValueBox?.SelectedItem as ActionFilterOption)?.Value);
+            FilterMode, (ValueBox?.SelectedItem as ActionFilterOption)?.Value, IdIndex,
+            minimum.HasValue ? minimumSpecial : maximumSpecial);
         var data = ActionStory.Data.Where(filter.Matches);
         ViewModel.EventStories = (_currentDirection == 1
-            ? data.OrderBy(item => item.ActionSet.Id)
-            : data.OrderByDescending(item => item.ActionSet.Id)).ToArray();
-        ResultText.Text = $"符合条件：{ViewModel.EventStories.Length} 条";
+            ? data.OrderBy(filter.GetSortKey).ThenBy(item => item.ActionSet.Id)
+            : data.OrderByDescending(filter.GetSortKey).ThenByDescending(item => item.ActionSet.Id)).ToArray();
+        ResultText.Text = $"符合条件：{ViewModel.EventStories.Length} 条 · 按 {IdIndex} 索引";
         AddFilteredButton.IsEnabled = ViewModel.EventStories.Length > 0;
     }
 
-    private static bool TryReadId(string text, out int? value)
+    private ActionStoryIdIndex IdIndex => IdIndexBox?.SelectedIndex == 1
+        ? ActionStoryIdIndex.TalkId : ActionStoryIdIndex.Id;
+
+    private bool TryReadId(string text, out int? value, out bool special)
     {
         value = null;
+        special = false;
         if (string.IsNullOrWhiteSpace(text)) return true;
-        if (!int.TryParse(text, out var id) || id <= 0) return false;
+        if (!ActionStoryFilter.TryParseTalkId(text, out var id, out special) ||
+            (IdIndex == ActionStoryIdIndex.Id && special)) return false;
         value = id;
         return true;
     }
+
+    private void IdIndex_OnSelectionChanged(object sender, SelectionChangedEventArgs e) => RefreshItems();
 
     private void IdRange_OnTextChanged(object sender, TextChangedEventArgs e) => RefreshItems();
 
