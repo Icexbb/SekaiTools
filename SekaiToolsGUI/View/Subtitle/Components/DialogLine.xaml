@@ -143,11 +143,11 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Margin="5" Text="{Binding SeparatedContentPart1Length}" />
+                            <TextBlock Grid.Column="0" Margin="5" Text="{Binding SeparatedContentPart1Length, StringFormat={}{0:0.#}}" />
                             <Slider Grid.Column="1" Minimum="1" VerticalAlignment="Center"
                                     Maximum="{Binding SeparatorContentIndexLimit}"
                                     Value="{Binding SeparatorContentIndex}" />
-                            <TextBlock Grid.Column="2" Margin="5" Text="{Binding SeparatedContentPart2Length}" />
+                            <TextBlock Grid.Column="2" Margin="5" Text="{Binding SeparatedContentPart2Length, StringFormat={}{0:0.#}}" />
                         </Grid>
 
                         <Separator Margin="0,8" />
