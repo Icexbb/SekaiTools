@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.IO;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -62,6 +63,8 @@ public partial class SubtitleTask : UserControl
         if (_disposed) return;
         await ReleaseProcessorAsync();
         _disposed = true;
+        ProcessView.EventTimelineEditor.ViewModel.PropertyChanged -= PlaybackModel_OnPropertyChanged;
+        ViewModel.IsPreviewPlaying = false;
         _fpsChangedSubscription?.Dispose();
         _progressChangedSubscription?.Dispose();
         _fpsChangedSubject?.Dispose();
@@ -84,6 +87,7 @@ public partial class SubtitleTask : UserControl
     {
         DataContext = state;
         InitializeComponent();
+        ProcessView.EventTimelineEditor.ViewModel.PropertyChanged += PlaybackModel_OnPropertyChanged;
         _previewEnabled = ViewModel.ShowPreview;
         ViewModel.PropertyChanged += (_, args) =>
         {
@@ -250,6 +254,12 @@ public partial class SubtitleTask : UserControl
     }
 
 
+    private void PlaybackModel_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(TimelineEditorModel.IsPlaying))
+            ViewModel.IsPreviewPlaying = ProcessView.EventTimelineEditor.ViewModel.IsPlaying;
+    }
+
     private void LinePanel_AddDialogLine(DialogBaseFrameSet set)
     {
         _resultQueue.Enqueue(() =>
@@ -268,7 +278,7 @@ public partial class SubtitleTask : UserControl
 
             line.PreviewRequested += async (_, _) =>
             {
-                if (_disposed || !ViewModel.CanPreviewLine) return;
+                if (_disposed || !ViewModel.CanStartLinePreview) return;
                 ViewModel.ShowPreview = true;
                 await ProcessView.EventTimelineEditor.PreviewEventVideoAsync(
                     ViewModel.VideoFilePath, CreateTimelineEvent(line), frame => ViewModel.FramePreviewImage = frame);

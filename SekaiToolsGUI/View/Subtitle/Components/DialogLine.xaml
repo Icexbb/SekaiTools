@@ -90,8 +90,8 @@
                             </TextBlock.Text>
                         </TextBlock>
                         <ui:Button Name="LinePreviewBtn" FontSize="12" Padding="6,4" Click="LinePreviewBtn_OnClick"
-                                   IsEnabled="{Binding DataContext.CanPreviewLine, RelativeSource={RelativeSource AncestorType={x:Type components:SubtitleTask}}, FallbackValue=False}"
-                                   Visibility="{Binding IsEnabled, RelativeSource={RelativeSource Self}, Converter={StaticResource PreviewVisibilityConverter}}">
+                                   IsEnabled="{Binding DataContext.CanStartLinePreview, RelativeSource={RelativeSource AncestorType={x:Type components:SubtitleTask}}, FallbackValue=False}"
+                                   Visibility="{Binding DataContext.CanPreviewLine, RelativeSource={RelativeSource AncestorType={x:Type components:SubtitleTask}}, Converter={StaticResource PreviewVisibilityConverter}, FallbackValue=Collapsed}">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="Play24" Margin="0,0,4,0" />
                                 <TextBlock Text="预览" />

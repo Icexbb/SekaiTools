@@ -159,8 +159,16 @@ public class SubtitlePageModel : ViewModelBase
     public bool IsHistory
     {
         get => GetProperty(false);
-        set { SetProperty(value); OnPropertyChanged(nameof(CanPreviewLine)); }
+        set { SetProperty(value); OnPropertyChanged(nameof(CanPreviewLine)); OnPropertyChanged(nameof(CanStartLinePreview)); }
     }
+
+    public bool IsPreviewPlaying
+    {
+        get => GetProperty(false);
+        set { SetProperty(value); OnPropertyChanged(nameof(CanStartLinePreview)); }
+    }
+
+    public bool CanStartLinePreview => CanPreviewLine && !IsPreviewPlaying;
 
     public bool CanPreviewLine => IsFinished && !IsHistory && !IsRunning && !IsCanceling &&
                                   !IsCanceled && !IsFailed && !IsPartial;
@@ -301,6 +309,7 @@ public class SubtitlePageModel : ViewModelBase
     private void SetRunningStatus()
     {
         OnPropertyChanged(nameof(CanPreviewLine));
+        OnPropertyChanged(nameof(CanStartLinePreview));
         if (IsCanceled)
             RunningStatus = "已取消";
         else if (IsPartial)
