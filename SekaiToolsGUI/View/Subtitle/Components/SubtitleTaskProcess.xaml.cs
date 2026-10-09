@@ -9,6 +9,59 @@ namespace SekaiToolsGUI.View.Subtitle.Components;
 public partial class SubtitleTaskProcess : UserControl
 {
     private bool _shortLayout;
+    private double _requestedPreviewHeight = 200;
+    private bool? _materialsVertical;
+
+    private double MaximumPreviewHeight => Math.Max(200, Math.Min(ActualHeight,
+        (ActualWidth - 350 - 5 + 12) / 2));
+
+    private void UpdatePreviewSize()
+    {
+        if (FramePreviewCard == null || ActualWidth <= 0 || ActualHeight <= 0) return;
+        var height = Math.Clamp(_requestedPreviewHeight, 200, MaximumPreviewHeight);
+        FramePreviewCard.Height = height;
+        // The card's padding and border occupy 12px; its image viewport stays at 2:1.
+        FramePreviewCard.Width = 2 * (height - 12) + 12;
+        PreviewZoomOutButton.IsEnabled = height > 200;
+        PreviewZoomInButton.IsEnabled = height < MaximumPreviewHeight;
+    }
+
+    private void ChangePreviewHeight(double delta)
+    {
+        _requestedPreviewHeight = Math.Clamp(FramePreviewCard.Height + delta, 200, MaximumPreviewHeight);
+        UpdatePreviewSize();
+    }
+
+    private void SubtitleTaskProcess_OnSizeChanged(object sender, SizeChangedEventArgs e) => UpdatePreviewSize();
+    private void PreviewZoomOutButton_OnClick(object sender, RoutedEventArgs e) => ChangePreviewHeight(-50);
+    private void PreviewZoomInButton_OnClick(object sender, RoutedEventArgs e) => ChangePreviewHeight(50);
+
+    private void FramePreviewCard_OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        ChangePreviewHeight(Math.Sign(e.Delta) * 50);
+        e.Handled = true;
+    }
+
+    private void TaskStatusPanel_OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var vertical = e.NewSize.Width < 600;
+        if (_materialsVertical == vertical || TaskMaterialsGrid == null) return;
+        _materialsVertical = vertical;
+        TaskMaterialsGrid.ColumnDefinitions.Clear();
+        TaskMaterialsGrid.RowDefinitions.Clear();
+        for (var i = 0; i < (vertical ? 1 : 3); i++)
+            TaskMaterialsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        for (var i = 0; i < (vertical ? 3 : 1); i++)
+            TaskMaterialsGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        var cards = new FrameworkElement[] { VideoMaterialCard, ScriptMaterialCard, TranslateMaterialCard };
+        for (var i = 0; i < cards.Length; i++)
+        {
+            Grid.SetColumn(cards[i], vertical ? 0 : i);
+            Grid.SetRow(cards[i], vertical ? i : 0);
+            cards[i].Margin = vertical ? new Thickness(0, 0, 0, i == 2 ? 0 : 5)
+                : new Thickness(i == 0 ? 0 : 5, 0, i == 2 ? 0 : 5, 0);
+        }
+    }
 
     public SubtitleTaskProcess()
     {

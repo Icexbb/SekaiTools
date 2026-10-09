@@ -11,6 +11,7 @@
              xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
              mc:Ignorable="d"
              d:DesignWidth="800"
+             SizeChanged="SubtitleTaskProcess_OnSizeChanged"
              PreviewKeyDown="SubtitleTaskProcess_OnPreviewKeyDown"
              d:DataContext="{d:DesignInstance subtitle:SubtitlePageModel, IsDesignTimeCreatable=True}">
     <Grid>
@@ -20,13 +21,13 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <!--任务控制-->
-        <Grid Grid.Row="0" Margin="0,0,0,5">
+        <Grid x:Name="TaskHeaderGrid" Grid.Row="0" Margin="0,0,0,5">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="350" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <!--任务状态-->
-            <Grid Grid.Column="0" Width="350" VerticalAlignment="Stretch">
+            <Grid x:Name="TaskStatusPanel" Grid.Column="0" MinWidth="350" VerticalAlignment="Stretch" SizeChanged="TaskStatusPanel_OnSizeChanged">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
@@ -38,7 +39,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <ui:CardAction Grid.Column="0" Margin="0,0,5,0" Click="VideoFileBtn_OnClick"
+                    <ui:CardAction x:Name="VideoMaterialCard" Grid.Column="0" Margin="0,0,5,0" Click="VideoFileBtn_OnClick"
                                    VerticalAlignment="Stretch" Padding="5">
                         <StackPanel>
                             <ui:SymbolIcon Symbol="Video32" />
@@ -50,7 +51,7 @@
                                 TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                     </ui:CardAction>
-                    <ui:CardAction Grid.Column="1" Margin="5,0,5,0" Click="ScriptFileBtn_OnClick"
+                    <ui:CardAction x:Name="ScriptMaterialCard" Grid.Column="1" Margin="5,0,5,0" Click="ScriptFileBtn_OnClick"
                                    VerticalAlignment="Stretch" Padding="5">
                         <StackPanel>
                             <ui:SymbolIcon Symbol="Script16" />
@@ -62,7 +63,7 @@
                                 TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                     </ui:CardAction>
-                    <ui:CardAction Grid.Column="2" Margin="5,0,0,0" Click="TranslateFileBtn_OnClick"
+                    <ui:CardAction x:Name="TranslateMaterialCard" Grid.Column="2" Margin="5,0,0,0" Click="TranslateFileBtn_OnClick"
                                    VerticalAlignment="Stretch" Padding="5">
                         <StackPanel>
                             <ui:SymbolIcon Symbol="Translate24" />
@@ -139,19 +140,10 @@
             <!--视频处理预览-->
             <ui:Card Grid.Column="1"
                      Margin="5,0,0,0"
-                     Padding="5,5" Name="FramePreviewCard"
+                     Padding="5,5" Name="FramePreviewCard" Height="200" Width="388"
+                     PreviewMouseWheel="FramePreviewCard_OnPreviewMouseWheel"
                      VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                      VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
-                <ui:Card.Style>
-                    <Style TargetType="ui:Card" BasedOn="{StaticResource {x:Type ui:Card}}">
-                        <Setter Property="Height" Value="200" />
-                        <Style.Triggers>
-                            <Trigger Property="layout:AdaptiveLayout.IsShort" Value="True">
-                                <Setter Property="Height" Value="120" />
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </ui:Card.Style>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -173,9 +165,17 @@
                         </ui:TextBlock>
                         <ui:Image VerticalContentAlignment="Stretch"
                                   HorizontalContentAlignment="Stretch"
-                                  Name="FramePreviewImage"
+                                  Name="FramePreviewImage" Stretch="Uniform"
                                   Source="{Binding FramePreviewImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
+                    <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Bottom">
+                        <ui:Button x:Name="PreviewZoomOutButton" Click="PreviewZoomOutButton_OnClick" ToolTip="缩小预览（50px）" Margin="0,0,5,0">
+                            <ui:SymbolIcon Symbol="Subtract24" />
+                        </ui:Button>
+                        <ui:Button x:Name="PreviewZoomInButton" Click="PreviewZoomInButton_OnClick" ToolTip="放大预览（50px）">
+                            <ui:SymbolIcon Symbol="Add24" />
+                        </ui:Button>
+                    </StackPanel>
                     <StackPanel Grid.Row="0" Grid.Column="0">
                         <ui:Button Click="PreviewToggleBtn_OnClick" Margin="0"
                                    Appearance="{Binding ShowPreview,Converter={StaticResource BoolToAppearancePriOrSec}}">
