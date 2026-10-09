@@ -9,25 +9,26 @@ namespace SekaiToolsGUI.View.Subtitle.Components;
 public partial class SubtitleTaskProcess : UserControl
 {
     private bool _shortLayout;
-    private double _requestedPreviewHeight = 200;
+    private const double MinimumPreviewHeight = 240;
+    private double _requestedPreviewHeight = MinimumPreviewHeight;
 
-    private double MaximumPreviewHeight => Math.Max(200, Math.Min(ActualHeight,
+    private double MaximumPreviewHeight => Math.Max(MinimumPreviewHeight, Math.Min(ActualHeight,
         (ActualWidth - 350 - 5 + 12) / 2));
 
     private void UpdatePreviewSize()
     {
         if (FramePreviewCard == null || ActualWidth <= 0 || ActualHeight <= 0) return;
-        var height = Math.Clamp(_requestedPreviewHeight, 200, MaximumPreviewHeight);
+        var height = Math.Clamp(_requestedPreviewHeight, MinimumPreviewHeight, MaximumPreviewHeight);
         FramePreviewCard.Height = height;
         // The card's padding and border occupy 12px; its image viewport stays at 2:1.
         FramePreviewCard.Width = 2 * (height - 12) + 12;
-        PreviewZoomOutButton.IsEnabled = height > 200;
+        PreviewZoomOutButton.IsEnabled = height > MinimumPreviewHeight;
         PreviewZoomInButton.IsEnabled = height < MaximumPreviewHeight;
     }
 
     private void ChangePreviewHeight(double delta)
     {
-        _requestedPreviewHeight = Math.Clamp(FramePreviewCard.Height + delta, 200, MaximumPreviewHeight);
+        _requestedPreviewHeight = Math.Clamp(FramePreviewCard.Height + delta, MinimumPreviewHeight, MaximumPreviewHeight);
         UpdatePreviewSize();
     }
 
