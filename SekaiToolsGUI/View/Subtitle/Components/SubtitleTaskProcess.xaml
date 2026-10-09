@@ -10,7 +10,6 @@
              xmlns:components="clr-namespace:SekaiToolsGUI.View.Subtitle.Components"
              xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
              mc:Ignorable="d"
-             d:Background="White"
              d:DesignWidth="800"
              PreviewKeyDown="SubtitleTaskProcess_OnPreviewKeyDown"
              d:DataContext="{d:DesignInstance subtitle:SubtitlePageModel, IsDesignTimeCreatable=True}">
@@ -27,19 +26,20 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <!--任务状态-->
-            <Grid Grid.Column="0" Width="350" VerticalAlignment="Top">
+            <Grid Grid.Column="0" Width="350" VerticalAlignment="Stretch">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <!--任务素材显示-->
-                <Grid>
+                <Grid Grid.Row="0" VerticalAlignment="Stretch" Name="TaskMaterialsGrid">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <ui:CardAction Grid.Column="0" Margin="0,0,5,0" Click="VideoFileBtn_OnClick">
+                    <ui:CardAction Grid.Column="0" Margin="0,0,5,0" Click="VideoFileBtn_OnClick"
+                                   VerticalAlignment="Stretch" Padding="5">
                         <StackPanel>
                             <ui:SymbolIcon Symbol="Video32" />
                             <ui:TextBlock
@@ -50,7 +50,8 @@
                                 TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                     </ui:CardAction>
-                    <ui:CardAction Grid.Column="1" Margin="5,0,5,0" Click="ScriptFileBtn_OnClick">
+                    <ui:CardAction Grid.Column="1" Margin="5,0,5,0" Click="ScriptFileBtn_OnClick"
+                                   VerticalAlignment="Stretch" Padding="5">
                         <StackPanel>
                             <ui:SymbolIcon Symbol="Script16" />
                             <ui:TextBlock
@@ -61,7 +62,8 @@
                                 TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                     </ui:CardAction>
-                    <ui:CardAction Grid.Column="2" Margin="5,0,0,0" Click="TranslateFileBtn_OnClick">
+                    <ui:CardAction Grid.Column="2" Margin="5,0,0,0" Click="TranslateFileBtn_OnClick"
+                                   VerticalAlignment="Stretch" Padding="5">
                         <StackPanel>
                             <ui:SymbolIcon Symbol="Translate24" />
                             <ui:TextBlock
@@ -74,7 +76,7 @@
                     </ui:CardAction>
                 </Grid>
                 <!--任务状态控制-->
-                <ui:Card Grid.Row="1" Margin="0,5,0,0">
+                <ui:Card Grid.Row="1" Margin="0,5,0,0" VerticalAlignment="Bottom" Name="TaskStatusCard">
                     <StackPanel>
                         <!--状态控制-->
                         <Grid>
@@ -137,7 +139,7 @@
             <!--视频处理预览-->
             <ui:Card Grid.Column="1"
                      Margin="5,0,0,0"
-                     Padding="5,5"
+                     Padding="5,5" Name="FramePreviewCard"
                      VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                      VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
                 <ui:Card.Style>
@@ -171,6 +173,7 @@
                         </ui:TextBlock>
                         <ui:Image VerticalContentAlignment="Stretch"
                                   HorizontalContentAlignment="Stretch"
+                                  Name="FramePreviewImage"
                                   Source="{Binding FramePreviewImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
                     <StackPanel Grid.Row="0" Grid.Column="0">
