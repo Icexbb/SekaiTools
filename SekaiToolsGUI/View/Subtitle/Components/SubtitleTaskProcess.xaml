@@ -27,55 +27,79 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <!--任务状态-->
-            <Grid x:Name="TaskStatusPanel" Grid.Column="0" MinWidth="350" VerticalAlignment="Stretch" SizeChanged="TaskStatusPanel_OnSizeChanged">
+            <Grid x:Name="TaskStatusPanel" Grid.Column="0" MinWidth="350" VerticalAlignment="Stretch">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <!--任务素材显示-->
-                <Grid Grid.Row="0" VerticalAlignment="Stretch" Name="TaskMaterialsGrid">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <ui:CardAction x:Name="VideoMaterialCard" Grid.Column="0" Margin="0,0,5,0" Click="VideoFileBtn_OnClick"
-                                   VerticalAlignment="Stretch" Padding="5">
-                        <StackPanel>
-                            <ui:SymbolIcon Symbol="Video32" />
-                            <ui:TextBlock
-                                ToolTip="{Binding VideoFilePath}"
-                                Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
-                                Appearance="Secondary"
-                                Text="{Binding VideoFileName}"
-                                TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
-                    </ui:CardAction>
-                    <ui:CardAction x:Name="ScriptMaterialCard" Grid.Column="1" Margin="5,0,5,0" Click="ScriptFileBtn_OnClick"
-                                   VerticalAlignment="Stretch" Padding="5">
-                        <StackPanel>
-                            <ui:SymbolIcon Symbol="Script16" />
-                            <ui:TextBlock
-                                ToolTip="{Binding ScriptFilePath}"
-                                Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
-                                Appearance="Secondary"
-                                Text="{Binding ScriptFileName}"
-                                TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
-                    </ui:CardAction>
-                    <ui:CardAction x:Name="TranslateMaterialCard" Grid.Column="2" Margin="5,0,0,0" Click="TranslateFileBtn_OnClick"
-                                   VerticalAlignment="Stretch" Padding="5">
-                        <StackPanel>
-                            <ui:SymbolIcon Symbol="Translate24" />
-                            <ui:TextBlock
-                                ToolTip="{Binding TranslateFilePath}"
-                                Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
-                                Appearance="Secondary"
-                                Text="{Binding TranslateFileName}"
-                                TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
-                    </ui:CardAction>
-                </Grid>
+                <!-- 素材列表始终保持三行，预览缩放时只改变可用宽度。 -->
+                <ui:Card Grid.Row="0" Padding="0" VerticalAlignment="Top">
+                    <Grid Name="TaskMaterialsGrid">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="40" />
+                            <RowDefinition Height="1" />
+                            <RowDefinition Height="40" />
+                            <RowDefinition Height="1" />
+                            <RowDefinition Height="40" />
+                        </Grid.RowDefinitions>
+                        <ui:Button Grid.Row="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                   Padding="10,0" BorderThickness="0" Background="Transparent" Click="VideoFileBtn_OnClick"
+                                   ToolTip="{Binding VideoFilePath}" AutomationProperties.Name="定位视频文件">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="24" />
+                                    <ColumnDefinition Width="42" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="24" />
+                                </Grid.ColumnDefinitions>
+                                <ui:SymbolIcon Symbol="Video24" FontSize="18" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="视频" VerticalAlignment="Center" Margin="6,0,0,0" />
+                                <TextBlock Grid.Column="2" Text="{Binding VideoFileName}" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <ui:SymbolIcon Grid.Column="3" Symbol="FolderOpen24" FontSize="16" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            </Grid>
+                        </ui:Button>
+                        <Border Grid.Row="1" Margin="10,0" Background="{DynamicResource CardStrokeColorDefaultBrush}" />
+                        <ui:Button Grid.Row="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                   Padding="10,0" BorderThickness="0" Background="Transparent" Click="ScriptFileBtn_OnClick"
+                                   ToolTip="{Binding ScriptFilePath}" AutomationProperties.Name="定位剧本文件">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="24" />
+                                    <ColumnDefinition Width="42" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="24" />
+                                </Grid.ColumnDefinitions>
+                                <ui:SymbolIcon Symbol="Script24" FontSize="18" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="剧本" VerticalAlignment="Center" Margin="6,0,0,0" />
+                                <TextBlock Grid.Column="2" Text="{Binding ScriptFileName}" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <ui:SymbolIcon Grid.Column="3" Symbol="FolderOpen24" FontSize="16" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            </Grid>
+                        </ui:Button>
+                        <Border Grid.Row="3" Margin="10,0" Background="{DynamicResource CardStrokeColorDefaultBrush}" />
+                        <ui:Button Grid.Row="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                   Padding="10,0" BorderThickness="0" Background="Transparent" Click="TranslateFileBtn_OnClick"
+                                   ToolTip="{Binding TranslateFilePath}" AutomationProperties.Name="定位翻译文件">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="24" />
+                                    <ColumnDefinition Width="42" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="24" />
+                                </Grid.ColumnDefinitions>
+                                <ui:SymbolIcon Symbol="Translate24" FontSize="18" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="翻译" VerticalAlignment="Center" Margin="6,0,0,0" />
+                                <TextBlock Grid.Column="2" Text="{Binding TranslateFileName}" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <ui:SymbolIcon Grid.Column="3" Symbol="FolderOpen24" FontSize="16" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            </Grid>
+                        </ui:Button>
+                    </Grid>
+                </ui:Card>
                 <!--任务状态控制-->
                 <ui:Card Grid.Row="1" Margin="0,5,0,0" VerticalAlignment="Bottom" Name="TaskStatusCard">
                     <StackPanel>
