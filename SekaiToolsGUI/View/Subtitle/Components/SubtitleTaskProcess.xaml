@@ -43,7 +43,8 @@
                             <RowDefinition Height="40" />
                         </Grid.RowDefinitions>
                         <ui:Button Grid.Row="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                                   Padding="10,0" BorderThickness="0" Background="Transparent" Click="VideoFileBtn_OnClick"
+                                   Padding="10,0" BorderThickness="0" Background="Transparent"
+                                   Click="VideoFileBtn_OnClick"
                                    ToolTip="{Binding VideoFilePath}" AutomationProperties.Name="定位视频文件">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -55,14 +56,17 @@
                                 <ui:SymbolIcon Symbol="Video24" FontSize="18" VerticalAlignment="Center" />
                                 <TextBlock Grid.Column="1" Text="视频" VerticalAlignment="Center" Margin="6,0,0,0" />
                                 <TextBlock Grid.Column="2" Text="{Binding VideoFileName}" VerticalAlignment="Center"
-                                           TextTrimming="CharacterEllipsis" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                                <ui:SymbolIcon Grid.Column="3" Symbol="FolderOpen24" FontSize="16" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <ui:SymbolIcon Grid.Column="3" Symbol="FolderOpen24" FontSize="16"
+                                               VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                             </Grid>
                         </ui:Button>
                         <Border Grid.Row="1" Margin="10,0" Background="{DynamicResource CardStrokeColorDefaultBrush}" />
                         <ui:Button Grid.Row="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                                   Padding="10,0" BorderThickness="0" Background="Transparent" Click="ScriptFileBtn_OnClick"
+                                   Padding="10,0" BorderThickness="0" Background="Transparent"
+                                   Click="ScriptFileBtn_OnClick"
                                    ToolTip="{Binding ScriptFilePath}" AutomationProperties.Name="定位剧本文件">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -74,14 +78,17 @@
                                 <ui:SymbolIcon Symbol="Script24" FontSize="18" VerticalAlignment="Center" />
                                 <TextBlock Grid.Column="1" Text="剧本" VerticalAlignment="Center" Margin="6,0,0,0" />
                                 <TextBlock Grid.Column="2" Text="{Binding ScriptFileName}" VerticalAlignment="Center"
-                                           TextTrimming="CharacterEllipsis" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                                <ui:SymbolIcon Grid.Column="3" Symbol="FolderOpen24" FontSize="16" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <ui:SymbolIcon Grid.Column="3" Symbol="FolderOpen24" FontSize="16"
+                                               VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                             </Grid>
                         </ui:Button>
                         <Border Grid.Row="3" Margin="10,0" Background="{DynamicResource CardStrokeColorDefaultBrush}" />
                         <ui:Button Grid.Row="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                                   Padding="10,0" BorderThickness="0" Background="Transparent" Click="TranslateFileBtn_OnClick"
+                                   Padding="10,0" BorderThickness="0" Background="Transparent"
+                                   Click="TranslateFileBtn_OnClick"
                                    ToolTip="{Binding TranslateFilePath}" AutomationProperties.Name="定位翻译文件">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -92,9 +99,12 @@
                                 </Grid.ColumnDefinitions>
                                 <ui:SymbolIcon Symbol="Translate24" FontSize="18" VerticalAlignment="Center" />
                                 <TextBlock Grid.Column="1" Text="翻译" VerticalAlignment="Center" Margin="6,0,0,0" />
-                                <TextBlock Grid.Column="2" Text="{Binding TranslateFileName}" VerticalAlignment="Center"
-                                           TextTrimming="CharacterEllipsis" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                                <ui:SymbolIcon Grid.Column="3" Symbol="FolderOpen24" FontSize="16" VerticalAlignment="Center"
+                                <TextBlock Grid.Column="2" Text="{Binding TranslateFileName}"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <ui:SymbolIcon Grid.Column="3" Symbol="FolderOpen24" FontSize="16"
+                                               VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                             </Grid>
                         </ui:Button>
@@ -194,10 +204,12 @@
                                   Source="{Binding FramePreviewImage,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
                     <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Bottom">
-                        <ui:Button x:Name="PreviewZoomOutButton" Click="PreviewZoomOutButton_OnClick" ToolTip="缩小预览（50px）" Margin="0,0,5,0">
+                        <ui:Button x:Name="PreviewZoomOutButton" Click="PreviewZoomOutButton_OnClick"
+                                   ToolTip="缩小预览（50px）" Margin="0,0,5,0">
                             <ui:SymbolIcon Symbol="Subtract24" />
                         </ui:Button>
-                        <ui:Button x:Name="PreviewZoomInButton" Click="PreviewZoomInButton_OnClick" ToolTip="放大预览（50px）">
+                        <ui:Button x:Name="PreviewZoomInButton" Click="PreviewZoomInButton_OnClick"
+                                   ToolTip="放大预览（50px）">
                             <ui:SymbolIcon Symbol="Add24" />
                         </ui:Button>
                     </StackPanel>
@@ -215,12 +227,21 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Margin="0,0,6,0">
-                            <TextBlock Text="{Binding PreviewFrameInfo}" FontSize="11" TextWrapping="Wrap"
-                                       ToolTip="帧索引从 0 开始；时间为视频绝对时间；识别时百分比为整个视频进度，播放时为当前语句区间进度。WPF 帧索引由播放位置与视频帧率换算。" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding PreviewFrameInfo}" FontSize="11"
+                                           TextWrapping="Wrap"
+                                           ToolTip="帧索引从 0 开始；时间为视频绝对时间；识别时百分比为整个视频进度，播放时为当前语句区间进度。WPF 帧索引由播放位置与视频帧率换算。" />
+
+                                <TextBlock Grid.Column="1" Text="{Binding PlaybackStatus}" FontSize="11"
+                                           TextWrapping="Wrap" TextAlignment="Right"
+                                           Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
+                            </Grid>
                             <ProgressBar Height="5" Margin="0,4,0,3" Minimum="0" Maximum="100"
                                          Value="{Binding PreviewPlaybackProgress}" />
-                            <TextBlock Text="{Binding PlaybackStatus}" FontSize="11" TextWrapping="Wrap"
-                                       Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
                         </StackPanel>
                         <ui:Button Grid.Column="1" VerticalAlignment="Center" Padding="6"
                                    ToolTip="停止语句预览" IsEnabled="{Binding IsPlaying}"
