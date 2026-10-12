@@ -20,9 +20,18 @@ public partial class BannerLine : UserControl, INavigableView<BannerLineModel>
 
     public event EventHandler? TimelineRequested;
 
-    private void BannerLine_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    public event EventHandler? PreviewRequested;
+
+    private void LineEditBtn_OnClick(object sender, RoutedEventArgs e)
     {
-        TimelineRequested?.Invoke(this, EventArgs.Empty);
+        if (LineEditBtn.IsEnabled) TimelineRequested?.Invoke(this, EventArgs.Empty);
+        e.Handled = true;
+    }
+
+    private void LinePreviewBtn_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (LinePreviewBtn.IsEnabled) PreviewRequested?.Invoke(this, EventArgs.Empty);
+        e.Handled = true;
     }
 
     private void BannerLine_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)

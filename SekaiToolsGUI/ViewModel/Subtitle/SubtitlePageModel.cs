@@ -170,8 +170,10 @@ public class SubtitlePageModel : ViewModelBase
 
     public bool CanStartLinePreview => CanPreviewLine && !IsPreviewPlaying;
 
-    public bool CanPreviewLine => IsFinished && !IsHistory && !IsRunning && !IsCanceling &&
-                                  !IsCanceled && !IsFailed && !IsPartial;
+    public bool CanEditLine => IsFinished && !IsRunning && !IsCanceling &&
+                               !IsCanceled && !IsFailed && !IsPartial;
+
+    public bool CanPreviewLine => CanEditLine && !IsHistory;
 
     public bool CanOutput => IsFinished || IsCanceled || IsPartial;
     public bool CanReset => IsFinished || IsCanceled || IsPartial || IsFailed;
@@ -308,6 +310,7 @@ public class SubtitlePageModel : ViewModelBase
 
     private void SetRunningStatus()
     {
+        OnPropertyChanged(nameof(CanEditLine));
         OnPropertyChanged(nameof(CanPreviewLine));
         OnPropertyChanged(nameof(CanStartLinePreview));
         if (IsCanceled)

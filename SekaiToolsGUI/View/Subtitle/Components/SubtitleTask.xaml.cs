@@ -287,7 +287,10 @@ public partial class SubtitleTask : UserControl
             {
                 var timelineEvent = CreateTimelineEvent(line);
                 ProcessView.EventTimelineEditor.RegisterEvent(timelineEvent);
-                line.TimelineRequested += (_, _) => ProcessView.OpenTimelineEvent(timelineEvent);
+                line.TimelineRequested += (_, _) =>
+                {
+                    if (ViewModel.CanEditLine) ProcessView.OpenTimelineEvent(timelineEvent);
+                };
                 line.SeparatorChanged += (_, _) => ProcessView.EventTimelineEditor.RefreshEventTiming(timelineEvent);
             }
 
@@ -325,9 +328,19 @@ public partial class SubtitleTask : UserControl
             {
                 var timelineEvent = CreateTimelineEvent(line);
                 ProcessView.EventTimelineEditor.RegisterEvent(timelineEvent);
-                line.TimelineRequested += (_, _) => ProcessView.EventTimelineEditor.SelectEvent(timelineEvent);
+                line.TimelineRequested += (_, _) =>
+                {
+                    if (ViewModel.CanEditLine) ProcessView.OpenTimelineEvent(timelineEvent);
+                };
             }
 
+            line.PreviewRequested += async (_, _) =>
+            {
+                if (_disposed || !ViewModel.CanStartLinePreview) return;
+                ViewModel.ShowPreview = true;
+                await ProcessView.EventTimelineEditor.PreviewEventVideoAsync(
+                    ViewModel.VideoFilePath, CreateTimelineEvent(line), frame => ViewModel.FramePreviewImage = frame);
+            };
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.BannerCurrent++;
             ProcessView.RefreshContentVisibility();
@@ -349,9 +362,19 @@ public partial class SubtitleTask : UserControl
             {
                 var timelineEvent = CreateTimelineEvent(line);
                 ProcessView.EventTimelineEditor.RegisterEvent(timelineEvent);
-                line.TimelineRequested += (_, _) => ProcessView.EventTimelineEditor.SelectEvent(timelineEvent);
+                line.TimelineRequested += (_, _) =>
+                {
+                    if (ViewModel.CanEditLine) ProcessView.OpenTimelineEvent(timelineEvent);
+                };
             }
 
+            line.PreviewRequested += async (_, _) =>
+            {
+                if (_disposed || !ViewModel.CanStartLinePreview) return;
+                ViewModel.ShowPreview = true;
+                await ProcessView.EventTimelineEditor.PreviewEventVideoAsync(
+                    ViewModel.VideoFilePath, CreateTimelineEvent(line), frame => ViewModel.FramePreviewImage = frame);
+            };
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.MarkerCurrent++;
             ProcessView.RefreshContentVisibility();

@@ -109,7 +109,7 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
 
     private void LineEditBtn_OnClick(object sender, RoutedEventArgs e)
     {
-        TimelineRequested?.Invoke(this, EventArgs.Empty);
+        if (LineEditBtn.IsEnabled) TimelineRequested?.Invoke(this, EventArgs.Empty);
         e.Handled = true;
     }
 

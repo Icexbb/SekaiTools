@@ -4,11 +4,14 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:components="clr-namespace:SekaiToolsGUI.View.Subtitle.Components"
              xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
              mc:Ignorable="d" d:DesignWidth="760"
              d:DataContext="{d:DesignInstance subtitle:MarkerLineModel, IsDesignTimeCreatable=False}"
-             PreviewMouseLeftButtonDown="MarkerLine_OnPreviewMouseLeftButtonDown"
              HorizontalAlignment="Stretch">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="PreviewVisibilityConverter" />
+    </UserControl.Resources>
     <ui:Card Padding="0">
         <Grid Margin="12">
             <Grid.ColumnDefinitions>
@@ -36,17 +39,34 @@
                         </Border>
                     </StackPanel>
 
-                    <TextBlock Grid.Column="1" VerticalAlignment="Center"
-                               FontFamily="Consolas"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}">
-                        <TextBlock.Text>
-                            <MultiBinding StringFormat="{}{0} → {1}　{2}">
-                                <Binding Path="StartTime" Mode="OneWay" />
-                                <Binding Path="EndTime" Mode="OneWay" />
-                                <Binding Path="EventDuration" Mode="OneWay" />
-                            </MultiBinding>
-                        </TextBlock.Text>
-                    </TextBlock>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <TextBlock VerticalAlignment="Center"
+                                   FontFamily="Consolas"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="{}{0} → {1}　{2}">
+                                    <Binding Path="StartTime" Mode="OneWay" />
+                                    <Binding Path="EndTime" Mode="OneWay" />
+                                    <Binding Path="EventDuration" Mode="OneWay" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <ui:Button Name="LineEditBtn" FontSize="12" Margin="5,0,0,0" Padding="6,4" Click="LineEditBtn_OnClick"
+                                   IsEnabled="{Binding DataContext.CanEditLine, RelativeSource={RelativeSource AncestorType={x:Type components:SubtitleTask}}, FallbackValue=False}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Edit24" Margin="0,0,4,0" />
+                                <TextBlock Text="编辑" />
+                            </StackPanel>
+                        </ui:Button>
+                        <ui:Button Name="LinePreviewBtn" FontSize="12" Margin="5,0,0,0" Padding="6,4" Click="LinePreviewBtn_OnClick"
+                                   IsEnabled="{Binding DataContext.CanStartLinePreview, RelativeSource={RelativeSource AncestorType={x:Type components:SubtitleTask}}, FallbackValue=False}"
+                                   Visibility="{Binding DataContext.CanPreviewLine, RelativeSource={RelativeSource AncestorType={x:Type components:SubtitleTask}}, Converter={StaticResource PreviewVisibilityConverter}, FallbackValue=Collapsed}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Play24" Margin="0,0,4,0" />
+                                <TextBlock Text="预览" />
+                            </StackPanel>
+                        </ui:Button>
+                    </StackPanel>
                 </Grid>
 
                 <ui:Card Margin="0,9,0,0"
