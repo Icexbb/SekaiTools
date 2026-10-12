@@ -27,7 +27,7 @@
             </Grid>
         </ui:CardExpander.Header>
         <ui:CardExpander.Content>
-            <StackPanel Name="PanelItems" />
+            <Grid Name="PanelItems" />
         </ui:CardExpander.Content>
     </ui:CardExpander>
 </UserControl>

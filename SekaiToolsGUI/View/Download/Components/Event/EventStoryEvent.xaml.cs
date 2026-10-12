@@ -80,6 +80,11 @@ public partial class EventStoryEvent
             if (panelItemsChild is DownloadItem downloadItem)
                 downloadItem.Recycle();
 
+        const int itemPreRow = 4;
+        PanelItems.RowDefinitions.Clear();
+        PanelItems.ColumnDefinitions.Clear();
+        for (var column = 0; column < itemPreRow; column++)
+            PanelItems.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         for (var i = 0; i < EventStorySet!.EventStory.EventStoryEpisodes.Length; i++)
         {
             var storyIndex = EventStorySet.Index;
@@ -90,7 +95,11 @@ public partial class EventStoryEvent
                     EventStorySet.EventStory.AssetBundleName), episode.Title, key,
                 $"EventStory|{storyIndex}-{EventStorySet.GameEvent.Name}|{episode.EpisodeNo}-{episode.Title}");
 
-            downloadItem.Margin = new Thickness(0, 5, 0, 0);
+            if (i % itemPreRow == 0)
+                PanelItems.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            Grid.SetRow(downloadItem, i / itemPreRow);
+            Grid.SetColumn(downloadItem, i % itemPreRow);
+            downloadItem.Margin = new Thickness(0, 5, i % itemPreRow == itemPreRow - 1 ? 0 : 5, 0);
             PanelItems.Children.Add(downloadItem);
         }
     }
