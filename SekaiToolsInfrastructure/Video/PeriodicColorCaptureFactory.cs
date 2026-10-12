@@ -21,10 +21,7 @@ public sealed class PeriodicColorCaptureFactory(string pluginPath) : IVideoCaptu
     public static PeriodicColorCaptureFactory ForCurrentRuntime()
     {
         if (!OperatingSystem.IsWindows() || IntPtr.Size != 8) throw new PlatformNotSupportedException();
-        _ = CvInvoke.NumThreads;
-        using var process = Process.GetCurrentProcess();
-        var native = process.Modules.Cast<ProcessModule>()
-            .Single(m => m.ModuleName.Equals("cvextern.dll", StringComparison.OrdinalIgnoreCase)).FileName;
+        var native = GetQualifiedRuntimePath();
         return new PeriodicColorCaptureFactory(Path.Combine(Path.GetDirectoryName(native)!, "opencv_videoio_ffmpeg500_64.dll"));
     }
 
@@ -34,10 +31,7 @@ public sealed class PeriodicColorCaptureFactory(string pluginPath) : IVideoCaptu
         if (previewInterval is < 1 or > 1000000) throw new ArgumentOutOfRangeException(nameof(previewInterval));
         var plugin = Path.GetFullPath(pluginPath);
         if (Hash(plugin) != QualifiedPluginHash) throw new InvalidDataException("未验证的捕获插件");
-        _ = CvInvoke.NumThreads;
-        using var process = Process.GetCurrentProcess();
-        var native = process.Modules.Cast<ProcessModule>()
-            .Single(m => m.ModuleName.Equals("cvextern.dll", StringComparison.OrdinalIgnoreCase)).FileName;
+        var native = GetQualifiedRuntimePath();
         var nativeHash = Hash(native);
         if (nativeHash != QualifiedNativeHash && nativeHash != QualifiedExpandedNativeHash)
             throw new InvalidDataException("未验证的周期彩色运行库");
@@ -48,6 +42,31 @@ public sealed class PeriodicColorCaptureFactory(string pluginPath) : IVideoCaptu
     {
         using var stream = File.OpenRead(path);
         return Convert.ToHexString(SHA256.HashData(stream));
+    }
+
+    private static string GetQualifiedRuntimePath()
+    {
+        _ = CvInvoke.NumThreads;
+        using var process = Process.GetCurrentProcess();
+        var paths = process.Modules.Cast<ProcessModule>()
+            .Where(m => m.ModuleName.Equals("cvextern.dll", StringComparison.OrdinalIgnoreCase))
+            .Select(m => m.FileName)
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        return SelectQualifiedRuntimePath(paths, Hash);
+    }
+
+    internal static string SelectQualifiedRuntimePath(IEnumerable<string> paths, Func<string, string> hash)
+    {
+        var modules = paths.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        if (modules.Length == 0) throw new InvalidDataException("未找到已加载的 OpenCV 运行库");
+        var fingerprints = modules.Select(hash).ToArray();
+        if (fingerprints.All(value => value != QualifiedNativeHash && value != QualifiedExpandedNativeHash))
+            throw new InvalidDataException("当前 OpenCV 运行库不支持周期彩色实验。请关闭该实验设置，或使用包含周期彩色扩展的候选包。");
+        // Two DLL instances have independent native state, even with equal bytes.
+        // Never bind a capture allocated by Emgu to an arbitrarily chosen module.
+        if (modules.Length != 1)
+            throw new InvalidDataException("加载了多份 OpenCV 运行库，无法安全启用周期彩色实验。请使用干净的候选包目录并重启程序。运行库路径：" + string.Join("；", modules));
+        return modules[0];
     }
 
     private sealed class Session : IVideoCaptureSession
