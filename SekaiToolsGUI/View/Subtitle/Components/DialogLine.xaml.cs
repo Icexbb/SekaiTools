@@ -107,6 +107,12 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
         if (PreviewLastButton.IsEnabled) PreviewLastRequested?.Invoke(this, EventArgs.Empty);
     }
 
+    private void LineEditBtn_OnClick(object sender, RoutedEventArgs e)
+    {
+        TimelineRequested?.Invoke(this, EventArgs.Empty);
+        e.Handled = true;
+    }
+
     private void LinePreviewBtn_OnClick(object sender, RoutedEventArgs e)
     {
         if (LinePreviewBtn.IsEnabled) PreviewRequested?.Invoke(this, EventArgs.Empty);

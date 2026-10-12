@@ -76,6 +76,15 @@ public partial class SubtitleTaskProcess : UserControl
         _shortLayout = shortLayout;
     }
 
+    internal void OpenTimelineEvent(TimelineEventSelection selection)
+    {
+        EventTimelineEditor.ViewModel.ShowTimeLine = true;
+        UpdateLayout();
+        EventTimelineEditor.SelectEvent(selection);
+        TimelineViewport.ScrollToTop();
+        EventTimelineEditor.BringIntoView();
+    }
+
     internal void RefreshContentVisibility()
     {
         foreach (var child in LinePanel.Children)

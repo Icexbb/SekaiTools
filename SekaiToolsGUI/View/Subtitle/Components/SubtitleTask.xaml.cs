@@ -287,7 +287,7 @@ public partial class SubtitleTask : UserControl
             {
                 var timelineEvent = CreateTimelineEvent(line);
                 ProcessView.EventTimelineEditor.RegisterEvent(timelineEvent);
-                line.TimelineRequested += (_, _) => ProcessView.EventTimelineEditor.SelectEvent(timelineEvent);
+                line.TimelineRequested += (_, _) => ProcessView.OpenTimelineEvent(timelineEvent);
                 line.SeparatorChanged += (_, _) => ProcessView.EventTimelineEditor.RefreshEventTiming(timelineEvent);
             }
 
