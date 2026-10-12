@@ -45,6 +45,11 @@ public partial class SubtitleTaskProcess : UserControl
     public SubtitleTaskProcess()
     {
         InitializeComponent();
+        EventTimelineEditor.InlineVideoPreview = frame =>
+        {
+            ViewModel.ShowPreview = true;
+            ViewModel.FramePreviewImage = frame;
+        };
     }
 
     public event RoutedEventHandler? StopRequested;

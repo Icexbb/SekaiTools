@@ -23,13 +23,13 @@
                             <ui:TextBlock FontTypography="Body" Text="语句预览播放方式" />
                             <ui:TextBlock TextWrapping="Wrap" MaxWidth="460"
                                           Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                          Text="FFmpeg 使用 ffplay 独立窗口同步播放。自动选择优先检测程序目录、资源目录及 PATH 中的 ffplay.exe，未找到时使用内嵌预览。" />
+                                          Text="WPF 播放器在预览区域统一播放声音和画面，无需安装 FFmpeg。自动选择优先使用 WPF，系统解码失败时回退到 OpenCV + NAudio。" />
                         </StackPanel>
                     </ui:CardControl.Header>
                     <ComboBox MinWidth="200" SelectedIndex="{Binding PreviewPlaybackBackend,Mode=TwoWay}">
                         <ComboBoxItem Content="自动选择" />
                         <ComboBoxItem Content="OpenCV + NAudio" />
-                        <ComboBoxItem Content="FFmpeg（ffplay）" />
+                        <ComboBoxItem Content="WPF 内嵌播放" />
                     </ComboBox>
                 </ui:CardControl>
                 <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Color24}">

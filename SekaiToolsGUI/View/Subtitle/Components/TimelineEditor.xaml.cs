@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -130,7 +129,7 @@ public partial class TimelineEditor : UserControl
         typeof(TimelineEditor),
         new FrameworkPropertyMetadata(false, OnIsReadOnlyChanged));
 
-    private CancellationTokenSource? _ffplayCancellation;
+    private CancellationTokenSource? _nativePlaybackCancellation;
     private readonly List<TimelineHitRegion> _eventHitRegions = [];
     private readonly List<TimelineEventSelection> _events = [];
     private readonly DispatcherTimer _playbackTimer;
@@ -188,6 +187,8 @@ public partial class TimelineEditor : UserControl
         UpdateUndoState();
         UpdateZoomText();
     }
+
+    public Action<ImageSource>? InlineVideoPreview { get; set; }
 
     public TimelineEditorModel ViewModel => (TimelineEditorModel)DataContext;
 
@@ -900,6 +901,8 @@ public partial class TimelineEditor : UserControl
             return;
         }
 
+        if (mode == PlaybackMode.Video) showFrame ??= InlineVideoPreview;
+
         StopPlayback(
             keepVideoPreview: mode == PlaybackMode.Video &&
                               _videoPlaybackWindow?.IsVisible == true);
@@ -914,47 +917,46 @@ public partial class TimelineEditor : UserControl
         var backend = SekaiToolsGUI.ViewModel.Setting.SettingPageModel.Instance.PreviewPlaybackBackend;
         if (!forceLegacy && backend != 1)
         {
-            var directories = new[]
+            var version = _playbackVersion;
+            using var cancellation = new CancellationTokenSource();
+            _nativePlaybackCancellation = cancellation;
+            if (mode == PlaybackMode.Video && _inlineVideoFrame == null)
             {
-                AppContext.BaseDirectory,
-                System.IO.Path.Combine(ResourceManager.DataBaseDir, "Resource", "vapourSynth")
-            }.Concat((Environment.GetEnvironmentVariable("PATH") ?? "").Split(System.IO.Path.PathSeparator));
-            var executable = SekaiToolsMedia.FfplayPreview.FindExecutable(directories);
-            if (executable != null)
+                var window = GetOrCreatePlaybackWindow();
+                window.Title = $"事件预览 · {_selection.EventNumber} {_selection.EventType}";
+                if (!window.IsVisible) window.Show();
+            }
+            SetPlaybackStatus("WPF 内嵌播放 · 正在加载…");
+            try
             {
-                var version = _playbackVersion;
-                using var cancellation = new CancellationTokenSource();
-                _ffplayCancellation = cancellation;
-                SetPlaybackStatus("FFmpeg · 正在独立窗口播放（关闭窗口可停止）");
-                try
-                {
-                    await SekaiToolsMedia.FfplayPreview.PlayAsync(executable, _mediaPath,
-                        _playbackStart, _playbackEnd - _playbackStart, mode == PlaybackMode.Audio,
-                        $"语句预览 · {_selection.EventNumber}", cancellation.Token);
-                    if (version == _playbackVersion) StopPlayback("播放完成");
-                }
-                catch (OperationCanceledException) { }
-                catch (Exception ex)
-                {
-                    if (version == _playbackVersion)
+                await WpfMediaPreview.PlayAsync(_mediaPath, _playbackStart, _playbackEnd,
+                    mode == PlaybackMode.Video,
+                    frame =>
                     {
-                        if (backend == 0)
-                            await StartPlaybackAsync(mode, requireFeatureSwitch, showFrame, forceLegacy: true);
-                        else
-                            StopPlayback($"FFmpeg 播放失败：{ex.Message}");
-                    }
-                }
-                finally
-                {
-                    if (ReferenceEquals(_ffplayCancellation, cancellation)) _ffplayCancellation = null;
-                }
-                return;
+                        if (version == _playbackVersion) ShowVideoPlaybackFrame(frame);
+                    },
+                    position =>
+                    {
+                        if (version == _playbackVersion) UpdatePlaybackStatus(position);
+                    }, cancellation.Token);
+                if (version == _playbackVersion) StopPlayback("播放完成", mode == PlaybackMode.Video);
             }
-            if (backend == 2)
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
             {
-                StopPlayback("未找到 ffplay.exe，请安装包含 ffplay 的 FFmpeg 并加入 PATH，或选择自动选择");
-                return;
+                if (version == _playbackVersion)
+                {
+                    if (backend == 0)
+                        await StartPlaybackAsync(mode, requireFeatureSwitch, showFrame, forceLegacy: true);
+                    else
+                        StopPlayback($"WPF 播放失败：{ex.Message}；可选择自动选择或 OpenCV + NAudio");
+                }
             }
+            finally
+            {
+                if (ReferenceEquals(_nativePlaybackCancellation, cancellation)) _nativePlaybackCancellation = null;
+            }
+            return;
         }
 
         if (mode == PlaybackMode.Video)
@@ -1144,7 +1146,8 @@ public partial class TimelineEditor : UserControl
             0,
             (_playbackEnd - _playbackStart).TotalMilliseconds);
         var duration = (_playbackEnd - _playbackStart).TotalMilliseconds;
-        var mode = _playbackMode == PlaybackMode.Video ? "OpenCV + NAudio" : "NAudio";
+        var mode = _nativePlaybackCancellation != null ? "WPF 内嵌播放" :
+            _playbackMode == PlaybackMode.Video ? "OpenCV + NAudio" : "NAudio";
         SetPlaybackStatus($"{mode} · {FormatTimestamp((int)elapsed)} / {FormatTimestamp((int)duration)}");
     }
 
@@ -1155,8 +1158,8 @@ public partial class TimelineEditor : UserControl
 
     private void StopPlayback(string status = "", bool keepVideoPreview = false)
     {
-        _ffplayCancellation?.Cancel();
-        _ffplayCancellation = null;
+        _nativePlaybackCancellation?.Cancel();
+        _nativePlaybackCancellation = null;
         _inlineVideoFrame = null;
         _playbackMode = PlaybackMode.None;
         _playbackVersion++;
