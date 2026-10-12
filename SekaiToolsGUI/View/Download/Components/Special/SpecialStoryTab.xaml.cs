@@ -31,6 +31,8 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
     private void RefreshCombo()
     {
         CardContents.Children.Clear();
+        CardContents.RowDefinitions.Clear();
+        CardContents.ColumnDefinitions.Clear();
         if (ListSpecialStory.Data.Count == 0) return;
         foreach (var (key, _) in ListSpecialStory.Data)
             SpecialStoryTypeSelector.Items.Add(key);
@@ -45,7 +47,14 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
         if (SpecialStoryTypeSelector.SelectedIndex == -1) return;
         var selectedUnit = SpecialStoryTypeSelector.SelectedItem.ToString()!;
         CardContents.Children.Clear();
+        CardContents.RowDefinitions.Clear();
+        CardContents.ColumnDefinitions.Clear();
         var set = ListSpecialStory.Data[selectedUnit];
+        const int itemPreRow = 4;
+        for (var column = 0; column < itemPreRow; column++)
+            CardContents.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var index = 0;
         foreach (var episode in set.Episodes)
         {
             var item = DownloadItem.GetItem(() => SourceList.Instance.SpecialStory(episode),
@@ -53,8 +62,13 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
                 episode.ScenarioId,
                 $"SpecialStory|{set.SpecialStory.AssetBundleName}-{set.SpecialStory.Title}|{episode.ScenarioId}-{episode.Title}"
             );
-            item.Margin = new Thickness(5);
+            if (index % itemPreRow == 0)
+                CardContents.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            Grid.SetRow(item, index / itemPreRow);
+            Grid.SetColumn(item, index % itemPreRow);
+            item.Margin = new Thickness(0, 0, index % itemPreRow == itemPreRow - 1 ? 0 : 5, 5);
             CardContents.Children.Add(item);
+            index++;
         }
     }
 

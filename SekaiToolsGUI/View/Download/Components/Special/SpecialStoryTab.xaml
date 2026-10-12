@@ -19,7 +19,7 @@
 
         <ui:Card Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
             <ui:PassiveScrollViewer>
-                <StackPanel Margin="5" Name="CardContents" />
+                <Grid Margin="5" Name="CardContents" />
             </ui:PassiveScrollViewer>
         </ui:Card>
     </Grid>
