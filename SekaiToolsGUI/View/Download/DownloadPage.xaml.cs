@@ -206,9 +206,21 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         };
     }
 
+    private void SourceSelector_OnTargetUpdated(object sender, System.Windows.Data.DataTransferEventArgs e)
+    {
+        if (e.Property == ItemsControl.ItemsSourceProperty)
+            Dispatcher.BeginInvoke(DispatcherPriority.DataBind, new Action(() =>
+            {
+                var selectedIndex = ViewModel.CurrentSourceIndex;
+                BoxSource.SetCurrentValue(System.Windows.Controls.Primitives.Selector.SelectedIndexProperty, -1);
+                BoxSource.SetCurrentValue(System.Windows.Controls.Primitives.Selector.SelectedIndexProperty, selectedIndex);
+            }));
+    }
+
     private async void SourceSelector_OnSelected(object sender, SelectionChangedEventArgs e)
     {
         if (BoxSource.SelectedItem is not SourceData || ContentCard == null) return;
+        ViewModel.CurrentSourceIndex = BoxSource.SelectedIndex;
         ++_selectionVersion;
         ++_sourceVersion;
         _storyTabs.Clear();
@@ -393,10 +405,6 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
                 ControlAppearance.Danger, new SymbolIcon(SymbolRegular.CloudDismiss24), TimeSpan.FromSeconds(5));
             Log.Logger.LogError(e, "{TypeName} InitDownloadSource Error", nameof(DownloadPage));
             ViewModel.SourceData = SourceData.Default;
-        }
-        finally
-        {
-            BoxSource.SelectedIndex = 0;
         }
     }
 

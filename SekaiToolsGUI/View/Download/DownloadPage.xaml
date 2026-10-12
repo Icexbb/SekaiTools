@@ -31,9 +31,10 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Margin="0,0,10,0" Text="数据源" VerticalAlignment="Center" />
-                    <ComboBox Name="BoxSource" ItemsSource="{Binding SourceData}"
+                    <ComboBox Name="BoxSource" ItemsSource="{Binding SourceData, NotifyOnTargetUpdated=True}"
+                              TargetUpdated="SourceSelector_OnTargetUpdated"
                               AutomationProperties.Name="数据源" MinWidth="120"
-                              SelectedIndex="{Binding CurrentSourceIndex}" SelectionChanged="SourceSelector_OnSelected">
+                              SelectedIndex="{Binding CurrentSourceIndex, Mode=OneWay}" SelectionChanged="SourceSelector_OnSelected">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding SourceName }" />
