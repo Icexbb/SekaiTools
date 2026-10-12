@@ -682,6 +682,8 @@ public partial class SubtitleTask
                                     new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
                             }
 
+                            if (ProcessView.EventTimelineEditor.ViewModel.HasPlaybackPreviewInfo)
+                                ProcessView.EventTimelineEditor.ViewModel.PlaybackStatus = "识别已结束";
                             ProcessView.TextBlockEta.Text = "";
                         });
                     },
@@ -715,12 +717,15 @@ public partial class SubtitleTask
                         });
                     },
                     OnProgress = progression => { OnProgressChanged(progression); },
-                    OnFramePreviewImage = frame =>
+                    OnFramePreview = (frame, frameIndex) =>
                     {
                         Dispatcher.Invoke(() =>
                         {
-                            if (ViewModel.ShowPreview)
+                            if (ViewModel.ShowPreview && VideoProcessor != null)
+                            {
                                 ViewModel.FramePreviewImage = frame.ToBitmapSource();
+                                ProcessView.EventTimelineEditor.UpdateRecognitionPreviewInfo(frameIndex, VideoProcessor.VideoInfo, ViewModel.IsRunning);
+                            }
                         });
                     },
                     IsPreviewEnabled = () => Volatile.Read(ref _previewEnabled),

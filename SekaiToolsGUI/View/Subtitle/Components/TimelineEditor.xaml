@@ -60,6 +60,13 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <ui:Button IsEnabled="{Binding CanPreview}" Click="PreviewEventButton_OnClick"
+                                   AutomationProperties.Name="预览当前事件" ToolTip="在页面预览区播放当前事件" Margin="0,0,5,0">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Play24" Margin="0,0,4,0" />
+                                <TextBlock Text="预览" />
+                            </StackPanel>
+                        </ui:Button>
                         <StackPanel Orientation="Horizontal"
                                     Visibility="{calcBinding:Binding IsEventPlaybackEnabled,FalseToVisibility=Collapsed}">
                             <ui:Button IsEnabled="{Binding CanPlay}" Click="PlayAudioButton_OnClick"
@@ -141,6 +148,12 @@
                                 MouseMove="TimelineCanvas_OnMouseMove"
                                 MouseLeftButtonUp="TimelineCanvas_OnMouseLeftButtonUp"
                                 MouseWheel="TimelineCanvas_OnMouseWheel" />
+                        <Canvas x:Name="PlaybackCursorCanvas" IsHitTestVisible="False" Visibility="Collapsed">
+                            <Line x:Name="PlaybackCursorLine" Stroke="{DynamicResource AccentFillColorDefaultBrush}"
+                                  StrokeThickness="2" />
+                            <Polygon x:Name="PlaybackCursorHead" Points="0,0 10,0 5,7"
+                                     Fill="{DynamicResource AccentFillColorDefaultBrush}" />
+                        </Canvas>
                         <ui:TextBlock x:Name="EmptyHint" Text="点击时间轴块或列表事件以选择"
                                       Visibility="{calcBinding:Binding !HasSelection,FalseToVisibility=Collapsed}"
                                       HorizontalAlignment="Center" VerticalAlignment="Center"

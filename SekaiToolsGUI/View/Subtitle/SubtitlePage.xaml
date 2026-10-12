@@ -80,7 +80,7 @@
                        VerticalAlignment="Center" HorizontalAlignment="Center" TextWrapping="Wrap"
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                        Visibility="{c:Binding !HasSelection, FalseToVisibility=Collapsed}" />
-            <ContentControl Content="{Binding SelectedControl}" HorizontalContentAlignment="Stretch"
+            <ContentControl Content="{Binding SelectedControl}" HorizontalContentAlignment="Stretch" Padding="0"
                             VerticalContentAlignment="Stretch" />
         </Grid>
     </Grid>

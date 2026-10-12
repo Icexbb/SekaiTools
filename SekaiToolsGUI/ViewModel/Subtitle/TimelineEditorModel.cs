@@ -45,6 +45,7 @@ public class TimelineEditorModel : ViewModelBase
             SetProperty(value);
             RefreshEditState();
             OnPropertyChanged(nameof(CanPlay));
+            OnPropertyChanged(nameof(CanPreview));
         }
     }
 
@@ -55,13 +56,14 @@ public class TimelineEditorModel : ViewModelBase
         {
             SetProperty(value);
             OnPropertyChanged(nameof(CanPlay));
+            OnPropertyChanged(nameof(CanPreview));
         }
     }
 
     public bool IsPlaying
     {
         get => GetProperty(false);
-        set => SetProperty(value);
+        set { SetProperty(value); OnPropertyChanged(nameof(CanPreview)); }
     }
 
     public string PlaybackStatus
@@ -96,6 +98,7 @@ public class TimelineEditorModel : ViewModelBase
             SetProperty(value);
             RefreshEditState();
             RefreshUndoState();
+            OnPropertyChanged(nameof(CanPreview));
         }
     }
 
@@ -138,6 +141,7 @@ public class TimelineEditorModel : ViewModelBase
     }
 
     public bool CanEdit => !IsReadOnly && HasSelection;
+    public bool CanPreview => HasSelection && HasMediaSource && !IsReadOnly && !IsPlaying;
     public bool CanPlay => IsEventPlaybackEnabled && HasSelection && HasMediaSource;
     public bool CanRestoreTiming => CanEdit && HasTimingEdits;
     public bool CanUndo => !IsReadOnly && UndoCount > 0;

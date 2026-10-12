@@ -134,6 +134,7 @@ public partial class TimelineEditor : UserControl
     private CancellationTokenSource? _nativePlaybackCancellation;
     private long _lastPreviewLogTick;
     private string _activePlaybackBackend = "";
+    private double? _playbackPositionMilliseconds;
     private readonly List<TimelineHitRegion> _eventHitRegions = [];
     private readonly List<TimelineEventSelection> _events = [];
     private readonly DispatcherTimer _playbackTimer;
@@ -269,6 +270,8 @@ public partial class TimelineEditor : UserControl
         }
 
         _selection = selection;
+        if (_playbackMode == PlaybackMode.None)
+            _playbackPositionMilliseconds = GetStartMilliseconds(selection);
         ViewModel.SetSelection(
             selection.EventNumber,
             selection.EventType,
@@ -298,6 +301,7 @@ public partial class TimelineEditor : UserControl
         _mediaPath = null;
         ViewModel.HasMediaSource = false;
         _selection = null;
+        _playbackPositionMilliseconds = null;
         _selectedHandle = DragMode.None;
         _waveformCancellation?.Cancel();
         _waveformCancellation?.Dispose();
@@ -881,6 +885,25 @@ public partial class TimelineEditor : UserControl
 
     public void StopEventPreview() => StopPlayback("已停止预览", keepVideoPreview: true);
 
+    private async void PreviewEventButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.CanPreview)
+            await StartPlaybackAsync(PlaybackMode.Video, requireFeatureSwitch: false);
+    }
+
+    public void UpdateRecognitionPreviewInfo(int frameIndex, VideoInfo videoInfo, bool isRunning)
+    {
+        var time = TimeSpan.FromMilliseconds(videoInfo.Fps.TimeAtFrame(frameIndex).Milliseconds);
+        var percent = videoInfo.FrameCount > 0
+            ? Math.Clamp((frameIndex + 1d) / videoInfo.FrameCount * 100, 0, 100) : 0;
+        ViewModel.HasPlaybackPreviewInfo = true;
+        ViewModel.PreviewPlaybackProgress = percent;
+        ViewModel.PreviewFrameInfo = $"帧 {frameIndex} · 时间 {time:hh\\:mm\\:ss\\.fff} · 视频 {percent:F1}%";
+        ViewModel.PlaybackStatus = isRunning ? "识别运行中" : "识别已结束";
+        _playbackPositionMilliseconds = time.TotalMilliseconds;
+        UpdatePlaybackCursor();
+    }
+
     public Task PreviewEventVideoAsync(string videoPath, TimelineEventSelection selection, Action<ImageSource> showFrame)
     {
         SelectEvent(selection);
@@ -1164,6 +1187,16 @@ public partial class TimelineEditor : UserControl
         var mode = _activePlaybackBackend;
         var progress = duration > 0 ? elapsed / duration * 100 : 0;
         var time = _playbackStart + TimeSpan.FromMilliseconds(elapsed);
+        _playbackPositionMilliseconds = time.TotalMilliseconds;
+        if (ViewModel.ShowTimeLine && _dragMode == DragMode.None && GetVisibleMilliseconds() > 0 &&
+            (time.TotalMilliseconds < _viewStartMilliseconds ||
+             time.TotalMilliseconds > _viewStartMilliseconds + GetVisibleMilliseconds()))
+        {
+            _viewStartMilliseconds = Math.Max(0, time.TotalMilliseconds - GetVisibleMilliseconds() * 0.2);
+            CoerceViewport();
+            RenderTimeline();
+        }
+        UpdatePlaybackCursor();
         var frameIndex = _selection == null ? 0 : Math.Clamp(
             _selection.FrameRate.FrameAtTime((int)time.TotalMilliseconds),
             _selection.StartFrame, _selection.EndFrame);
@@ -1768,6 +1801,20 @@ public partial class TimelineEditor : UserControl
         }
 
         RenderOverview();
+        UpdatePlaybackCursor();
+    }
+
+    private void UpdatePlaybackCursor()
+    {
+        if (PlaybackCursorCanvas == null) return;
+        var x = _playbackPositionMilliseconds.HasValue ? TimeToX(_playbackPositionMilliseconds.Value) : -1;
+        var visible = ViewModel.ShowTimeLine && x >= TrackHeaderWidth && x <= TimelineCanvas.ActualWidth;
+        PlaybackCursorCanvas.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        if (!visible) return;
+        PlaybackCursorLine.X1 = PlaybackCursorLine.X2 = x;
+        PlaybackCursorLine.Y1 = 7;
+        PlaybackCursorLine.Y2 = TimelineCanvas.ActualHeight;
+        Canvas.SetLeft(PlaybackCursorHead, x - 5);
     }
 
     private void RenderOverview()
@@ -2075,6 +2122,12 @@ public partial class TimelineEditor : UserControl
     private void TitleHeader_OnClick(object sender, RoutedEventArgs e)
     {
         ViewModel.ShowTimeLine = true;
+        if (_playbackPositionMilliseconds.HasValue)
+        {
+            _viewStartMilliseconds = Math.Max(0, _playbackPositionMilliseconds.Value - GetVisibleMilliseconds() * 0.2);
+            CoerceViewport();
+        }
+        RenderTimeline();
     }
 
     private void HideTimeLine_OnClick(object sender, RoutedEventArgs e)

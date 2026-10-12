@@ -116,6 +116,26 @@ public class VideoProcessorLifecycleTests
     }
 
     [Fact]
+    public async Task PreviewMetadataMatchesDeliveredImage()
+    {
+        using var fixture = new Fixture(encodeFrameIndex: true);
+        var delivered = new List<(int Index, double Blue)>();
+        using var processor = fixture.Create(new VideoProcessCallbacks
+        {
+            OnFramePreview = (image, index) => delivered.Add((index, CvInvoke.Mean(image).V0))
+        });
+        processor.StartProcess();
+        await processor.WaitForCompletionAsync().WaitAsync(TimeSpan.FromSeconds(10));
+        await processor.StopProcessAsync();
+        Assert.NotEmpty(delivered);
+        foreach (var frame in delivered)
+        {
+            Assert.InRange(frame.Index, 0, 11);
+            Assert.InRange(frame.Blue, frame.Index * 10 - 5, frame.Index * 10 + 5);
+        }
+    }
+
+    [Fact]
     public async Task CancellationSavesConsumedFrameInsteadOfPrefetchedPosition()
     {
         using var fixture = new Fixture();
@@ -238,7 +258,7 @@ public class VideoProcessorLifecycleTests
         private string ScriptPath => Path.Combine(_directory, "story.json");
         private string MenuPath => Path.Combine(_directory, "menu.png");
 
-        public Fixture()
+        public Fixture(bool encodeFrameIndex = false)
         {
             Directory.CreateDirectory(_directory);
             using (var frame = new Mat(90, 160, DepthType.Cv8U, 3))
@@ -246,7 +266,11 @@ public class VideoProcessorLifecycleTests
             {
                 Assert.True(writer.IsOpened);
                 frame.SetTo(new MCvScalar(20, 40, 60));
-                for (var i = 0; i < 12; i++) writer.Write(frame);
+                for (var i = 0; i < 12; i++)
+                {
+                    if (encodeFrameIndex) frame.SetTo(new MCvScalar(i * 10, 40, 60));
+                    writer.Write(frame);
+                }
             }
             using (var menu = new Mat(32, 32, DepthType.Cv8U, 4))
             {

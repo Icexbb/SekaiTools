@@ -216,7 +216,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Margin="0,0,6,0">
                             <TextBlock Text="{Binding PreviewFrameInfo}" FontSize="11" TextWrapping="Wrap"
-                                       ToolTip="帧索引从 0 开始；时间为视频绝对时间；百分比为当前语句区间的播放进度。WPF 帧索引由播放位置与视频帧率换算。" />
+                                       ToolTip="帧索引从 0 开始；时间为视频绝对时间；识别时百分比为整个视频进度，播放时为当前语句区间进度。WPF 帧索引由播放位置与视频帧率换算。" />
                             <ProgressBar Height="5" Margin="0,4,0,3" Minimum="0" Maximum="100"
                                          Value="{Binding PreviewPlaybackProgress}" />
                             <TextBlock Text="{Binding PlaybackStatus}" FontSize="11" TextWrapping="Wrap"

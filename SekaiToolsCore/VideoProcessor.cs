@@ -23,6 +23,7 @@ public class VideoProcessCallbacks
     public Action OnTaskStarted { get; set; } = () => { };
     public Action OnTaskFinished { get; set; } = () => { };
     public Action<Mat> OnFramePreviewImage { get; set; } = mat => { };
+    public Action<Mat, int> OnFramePreview { get; set; } = (mat, index) => { };
     public Func<bool> IsPreviewEnabled { get; set; } = () => true;
 
     public Action<DialogBaseFrameSet> OnNewDialog { get; set; } = dialog => { };
@@ -83,7 +84,7 @@ public class VideoProcessor : IDisposable
     private long _lastProgressCallbackTime;
 
     // 预览图像有界队列（长度 1，只保留最新帧）
-    private Channel<Mat>? _previewChannel;
+    private Channel<(Mat Image, int FrameIndex)>? _previewChannel;
     private Task? _previewConsumerTask;
     private Task _progressSaveTask = Task.CompletedTask;
 
@@ -467,7 +468,7 @@ public class VideoProcessor : IDisposable
         var markerIndexInDialog = MarkerIndexOfDialog();
 
         // 初始化预览通道（有界队列，容量 1）
-        _previewChannel = Channel.CreateBounded<Mat>(new BoundedChannelOptions(1)
+        _previewChannel = Channel.CreateBounded<(Mat Image, int FrameIndex)>(new BoundedChannelOptions(1)
         {
             FullMode = BoundedChannelFullMode.Wait
         });
@@ -580,7 +581,7 @@ public class VideoProcessor : IDisposable
                 {
                     var previewStart = Stopwatch.GetTimestamp();
                     var previewFrame = FramePreview.Create(frame);
-                    EnqueueLatestPreview(previewFrame);
+                    EnqueueLatestPreview(previewFrame, Math.Max(0, frameIndex - 1));
                     _performanceMetrics.Record(ProcessingStage.Preview, Stopwatch.GetElapsedTime(previewStart));
                 }
 
@@ -880,10 +881,10 @@ public class VideoProcessor : IDisposable
 
         // 消费任务可能因取消而提前退出，释放仍留在通道中的原生图像。
         while (_previewChannel?.Reader.TryRead(out var pendingFrame) == true)
-            pendingFrame.Dispose();
+            pendingFrame.Image.Dispose();
     }
 
-    private void EnqueueLatestPreview(Mat previewFrame)
+    private void EnqueueLatestPreview(Mat previewFrame, int frameIndex)
     {
         var channel = _previewChannel;
         if (channel == null)
@@ -892,29 +893,30 @@ public class VideoProcessor : IDisposable
             return;
         }
 
-        if (channel.Writer.TryWrite(previewFrame)) return;
+        if (channel.Writer.TryWrite((previewFrame, frameIndex))) return;
 
         // 通道容量为 1。显式取出并释放旧帧，避免 DropOldest 静默丢弃 Mat
         // 后无人负责释放其原生缓冲区。
         if (channel.Reader.TryRead(out var droppedFrame))
-            droppedFrame.Dispose();
+            droppedFrame.Image.Dispose();
 
-        if (!channel.Writer.TryWrite(previewFrame))
+        if (!channel.Writer.TryWrite((previewFrame, frameIndex)))
             previewFrame.Dispose();
     }
 
-    private async Task StartPreviewConsumer(Channel<Mat> previewChannel, CancellationToken token)
+    private async Task StartPreviewConsumer(Channel<(Mat Image, int FrameIndex)> previewChannel, CancellationToken token)
     {
         try
         {
             await foreach (var frame in previewChannel.Reader.ReadAllAsync(token))
                 try
                 {
-                    Callbacks.OnFramePreviewImage(frame);
+                    Callbacks.OnFramePreviewImage(frame.Image);
+                    Callbacks.OnFramePreview(frame.Image, frame.FrameIndex);
                 }
                 finally
                 {
-                    frame.Dispose();
+                    frame.Image.Dispose();
                 }
         }
         catch (OperationCanceledException)
