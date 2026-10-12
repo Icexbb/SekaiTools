@@ -1,6 +1,8 @@
 using System.Drawing;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
+using System.Diagnostics;
+using SekaiToolsCore.Process.Performance;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
@@ -22,6 +24,7 @@ public sealed class FrameMatchContext : IDisposable
 
     public Mat Gray { get; private set; }
     public Size Size => Gray.Size;
+    internal TemplateMatchingMetrics? Metrics { get; set; }
 
     public void Dispose()
     {
@@ -76,7 +79,9 @@ public sealed class FrameMatchContext : IDisposable
             _scaledGrayRegions.Add(key, scaled);
             _retainedRegionBytes += bytes;
         }
+        var started = Metrics != null ? Stopwatch.GetTimestamp() : 0;
         CvInvoke.Resize(source, scaled, new Size(width, height), interpolation: interpolation);
+        Metrics?.Record(TemplateMatchingStage.Resize, started);
         _validRegions.Add(key);
         return scaled;
     }

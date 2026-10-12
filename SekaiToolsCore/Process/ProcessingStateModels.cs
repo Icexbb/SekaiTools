@@ -34,8 +34,14 @@ public class MarkerFrameSetDto
     public List<FrameResultDto> Frames { get; init; } = [];
 }
 
+public sealed record AdaptiveSearchStateDto(int LastSampleFrameIndex, int PreviousSkippedFrameIndex);
+
+public sealed record LookaheadStateDto(int FirstFailureFrame, int TargetIndex);
+
 public class DialogMatcherStateDto
 {
+    public AdaptiveSearchStateDto? SearchState { get; init; }
+    public LookaheadStateDto? LookaheadState { get; init; }
     public int Status { get; init; }
     public int ConsecutiveFailures { get; init; }
     public int LastFailedIndex { get; init; } = -1;
@@ -47,6 +53,8 @@ public class DialogMatcherStateDto
 
 public class BannerMatcherStateDto
 {
+    public AdaptiveSearchStateDto? SearchState { get; init; }
+    public LookaheadStateDto? LookaheadState { get; init; }
     public int Status { get; init; }
     public int ConsecutiveFailures { get; init; }
     public int LastFailedIndex { get; init; } = -1;
@@ -57,6 +65,8 @@ public class BannerMatcherStateDto
 
 public class MarkerMatcherStateDto
 {
+    public AdaptiveSearchStateDto? SearchState { get; init; }
+    public LookaheadStateDto? LookaheadState { get; init; }
     public int Status { get; init; }
     public int ConsecutiveFailures { get; init; }
     public int LastFailedIndex { get; init; } = -1;
@@ -64,6 +74,8 @@ public class MarkerMatcherStateDto
     public List<MarkerFrameSetDto> FrameSets { get; init; } = [];
     public List<MatcherDiagnosticDto> Diagnostics { get; init; } = [];
 }
+
+public sealed record TemplateScaleStateDto(int Usage, double? Scale, int LowConfidenceCount);
 
 public class ProcessingState
 {
@@ -79,4 +91,5 @@ public class ProcessingState
     public DialogMatcherStateDto? Dialog { get; init; }
     public BannerMatcherStateDto? Banner { get; init; }
     public MarkerMatcherStateDto? Marker { get; init; }
+    public List<TemplateScaleStateDto>? TemplateScales { get; init; }
 }

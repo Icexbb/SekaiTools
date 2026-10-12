@@ -51,6 +51,13 @@ public sealed record ProcessingStateMetadata(
     VideoStateMetadata VideoInfo,
     string ConfigHash)
 {
+    /// <summary>
+    /// Optional qualified capture implementation identity. Null preserves ordinary
+    /// capture checkpoints; alternate implementations must include runtime,
+    /// decoder and frame-format settings in a stable identity.
+    /// </summary>
+    public string? CaptureIdentity { get; init; }
+
     public static ProcessingStateMetadata Create(ProcessConfig config, VideoStateMetadata videoInfo)
     {
         var configJson = JsonSerializer.Serialize(new
@@ -97,6 +104,10 @@ public static class ProcessingStateCompatibility
     {
         if (state.Version == "1.0")
         {
+            if (currentMetadata.CaptureIdentity != null)
+                return new ProcessingStateCompatibilityResult(
+                    ProcessingStateCompatibilityStatus.Incompatible,
+                    "旧版进度缺少捕获模式身份，不能恢复到当前捕获模式");
             if (!PathsMatch(state, config))
                 return new ProcessingStateCompatibilityResult(
                     ProcessingStateCompatibilityStatus.Incompatible, "旧版进度的输入文件路径与当前任务不一致");

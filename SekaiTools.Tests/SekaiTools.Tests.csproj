@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
         <PackageReference Include="xunit" Version="2.9.3"/>
         <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0">
             <PrivateAssets>all</PrivateAssets>
@@ -17,6 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Compile Include="..\Tools\DecoderProbe\BytePixelComparison.cs" Link="Tools\BytePixelComparison.cs"/>
         <Compile Include="..\Updater\UpdateProxySettings.cs" Link="Updater\UpdateProxySettings.cs"/>
         <Compile Include="..\SekaiToolsGUI\ViewModel\ViewModelBase.cs" Link="ViewModel\ViewModelBase.cs"/>
         <Compile Include="..\SekaiToolsGUI\Service\SequentialTaskQueue.cs" Link="Service\SequentialTaskQueue.cs"/>

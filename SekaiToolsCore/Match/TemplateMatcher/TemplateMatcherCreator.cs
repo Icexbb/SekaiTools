@@ -16,7 +16,7 @@ public class TemplateMatcherCreator : IDisposable
         Story = SekaiStory.FromFile(Config.ScriptFilePath, Config.TranslateFilePath);
 
         Manager = new TemplateManager(VInfo.Resolution, resourceProvider);
-        CachePool = new TemplateMatchCachePool();
+        CachePool = new TemplateMatchCachePool { UseContentPositionHints = config.PerformanceOptions.UseContentPositionHints };
     }
 
     private Config Config { get; }

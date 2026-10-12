@@ -4,7 +4,9 @@ public enum ProcessingStage
 {
     Decode,
     Preprocess,
-    Match
+    Match,
+    ReadWait,
+    Preview
 }
 
 public sealed record ProcessingPerformanceSnapshot(
@@ -14,6 +16,8 @@ public sealed record ProcessingPerformanceSnapshot(
     TimeSpan MatchTime)
 {
     public TimeSpan ElapsedTime { get; init; }
+    public TimeSpan ReadWaitTime { get; init; }
+    public TimeSpan PreviewTime { get; init; }
     public TimeSpan MeasuredTime => DecodeTime + PreprocessTime + MatchTime;
 
     public double AverageMillisecondsPerFrame => FrameCount > 0
@@ -25,6 +29,7 @@ public sealed record ProcessingPerformanceSnapshot(
         return $"帧数={FrameCount}, 解码={DecodeTime.TotalMilliseconds:F1}ms, " +
                $"预处理={PreprocessTime.TotalMilliseconds:F1}ms, " +
                $"匹配={MatchTime.TotalMilliseconds:F1}ms, " +
+               $"读帧等待={ReadWaitTime.TotalMilliseconds:F1}ms, 预览生成={PreviewTime.TotalMilliseconds:F1}ms, " +
                $"平均={AverageMillisecondsPerFrame:F3}ms/帧";
     }
 }
@@ -36,6 +41,8 @@ public sealed class ProcessingPerformanceMetrics
     private long _matchTicks;
     private long _preprocessTicks;
     private long _elapsedTicks;
+    private long _readWaitTicks;
+    private long _previewTicks;
 
     internal void RecordElapsed(TimeSpan elapsed) => Interlocked.Exchange(ref _elapsedTicks, elapsed.Ticks);
 
@@ -44,6 +51,12 @@ public sealed class ProcessingPerformanceMetrics
         var ticks = elapsed.Ticks;
         switch (stage)
         {
+            case ProcessingStage.ReadWait:
+                Interlocked.Add(ref _readWaitTicks, ticks);
+                break;
+            case ProcessingStage.Preview:
+                Interlocked.Add(ref _previewTicks, ticks);
+                break;
             case ProcessingStage.Decode:
                 Interlocked.Add(ref _decodeTicks, ticks);
                 break;
@@ -70,6 +83,8 @@ public sealed class ProcessingPerformanceMetrics
         Interlocked.Exchange(ref _preprocessTicks, 0);
         Interlocked.Exchange(ref _elapsedTicks, 0);
         Interlocked.Exchange(ref _matchTicks, 0);
+        Interlocked.Exchange(ref _readWaitTicks, 0);
+        Interlocked.Exchange(ref _previewTicks, 0);
     }
 
     public ProcessingPerformanceSnapshot Snapshot()
@@ -80,7 +95,9 @@ public sealed class ProcessingPerformanceMetrics
             TimeSpan.FromTicks(Interlocked.Read(ref _preprocessTicks)),
             TimeSpan.FromTicks(Interlocked.Read(ref _matchTicks)))
         {
-            ElapsedTime = TimeSpan.FromTicks(Interlocked.Read(ref _elapsedTicks))
+            ElapsedTime = TimeSpan.FromTicks(Interlocked.Read(ref _elapsedTicks)),
+            ReadWaitTime = TimeSpan.FromTicks(Interlocked.Read(ref _readWaitTicks)),
+            PreviewTime = TimeSpan.FromTicks(Interlocked.Read(ref _previewTicks))
         };
     }
 }

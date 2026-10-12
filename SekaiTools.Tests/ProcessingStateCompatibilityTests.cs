@@ -5,6 +5,43 @@ namespace SekaiTools.Tests;
 
 public class ProcessingStateCompatibilityTests
 {
+    [Theory]
+    [InlineData(null, "periodic:runtime-a:plugin-a:16:12", false)]
+    [InlineData("periodic:runtime-a:plugin-a:16:12", null, false)]
+    [InlineData("periodic:runtime-a:plugin-a:16:12", "periodic:runtime-b:plugin-a:16:12", false)]
+    [InlineData("periodic:runtime-a:plugin-a:16:12", "periodic:runtime-a:plugin-a:16:10", false)]
+    [InlineData("periodic:runtime-a:plugin-a:16:12", "periodic:runtime-a:plugin-a:16:12", true)]
+    [InlineData(null, null, true)]
+    public void ValidateAndMigrate_RequiresMatchingCaptureIdentity(string? saved, string? current, bool compatible)
+    {
+        WithInputs((config, metadata) =>
+        {
+            var state = CreateState(config, metadata with { CaptureIdentity = saved });
+            state = System.Text.Json.JsonSerializer.Deserialize<ProcessingState>(
+                System.Text.Json.JsonSerializer.Serialize(state))!;
+            Assert.Equal(saved, state.Metadata!.CaptureIdentity);
+            var result = ProcessingStateCompatibility.ValidateAndMigrate(state, config,
+                metadata with { CaptureIdentity = current });
+            Assert.Equal(compatible, result.CanRestore);
+        });
+    }
+
+    [Fact]
+    public void ValidateAndMigrate_RejectsLegacyAlternateCaptureWithoutMutatingState()
+    {
+        WithInputs((config, metadata) =>
+        {
+            var state = CreateState(config, metadata);
+            state.Version = "1.0";
+            state.Metadata = null;
+            var result = ProcessingStateCompatibility.ValidateAndMigrate(state, config,
+                metadata with { CaptureIdentity = "periodic:runtime-a:plugin-a:16:12" });
+            Assert.False(result.CanRestore);
+            Assert.Equal("1.0", state.Version);
+            Assert.Null(state.Metadata);
+        });
+    }
+
     [Fact]
     public void ValidateAndMigrate_RejectsChangedInputFingerprint()
     {

@@ -22,6 +22,7 @@ public sealed class CoreRecognitionPerformanceTests
         using var template = new GaMat(templateSource, false);
         using var context = new FrameMatchContext();
         var cache = new TemplateMatchCachePool();
+        cache.Metrics.Enabled = true;
         var metrics = new ProcessingPerformanceMetrics();
         var frameRegion = new Rectangle(0, 0, 160, 120);
 
@@ -52,6 +53,22 @@ public sealed class CoreRecognitionPerformanceTests
         Assert.True(snapshot.PreprocessTime > TimeSpan.Zero);
         Assert.True(snapshot.MatchTime > TimeSpan.Zero);
         Assert.InRange(snapshot.AverageMillisecondsPerFrame, 0, 1000);
+        var matching = cache.Metrics.Snapshot();
+        Assert.Equal(24, matching.Requests);
+        Assert.Equal(0, matching.CacheHits);
+        Assert.True(matching.CorrelationCalls >= 48);
+        Assert.True(matching.CorrelationTime > TimeSpan.Zero);
+        var reused = Matcher.Match(context, frameRegion, template, cache);
+        Assert.True(reused.MaxVal > 0.99);
+        Assert.Equal(1, cache.Metrics.Snapshot().CacheHits);
+        Assert.Equal(matching.CorrelationCalls, cache.Metrics.Snapshot().CorrelationCalls);
+        cache.Metrics.Reset();
+        Assert.Equal(0, cache.Metrics.Snapshot().Requests);
+        Assert.Equal(TimeSpan.Zero, cache.Metrics.Snapshot().CorrelationTime);
+        cache.Metrics.Enabled = false;
+        var unprofiled = Matcher.Match(context, frameRegion, template, cache);
+        Assert.Equal(reused, unprofiled);
+        Assert.Equal(0, cache.Metrics.Snapshot().Requests);
     }
 
     private static Mat CreateTemplate()

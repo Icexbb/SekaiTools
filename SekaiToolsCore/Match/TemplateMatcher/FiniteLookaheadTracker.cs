@@ -1,3 +1,5 @@
+using SekaiToolsCore.Process;
+
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
 internal sealed class FiniteLookaheadTracker
@@ -20,6 +22,14 @@ internal sealed class FiniteLookaheadTracker
     public void Postpone(int frameIndex)
     {
         _firstFailureFrame = frameIndex;
+    }
+
+    public LookaheadStateDto CaptureState() => new(_firstFailureFrame, _targetIndex);
+
+    public void RestoreState(LookaheadStateDto? state)
+    {
+        _firstFailureFrame = state?.FirstFailureFrame ?? -1;
+        _targetIndex = state?.TargetIndex ?? -1;
     }
 
     public void Reset()

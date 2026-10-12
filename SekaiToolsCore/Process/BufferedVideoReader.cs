@@ -47,7 +47,11 @@ public sealed class BufferedVideoReader : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (_frames != null)
+        {
+            _stop.Token.ThrowIfCancellationRequested();
+            if (_frames.Reader.TryRead(out var prepared)) return prepared;
             return _frames.Reader.ReadAsync(_stop.Token).AsTask().GetAwaiter().GetResult();
+        }
         _slots.Wait(_stop.Token);
         _free.TryDequeue(out var buffer);
         return Decode(buffer!);

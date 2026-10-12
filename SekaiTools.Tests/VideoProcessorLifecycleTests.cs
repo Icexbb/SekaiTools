@@ -14,6 +14,63 @@ namespace SekaiTools.Tests;
 public class VideoProcessorLifecycleTests
 {
     [Fact]
+    public async Task FactorySessionSurvivesWorkerUntilProcessorDisposal()
+    {
+        using var fixture = new Fixture();
+        using var gate = new ManualResetEventSlim();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var factory = new TrackingFactory("qualified-test", false);
+        using var processor = fixture.Create(new VideoProcessCallbacks
+        {
+            OnTaskStarted = () => { started.SetResult(); gate.Wait(TimeSpan.FromSeconds(10)); }
+        }, factory);
+        Assert.Equal("qualified-test", processor.CaptureState().Metadata!.CaptureIdentity);
+        processor.StartProcess();
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        try
+        {
+            Assert.Throws<InvalidOperationException>(processor.Dispose);
+            Assert.Equal(0, factory.Session!.DisposeCount);
+        }
+        finally { gate.Set(); }
+        await processor.StopProcessAsync().WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(IntPtr.Zero, factory.Session!.Capture.Ptr);
+        Assert.Equal(0, factory.Session.DisposeCount);
+        processor.Dispose();
+        processor.Dispose();
+        Assert.Equal(1, factory.Session.DisposeCount);
+    }
+
+    [Theory]
+    [InlineData("", false, false)]
+    [InlineData("qualified-test", true, true)]
+    public void RejectedFactorySessionIsDisposedDuringConstruction(string identity, bool mixed, bool prepareGray)
+    {
+        using var fixture = new Fixture();
+        var factory = new TrackingFactory(identity, mixed);
+        Assert.Throws<InvalidOperationException>(() => fixture.Create(new VideoProcessCallbacks(), factory,
+            new RecognitionPerformanceOptions { PrepareGrayFrames = prepareGray }));
+        Assert.Equal(1, factory.Session!.DisposeCount);
+        Assert.Equal(IntPtr.Zero, factory.Session.Capture.Ptr);
+    }
+
+    private sealed class TrackingFactory(string identity, bool mixed) : IVideoCaptureFactory
+    {
+        public TrackingSession? Session { get; private set; }
+        public IVideoCaptureSession Open(string videoPath, int previewInterval) =>
+            Session = new TrackingSession(new VideoCapture(videoPath), identity, mixed);
+    }
+
+    private sealed class TrackingSession(VideoCapture capture, string identity, bool mixed) : IVideoCaptureSession
+    {
+        public VideoCapture Capture => capture;
+        public string Identity => identity;
+        public bool HasMixedFrameChannels => mixed;
+        public int DisposeCount { get; private set; }
+        public void Dispose() { DisposeCount++; capture.Dispose(); }
+    }
+
+    [Fact]
     public async Task WaitingForCompletionDoesNotCancelProcessing()
     {
         using var fixture = new Fixture();
@@ -134,6 +191,46 @@ public class VideoProcessorLifecycleTests
         Assert.Null(captureProperty.GetValue(processor));
     }
 
+    [Fact]
+    public async Task ResumeBackcheckWarmupDoesNotConsumeCheckpointFrameTwice()
+    {
+        using var fixture = new Fixture();
+        VideoProcessor? active = null;
+        using var initial = fixture.Create(new VideoProcessCallbacks
+        {
+            IsPreviewEnabled = () =>
+            {
+                if (active!.CaptureState().FrameIndex == 2) active.StopProcess();
+                return false;
+            }
+        });
+        active = initial;
+        initial.StartProcess();
+        await initial.WaitForCompletionAsync().WaitAsync(TimeSpan.FromSeconds(10));
+        var state = initial.CaptureState();
+        Assert.Equal(2, state.FrameIndex);
+        // The synthetic clip has no targets. Inject only a pending backcheck to
+        // exercise decoder warmup independently of template resource matching.
+        var json = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(state))!;
+        json["Dialog"]!["SearchState"] = JsonSerializer.SerializeToNode(new AdaptiveSearchStateDto(1, 2));
+        var checkpoint = json.Deserialize<ProcessingState>()!;
+        Exception? error = null;
+        using var resumed = fixture.Create(new VideoProcessCallbacks
+        {
+            IsPreviewEnabled = () => false,
+            OnException = e => error = e
+        });
+        resumed.ApplyState(checkpoint);
+        resumed.StartProcess();
+        await resumed.WaitForCompletionAsync().WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Null(error);
+        Assert.Equal(ProcessStopReason.EndOfStream, resumed.StopReason);
+        Assert.Equal(10, resumed.Performance.FrameCount);
+        Assert.Equal(12, resumed.CaptureState().FrameIndex);
+        Assert.Equal(12, resumed.CaptureState().Timecodes.Count);
+        Assert.Equal(state.Timecodes, resumed.CaptureState().Timecodes.Take(2));
+    }
+
     private sealed class Fixture : ITemplateResourceProvider, IProcessingStatePersistence, IDisposable
     {
         private readonly string _directory = Path.Combine(Path.GetTempPath(), "SekaiTools-lifecycle-" + Guid.NewGuid().ToString("N"));
@@ -159,7 +256,8 @@ public class VideoProcessorLifecycleTests
             }
             File.WriteAllText(ScriptPath, JsonSerializer.Serialize(new SekaiToolsBase.GameScript.GameScript { Snippets = [], TalkData = [], SpecialEffectData = [] }));
         }
-        public VideoProcessor Create(VideoProcessCallbacks callbacks) => new(new Config(VideoPath, ScriptPath, ""), callbacks, this, this);
+        public VideoProcessor Create(VideoProcessCallbacks callbacks, IVideoCaptureFactory? factory = null,
+            RecognitionPerformanceOptions? options = null) => new(new Config(VideoPath, ScriptPath, "", performanceOptions: options), callbacks, this, this, factory);
         public string GetVideoProcessResourcePath(string fileName) => MenuPath;
         public void SaveProgress(string key, ProcessingState state) { }
         public void DeleteProgress(string key) { }

@@ -8,6 +8,11 @@ public sealed record RecognitionPerformanceOptions
     public int MemoryBudgetMiB { get; init; } = 2048;
     public bool EnableFramePrefetch { get; init; } = true;
     public bool PrepareGrayFrames { get; init; }
+    public bool CollectDetailedMetrics { get; init; }
+    /// <summary>可选预读帧数上限；仍受性能模式及可用内存预算约束。</summary>
+    public int? FrameBufferCapacity { get; init; }
+    /// <summary>实验性文本存在探测，默认关闭；弱匹配时恢复完整搜索。</summary>
+    public bool UseContentPositionHints { get; init; }
 
     public int GetFrameCapacity(int width, int height, long availableBytes)
     {
@@ -29,6 +34,8 @@ public sealed record RecognitionPerformanceOptions
             RecognitionPerformanceMode.HighPerformance => 32,
             _ => 16
         };
+        if (FrameBufferCapacity is { } requested)
+            maxFrames = Math.Min(maxFrames, Math.Clamp(requested, 0, 32));
         return count < 2 ? 0 : (int)Math.Min(count, maxFrames);
     }
 }

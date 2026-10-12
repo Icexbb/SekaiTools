@@ -1,3 +1,5 @@
+using SekaiToolsCore.Process;
+
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
 internal sealed class TemplateScaleCalibration
@@ -7,10 +9,11 @@ internal sealed class TemplateScaleCalibration
     private const int UnlockFailureCount = 30;
     private static readonly double[] InitialScales = [1.00, 0.96, 1.04];
     private double? _lockedScale;
+    private readonly double[] _lockedScales = new double[1];
 
     private int _lowConfidenceCount;
 
-    public IReadOnlyList<double> CandidateScales => _lockedScale is { } scale ? [scale] : InitialScales;
+    public IReadOnlyList<double> CandidateScales => _lockedScale.HasValue ? _lockedScales : InitialScales;
 
     public void Observe(double scale, double score)
     {
@@ -19,6 +22,7 @@ internal sealed class TemplateScaleCalibration
             if (double.IsFinite(score) && score >= LockConfidence)
             {
                 _lockedScale = scale;
+                _lockedScales[0] = scale;
                 _lowConfidenceCount = 0;
             }
 
@@ -42,5 +46,23 @@ internal sealed class TemplateScaleCalibration
     {
         _lockedScale = null;
         _lowConfidenceCount = 0;
+    }
+
+    internal TemplateScaleStateDto CaptureState(int usage) => new(usage, _lockedScale, _lowConfidenceCount);
+
+    internal static void ValidateState(TemplateScaleStateDto state)
+    {
+        if (state.Scale is { } scale && !InitialScales.Contains(scale)
+            || state.LowConfidenceCount is < 0 or >= UnlockFailureCount
+            || state.Scale == null && state.LowConfidenceCount != 0)
+            throw new InvalidDataException("Invalid template scale checkpoint");
+    }
+
+    internal void RestoreState(TemplateScaleStateDto state)
+    {
+        ValidateState(state);
+        _lockedScale = state.Scale;
+        if (state.Scale is { } scale) _lockedScales[0] = scale;
+        _lowConfidenceCount = state.LowConfidenceCount;
     }
 }

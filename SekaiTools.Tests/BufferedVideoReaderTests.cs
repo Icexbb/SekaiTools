@@ -79,6 +79,7 @@ public class BufferedVideoReaderTests
         using (var frame = reader.Read()) Assert.True(frame.Succeeded);
         await Task.Delay(100);
         stop.Cancel();
+        Assert.ThrowsAny<OperationCanceledException>(() => reader.Read());
         await Task.Run(reader.Dispose).WaitAsync(TimeSpan.FromSeconds(5));
     }
 
@@ -101,6 +102,18 @@ public class BufferedVideoReaderTests
             .GetFrameCapacity(1920, 1080, available));
         Assert.Equal(32, new RecognitionPerformanceOptions { Mode = RecognitionPerformanceMode.HighPerformance }
             .GetFrameCapacity(3840, 2160, available));
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(4, 4)]
+    [InlineData(8, 8)]
+    [InlineData(99, 16)]
+    public void ExplicitCapacityRemainsBoundedByModeAndMemory(int requested, int expected)
+    {
+        var options = new RecognitionPerformanceOptions { FrameBufferCapacity = requested };
+        Assert.Equal(expected, options.GetFrameCapacity(1920, 1080, 16L * 1024 * 1024 * 1024));
+        Assert.Equal(0, options.GetFrameCapacity(3840, 2160, 256L * 1024 * 1024));
     }
 
     [Fact]

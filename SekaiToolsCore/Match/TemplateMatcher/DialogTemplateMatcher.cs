@@ -196,14 +196,15 @@ public class DialogTemplateMatcher(
             if (dialogStartPosition.Width < tmp.Size.Width || dialogStartPosition.Height < tmp.Size.Height)
                 return false;
 
-            var result = TemplateMatcher.Match(src, dialogStartPosition, tmp, cachePool, usage);
+            var effectiveThreshold = EffectiveThreshold(threshold, IsStatusMatched(lastStatus));
+            var result = TemplateMatcher.MatchContent(src, dialogStartPosition, tmp, cachePool, usage, effectiveThreshold);
 
             if (frameIndex != -1)
                 Logger.Log(
                     $"{nameof(DialogTemplateMatcher)} Frame {frameIndex} Match Dialog Content {LastNotProcessedIndex()} Result: {result.MaxVal}",
                     ExtLogLevel.Debug);
 
-            return result.IsMatch(EffectiveThreshold(threshold, IsStatusMatched(lastStatus)));
+            return result.IsMatch(effectiveThreshold);
         }
 
     }
@@ -272,6 +273,7 @@ public class DialogTemplateMatcher(
             }
 
             var matchResult = MatchForDialog(frame, dialogRefers, frameIndex);
+            var currentMatchPoint = matchResult.Point;
             var matchedFrameIndex = frameIndex;
             FrameMatchContext? backcheckFrame = null;
             var backcheckFrameIndex = -1;
@@ -307,6 +309,7 @@ public class DialogTemplateMatcher(
 
                     foundIndex = candidateIndex;
                     matchResult = candidateResult;
+                    currentMatchPoint = candidateResult.Point;
                     matchedFrameIndex = frameIndex;
                     if (backcheckFrame != null)
                     {
@@ -357,7 +360,8 @@ public class DialogTemplateMatcher(
                     if (TryEnterFallback()) continue;
                     return IsStatusMatched(firstStatus.Value);
                 default:
-                    Set[dIndex].Add(matchedFrameIndex, matchResult.Point);
+                    MatchedFrameRecorder.Record(Set[dIndex], matchedFrameIndex, matchResult.Point,
+                        frameIndex, currentMatchPoint);
                     MarkSucceeded();
                     _lookaheadTracker.Reset();
                     return IsStatusMatched(firstStatus.Value);
@@ -398,6 +402,8 @@ public class DialogTemplateMatcher(
         var (cf, lfi, uft) = SaveFallbackState();
         return new DialogMatcherStateDto
         {
+            SearchState = _searchScheduler.CaptureState(),
+            LookaheadState = _lookaheadTracker.CaptureState(),
             Status = (int)_status,
             ConsecutiveFailures = cf,
             LastFailedIndex = lfi,
@@ -419,6 +425,8 @@ public class DialogTemplateMatcher(
 
     public void RestoreState(DialogMatcherStateDto state)
     {
+        _searchScheduler.RestoreState(state.SearchState);
+        _lookaheadTracker.RestoreState(state.LookaheadState);
         _status = (MatchStatus)state.Status;
         RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold);
         _nameTagPosition = state.NameTagPosition is { } p

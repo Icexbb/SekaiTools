@@ -193,7 +193,7 @@ public class BannerTemplateMatcher(
                     return;
                 case MatchStatus.Matched:
                 default:
-                    Set[index].Add(matchedFrameIndex);
+                    MatchedFrameRecorder.Record(Set[index], matchedFrameIndex, frameIndex);
                     MarkSucceeded();
                     _lookaheadTracker.Reset();
                     return;
@@ -206,6 +206,8 @@ public class BannerTemplateMatcher(
         var (cf, lfi, uft) = SaveFallbackState();
         return new BannerMatcherStateDto
         {
+            SearchState = _searchScheduler.CaptureState(),
+            LookaheadState = _lookaheadTracker.CaptureState(),
             Status = (int)_status,
             ConsecutiveFailures = cf,
             LastFailedIndex = lfi,
@@ -222,6 +224,8 @@ public class BannerTemplateMatcher(
 
     public void RestoreState(BannerMatcherStateDto state)
     {
+        _searchScheduler.RestoreState(state.SearchState);
+        _lookaheadTracker.RestoreState(state.LookaheadState);
         _status = (MatchStatus)state.Status;
         RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold);
         RestoreDiagnostics(state.Diagnostics);

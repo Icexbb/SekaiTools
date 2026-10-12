@@ -1,3 +1,5 @@
+using SekaiToolsCore.Process;
+
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
 internal sealed class AdaptiveSearchScheduler(int searchInterval = 2) : IDisposable
@@ -39,6 +41,14 @@ internal sealed class AdaptiveSearchScheduler(int searchInterval = 2) : IDisposa
     {
         _lastSampleFrameIndex = frameIndex;
         ClearPrevious();
+    }
+
+    public AdaptiveSearchStateDto CaptureState() => new(_lastSampleFrameIndex, _previousSkippedFrameIndex);
+
+    public void RestoreState(AdaptiveSearchStateDto? state)
+    {
+        _lastSampleFrameIndex = state?.LastSampleFrameIndex ?? -1;
+        _previousSkippedFrameIndex = state?.PreviousSkippedFrameIndex ?? -1;
     }
 
     public void Reset()

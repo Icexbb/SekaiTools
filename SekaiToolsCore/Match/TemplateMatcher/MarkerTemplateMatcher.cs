@@ -118,6 +118,7 @@ public class MarkerTemplateMatcher(
             }
 
             var matchResult = MarkerMatch(frame, Set[index].Data.BodyOriginal, frameIndex);
+            var currentMatchPoint = matchResult.Point;
             var matchedFrameIndex = frameIndex;
             FrameMatchContext? backcheckFrame = null;
             var backcheckFrameIndex = -1;
@@ -152,6 +153,7 @@ public class MarkerTemplateMatcher(
 
                     foundIndex = candidateIndex;
                     matchResult = candidateResult;
+                    currentMatchPoint = candidateResult.Point;
                     matchedFrameIndex = frameIndex;
                     if (backcheckFrame != null)
                     {
@@ -199,7 +201,8 @@ public class MarkerTemplateMatcher(
                     return;
                 case MatchStatus.Matched:
                 default:
-                    Set[index].Add(matchedFrameIndex, matchResult.Point);
+                    MatchedFrameRecorder.Record(Set[index], matchedFrameIndex, matchResult.Point,
+                        frameIndex, currentMatchPoint);
                     MarkSucceeded();
                     _lookaheadTracker.Reset();
                     return;
@@ -212,6 +215,8 @@ public class MarkerTemplateMatcher(
         var (cf, lfi, uft) = SaveFallbackState();
         return new MarkerMatcherStateDto
         {
+            SearchState = _searchScheduler.CaptureState(),
+            LookaheadState = _lookaheadTracker.CaptureState(),
             Status = (int)_status,
             ConsecutiveFailures = cf,
             LastFailedIndex = lfi,
@@ -227,6 +232,8 @@ public class MarkerTemplateMatcher(
 
     public void RestoreState(MarkerMatcherStateDto state)
     {
+        _searchScheduler.RestoreState(state.SearchState);
+        _lookaheadTracker.RestoreState(state.LookaheadState);
         _status = (MatchStatus)state.Status;
         RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold);
         RestoreDiagnostics(state.Diagnostics);
