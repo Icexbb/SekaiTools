@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using SekaiToolsBase;
 
 namespace SekaiToolsGUI.View.Subtitle.Components;
 
@@ -62,6 +63,8 @@ internal static class WpfMediaPreview
                 throw new InvalidOperationException("系统播放器无法解码视频画面");
             if (player.NaturalDuration.HasTimeSpan && start >= player.NaturalDuration.TimeSpan)
                 throw new InvalidOperationException("语句起点超出媒体时长");
+
+            Logger.Log($"[语句预览] WPF 媒体已打开 | 文件={path} | 视频={player.HasVideo} | 音频={player.HasAudio} | 分辨率={player.NaturalVideoWidth}×{player.NaturalVideoHeight} | 时长={player.NaturalDuration}");
 
             if (video)
             {

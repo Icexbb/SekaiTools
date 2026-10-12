@@ -7,6 +7,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using Microsoft.Extensions.Logging;
+using SekaiToolsBase;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using SekaiToolsCore.Process.FrameSet;
@@ -130,6 +132,8 @@ public partial class TimelineEditor : UserControl
         new FrameworkPropertyMetadata(false, OnIsReadOnlyChanged));
 
     private CancellationTokenSource? _nativePlaybackCancellation;
+    private long _lastPreviewLogTick;
+    private string _activePlaybackBackend = "";
     private readonly List<TimelineHitRegion> _eventHitRegions = [];
     private readonly List<TimelineEventSelection> _events = [];
     private readonly DispatcherTimer _playbackTimer;
@@ -875,6 +879,8 @@ public partial class TimelineEditor : UserControl
         StopPlayback();
     }
 
+    public void StopEventPreview() => StopPlayback("已停止预览", keepVideoPreview: true);
+
     public Task PreviewEventVideoAsync(string videoPath, TimelineEventSelection selection, Action<ImageSource> showFrame)
     {
         SelectEvent(selection);
@@ -890,6 +896,7 @@ public partial class TimelineEditor : UserControl
         if (_selection == null || string.IsNullOrWhiteSpace(_mediaPath) || !File.Exists(_mediaPath))
         {
             SetPlaybackStatus("媒体文件不可用");
+            Logger.Log($"[语句预览] 无法开始：媒体文件不可用 | {_mediaPath}", LogLevel.Warning);
             return;
         }
 
@@ -898,6 +905,7 @@ public partial class TimelineEditor : UserControl
         if (endMilliseconds <= startMilliseconds)
         {
             SetPlaybackStatus("事件区间无效");
+            Logger.Log($"[语句预览] 无法开始：事件区间无效 | {_selection.EventNumber} | {startMilliseconds}–{endMilliseconds} ms", LogLevel.Warning);
             return;
         }
 
@@ -915,6 +923,10 @@ public partial class TimelineEditor : UserControl
         SetPlaybackStatus("正在加载…");
 
         var backend = SekaiToolsGUI.ViewModel.Setting.SettingPageModel.Instance.PreviewPlaybackBackend;
+        _activePlaybackBackend = !forceLegacy && backend != 1 ? "WPF 内嵌播放" : "OpenCV + NAudio";
+        _lastPreviewLogTick = Environment.TickCount64;
+        UpdatePlaybackStatus(_playbackStart);
+        Logger.Log($"[语句预览] 开始 | {_activePlaybackBackend} | {_selection.EventNumber} {_selection.EventType} | 文件={_mediaPath} | 帧={_selection.StartFrame}–{_selection.EndFrame}（0 起） | 时间={_playbackStart:hh\\:mm\\:ss\\.fff}–{_playbackEnd:hh\\:mm\\:ss\\.fff}");
         if (!forceLegacy && backend != 1)
         {
             var version = _playbackVersion;
@@ -947,7 +959,10 @@ public partial class TimelineEditor : UserControl
                 if (version == _playbackVersion)
                 {
                     if (backend == 0)
+                    {
+                        Logger.Log($"[语句预览] WPF 播放失败，回退到 OpenCV + NAudio | {ex}", LogLevel.Warning);
                         await StartPlaybackAsync(mode, requireFeatureSwitch, showFrame, forceLegacy: true);
+                    }
                     else
                         StopPlayback($"WPF 播放失败：{ex.Message}；可选择自动选择或 OpenCV + NAudio");
                 }
@@ -1146,8 +1161,20 @@ public partial class TimelineEditor : UserControl
             0,
             (_playbackEnd - _playbackStart).TotalMilliseconds);
         var duration = (_playbackEnd - _playbackStart).TotalMilliseconds;
-        var mode = _nativePlaybackCancellation != null ? "WPF 内嵌播放" :
-            _playbackMode == PlaybackMode.Video ? "OpenCV + NAudio" : "NAudio";
+        var mode = _activePlaybackBackend;
+        var progress = duration > 0 ? elapsed / duration * 100 : 0;
+        var time = _playbackStart + TimeSpan.FromMilliseconds(elapsed);
+        var frameIndex = _selection == null ? 0 : Math.Clamp(
+            _selection.FrameRate.FrameAtTime((int)time.TotalMilliseconds),
+            _selection.StartFrame, _selection.EndFrame);
+        ViewModel.HasPlaybackPreviewInfo = true;
+        ViewModel.PreviewPlaybackProgress = progress;
+        ViewModel.PreviewFrameInfo = $"帧 {frameIndex} · 时间 {time:hh\\:mm\\:ss\\.fff} · 片段 {progress:F1}%";
+        if (Environment.TickCount64 - _lastPreviewLogTick >= 1000)
+        {
+            _lastPreviewLogTick = Environment.TickCount64;
+            Logger.Log($"[语句预览] 进度 | {mode} | {_selection?.EventNumber} | {ViewModel.PreviewFrameInfo}");
+        }
         SetPlaybackStatus($"{mode} · {FormatTimestamp((int)elapsed)} / {FormatTimestamp((int)duration)}");
     }
 
@@ -1158,6 +1185,13 @@ public partial class TimelineEditor : UserControl
 
     private void StopPlayback(string status = "", bool keepVideoPreview = false)
     {
+        if (_playbackMode != PlaybackMode.None)
+        {
+            if (status == "播放完成") UpdatePlaybackStatus(_playbackEnd);
+            var reason = string.IsNullOrEmpty(status) ? "已停止预览" : status;
+            Logger.Log($"[语句预览] {reason} | {_activePlaybackBackend} | {_selection?.EventNumber} | {ViewModel.PreviewFrameInfo}",
+                reason.Contains("失败") || reason.Contains("无法") ? LogLevel.Error : LogLevel.Information);
+        }
         _nativePlaybackCancellation?.Cancel();
         _nativePlaybackCancellation = null;
         _inlineVideoFrame = null;

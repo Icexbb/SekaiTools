@@ -70,6 +70,24 @@ public class TimelineEditorModel : ViewModelBase
         set => SetProperty(value);
     }
 
+    public bool HasPlaybackPreviewInfo
+    {
+        get => GetProperty(false);
+        set => SetProperty(value);
+    }
+
+    public string PreviewFrameInfo
+    {
+        get => GetProperty("帧 -- · 时间 -- · 片段 --%");
+        set => SetProperty(value);
+    }
+
+    public double PreviewPlaybackProgress
+    {
+        get => GetProperty(0d);
+        set => SetProperty(value);
+    }
+
     public bool IsReadOnly
     {
         get => GetProperty(false);
@@ -165,6 +183,9 @@ public class TimelineEditorModel : ViewModelBase
         HasSelection = false;
         IsPlaying = false;
         PlaybackStatus = "";
+        HasPlaybackPreviewInfo = false;
+        PreviewFrameInfo = "帧 -- · 时间 -- · 片段 --%";
+        PreviewPlaybackProgress = 0;
         StartTime = "--:--:--.--";
         EndTime = "--:--:--.--";
         Duration = "--";

@@ -58,6 +58,8 @@ public partial class SubtitleTaskProcess : UserControl
 
     private SubtitlePageModel ViewModel => (SubtitlePageModel)DataContext;
 
+    private void StopPreviewButton_OnClick(object sender, RoutedEventArgs e) => EventTimelineEditor.StopEventPreview();
+
     private void StopButton_OnClick(object sender, RoutedEventArgs e) => StopRequested?.Invoke(sender, e);
 
     private void OutputButton_OnClick(object sender, RoutedEventArgs e) => OutputRequested?.Invoke(sender, e);
