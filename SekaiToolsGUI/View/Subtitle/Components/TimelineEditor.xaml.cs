@@ -972,7 +972,7 @@ public partial class TimelineEditor : UserControl
                 window.Title = $"事件预览 · {_selection.EventNumber} {_selection.EventType}";
                 if (!window.IsVisible) window.Show();
             }
-            SetPlaybackStatus("WPF 内嵌播放 · 正在加载…");
+            SetPlaybackStatus("正在加载…");
             try
             {
                 await WpfMediaPreview.PlayAsync(_mediaPath, _playbackStart, _playbackEnd,
@@ -998,7 +998,7 @@ public partial class TimelineEditor : UserControl
                         await StartPlaybackAsync(mode, requireFeatureSwitch, showFrame, forceLegacy: true, startMillisecondsOverride, endMillisecondsOverride);
                     }
                     else
-                        StopPlayback($"WPF 播放失败：{ex.Message}；可选择自动选择或 OpenCV + NAudio");
+                        StopPlayback($"播放失败：{ex.Message}");
                 }
             }
             finally
@@ -1195,7 +1195,7 @@ public partial class TimelineEditor : UserControl
             0,
             (_playbackEnd - _playbackStart).TotalMilliseconds);
         var duration = (_playbackEnd - _playbackStart).TotalMilliseconds;
-        var mode = _activePlaybackBackend;
+        var mode = _playbackMode == PlaybackMode.Video ? "音视频" : "音频";
         var progress = duration > 0 ? elapsed / duration * 100 : 0;
         var time = _playbackStart + TimeSpan.FromMilliseconds(elapsed);
         _playbackPositionMilliseconds = time.TotalMilliseconds;
@@ -1217,7 +1217,7 @@ public partial class TimelineEditor : UserControl
         if (Environment.TickCount64 - _lastPreviewLogTick >= 1000)
         {
             _lastPreviewLogTick = Environment.TickCount64;
-            Logger.Log($"[语句预览] 进度 | {mode} | {_selection?.EventNumber} | {ViewModel.PreviewFrameInfo}");
+            Logger.Log($"[语句预览] 进度 | {_activePlaybackBackend} | {_selection?.EventNumber} | {ViewModel.PreviewFrameInfo}");
         }
         SetPlaybackStatus($"{mode} · {FormatTimestamp((int)elapsed)} / {FormatTimestamp((int)duration)}");
     }
