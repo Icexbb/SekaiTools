@@ -14,7 +14,7 @@
                           Text="Unit Story Chapter" />
         </ui:CardExpander.Header>
         <ui:CardExpander.Content>
-            <StackPanel Name="CardContents" />
+            <Grid Name="CardContents" />
         </ui:CardExpander.Content>
     </ui:CardExpander>
 </UserControl>
