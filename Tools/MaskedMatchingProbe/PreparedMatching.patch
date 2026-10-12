@@ -1,0 +1,279 @@
+diff --git a/SekaiToolsCore/Match/TemplateMatcher/FrameMatchContext.cs b/SekaiToolsCore/Match/TemplateMatcher/FrameMatchContext.cs
+index 5605cc6..fd44159 100644
+--- a/SekaiToolsCore/Match/TemplateMatcher/FrameMatchContext.cs
++++ b/SekaiToolsCore/Match/TemplateMatcher/FrameMatchContext.cs
+@@ -15,6 +15,7 @@ public sealed class FrameMatchContext : IDisposable
+     private readonly HashSet<ScaledRegion> _validRegions = [];
+     private readonly Mat _coarseResult = new();
+     private readonly Mat _refinementResult = new();
++    private readonly Mat _floatMatchImage = new();
+     private long _retainedRegionBytes;
+ 
+     public FrameMatchContext()
+@@ -25,6 +26,7 @@ public sealed class FrameMatchContext : IDisposable
+     public Mat Gray { get; private set; }
+     public Size Size => Gray.Size;
+     internal TemplateMatchingMetrics? Metrics { get; set; }
++    internal bool UsePreparedTemplates { get; set; }
+ 
+     public void Dispose()
+     {
+@@ -32,6 +34,7 @@ public sealed class FrameMatchContext : IDisposable
+         Gray.Dispose();
+         _coarseResult.Dispose();
+         _refinementResult.Dispose();
++        _floatMatchImage.Dispose();
+     }
+ 
+     public void Update(Mat source)
+@@ -108,6 +111,15 @@ public sealed class FrameMatchContext : IDisposable
+         public void Dispose() { if (owned) Image.Dispose(); }
+     }
+ 
++    internal MatchResultLease PrepareMatchImage(Mat source)
++    {
++        var retain = (long)source.Width * source.Height * sizeof(float) <= 8L * 1024 * 1024;
++        var image = retain ? _floatMatchImage : new Mat();
++        try { source.ConvertTo(image, DepthType.Cv32F); }
++        catch { if (!retain) image.Dispose(); throw; }
++        return new MatchResultLease(image, !retain);
++    }
++
+     private void ClearScaledRegions()
+     {
+         foreach (var region in _scaledGrayRegions.Values)
+diff --git a/SekaiToolsCore/Match/TemplateMatcher/TemplateMatchCachePool.cs b/SekaiToolsCore/Match/TemplateMatcher/TemplateMatchCachePool.cs
+index 9efbc9f..f0ba392 100644
+--- a/SekaiToolsCore/Match/TemplateMatcher/TemplateMatchCachePool.cs
++++ b/SekaiToolsCore/Match/TemplateMatcher/TemplateMatchCachePool.cs
+@@ -15,6 +15,7 @@ public sealed class TemplateMatchCachePool
+ {
+     public TemplateMatchingMetrics Metrics { get; } = new();
+     internal bool UseContentPositionHints { get; init; }
++    internal bool UsePreparedTemplates { get; set; }
+     public enum MatchUsage
+     {
+         ContentStartSign = 0,
+diff --git a/SekaiToolsCore/Match/TemplateMatcher/TemplateMatcher.cs b/SekaiToolsCore/Match/TemplateMatcher/TemplateMatcher.cs
+index fa6d23c..b1ab092 100644
+--- a/SekaiToolsCore/Match/TemplateMatcher/TemplateMatcher.cs
++++ b/SekaiToolsCore/Match/TemplateMatcher/TemplateMatcher.cs
+@@ -37,6 +37,7 @@ public static class TemplateMatcher
+         var metrics = cachePool.Metrics.Enabled ? cachePool.Metrics : null;
+         var started = metrics != null ? Stopwatch.GetTimestamp() : 0;
+         frame.Metrics = metrics;
++        frame.UsePreparedTemplates = cachePool.UsePreparedTemplates;
+         if (cachePool.TryGet(usage, frame.Gray, region, tmp, matchingType, out var cachedResult))
+         {
+             metrics?.RecordRequest(usage, true, started);
+@@ -90,7 +91,7 @@ public static class TemplateMatcher
+         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
+         string memberName = "")
+     {
+-        var templateLayer = tmp.GetScaledLayer(scale, 1);
++        var templateLayer = frame.UsePreparedTemplates ? tmp.GetPreparedLayer(scale, 1) : tmp.GetScaledLayer(scale, 1);
+         if (templateLayer.Size.Width > region.Width || templateLayer.Size.Height > region.Height)
+             return new TemplateMatchResult(double.NegativeInfinity, double.PositiveInfinity,
+                 Point.Empty, Point.Empty) { Scale = scale };
+@@ -107,7 +108,7 @@ public static class TemplateMatcher
+         GaMatLayer fullTemplateLayer, double scale, TemplateMatchingType matchingType, string memberName)
+     {
+         var imgSmall = frame.GetScaledGrayRoi(region, SearchDownscaleDivisor, SearchInterpolation);
+-        var templateLayer = tmp.GetScaledLayer(scale, SearchDownscaleDivisor);
++        var templateLayer = frame.UsePreparedTemplates ? tmp.GetPreparedLayer(scale, SearchDownscaleDivisor) : tmp.GetScaledLayer(scale, SearchDownscaleDivisor);
+ 
+         using var resultLease = frame.RentMatchResult(imgSmall.Size, templateLayer.Size);
+         var matchResult = resultLease.Image;
+@@ -179,7 +180,12 @@ public static class TemplateMatcher
+     {
+         var metrics = frame.Metrics;
+         var started = metrics != null ? Stopwatch.GetTimestamp() : 0;
+-        CvInvoke.MatchTemplate(image, template.Gray, result, type, template.Alpha);
++        if (frame.UsePreparedTemplates)
++        {
++            using var prepared = frame.PrepareMatchImage(image);
++            CvInvoke.MatchTemplate(prepared.Image, template.Gray, result, type, template.Alpha);
++        }
++        else CvInvoke.MatchTemplate(image, template.Gray, result, type, template.Alpha);
+         metrics?.Record(TemplateMatchingStage.Correlation, started);
+         started = metrics != null ? Stopwatch.GetTimestamp() : 0;
+         result.MatRemoveErrorInf();
+diff --git a/SekaiToolsCore/Process/Model/GaMat.cs b/SekaiToolsCore/Process/Model/GaMat.cs
+index 4acbce4..fe1a0be 100644
+--- a/SekaiToolsCore/Process/Model/GaMat.cs
++++ b/SekaiToolsCore/Process/Model/GaMat.cs
+@@ -9,6 +9,7 @@ public class GaMat : IDisposable // Gray and Alpha Mat
+     public readonly Mat Alpha;
+     public readonly Mat Gray;
+     private readonly Dictionary<GaMatScale, GaMatLayer> _scaledLayers = new();
++    private readonly Dictionary<GaMatScale, GaMatLayer> _preparedLayers = new();
+     private readonly object _scaledLayersLock = new();
+ 
+     public GaMat(IInputArray src, bool resize = true)
+@@ -44,6 +45,12 @@ public class GaMat : IDisposable // Gray and Alpha Mat
+     {
+         lock (_scaledLayersLock)
+         {
++            foreach (var layer in _preparedLayers.Values)
++            {
++                layer.Gray.Dispose();
++                layer.Alpha.Dispose();
++            }
++            _preparedLayers.Clear();
+             foreach (var layer in _scaledLayers.Values)
+             {
+                 layer.Gray.Dispose();
+@@ -62,6 +69,34 @@ public class GaMat : IDisposable // Gray and Alpha Mat
+         return GetScaledLayer(1, divisor);
+     }
+ 
++    internal GaMatLayer GetPreparedLayer(double scale, int divisor)
++    {
++        lock (_scaledLayersLock)
++        {
++            var key = new GaMatScale(scale, divisor);
++            if (_preparedLayers.TryGetValue(key, out var cached)) return cached;
++            var source = GetScaledLayer(scale, divisor);
++            var gray = new Mat();
++            var alpha = new Mat();
++            try
++            {
++                source.Gray.ConvertTo(gray, DepthType.Cv32F);
++                if (source.Alpha.Depth == DepthType.Cv8U)
++                {
++                    using var binary = new Mat();
++                    CvInvoke.Threshold(source.Alpha, binary, 0, 1, ThresholdType.Binary);
++                    binary.ConvertTo(alpha, DepthType.Cv32F);
++                }
++                else if (source.Alpha.Depth == DepthType.Cv32F) source.Alpha.CopyTo(alpha);
++                else throw new NotSupportedException("Unsupported matching mask depth");
++                var layer = new GaMatLayer(gray, alpha);
++                _preparedLayers.Add(key, layer);
++                return layer;
++            }
++            catch { gray.Dispose(); alpha.Dispose(); throw; }
++        }
++    }
++
+     public GaMatLayer GetScaledLayer(double scale, int divisor)
+     {
+         if (scale <= 0) throw new ArgumentOutOfRangeException(nameof(scale));
+@@ -104,4 +139,4 @@ internal readonly record struct GaMatScale(double Scale, int Divisor);
+ public readonly record struct GaMatLayer(Mat Gray, Mat Alpha)
+ {
+     public Size Size => Gray.Size;
+-}
+\ No newline at end of file
++}
+diff --git a/Tools/RecognitionBenchmark/Program.cs b/Tools/RecognitionBenchmark/Program.cs
+index 623fff8..71c4d65 100644
+--- a/Tools/RecognitionBenchmark/Program.cs
++++ b/Tools/RecognitionBenchmark/Program.cs
+@@ -26,6 +26,7 @@ var capacity = args.Length > 9 ? int.Parse(args[9]) : (int?)null;
+ var positionHints = args.Length > 10 && bool.Parse(args[10]);
+ var decodeOnly = args.Length > 11 && bool.Parse(args[11]);
+ var hardwareDecode = args.Length > 12 && bool.Parse(args[12]);
++var preparedTemplates = args.Length > 13 && bool.Parse(args[13]);
+ for (var run = warmup ? 0 : 1; run <= runs; run++)
+ {
+     if (decodeOnly)
+@@ -95,6 +96,14 @@ for (var run = warmup ? 0 : 1; run <= runs; run++)
+         catch { replacement.Dispose(); throw; }
+     }
+     var activeCapture = (VideoCapture?)captureProperty.GetValue(processor) ?? throw new InvalidOperationException("Missing capture");
++    if (preparedTemplates)
++    {
++        var creator = typeof(VideoProcessor).GetProperty("Creator", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(processor)!;
++        var pool = creator.GetType().GetProperty("CachePool")!.GetValue(creator)!;
++        var hook = pool.GetType().GetProperty("UsePreparedTemplates", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
++            ?? throw new InvalidOperationException("Prepared matching experiment unavailable");
++        hook.SetValue(pool, true);
++    }
+     var decodeBackend = activeCapture.BackendName;
+     var decodeAcceleration = ((Emgu.CV.CvEnum.VideoAccelerationType)(int)activeCapture.Get(Emgu.CV.CvEnum.CapProp.HwAcceleration)).ToString();
+     Console.WriteLine($"Run {run}: {(run == 0 ? "warmup" : "measured")}");
+@@ -126,6 +135,7 @@ for (var run = warmup ? 0 : 1; run <= runs; run++)
+         FrameBufferCapacity = capacity,
+         ContentPositionHints = positionHints,
+         HardwareDecode = hardwareDecode,
++        PreparedTemplates = preparedTemplates,
+         DecodeBackend = decodeBackend,
+         DecodeAcceleration = decodeAcceleration,
+         WallMilliseconds = Stopwatch.GetElapsedTime(started).TotalMilliseconds,
+diff --git a/SekaiTools.Tests/PreparedMatchingTests.cs b/SekaiTools.Tests/PreparedMatchingTests.cs
+new file mode 100644
+index 0000000..07def89
+--- /dev/null
++++ b/SekaiTools.Tests/PreparedMatchingTests.cs
+@@ -0,0 +1,71 @@
++using System.Drawing;
++using System.Runtime.InteropServices;
++using Emgu.CV;
++using Emgu.CV.CvEnum;
++using Emgu.CV.Structure;
++using SekaiToolsCore.Process.Model;
++using SekaiToolsCore.Match.TemplateMatcher;
++
++namespace SekaiTools.Tests;
++
++public class PreparedMatchingTests
++{
++    [Theory]
++    [InlineData(1d, 1)]
++    [InlineData(.96, 2)]
++    [InlineData(1.04, 2)]
++    public void PreparedTemplatePreservesEveryScoreIncludingNonfiniteValues(double scale, int divisor)
++    {
++        using var source = new Mat(20, 24, DepthType.Cv8U, 4);
++        source.SetTo(new MCvScalar(20, 20, 20, 0));
++        CvInvoke.Rectangle(source, new Rectangle(3, 2, 7, 14), new MCvScalar(240, 240, 240, 1), -1);
++        CvInvoke.Rectangle(source, new Rectangle(13, 6, 8, 5), new MCvScalar(130, 130, 130, 128), -1);
++        using var template = new GaMat(source, false);
++        var original = template.GetScaledLayer(scale, divisor);
++        var prepared = template.GetPreparedLayer(scale, divisor);
++        Assert.Same(prepared.Gray, template.GetPreparedLayer(scale, divisor).Gray);
++        using var image = new Mat(40, 50, DepthType.Cv8U, 1);
++        image.SetTo(new MCvScalar(0));
++        using (var target = new Mat(image, new Rectangle(new Point(11, 7), original.Size))) original.Gray.CopyTo(target);
++        using var imageFloat = new Mat();
++        image.ConvertTo(imageFloat, DepthType.Cv32F);
++        using var left = new Mat();
++        using var right = new Mat();
++        CvInvoke.MatchTemplate(image, original.Gray, left, TemplateMatchingType.CcoeffNormed, original.Alpha);
++        CvInvoke.MatchTemplate(imageFloat, prepared.Gray, right, TemplateMatchingType.CcoeffNormed, prepared.Alpha);
++        Assert.Equal(ScoreBits(left), ScoreBits(right));
++    }
++
++    [Fact]
++    public void FloatMaskKeepsFractionalWeights()
++    {
++        using var source = new Mat(10, 12, DepthType.Cv32F, 4);
++        source.SetTo(new MCvScalar(20, 30, 40, .25));
++        using var template = new GaMat(source, false);
++        var prepared = template.GetPreparedLayer(1, 1);
++        Assert.Equal(0, CvInvoke.Norm(template.Alpha, prepared.Alpha, NormType.C));
++    }
++
++    [Fact]
++    public void ChangingFramesRefreshesPreparedImage()
++    {
++        using var context = new FrameMatchContext();
++        using var source = new Mat(40, 50, DepthType.Cv8U, 1);
++        foreach (var value in new[] { 12, 200 })
++        {
++            source.SetTo(new MCvScalar(value));
++            context.Update(source);
++            using var prepared = context.PrepareMatchImage(context.Gray);
++            using var expected = new Mat();
++            source.ConvertTo(expected, DepthType.Cv32F);
++            Assert.Equal(0, CvInvoke.Norm(expected, prepared.Image, NormType.C));
++        }
++    }
++
++    private static int[] ScoreBits(Mat result)
++    {
++        var scores = new float[result.Rows * result.Cols];
++        for (var row = 0; row < result.Rows; row++) Marshal.Copy(result.DataPointer + row * result.Step, scores, row * result.Cols, result.Cols);
++        return scores.Select(BitConverter.SingleToInt32Bits).ToArray();
++    }
++}
