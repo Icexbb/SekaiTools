@@ -137,7 +137,6 @@
                         </StackPanel>
                     </Expander.Header>
                     <StackPanel Margin="8,6,8,4">
-                        <Separator Margin="0,0,0,8" />
                         <Grid>
                             <TextBlock Text="将文本分割为：" />
                             <TextBlock Text="*本行文本发生抖动*" HorizontalAlignment="Right"
@@ -166,7 +165,7 @@
                                        Text="{Binding SeparatedContentPart2Length, StringFormat={}{0:0.#}}" />
                         </Grid>
 
-                        <Separator Margin="0,8" />
+                        <Separator Margin="0,4" />
 
                         <Grid>
                             <TextBlock>
@@ -189,14 +188,40 @@
                         <Slider x:Name="SeparateFrameSlider"
                                 Minimum="{Binding StartFrame}" Maximum="{Binding EndFrame}"
                                 Value="{Binding SeparateFrame}" />
-                        <TextBlock x:Name="SeparateTimeText" HorizontalAlignment="Center">
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="{}在 {0} ⇒ {1} 处换行">
-                                    <Binding Path="SeparateFrame" Mode="OneWay" />
-                                    <Binding Path="SeparateTime" Mode="OneWay" />
-                                </MultiBinding>
-                            </TextBlock.Text>
-                        </TextBlock>
+                        <Grid Margin="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:Button  Grid.Column="0" Padding="4" FontSize="12" Name="PreviewFirstButton"
+                                       Click="PreviewFirstButton_OnClick" ToolTip="预览前半段"
+                                       IsEnabled="{Binding IsEnabled, ElementName=LinePreviewBtn}"
+                                       Visibility="{Binding Visibility, ElementName=LinePreviewBtn}">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="Play24" Margin="0,0,4,0" />
+                                    <TextBlock Text="预览" />
+                                </StackPanel>
+                            </ui:Button>
+                            <ui:Button Grid.Column="2" Padding="4" FontSize="12" Name="PreviewLastButton"
+                                       Click="PreviewLastButton_OnClick" ToolTip="预览后半段"
+                                       IsEnabled="{Binding IsEnabled, ElementName=LinePreviewBtn}"
+                                       Visibility="{Binding Visibility, ElementName=LinePreviewBtn}">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="Play24" Margin="0,0,4,0" />
+                                    <TextBlock Text="预览" />
+                                </StackPanel>
+                            </ui:Button>
+                            <TextBlock Grid.Column="1" x:Name="SeparateTimeText" HorizontalAlignment="Center">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}在 {0} ⇒ {1} 处换行">
+                                        <Binding Path="SeparateFrame" Mode="OneWay" />
+                                        <Binding Path="SeparateTime" Mode="OneWay" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </Grid>
+
                     </StackPanel>
                 </Expander>
 

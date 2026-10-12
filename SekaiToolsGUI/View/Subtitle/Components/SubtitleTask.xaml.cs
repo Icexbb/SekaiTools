@@ -290,13 +290,18 @@ public partial class SubtitleTask : UserControl
                 line.TimelineRequested += (_, _) => ProcessView.EventTimelineEditor.SelectEvent(timelineEvent);
             }
 
-            line.PreviewRequested += async (_, _) =>
+            async Task PreviewAsync(int part)
             {
                 if (_disposed || !ViewModel.CanStartLinePreview) return;
                 ViewModel.ShowPreview = true;
                 await ProcessView.EventTimelineEditor.PreviewEventVideoAsync(
-                    ViewModel.VideoFilePath, CreateTimelineEvent(line), frame => ViewModel.FramePreviewImage = frame);
-            };
+                    ViewModel.VideoFilePath, CreateTimelineEvent(line), frame => ViewModel.FramePreviewImage = frame,
+                    part == 2 ? line.ViewModel.Set.Separate.SeparateFrame : null,
+                    part == 1 ? line.ViewModel.Set.Separate.SeparateFrame : null);
+            }
+            line.PreviewRequested += async (_, _) => await PreviewAsync(0);
+            line.PreviewFirstRequested += async (_, _) => await PreviewAsync(1);
+            line.PreviewLastRequested += async (_, _) => await PreviewAsync(2);
             LinePanel_InsertInOriginalOrder(line, line.ViewModel.EventIndex);
             ViewModel.DialogCurrent++;
             ProcessView.RefreshContentVisibility();

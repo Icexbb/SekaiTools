@@ -904,14 +904,19 @@ public partial class TimelineEditor : UserControl
         UpdatePlaybackCursor();
     }
 
-    public Task PreviewEventVideoAsync(string videoPath, TimelineEventSelection selection, Action<ImageSource> showFrame)
+    public Task PreviewEventVideoAsync(string videoPath, TimelineEventSelection selection, Action<ImageSource> showFrame, int? startFrame = null, int? endFrameExclusive = null)
     {
         SelectEvent(selection);
         _mediaPath = videoPath;
-        return StartPlaybackAsync(PlaybackMode.Video, requireFeatureSwitch: false, showFrame);
+        var start = startFrame.HasValue ? selection.FrameRate.TimeAtFrame(
+            Math.Clamp(startFrame.Value, selection.StartFrame, selection.EndFrame), FrameType.Start).Milliseconds : (int?)null;
+        var end = endFrameExclusive.HasValue ? selection.FrameRate.TimeAtFrame(
+            Math.Clamp(endFrameExclusive.Value, selection.StartFrame, selection.EndFrame), FrameType.Start).Milliseconds : (int?)null;
+        return StartPlaybackAsync(PlaybackMode.Video, requireFeatureSwitch: false, showFrame,
+            startMillisecondsOverride: start, endMillisecondsOverride: end);
     }
 
-    private async Task StartPlaybackAsync(PlaybackMode mode, bool requireFeatureSwitch = true, Action<ImageSource>? showFrame = null, bool forceLegacy = false)
+    private async Task StartPlaybackAsync(PlaybackMode mode, bool requireFeatureSwitch = true, Action<ImageSource>? showFrame = null, bool forceLegacy = false, int? startMillisecondsOverride = null, int? endMillisecondsOverride = null)
     {
         if (requireFeatureSwitch && !GeneralFunctionSwitch.EventPlayBack)
             return;
@@ -923,8 +928,8 @@ public partial class TimelineEditor : UserControl
             return;
         }
 
-        var startMilliseconds = GetStartMilliseconds(_selection);
-        var endMilliseconds = GetEndMilliseconds(_selection);
+        var startMilliseconds = startMillisecondsOverride ?? GetStartMilliseconds(_selection);
+        var endMilliseconds = endMillisecondsOverride ?? GetEndMilliseconds(_selection);
         if (endMilliseconds <= startMilliseconds)
         {
             SetPlaybackStatus("事件区间无效");
@@ -984,7 +989,7 @@ public partial class TimelineEditor : UserControl
                     if (backend == 0)
                     {
                         Logger.Log($"[语句预览] WPF 播放失败，回退到 OpenCV + NAudio | {ex}", LogLevel.Warning);
-                        await StartPlaybackAsync(mode, requireFeatureSwitch, showFrame, forceLegacy: true);
+                        await StartPlaybackAsync(mode, requireFeatureSwitch, showFrame, forceLegacy: true, startMillisecondsOverride, endMillisecondsOverride);
                     }
                     else
                         StopPlayback($"WPF 播放失败：{ex.Message}；可选择自动选择或 OpenCV + NAudio");
@@ -1020,7 +1025,7 @@ public partial class TimelineEditor : UserControl
             try
             {
                 var firstFrame = await loader.LoadFrameAsync(
-                    _selection.StartFrame,
+                    _selection.FrameRate.FrameAtTime(startMilliseconds),
                     cancellation.Token);
                 if (playbackVersion != _playbackVersion ||
                     _playbackMode != PlaybackMode.Video ||
@@ -1033,7 +1038,7 @@ public partial class TimelineEditor : UserControl
                 }
 
                 ShowVideoPlaybackFrame(firstFrame);
-                _lastVideoFrame = _selection.StartFrame;
+                _lastVideoFrame = _selection.FrameRate.FrameAtTime(startMilliseconds);
             }
             catch (OperationCanceledException)
             {
