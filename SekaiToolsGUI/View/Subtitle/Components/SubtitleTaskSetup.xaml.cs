@@ -1,4 +1,6 @@
 using System.IO;
+using System.Diagnostics;
+using SekaiToolsBase;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
@@ -21,109 +23,95 @@ public partial class SubtitleTaskSetup : UserControl
     private static ISnackbarService SnackService =>
         (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
 
+    private int _selectionVersion;
+
     private static string? SelectFile(object sender, RoutedEventArgs e, string filter)
     {
         var openFileDialog = new OpenFileDialog { Filter = filter };
+        var timer = Stopwatch.StartNew();
         var result = openFileDialog.ShowDialog();
+        Logger.Log($"文件对话框（含用户选择时间）: {timer.Elapsed.TotalMilliseconds:F0} ms; 已选择={result == true}");
         return result == true ? openFileDialog.FileName : null;
     }
 
-    private void SelectSameNameFile(string filename)
+    private async Task SelectSameNameFileAsync(string filename)
     {
-        var fileExt = Path.GetExtension(filename).ToLower();
-
+        var version = ++_selectionVersion;
+        var model = ViewModel;
+        var fileExt = Path.GetExtension(filename).ToLowerInvariant();
         string[] videoExt = [".mp4", ".avi", ".mkv", ".webm", ".wmv"];
-        string[] jsonExt = [".json", ".asset"];
-        string[] txtExt = [".txt"];
+        string[] scriptExt = [".json", ".asset"];
+        if (videoExt.Contains(fileExt)) model.VideoFilePath = filename;
+        else if (scriptExt.Contains(fileExt)) model.ScriptFilePath = filename;
+        else if (fileExt == ".txt") model.TranslateFilePath = filename;
+        else return;
+        if (!model.AutoSelectSameNameFiles) return;
 
-        if (videoExt.Contains(fileExt))
+        var timer = Stopwatch.StartNew();
+        try
         {
-            ViewModel.VideoFilePath = filename;
-
-            var translatePath = txtExt.Select(te => Path.ChangeExtension(filename, te)).FirstOrDefault(File.Exists);
-            var scriptPath = jsonExt.Select(se => Path.ChangeExtension(filename, se)).FirstOrDefault(File.Exists);
-
-            if (scriptPath == null && translatePath == null) return;
-
-            var selectRelatedFiles = ViewModel.AutoSelectSameNameFiles;
-            if (!selectRelatedFiles) return;
-            if (scriptPath != null) ViewModel.ScriptFilePath = scriptPath;
-            if (translatePath != null) ViewModel.TranslateFilePath = translatePath;
+            // File-system queries can block on a slow disk. Keep them off the dispatcher.
+            var related = await Task.Run(() => (
+                Video: videoExt.Contains(fileExt) ? null : videoExt.Select(ext => Path.ChangeExtension(filename, ext)).FirstOrDefault(File.Exists),
+                Script: scriptExt.Contains(fileExt) ? null : scriptExt.Select(ext => Path.ChangeExtension(filename, ext)).FirstOrDefault(File.Exists),
+                Translation: fileExt == ".txt" ? null : new[] { Path.ChangeExtension(filename, ".txt") }.FirstOrDefault(File.Exists)));
+            // A later selection, dialog close or checkbox change invalidates this result.
+            if (version != _selectionVersion || !IsLoaded || DataContext != model || !model.AutoSelectSameNameFiles) return;
+            if (related.Video != null) model.VideoFilePath = related.Video;
+            if (related.Script != null) model.ScriptFilePath = related.Script;
+            if (related.Translation != null) model.TranslateFilePath = related.Translation;
         }
-        else if (jsonExt.Contains(fileExt))
+        catch (Exception exception)
         {
-            ViewModel.ScriptFilePath = filename;
-
-            var videoPath = videoExt.Select(ve => Path.ChangeExtension(filename, ve)).FirstOrDefault(File.Exists);
-            var translatePath = txtExt.Select(te => Path.ChangeExtension(filename, te)).FirstOrDefault(File.Exists);
-
-            if (videoPath == null && translatePath == null) return;
-
-            var selectRelatedFiles = ViewModel.AutoSelectSameNameFiles;
-            if (!selectRelatedFiles) return;
-            if (videoPath != null) ViewModel.VideoFilePath = videoPath;
-            if (translatePath != null) ViewModel.TranslateFilePath = translatePath;
+            Logger.Log($"匹配配套文件失败: {exception}");
         }
-        else if (txtExt.Contains(fileExt))
+        finally
         {
-            ViewModel.TranslateFilePath = filename;
-
-            var videoPath = videoExt.Select(ve => Path.ChangeExtension(filename, ve)).FirstOrDefault(File.Exists);
-            var scriptPath = jsonExt.Select(se => Path.ChangeExtension(filename, se)).FirstOrDefault(File.Exists);
-
-            if (videoPath == null && scriptPath == null) return;
-
-            var selectRelatedFiles = ViewModel.AutoSelectSameNameFiles;
-            if (!selectRelatedFiles) return;
-            if (videoPath != null) ViewModel.VideoFilePath = videoPath;
-            if (scriptPath != null) ViewModel.ScriptFilePath = scriptPath;
+            Logger.Log($"匹配配套文件: {timer.Elapsed.TotalMilliseconds:F0} ms");
         }
-
-        return;
-
     }
 
-    private void VideoFileBrowser_OnClick(object sender, RoutedEventArgs e)
+    private async void VideoFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
         var result = SelectFile(sender, e, "视频文件|*.mp4;*.avi;*.mkv;*.webm;*.wmv");
         if (result == null) return;
 
-        SelectSameNameFile(result);
+        await SelectSameNameFileAsync(result);
     }
 
-    private void ScriptFileBrowser_OnClick(object sender, RoutedEventArgs e)
+    private async void ScriptFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
         var result = SelectFile(sender, e, "剧情脚本文件|*.json;*.asset");
         if (result == null) return;
 
-        SelectSameNameFile(result);
+        await SelectSameNameFileAsync(result);
     }
 
-    private void TranslationFileBrowser_OnClick(object sender, RoutedEventArgs e)
+    private async void TranslationFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
         var result = SelectFile(sender, e, "剧情翻译文件|*.txt");
         if (result == null) return;
 
-        SelectSameNameFile(result);
+        await SelectSameNameFileAsync(result);
     }
 
-    private void UIElement_OnDrop(object sender, DragEventArgs e)
+    private async void UIElement_OnDrop(object sender, DragEventArgs e)
     {
         if (e.Data.GetData(DataFormats.FileDrop) is not string[] { Length: > 0 } files) return;
         var fileName = files[0];
         if (!File.Exists(fileName)) return;
 
-        GetSameBaseFile(fileName);
+        await GetSameBaseFileAsync(fileName);
     }
 
-    private void GetSameBaseFile(string filename)
+    private async Task GetSameBaseFileAsync(string filename)
     {
         var fileExt = Path.GetExtension(filename).ToLower();
         List<string> vExt = [".mp4", ".avi", ".mkv", ".webm", ".wmv"];
         List<string> sExt = [".json", ".asset"];
         List<string> tExt = [".txt"];
         if (vExt.Contains(fileExt) || sExt.Contains(fileExt) || tExt.Contains(fileExt))
-            SelectSameNameFile(filename);
+            await SelectSameNameFileAsync(filename);
         else
             SnackService.Show("错误", "文件格式不支持", ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentError24),

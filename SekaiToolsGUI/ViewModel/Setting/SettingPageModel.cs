@@ -24,10 +24,21 @@ public partial class SettingPageModel : ViewModelBase
     internal SettingPageModel(string settingsPath)
     {
         _settingsPath = Path.GetFullPath(settingsPath);
-        IsPeriodicColorAvailable = PeriodicColorCaptureFactory.IsCurrentRuntimeSupported(out var reason);
-        PeriodicColorAvailabilityReason = reason;
+        var availability = PeriodicColorAvailability.Value;
+        IsPeriodicColorAvailable = availability.Supported;
+        PeriodicColorAvailabilityReason = availability.Reason;
         LoadSetting();
     }
+
+    private static readonly Lazy<(bool Supported, string Reason)> PeriodicColorAvailability = new(() =>
+    {
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+        var supported = PeriodicColorCaptureFactory.IsCurrentRuntimeSupported(out var reason);
+        Logger.Log($"启动周期彩色资格检查: {timer.Elapsed.TotalMilliseconds:F0} ms; {reason}");
+        return (supported, reason);
+    });
+
+    public static void InitializePeriodicColorAvailability() => _ = PeriodicColorAvailability.Value;
 
     private static readonly Lazy<SettingPageModel> SharedInstance = new(() => new SettingPageModel());
     public static SettingPageModel Instance => SharedInstance.Value;

@@ -32,6 +32,17 @@ internal static class Program
         var constructor = typeof(SettingPageModel).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic,
             null, [typeof(string)], null)!;
         SettingPageModel Create() => (SettingPageModel)constructor.Invoke([path]);
+        var startupTimer = System.Diagnostics.Stopwatch.StartNew();
+        typeof(SettingPageModel).GetMethod("InitializePeriodicColorAvailability")?.Invoke(null, null);
+        var startupMilliseconds = startupTimer.Elapsed.TotalMilliseconds;
+        if (args.Length == 3 && args[1] == "selection")
+        {
+            VerifyFileSelection(application, Create, args[2], output, startupMilliseconds);
+            if (Hash(userSetting) != before || UserStoreFingerprint() != userStoresBefore)
+                throw new InvalidDataException("User stores changed during selection check");
+            application.Shutdown();
+            return;
+        }
         if (args.Length == 2 && args[1] == "unavailable")
         {
             VerifyUnavailableRuntime(application, path, Create, output);
@@ -111,6 +122,75 @@ internal static class Program
             GuiAssemblyHash = Hash(typeof(SettingPageModel).Assembly.Location)
         }, new JsonSerializerOptions { WriteIndented = true }));
         application.Shutdown();
+    }
+
+    private static void VerifyFileSelection(Application application, Func<SettingPageModel> create,
+        string directory, string output, double startupMilliseconds)
+    {
+        var repeatedTimer = System.Diagnostics.Stopwatch.StartNew();
+        for (var i = 0; i < 20; i++)
+        {
+            typeof(SettingPageModel).GetMethod("InitializePeriodicColorAvailability")?.Invoke(null, null);
+            var model = create();
+            if (model.RecognitionPeriodicColor) throw new InvalidDataException("Experiment unexpectedly enabled");
+        }
+        var repeatedMilliseconds = repeatedTimer.Elapsed.TotalMilliseconds;
+        application.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary());
+        application.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
+        application.Resources.MergedDictionaries.Add(new ResourceDictionary
+            { Source = new Uri("/SekaiToolsGUI;component/Converter/Converters.xaml", UriKind.Relative) });
+        var state = new SekaiToolsGUI.ViewModel.Subtitle.SubtitlePageModel();
+        var setup = new SekaiToolsGUI.View.Subtitle.Components.SubtitleTaskSetup { DataContext = state };
+        var window = new Window { Content = setup, Width = 800, Height = 500, Opacity = 0,
+            ShowInTaskbar = false, ShowActivated = false };
+        application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        window.Show();
+        var method = setup.GetType().GetMethod("SelectSameNameFileAsync", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? setup.GetType().GetMethod("SelectSameNameFile", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        Task Select(string path) => method.Invoke(setup, [path]) as Task ?? Task.CompletedTask;
+        void Wait(Task task)
+        {
+            if (!task.IsCompleted)
+            {
+                var frame = new System.Windows.Threading.DispatcherFrame();
+                _ = task.ContinueWith(_ => application.Dispatcher.BeginInvoke(() => frame.Continue = false));
+                System.Windows.Threading.Dispatcher.PushFrame(frame);
+            }
+            task.GetAwaiter().GetResult();
+        }
+        var timings = new List<object>();
+        var videos = Directory.GetFiles(directory, "*.mp4");
+        if (videos.Length < 2) throw new InvalidDataException("Need multiple standard file groups");
+        foreach (var video in videos)
+            foreach (var ext in new[] { ".mp4", ".json", ".txt" })
+                for (var repeat = 0; repeat < 3; repeat++)
+                {
+                    state.Reset();
+                    var timer = System.Diagnostics.Stopwatch.StartNew();
+                    Wait(Select(Path.ChangeExtension(video, ext)));
+                    if (state.VideoFilePath != video || state.ScriptFilePath != Path.ChangeExtension(video, ".json") ||
+                        state.TranslateFilePath != Path.ChangeExtension(video, ".txt"))
+                        throw new InvalidDataException("Companion group mismatch");
+                    timings.Add(new { File = Path.GetFileName(video), SelectedExtension = ext,
+                        Repeat = repeat, Milliseconds = timer.Elapsed.TotalMilliseconds });
+                }
+        state.Reset();
+        var earlier = Select(videos[0]);
+        var latest = Select(videos[1]);
+        Wait(Task.WhenAll(earlier, latest));
+        if (state.VideoFilePath != videos[1] || state.ScriptFilePath != Path.ChangeExtension(videos[1], ".json"))
+            throw new InvalidDataException("Stale selection overwrote latest group");
+        state.Reset();
+        state.AutoSelectSameNameFiles = false;
+        Wait(Select(videos[0]));
+        if (state.ScriptFilePath != "" || state.TranslateFilePath != "")
+            throw new InvalidDataException("Disabled auto-selection changed companions");
+        window.Close();
+        File.WriteAllText(Path.Combine(output, "report.json"), JsonSerializer.Serialize(new {
+            VerificationPassed = true, StartupEligibilityMilliseconds = startupMilliseconds,
+            TwentyCachedInitializationsMilliseconds = repeatedMilliseconds,
+            LatestSelectionWins = true, DisabledAutoSelectionPreserved = true, Timings = timings
+        }, new JsonSerializerOptions { WriteIndented = true }));
     }
 
     private static void VerifyUnavailableRuntime(Application application, string path,

@@ -35,6 +35,8 @@ public partial class App : Application
             return;
         }
 
+        // Probe once before any window or file selection; settings instances reuse the result.
+        ViewModel.Setting.SettingPageModel.InitializePeriodicColorAvailability();
         // OpenCV threads are process-wide. Apply only once, before starting any video task.
         var threadChoice = ViewModel.Setting.SettingPageModel.Instance.RecognitionThreadChoice;
         var threads = threadChoice switch { 1 => 4, 2 => 8, 3 => 16, _ => 0 };
