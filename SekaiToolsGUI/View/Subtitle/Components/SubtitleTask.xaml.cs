@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 using SekaiToolsBase.SubStationAlpha;
 using SekaiToolsCore;
+using SekaiToolsCore.Abstractions;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
@@ -21,6 +22,7 @@ using SekaiToolsGUI.Service;
 using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.ViewModel.Setting;
 using SekaiToolsGUI.ViewModel.Subtitle;
+using SekaiToolsInfrastructure.Video;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
@@ -35,6 +37,8 @@ public partial class SubtitleTask : UserControl
     private readonly DispatcherBatchQueue _resultQueue;
     private bool _previewEnabled;
     private bool _disposed;
+    private readonly IProcessingStatePersistence _persistence;
+    private readonly SettingPageModel _settings;
     internal Func<bool>? CanDeleteSavedProgress { get; set; }
     public event EventHandler? RemoveRequested;
 
@@ -83,8 +87,18 @@ public partial class SubtitleTask : UserControl
 
     public SubtitleTask() : this(new SubtitlePageModel()) { }
 
-    public SubtitleTask(SubtitlePageModel state)
+    public SubtitleTask(SubtitlePageModel state) : this(state, SubtitleQueueProcessingStatePersistence.Instance)
     {
+    }
+
+    internal SubtitleTask(SubtitlePageModel state, IProcessingStatePersistence persistence) : this(state, persistence, SettingPageModel.Instance)
+    {
+    }
+
+    internal SubtitleTask(SubtitlePageModel state, IProcessingStatePersistence persistence, SettingPageModel settings)
+    {
+        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _persistence = persistence ?? throw new ArgumentNullException(nameof(persistence));
         DataContext = state;
         InitializeComponent();
         ProcessView.EventTimelineEditor.ViewModel.PropertyChanged += PlaybackModel_OnPropertyChanged;
@@ -107,7 +121,7 @@ public partial class SubtitleTask : UserControl
 
     internal void LoadHistoryState(ProcessingState state)
     {
-        var settings = SettingPageModel.Instance;
+        var settings = _settings;
         try
         {
             VideoProcessor?.Dispose();
@@ -119,13 +133,13 @@ public partial class SubtitleTask : UserControl
                 settings.GetExportStyleConfig(),
                 settings.GetTypewriterSetting(),
                 GetMatchingThreshold(),
-                settings.GetRecognitionPerformanceOptions()
+                GetRecognitionOptions(state)
             ), new VideoProcessCallbacks
             {
                 OnNewDialog = LinePanel_AddDialogLine,
                 OnNewBanner = LinePanel_AddBannerLine,
                 OnNewMarker = LinePanel_AddMarkerLine
-            }, ResourceManager.Instance, ProcessingStatePersistence.Instance);
+            }, ResourceManager.Instance, ProcessingStatePersistence.Instance, GetCaptureFactory(state));
 
             SetTimelineVideoDuration();
             VideoProcessor.ApplyState(state);
@@ -566,9 +580,34 @@ public partial class SubtitleTask
         return JsonSerializer.Deserialize<MatchingThreshold>(json);
     }
 
+    private static bool UsePeriodicCapture(ProcessingState? savedState, SettingPageModel settings) => savedState != null
+        ? savedState.Metadata?.CaptureIdentity != null
+        : settings.RecognitionPeriodicColor;
+
+    private static RecognitionPerformanceOptions GetRecognitionOptions(ProcessingState? savedState) =>
+        GetRecognitionOptionsForSettings(savedState, SettingPageModel.Instance);
+
+    private static RecognitionPerformanceOptions GetRecognitionOptionsForSettings(ProcessingState? savedState, SettingPageModel settings)
+    {
+        var options = settings.GetRecognitionPerformanceOptions();
+        return UsePeriodicCapture(savedState, settings) ? options with { PrepareGrayFrames = false } : options;
+    }
+
+    private static IVideoCaptureFactory? GetCaptureFactory(ProcessingState? savedState) =>
+        GetCaptureFactoryForSettings(savedState, SettingPageModel.Instance);
+
+    private static IVideoCaptureFactory? GetCaptureFactoryForSettings(ProcessingState? savedState, SettingPageModel settings)
+    {
+        if (!UsePeriodicCapture(savedState, settings)) return null;
+        if (savedState?.Metadata?.CaptureIdentity is { } identity &&
+            !identity.StartsWith("PeriodicColor:", StringComparison.Ordinal))
+            throw new InvalidDataException("不支持此进度的捕获模式");
+        return PeriodicColorCaptureFactory.ForCurrentRuntime();
+    }
+
     private void StartProcess(string saveKey, ProcessingState? resumeState)
     {
-        var settings = SettingPageModel.Instance;
+        var settings = _settings;
 
         Logger.Log(
             $"开始处理: 视频={ViewModel.VideoFilePath}, 剧本={ViewModel.ScriptFilePath}, 翻译={ViewModel.TranslateFilePath}");
@@ -584,7 +623,7 @@ public partial class SubtitleTask
                     settings.GetExportStyleConfig(),
                     settings.GetTypewriterSetting(),
                     GetMatchingThreshold(),
-                    settings.GetRecognitionPerformanceOptions()
+                    GetRecognitionOptionsForSettings(resumeState, _settings)
                 ), new VideoProcessCallbacks
                 {
                     OnTaskFinished = () =>
@@ -705,7 +744,8 @@ public partial class SubtitleTask
                     OnFps = OnFpsChanged
                 },
                 ResourceManager.Instance,
-                SubtitleQueueProcessingStatePersistence.Instance
+                _persistence,
+                GetCaptureFactoryForSettings(resumeState, _settings)
             );
 
             SetTimelineVideoDuration();

@@ -327,6 +327,38 @@
                         </StackPanel>
                     </ui:CardExpander.Header>
                     <StackPanel>
+                        <ui:CardControl Icon="{ui:SymbolIcon Settings24}">
+                            <ui:CardControl.Header>
+                                <StackPanel>
+                                    <ui:TextBlock FontTypography="Body" Text="识别计算线程" />
+                                    <ui:TextBlock TextWrapping="Wrap"
+                                                  Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                                  Text="较少线程可能提高吞吐量；重启应用后生效" />
+                                </StackPanel>
+                            </ui:CardControl.Header>
+                            <ComboBox MinWidth="140" SelectedIndex="{Binding RecognitionThreadChoice,Mode=TwoWay}">
+                                <ComboBoxItem Content="自动" />
+                                <ComboBoxItem Content="4 线程" />
+                                <ComboBoxItem Content="8 线程" />
+                                <ComboBoxItem Content="16 线程" />
+                            </ComboBox>
+                        </ui:CardControl>
+                        <ui:CardControl Icon="{ui:SymbolIcon Memory16}">
+                            <ui:CardControl.Header>
+                                <StackPanel>
+                                    <ui:TextBlock FontTypography="Body" Text="预读帧数上限" />
+                                    <ui:TextBlock TextWrapping="Wrap"
+                                                  Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                                  Text="减少帧缓存内存；仍受性能模式和内存预算限制，新任务生效" />
+                                </StackPanel>
+                            </ui:CardControl.Header>
+                            <ComboBox MinWidth="140" SelectedIndex="{Binding RecognitionFrameBufferChoice,Mode=TwoWay}">
+                                <ComboBoxItem Content="自动" />
+                                <ComboBoxItem Content="4 帧" />
+                                <ComboBoxItem Content="8 帧" />
+                                <ComboBoxItem Content="16 帧" />
+                            </ComboBox>
+                        </ui:CardControl>
                         <ui:CardControl>
                             <ui:CardControl.Header>
                                 <StackPanel>
@@ -337,6 +369,17 @@
                                 </StackPanel>
                             </ui:CardControl.Header>
                             <CheckBox IsChecked="{Binding RecognitionPrepareGray,Mode=TwoWay}" Content="启用" />
+                        </ui:CardControl>
+                        <ui:CardControl Icon="{ui:SymbolIcon Beaker24}">
+                            <ui:CardControl.Header>
+                                <StackPanel>
+                                    <ui:TextBlock FontTypography="Body" Text="周期彩色读取" />
+                                    <ui:TextBlock TextWrapping="Wrap"
+                                                  Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                                  Text="保留彩色预览并降低帧缓存占用；仅支持已验证的实验运行库，新任务生效" />
+                                </StackPanel>
+                            </ui:CardControl.Header>
+                            <CheckBox IsChecked="{Binding RecognitionPeriodicColor,Mode=TwoWay}" Content="启用" />
                         </ui:CardControl>
                     </StackPanel>
                 </ui:CardExpander>

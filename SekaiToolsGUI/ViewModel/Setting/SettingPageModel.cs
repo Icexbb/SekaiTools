@@ -14,9 +14,15 @@ public partial class SettingPageModel : ViewModelBase
 {
     public readonly List<string> CustomSpecialCharacters = [];
     private bool _suspendSaving;
+    private readonly string _settingsPath;
 
-    private SettingPageModel()
+    private SettingPageModel() : this(Path.Combine(ResourceManager.DataBaseDir, "Data", "setting.json"))
     {
+    }
+
+    internal SettingPageModel(string settingsPath)
+    {
+        _settingsPath = Path.GetFullPath(settingsPath);
         LoadSetting();
     }
 
@@ -37,12 +43,37 @@ public partial class SettingPageModel : ViewModelBase
     {
         Mode = (RecognitionPerformanceMode)RecognitionPerformanceMode,
         MemoryBudgetMiB = RecognitionMemoryBudgetMiB,
-        PrepareGrayFrames = RecognitionPrepareGray
+        PrepareGrayFrames = RecognitionPrepareGray,
+        FrameBufferCapacity = RecognitionFrameBufferChoice switch { 1 => 4, 2 => 8, 3 => 16, _ => null }
     };
+    public int RecognitionThreadChoice
+    {
+        get => GetProperty(0);
+        set => SetProperty(value is >= 0 and <= 3 ? value : 0);
+    }
+    public int RecognitionFrameBufferChoice
+    {
+        get => GetProperty(0);
+        set => SetProperty(value is >= 0 and <= 3 ? value : 0);
+    }
     public bool RecognitionPrepareGray
     {
         get => GetProperty(false);
-        set => SetProperty(value);
+        set
+        {
+            if (value) RecognitionPeriodicColor = false;
+            SetProperty(value);
+        }
+    }
+
+    public bool RecognitionPeriodicColor
+    {
+        get => GetProperty(false);
+        set
+        {
+            if (value) RecognitionPrepareGray = false;
+            SetProperty(value);
+        }
     }
 
     public int CurrentApplicationTheme
@@ -251,9 +282,9 @@ public partial class SettingPageModel : ViewModelBase
 
 partial class SettingPageModel
 {
-    private static string GetSettingPath()
+    private string GetSettingPath()
     {
-        return Path.Combine(ResourceManager.DataBaseDir, "Data", "setting.json");
+        return _settingsPath;
     }
 
     public void SaveSetting()
@@ -293,6 +324,9 @@ partial class SettingPageModel
             RecognitionPerformanceMode = Model.Setting.Default.RecognitionPerformanceMode;
             RecognitionMemoryBudgetMiB = Model.Setting.Default.RecognitionMemoryBudgetMiB;
             RecognitionPrepareGray = Model.Setting.Default.RecognitionPrepareGray;
+            RecognitionPeriodicColor = Model.Setting.Default.RecognitionPeriodicColor;
+            RecognitionThreadChoice = Model.Setting.Default.RecognitionThreadChoice;
+            RecognitionFrameBufferChoice = Model.Setting.Default.RecognitionFrameBufferChoice;
 
             TypewriterFadeTime = Model.Setting.Default.TypewriterFadeTime;
             TypewriterCharTime = Model.Setting.Default.TypewriterCharTime;
@@ -342,6 +376,9 @@ partial class SettingPageModel
             RecognitionPerformanceMode = setting.RecognitionPerformanceMode;
             RecognitionMemoryBudgetMiB = setting.RecognitionMemoryBudgetMiB;
             RecognitionPrepareGray = setting.RecognitionPrepareGray;
+            RecognitionPeriodicColor = setting.RecognitionPeriodicColor;
+            RecognitionThreadChoice = setting.RecognitionThreadChoice;
+            RecognitionFrameBufferChoice = setting.RecognitionFrameBufferChoice;
 
             TypewriterFadeTime = setting.TypewriterFadeTime;
             TypewriterCharTime = setting.TypewriterCharTime;

@@ -34,8 +34,13 @@ public partial class MainWindow : FluentWindow
     private bool _closeInProgress;
     private bool _closeConfirmed;
 
-    public MainWindow()
+    public MainWindow() : this(true)
     {
+    }
+
+    internal MainWindow(bool checkUpdates)
+    {
+        _useCheckUpdate = checkUpdates;
         InitializeComponent();
         WindowWorkArea.Attach(this);
         DataContext = new MainWindowViewModel();
@@ -236,7 +241,7 @@ public partial class MainWindow : FluentWindow
 
 partial class MainWindow
 {
-    private readonly bool _useCheckUpdate = true;
+    private readonly bool _useCheckUpdate;
 
     private async void CheckUpdate()
     {

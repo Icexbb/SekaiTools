@@ -22,6 +22,9 @@ public struct Setting
     public int RecognitionPerformanceMode { get; init; } = 1;
     public int RecognitionMemoryBudgetMiB { get; init; } = 2048;
     public bool RecognitionPrepareGray { get; init; }
+    public bool RecognitionPeriodicColor { get; init; }
+    public int RecognitionThreadChoice { get; init; }
+    public int RecognitionFrameBufferChoice { get; init; }
 
     public int TypewriterFadeTime { get; init; } = 50;
     public int TypewriterCharTime { get; init; } = 80;
@@ -77,6 +80,9 @@ public struct Setting
             RecognitionPerformanceMode = model.RecognitionPerformanceMode,
             RecognitionMemoryBudgetMiB = model.RecognitionMemoryBudgetMiB,
             RecognitionPrepareGray = model.RecognitionPrepareGray,
+            RecognitionPeriodicColor = model.RecognitionPeriodicColor,
+            RecognitionThreadChoice = model.RecognitionThreadChoice,
+            RecognitionFrameBufferChoice = model.RecognitionFrameBufferChoice,
 
             TypewriterFadeTime = model.TypewriterFadeTime,
             TypewriterCharTime = model.TypewriterCharTime,
