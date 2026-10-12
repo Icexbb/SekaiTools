@@ -18,11 +18,20 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
         set.InitSeparator();
         DataContext = new DialogLineModel(set, CharTime);
         InitializeComponent();
+        ViewModel.SeparatorChanged += ViewModel_OnSeparatorChanged;
+        DataContextChanged += (_, e) =>
+        {
+            if (e.OldValue is DialogLineModel oldModel) oldModel.SeparatorChanged -= ViewModel_OnSeparatorChanged;
+            if (e.NewValue is DialogLineModel newModel) newModel.SeparatorChanged += ViewModel_OnSeparatorChanged;
+        };
     }
 
     private int CharTime => SettingPageModel.Instance.TypewriterCharTime;
 
     public DialogLineModel ViewModel => (DialogLineModel)DataContext;
+
+    public event EventHandler? SeparatorChanged;
+    private void ViewModel_OnSeparatorChanged(object? sender, EventArgs e) => SeparatorChanged?.Invoke(this, e);
 
     public event EventHandler? TimelineRequested;
     public event EventHandler? PreviewRequested;

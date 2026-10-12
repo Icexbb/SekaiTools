@@ -284,6 +284,12 @@ public partial class TimelineEditor : UserControl
         Focus();
     }
 
+    public void RefreshEventTiming(TimelineEventSelection selection)
+    {
+        if (ReferenceEquals(_selection?.FrameSet, selection.FrameSet)) UpdateTimingDisplay();
+        RenderTimeline();
+    }
+
     public void RegisterEvent(TimelineEventSelection selection)
     {
         ArgumentNullException.ThrowIfNull(selection);

@@ -97,15 +97,19 @@ public class DialogLineModel : ViewModelBase
         }
     }
 
+    public event EventHandler? SeparatorChanged;
+
     public int SeparateFrame
     {
         get => GetProperty(Set.Separate.SeparateFrame);
         set
         {
+            var previousFrame = Set.Separate.SeparateFrame;
             SetProperty(value);
             SetPromptWarning();
             SeparateTime = new ProcessFrame(value, FrameRate).StartTime();
             Set.SetSeparator(SeparateFrame, SeparatorContentIndex);
+            if (previousFrame != value) SeparatorChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
