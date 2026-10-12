@@ -44,6 +44,12 @@ public partial class SettingPageModel : ViewModelBase
     public static SettingPageModel Instance => SharedInstance.Value;
     public bool IsPeriodicColorAvailable { get; }
     public string PeriodicColorAvailabilityReason { get; }
+    public int PreviewPlaybackBackend
+    {
+        get => GetProperty(0);
+        set => SetProperty(Math.Clamp(value, 0, 2));
+    }
+
     public int RecognitionPerformanceMode
     {
         get => GetProperty(1);
@@ -344,6 +350,7 @@ partial class SettingPageModel
             ProxyType = Model.Setting.Default.ProxyType;
             ProxyHost = Model.Setting.Default.ProxyHost;
             ProxyPort = Model.Setting.Default.ProxyPort;
+            PreviewPlaybackBackend = Model.Setting.Default.PreviewPlaybackBackend;
             RecognitionPerformanceMode = Model.Setting.Default.RecognitionPerformanceMode;
             RecognitionMemoryBudgetMiB = Model.Setting.Default.RecognitionMemoryBudgetMiB;
             RecognitionPrepareGray = Model.Setting.Default.RecognitionPrepareGray;
@@ -396,6 +403,7 @@ partial class SettingPageModel
             ProxyType = setting.ProxyType;
             ProxyHost = setting.ProxyHost;
             ProxyPort = setting.ProxyPort;
+            PreviewPlaybackBackend = setting.PreviewPlaybackBackend;
             RecognitionPerformanceMode = setting.RecognitionPerformanceMode;
             RecognitionMemoryBudgetMiB = setting.RecognitionMemoryBudgetMiB;
             RecognitionPrepareGray = setting.RecognitionPrepareGray;

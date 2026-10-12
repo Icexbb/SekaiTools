@@ -78,7 +78,16 @@ internal sealed class TimelineFramePreviewLoader(string videoPath) : IDisposable
             return null;
         if (_nextFrameIndex != frameIndex)
         {
-            if (!_capture.Set(CapProp.PosFrames, frameIndex))
+            // Catch up a few frames sequentially instead of repeatedly seeking to keyframes.
+            if (_nextFrameIndex >= 0 && frameIndex > _nextFrameIndex && frameIndex - _nextFrameIndex <= 60)
+            {
+                while (_nextFrameIndex < frameIndex)
+                {
+                    if (!_capture.Grab()) return null;
+                    _nextFrameIndex++;
+                }
+            }
+            else if (!_capture.Set(CapProp.PosFrames, frameIndex))
                 return null;
             _nextFrameIndex = frameIndex;
         }

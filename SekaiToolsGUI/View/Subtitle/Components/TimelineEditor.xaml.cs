@@ -130,7 +130,7 @@ public partial class TimelineEditor : UserControl
         typeof(TimelineEditor),
         new FrameworkPropertyMetadata(false, OnIsReadOnlyChanged));
 
-    private readonly Stopwatch _audioPlaybackClock = new();
+    private CancellationTokenSource? _ffplayCancellation;
     private readonly List<TimelineHitRegion> _eventHitRegions = [];
     private readonly List<TimelineEventSelection> _events = [];
     private readonly DispatcherTimer _playbackTimer;
@@ -881,7 +881,7 @@ public partial class TimelineEditor : UserControl
         return StartPlaybackAsync(PlaybackMode.Video, requireFeatureSwitch: false, showFrame);
     }
 
-    private async Task StartPlaybackAsync(PlaybackMode mode, bool requireFeatureSwitch = true, Action<ImageSource>? showFrame = null)
+    private async Task StartPlaybackAsync(PlaybackMode mode, bool requireFeatureSwitch = true, Action<ImageSource>? showFrame = null, bool forceLegacy = false)
     {
         if (requireFeatureSwitch && !GeneralFunctionSwitch.EventPlayBack)
             return;
@@ -910,6 +910,52 @@ public partial class TimelineEditor : UserControl
         _playbackEnd = TimeSpan.FromMilliseconds(endMilliseconds);
         ViewModel.IsPlaying = true;
         SetPlaybackStatus("正在加载…");
+
+        var backend = SekaiToolsGUI.ViewModel.Setting.SettingPageModel.Instance.PreviewPlaybackBackend;
+        if (!forceLegacy && backend != 1)
+        {
+            var directories = new[]
+            {
+                AppContext.BaseDirectory,
+                System.IO.Path.Combine(ResourceManager.DataBaseDir, "Resource", "vapourSynth")
+            }.Concat((Environment.GetEnvironmentVariable("PATH") ?? "").Split(System.IO.Path.PathSeparator));
+            var executable = SekaiToolsMedia.FfplayPreview.FindExecutable(directories);
+            if (executable != null)
+            {
+                var version = _playbackVersion;
+                using var cancellation = new CancellationTokenSource();
+                _ffplayCancellation = cancellation;
+                SetPlaybackStatus("FFmpeg · 正在独立窗口播放（关闭窗口可停止）");
+                try
+                {
+                    await SekaiToolsMedia.FfplayPreview.PlayAsync(executable, _mediaPath,
+                        _playbackStart, _playbackEnd - _playbackStart, mode == PlaybackMode.Audio,
+                        $"语句预览 · {_selection.EventNumber}", cancellation.Token);
+                    if (version == _playbackVersion) StopPlayback("播放完成");
+                }
+                catch (OperationCanceledException) { }
+                catch (Exception ex)
+                {
+                    if (version == _playbackVersion)
+                    {
+                        if (backend == 0)
+                            await StartPlaybackAsync(mode, requireFeatureSwitch, showFrame, forceLegacy: true);
+                        else
+                            StopPlayback($"FFmpeg 播放失败：{ex.Message}");
+                    }
+                }
+                finally
+                {
+                    if (ReferenceEquals(_ffplayCancellation, cancellation)) _ffplayCancellation = null;
+                }
+                return;
+            }
+            if (backend == 2)
+            {
+                StopPlayback("未找到 ffplay.exe，请安装包含 ffplay 的 FFmpeg 并加入 PATH，或选择自动选择");
+                return;
+            }
+        }
 
         if (mode == PlaybackMode.Video)
         {
@@ -981,7 +1027,6 @@ public partial class TimelineEditor : UserControl
             output.PlaybackStopped += AudioOutput_OnPlaybackStopped;
             _audioReader = reader;
             _audioOutput = output;
-            _audioPlaybackClock.Restart();
             output.Play();
             _playbackTimer.Start();
             UpdatePlaybackStatus(_playbackStart);
@@ -1018,7 +1063,19 @@ public partial class TimelineEditor : UserControl
         if (_playbackMode == PlaybackMode.None)
             return;
 
-        var position = _playbackStart + _audioPlaybackClock.Elapsed;
+        if (_audioOutput == null) return;
+        TimeSpan position;
+        try
+        {
+            // The device position excludes queued audio; wall-clock time includes startup latency.
+            position = _playbackStart + TimeSpan.FromSeconds(
+                (double)_audioOutput.GetPosition() / _audioOutput.OutputWaveFormat.AverageBytesPerSecond);
+        }
+        catch (Exception ex)
+        {
+            StopPlayback($"无法读取音频播放位置：{ex.Message}");
+            return;
+        }
         if (position >= _playbackEnd)
         {
             StopPlayback("播放完成", _playbackMode == PlaybackMode.Video);
@@ -1087,7 +1144,7 @@ public partial class TimelineEditor : UserControl
             0,
             (_playbackEnd - _playbackStart).TotalMilliseconds);
         var duration = (_playbackEnd - _playbackStart).TotalMilliseconds;
-        var mode = _playbackMode == PlaybackMode.Video ? "音视频" : "音频";
+        var mode = _playbackMode == PlaybackMode.Video ? "OpenCV + NAudio" : "NAudio";
         SetPlaybackStatus($"{mode} · {FormatTimestamp((int)elapsed)} / {FormatTimestamp((int)duration)}");
     }
 
@@ -1098,11 +1155,12 @@ public partial class TimelineEditor : UserControl
 
     private void StopPlayback(string status = "", bool keepVideoPreview = false)
     {
+        _ffplayCancellation?.Cancel();
+        _ffplayCancellation = null;
         _inlineVideoFrame = null;
         _playbackMode = PlaybackMode.None;
         _playbackVersion++;
         _playbackTimer.Stop();
-        _audioPlaybackClock.Reset();
 
         var output = _audioOutput;
         _audioOutput = null;

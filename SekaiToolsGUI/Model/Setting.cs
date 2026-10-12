@@ -19,6 +19,7 @@ public struct Setting
     public int ProxyType { get; init; } = 0;
     public string ProxyHost { get; init; } = "127.0.0.1";
     public int ProxyPort { get; init; } = 1080;
+    public int PreviewPlaybackBackend { get; init; } = 0;
     public int RecognitionPerformanceMode { get; init; } = 1;
     public int RecognitionMemoryBudgetMiB { get; init; } = 2048;
     public bool RecognitionPrepareGray { get; init; }
@@ -77,6 +78,7 @@ public struct Setting
             ProxyType = model.ProxyType,
             ProxyHost = model.ProxyHost,
             ProxyPort = model.ProxyPort,
+            PreviewPlaybackBackend = model.PreviewPlaybackBackend,
             RecognitionPerformanceMode = model.RecognitionPerformanceMode,
             RecognitionMemoryBudgetMiB = model.RecognitionMemoryBudgetMiB,
             RecognitionPrepareGray = model.RecognitionPrepareGray,
