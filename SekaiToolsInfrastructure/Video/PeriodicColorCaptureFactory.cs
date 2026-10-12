@@ -14,9 +14,27 @@ namespace SekaiToolsInfrastructure.Video;
 /// </summary>
 public sealed class PeriodicColorCaptureFactory(string pluginPath) : IVideoCaptureFactory
 {
+    private readonly string _pluginPath = pluginPath;
     public const string QualifiedNativeHash = "5B13F57426105BABBFD02395D4F6AC5F9D622FAE9FD0B9C81C08CA9FD287B984";
     public const string QualifiedExpandedNativeHash = "EC795EC4496E2DAB48A593A3E3FC94DEDC35FFB05404BF6A3D9DA7CCBFDB35D1";
     public const string QualifiedPluginHash = "7AABFF029D1FA47CF56EDE4DBBE05DC62DA3208F07CD16471D4C966A33F9AA31";
+
+    public static bool IsCurrentRuntimeSupported(out string reason)
+    {
+        try
+        {
+            var factory = ForCurrentRuntime();
+            if (Hash(Path.GetFullPath(factory._pluginPath)) != QualifiedPluginHash)
+                throw new InvalidDataException("周期彩色捕获插件缺失或未通过验证");
+            reason = "本地运行库及捕获插件已通过周期彩色实验资格检查";
+            return true;
+        }
+        catch (Exception exception)
+        {
+            reason = "周期彩色实验不可用：" + exception.Message;
+            return false;
+        }
+    }
 
     public static PeriodicColorCaptureFactory ForCurrentRuntime()
     {
@@ -29,7 +47,7 @@ public sealed class PeriodicColorCaptureFactory(string pluginPath) : IVideoCaptu
     {
         if (!OperatingSystem.IsWindows() || IntPtr.Size != 8) throw new PlatformNotSupportedException();
         if (previewInterval is < 1 or > 1000000) throw new ArgumentOutOfRangeException(nameof(previewInterval));
-        var plugin = Path.GetFullPath(pluginPath);
+        var plugin = Path.GetFullPath(_pluginPath);
         if (Hash(plugin) != QualifiedPluginHash) throw new InvalidDataException("未验证的捕获插件");
         var native = GetQualifiedRuntimePath();
         var nativeHash = Hash(native);

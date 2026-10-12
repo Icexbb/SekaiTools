@@ -32,6 +32,14 @@ internal static class Program
         var constructor = typeof(SettingPageModel).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic,
             null, [typeof(string)], null)!;
         SettingPageModel Create() => (SettingPageModel)constructor.Invoke([path]);
+        if (args.Length == 2 && args[1] == "unavailable")
+        {
+            VerifyUnavailableRuntime(application, path, Create, output);
+            if (Hash(userSetting) != before || UserStoreFingerprint() != userStoresBefore)
+                throw new InvalidDataException("User stores changed during unavailable-runtime check");
+            application.Shutdown();
+            return;
+        }
         var model = Create();
         if (model.RecognitionPeriodicColor || File.Exists(path)) throw new InvalidDataException("Default enabled or initialization saved settings");
         model.RecognitionPrepareGray = true;
@@ -69,6 +77,8 @@ internal static class Program
         page.UpdateLayout();
         var checkbox = nodes.OfType<CheckBox>().Single(c =>
             BindingOperations.GetBinding(c, System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty)?.Path?.Path == "RecognitionPeriodicColor");
+        if (!legacy.IsPeriodicColorAvailable || !checkbox.IsEnabled)
+            throw new InvalidDataException("Qualified runtime checkbox unavailable");
         checkbox.IsChecked = true;
         checkbox.GetBindingExpression(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty)!.UpdateSource();
         if (!legacy.RecognitionPeriodicColor || Setting.Load(path).RecognitionPrepareGray)
@@ -101,6 +111,38 @@ internal static class Program
             GuiAssemblyHash = Hash(typeof(SettingPageModel).Assembly.Location)
         }, new JsonSerializerOptions { WriteIndented = true }));
         application.Shutdown();
+    }
+
+    private static void VerifyUnavailableRuntime(Application application, string path,
+        Func<SettingPageModel> create, string output)
+    {
+        File.WriteAllText(path, new Setting { RecognitionPeriodicColor = true,
+            RecognitionPrepareGray = true, RecognitionThreadChoice = 2 }.Dump());
+        var model = create();
+        var saved = Setting.Load(path);
+        if (model.IsPeriodicColorAvailable || model.RecognitionPeriodicColor || saved.RecognitionPeriodicColor ||
+            !saved.RecognitionPrepareGray || saved.RecognitionThreadChoice != 2 || string.IsNullOrWhiteSpace(model.PeriodicColorAvailabilityReason))
+            throw new InvalidDataException("Unsupported saved option was not cleared correctly");
+        model.RecognitionPeriodicColor = true;
+        if (model.RecognitionPeriodicColor || Setting.Load(path).RecognitionPeriodicColor || !model.RecognitionPrepareGray)
+            throw new InvalidDataException("Unsupported option could be re-enabled");
+        application.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary());
+        application.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
+        application.Resources.MergedDictionaries.Add(new ResourceDictionary
+            { Source = new Uri("/SekaiToolsGUI;component/Converter/Converters.xaml", UriKind.Relative) });
+        var pageConstructor = typeof(SekaiToolsGUI.View.Setting.SettingPage).GetConstructor(
+            BindingFlags.Instance | BindingFlags.NonPublic, null, [typeof(SettingPageModel)], null)!;
+        var page = (FrameworkElement)pageConstructor.Invoke([model]);
+        page.Measure(new Size(1000,900));
+        page.Arrange(new Rect(0,0,1000,900));
+        page.UpdateLayout();
+        var checkbox = Descendants(page).OfType<CheckBox>().Single(c =>
+            BindingOperations.GetBinding(c, System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty)?.Path?.Path == "RecognitionPeriodicColor");
+        if (checkbox.IsEnabled || checkbox.IsChecked == true) throw new InvalidDataException("Unsupported checkbox enabled or checked");
+        File.WriteAllText(Path.Combine(output,"report.json"), JsonSerializer.Serialize(new {
+            VerificationPassed=true, UnsupportedSavedOptionCleared=true, UnsupportedCheckboxDisabled=true,
+            ReenableRejected=true, OtherSettingsPreserved=true, Reason=model.PeriodicColorAvailabilityReason,
+            UserStoresUnchanged=true }, new JsonSerializerOptions { WriteIndented=true }));
     }
 
     private static void VerifyMainWindowClose(Application application, string? video, string output, bool queue)

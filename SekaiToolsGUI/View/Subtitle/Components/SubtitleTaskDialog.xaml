@@ -4,16 +4,19 @@
                   xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                   xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
                   xmlns:components="clr-namespace:SekaiToolsGUI.View.Subtitle.Components"
+                  xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
                   layout:AdaptiveLayout.FitDialog="True"
                   Title="添加字幕任务" PrimaryButtonText="加入队列" CloseButtonText="取消"
-                  DefaultButton="Primary" IsPrimaryButtonEnabled="{Binding CanStart}" MinWidth="520">
+                  DefaultButton="Primary" IsPrimaryButtonEnabled="{Binding CanStart}" Width="600">
     <ui:ContentDialog.Resources>
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}" TargetType="components:SubtitleTaskDialog" />
     </ui:ContentDialog.Resources>
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel>
-            <components:SubtitleTaskSetup />
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                  HorizontalAlignment="Stretch">
+        <StackPanel HorizontalAlignment="Stretch">
+            <components:SubtitleTaskSetup HorizontalAlignment="Stretch" />
             <TextBlock x:Name="ValidationError" Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                       Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
                        TextWrapping="Wrap" Margin="0,8,0,0" />
         </StackPanel>
     </ScrollViewer>

@@ -20,12 +20,16 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
 {
     private readonly ICollectionView _logView;
 
-    public SettingPage()
+    public SettingPage() : this(MainWindowViewModel.SettingPageModel)
+    {
+    }
+
+    internal SettingPage(SettingPageModel model)
     {
         _logView = CollectionViewSource.GetDefaultView(InMemoryLogSink.Entries);
         _logView.Filter = _ => true;
 
-        DataContext = MainWindowViewModel.SettingPageModel;
+        DataContext = model;
         InitializeComponent();
         TestErrorButton.Visibility = Debugger.IsAttached ? Visibility.Visible : Visibility.Collapsed;
 

@@ -21,3 +21,11 @@
 周期彩色队列预览开关补充证据 `.codex-build/periodic-queue-preview/qualification/report.json`：真实首项收到图像后关闭 ShowPreview，至少再处理 100 帧且图像对象不更新；重新开启后必须恢复更新且任务仍在运行。随后取消首项、自动启动第二项、切回首项及活动窗口关闭保存／释放检查全部通过，第三项未启动，用户存储未变。该版本报告 PeriodicQueuePreviewToggleQualified=true，补齐先前只有普通捕获控件执行预览开关断言的缺口。仍不证明可见窗口效果或性能收益。
 
 工厂失败恢复检查随队列模式运行：周期 0／1000001 须抛 ArgumentOutOfRangeException，错误插件指纹须抛 InvalidDataException；三轮缺失视频须抛 InvalidOperationException，随后同工厂每轮均能读取有效视频的第 1～13 帧，通道周期正确，重复 Dispose 后指针为零。证据 `.codex-build/periodic-factory-failure-v2/qualification/report.json` 的 ProductFactoryFailureRecoveryQualified=true，后续真实队列及用户记录不变检查仍通过。首次探针错误地使用从 0 开始的周期索引，保留失败输出；修正为产品第 1 帧编号后通过。此检查不量化原生模块引用泄漏或任意错误恢复。
+# 周期彩色可用性预检查
+
+设置模型初始化时核验实际加载运行库和配套插件。原包、缺失／错误插件或无法安全选择的重复库使选项禁用；旧设置中的勾选自动清除并持久化，保留其他设置。共享设置实例改为延迟创建，隔离构造不触碰用户文件。
+
+第二参数 `unavailable` 用于不支持模式验证：在隔离文件保存旧勾选，确认取消及落盘、拒绝重新启用、实际设置页复选框禁用。实际页面通过内部模型注入构造，公共入口仍使用共享设置。证据 `.codex-build/periodic-availability/unavailable/report.json` 和 `bad-plugin/report.json`；用户文件指纹未变。
+
+合格扩展库证据 `.codex-build/periodic-availability/qualified/report.json`：复选框仍可用，已有设置绑定、预览开关、队列取消／推进及窗口关闭保存检查全部通过，实际库 EC795E...DB35D1。未验证可见视觉效果。已保存的周期彩色断点仍按原身份检查，禁用新任务选项不改变旧断点身份。
+

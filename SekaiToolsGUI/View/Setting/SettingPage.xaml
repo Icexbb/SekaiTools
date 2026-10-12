@@ -6,6 +6,7 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:configuration="clr-namespace:SekaiToolsConfiguration;assembly=SekaiToolsConfiguration"
              xmlns:setting="clr-namespace:SekaiToolsGUI.ViewModel.Setting"
+             xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
              d:DataContext="{d:DesignInstance setting:SettingPageModel, IsDesignTimeCreatable=True}"
              mc:Ignorable="d">
 
@@ -377,9 +378,15 @@
                                     <ui:TextBlock TextWrapping="Wrap"
                                                   Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                                   Text="保留彩色预览并降低帧缓存占用；仅支持已验证的实验运行库，新任务生效" />
+                                    <ui:TextBlock Text="{Binding PeriodicColorAvailabilityReason}" TextWrapping="Wrap"
+                                                  Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                                  Visibility="{calcBinding:Binding RelativeSource={RelativeSource Self}, Path='Text.Length!=0',FalseToVisibility=Collapsed}"
+                                                  Margin="0,4,0,0" />
+
                                 </StackPanel>
                             </ui:CardControl.Header>
-                            <CheckBox IsChecked="{Binding RecognitionPeriodicColor,Mode=TwoWay}" Content="启用" />
+                            <CheckBox IsChecked="{Binding RecognitionPeriodicColor,Mode=TwoWay}"
+                                      IsEnabled="{Binding IsPeriodicColorAvailable}" Content="启用" />
                         </ui:CardControl>
                     </StackPanel>
                 </ui:CardExpander>

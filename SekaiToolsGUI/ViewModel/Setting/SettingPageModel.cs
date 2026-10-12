@@ -6,6 +6,7 @@ using System.Windows;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 using SekaiToolsCore.Process.Config;
+using SekaiToolsInfrastructure.Video;
 using Wpf.Ui.Appearance;
 
 namespace SekaiToolsGUI.ViewModel.Setting;
@@ -23,10 +24,15 @@ public partial class SettingPageModel : ViewModelBase
     internal SettingPageModel(string settingsPath)
     {
         _settingsPath = Path.GetFullPath(settingsPath);
+        IsPeriodicColorAvailable = PeriodicColorCaptureFactory.IsCurrentRuntimeSupported(out var reason);
+        PeriodicColorAvailabilityReason = reason;
         LoadSetting();
     }
 
-    public static SettingPageModel Instance { get; } = new();
+    private static readonly Lazy<SettingPageModel> SharedInstance = new(() => new SettingPageModel());
+    public static SettingPageModel Instance => SharedInstance.Value;
+    public bool IsPeriodicColorAvailable { get; }
+    public string PeriodicColorAvailabilityReason { get; }
     public int RecognitionPerformanceMode
     {
         get => GetProperty(1);
@@ -71,6 +77,12 @@ public partial class SettingPageModel : ViewModelBase
         get => GetProperty(false);
         set
         {
+            if (value && !IsPeriodicColorAvailable)
+            {
+                SetProperty(false);
+                OnPropertyChanged();
+                return;
+            }
             if (value) RecognitionPrepareGray = false;
             SetProperty(value);
         }
@@ -407,5 +419,7 @@ partial class SettingPageModel
         {
             _suspendSaving = false;
         }
+        if (setting.RecognitionPeriodicColor && !IsPeriodicColorAvailable)
+            SaveSetting();
     }
 }
