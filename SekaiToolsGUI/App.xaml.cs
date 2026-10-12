@@ -16,6 +16,7 @@ public partial class App : Application
 
     public App()
     {
+        Console.OutputEncoding = new System.Text.UTF8Encoding(false);
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;

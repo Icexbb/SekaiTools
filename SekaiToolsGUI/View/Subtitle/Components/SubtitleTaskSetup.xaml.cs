@@ -27,10 +27,22 @@ public partial class SubtitleTaskSetup : UserControl
 
     private static string? SelectFile(object sender, RoutedEventArgs e, string filter)
     {
-        var openFileDialog = new OpenFileDialog { Filter = filter };
+        // Material selection does not need Windows' recent-document registration.
+        var openFileDialog = new OpenFileDialog { Filter = filter, AddToRecent = false };
         var timer = Stopwatch.StartNew();
-        var result = openFileDialog.ShowDialog();
-        Logger.Log($"文件对话框（含用户选择时间）: {timer.Elapsed.TotalMilliseconds:F0} ms; 已选择={result == true}");
+        double? acceptedAt = null;
+        openFileDialog.FileOk += (_, _) =>
+        {
+            // WPF raises this after native/managed validation, not at the mouse click.
+            acceptedAt = timer.Elapsed.TotalMilliseconds;
+            Logger.Log($"文件对话框 FileOk: {acceptedAt:F0} ms（已完成路径校验，等待关闭）");
+        };
+        Logger.Log("文件对话框开始: 即将进入 Windows 文件选择");
+        var owner = sender is DependencyObject element ? Window.GetWindow(element) : null;
+        var result = owner != null ? openFileDialog.ShowDialog(owner) : openFileDialog.ShowDialog();
+        var returnedAt = timer.Elapsed.TotalMilliseconds;
+        Logger.Log($"文件对话框返回（含用户选择时间）: {returnedAt:F0} ms; 已选择={result == true}; " +
+                   $"FileOk 到返回: {(acceptedAt.HasValue ? $"{returnedAt - acceptedAt.Value:F0} ms" : "未触发 FileOk")}");
         return result == true ? openFileDialog.FileName : null;
     }
 

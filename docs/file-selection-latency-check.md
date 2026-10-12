@@ -31,3 +31,13 @@
 本机旧版对照未复现用户描述的长时间阻塞，根因尚未确认。使用新构建重启后，若仍卡顿，应查看日志中“文件对话框（含用户选择时间）”与“匹配配套文件”的时间，结合卡顿发生在对话框打开、文件确认还是返回之后，继续定位 Windows 文件对话框或磁盘访问延迟。不能把现有证据解释成卡顿已彻底解决。
 
 本次仅本地构建和提交，不发布版本。
+
+## 文件对话框阶段的进一步排查
+
+用户补充：同一文件通过拖放进入时完全没有等待。拖放与浏览最终都调用 `SelectSameNameFileAsync`，区别是浏览入口先执行 `OpenFileDialog.ShowDialog`，因此卡顿范围进一步收敛到 Windows 文件对话框及其返回过程，而非配套文件匹配。
+
+原计时只有 `ShowDialog` 返回后的一条日志，不能区分确认前后的延迟。现增加开始、`FileOk`、返回三条日志，以及 `FileOk 到返回` 单独耗时。注意 `FileOk` 不是鼠标点击时间：WPF 在获取所选路径并完成路径校验后才触发该事件，因此点击确认到 `FileOk` 之间仍可能包含系统或框架处理。源码依据：[CommonItemDialog](https://source.dot.net/PresentationFramework/Microsoft/Win32/CommonItemDialog.cs.html)、[FileDialog](https://source.dot.net/PresentationFramework/Microsoft/Win32/FileDialog.cs.html)。
+
+同时明确设置对话框所属窗口，并将 `AddToRecent` 设为 `false`，避免素材选择时向 Windows 最近文档列表登记。此项是减少系统副作用的排查性调整，尚无证据证明最近文档登记就是根因。文件存在性与名称校验保持开启。
+
+Release 构建通过，配套匹配回归验证通过；原生对话框确认/关闭延迟仍需在用户能复现的运行环境中测量。若 `FileOk 到返回` 很长，优先检查对话框关闭阶段；若该段很短但点击确认后迟迟没有 `FileOk`，应采集系统文件对话框的校验/获取路径阶段调用栈，不能仅凭总计时认定缩略图、杀毒软件或系统历史是根因。
