@@ -1,0 +1,4 @@
+interface:
+  display_name: "SekaiTools 版本发布"
+  short_description: "整理版本净变化、同步版本与发布说明，并验证构建、测试及发布产物"
+  default_prompt: "使用 $sekai-release 按项目规范准备并完成本次版本发布。"

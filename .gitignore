@@ -467,4 +467,7 @@ Build
 .claude
 .codex
 .codex-build
-.agents
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/sekai-release/
