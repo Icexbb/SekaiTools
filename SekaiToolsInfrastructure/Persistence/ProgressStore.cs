@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using SekaiToolsBase;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -80,8 +82,9 @@ public static class ProgressStore
         {
             return JsonSerializer.Deserialize<ProcessingState>(File.ReadAllText(path));
         }
-        catch
+        catch (Exception exception)
         {
+            Logger.Log($"处理进度加载失败: {path}, {exception}", LogLevel.Warning);
             return null;
         }
     }
@@ -125,9 +128,9 @@ public static class ProgressStore
                 {
                     File.Delete(file);
                 }
-                catch
+                catch (Exception exception)
                 {
-                    // ignore stale progress cleanup failures
+                    Logger.Log($"旧进度文件清理失败: {file}, {exception}", LogLevel.Warning);
                 }
     }
 }

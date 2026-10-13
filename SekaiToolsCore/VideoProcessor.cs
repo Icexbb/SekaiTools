@@ -319,6 +319,7 @@ public class VideoProcessor : IDisposable
         _lastProgressSaveFrame = state.FrameIndex;
         _processedFrameIndex = state.FrameIndex;
         _nextProgressSaveFrame = ProgressSavePolicy.GetNextFrame(state.FrameIndex);
+        Logger.Log($"处理进度恢复完成: 帧={state.FrameIndex}, 原停止原因={state.StopReason}");
     }
 
     public void ReplayFinishedCallbacks(
@@ -397,10 +398,12 @@ public class VideoProcessor : IDisposable
             catch (OperationCanceledException)
             {
                 StopReason = ProcessStopReason.Canceled;
+                Logger.Log($"视频处理已取消: 当前帧={_processedFrameIndex}");
             }
             catch (Exception e)
             {
                 StopReason = ProcessStopReason.UnexpectedError;
+                Logger.Log($"视频处理异常: 当前帧={_processedFrameIndex}, {e}", ExtLogLevel.Error);
 
                 TokenSource?.Cancel();
                 TeardownPreview();

@@ -22,6 +22,7 @@ public partial class App : Application
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
         InitializeComponent();
         Logger.Log("SekaiToolsGUI 启动");
+        AssemblyResolver.FlushDiagnostics();
     }
 
     protected override void OnStartup(StartupEventArgs e)
@@ -30,6 +31,7 @@ public partial class App : Application
         _ownsSingleInstanceMutex = createdNew;
         if (!createdNew)
         {
+            Logger.Log("检测到已运行的实例，结束本次启动");
             MessageBox.Show("SekaiTools 已在运行中。", "SekaiTools",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             Shutdown();
@@ -48,11 +50,13 @@ public partial class App : Application
         }
         WindowsNotificationService.Initialize();
         base.OnStartup(e);
+        AssemblyResolver.FlushDiagnostics();
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
         WindowsNotificationService.Shutdown();
+        AssemblyResolver.FlushDiagnostics();
         Logger.Log($"SekaiToolsGUI 退出 (exitCode={e.ApplicationExitCode})");
         if (_ownsSingleInstanceMutex)
         {

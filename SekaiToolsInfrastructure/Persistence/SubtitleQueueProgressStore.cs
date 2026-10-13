@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using SekaiToolsBase;
 using System.Text.Json;
 using SekaiToolsCore;
 using SekaiToolsCore.Abstractions;
@@ -36,9 +38,16 @@ public static class SubtitleQueueProgressStore
                 if (state != null && state.StopReason != ProcessStopReason.Completed)
                     entries.Add((Path.GetFileNameWithoutExtension(path), state));
             }
-            catch (JsonException) { }
-            catch (IOException) { }
+            catch (JsonException exception)
+            {
+                Logger.Log($"队列进度格式错误，已跳过: {path}, {exception.Message}", LogLevel.Warning);
+            }
+            catch (IOException exception)
+            {
+                Logger.Log($"队列进度读取失败，已跳过: {path}, {exception.Message}", LogLevel.Warning);
+            }
         }
+        Logger.Log($"队列进度扫描完成: 待恢复任务={entries.Count}");
         return entries;
     }
 }

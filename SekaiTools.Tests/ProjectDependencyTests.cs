@@ -9,7 +9,7 @@ public class ProjectDependencyTests
         { "SekaiToolsBase", [] },
         { "SekaiToolsConfiguration", [] },
         { "SekaiToolsSubtitles", [] },
-        { "SekaiToolsMedia", [] },
+        { "SekaiToolsMedia", ["SekaiToolsBase"] },
         { "SekaiDataFetch", ["SekaiToolsBase", "SekaiToolsConfiguration"] },
         { "SekaiToolsCore", ["SekaiToolsBase", "SekaiToolsSubtitles"] },
         {

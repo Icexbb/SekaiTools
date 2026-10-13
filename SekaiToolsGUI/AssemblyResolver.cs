@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -7,6 +7,15 @@ namespace SekaiToolsGUI;
 
 internal static class AssemblyResolver
 {
+    // Resolving Logger's own dependencies must never invoke Logger recursively.
+    private static readonly ConcurrentQueue<string> Diagnostics = new();
+
+    internal static void FlushDiagnostics()
+    {
+        while (Diagnostics.TryDequeue(out var message))
+            SekaiToolsBase.Logger.Log(message, callerMemberName: nameof(AssemblyResolver));
+    }
+
     [ModuleInitializer]
     internal static void Initialize()
     {
@@ -25,11 +34,13 @@ internal static class AssemblyResolver
 
         if (!File.Exists(dllPath))
         {
-            Debug.WriteLine($"[AssemblyResolver] Not found: {args.Name}");
+            // Missing satellite assemblies are normal probing, not application failures.
+            if (name.Name is { } missing && !missing.EndsWith(".resources") && !missing.EndsWith(".XmlSerializers"))
+                Diagnostics.Enqueue($"程序集未找到: {args.Name}");
             return null;
         }
 
-        Debug.WriteLine($"[AssemblyResolver] Loading from libs: {assemblyName}");
+        Diagnostics.Enqueue($"从 libs 加载程序集: {assemblyName}");
         return Assembly.LoadFrom(dllPath);
     }
 }

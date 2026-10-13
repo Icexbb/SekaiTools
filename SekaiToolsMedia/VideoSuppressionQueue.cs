@@ -1,4 +1,6 @@
 using System.Threading.Channels;
+using Microsoft.Extensions.Logging;
+using SekaiToolsBase;
 
 namespace SekaiToolsMedia;
 
@@ -23,6 +25,7 @@ public sealed class VideoSuppressionQueue : IDisposable
     {
         if (!job.TryEnqueue()) throw new InvalidOperationException("任务已加入队列");
         if (!_jobs.Writer.TryWrite(job)) throw new ObjectDisposedException(nameof(VideoSuppressionQueue));
+        Logger.Log($"压制任务加入队列: 输出={job.Options.OutputPath}");
     }
 
     private async Task ProcessAsync()
@@ -33,16 +36,20 @@ public sealed class VideoSuppressionQueue : IDisposable
             try
             {
                 source.Token.ThrowIfCancellationRequested();
+                Logger.Log($"开始执行压制队列任务: 输出={job.Options.OutputPath}");
                 job.Report(new(0, job.Options.SourceFrameCount, 0, VideoSuppressionState.Preparing, "正在准备压制…"));
                 await _run(job.Options, job.Report, source.Token).ConfigureAwait(false);
                 job.Finish(VideoSuppressionState.Completed);
+                Logger.Log($"压制队列任务完成: 输出={job.Options.OutputPath}");
             }
             catch (OperationCanceledException) when (source.IsCancellationRequested)
             {
                 job.Finish(VideoSuppressionState.Cancelled);
+                Logger.Log($"压制队列任务已取消: 输出={job.Options.OutputPath}");
             }
             catch (Exception ex)
             {
+                Logger.Log($"压制队列任务失败: 输出={job.Options.OutputPath}, {ex}", LogLevel.Error);
                 job.Finish(VideoSuppressionState.Failed, $"压制失败：{ex.Message}");
             }
         }
@@ -57,6 +64,7 @@ public sealed class VideoSuppressionQueue : IDisposable
         }
         catch (TimeoutException)
         {
+            Logger.Log("等待压制队列退出超时", LogLevel.Warning);
             // 应用关闭不应因单个外部进程卡住而阻塞 UI。
         }
     }

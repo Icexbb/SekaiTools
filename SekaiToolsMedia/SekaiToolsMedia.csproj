@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\SekaiToolsBase\SekaiToolsBase.csproj" />
         <PackageReference Include="Emgu.CV" Version="5.0.0.6584" />
     </ItemGroup>
 </Project>

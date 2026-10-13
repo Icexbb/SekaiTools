@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 
 namespace SekaiToolsBase;
@@ -13,52 +14,20 @@ public static class Logger
         builder.AddProvider(new InMemoryLogSink());
     });
 
-    private static Dictionary<string, ILogger> LoggerDictionary { get; } = new();
+    private static ConcurrentDictionary<string, ILogger> LoggerDictionary { get; } = new();
+
+    public static ILogger CreateLogger(string categoryName) =>
+        LoggerDictionary.GetOrAdd(categoryName, Factory.CreateLogger);
 
     public static bool IsEnabled(LogLevel logLevel,
         [CallerMemberName] string callerMemberName = "")
     {
-        if (!LoggerDictionary.TryGetValue(callerMemberName, out var logger))
-        {
-            logger = Factory.CreateLogger(callerMemberName);
-            LoggerDictionary[callerMemberName] = logger;
-        }
-
-        return logger.IsEnabled(logLevel);
+        return CreateLogger(callerMemberName).IsEnabled(logLevel);
     }
 
     public static void Log(string message, LogLevel logLevel = LogLevel.Information,
         [CallerMemberName] string callerMemberName = "")
     {
-        if (!LoggerDictionary.ContainsKey(callerMemberName))
-            LoggerDictionary[callerMemberName] = Factory.CreateLogger(callerMemberName);
-        var logger = LoggerDictionary[callerMemberName];
-
-
-        switch (logLevel)
-        {
-            case LogLevel.Trace:
-                logger.LogTrace(message);
-                break;
-            case LogLevel.Debug:
-                logger.LogDebug(message);
-                break;
-
-            case LogLevel.Warning:
-                logger.LogWarning(message);
-                break;
-            case LogLevel.Error:
-                logger.LogError(message);
-                break;
-            case LogLevel.Critical:
-                logger.LogCritical(message);
-                break;
-            case LogLevel.None:
-                break;
-            case LogLevel.Information:
-            default:
-                logger.LogInformation(message);
-                break;
-        }
+        CreateLogger(callerMemberName).Log(logLevel, "{Message}", message);
     }
 }

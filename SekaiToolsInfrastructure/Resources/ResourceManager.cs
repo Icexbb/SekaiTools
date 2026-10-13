@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
@@ -163,10 +164,22 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
         await resourceLock.WaitAsync(cancellationToken);
         try
         {
+            Logger.Log($"开始准备资源: {type}");
             var fileList = await GetFileList(type, cancellationToken);
             using var downloadLimiter = new SemaphoreSlim(MaxConcurrentDownloads, MaxConcurrentDownloads);
             var tasks = fileList.Select(file => EnsureResourceFile(type, file, downloadLimiter, cancellationToken)).ToArray();
             await Task.WhenAll(tasks);
+            Logger.Log($"资源准备完成: {type}, 文件数={fileList.Length}");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            Logger.Log($"资源准备已取消: {type}");
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Logger.Log($"资源准备失败: {type}, {exception}", LogLevel.Error);
+            throw;
         }
         finally
         {
@@ -199,9 +212,9 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
         try
         {
             if (await Task.Run(() => CheckResourceFile(type, resource), cancellationToken)) return;
-        var fileUrl = ResourceServerUrl + resource.Path;
+            var fileUrl = ResourceServerUrl + resource.Path;
 
-        Console.WriteLine($"Downloading {fileUrl}");
+            Logger.Log($"开始下载资源: {resource.Path}, 大小={resource.Size} 字节");
             using var response = await Download(fileUrl, cancellationToken);
             await using (var source = await response.Content.ReadAsStreamAsync(cancellationToken))
             await using (var target = new FileStream(temporaryFilename, FileMode.CreateNew, FileAccess.Write, FileShare.None, 64 * 1024, useAsync: true))
@@ -213,7 +226,7 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
                 throw new InvalidDataException($"资源校验失败: {resource.Path}");
 
             File.Move(temporaryFilename, filename, true);
-            Console.WriteLine($"Download completed: {filename}");
+            Logger.Log($"资源下载并校验完成: {resource.Path}");
         }
         finally
         {
@@ -222,9 +235,10 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
             {
                 if (File.Exists(temporaryFilename)) File.Delete(temporaryFilename);
             }
-            catch (IOException)
+            catch (IOException exception)
             {
                 // 清理失败不覆盖下载或取消的原始错误。
+                Logger.Log($"资源临时文件清理失败: {temporaryFilename}, {exception.Message}", LogLevel.Warning);
             }
         }
     }
@@ -261,7 +275,7 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
 
         var fileListUrl = ResourceServerUrl + $"{typeDir}.json";
 
-        Console.WriteLine($"Downloading {fileListUrl}");
+        Logger.Log($"开始获取资源清单: {type}");
 
         using var response = await Download(fileListUrl, cancellationToken);
         var fileListJson = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -271,6 +285,7 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
             PropertyNameCaseInsensitive = true
         }) ?? [];
         ResourceFileList[type] = fileList;
+        Logger.Log($"资源清单加载完成: {type}, 文件数={fileList.Length}");
         return fileList;
     }
 }

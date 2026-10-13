@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Text;
+using SekaiToolsBase;
 using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsBase.SubStationAlpha;
 using SekaiToolsBase.SubStationAlpha.AssDraw;
@@ -31,6 +32,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         List<MarkerBaseFrameSet> markerList,
         SubtitleExportInfo exportInfo)
     {
+        Logger.Log($"开始生成字幕: 对话={dialogList.Count}, 横幅={bannerList.Count}, 标记={markerList.Count}");
         var events = new List<SubtitleEvent>();
 
         if (dialogList.Count != 0)
@@ -64,6 +66,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         if (!ExportStyleConfig.ExportScreenComment) events.RemoveAll(e => e.Style == "Screen");
 
         events.InsertRange(0, exportInfo.MakeComments());
+        Logger.Log($"字幕生成完成: 样式={_styles.Count}, 事件={events.Count}");
 
         return new Subtitle(
             new ScriptInfo(videoInfo.Resolution.Width, videoInfo.Resolution.Height),

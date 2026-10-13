@@ -5,6 +5,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
+using SekaiToolsBase;
 
 namespace SekaiToolsMedia;
 
@@ -114,6 +116,7 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
         try
         {
             ValidateOptions(options);
+            Logger.Log($"开始视频压制: 输入={options.SourceVideo}, 输出={options.OutputPath}");
             outputTransaction = new VideoOutputTransaction(options.OutputPath, options.OverwriteExisting);
             var ffmpegPath = resourceProvider.GetVapourSynthResourcePath("ffmpeg.exe");
             var audioPlan = await FfmpegAudioInspector
@@ -129,6 +132,7 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
             _totalFrames = frameCount;
             var threads = options.EncodingSettings.GetThreadCount(sourceHeight, Environment.ProcessorCount);
             _status += threads > 0 ? $"\n编码线程数：{threads}" : "\n编码线程数：由 x264 自动选择";
+            Logger.Log($"压制媒体分析完成: 总帧={frameCount}, {_status}");
             _vapourProcess = CreateVapourProcess(options);
             _ffmpegProcess = CreateFfmpegProcess(
                 options, audioPlan, ffmpegPath, outputTransaction.TemporaryPath, sourceHeight);
@@ -145,6 +149,7 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
             });
 
             State = VideoSuppressionState.Running;
+            Logger.Log($"压制进程已启动: VSPipe={_vapourProcess.Id}, FFmpeg={_ffmpegProcess.Id}");
             PublishProgress();
 
             await Task.WhenAll(
@@ -157,16 +162,19 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
             _processedFrames = _totalFrames;
             _status = $"{_status}\n压制完成";
             State = VideoSuppressionState.Completed;
+            Logger.Log($"视频压制完成: 输出={options.OutputPath}, 总帧={_totalFrames}");
         }
         catch (Exception) when (cancellationToken.IsCancellationRequested)
         {
             _status = $"{_status}\n压制已取消";
             State = VideoSuppressionState.Cancelled;
+            Logger.Log($"视频压制已取消: 输出={options.OutputPath}, 已处理帧={_processedFrames}");
             throw new OperationCanceledException(cancellationToken);
         }
         catch (Exception exception)
         {
             State = VideoSuppressionState.Failed;
+            Logger.Log($"视频压制失败: 输出={options.OutputPath}, {exception}", LogLevel.Error);
             _status = string.IsNullOrWhiteSpace(_status)
                 ? $"压制失败：{exception.Message}"
                 : $"{_status}\n压制失败：{exception.Message}";

@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using SekaiToolsBase;
 using System.Text.Json;
 using SekaiToolsCore;
 using SekaiToolsCore.Process;
@@ -39,9 +41,9 @@ public static class HistoryStore
             {
                 File.Delete(oldFile);
             }
-            catch
+            catch (Exception exception)
             {
-                /* ignore */
+                Logger.Log($"历史记录清理失败: {oldFile}, {exception}", LogLevel.Warning);
             }
 
         var ts = DateTime.Now;
@@ -52,6 +54,7 @@ public static class HistoryStore
         var json = JsonSerializer.Serialize(entry, JsonOptions);
         File.WriteAllText(Path.Combine(dir, fileName), json);
 
+        Logger.Log($"历史记录保存完成: {fileName}");
         PruneIfNeeded();
     }
 
@@ -70,9 +73,9 @@ public static class HistoryStore
                 if (entry != null && IsCompleted(entry.State))
                     result.Add(entry);
             }
-            catch
+            catch (Exception exception)
             {
-                // skip corrupt files
+                Logger.Log($"历史记录加载失败，已跳过: {file}, {exception}", LogLevel.Warning);
             }
 
         return result;
@@ -88,9 +91,9 @@ public static class HistoryStore
             {
                 File.Delete(file);
             }
-            catch
+            catch (Exception exception)
             {
-                // ignore cleanup failures
+                Logger.Log($"历史记录清理失败: {file}, {exception}", LogLevel.Warning);
             }
     }
 
@@ -105,9 +108,9 @@ public static class HistoryStore
             {
                 File.Delete(file);
             }
-            catch
+            catch (Exception exception)
             {
-                /* ignore */
+                Logger.Log($"历史记录清理失败: {file}, {exception}", LogLevel.Warning);
             }
     }
 }

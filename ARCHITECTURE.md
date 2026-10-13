@@ -45,8 +45,11 @@ SekaiTools.Tests → 所有被测非 UI 项目
 3. `GUI` 是组合根，负责把 `ResourceManager`、`ProcessingStatePersistence` 等实现注入处理服务。
 4. `Updater` 由 GUI 的发布目标构建和复制，仅引用 `SekaiToolsConfiguration`。
 5. 项目若直接使用另一个程序集的公共类型，应声明直接 `ProjectReference`，不依赖偶然的传递引用。
+6. `Media` 可引用 `Base` 的共享 Logger，将压制流程诊断接入统一日志。
 
 ## 新代码放置规则
+
+运行时诊断统一使用 `SekaiToolsBase.Logger`；需要结构化参数和异常对象时通过 `Logger.CreateLogger(category)` 获取共享 `ILogger`，保证控制台与应用日志面板接收相同记录。流程开始、完成、取消使用 Information，可恢复的异常使用 Warning，失败使用 Error；逐帧和周期检查点不添加 Information 日志。程序集解析期间先缓存诊断，待应用日志初始化后写入，避免加载 Logger 依赖时递归解析。`Tools` 下探针和基准工具的 Console JSON/结果输出属于命令行输出协议，保留原格式。
 
 - 游戏 JSON、Story 或翻译领域规则：`SekaiToolsBase`
 - 网络服务地址及默认数据源端点：根目录 `network-endpoints.json`，由 `SekaiToolsConfiguration` 负责加载与校验
