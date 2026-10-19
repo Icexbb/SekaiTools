@@ -458,6 +458,7 @@ public partial class SubtitleTask : UserControl
 
         var dialog = new SaveFileDialog(dialogService.GetDialogHostEx() ?? throw new InvalidOperationException(),
             ViewModel.VideoFilePath);
+        dialog.ViewModel.LoadExportOptions(_settings.GetExportStyleConfig());
         var token = CancellationToken.None;
         var dialogResult = await dialogService.ShowAsync(dialog, token);
         if (dialogResult != ContentDialogResult.Primary) return;
@@ -465,7 +466,7 @@ public partial class SubtitleTask : UserControl
 
         try
         {
-            var subtitle = GenerateSubtitle();
+            var subtitle = GenerateSubtitle(dialog.ViewModel.GetExportStyleConfig());
 
             var staffText = BuildStaffLineText(dialog.ViewModel);
             if (!string.IsNullOrWhiteSpace(staffText))
@@ -584,7 +585,7 @@ public partial class SubtitleTask
         }
     }
 
-    private SekaiToolsBase.SubStationAlpha.Subtitle GenerateSubtitle()
+    private SekaiToolsBase.SubStationAlpha.Subtitle GenerateSubtitle(ExportStyleConfig exportStyleConfig)
     {
         List<BannerBaseFrameSet> bannerFrameSets = [];
         List<DialogBaseFrameSet> dialogFrameSets = [];
@@ -606,7 +607,7 @@ public partial class SubtitleTask
             }
 
         if (VideoProcessor == null) throw new NullReferenceException();
-        return VideoProcessor.GenerateSubtitle(bannerFrameSets, dialogFrameSets, markerFrameSets);
+        return VideoProcessor.GenerateSubtitle(bannerFrameSets, dialogFrameSets, markerFrameSets, exportStyleConfig);
     }
 
     private MatchingThreshold GetMatchingThreshold()

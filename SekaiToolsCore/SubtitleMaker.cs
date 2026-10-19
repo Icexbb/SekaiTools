@@ -24,13 +24,11 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
     private StyleFontConfig StyleFontConfig { get; } = config.StyleFontConfig;
     private TypewriterSetting TypewriterSetting { get; } = config.TyperSetting;
 
-    private ExportStyleConfig ExportStyleConfig { get; } = config.ExportStyleConfig;
-
     public Subtitle Make(
         List<DialogBaseFrameSet> dialogList,
         List<BannerBaseFrameSet> bannerList,
         List<MarkerBaseFrameSet> markerList,
-        SubtitleExportInfo exportInfo)
+        SubtitleExportInfo exportInfo, ExportStyleConfig? exportStyleConfig = null)
     {
         Logger.Log($"开始生成字幕: 对话={dialogList.Count}, 横幅={bannerList.Count}, 标记={markerList.Count}");
         var events = new List<SubtitleEvent>();
@@ -54,16 +52,16 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             events.AddRange(MakeMarkerEvents(markerList));
         }
 
-        // if (!ExportStyleConfig) events.RemoveAll(e => e.Type == "Comment");
-        if (!ExportStyleConfig.ExportLine1) events.RemoveAll(e => e.Style == "Line1");
-        if (!ExportStyleConfig.ExportLine2) events.RemoveAll(e => e.Style == "Line2");
-        if (!ExportStyleConfig.ExportLine3) events.RemoveAll(e => e.Style == "Line3");
-        if (!ExportStyleConfig.ExportCharacter) events.RemoveAll(e => e.Style == "Character");
-        if (!ExportStyleConfig.ExportBannerMask) events.RemoveAll(e => e.Style == "BannerMask");
-        if (!ExportStyleConfig.ExportBannerText) events.RemoveAll(e => e.Style == "BannerText");
-        if (!ExportStyleConfig.ExportMarkerMask) events.RemoveAll(e => e.Style == "MarkerMask");
-        if (!ExportStyleConfig.ExportMarkerText) events.RemoveAll(e => e.Style == "MarkerText");
-        if (!ExportStyleConfig.ExportScreenComment) events.RemoveAll(e => e.Style == "Screen");
+        var outputOptions = exportStyleConfig ?? config.ExportStyleConfig;
+        if (!outputOptions.ExportLine1) events.RemoveAll(e => e.Style == "Line1");
+        if (!outputOptions.ExportLine2) events.RemoveAll(e => e.Style == "Line2");
+        if (!outputOptions.ExportLine3) events.RemoveAll(e => e.Style == "Line3");
+        if (!outputOptions.ExportCharacter) events.RemoveAll(e => e.Style == "Character");
+        if (!outputOptions.ExportBannerMask) events.RemoveAll(e => e.Style == "BannerMask");
+        if (!outputOptions.ExportBannerText) events.RemoveAll(e => e.Style == "BannerText");
+        if (!outputOptions.ExportMarkerMask) events.RemoveAll(e => e.Style == "MarkerMask");
+        if (!outputOptions.ExportMarkerText) events.RemoveAll(e => e.Style == "MarkerText");
+        if (!outputOptions.ExportScreenComment) events.RemoveAll(e => e.Style == "Screen");
 
         events.InsertRange(0, exportInfo.MakeComments());
         Logger.Log($"字幕生成完成: 样式={_styles.Count}, 事件={events.Count}");

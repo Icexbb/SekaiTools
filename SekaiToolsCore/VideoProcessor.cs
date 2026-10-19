@@ -212,7 +212,7 @@ public class VideoProcessor : IDisposable
     }
 
     public Subtitle GenerateSubtitle(List<BannerBaseFrameSet> bannerFrameSets, List<DialogBaseFrameSet> dialogFrameSets,
-        List<MarkerBaseFrameSet> markerFrameSets)
+        List<MarkerBaseFrameSet> markerFrameSets, ExportStyleConfig? exportStyleConfig = null)
     {
         if (Creator == null) throw new NullReferenceException();
         var exportableDialogs = dialogFrameSets.Where(item => !item.IsEmpty()).ToList();
@@ -230,7 +230,7 @@ public class VideoProcessor : IDisposable
             Path.GetFileName(_scriptPath),
             Path.GetFileName(_translatePath),
             ResultReport);
-        return maker.Make(exportableDialogs, exportableBanners, exportableMarkers, exportInfo);
+        return maker.Make(exportableDialogs, exportableBanners, exportableMarkers, exportInfo, exportStyleConfig);
     }
 
     private string GetTaskStatus()
