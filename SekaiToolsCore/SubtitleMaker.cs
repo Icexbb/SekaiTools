@@ -516,10 +516,10 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
                 var fs = _styles.First(style => style.Name == "MarkerText").Fontsize;
                 var tagText = new Tags(Tags.Position(position.X, position.Y + (int)(fs * 1.6)));
 
+                var tagMaskTl = new Point(0, position.Y + (int)(fs * 1.6));
                 var tagMask = new Tags(
                     Tags.Bord(0), Tags.Blur(50), Tags.Clip(
-                        new Point(0, position.Y + (int)(fs * 1.6)),
-                        new Point((int)(fs * contentLength * 1.5), position.Y + (int)(fs * 2.65))),
+                        tagMaskTl, tagMaskTl + new Size((int)(fs * contentLength * 2.0), (int)(fs * 1.05))),
                     Tags.Paint(1)
                 );
                 var mask = AssDraw.Rectangle(
