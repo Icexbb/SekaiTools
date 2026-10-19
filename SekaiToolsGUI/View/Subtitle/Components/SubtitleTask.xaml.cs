@@ -119,13 +119,13 @@ public partial class SubtitleTask : UserControl
 
     public SubtitlePageModel ViewModel => (SubtitlePageModel)DataContext;
 
-    internal void LoadHistoryState(ProcessingState state)
+    internal async Task LoadHistoryStateAsync(ProcessingState state)
     {
         var settings = _settings;
         try
         {
             VideoProcessor?.Dispose();
-            VideoProcessor = new VideoProcessor(new Config(
+            var config = new Config(
                 state.VideoFilePath,
                 state.ScriptFilePath,
                 state.TranslateFilePath,
@@ -134,25 +134,33 @@ public partial class SubtitleTask : UserControl
                 settings.GetTypewriterSetting(),
                 GetMatchingThreshold(),
                 GetRecognitionOptions(state)
-            ), new VideoProcessCallbacks
+            );
+            var captureFactory = GetCaptureFactory(state);
+            var resources = ResourceManager.Instance;
+            var processor = await Task.Run(() =>
             {
-                OnNewDialog = LinePanel_AddDialogLine,
-                OnNewBanner = LinePanel_AddBannerLine,
-                OnNewMarker = LinePanel_AddMarkerLine
-            }, ResourceManager.Instance, ProcessingStatePersistence.Instance, GetCaptureFactory(state));
-
+                var restored = new VideoProcessor(config, new VideoProcessCallbacks
+                {
+                    OnNewDialog = LinePanel_AddDialogLine,
+                    OnNewBanner = LinePanel_AddBannerLine,
+                    OnNewMarker = LinePanel_AddMarkerLine
+                }, resources, ProcessingStatePersistence.Instance, captureFactory);
+                VideoProcessor = restored;
+                restored.ApplyState(state);
+                restored.ReplayExportableCallbacks(
+                    LinePanel_AddDialogLine,
+                    LinePanel_AddBannerLine,
+                    LinePanel_AddMarkerLine);
+                return restored;
+            });
+            await _resultQueue.FlushAsync();
             SetTimelineVideoDuration();
-            VideoProcessor.ApplyState(state);
-            VideoProcessor.ReplayExportableCallbacks(
-                LinePanel_AddDialogLine,
-                LinePanel_AddBannerLine,
-                LinePanel_AddMarkerLine);
 
-            ViewModel.DialogTotal = VideoProcessor.ContentLength.Dialog;
-            ViewModel.BannerTotal = VideoProcessor.ContentLength.Banner;
-            ViewModel.MarkerTotal = VideoProcessor.ContentLength.Marker;
+            ViewModel.DialogTotal = processor.ContentLength.Dialog;
+            ViewModel.BannerTotal = processor.ContentLength.Banner;
+            ViewModel.MarkerTotal = processor.ContentLength.Marker;
             ViewModel.HasNotStarted = false;
-            var resultReport = VideoProcessor.ResultReport;
+            var resultReport = processor.ResultReport;
             var isPartial = resultReport.Outcome != ProcessingOutcome.Complete || !resultReport.CanExport;
             ViewModel.IsFinished = !isPartial;
             ViewModel.IsCanceled = state.StopReason == ProcessStopReason.Canceled;

@@ -26,6 +26,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
     private bool _preparingResources;
     private bool _checkedSavedProgress;
     private bool _closing;
+    private Task? _historyLoading;
     private SubtitlePageModel? _selectedState;
 
     public SubtitlePage()
@@ -177,9 +178,10 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
         ViewModel.IsDialogOpen = true;
         try
         {
-            var entries = HistoryStore.LoadAll();
-            var unfinished = EnumerateSavedProgress()
-                .Select(item => new HistoryEntry { Timestamp = "未完成", State = item.State }).ToList();
+            var catalog = await Task.Run(HistoryCatalog.Read);
+            if (_closing) return;
+            var entries = catalog.Where(entry => entry.IsHistory).ToList();
+            var unfinished = catalog.Where(entry => !entry.IsHistory).ToList();
             if (entries.Count == 0 && unfinished.Count == 0)
             {
                 SnackService.Show("提示", "暂无历史记录", ControlAppearance.Info,
@@ -196,18 +198,27 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
                     Title = "清除已完成历史记录？", Content = "此操作不可恢复，但不会删除未完成任务。",
                     PrimaryButtonText = "清除", CloseButtonText = "取消"
                 }, CancellationToken.None);
-                if (clear == ContentDialogResult.Primary) HistoryStore.Clear();
+                if (clear == ContentDialogResult.Primary) await Task.Run(HistoryStore.Clear);
                 return;
             }
-            var state = (dialog.SelectedEntry ?? dialog.SelectedUnfinishedEntry)?.State;
-            if (result != ContentDialogResult.Primary || state == null) return;
-            var task = CreateTask(state, true);
-            task.Control.LoadHistoryState(state);
-            _queue.HistoryTasks.Add(task);
-            SelectTask(task);
+            var selected = dialog.SelectedEntry ?? dialog.SelectedUnfinishedEntry;
+            if (result != ContentDialogResult.Primary || selected == null) return;
+            _historyLoading = LoadSelectedHistoryAsync(selected);
+            await _historyLoading;
         }
         catch (Exception exception) { ShowError("读取历史失败", exception); }
-        finally { ViewModel.IsDialogOpen = false; }
+        finally { _historyLoading = null; ViewModel.IsDialogOpen = false; }
+    }
+
+    private async Task LoadSelectedHistoryAsync(HistoryCatalogEntry selected)
+    {
+        var state = await Task.Run(selected.LoadState);
+        if (_closing) return;
+        var task = CreateTask(state, true);
+        await task.Control.LoadHistoryStateAsync(state);
+        if (_closing) { await task.Control.DisposeAsync(); task.Detach(); return; }
+        _queue.HistoryTasks.Add(task);
+        SelectTask(task);
     }
 
     private static SubtitleQueueTaskModel CreateTask(ProcessingState state, bool isHistory) => new(new SubtitlePageModel
@@ -286,6 +297,9 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
         var stopped = page._queue.StopAsync();
         foreach (var task in page._queue.ProcessingTasks) task.CreatedControl?.RequestStop();
         await stopped;
+        if (page._historyLoading is { } historyLoading)
+            try { await historyLoading; }
+            catch (Exception exception) { Logger.Log($"历史加载退出失败: {exception}", LogLevel.Warning); }
         foreach (var task in page.AllTasks().ToArray())
         {
             if (task.CreatedControl is { } control) await control.DisposeAsync();

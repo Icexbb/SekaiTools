@@ -1,15 +1,18 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
+using SekaiToolsInfrastructure.Persistence;
 using SekaiToolsCore;
 using Wpf.Ui.Controls;
 using Button = Wpf.Ui.Controls.Button;
+using TextBlock = System.Windows.Controls.TextBlock;
 
 namespace SekaiToolsGUI.View.Subtitle.Components;
 
 public partial class HistoryDialog : ContentDialog
 {
-    public HistoryDialog(ContentDialogHost contentPresenter, IReadOnlyList<HistoryEntry> completedEntries,
-        IReadOnlyList<HistoryEntry> unfinishedEntries) : base(contentPresenter)
+    public HistoryDialog(ContentDialogHost contentPresenter, IReadOnlyList<HistoryCatalogEntry> completedEntries,
+        IReadOnlyList<HistoryCatalogEntry> unfinishedEntries) : base(contentPresenter)
     {
         InitializeComponent();
 
@@ -18,13 +21,13 @@ public partial class HistoryDialog : ContentDialog
             AddHeader("未完成任务（作为历史结果查看）");
             foreach (var unfinishedEntry in unfinishedEntries)
             {
-                var button = CreateEntryButton(unfinishedEntry, "未完成");
+                var (row, button) = CreateEntryRow(unfinishedEntry, "未完成");
                 button.Click += (_, _) =>
                 {
                     SelectedUnfinishedEntry = unfinishedEntry;
                     Hide(ContentDialogResult.Primary);
                 };
-                HistoryItemsPanel.Children.Add(button);
+                HistoryItemsPanel.Children.Add(row);
             }
         }
 
@@ -33,20 +36,20 @@ public partial class HistoryDialog : ContentDialog
             AddHeader("已完成历史");
             foreach (var entry in completedEntries)
             {
-                var button = CreateEntryButton(entry, entry.Timestamp);
+                var (row, button) = CreateEntryRow(entry, entry.Timestamp);
                 button.Click += (_, _) =>
                 {
                     SelectedEntry = entry;
                     Hide(ContentDialogResult.Primary);
                 };
-                HistoryItemsPanel.Children.Add(button);
+                HistoryItemsPanel.Children.Add(row);
             }
         }
     }
 
-    public HistoryEntry? SelectedEntry { get; private set; }
+    public HistoryCatalogEntry? SelectedEntry { get; private set; }
 
-    public HistoryEntry? SelectedUnfinishedEntry { get; private set; }
+    public HistoryCatalogEntry? SelectedUnfinishedEntry { get; private set; }
 
     private void AddHeader(string text)
     {
@@ -58,18 +61,42 @@ public partial class HistoryDialog : ContentDialog
         });
     }
 
-    private static Button CreateEntryButton(HistoryEntry entry, string prefix)
+    private static (Card Row, Button LoadButton) CreateEntryRow(HistoryCatalogEntry entry, string prefix)
     {
-        var videoName = Path.GetFileName(entry.State.VideoFilePath);
-        return new Button
+        var summary = entry.Summary;
+        var videoName = Path.GetFileName(summary.VideoFilePath);
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var text = new System.Windows.Controls.TextBlock
         {
-            Content = $"{prefix}    {videoName}\n{GetStatusText(entry.State.StopReason)}",
-            HorizontalContentAlignment = HorizontalAlignment.Left,
+            Text = $"{videoName}\n{prefix} · {GetStatusText(summary.StopReason)}",
+            TextWrapping = TextWrapping.Wrap,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 12, 0)
+        };
+        var button = new Button
+        {
+            Content = "加载",
+            Icon = new SymbolIcon(SymbolRegular.FolderOpen24),
+            VerticalAlignment = VerticalAlignment.Center,
+            ToolTip = $"加载 {videoName}"
+        };
+        System.Windows.Automation.AutomationProperties.SetName(button, $"加载 {videoName}");
+        Grid.SetColumn(button, 1);
+        grid.Children.Add(text);
+        grid.Children.Add(button);
+        var card = new Card
+        {
+            Content = grid,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
             Margin = new Thickness(0, 0, 0, 6),
             Padding = new Thickness(12, 8, 12, 8),
             ToolTip =
-                $"视频：{entry.State.VideoFilePath}\n剧本：{entry.State.ScriptFilePath}\n翻译：{entry.State.TranslateFilePath}"
+                $"视频：{summary.VideoFilePath}\n剧本：{summary.ScriptFilePath}\n翻译：{summary.TranslateFilePath}"
         };
+        return (card, button);
     }
 
     private static string GetStatusText(ProcessStopReason reason)
