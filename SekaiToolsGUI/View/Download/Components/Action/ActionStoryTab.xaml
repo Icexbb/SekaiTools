@@ -164,19 +164,19 @@
                 </StackPanel>
             </Grid>
         </StackPanel>
-        <ListView Grid.Row="1" ItemsSource="{Binding EventStories}"
+        <ui:ListView Grid.Row="1" ItemsSource="{Binding EventStories}"
                   BorderBrush="Transparent"
                   Background="Transparent"
                   Padding="0"
                   ScrollViewer.CanContentScroll="True"
                   VirtualizingStackPanel.ScrollUnit="Pixel">
-            <ListView.ItemTemplate>
+            <ui:ListView.ItemTemplate>
                 <DataTemplate>
                     <local:ActionStoryItem AreaStorySet="{Binding}" HorizontalAlignment="Stretch" />
                 </DataTemplate>
-            </ListView.ItemTemplate>
+            </ui:ListView.ItemTemplate>
 
-            <ListView.ItemContainerStyle>
+            <ui:ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="Focusable" Value="False" />
                     <Setter Property="IsHitTestVisible" Value="True" />
@@ -193,7 +193,7 @@
                         </Setter.Value>
                     </Setter>
                 </Style>
-            </ListView.ItemContainerStyle>
-        </ListView>
+            </ui:ListView.ItemContainerStyle>
+        </ui:ListView>
     </Grid>
 </UserControl>

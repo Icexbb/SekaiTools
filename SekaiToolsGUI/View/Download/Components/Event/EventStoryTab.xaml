@@ -79,17 +79,17 @@
             <ui:Card Name="CardUnits" Padding="2" HorizontalContentAlignment="Stretch" Margin="0,0,0,5" />
         </StackPanel>
 
-        <ListView Grid.Row="1" ItemsSource="{Binding EventStories}"
+        <ui:ListView Grid.Row="1" ItemsSource="{Binding EventStories}"
                   BorderBrush="Transparent" Background="Transparent"
                   ScrollViewer.CanContentScroll="True"
                   VirtualizingStackPanel.ScrollUnit="Pixel">
-            <ListView.ItemTemplate>
+            <ui:ListView.ItemTemplate>
                 <DataTemplate>
                     <event:EventStoryEvent EventStorySet="{Binding}"
                                            HorizontalAlignment="Stretch" />
                 </DataTemplate>
-            </ListView.ItemTemplate>
-            <ListView.ItemContainerStyle>
+            </ui:ListView.ItemTemplate>
+            <ui:ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="Focusable" Value="False" />
                     <Setter Property="IsHitTestVisible" Value="True" />
@@ -106,7 +106,7 @@
                         </Setter.Value>
                     </Setter>
                 </Style>
-            </ListView.ItemContainerStyle>
-        </ListView>
+            </ui:ListView.ItemContainerStyle>
+        </ui:ListView>
     </Grid>
 </UserControl>

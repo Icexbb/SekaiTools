@@ -66,18 +66,18 @@
             </ui:Button>
         </Grid>
 
-        <ListView Grid.Row="1" ItemsSource="{Binding CardStories}"
+        <ui:ListView Grid.Row="1" ItemsSource="{Binding CardStories}"
                   BorderBrush="Transparent"
                   Background="Transparent"
                   ScrollViewer.CanContentScroll="True"
                   VirtualizingStackPanel.ScrollUnit="Pixel">
-            <ListView.ItemTemplate>
+            <ui:ListView.ItemTemplate>
                 <DataTemplate>
                     <card:CardStoryCard CardStorySet="{Binding}" HorizontalAlignment="Stretch" Margin="0,5" />
                 </DataTemplate>
-            </ListView.ItemTemplate>
+            </ui:ListView.ItemTemplate>
 
-            <ListView.ItemContainerStyle>
+            <ui:ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="Focusable" Value="False" />
                     <Setter Property="IsHitTestVisible" Value="True" />
@@ -94,7 +94,7 @@
                         </Setter.Value>
                     </Setter>
                 </Style>
-            </ListView.ItemContainerStyle>
-        </ListView>
+            </ui:ListView.ItemContainerStyle>
+        </ui:ListView>
     </Grid>
 </UserControl>
