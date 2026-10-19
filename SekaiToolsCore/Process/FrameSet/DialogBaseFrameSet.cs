@@ -38,7 +38,7 @@ public partial class DialogBaseFrameSet : BaseFrameSet
                 .IndexOf("\\R", StringComparison.Ordinal);
         else if (Data.BodyTranslated.Count(c => c == '\n') == 1)
             separatorContentIndex = Data.BodyTranslated
-                .IndexOf("\\R", StringComparison.Ordinal);
+                .Split('\n')[0].TrimAll().Length;
         else
             separatorContentIndex = Data.BodyTranslated.TrimAll().Length / 2;
 
@@ -56,8 +56,11 @@ public partial class DialogBaseFrameSet : BaseFrameSet
 
     public bool IsJitter => Data.Shake;
 
-    public bool SeparatorNeeded => Data.BodyTranslated != string.Empty &&
-                                    Data.BodyOriginal.LineCount() == 3;
+    public bool SeparatorUsable => Data.BodyTranslated.TrimAll().Length > 1 &&
+                                   Data.BodyOriginal.LineCount() == 3;
+
+    public bool SeparatorNeeded => SeparatorUsable &&
+                                   Data.BodyTranslated.TrimAll().DialogContentLength() > 37;
 
     public bool SeparatorEnabled { get; set; }
 

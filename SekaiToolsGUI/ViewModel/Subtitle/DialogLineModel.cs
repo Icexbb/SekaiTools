@@ -21,9 +21,9 @@ public class DialogLineModel : ViewModelBase
         FrameRate = set.Fps;
         _charTime = charTime;
 
-        SeparatorEnabled = set.SeparatorNeeded;
-        SeparatorUsable = set.SeparatorNeeded;
-        if (set.SeparatorNeeded)
+        SeparatorEnabled = set.SeparatorEnabled;
+        SeparatorUsable = set.SeparatorUsable;
+        if (set.SeparatorUsable)
         {
             SeparateFrame = set.Separate.SeparateFrame;
             SeparatorContentIndex = set.Separate.SeparatorContentIndex;
@@ -153,17 +153,9 @@ public class DialogLineModel : ViewModelBase
         }
     }
 
-    public double SeparatedContentPart1Length => CalculateContentLength(SeparatedContentPart1);
+    public double SeparatedContentPart1Length => SeparatedContentPart1.DialogContentLength();
 
-    public double SeparatedContentPart2Length => CalculateContentLength(SeparatedContentPart2);
-
-    private static double CalculateContentLength(string content) =>
-        content.Sum(character => character switch
-        {
-            '.' => 0.3,
-            _ when char.IsAscii(character) => 0.5,
-            _ => 1,
-        });
+    public double SeparatedContentPart2Length => SeparatedContentPart2.DialogContentLength();
 
 
     public string PromptWarning
