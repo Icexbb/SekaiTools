@@ -1,0 +1,54 @@
+name: "视频压制问题"
+description: "压制失败、编码参数或成片画面与音轨异常"
+title: "[视频压制] "
+labels:
+  - "bug"
+body:
+  - type: "markdown"
+    attributes:
+      value: "请先搜索已有 Issue，确认是否已有相同问题。上传素材、截图或日志前，请移除账号、令牌等个人信息。"
+  - type: "input"
+    id: "version"
+    attributes:
+      label: "SekaiTools 版本"
+      description: "可从“设置与关于”查看；请注明完整版本号。"
+    validations:
+      required: true
+  - type: "input"
+    id: "environment"
+    attributes:
+      label: "系统环境"
+      description: "请填写 Windows 版本；涉及性能、识别或压制时，也请填写 CPU、显卡与内存。"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "description"
+    attributes:
+      label: "问题描述与预期行为"
+      description: "实际发生了什么？你期望得到什么结果？"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "steps"
+    attributes:
+      label: "复现步骤"
+      description: "请按顺序描述从打开页面到出现问题的操作，并说明是否每次都能复现。"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "input"
+    attributes:
+      label: "压制素材与参数"
+      description: "请填写输入视频的分辨率、帧率、编码，提供字幕文件、压制参数及相关工具版本；素材可提供来源或可复现片段。"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "output"
+    attributes:
+      label: "压制结果与日志"
+      description: "请附完整错误提示或压制日志；若成片异常，请指出时间点并附截图或片段。"
+  - type: "textarea"
+    id: "others"
+    attributes:
+      label: "补充信息"
+      description: "可补充日志、已尝试的解决方法，或是否在旧版本正常。"

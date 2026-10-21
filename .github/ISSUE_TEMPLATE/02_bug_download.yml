@@ -1,0 +1,54 @@
+name: "资料下载问题"
+description: "剧本或资料列表加载、筛选、下载与缓存异常"
+title: "[资料下载] "
+labels:
+  - "bug"
+body:
+  - type: "markdown"
+    attributes:
+      value: "请先搜索已有 Issue，确认是否已有相同问题。上传素材、截图或日志前，请移除账号、令牌等个人信息。"
+  - type: "input"
+    id: "version"
+    attributes:
+      label: "SekaiTools 版本"
+      description: "可从“设置与关于”查看；请注明完整版本号。"
+    validations:
+      required: true
+  - type: "input"
+    id: "environment"
+    attributes:
+      label: "系统环境"
+      description: "请填写 Windows 版本；涉及性能、识别或压制时，也请填写 CPU、显卡与内存。"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "description"
+    attributes:
+      label: "问题描述与预期行为"
+      description: "实际发生了什么？你期望得到什么结果？"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "steps"
+    attributes:
+      label: "复现步骤"
+      description: "请按顺序描述从打开页面到出现问题的操作，并说明是否每次都能复现。"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "input"
+    attributes:
+      label: "下载目标与网络环境"
+      description: "请填写数据源、游戏区服、剧情类型、剧情名称或 ID，以及是否使用代理；如有报错，请附完整提示。"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "output"
+    attributes:
+      label: "下载结果"
+      description: "请附列表或报错截图；如下载内容不完整或错误，请附对应文件并说明缺失内容。"
+  - type: "textarea"
+    id: "others"
+    attributes:
+      label: "补充信息"
+      description: "可补充日志、已尝试的解决方法，或是否在旧版本正常。"

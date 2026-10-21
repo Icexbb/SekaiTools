@@ -4,6 +4,21 @@ labels: [ "enhancement" ]
 
 body:
   - type: dropdown
+    id: module
+    attributes:
+      label: 所属模块
+      description: 请选择此功能主要涉及的模块
+      options:
+        - 字幕识别
+        - 资料下载
+        - 脚本翻译
+        - 字幕导出
+        - 视频压制
+        - 设置与更新
+        - 其他或跨模块
+    validations:
+      required: true
+  - type: dropdown
     id: priority
     attributes:
       label: 优先级
