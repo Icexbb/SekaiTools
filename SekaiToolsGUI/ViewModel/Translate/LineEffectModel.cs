@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using SekaiToolsBase.Story.StoryEvent;
+using SekaiToolsBase.Story.Translation;
 
 namespace SekaiToolsGUI.ViewModel.Translate;
 
@@ -21,7 +22,7 @@ public class LineEffectModel : LineModel
         set => SetProperty(value);
     }
 
-    public override string Result => Content.Result;
+    public override string Result => TranslationText.Normalize(Content.Result).Replace("\n", "\\N");
     public bool ContentTranslateChangedEnabled { get; set; } = true;
 
     private void OnContentPropertyChanged(object? sender, PropertyChangedEventArgs e)

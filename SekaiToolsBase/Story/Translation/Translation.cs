@@ -2,7 +2,7 @@ namespace SekaiToolsBase.Story.Translation;
 
 public abstract class Translation(string body)
 {
-    public string Body = body.Trim();
+    public string Body = TranslationText.Normalize(body);
 }
 
 public class DialogTranslate(string chara, string body) : Translation(body)

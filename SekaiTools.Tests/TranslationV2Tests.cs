@@ -8,6 +8,47 @@ namespace SekaiTools.Tests;
 
 public class TranslationV2Tests
 {
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public void PerLineTrimAndRepeatedEditorRoundtripsKeepNewlinesStable(string newline)
+    {
+        var data = Load(string.Join(newline, new[]
+        {
+            "@version:2", "@scenario:scenario", "@banner:005", "  地点  ", "",
+            "@dialog:001[角色]", "  第一行  ", " \t ", "\t第二行\t", "  \\@正文  ", ""
+        }));
+        var expected = "第一行\n\n第二行\n@正文";
+        var model = new SekaiToolsGUI.ViewModel.Translate.TranslatePageModel();
+        model.LoadScript(CreateScript(), "script.json");
+        for (var i = 0; i < 3; i++)
+        {
+            model.LoadTranslation(data, "translation.txt");
+            var dialog = Assert.IsType<SekaiToolsGUI.ViewModel.Translate.LineDialogModel>(model.Events[1]);
+            Assert.Equal(expected, dialog.Content.Translated);
+            // WPF multiline editing can return CRLF even for an LF source.
+            dialog.Content.Translated = dialog.Content.Translated.Replace("\n", "\r\n");
+            var exported = model.Export();
+            Assert.DoesNotContain('\r', exported);
+            data = Load(exported.Replace("\n", newline));
+            Assert.Equal(expected, data.ForScript(CreateScript())[1].Body);
+            var legacy = model.Export(false);
+            Assert.Contains("角色：第一行\\N\\N第二行\\N@正文", legacy);
+            Assert.Equal(expected, Load(legacy.Replace("\n", newline)).Translations[1].Body);
+        }
+    }
+
+    [Fact]
+    public void ExportTrimsEveryLineBeforeEscapingAndPreservesLiteralV2BackslashN()
+    {
+        Translation[] values = [new EffectTranslate(" 横幅 \r\n 第二行 "),
+            new DialogTranslate("角色", "") { Body = " 第一行 \r\n \t第二行 \n  @标记 \n  #注释 \n字面\\N内容 " }];
+        var exported = TranslationFormatV2.Export(CreateScript(), values);
+        Assert.Contains("横幅\n第二行", exported);
+        Assert.Contains("第一行\n第二行\n\\@标记\n\\#注释\n字面\\N内容", exported);
+        Assert.Equal("第一行\n第二行\n@标记\n#注释\n字面\\N内容", Load(exported).ForScript(CreateScript())[1].Body);
+    }
+
     [Fact]
     public void LegacyAtSignTextStillLoadsAsLegacy()
     {
@@ -55,7 +96,7 @@ public class TranslationV2Tests
         Assert.Equal("横幅翻译", story.Events[0].FinalContent);
         var dialog = Assert.IsType<SekaiToolsBase.Story.StoryEvent.DialogStoryEvent>(story.Events[1]);
         Assert.Equal("名[称]", dialog.FinalCharacter);
-        Assert.Equal("  内容：12:30…\n\n@正文\n#正文\n\\正文", dialog.FinalContent);
+        Assert.Equal("内容：12:30…\n\n@正文\n#正文\n\\正文", dialog.FinalContent);
     }
 
     [Fact]

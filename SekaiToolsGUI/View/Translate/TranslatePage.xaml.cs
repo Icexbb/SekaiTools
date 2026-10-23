@@ -105,8 +105,6 @@ public partial class TranslatePage : UserControl
         try
         {
             var tData = new TranslationData(filePath);
-            if (!tData.IsV2)
-                foreach (var t in tData.Translations) t.Body = t.Body.Replace("\\N", "\n");
 
             if (ViewModel.IsTranslationApplicable(tData))
             {
@@ -160,8 +158,6 @@ public partial class TranslatePage : UserControl
         try
         {
             var tData = new TranslationData(filePath);
-            if (!tData.IsV2)
-                foreach (var t in tData.Translations) t.Body = t.Body.Replace("\\N", "\n");
 
             if (ViewModel.IsTranslationApplicable(tData))
             {

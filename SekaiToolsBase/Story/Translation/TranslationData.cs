@@ -32,12 +32,12 @@ public class TranslationData
         {
             if (!line.Contains('：'))
             {
-                Translations.Add(new EffectTranslate(line));
+                Translations.Add(new EffectTranslate(line.Replace("\\N", "\n")));
                 return;
             }
 
             var parts = line.Split('：', 2);
-            Translations.Add(new DialogTranslate(parts[0], parts[1].Replace("…", "...")));
+            Translations.Add(new DialogTranslate(parts[0], parts[1].Replace("…", "...").Replace("\\N", "\n")));
         });
     }
 

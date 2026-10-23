@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsBase.Utils;
+using SekaiToolsBase.Story.Translation;
 
 namespace SekaiToolsGUI.ViewModel.Translate;
 
@@ -110,7 +111,7 @@ public partial class LineDialogModel : LineModel
 public partial class LineDialogModel
 {
     public override string Result =>
-        $"{Character.Result}：{Content.Result.Trim().Replace("\r\n", "\n").Replace("\n", "\\N")}" + (EndLine ? "\n" : "");
+        $"{Character.Result.Trim()}：{TranslationText.Normalize(Content.Result).Replace("\n", "\\N")}" + (EndLine ? "\n" : "");
 
     private int CharacterId { get; }
 

@@ -37,7 +37,7 @@ public static class TranslationFormatV2
             if (current == null) return;
             while (body.Count > 0 && string.IsNullOrWhiteSpace(body[0])) body.RemoveAt(0);
             while (body.Count > 0 && string.IsNullOrWhiteSpace(body[^1])) body.RemoveAt(body.Count - 1);
-            current.Value.Body = string.Join("\n", body);
+            current.Value.Body = TranslationText.Normalize(string.Join("\n", body));
             entries.Add(current);
             body.Clear();
         }
@@ -53,6 +53,7 @@ public static class TranslationFormatV2
                     if (!string.IsNullOrWhiteSpace(line)) throw Error("正文前缺少条目标记");
                     continue;
                 }
+                line = line.Trim();
                 if (line.Length >= 2 && line[0] == '\\' && line[1] is '@' or '#' or '\\') line = line[1..];
                 body.Add(line);
                 continue;
@@ -99,8 +100,8 @@ public static class TranslationFormatV2
             var speaker = value is DialogTranslate dialog ? $"[{dialog.Chara}]" : "";
             if (speaker.Contains('\n') || speaker.Contains('\r')) throw new InvalidOperationException("说话人不能包含换行");
             output.Append($"\n@{keys[i].Type}:{keys[i].Number:D3}{speaker}\n");
-            var content = value is DialogTranslate ? value.Body.Trim() : value.Body;
-            foreach (var line in content.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n'))
+            var content = TranslationText.Normalize(value.Body);
+            foreach (var line in content.Split('\n'))
             {
                 if (line.Length > 0 && line[0] is '@' or '#' or '\\') output.Append('\\');
                 output.Append(line).Append('\n');
