@@ -199,9 +199,6 @@
     ]
   },
   {
-    "custom": "logs"
-  },
-  {
     "title": "视频识别性能",
     "icon": "Memory16",
     "description": "内存充足时提前解码；新任务生效",

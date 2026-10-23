@@ -66,6 +66,7 @@ internal static class Program
         Wpf.Ui.Appearance.ApplicationThemeManager.Apply(Wpf.Ui.Appearance.ApplicationTheme.Light);
         Pump();
         Require(((SymbolIcon)undo.Content).Foreground == app.FindResource("AccentTextFillColorPrimaryBrush"), "Undo does not follow light accent resource");
+        VerifyRuntimeLogWindow(window, output);
         var animationFrame = new DispatcherFrame();
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
         timer.Tick += (_, _) => { timer.Stop(); animationFrame.Continue = false; };
@@ -76,6 +77,50 @@ internal static class Program
         using (var file = File.Create(Path.Combine(output,"settings.png"))) encoder.Save(file);
         Console.WriteLine($"PASS: {buttons.Length} cards, visibility, grouped reset, isolation, persistence; periodic available={model.IsPeriodicColorAvailable}");
         window.Close();app.Shutdown();
+    }
+
+    private static void VerifyRuntimeLogWindow(Window owner, string output)
+    {
+        using var sink = new SekaiToolsBase.InMemoryLogSink();
+        SekaiToolsBase.InMemoryLogSink.Clear();
+        var logger = sink.CreateLogger("window-probe");
+        var logs = RuntimeLogWindow.Open(owner);
+        logs.Left = -15000; logs.Top = -15000;
+        Require(ReferenceEquals(logs, RuntimeLogWindow.Open(owner)), "Log window duplicated");
+        System.Threading.Tasks.Task.Run(() =>
+        {
+            logger.Log(Microsoft.Extensions.Logging.LogLevel.Information, new Microsoft.Extensions.Logging.EventId(), "information", null, (value, _) => value);
+            logger.Log(Microsoft.Extensions.Logging.LogLevel.Warning, new Microsoft.Extensions.Logging.EventId(), "warning", null, (value, _) => value);
+            logger.Log(Microsoft.Extensions.Logging.LogLevel.Error, new Microsoft.Extensions.Logging.EventId(), "error", null, (value, _) => value);
+        }).GetAwaiter().GetResult();
+        Pump();
+        var list = (ListBox)logs.FindName("LogListBox");
+        var filter = (ComboBox)logs.FindName("LevelFilter");
+        Require(list.Items.Count == 3, "Background logs missing");
+        filter.SelectedIndex = 2; Pump();
+        Require(list.Items.Count == 2 && list.Items.Cast<SekaiToolsBase.LogEntry>().All(entry => entry.Level >= Microsoft.Extensions.Logging.LogLevel.Warning), "WARN+ filter incorrect");
+        filter.SelectedIndex = 3; Pump(); Require(list.Items.Count == 1, "ERROR+ filter incorrect");
+        var logBitmap = new RenderTargetBitmap((int)logs.ActualWidth, (int)logs.ActualHeight, 96,96,PixelFormats.Pbgra32);
+        logBitmap.Render(logs);
+        var logEncoder = new PngBitmapEncoder();logEncoder.Frames.Add(BitmapFrame.Create(logBitmap));
+        using (var file = File.Create(Path.Combine(output,"runtime-logs.png"))) logEncoder.Save(file);
+        logs.Close();
+        logger.Log(Microsoft.Extensions.Logging.LogLevel.Error, new Microsoft.Extensions.Logging.EventId(), "after-close", null, (value, _) => value);
+        Pump();
+        var reopened = RuntimeLogWindow.Open(owner);
+        reopened.Left = -15000; reopened.Top = -15000; Pump();
+        Require(!ReferenceEquals(logs,reopened) && ((ListBox)reopened.FindName("LogListBox")).Items.Count == 4, "Reopened window lost logs");
+        Nodes(reopened).OfType<Wpf.Ui.Controls.Button>().Single(button => Equals(button.Content,"清空日志"))
+            .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+        Pump();
+        Require(((ListBox)reopened.FindName("LogListBox")).Items.Count == 0, "Log clearing failed");
+        reopened.Close();
+        var temporaryOwner = new FluentWindow { Left = -15000, Top = -15000, Width = 100, Height = 100, ShowActivated = false, ShowInTaskbar = false };
+        temporaryOwner.Show();
+        var owned = RuntimeLogWindow.Open(temporaryOwner);
+        owned.Left = -15000; owned.Top = -15000;
+        temporaryOwner.Close();
+        Require(!owned.IsVisible, "Owner shutdown left log window open");
     }
 
     private static void VerifyDownloadDirectory(ConstructorInfo constructor, string output)

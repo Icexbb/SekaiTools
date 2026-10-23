@@ -19,57 +19,6 @@
         <ScrollViewer Grid.Row="0">
             <StackPanel x:Name="SettingsItems" Margin="10">
 
-                <ui:CardExpander x:Name="LogSection" Margin="0,0,0,8" Icon="{ui:SymbolIcon ClipboardTask24}" ContentPadding="0">
-                    <ui:CardExpander.Header>
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="运行日志" />
-                            <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                          Text="查看程序运行过程中产生的日志" />
-                        </Grid>
-                    </ui:CardExpander.Header>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <DockPanel Grid.Row="0" Margin="8">
-                            <ui:Button DockPanel.Dock="Right" Content="清空日志" Click="ClearLog_Click" />
-                            <ui:Button x:Name="TestErrorButton"
-                                       DockPanel.Dock="Right"
-                                       Margin="0,0,8,0"
-                                       Content="测试错误提示"
-                                       Visibility="Collapsed"
-                                       Click="TestErrorButton_Click" />
-
-                            <ui:TextBlock Text="等级:" VerticalAlignment="Center" Margin="0,0,8,0" />
-                            <ComboBox x:Name="LevelFilter" Width="100" SelectedIndex="0"
-                                      SelectionChanged="LevelFilter_SelectionChanged">
-                                <ComboBoxItem>全部</ComboBoxItem>
-                                <ComboBoxItem>INFO+</ComboBoxItem>
-                                <ComboBoxItem>WARN+</ComboBoxItem>
-                                <ComboBoxItem>ERROR+</ComboBoxItem>
-                            </ComboBox>
-                        </DockPanel>
-                        <ListBox x:Name="LogListBox" Grid.Row="1"
-                                 MaxHeight="400"
-                                 Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                                 BorderThickness="0"
-                                 FontFamily="Consolas" FontSize="11"
-                                 HorizontalContentAlignment="Stretch"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding}" TextWrapping="Wrap" />
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </Grid>
-                </ui:CardExpander>
-
                 <ui:CardExpander x:Name="AboutSection" ContentPadding="0"
                                  Icon="{ui:ImageIcon 'pack://application:,,,/Resource/icon.png', Width=28, Height=28}">
                     <ui:CardExpander.Header>
@@ -126,12 +75,11 @@
         </ScrollViewer>
         <ui:Card Grid.Row="1" Padding="5">
             <Grid>
-                <ui:Button
-                    Margin="10"
-                    HorizontalAlignment="Left"
-                    Width="100"
-                    Content="重置为默认"
-                    Click="ResetToDefault_Click" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="10">
+                    <ui:Button Width="100" Content="重置为默认" Click="ResetToDefault_Click" />
+                    <ui:Button Margin="8,0,0,0" Content="运行日志" Icon="{ui:SymbolIcon ClipboardTask24}"
+                               AutomationProperties.Name="打开运行日志窗口" Click="OpenLogs_Click" />
+                </StackPanel>
                 <ui:TextBlock
                     Margin="10"
                     HorizontalAlignment="Right"

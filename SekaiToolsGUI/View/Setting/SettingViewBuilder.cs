@@ -13,6 +13,8 @@ public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Fu
 {
     public FrameworkElement Build(SettingSection section, bool nested = false)
     {
+        // Older external catalogs may still contain the former inline log section.
+        if (section.Custom == "logs") return new Border { Visibility = Visibility.Collapsed };
         if (section.Custom is { } custom) return customContent(custom);
         var header = Header(section);
         var icon = new SymbolIcon(Enum.Parse<SymbolRegular>(section.Icon)) { FontSize = 24 };

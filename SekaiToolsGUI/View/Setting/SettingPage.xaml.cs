@@ -1,11 +1,5 @@
-using System.Collections.Specialized;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using Microsoft.Extensions.Logging;
-using SekaiToolsBase;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.Setting.Components;
 using SekaiToolsGUI.ViewModel;
@@ -18,33 +12,18 @@ namespace SekaiToolsGUI.View.Setting;
 
 public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
 {
-    private readonly ICollectionView _logView;
-
     public SettingPage() : this(MainWindowViewModel.SettingPageModel)
     {
     }
 
     internal SettingPage(SettingPageModel model)
     {
-        _logView = CollectionViewSource.GetDefaultView(InMemoryLogSink.Entries);
-        _logView.Filter = _ => true;
-
         DataContext = model;
         InitializeComponent();
-        var specialSections = new Dictionary<string, FrameworkElement> { ["logs"] = LogSection, ["about"] = AboutSection };
+        var specialSections = new Dictionary<string, FrameworkElement> { ["about"] = AboutSection };
         SettingsItems.Children.Clear();
         var builder = new SettingViewBuilder(OpenFontDialog, key => specialSections[key]);
         foreach (var section in SettingCatalog.Load()) SettingsItems.Children.Add(builder.Build(section));
-        TestErrorButton.Visibility = Debugger.IsAttached ? Visibility.Visible : Visibility.Collapsed;
-
-        BindingOperations.EnableCollectionSynchronization(InMemoryLogSink.Entries, InMemoryLogSink.Entries);
-        LogListBox.ItemsSource = _logView;
-
-        ((INotifyCollectionChanged)LogListBox.Items).CollectionChanged += (_, _) =>
-        {
-            if (LogListBox.Items.Count > 0)
-                LogListBox.ScrollIntoView(LogListBox.Items[^1]);
-        };
     }
 
     private static ISnackbarService SnackService =>
@@ -52,46 +31,7 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
 
     public SettingPageModel ViewModel => (SettingPageModel)DataContext;
 
-    private void ClearLog_Click(object sender, RoutedEventArgs e)
-    {
-        InMemoryLogSink.Clear();
-    }
-
-    private void TestErrorButton_Click(object sender, RoutedEventArgs e)
-    {
-        throw new InvalidOperationException("这是用于测试错误提示的模拟异常。");
-    }
-
-    private static bool FilterAll(object obj)
-    {
-        return true;
-    }
-
-    private static bool FilterInfoPlus(object obj)
-    {
-        return obj is LogEntry e && e.Level <= LogLevel.Information;
-    }
-
-    private static bool FilterWarnPlus(object obj)
-    {
-        return obj is LogEntry e && e.Level <= LogLevel.Warning;
-    }
-
-    private static bool FilterErrorPlus(object obj)
-    {
-        return obj is LogEntry e && e.Level <= LogLevel.Error;
-    }
-
-    private void LevelFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        _logView.Filter = LevelFilter.SelectedIndex switch
-        {
-            1 => FilterInfoPlus,
-            2 => FilterWarnPlus,
-            3 => FilterErrorPlus,
-            _ => FilterAll
-        };
-    }
+    private void OpenLogs_Click(object sender, RoutedEventArgs e) => RuntimeLogWindow.Open(Window.GetWindow(this));
 
     private async Task<string> OpenFontDialog(string currentFontFamily)
     {

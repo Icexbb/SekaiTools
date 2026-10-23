@@ -1,0 +1,43 @@
+<ui:FluentWindow x:Class="SekaiToolsGUI.View.Setting.RuntimeLogWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="运行日志" Width="1000" Height="650" MinWidth="560" MinHeight="320"
+    ExtendsContentIntoTitleBar="True" WindowCornerPreference="Round"
+    WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+    Background="{DynamicResource ApplicationBackgroundBrush}"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <ui:TitleBar Grid.Row="0" Title="运行日志" />
+        <DockPanel Grid.Row="1" Margin="12,8,12,10">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <ui:Button x:Name="TestErrorButton" Margin="0,0,8,0" Content="测试错误提示"
+                           Visibility="Collapsed" Click="TestError_Click" />
+                <ui:Button Content="清空日志" Icon="{ui:SymbolIcon Delete24}" Click="ClearLogs_Click" />
+            </StackPanel>
+            <TextBlock Text="日志等级" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <ComboBox x:Name="LevelFilter" Width="120" HorizontalAlignment="Left"
+                      AutomationProperties.Name="日志等级" SelectedIndex="0" SelectionChanged="LevelFilter_SelectionChanged">
+                <ComboBoxItem Content="全部" />
+                <ComboBoxItem Content="INFO+" />
+                <ComboBoxItem Content="WARN+" />
+                <ComboBoxItem Content="ERROR+" />
+            </ComboBox>
+        </DockPanel>
+        <ListBox x:Name="LogListBox" Grid.Row="2" Margin="12,0,12,12" BorderThickness="0" FontFamily="Consolas" FontSize="12"
+                 Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                 Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                 HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling"
+                 AutomationProperties.Name="运行日志列表">
+            <ListBox.ItemTemplate>
+                <DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" /></DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</ui:FluentWindow>
