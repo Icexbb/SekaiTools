@@ -330,6 +330,23 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         UpdateTaskListState();
     }
 
+    private void OpenDownloadFolder_OnClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var directory = Path.GetFullPath(Path.Combine(
+                SekaiToolsInfrastructure.Resources.ResourceManager.DataBaseDir, "Scripts"));
+            Directory.CreateDirectory(directory);
+            Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true });
+        }
+        catch (Exception exception)
+        {
+            Log.Logger.LogError(exception, "Open download folder failed");
+            SnackService.Show("打开下载文件夹失败", exception.Message, ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.FolderOpen24), TimeSpan.FromSeconds(5));
+        }
+    }
+
     private async void ButtonClearCache_OnClick(object sender, RoutedEventArgs e)
     {
         if (!BoxSource.IsEnabled || !ClearCacheButton.IsEnabled) return;
