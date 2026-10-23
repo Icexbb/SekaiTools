@@ -65,16 +65,16 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
             if (!_checkedSavedProgress)
             {
                 _checkedSavedProgress = true;
-                var saved = EnumerateSavedProgress().Where(item => MaterialsExist(item.State)).ToList();
+                var saved = SubtitleRecoveryStore.TakeOnce().Where(item => MaterialsExist(item.State)).ToList();
                 if (saved.Count > 0)
                 {
                     ViewModel.IsDialogOpen = true;
                     var result = await DialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
                     {
                         Title = "恢复未完成任务",
-                        Content = $"检测到 {saved.Count} 个未完成的字幕任务，是否加入队列继续处理？",
+                        Content = $"检测到 {saved.Count} 个未完成的字幕任务，是否加入队列继续处理？\n仅提供本次恢复机会。关闭此提示将放弃恢复；恢复后的任务关闭后也不再保留恢复记录。",
                         PrimaryButtonText = "加入队列",
-                        CloseButtonText = "暂不恢复"
+                        CloseButtonText = "放弃恢复"
                     }, CancellationToken.None);
                     ViewModel.IsDialogOpen = false;
                     if (result == ContentDialogResult.Primary && !_closing)
@@ -310,11 +310,6 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
 
     private static bool MaterialsExist(ProcessingState state) => File.Exists(state.VideoFilePath) &&
         File.Exists(state.ScriptFilePath) && File.Exists(state.TranslateFilePath);
-
-    private static IEnumerable<(string SaveKey, ProcessingState State)> EnumerateSavedProgress() =>
-        SubtitleQueueProgressStore.EnumerateProgressFiles().Concat(ProgressStore.EnumerateProgressFiles()
-            .Where(entry => !SubtitleQueueProgressStore.HasSavedState(entry.SaveKey)))
-            .DistinctBy(entry => entry.SaveKey);
 
     private static bool SameMaterials(SubtitlePageModel left, SubtitlePageModel right) =>
         string.Equals(left.VideoFilePath, right.VideoFilePath, StringComparison.OrdinalIgnoreCase) &&

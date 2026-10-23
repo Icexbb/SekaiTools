@@ -2,6 +2,7 @@ using System.ComponentModel;
 using SekaiToolsCore;
 using SekaiToolsCore.Process;
 using SekaiToolsGUI.View.Subtitle.Components;
+using SekaiToolsInfrastructure.Persistence;
 
 namespace SekaiToolsGUI.ViewModel.Subtitle;
 
@@ -21,7 +22,9 @@ public sealed class SubtitleQueueTaskModel : ViewModelBase
     public SubtitlePageModel State { get; }
     public bool IsHistory { get; }
     public ProcessingState? SavedState { get; }
-    public SubtitleTask Control => _control ??= new SubtitleTask(State);
+    public SubtitleTask Control => _control ??= SavedState != null && !IsHistory
+        ? new SubtitleTask(State, new RecoveredTaskPersistence(SubtitleQueueProcessingStatePersistence.Instance))
+        : new SubtitleTask(State);
     internal SubtitleTask? CreatedControl => _control;
     public string VideoName => State.VideoFileName;
     public string Status => IsHistory ? $"历史 · {State.RunningStatus}" : State.RunningStatus;
