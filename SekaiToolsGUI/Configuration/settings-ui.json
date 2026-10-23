@@ -1,0 +1,314 @@
+[
+  {
+    "title": "主题",
+    "icon": "Color24",
+    "description": "选择应用配色主题",
+    "fields": [
+      {
+        "kind": "choice",
+        "property": "CurrentApplicationTheme",
+        "width": 200.0,
+        "options": [
+          "亮色",
+          "暗色",
+          "高对比度"
+        ]
+      }
+    ]
+  },
+  {
+    "title": "代理",
+    "icon": "Earth24",
+    "description": "下载剧本时所用的代理",
+    "fields": [
+      {
+        "kind": "choice",
+        "property": "ProxyType",
+        "options": [
+          "不使用",
+          "http://",
+          "sock5://"
+        ]
+      },
+      {
+        "kind": "text",
+        "property": "ProxyHost",
+        "width": 150.0,
+        "visibilityProperty": "ProxyChangeable"
+      },
+      {
+        "kind": "number",
+        "property": "ProxyPort",
+        "width": 150.0,
+        "minimum": 0.0,
+        "maximum": 65536.0,
+        "visibilityProperty": "ProxyChangeable"
+      }
+    ]
+  },
+  {
+    "title": "打字机设置",
+    "icon": "TextContinuous24",
+    "description": "设置打字机的渐变时间参数",
+    "fields": [
+      {
+        "kind": "number",
+        "property": "TypewriterCharTime",
+        "width": 120.0,
+        "minimum": 0.0,
+        "smallChange": 1.0,
+        "largeChange": 10.0
+      },
+      {
+        "kind": "number",
+        "property": "TypewriterFadeTime",
+        "width": 120.0,
+        "minimum": 0.0,
+        "smallChange": 1.0,
+        "largeChange": 10.0
+      }
+    ]
+  },
+  {
+    "title": "字体自定义",
+    "icon": "TextFont24",
+    "description": "选择字幕样式所用的字体",
+    "children": [
+      {
+        "title": "对话字体",
+        "icon": "TextDescription24",
+        "fields": [
+          {
+            "kind": "font",
+            "property": "DialogFontFamily",
+            "width": 150.0
+          }
+        ]
+      },
+      {
+        "title": "横幅字体",
+        "icon": "Location24",
+        "fields": [
+          {
+            "kind": "font",
+            "property": "BannerFontFamily",
+            "width": 150.0
+          }
+        ]
+      },
+      {
+        "title": "地点角标字体",
+        "icon": "Bookmark24",
+        "fields": [
+          {
+            "kind": "font",
+            "property": "MarkerFontFamily",
+            "width": 150.0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "输出注释",
+    "icon": "CommentNote24",
+    "description": "选择字幕输出的类别",
+    "children": [
+      {
+        "title": "对话",
+        "icon": "TextDescription24",
+        "fields": [
+          {
+            "kind": "toggle",
+            "property": "ExportLine1",
+            "label": "一行"
+          },
+          {
+            "kind": "toggle",
+            "property": "ExportLine2",
+            "label": "二行"
+          },
+          {
+            "kind": "toggle",
+            "property": "ExportLine3",
+            "label": "三行"
+          },
+          {
+            "kind": "toggle",
+            "property": "ExportCharacter",
+            "label": "姓名"
+          }
+        ],
+        "columns": 2
+      },
+      {
+        "title": "横幅",
+        "icon": "Location24",
+        "fields": [
+          {
+            "kind": "toggle",
+            "property": "ExportBannerMask",
+            "label": "遮罩"
+          },
+          {
+            "kind": "toggle",
+            "property": "ExportBannerText",
+            "label": "内容"
+          }
+        ]
+      },
+      {
+        "title": "地点角标",
+        "icon": "Bookmark24",
+        "fields": [
+          {
+            "kind": "toggle",
+            "property": "ExportMarkerMask",
+            "label": "遮罩"
+          },
+          {
+            "kind": "toggle",
+            "property": "ExportMarkerText",
+            "label": "内容"
+          }
+        ]
+      },
+      {
+        "title": "其他注释",
+        "icon": "Comment24",
+        "fields": [
+          {
+            "kind": "toggle",
+            "property": "ExportScreenComment",
+            "label": "注释"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "custom": "logs"
+  },
+  {
+    "title": "视频识别性能",
+    "icon": "Memory16",
+    "description": "内存充足时提前解码；新任务生效",
+    "fields": [
+      {
+        "kind": "choice",
+        "property": "RecognitionPerformanceMode",
+        "width": 160.0,
+        "options": [
+          "节省内存",
+          "自动",
+          "高性能"
+        ]
+      }
+    ]
+  },
+  {
+    "title": "高性能缓存预算（MiB）",
+    "icon": "DataUsageSettings20",
+    "description": "128–4096；按可用内存和视频分辨率限制实际分配",
+    "fields": [
+      {
+        "kind": "number",
+        "property": "RecognitionMemoryBudgetMiB",
+        "width": 160.0,
+        "minimum": 128.0,
+        "maximum": 4096.0,
+        "smallChange": 128.0,
+        "largeChange": 512.0
+      }
+    ]
+  },
+  {
+    "title": "语句预览播放方式",
+    "icon": "Play24",
+    "description": "WPF 播放器在预览区域统一播放声音和画面，无需安装 FFmpeg。\n自动选择优先使用 WPF，系统解码失败时回退到 OpenCV + NAudio。",
+    "fields": [
+      {
+        "kind": "choice",
+        "property": "PreviewPlaybackBackend",
+        "width": 200.0,
+        "options": [
+          "自动选择",
+          "OpenCV + NAudio",
+          "WPF 内嵌播放"
+        ]
+      }
+    ]
+  },
+  {
+    "title": "实验性功能",
+    "icon": "Beaker24",
+    "description": "展开查看实验性功能设置",
+    "children": [
+      {
+        "title": "识别计算线程",
+        "icon": "Settings24",
+        "description": "较少线程可能提高吞吐量；重启应用后生效",
+        "fields": [
+          {
+            "kind": "choice",
+            "property": "RecognitionThreadChoice",
+            "width": 140.0,
+            "options": [
+              "自动",
+              "4 线程",
+              "8 线程",
+              "16 线程"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "预读帧数上限",
+        "icon": "Memory16",
+        "description": "减少帧缓存内存；仍受性能模式和内存预算限制，新任务生效",
+        "fields": [
+          {
+            "kind": "choice",
+            "property": "RecognitionFrameBufferChoice",
+            "width": 140.0,
+            "options": [
+              "自动",
+              "4 帧",
+              "8 帧",
+              "16 帧"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "后台灰度预处理",
+        "icon": "Beaker24",
+        "description": "增加帧缓存内存；部分视频可能受益，新任务生效",
+        "fields": [
+          {
+            "kind": "check",
+            "property": "RecognitionPrepareGray",
+            "label": "启用"
+          }
+        ]
+      },
+      {
+        "title": "周期彩色读取",
+        "icon": "Beaker24",
+        "description": "保留彩色预览并降低帧缓存占用；仅支持已验证的实验运行库，新任务生效",
+        "fields": [
+          {
+            "kind": "check",
+            "property": "RecognitionPeriodicColor",
+            "label": "启用",
+            "enabledProperty": "IsPeriodicColorAvailable"
+          }
+        ],
+        "statusProperty": "PeriodicColorAvailabilityReason"
+      }
+    ]
+  },
+  {
+    "custom": "about"
+  }
+]

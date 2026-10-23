@@ -31,6 +31,10 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
 
         DataContext = model;
         InitializeComponent();
+        var specialSections = new Dictionary<string, FrameworkElement> { ["logs"] = LogSection, ["about"] = AboutSection };
+        SettingsItems.Children.Clear();
+        var builder = new SettingViewBuilder(OpenFontDialog, key => specialSections[key]);
+        foreach (var section in SettingCatalog.Load()) SettingsItems.Children.Add(builder.Build(section));
         TestErrorButton.Visibility = Debugger.IsAttached ? Visibility.Visible : Visibility.Collapsed;
 
         BindingOperations.EnableCollectionSynchronization(InMemoryLogSink.Entries, InMemoryLogSink.Entries);
@@ -89,24 +93,6 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
         };
     }
 
-    private async void ChooseDialogFont(object sender, RoutedEventArgs e)
-    {
-        var font = await OpenFontDialog(ViewModel.DialogFontFamily);
-        if (font != "") ViewModel.DialogFontFamily = font;
-    }
-
-    private async void ChooseBannerFont(object sender, RoutedEventArgs e)
-    {
-        var font = await OpenFontDialog(ViewModel.BannerFontFamily);
-        if (font != "") ViewModel.BannerFontFamily = font;
-    }
-
-    private async void ChooseMarkerFont(object sender, RoutedEventArgs e)
-    {
-        var font = await OpenFontDialog(ViewModel.MarkerFontFamily);
-        if (font != "") ViewModel.MarkerFontFamily = font;
-    }
-
     private async Task<string> OpenFontDialog(string currentFontFamily)
     {
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
@@ -114,11 +100,6 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
         var token = CancellationToken.None;
         var dialogResult = await dialogService.ShowAsync(dialog, token);
         return dialogResult != ContentDialogResult.Primary ? "" : dialog.FontName;
-    }
-
-    private void ProxyPort_ValueChanged(object sender, RoutedEventArgs e)
-    {
-        if (sender is NumberBox numberBox) numberBox.GetBindingExpression(NumberBox.ValueProperty)?.UpdateSource();
     }
 
     private async void ResetToDefault_Click(object sender, RoutedEventArgs e)

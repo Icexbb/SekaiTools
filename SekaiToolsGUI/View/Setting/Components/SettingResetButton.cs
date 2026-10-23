@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using Wpf.Ui.Controls;
 using SekaiToolsGUI.ViewModel.Setting;
 
@@ -21,13 +23,20 @@ public sealed class SettingResetButton : Wpf.Ui.Controls.Button
     private SettingPageModel? _model;
     public SettingResetButton()
     {
-        SetResourceReference(StyleProperty, typeof(Wpf.Ui.Controls.Button));
-        Appearance = ControlAppearance.Transparent;
-        Icon = new SymbolIcon(SymbolRegular.ArrowUndo24) { FontSize = 16 };
+        // A content-only template keeps theme button chrome out of this inline action.
+        var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+        presenter.SetValue(HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        presenter.SetValue(VerticalAlignmentProperty, VerticalAlignment.Center);
+        Template = new ControlTemplate(typeof(SettingResetButton)) { VisualTree = presenter };
+        var icon = new SymbolIcon(SymbolRegular.ArrowUndo24) { FontSize = 16 };
+        icon.SetResourceReference(ForegroundProperty, "AccentTextFillColorPrimaryBrush");
+        Content = icon;
+        Cursor = Cursors.Hand;
         Width = 24;
         Height = 24;
-        Padding = new Thickness(4);
-        Margin = new Thickness(6, 0, 0, 0);
+        Padding = new Thickness(0);
+        BorderThickness = new Thickness(0);
+        Margin = new Thickness(8, 0, 0, 0);
         VerticalAlignment = VerticalAlignment.Center;
         Visibility = Visibility.Collapsed;
         ToolTip = "还原此项默认设置";

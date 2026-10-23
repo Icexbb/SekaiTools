@@ -29,6 +29,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Update="Configuration\settings-ui.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+        <EmbeddedResource Include="Configuration\settings-ui.json" LogicalName="SekaiToolsGUI.settings-ui.json" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\SekaiDataFetch\SekaiDataFetch.csproj"/>
         <ProjectReference Include="..\SekaiToolsCore\SekaiToolsCore.csproj"/>
         <ProjectReference Include="..\SekaiToolsInfrastructure\SekaiToolsInfrastructure.csproj"/>

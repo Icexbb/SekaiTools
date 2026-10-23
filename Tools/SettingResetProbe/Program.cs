@@ -54,6 +54,17 @@ internal static class Program
         }
         model.TypewriterCharTime = 90;
         Pump();
+        var undo = buttons.Single(button => button.Properties.Contains("TypewriterCharTime"));
+        Require(undo.BorderThickness == new Thickness(0) && undo.Margin.Left == 8, "Inline reset chrome/spacing incorrect");
+        Require(undo.Content is SymbolIcon { Symbol: SymbolRegular.ArrowUndo24 }, "Wrong undo icon");
+        Require(Nodes(undo).All(node => node is not Border), "Inline undo still contains a border");
+        VerifyConfigurationChanges(constructor, output);
+        Wpf.Ui.Appearance.ApplicationThemeManager.Apply(Wpf.Ui.Appearance.ApplicationTheme.Dark);
+        Pump();
+        Require(((SymbolIcon)undo.Content).Foreground == app.FindResource("AccentTextFillColorPrimaryBrush"), "Undo does not follow dark accent resource");
+        Wpf.Ui.Appearance.ApplicationThemeManager.Apply(Wpf.Ui.Appearance.ApplicationTheme.Light);
+        Pump();
+        Require(((SymbolIcon)undo.Content).Foreground == app.FindResource("AccentTextFillColorPrimaryBrush"), "Undo does not follow light accent resource");
         var animationFrame = new DispatcherFrame();
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
         timer.Tick += (_, _) => { timer.Stop(); animationFrame.Continue = false; };
@@ -64,6 +75,47 @@ internal static class Program
         using (var file = File.Create(Path.Combine(output,"settings.png"))) encoder.Save(file);
         Console.WriteLine($"PASS: {buttons.Length} cards, visibility, grouped reset, isolation, persistence; periodic available={model.IsPeriodicColorAvailable}");
         window.Close();app.Shutdown();
+    }
+
+    private static void VerifyConfigurationChanges(ConstructorInfo constructor, string output)
+    {
+        const string custom = """
+        [{"title":"配置生成的分组","icon":"Settings24","children":[
+          {"title":"配置生成的选项","icon":"Play24","fields":[
+            {"kind":"choice","property":"PreviewPlaybackBackend","options":["自定义 A","自定义 B","自定义 C"],"width":310}]},
+          {"title":"配置生成的数值","icon":"Memory16","fields":[
+            {"kind":"number","property":"RecognitionMemoryBudgetMiB","minimum":128,"maximum":4096,"smallChange":128,"width":180}]}]}]
+        """;
+        var section = SettingCatalog.Parse(custom).Single();
+        Require(section.Properties.Order().SequenceEqual(new[] { "PreviewPlaybackBackend", "RecognitionMemoryBudgetMiB" }.Order()), "Derived reset group incorrect");
+        var built = new SettingViewBuilder(_ => Task.FromResult(""), _ => throw new InvalidOperationException()).Build(section);
+        var variantPath = Path.Combine(output,"config-variant.json");
+        File.Delete(variantPath);
+        var model = (SettingPageModel)constructor.Invoke([variantPath]);
+        built.DataContext = model;
+        var expander = (CardExpander)built;
+        Require(!expander.IsExpanded, "Groups must default collapsed");
+        expander.IsExpanded = true;
+        var window = new Window { Content = built, Width = 900, Height = 400, Left = -15000, Top = -15000, ShowActivated = false, ShowInTaskbar = false };
+        window.Show(); Pump();
+        var combo = Nodes(built).OfType<ComboBox>().Single();
+        Require(combo.Width == 310 && ((ComboBoxItem)combo.Items[1]).Content.Equals("自定义 B"), "Config did not update UI options/width");
+        combo.SetCurrentValue(System.Windows.Controls.Primitives.Selector.SelectedIndexProperty, 2);
+        Pump(); Require(model.PreviewPlaybackBackend == 2, "Config editor did not update model");
+        var number = Nodes(built).OfType<NumberBox>().Single();
+        Require(number.Minimum == 128 && number.Maximum == 4096 && number.SmallChange == 128, "Config numeric bounds ignored");
+        foreach (var invalid in new[]
+        {
+            custom.Replace("PreviewPlaybackBackend", "MissingProperty"),
+            custom.Replace("\"kind\":\"choice\"", "\"kind\":\"unknown\""),
+            custom.Replace("\"icon\":\"Settings24\"", "\"icon\":\"MissingIcon\""),
+            custom.Replace("\"maximum\":4096", "\"maximum\":1024")
+        })
+        {
+            try { SettingCatalog.Parse(invalid); throw new Exception("Invalid config accepted"); }
+            catch (InvalidDataException) { }
+        }
+        window.Close();
     }
     private static void Pump() => Dispatcher.CurrentDispatcher.Invoke(() => {}, DispatcherPriority.ApplicationIdle);
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
