@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
+using System.Windows.Media;
 using SekaiDataFetch.Item;
 using SekaiDataFetch.Source;
 
@@ -46,10 +47,26 @@ public partial class EventStoryEvent
             ? Visibility.Visible
             : Visibility.Collapsed;
         TextBlockTitle.Text = $"{EventStorySet.GameEvent.Name}";
+        AddAllButton.IsEnabled = EventStorySet.EventStory.EventStoryEpisodes.Length > 0;
 
         RefreshBannerIcons();
 
         InitDownloadItems();
+    }
+
+    private void AddAll_OnClick(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (EventStorySet is not { } story) return;
+        DependencyObject? parent = this;
+        while (parent != null && parent is not DownloadPage)
+            parent = VisualTreeHelper.GetParent(parent);
+        if (parent is not DownloadPage page) return;
+        var source = page.GetSourceType();
+        SourceList.Instance.SourceData = source;
+        page.AddTasks(story.EventStory.EventStoryEpisodes.Select(episode =>
+            ($"{source.SourceName}|EventStory|{story.Index}-{story.GameEvent.Name}|{episode.EpisodeNo}-{episode.Title}",
+                SourceList.Instance.EventStory(episode.ScenarioId, story.EventStory.AssetBundleName))));
     }
 
     private void RefreshBannerIcons()
