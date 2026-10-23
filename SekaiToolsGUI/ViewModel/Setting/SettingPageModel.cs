@@ -347,6 +347,7 @@ partial class SettingPageModel
         _suspendSaving = true;
         try
         {
+            CurrentApplicationTheme = Model.Setting.Default.CurrentApplicationTheme;
             ProxyType = Model.Setting.Default.ProxyType;
             ProxyHost = Model.Setting.Default.ProxyHost;
             ProxyPort = Model.Setting.Default.ProxyPort;

@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:configuration="clr-namespace:SekaiToolsConfiguration;assembly=SekaiToolsConfiguration"
+             xmlns:components="clr-namespace:SekaiToolsGUI.View.Setting.Components"
              xmlns:setting="clr-namespace:SekaiToolsGUI.ViewModel.Setting"
              xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
              d:DataContext="{d:DesignInstance setting:SettingPageModel, IsDesignTimeCreatable=True}"
@@ -24,10 +25,10 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <ui:TextBlock
-                                Grid.Row="0"
-                                FontTypography="Body"
-                                Text="主题" />
+                            <StackPanel Orientation="Horizontal" Grid.Row="0">
+                                <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="主题" />
+                                <components:SettingResetButton Properties="CurrentApplicationTheme" />
+                            </StackPanel>
                             <ui:TextBlock
                                 Grid.Row="1"
                                 Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
@@ -50,10 +51,10 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <ui:TextBlock
-                                Grid.Row="0"
-                                FontTypography="Body"
-                                Text="代理" />
+                            <StackPanel Orientation="Horizontal" Grid.Row="0">
+                                <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="代理" />
+                                <components:SettingResetButton Properties="ProxyType,ProxyHost,ProxyPort" />
+                            </StackPanel>
                             <ui:TextBlock
                                 Grid.Row="1"
                                 Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
@@ -69,7 +70,7 @@
                             </ComboBox>
                             <ui:TextBox Width="150" Margin="5,0"
                                         Visibility="{Binding ProxyChangeable}"
-                                        Text="{Binding ProxyHost,Mode=TwoWay}"
+                                        Text="{Binding ProxyHost,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
                                         ClearButtonEnabled="False" AcceptsReturn="False" AcceptsTab="False" />
                             <ui:NumberBox Width="150" Maximum="65536" Minimum="0"
                                           Visibility="{Binding ProxyChangeable}"
@@ -86,19 +87,22 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="打字机设置" />
+                            <StackPanel Orientation="Horizontal" Grid.Row="0">
+                                <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="打字机设置" />
+                                <components:SettingResetButton Properties="TypewriterFadeTime,TypewriterCharTime" />
+                            </StackPanel>
                             <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                           Text="设置打字机的渐变时间参数" />
                         </Grid>
                     </ui:CardControl.Header>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <ui:NumberBox Width="120" Margin="5,0"
-                                      Maximum="{Binding TypewriterFadeTime}" Minimum="0"
+                                      Minimum="0"
                                       SmallChange="1" LargeChange="10"
                                       Value="{Binding TypewriterCharTime,Mode=TwoWay}"
                                       ClearButtonEnabled="False" />
                         <ui:NumberBox Width="120"
-                                      Minimum="{Binding TypewriterCharTime,Mode=TwoWay}"
+                                      Minimum="0"
                                       SmallChange="1" LargeChange="10"
                                       Value="{Binding TypewriterFadeTime,Mode=TwoWay}"
                                       ClearButtonEnabled="False" />
@@ -111,7 +115,10 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="字体自定义" />
+                            <StackPanel Orientation="Horizontal" Grid.Row="0">
+                                <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="字体自定义" />
+                                <components:SettingResetButton Properties="DialogFontFamily,BannerFontFamily,MarkerFontFamily" />
+                            </StackPanel>
                             <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                           Text="选择字幕样式所用的字体" />
                         </Grid>
@@ -121,36 +128,45 @@
                         <StackPanel Orientation="Vertical">
                             <ui:CardControl Icon="{ui:SymbolIcon TextDescription24}">
                                 <ui:CardControl.Header>
-                                    <ui:TextBlock FontTypography="Body" Text="对话字体" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="对话字体" />
+                                        <components:SettingResetButton Properties="DialogFontFamily" />
+                                    </StackPanel>
                                 </ui:CardControl.Header>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                     <ui:TextBox Width="150" Margin="5,0"
                                                 AcceptsReturn="False" AcceptsTab="False" TextWrapping="NoWrap"
-                                                Text="{Binding  DialogFontFamily,Mode=TwoWay}"
+                                                Text="{Binding DialogFontFamily,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
                                                 ClearButtonEnabled="False" />
                                     <ui:Button Content="选择" Click="ChooseDialogFont" />
                                 </StackPanel>
                             </ui:CardControl>
                             <ui:CardControl Icon="{ui:SymbolIcon Location24}">
                                 <ui:CardControl.Header>
-                                    <ui:TextBlock FontTypography="Body" Text="横幅字体" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="横幅字体" />
+                                        <components:SettingResetButton Properties="BannerFontFamily" />
+                                    </StackPanel>
                                 </ui:CardControl.Header>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                     <ui:TextBox Width="150" Margin="5,0"
                                                 AcceptsReturn="False" AcceptsTab="False" TextWrapping="NoWrap"
-                                                Text="{Binding  BannerFontFamily,Mode=TwoWay}"
+                                                Text="{Binding BannerFontFamily,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
                                                 ClearButtonEnabled="False" />
                                     <ui:Button Content="选择" Click="ChooseBannerFont" />
                                 </StackPanel>
                             </ui:CardControl>
                             <ui:CardControl Icon="{ui:SymbolIcon Bookmark24}">
                                 <ui:CardControl.Header>
-                                    <ui:TextBlock FontTypography="Body" Text="地点角标字体" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="地点角标字体" />
+                                        <components:SettingResetButton Properties="MarkerFontFamily" />
+                                    </StackPanel>
                                 </ui:CardControl.Header>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                     <ui:TextBox Width="150" Margin="5,0"
                                                 AcceptsReturn="False" AcceptsTab="False" TextWrapping="NoWrap"
-                                                Text="{Binding  MarkerFontFamily,Mode=TwoWay}"
+                                                Text="{Binding MarkerFontFamily,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
                                                 ClearButtonEnabled="False" />
                                     <ui:Button Content="选择" Click="ChooseMarkerFont" />
                                 </StackPanel>
@@ -167,7 +183,10 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <ui:TextBlock Grid.Row="0" FontTypography="Body" Text="输出注释" />
+                            <StackPanel Orientation="Horizontal" Grid.Row="0">
+                                <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="输出注释" />
+                                <components:SettingResetButton Properties="ExportLine1,ExportLine2,ExportLine3,ExportCharacter,ExportBannerMask,ExportBannerText,ExportMarkerMask,ExportMarkerText,ExportScreenComment" />
+                            </StackPanel>
                             <ui:TextBlock Grid.Row="1" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                           Text="选择字幕输出的类别" />
                         </Grid>
@@ -181,7 +200,10 @@
                         </StackPanel.Resources>
                         <ui:CardControl Icon="{ui:SymbolIcon TextDescription24}">
                             <ui:CardControl.Header>
-                                <ui:TextBlock FontTypography="Body" Text="对话" />
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="对话" />
+                                    <components:SettingResetButton Properties="ExportLine1,ExportLine2,ExportLine3,ExportCharacter" />
+                                </StackPanel>
                             </ui:CardControl.Header>
                             <StackPanel Orientation="Vertical" HorizontalAlignment="Right">
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
@@ -205,7 +227,10 @@
                         </ui:CardControl>
                         <ui:CardControl Icon="{ui:SymbolIcon Location24}">
                             <ui:CardControl.Header>
-                                <ui:TextBlock FontTypography="Body" Text="横幅" />
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="横幅" />
+                                    <components:SettingResetButton Properties="ExportBannerMask,ExportBannerText" />
+                                </StackPanel>
                             </ui:CardControl.Header>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <StackPanel Orientation="Horizontal" Margin="5,0">
@@ -220,7 +245,10 @@
                         </ui:CardControl>
                         <ui:CardControl Icon="{ui:SymbolIcon Bookmark24}">
                             <ui:CardControl.Header>
-                                <ui:TextBlock FontTypography="Body" Text="地点角标" />
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="地点角标" />
+                                    <components:SettingResetButton Properties="ExportMarkerMask,ExportMarkerText" />
+                                </StackPanel>
                             </ui:CardControl.Header>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <StackPanel Orientation="Horizontal" Margin="5,0">
@@ -235,7 +263,10 @@
                         </ui:CardControl>
                         <ui:CardControl Icon="{ui:SymbolIcon Comment24}">
                             <ui:CardControl.Header>
-                                <ui:TextBlock FontTypography="Body" Text="其他注释" />
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="其他注释" />
+                                    <components:SettingResetButton Properties="ExportScreenComment" />
+                                </StackPanel>
                             </ui:CardControl.Header>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="5,0">
                                 <ui:TextBlock Text="注释" />
@@ -297,7 +328,10 @@
                 <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Memory16}">
                     <ui:CardControl.Header>
                         <StackPanel>
-                            <ui:TextBlock FontTypography="Body" Text="视频识别性能" />
+                            <StackPanel Orientation="Horizontal">
+                                <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="视频识别性能" />
+                                <components:SettingResetButton Properties="RecognitionPerformanceMode" />
+                            </StackPanel>
                             <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                           Text="内存充足时提前解码；新任务生效" />
                         </StackPanel>
@@ -311,7 +345,10 @@
                 <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon DataUsageSettings20}">
                     <ui:CardControl.Header>
                         <StackPanel>
-                            <ui:TextBlock FontTypography="Body" Text="高性能缓存预算（MiB）" />
+                            <StackPanel Orientation="Horizontal">
+                                <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="高性能缓存预算（MiB）" />
+                                <components:SettingResetButton Properties="RecognitionMemoryBudgetMiB" />
+                            </StackPanel>
                             <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                           Text="128–4096；按可用内存和视频分辨率限制实际分配" />
                         </StackPanel>
@@ -323,7 +360,10 @@
                 <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Play24}">
                     <ui:CardControl.Header>
                         <StackPanel>
-                            <ui:TextBlock FontTypography="Body" Text="语句预览播放方式" />
+                            <StackPanel Orientation="Horizontal">
+                                <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="语句预览播放方式" />
+                                <components:SettingResetButton Properties="PreviewPlaybackBackend" />
+                            </StackPanel>
                             <ui:TextBlock TextAlignment="Left" TextWrapping="WrapWithOverflow"
                                           Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}">
                                     WPF 播放器在预览区域统一播放声音和画面，无需安装 FFmpeg。
@@ -341,7 +381,10 @@
                 <ui:CardExpander Margin="0,0,0,8" Icon="{ui:SymbolIcon Beaker24}" IsExpanded="False" ContentPadding="0">
                     <ui:CardExpander.Header>
                         <StackPanel>
-                            <ui:TextBlock FontTypography="Body" Text="实验性功能" />
+                            <StackPanel Orientation="Horizontal">
+                                <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="实验性功能" />
+                                <components:SettingResetButton Properties="RecognitionThreadChoice,RecognitionFrameBufferChoice,RecognitionPrepareGray,RecognitionPeriodicColor" />
+                            </StackPanel>
                             <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                           Text="展开查看实验性功能设置" />
                         </StackPanel>
@@ -350,7 +393,10 @@
                         <ui:CardControl Icon="{ui:SymbolIcon Settings24}">
                             <ui:CardControl.Header>
                                 <StackPanel>
-                                    <ui:TextBlock FontTypography="Body" Text="识别计算线程" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="识别计算线程" />
+                                        <components:SettingResetButton Properties="RecognitionThreadChoice" />
+                                    </StackPanel>
                                     <ui:TextBlock TextWrapping="Wrap"
                                                   Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                                   Text="较少线程可能提高吞吐量；重启应用后生效" />
@@ -366,7 +412,10 @@
                         <ui:CardControl Icon="{ui:SymbolIcon Memory16}">
                             <ui:CardControl.Header>
                                 <StackPanel>
-                                    <ui:TextBlock FontTypography="Body" Text="预读帧数上限" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="预读帧数上限" />
+                                        <components:SettingResetButton Properties="RecognitionFrameBufferChoice" />
+                                    </StackPanel>
                                     <ui:TextBlock TextWrapping="Wrap"
                                                   Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                                   Text="减少帧缓存内存；仍受性能模式和内存预算限制，新任务生效" />
@@ -382,7 +431,10 @@
                         <ui:CardControl>
                             <ui:CardControl.Header>
                                 <StackPanel>
-                                    <ui:TextBlock FontTypography="Body" Text="后台灰度预处理" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="后台灰度预处理" />
+                                        <components:SettingResetButton Properties="RecognitionPrepareGray" />
+                                    </StackPanel>
                                     <ui:TextBlock TextWrapping="Wrap"
                                                   Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                                   Text="增加帧缓存内存；部分视频可能受益，新任务生效" />
@@ -393,7 +445,10 @@
                         <ui:CardControl Icon="{ui:SymbolIcon Beaker24}">
                             <ui:CardControl.Header>
                                 <StackPanel>
-                                    <ui:TextBlock FontTypography="Body" Text="周期彩色读取" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:TextBlock FontTypography="Body" VerticalAlignment="Center" Text="周期彩色读取" />
+                                        <components:SettingResetButton Properties="RecognitionPeriodicColor" />
+                                    </StackPanel>
                                     <ui:TextBlock TextWrapping="Wrap"
                                                   Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                                   Text="保留彩色预览并降低帧缓存占用；仅支持已验证的实验运行库，新任务生效" />
