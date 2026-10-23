@@ -22,6 +22,14 @@
     </ui:ContentDialog.Resources>
     <ui:ContentDialog.Content>
         <StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <ui:SymbolIcon Symbol="Document24" Margin="0,0,8,0" />
+                <TextBlock Text="导出格式" VerticalAlignment="Center" />
+            </StackPanel>
+            <ComboBox x:Name="FormatSelector" SelectedIndex="0" Margin="0,0,0,12">
+                <ComboBoxItem Content="TXT v2（按剧本标识匹配，推荐）" />
+                <ComboBoxItem Content="旧 TXT（按行顺序匹配）" />
+            </ComboBox>
             <TextBlock Text="文件将保存到：" HorizontalAlignment="Left" VerticalAlignment="Center" />
             <TextBox IsReadOnly="True" Margin="5,15,5,5"
                      Text="{Binding Path=FileName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />

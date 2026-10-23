@@ -19,6 +19,7 @@ public partial class SaveFileDialog : ContentDialog
     }
 
     public SaveFileDialogModel ViewModel => (SaveFileDialogModel)DataContext;
+    public bool UseV2 => FormatSelector.SelectedIndex == 0;
     private string ScriptFile { get; }
     private string TranslationFile { get; }
 

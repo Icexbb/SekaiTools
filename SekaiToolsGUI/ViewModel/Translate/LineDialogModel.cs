@@ -13,7 +13,8 @@ public partial class LineDialogModel : LineModel
         CharacterId = dialogStoryEvent.CharacterId;
 
         Character.Original = dialogStoryEvent.CharacterOriginal;
-        Character.Translated = string.IsNullOrWhiteSpace(dialogStoryEvent.CharacterTranslated)
+        Character.PreserveEmpty = Content.PreserveEmpty = dialogStoryEvent.HasExplicitTranslation;
+        Character.Translated = !dialogStoryEvent.HasExplicitTranslation && string.IsNullOrWhiteSpace(dialogStoryEvent.CharacterTranslated)
             ? dialogStoryEvent.CharacterOriginal
             : dialogStoryEvent.CharacterTranslated;
 
@@ -109,7 +110,7 @@ public partial class LineDialogModel : LineModel
 public partial class LineDialogModel
 {
     public override string Result =>
-        $"{Character.Result}：{Content.Result.Replace("\n", "\\N")}" + (EndLine ? "\n" : "");
+        $"{Character.Result}：{Content.Result.Trim().Replace("\r\n", "\n").Replace("\n", "\\N")}" + (EndLine ? "\n" : "");
 
     private int CharacterId { get; }
 

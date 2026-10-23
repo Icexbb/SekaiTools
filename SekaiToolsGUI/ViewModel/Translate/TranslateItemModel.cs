@@ -20,5 +20,6 @@ public class TranslateItemModel : ViewModelBase
         set => SetProperty(value);
     }
 
-    public string Result => string.IsNullOrWhiteSpace(Translated) ? Original : Translated;
+    public bool PreserveEmpty { get; set; }
+    public string Result => !PreserveEmpty && string.IsNullOrWhiteSpace(Translated) ? Original : Translated;
 }

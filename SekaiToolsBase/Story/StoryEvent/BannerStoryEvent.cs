@@ -8,7 +8,7 @@ public class BannerStoryEvent(string bodyOriginal, int index, int totalIndex = -
 
     public override object Clone()
     {
-        var cloned = new BannerStoryEvent(BodyOriginal, Index, StoryIndex) { BodyTranslated = BodyTranslated };
+        var cloned = new BannerStoryEvent(BodyOriginal, Index, StoryIndex) { BodyTranslated = BodyTranslated, HasExplicitTranslation = HasExplicitTranslation };
         return cloned;
     }
 }

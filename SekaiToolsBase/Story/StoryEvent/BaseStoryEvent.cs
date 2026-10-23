@@ -13,9 +13,10 @@ public abstract class BaseStoryEvent(
 
     public readonly string Type = type;
     public string BodyTranslated = translated;
+    public bool HasExplicitTranslation { get; set; }
 
     public int EffectiveStoryIndex => StoryIndex >= 0 ? StoryIndex : Index;
-    public string FinalContent => BodyTranslated.Length > 0 ? BodyTranslated : BodyOriginal;
+    public string FinalContent => HasExplicitTranslation || BodyTranslated.Length > 0 ? BodyTranslated : BodyOriginal;
 
     public abstract object Clone();
 }

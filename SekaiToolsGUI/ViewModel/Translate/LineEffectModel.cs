@@ -8,6 +8,7 @@ public class LineEffectModel : LineModel
     public LineEffectModel(BaseStoryEvent eBaseStoryEvent)
     {
         Content.Original = eBaseStoryEvent.BodyOriginal;
+        Content.PreserveEmpty = eBaseStoryEvent.HasExplicitTranslation;
         Content.Translated = eBaseStoryEvent.BodyTranslated;
         Index = eBaseStoryEvent.Index;
 

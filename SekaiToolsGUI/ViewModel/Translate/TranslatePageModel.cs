@@ -127,6 +127,18 @@ public class TranslatePageModel : ViewModelBase
         }
     }
 
+    public string Export(bool useV2 = true)
+    {
+        if (!useV2) return Result;
+        var values = Events.Select(line => line switch
+        {
+            LineDialogModel dialog => (Translation)new DialogTranslate(dialog.Character.Result, dialog.Content.Result.Trim()),
+            LineEffectModel effect => new EffectTranslate(effect.Content.Result),
+            _ => throw new InvalidOperationException("未知翻译条目")
+        }).ToArray();
+        return TranslationFormatV2.Export(_loadedScript ?? throw new InvalidOperationException("请先载入剧本"), values);
+    }
+
     public void Clear()
     {
         Story = Story.Empty();

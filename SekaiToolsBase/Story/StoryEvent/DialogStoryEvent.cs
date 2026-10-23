@@ -18,7 +18,7 @@ public class DialogStoryEvent(
     public readonly bool Shake = shake;
     public string CharacterTranslated = "";
 
-    public string FinalCharacter => CharacterTranslated.Length > 0 && CharacterTranslated != CharacterOriginal
+    public string FinalCharacter => HasExplicitTranslation || CharacterTranslated.Length > 0 && CharacterTranslated != CharacterOriginal
         ? CharacterTranslated
         : CharacterOriginal;
 
@@ -52,6 +52,7 @@ public class DialogStoryEvent(
             Index, BodyOriginal, CharacterId, CharacterOriginal, CloseWindow, Shake, StoryIndex)
         {
             BodyTranslated = BodyTranslated,
+            HasExplicitTranslation = HasExplicitTranslation,
             CharacterTranslated = CharacterTranslated
         };
         return cloned;

@@ -74,25 +74,29 @@ public class Story
         }
 
         Events = events.ToArray();
-        if (translationData.IsEmpty()) return;
+        if (translationData.IsEmpty() && !translationData.IsV2) return;
         if (!translationData.IsApplicable(gameScript)) throw new Exception("Translation data is not applicable");
-        var translationCount = translationData.Translations.Count;
+        var translations = translationData.ForScript(gameScript);
+        var translationCount = translations.Count;
         for (var i = 0; i < Events.Length; i++)
+        {
+            Events[i].HasExplicitTranslation = translationData.IsV2;
             if (i >= translationCount)
             {
                 // Translations exhausted, leave remaining events untranslated
             }
             else if (Events[i] is not DialogStoryEvent)
             {
-                Events[i].BodyTranslated = translationData.Translations[i].Body;
+                Events[i].BodyTranslated = translations[i].Body;
             }
             else
             {
                 var dialog = (DialogStoryEvent)Events[i];
-                var dt = translationData.Translations[i] as DialogTranslate;
+                var dt = translations[i] as DialogTranslate;
                 if (dt != null)
                     dialog.SetTranslation(dt.Chara, dt.Body);
             }
+        }
     }
 
     public static Story FromFile(string gameStoryDataPath, string translationDataPath = "")

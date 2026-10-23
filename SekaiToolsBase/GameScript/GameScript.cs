@@ -14,6 +14,7 @@ public class GameScript()
             PropertyNameCaseInsensitive = true
         }) ?? throw new Exception("Json parse error");
 
+        ScenarioId = data.ScenarioId;
         TalkData = data.TalkData;
         Snippets = data.Snippets;
         SpecialEffectData = data.SpecialEffectData;
@@ -73,10 +74,15 @@ public class GameScript()
             }
 
         Snippets = sn.ToArray();
+        OriginalEffectIndices = SpecialEffectData.Select((effect, index) => (effect, index))
+            .Where(item => item.effect.EffectType is 8 or 18).Select(item => item.index).ToArray();
         SpecialEffectData = SpecialEffectData
             .Where(seData => seData.EffectType is 8 or 18).ToArray();
     }
 
+    public string ScenarioId { get; set; } = "";
+    [System.Text.Json.Serialization.JsonIgnore]
+    public int[] OriginalEffectIndices { get; set; } = [];
     public Snippet[] Snippets { get; set; } = [];
     public SpecialEffect[] SpecialEffectData { get; set; } = [];
     public Talk[] TalkData { get; set; } = [];
