@@ -223,6 +223,46 @@ public class DialogTemplateMatcher(
         return result;
     }
 
+    // Frame sets retain a name-tag-equivalent anchor so tracking, checkpoints and
+    // subtitle layout use the same coordinate convention for both dialogue kinds.
+    internal static Point ContentToDialogAnchor(Point contentPosition, int fontSize) =>
+        new(contentPosition.X + (int)(0.5f * fontSize), contentPosition.Y - fontSize);
+
+    private Point DialogMatchUnnamed(FrameMatchContext frame, DialogBaseFrameSet dialog)
+    {
+        var content = dialog.Data.BodyOriginal;
+        if (string.IsNullOrWhiteSpace(content)) return Point.Empty;
+        var font = TemplateManager.GetFontSize(frame.Size);
+        var height = videoInfo.FrameRatio > 16.0 / 9 ? frame.Size.Height * 0.237 : frame.Size.Width * 0.133;
+        var width = videoInfo.FrameRatio > 16.0 / 9 ? frame.Size.Height * 1.389 : frame.Size.Width * 0.781;
+        var region = new Rectangle((int)((frame.Size.Width - width) / 2 - font),
+            (int)(frame.Size.Height - height - font), font * 8, font * 4);
+        // Once acquired, keep searching near the actual body rather than elsewhere
+        // in the scene. Shake still gets a bounded window around its last position.
+        if (!dialog.IsEmpty())
+        {
+            var anchor = dialog.End().Point;
+            region = new Rectangle(anchor.X - font, anchor.Y, font * 6, font * 4);
+        }
+        region.Limit(new Rectangle(Point.Empty, frame.Size));
+        var templates = GetContentTemplates(content);
+        var candidates = new[] { templates.Third, templates.Second, templates.First };
+        foreach (var template in candidates.Distinct())
+        {
+            if (region.Width < template.Size.Width || region.Height < template.Size.Height) continue;
+            // A single glyph has no name-tag evidence: never relax its acquisition
+            // threshold through the generic fallback used for named dialogue.
+            var threshold = Math.Max(template == templates.First ? 0.90 : 0.85,
+                dialog.Data.Shake ? config.MatchingThreshold.DialogContentSpecial : config.MatchingThreshold.DialogContentNormal);
+            var result = TemplateMatcher.Match(frame, region, template, cachePool);
+            if (!result.IsMatch(threshold)) continue;
+            var point = ContentToDialogAnchor(new Point(region.X + result.MaxLoc.X, region.Y + result.MaxLoc.Y), font);
+            if (_nameTagPosition.IsEmpty) _nameTagPosition = point;
+            return point;
+        }
+        return Point.Empty;
+    }
+
     public int DebugSetFinishedUntilContains(string targetString, string? speaker = null)
     {
         return DebugSetFinishedUntilContains(Set, targetString, speaker);
@@ -384,7 +424,9 @@ public class DialogTemplateMatcher(
         if (lastStatus is MatchStatus.DialogDropped && dialogBase.IsEmpty())
             lastStatus = MatchStatus.DialogNotMatched;
         Point point;
-        if (dialogBase.Data.Shake || dialogBase.IsEmpty())
+        if (string.IsNullOrWhiteSpace(dialogBase.Data.CharacterOriginal))
+            point = DialogMatchUnnamed(frame, dialogBase);
+        else if (dialogBase.Data.Shake || dialogBase.IsEmpty())
             point = DialogMatchNameTag(frame, dialogBase, frameIndex);
         else
             point = dialogBase.Start().Point;

@@ -78,6 +78,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
     private int GetNameTagWidth(string name)
     {
+        if (string.IsNullOrWhiteSpace(name)) return 0;
         return templateManager.GetMatchTemplate(TemplateUsage.DialogNameTag, name).Size.Width;
     }
 
@@ -319,6 +320,8 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
             var dialogItem = SubtitleEvent.Dialog(body, startTime, endTime, styleName);
 
+            if (string.IsNullOrWhiteSpace(characterName)) return [dialogItem];
+
             var characterItemPosition =
                 dialogBaseFrameSet.Start().Point +
                 new Size(GetNameTagWidth(dialogBaseFrameSet.Data.CharacterOriginal) + 10, 0);
@@ -359,6 +362,11 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
                 else
                     dialogEvents.Add(SubtitleEvent.Dialog(body, frame.StartTime(), frame.EndTime(), styleName));
 
+                if (string.IsNullOrWhiteSpace(characterName))
+                {
+                    lastPosition = new Point(x, y);
+                    continue;
+                }
                 if (characterEvents.Count > 0 && lastPosition.X == x && lastPosition.Y == y &&
                     body == characterEvents[^1].Text)
                 {
