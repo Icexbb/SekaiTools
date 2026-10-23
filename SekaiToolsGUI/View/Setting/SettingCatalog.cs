@@ -86,7 +86,7 @@ public static class SettingCatalog
             var expected = field.Kind switch
             {
                 "choice" or "number" => typeof(int),
-                "text" or "font" => typeof(string),
+                "text" or "font" or "directory" => typeof(string),
                 "toggle" or "check" => typeof(bool),
                 _ => throw new InvalidDataException($"未知设置控件类型：{field.Kind}")
             };

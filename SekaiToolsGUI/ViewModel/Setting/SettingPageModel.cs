@@ -164,6 +164,21 @@ public partial class SettingPageModel : ViewModelBase
         set => SetProperty(value);
     }
 
+    public string DownloadDirectory
+    {
+        get => GetProperty(Model.Setting.Default.DownloadDirectory);
+        set => SetProperty(value ?? "");
+    }
+
+    public string GetDownloadDirectory()
+    {
+        var directory = string.IsNullOrWhiteSpace(DownloadDirectory)
+            ? Model.Setting.Default.DownloadDirectory : DownloadDirectory.Trim();
+        if (!Path.IsPathFullyQualified(directory))
+            throw new ArgumentException("下载文件存储目录必须是绝对路径，请在设置中重新选择。");
+        return Path.GetFullPath(directory);
+    }
+
     public int TypewriterFadeTime
     {
         get => GetProperty(50);
@@ -351,6 +366,7 @@ partial class SettingPageModel
             ProxyType = Model.Setting.Default.ProxyType;
             ProxyHost = Model.Setting.Default.ProxyHost;
             ProxyPort = Model.Setting.Default.ProxyPort;
+            DownloadDirectory = Model.Setting.Default.DownloadDirectory;
             PreviewPlaybackBackend = Model.Setting.Default.PreviewPlaybackBackend;
             RecognitionPerformanceMode = Model.Setting.Default.RecognitionPerformanceMode;
             RecognitionMemoryBudgetMiB = Model.Setting.Default.RecognitionMemoryBudgetMiB;
@@ -404,6 +420,8 @@ partial class SettingPageModel
             ProxyType = setting.ProxyType;
             ProxyHost = setting.ProxyHost;
             ProxyPort = setting.ProxyPort;
+            DownloadDirectory = string.IsNullOrWhiteSpace(setting.DownloadDirectory)
+                ? Model.Setting.Default.DownloadDirectory : setting.DownloadDirectory;
             PreviewPlaybackBackend = setting.PreviewPlaybackBackend;
             RecognitionPerformanceMode = setting.RecognitionPerformanceMode;
             RecognitionMemoryBudgetMiB = setting.RecognitionMemoryBudgetMiB;

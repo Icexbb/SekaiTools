@@ -14,7 +14,7 @@ public partial class DownloadTask : UserControl
         Url = url;
         ScriptTag = scriptTag;
         var filename = Path.GetFileName(url);
-        SavePath = Path.Combine(ResourceManager.DataBaseDir, "Scripts", filename);
+        SavePath = Path.Combine(Model.Setting.Default.DownloadDirectory, filename);
         DataContext = this;
         TaskNameTextBlock.Text = string.Join("\n", ScriptTag.Split("|"));
     }

@@ -91,6 +91,7 @@ public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Fu
                 break;
             case "text":
             case "font":
+            case "directory":
                 var text = new Wpf.Ui.Controls.TextBox
                 {
                     AcceptsReturn = false, AcceptsTab = false, TextWrapping = TextWrapping.NoWrap,
@@ -98,13 +99,20 @@ public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Fu
                 };
                 text.SetBinding(System.Windows.Controls.TextBox.TextProperty, Value(field.Property));
                 editor = text;
-                if (field.Kind == "font")
+                if (field.Kind is "font" or "directory")
                 {
                     var choose = new Wpf.Ui.Controls.Button { Content = "选择", Margin = new Thickness(5,0,0,0) };
                     choose.Click += async (_, args) =>
                     {
                         args.Handled = true;
-                        var selected = await selectFont(text.Text);
+                        string selected;
+                        if (field.Kind == "directory")
+                        {
+                            var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "选择下载文件存储目录" };
+                            if (System.IO.Directory.Exists(text.Text)) dialog.InitialDirectory = text.Text;
+                            selected = dialog.ShowDialog(Window.GetWindow(text)) == true ? dialog.FolderName : "";
+                        }
+                        else selected = await selectFont(text.Text);
                         if (!string.IsNullOrEmpty(selected)) text.SetCurrentValue(System.Windows.Controls.TextBox.TextProperty, selected);
                     };
                     var fonts = new StackPanel { Orientation = Orientation.Horizontal };
@@ -124,7 +132,7 @@ public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Fu
                 break;
             default: throw new InvalidOperationException($"未知设置控件：{field.Kind}");
         }
-        if (field.Kind != "font") editor.Width = field.Width;
+        if (field.Kind is not ("font" or "directory")) editor.Width = field.Width;
         if (field.VisibilityProperty is { } visibility) editor.SetBinding(UIElement.VisibilityProperty, new Binding(visibility));
         if (field.EnabledProperty is { } enabled) editor.SetBinding(UIElement.IsEnabledProperty, new Binding(enabled));
         System.Windows.Automation.AutomationProperties.SetName(editor, string.IsNullOrEmpty(field.Label) ? title : $"{title}：{field.Label}");

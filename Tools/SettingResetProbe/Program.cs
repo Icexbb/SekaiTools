@@ -32,7 +32,7 @@ internal static class Program
         foreach (var expander in Nodes(page).OfType<CardExpander>()) expander.IsExpanded = true;
         Pump();
         var buttons = Nodes(page).OfType<SettingResetButton>().ToArray();
-        Require(buttons.Length == 20, $"Expected 20 reset buttons, got {buttons.Length}");
+        Require(buttons.Length == 21, $"Expected 21 reset buttons, got {buttons.Length}");
         foreach (var button in buttons)
         {
             Require(button.Visibility == Visibility.Collapsed, "Default unexpectedly modified: " + button.Properties);
@@ -59,6 +59,7 @@ internal static class Program
         Require(undo.Content is SymbolIcon { Symbol: SymbolRegular.ArrowUndo24 }, "Wrong undo icon");
         Require(Nodes(undo).All(node => node is not Border), "Inline undo still contains a border");
         VerifyConfigurationChanges(constructor, output);
+        VerifyDownloadDirectory(constructor, output);
         Wpf.Ui.Appearance.ApplicationThemeManager.Apply(Wpf.Ui.Appearance.ApplicationTheme.Dark);
         Pump();
         Require(((SymbolIcon)undo.Content).Foreground == app.FindResource("AccentTextFillColorPrimaryBrush"), "Undo does not follow dark accent resource");
@@ -75,6 +76,25 @@ internal static class Program
         using (var file = File.Create(Path.Combine(output,"settings.png"))) encoder.Save(file);
         Console.WriteLine($"PASS: {buttons.Length} cards, visibility, grouped reset, isolation, persistence; periodic available={model.IsPeriodicColorAvailable}");
         window.Close();app.Shutdown();
+    }
+
+    private static void VerifyDownloadDirectory(ConstructorInfo constructor, string output)
+    {
+        var path = Path.Combine(output, "download-directory.json");
+        File.WriteAllText(path, "{}");
+        SettingPageModel Create() => (SettingPageModel)constructor.Invoke([path]);
+        var model = Create();
+        Require(model.GetDownloadDirectory() == Setting.Default.DownloadDirectory, "Legacy setting default changed");
+        var selected = Path.Combine(output, "下载文件 目录");
+        model.DownloadDirectory = selected;
+        Require(Create().GetDownloadDirectory() == selected, "Download directory did not persist");
+        model.DownloadDirectory = "";
+        Require(model.GetDownloadDirectory() == Setting.Default.DownloadDirectory, "Empty directory did not fall back");
+        model.DownloadDirectory = "relative/path";
+        try { model.GetDownloadDirectory(); throw new Exception("Relative download path accepted"); }
+        catch (ArgumentException) { }
+        model.ResetProperties([nameof(model.DownloadDirectory)]);
+        Require(Setting.Load(path).DownloadDirectory == Setting.Default.DownloadDirectory, "Download directory reset not saved");
     }
 
     private static void VerifyConfigurationChanges(ConstructorInfo constructor, string output)

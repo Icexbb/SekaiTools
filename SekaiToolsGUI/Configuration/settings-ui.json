@@ -47,6 +47,18 @@
     ]
   },
   {
+    "title": "下载文件存储目录",
+    "description": "下载开始时使用此目录；留空使用默认目录，不移动已下载文件",
+    "icon": "FolderOpen24",
+    "fields": [
+      {
+        "kind": "directory",
+        "property": "DownloadDirectory",
+        "width": 320
+      }
+    ]
+  },
+  {
     "title": "打字机设置",
     "icon": "TextContinuous24",
     "description": "设置打字机的渐变时间参数",

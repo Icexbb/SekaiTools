@@ -19,6 +19,8 @@ public struct Setting
     public int ProxyType { get; init; } = 0;
     public string ProxyHost { get; init; } = "127.0.0.1";
     public int ProxyPort { get; init; } = 1080;
+    public string DownloadDirectory { get; init; } = Path.Combine(
+        SekaiToolsInfrastructure.Resources.ResourceManager.DataBaseDir, "Scripts");
     public int PreviewPlaybackBackend { get; init; } = 0;
     public int RecognitionPerformanceMode { get; init; } = 1;
     public int RecognitionMemoryBudgetMiB { get; init; } = 2048;
@@ -78,6 +80,7 @@ public struct Setting
             ProxyType = model.ProxyType,
             ProxyHost = model.ProxyHost,
             ProxyPort = model.ProxyPort,
+            DownloadDirectory = model.DownloadDirectory,
             PreviewPlaybackBackend = model.PreviewPlaybackBackend,
             RecognitionPerformanceMode = model.RecognitionPerformanceMode,
             RecognitionMemoryBudgetMiB = model.RecognitionMemoryBudgetMiB,

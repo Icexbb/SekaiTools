@@ -18,6 +18,7 @@ using SekaiToolsGUI.View.Download.Components.Special;
 using SekaiToolsGUI.View.Download.Components.Unit;
 using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.ViewModel.Download;
+using SekaiToolsGUI.ViewModel.Setting;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Button = System.Windows.Controls.Button;
@@ -244,6 +245,14 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 
         async Task FuncDownload()
         {
+            string downloadDirectory;
+            try { downloadDirectory = SettingPageModel.Instance.GetDownloadDirectory(); }
+            catch (Exception exception)
+            {
+                SnackService.Show("下载目录无效", exception.Message, ControlAppearance.Danger,
+                    new SymbolIcon(SymbolRegular.FolderOpen24), TimeSpan.FromSeconds(5));
+                return;
+            }
             button.IsEnabled = false;
             TaskClearButton.IsEnabled = false;
             ContentCard.IsEnabled = false;
@@ -260,6 +269,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
                     downloadItem.ChangeStatus(0);
                     try
                     {
+                        downloadItem.SavePath = Path.Combine(downloadDirectory, Path.GetFileName(downloadItem.Url));
                         await Fetcher.Instance.FetchToFile(downloadItem.Url, downloadItem.SavePath);
                         downloadItem.ChangeStatus(1);
                         successCount++;
@@ -334,8 +344,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     {
         try
         {
-            var directory = Path.GetFullPath(Path.Combine(
-                SekaiToolsInfrastructure.Resources.ResourceManager.DataBaseDir, "Scripts"));
+            var directory = SettingPageModel.Instance.GetDownloadDirectory();
             Directory.CreateDirectory(directory);
             Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true });
         }
