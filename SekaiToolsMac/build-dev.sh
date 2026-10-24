@@ -6,9 +6,17 @@ if [[ "$(uname -s)" != Darwin || "$(uname -m)" != arm64 ]]; then
   exit 1
 fi
 root="$(cd "$(dirname "$0")/.." && pwd)"
+dotnet="${DOTNET_EXECUTABLE:-$(command -v dotnet || true)}"
+if [[ -z "$dotnet" && -x /usr/local/share/dotnet/dotnet ]]; then
+  dotnet=/usr/local/share/dotnet/dotnet
+fi
+if [[ -z "$dotnet" || ! -x "$dotnet" ]]; then
+  echo 'Cannot find dotnet. Set DOTNET_EXECUTABLE to the .NET 10 executable.' >&2
+  exit 1
+fi
 app="$root/artifacts/macos/SekaiTools.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Helpers"
-dotnet publish "$root/SekaiToolsHost/SekaiToolsHost.csproj" -c Release -r osx-arm64 --self-contained true -o "$app/Contents/Helpers"
+"$dotnet" publish "$root/SekaiToolsHost/SekaiToolsHost.csproj" -c Release -r osx-arm64 --self-contained true -o "$app/Contents/Helpers"
 swift build --package-path "$root/SekaiToolsMac" -c release --arch arm64
 bin="$(swift build --package-path "$root/SekaiToolsMac" -c release --arch arm64 --show-bin-path)"
 cp "$bin/SekaiToolsMac" "$app/Contents/MacOS/SekaiToolsMac"

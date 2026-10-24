@@ -9,6 +9,25 @@ bash SekaiToolsMac/build-dev.sh
 open artifacts/macos/SekaiTools.app
 ```
 
+SSH 会话的 PATH 可能不包含 .NET。脚本会回退到 `/usr/local/share/dotnet/dotnet`，也可用 `DOTNET_EXECUTABLE=/absolute/path/to/dotnet` 显式指定。
+
+Windows 可通过 SSH 构建已经同步的远端仓库并检查发布 Host：
+
+```powershell
+./Tools/InvokeMacBuild.ps1 -Mac user@mac-host -Repository '~/dev/SekaiTools'
+```
+
+该命令不自动同步、切换分支或覆盖远端代码。在 Mac 上亦可单独检查：
+
+```bash
+python3 Tools/verify-macos-host.py artifacts/macos/SekaiTools.app/Contents/Helpers/SekaiToolsHost
+xcrun lldb SekaiToolsMac/.build/arm64-apple-macosx/debug/SekaiToolsMac
+```
+
+给 Python 探针增加 `--download` 会连接配置内的数据源，刷新活动目录、下载一个剧本到临时目录并验证能载入翻译页；此项需要网络。
+
+LLDB 中用 `breakpoint set --name main`、`run`、`bt` 设置断点、启动和读取调用栈。普通 SSH 能支持这些命令及日志检查；窗口布局和交互仍需在 Mac 桌面观察。
+
 开发构建不签名、不公证，不用于正式分发。不要将 Windows 发布目录的 DLL 整理逻辑套用到 Host。
 打包目录必须同时包含 `Contents/Helpers` 下完整的 .NET 发布产物和 `network-endpoints.json`。
 脚本只在本机 Apple Silicon 构建，避免宿主系统条件错误地引入 Windows runtime。
