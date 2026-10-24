@@ -16,6 +16,8 @@
 | `SekaiDataFetch` | 远程游戏数据获取、数据源选择、缓存写入 | 页面控件、导航和提示框 |
 | `SekaiToolsInfrastructure` | 模板资源下载校验、进度与历史文件存储，以及 Core/Media 契约实现 | 页面状态和业务交互 |
 | `SekaiToolsGUI` | WPF 视图、ViewModel、导航、交互编排和 Windows 集成 | 可复用的视频算法、HTTP 实现、FFmpeg 管线 |
+| `SekaiToolsHost` | macOS 客户端的本地 JSON Lines 入口、非 UI 流程编排 | WPF、SwiftUI 控件、压制页面 |
+| `SekaiToolsMac` | Apple Silicon SwiftUI 客户端，通过子进程调用 Host | 重复实现 C# 识别和翻译规则 |
 | `Updater` | 独立更新进程 | 除统一配置外的主程序程序集依赖 |
 | `SekaiTools.Tests` | 非 UI 项目的单元测试与兼容性测试 | 产品运行时代码 |
 
@@ -61,3 +63,5 @@ SekaiTools.Tests → 所有被测非 UI 项目
 - WPF 控件、ViewModel、通知、电源请求：`SekaiToolsGUI`
 
 当一个功能同时涉及 UI 和业务流程时，先在非 UI 项目中设计参数、结果和进度模型，再由 GUI 做绑定与交互编排。
+
+macOS 移植范围、原生依赖门槛和待验收项见 [macOS 首版移植](Docs/macos-port.md)。`Host` 依赖 Core、Base、Infrastructure、DataFetch 和 Configuration，不引用 WPF GUI。Swift Package 不纳入 .NET 解决方案，由 macOS 开发脚本与 CI 构建。

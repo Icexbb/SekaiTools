@@ -17,6 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\SekaiToolsHost\SekaiToolsHost.csproj"/>
         <Compile Include="..\Tools\DecoderProbe\BytePixelComparison.cs" Link="Tools\BytePixelComparison.cs"/>
         <Compile Include="..\Updater\UpdateProxySettings.cs" Link="Updater\UpdateProxySettings.cs"/>
         <Compile Include="..\SekaiToolsGUI\ViewModel\ViewModelBase.cs" Link="ViewModel\ViewModelBase.cs"/>

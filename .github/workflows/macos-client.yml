@@ -1,0 +1,38 @@
+name: macOS client development checks
+
+on:
+  pull_request:
+    paths:
+      - 'SekaiToolsMac/**'
+      - 'SekaiToolsHost/**'
+      - 'SekaiToolsCore/**'
+      - 'SekaiToolsInfrastructure/**'
+      - 'SekaiDataFetch/**'
+      - 'SekaiToolsBase/**'
+      - 'SekaiToolsSubtitles/**'
+      - 'SekaiToolsConfiguration/**'
+      - 'network-endpoints.json'
+      - '.github/workflows/macos-client.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile SwiftUI for Apple Silicon
+        run: swift build --package-path SekaiToolsMac --arch arm64
+      - name: Publish ARM64 host
+        run: dotnet publish SekaiToolsHost/SekaiToolsHost.csproj -c Release -r osx-arm64 --self-contained true -o artifacts/macos/host
+      - name: Confirm ARM64 native asset is published
+        run: |
+          asset=$(find artifacts/macos/host -name libcvextern.dylib -print -quit)
+          test -n "$asset"
+          file "$asset"
+          lipo -verify_arch arm64 "$asset"

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../SekaiToolsBase/SekaiToolsBase.csproj" />
+    <ProjectReference Include="../SekaiToolsCore/SekaiToolsCore.csproj" />
+    <ProjectReference Include="../SekaiToolsInfrastructure/SekaiToolsInfrastructure.csproj" />
+    <ProjectReference Include="../SekaiDataFetch/SekaiDataFetch.csproj" />
+    <ProjectReference Include="../SekaiToolsConfiguration/SekaiToolsConfiguration.csproj" />
+  </ItemGroup>
+</Project>

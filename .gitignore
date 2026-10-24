@@ -471,3 +471,7 @@ Build
 !.agents/skills/
 .agents/skills/*
 !.agents/skills/sekai-release/
+
+# Swift Package development output
+SekaiToolsMac/.build/
+SekaiToolsMac/.swiftpm/
