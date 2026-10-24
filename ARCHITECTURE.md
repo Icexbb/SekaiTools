@@ -64,4 +64,4 @@ SekaiTools.Tests → 所有被测非 UI 项目
 
 当一个功能同时涉及 UI 和业务流程时，先在非 UI 项目中设计参数、结果和进度模型，再由 GUI 做绑定与交互编排。
 
-macOS 移植范围、原生依赖门槛和待验收项见 [macOS 首版移植](Docs/macos-port.md)。`Host` 依赖 Core、Base、Infrastructure、DataFetch 和 Configuration，不引用 WPF GUI。Swift Package 不纳入 .NET 解决方案，由 macOS 开发脚本与 CI 构建。
+macOS 移植范围、原生依赖门槛和待验收项见 [macOS 首版移植](docs/macos-port.md)。`Host` 依赖 Core、Base、Infrastructure、DataFetch 和 Configuration，不引用 WPF GUI。Swift Package 不纳入 .NET 解决方案，由 macOS 开发脚本与 CI 构建。

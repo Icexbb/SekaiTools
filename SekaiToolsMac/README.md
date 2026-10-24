@@ -1,6 +1,6 @@
 # SekaiTools macOS 开发客户端
 
-仅 Apple Silicon，macOS 15+。这是首个移植切片，不是已验收的正式 macOS 版本。范围与缺口见 [移植说明](../Docs/macos-port.md)。
+仅 Apple Silicon，macOS 15+。这是首个移植切片，不是已验收的正式 macOS 版本。范围与缺口见 [移植说明](../docs/macos-port.md)。
 
 在 Apple Silicon Mac 安装 Xcode Command Line Tools（Swift 6+）与 .NET 10 SDK，然后在仓库根目录运行：
 
