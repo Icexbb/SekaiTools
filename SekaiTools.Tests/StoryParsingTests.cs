@@ -8,6 +8,32 @@ namespace SekaiTools.Tests;
 
 public class StoryParsingTests
 {
+    [Theory]
+    [InlineData("角色：一句", "对话数量不匹配")]
+    [InlineData("角色：一句\n角色：二句", "特效数量不匹配")]
+    [InlineData("横幅\n角色：一句\n角色：二句", "第 1 个条目类型不匹配")]
+    [InlineData("角色：一句\n角色：二句\n横幅", null)]
+    public void 旧版翻译返回具体不匹配原因(string content, string? expectedReason)
+    {
+        var script = new GameScriptModel
+        {
+            TalkData = [new Talk("角色", "一句", 0), new Talk("角色", "二句", 0)],
+            SpecialEffectData = [new SpecialEffect(8, "", "", 0, 0)],
+            Snippets = [new Snippet { Action = 1 }, new Snippet { Action = 1 }, new Snippet { Action = 6 }]
+        };
+        var path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, content);
+            var translation = new TranslationData(path);
+            var reason = translation.GetMismatchReason(script);
+            if (expectedReason == null) Assert.Null(reason);
+            else Assert.Contains(expectedReason, reason);
+            Assert.Equal(expectedReason == null, translation.IsApplicable(script));
+        }
+        finally { File.Delete(path); }
+    }
+
     [Fact]
     public void Story忽略缺少TalkData的对话片段()
     {

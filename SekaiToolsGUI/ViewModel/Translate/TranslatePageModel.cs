@@ -72,6 +72,9 @@ public class TranslatePageModel : ViewModelBase
     public bool IsTranslationApplicable(TranslationData translation) =>
         _loadedScript != null && translation.IsApplicable(_loadedScript);
 
+    public string? GetTranslationMismatchReason(TranslationData translation) =>
+        _loadedScript == null ? "请先载入剧本文件。" : translation.GetMismatchReason(_loadedScript);
+
     public void ClearTranslation()
     {
         if (_loadedScript == null) return;

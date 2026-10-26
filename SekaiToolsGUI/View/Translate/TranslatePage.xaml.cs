@@ -25,6 +25,7 @@ public partial class TranslatePage : UserControl
     private string? _dragTranslationPath;
     private Story? _dragStory;
     private TranslationData? _dragTranslation;
+    private string? _dragTranslationError;
 
     public TranslatePage()
     {
@@ -77,7 +78,12 @@ public partial class TranslatePage : UserControl
             ? DragDropEffects.Copy
             : DragDropEffects.None;
         e.Handled = true;
-        DropOverlay.Visibility = allowed ? Visibility.Visible : Visibility.Collapsed;
+        var showError = !script && path != null && Path.GetExtension(path).Equals(".txt", StringComparison.OrdinalIgnoreCase);
+        DropOverlay.Visibility = allowed || showError ? Visibility.Visible : Visibility.Collapsed;
+        DropErrorRegion.Visibility = !allowed && showError ? Visibility.Visible : Visibility.Collapsed;
+        ReferenceDropRegion.Visibility = allowed ? Visibility.Visible : Visibility.Collapsed;
+        TranslationDropRegion.Visibility = Visibility.Collapsed;
+        DropErrorText.Text = _isLoadingScript ? "正在载入文件，请稍后重试。" : _dragTranslationError;
         if (!allowed) return;
 
         ReferenceDropText.Text = script ? "松开以重新载入剧本" : "松开以载入参考翻译";
@@ -150,25 +156,35 @@ public partial class TranslatePage : UserControl
         _dragTranslationPath = null;
         _dragStory = null;
         _dragTranslation = null;
+        _dragTranslationError = null;
     }
 
     private TranslationData? GetDragTranslation(string? path)
     {
-        if (!ViewModel.HasScript || path == null || !Path.GetExtension(path).Equals(".txt", StringComparison.OrdinalIgnoreCase))
+        if (path == null || !Path.GetExtension(path).Equals(".txt", StringComparison.OrdinalIgnoreCase))
             return null;
+        if (!ViewModel.HasScript)
+        {
+            _dragTranslationError = "请先载入剧本文件，再拖入翻译文件。";
+            return null;
+        }
         if (_dragTranslationPath == path && ReferenceEquals(_dragStory, ViewModel.Story)) return _dragTranslation;
         _dragTranslationPath = path;
         _dragStory = ViewModel.Story;
         _dragTranslation = null;
+        _dragTranslationError = null;
         try
         {
             var translation = new TranslationData(path);
-            if (!translation.IsEmpty() && ViewModel.IsTranslationApplicable(translation))
+            _dragTranslationError = translation.IsEmpty()
+                ? "翻译文件为空，或只包含空行和注释，没有可载入的翻译条目。"
+                : ViewModel.GetTranslationMismatchReason(translation);
+            if (_dragTranslationError == null)
                 _dragTranslation = translation;
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            // 无效或不匹配的文件保持禁止拖入，不在拖动过程中弹出提示。
+            _dragTranslationError = $"翻译文件读取或解析失败：{exception.Message}";
         }
         return _dragTranslation;
     }

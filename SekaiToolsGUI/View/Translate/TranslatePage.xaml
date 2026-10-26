@@ -151,6 +151,17 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
+            <Border x:Name="DropErrorRegion" Grid.RowSpan="2" Visibility="Collapsed"
+                    Margin="12" Padding="24" CornerRadius="8" BorderBrush="#FFFF8080"
+                    BorderThickness="2" Background="#A0601010">
+                <StackPanel VerticalAlignment="Center">
+                    <ui:SymbolIcon Symbol="DocumentDismiss24" Foreground="White" FontSize="32" />
+                    <TextBlock Text="无法载入翻译文件" Foreground="White" FontSize="24"
+                               Margin="0,12,0,12" TextAlignment="Center" />
+                    <TextBlock x:Name="DropErrorText" Foreground="White" FontSize="16"
+                               TextWrapping="Wrap" TextAlignment="Center" />
+                </StackPanel>
+            </Border>
             <Border x:Name="ReferenceDropRegion" Margin="12,12,12,6" CornerRadius="8"
                     BorderBrush="White" BorderThickness="2">
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">

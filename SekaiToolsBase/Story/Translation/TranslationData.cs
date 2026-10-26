@@ -63,24 +63,38 @@ public class TranslationData
             ValidateV2(gameScript);
             return true;
         }
-        if (gameScript.Empty()) return true;
-        if (IsEmpty()) return true;
+        return GetMismatchReason(gameScript) == null;
+    }
 
-        if (DialogCount() != gameScript.TalkData.Length) return false;
-        if (EffectCount() != gameScript.SpecialEffectData.Length) return false;
-
+    public string? GetMismatchReason(GameScript.GameScript gameScript)
+    {
+        if (IsV2)
+        {
+            try { ValidateV2(gameScript); }
+            catch (FormatException exception) { return exception.Message; }
+            return null;
+        }
+        if (gameScript.Empty() || IsEmpty()) return null;
+        var reasons = new List<string>();
+        if (DialogCount() != gameScript.TalkData.Length)
+            reasons.Add($"对话数量不匹配：剧本需要 {gameScript.TalkData.Length} 条，翻译包含 {DialogCount()} 条。");
+        if (EffectCount() != gameScript.SpecialEffectData.Length)
+            reasons.Add($"特效数量不匹配：剧本需要 {gameScript.SpecialEffectData.Length} 条，翻译包含 {EffectCount()} 条。");
+        if (reasons.Count > 0) return string.Join("\n", reasons);
         for (var i = 0; i < gameScript.Snippets.Length; i++)
+        {
+            if (i >= Translations.Count) return $"翻译缺少第 {i + 1} 个条目。";
             switch (gameScript.Snippets[i].Action)
             {
                 case 1:
-                    if (Translations[i] is not DialogTranslate) return false;
+                    if (Translations[i] is not DialogTranslate) return $"第 {i + 1} 个条目类型不匹配：剧本需要对话，翻译为特效。";
                     break;
                 case 6:
-                    if (Translations[i] is not EffectTranslate) return false;
+                    if (Translations[i] is not EffectTranslate) return $"第 {i + 1} 个条目类型不匹配：剧本需要特效，翻译为对话。";
                     break;
             }
-
-        return true;
+        }
+        return null;
     }
 
     public IReadOnlyList<Translation> ForScript(GameScript.GameScript script)
