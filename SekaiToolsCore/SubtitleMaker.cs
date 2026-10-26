@@ -35,9 +35,11 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
         if (dialogList.Count != 0)
         {
-            // 无名台词保存的是正文推算锚点，不能覆盖真实名字栏的全局排版基准。
-            var layoutReference = dialogList.FirstOrDefault(set =>
-                !set.IsEmpty() && !string.IsNullOrWhiteSpace(set.Data.CharacterOriginal)) ?? dialogList[0];
+            // 优先使用未抖动的真实名字栏；无名台词的正文匹配仅用于时序和相对位移。
+            var namedReferences = dialogList.Where(set =>
+                !set.IsEmpty() && !string.IsNullOrWhiteSpace(set.Data.CharacterOriginal)).ToList();
+            var layoutReference = namedReferences.FirstOrDefault(set => !set.IsJitter)
+                                  ?? namedReferences.FirstOrDefault() ?? dialogList[0];
             _nameTagPosition = layoutReference.Start().Point;
             _styles.AddRange(MakeDialogStyles());
             events.AddRange(MakeDialogEvents(dialogList));
@@ -84,6 +86,11 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         if (string.IsNullOrWhiteSpace(name)) return 0;
         return templateManager.GetMatchTemplate(TemplateUsage.DialogNameTag, name).Size.Width;
     }
+
+    private Point GetCharacterAnchor(DialogBaseFrameSet set, Point point) =>
+        string.IsNullOrWhiteSpace(set.Data.CharacterOriginal)
+            ? _nameTagPosition + new Size(point.X - set.Start().Point.X, point.Y - set.Start().Point.Y)
+            : point;
 
     private static Queue<char> FormatDialogBodyArr(string body)
     {
@@ -326,7 +333,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             if (string.IsNullOrWhiteSpace(characterName)) return [dialogItem];
 
             var characterItemPosition =
-                dialogBaseFrameSet.Start().Point +
+                GetCharacterAnchor(dialogBaseFrameSet, dialogBaseFrameSet.Start().Point) +
                 new Size(GetNameTagWidth(dialogBaseFrameSet.Data.CharacterOriginal) + 10, 0);
             var characterItemPositionTag = $@"{{\pos({characterItemPosition.X},{characterItemPosition.Y})}}";
             var characterItem = SubtitleEvent.Dialog(
@@ -378,7 +385,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
                 else
                 {
                     var offset = GetNameTagWidth(dialogBaseFrameSet.Data.CharacterOriginal);
-                    var position = frame.Point + new Size(offset + 10, 0);
+                    var position = GetCharacterAnchor(dialogBaseFrameSet, frame.Point) + new Size(offset + 10, 0);
                     var tag = $@"{{\pos({position.X},{position.Y})}}";
 
                     var characterItem = SubtitleEvent.Dialog(

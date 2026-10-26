@@ -17,6 +17,35 @@ namespace SekaiTools.Tests;
 public class UnnamedDialogTests
 {
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void UnnamedPositionUsesNonShakingNamedReference(bool shake)
+    {
+        using var fixture = new Fixture();
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        var unnamed = CreateSet("", "Music", shake, 0, new Point(174, 551));
+        unnamed.Data.SetTranslation("Supplement", "Music");
+        unnamed.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(1, fixture.Info.Fps, new Point(180, 555)));
+        var shakingNamed = CreateSet("Speaker", "Shaking", true, 10, new Point(170, 520));
+        var stableNamed = CreateSet("Speaker", "Stable", false, 20, new Point(150, 500));
+        var info = new SubtitleExportInfo("test", "1", "done", "", "", "");
+        var baseline = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([stableNamed], [], [], info, new ExportStyleConfig());
+        var actual = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([unnamed, shakingNamed, stableNamed], [], [], info, new ExportStyleConfig());
+        Assert.Equal(baseline.ToString().Split('\n').Where(line => line.StartsWith("Style: Line")),
+            actual.ToString().Split('\n').Where(line => line.StartsWith("Style: Line")));
+        Assert.Contains(@"{\pos(160,500)}Supplement", actual.Events.ToString());
+        if (shake) Assert.Contains(@"{\pos(166,504)}Supplement", actual.Events.ToString());
+
+        SekaiToolsCore.Process.FrameSet.DialogBaseFrameSet CreateSet(string name, string body, bool jitter, int frame, Point point)
+        {
+            var data = new SekaiToolsBase.Story.StoryEvent.DialogStoryEvent(frame, body, 0, name, false, jitter);
+            var set = new SekaiToolsCore.Process.FrameSet.DialogBaseFrameSet(data, fixture.Info.Fps);
+            set.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(frame, fixture.Info.Fps, point));
+            return set;
+        }
+    }
+
+    [Theory]
     [InlineData(false, "")]
     [InlineData(true, "")]
     [InlineData(false, "译者补充的名字")]
@@ -33,8 +62,8 @@ public class UnnamedDialogTests
         named.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(10, fixture.Info.Fps, new Point(150, 500)));
         named.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(11, fixture.Info.Fps, new Point(152, 502)));
         var info = new SubtitleExportInfo("test", "1", "done", "", "", "");
-        var baseline = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([named], [], [], info);
-        var actual = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([unnamed, named], [], [], info);
+        var baseline = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([named], [], [], info, new ExportStyleConfig());
+        var actual = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([unnamed, named], [], [], info, new ExportStyleConfig());
 
         var expectedStyles = baseline.ToString().Split('\n').Where(line => line.StartsWith("Style: Line"));
         var actualStyles = actual.ToString().Split('\n').Where(line => line.StartsWith("Style: Line"));
