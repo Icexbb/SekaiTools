@@ -7,8 +7,10 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" Margin="0"
              d:DataContext="{d:DesignInstance local:DownloadItem}"
-             HorizontalAlignment="Stretch">
+             HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+             VerticalContentAlignment="Stretch">
     <ui:CardAction HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                   VerticalAlignment="Stretch" VerticalContentAlignment="Center"
                    Click="ButtonBase_OnClick" Padding="10">
         <Grid>
             <Grid.ColumnDefinitions>
