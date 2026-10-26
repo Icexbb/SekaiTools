@@ -92,6 +92,9 @@ public sealed class TemplateMatchCachePool
         _scaleCalibrations[(int)usage].Observe(scale, score);
     }
 
+    internal bool TryRecoverScale(MatchUsage usage, double scale, double score, double threshold) =>
+        _scaleCalibrations[(int)usage].TryRecover(scale, score, threshold);
+
     internal bool TryGetContentPosition(MatchUsage usage, Rectangle region, GaMat template,
         double scale, out Point position)
     {

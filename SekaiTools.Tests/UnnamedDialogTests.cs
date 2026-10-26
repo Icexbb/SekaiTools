@@ -285,6 +285,46 @@ public class UnnamedDialogTests
         Assert.Empty(matcher.SaveState().PendingTrackingFrames);
     }
 
+    [Fact]
+    public void LookaheadRejectsLastVisibleSharedPrefixButCanSkipTrulyMissingDialogue()
+    {
+        using var fixture = new Fixture();
+        var story = new Story(new SekaiToolsBase.GameScript.GameScript
+        {
+            TalkData = [new Talk("A", "(...Old", 0), new Talk("A", "Missing", 0), new Talk("A", "(...New", 0)],
+            Snippets = [new Snippet { Action = 1 }, new Snippet { Action = 1 }, new Snippet { Action = 1 }]
+        }, new TranslationData(null));
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        var cache = new TemplateMatchCachePool();
+        using var matcher = new DialogTemplateMatcher(fixture.Info, story, manager, cache, fixture.Config);
+        matcher.Set[0].Finished = true;
+        var state = matcher.SaveState();
+        matcher.RestoreState(state);
+        using var oldFrame = fixture.NamedFrame(manager, "(...Old", 0);
+        using var newFrame = fixture.NamedFrame(manager, "(...New", 0);
+        using var context = new FrameMatchContext();
+        context.Update(oldFrame);
+        for (var index = 1; index <= 120; index++)
+        {
+            cache.SetFrameIndex(index);
+            matcher.Process(context, index);
+        }
+        Assert.False(matcher.Set[1].Finished);
+        Assert.Empty(matcher.Set[2].Frames);
+        Assert.Empty(matcher.Diagnostics);
+        context.Update(newFrame);
+        for (var index = 121; index <= 240; index++)
+        {
+            cache.SetFrameIndex(index);
+            matcher.Process(context, index);
+        }
+        Assert.True(matcher.Set[1].Finished);
+        Assert.NotEmpty(matcher.Set[2].Frames);
+        Assert.All(matcher.Set[2].Frames, frame => Assert.True(frame.Index >= 120));
+        Assert.Single(matcher.Diagnostics);
+        Assert.Equal(1, matcher.Diagnostics[0].TargetIndex);
+    }
+
     private sealed class Fixture : ITemplateResourceProvider, IDisposable
     {
         private readonly string _video = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".avi");

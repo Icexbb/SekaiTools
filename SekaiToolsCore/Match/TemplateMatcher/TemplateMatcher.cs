@@ -27,17 +27,19 @@ public static class TemplateMatcher
 
     internal static TemplateMatchResult MatchContent(FrameMatchContext frame, Rectangle region, GaMat template,
         TemplateMatchCachePool pool, TemplateMatchCachePool.MatchUsage usage, double threshold,
-        [CallerMemberName] string memberName = "") =>
-        MatchCore(frame, region, template, pool, usage, TemplateMatchingType.CcoeffNormed, memberName, threshold);
+        [CallerMemberName] string memberName = "", bool allowScaleRecovery = false) =>
+        MatchCore(frame, region, template, pool, usage, TemplateMatchingType.CcoeffNormed, memberName, threshold, allowScaleRecovery);
 
     private static TemplateMatchResult MatchCore(FrameMatchContext frame, Rectangle region, GaMat tmp,
         TemplateMatchCachePool cachePool, TemplateMatchCachePool.MatchUsage usage,
-        TemplateMatchingType matchingType, string memberName, double? acceptanceThreshold)
+        TemplateMatchingType matchingType, string memberName, double? acceptanceThreshold, bool allowScaleRecovery = false)
     {
         var metrics = cachePool.Metrics.Enabled ? cachePool.Metrics : null;
         var started = metrics != null ? Stopwatch.GetTimestamp() : 0;
         frame.Metrics = metrics;
-        if (cachePool.TryGet(usage, frame.Gray, region, tmp, matchingType, out var cachedResult))
+        if (cachePool.TryGet(usage, frame.Gray, region, tmp, matchingType, out var cachedResult) &&
+            !(allowScaleRecovery && acceptanceThreshold is { } cachedThreshold &&
+              !cachedResult.IsMatch(cachedThreshold) && cachePool.GetCandidateScales(usage).Count == 1))
         {
             metrics?.RecordRequest(usage, true, started);
             return cachedResult;
@@ -76,6 +78,24 @@ public static class TemplateMatcher
             var candidate = MatchNoCache(frame, region, tmp, scale, matchingType, memberName);
             if (candidate.MaxVal > res.MaxVal)
                 res = candidate;
+        }
+
+        // A locked scale can fail tracking without reaching the much lower global
+        // unlock threshold. Recheck only the other two supported scales, and move
+        // the lock only on strong evidence; never relax the acceptance threshold.
+        if (allowScaleRecovery && acceptanceThreshold is { } recoveryThreshold &&
+            scales.Count == 1 && !res.IsMatch(recoveryThreshold))
+        {
+            var lockedScale = scales[0];
+            var recovered = res;
+            foreach (var scale in TemplateScaleCalibration.RecoveryScales)
+            {
+                if (scale == lockedScale) continue;
+                var candidate = MatchNoCache(frame, region, tmp, scale, matchingType, memberName);
+                if (candidate.MaxVal > recovered.MaxVal) recovered = candidate;
+            }
+            if (cachePool.TryRecoverScale(usage, recovered.Scale, recovered.MaxVal, recoveryThreshold))
+                res = recovered;
         }
 
         cachePool.ObserveScale(usage, res.Scale, res.MaxVal);

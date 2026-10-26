@@ -1,6 +1,7 @@
 using System.Drawing;
 using SekaiToolsBase;
 using SekaiToolsBase.Story;
+using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
@@ -30,12 +31,14 @@ public class DialogTemplateMatcher(
     private readonly DialogTrackingGrace _trackingGrace = new(videoInfo.Fps.Fps());
     private readonly Dictionary<string, GaMat> _nameTemplates = new(StringComparer.Ordinal);
     private readonly Dictionary<string, (GaMat First, GaMat Second, GaMat Third)> _contentTemplates = new(StringComparer.Ordinal);
+    private readonly TemplateMatchCachePool _lookaheadEvidencePool = new();
 
     public void Dispose()
     {
         _searchScheduler.Dispose();
         _nameTemplates.Clear();
         _contentTemplates.Clear();
+        _lookaheadEvidencePool.ResetAll();
     }
 
     public int LastNotProcessedIndex()
@@ -207,7 +210,8 @@ public class DialogTemplateMatcher(
                 return false;
 
             var effectiveThreshold = EffectiveThreshold(threshold, IsStatusMatched(lastStatus));
-            var result = TemplateMatcher.MatchContent(src, dialogStartPosition, tmp, cachePool, usage, effectiveThreshold);
+            var result = TemplateMatcher.MatchContent(src, dialogStartPosition, tmp, cachePool, usage, effectiveThreshold,
+                allowScaleRecovery: IsStatusMatched(lastStatus));
 
             if (frameIndex != -1)
                 Logger.Log(
@@ -231,6 +235,59 @@ public class DialogTemplateMatcher(
         var result = (template1, template2, template3);
         _contentTemplates.Add(content, result);
         return result;
+    }
+
+    // Lookahead must identify a different line, rather than another instance of
+    // the same speaker's opening parenthesis or shared punctuation prefix.
+    internal static string LookaheadContentPrefix(DialogStoryEvent candidate, IEnumerable<DialogStoryEvent> earlier)
+    {
+        var content = FirstLine(candidate.BodyOriginal);
+        if (content.Length == 0) return string.Empty;
+        var length = Math.Min(3, content.Length);
+        var name = TrimTemplateContent(candidate.CharacterOriginal);
+        foreach (var previous in earlier)
+        {
+            if (TrimTemplateContent(previous.CharacterOriginal) != name) continue;
+            var other = FirstLine(previous.BodyOriginal);
+            var shared = 0;
+            while (shared < content.Length && shared < other.Length && content[shared] == other[shared]) shared++;
+            // Identical first lines and very long shared prefixes cannot be
+            // distinguished by this bounded verification window.
+            if (shared == content.Length || shared >= 12) return string.Empty;
+            length = Math.Max(length, Math.Min(12, Math.Min(content.Length, shared + 3)));
+        }
+        return content[..length];
+
+        static string FirstLine(string body)
+        {
+            var end = body.IndexOfAny(['\r', '\n']);
+            return end < 0 ? body : body[..end];
+        }
+    }
+
+    private bool ConfirmLookaheadTarget(FrameMatchContext frame, int currentIndex, int candidateIndex,
+        Point point, int frameIndex)
+    {
+        var candidate = Set[candidateIndex];
+        var prefix = LookaheadContentPrefix(candidate.Data,
+            Set.Skip(Math.Max(0, currentIndex - 1)).Take(candidateIndex - Math.Max(0, currentIndex - 1))
+                .Select(dialog => dialog.Data));
+        if (prefix.Length == 0 || point.IsEmpty) return false;
+        var template = templateManager.GetMatchTemplate(TemplateUsage.DialogContent, prefix);
+        var font = TemplateManager.GetFontSize(frame.Size);
+        var region = new Rectangle(point.X - (int)(0.5f * font), point.Y + font,
+            Math.Max(font * 5, template.Size.Width + font * 2), font * 2);
+        if (candidate.IsJitter) region.Extend(1.5);
+        region.Limit(new Rectangle(Point.Empty, frame.Size));
+        if (region.Width < template.Size.Width || region.Height < template.Size.Height) return false;
+        // Verification is transient and searches all supported scales. It must
+        // not calibrate the main matcher or become part of checkpoint state.
+        _lookaheadEvidencePool.ResetAll();
+        _lookaheadEvidencePool.SetFrameIndex(frameIndex);
+        var result = TemplateMatcher.Match(frame, region, template, _lookaheadEvidencePool);
+        var threshold = Math.Max(0.85, candidate.Data.Shake
+            ? config.MatchingThreshold.DialogContentSpecial : config.MatchingThreshold.DialogContentNormal);
+        return result.IsMatch(threshold);
     }
 
     // Frame sets retain a name-tag-equivalent anchor so tracking, checkpoints and
@@ -355,7 +412,8 @@ public class DialogTemplateMatcher(
                     _status = MatchStatus.DialogNotMatched;
                     _nameTagPosition = Point.Empty;
                     var candidateResult = MatchForDialog(frame, Set[candidateIndex], frameIndex);
-                    if (!IsStatusMatched(candidateResult.Status)) continue;
+                    if (!IsStatusMatched(candidateResult.Status) ||
+                        !ConfirmLookaheadTarget(frame, dIndex, candidateIndex, candidateResult.Point, frameIndex)) continue;
 
                     foundIndex = candidateIndex;
                     matchResult = candidateResult;
@@ -366,7 +424,8 @@ public class DialogTemplateMatcher(
                         _status = MatchStatus.DialogNotMatched;
                         _nameTagPosition = Point.Empty;
                         var previousResult = MatchForDialog(backcheckFrame, Set[candidateIndex], backcheckFrameIndex);
-                        if (IsStatusMatched(previousResult.Status))
+                        if (IsStatusMatched(previousResult.Status) &&
+                            ConfirmLookaheadTarget(backcheckFrame, dIndex, candidateIndex, previousResult.Point, backcheckFrameIndex))
                         {
                             matchResult = previousResult;
                             matchedFrameIndex = backcheckFrameIndex;

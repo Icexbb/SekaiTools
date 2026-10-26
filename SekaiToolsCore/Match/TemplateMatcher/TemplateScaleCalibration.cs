@@ -8,12 +8,23 @@ internal sealed class TemplateScaleCalibration
     private const double UnlockConfidence = 0.50;
     private const int UnlockFailureCount = 30;
     private static readonly double[] InitialScales = [1.00, 0.96, 1.04];
+    internal static IReadOnlyList<double> RecoveryScales => InitialScales;
     private double? _lockedScale;
     private readonly double[] _lockedScales = new double[1];
 
     private int _lowConfidenceCount;
 
     public IReadOnlyList<double> CandidateScales => _lockedScale.HasValue ? _lockedScales : InitialScales;
+
+    internal bool TryRecover(double scale, double score, double threshold)
+    {
+        if (!InitialScales.Contains(scale) || !double.IsFinite(score) || !double.IsFinite(threshold)
+            || score < Math.Max(LockConfidence, threshold)) return false;
+        _lockedScale = scale;
+        _lockedScales[0] = scale;
+        _lowConfidenceCount = 0;
+        return true;
+    }
 
     public void Observe(double scale, double score)
     {
