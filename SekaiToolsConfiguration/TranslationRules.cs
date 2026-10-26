@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace SekaiToolsConfiguration;
 
@@ -7,22 +8,10 @@ public sealed class TranslationRules
     public const string FileName = "translation-rules.json";
     private static readonly Lazy<TranslationRules> CurrentValue = new(() => Load());
     public static TranslationRules Current => CurrentValue.Value;
+    private readonly Dictionary<string, Regex> _patterns = new(StringComparer.Ordinal);
 
     public required List<TranslationReplacement> Replacements { get; init; }
-    public required bool CheckEndPunctuation { get; init; }
-    public required string ValidEndCharacters { get; init; }
-    public required string ClosingCharacters { get; init; }
-    public required string MissingEndMessage { get; init; }
-    public required bool CheckEllipsisPunctuation { get; init; }
-    public required List<string> InvalidEndings { get; init; }
-    public required string InvalidEndingMessage { get; init; }
-    public required bool CheckDash { get; init; }
-    public required string DashCharacter { get; init; }
-    public required int DashGroupLength { get; init; }
-    public required string DashMessage { get; init; }
-    public required bool CheckLineLength { get; init; }
-    public required int MaxLineLength { get; init; }
-    public required int ThreeLineMaxLength { get; init; }
+    public required List<TranslationCheck> Checks { get; init; }
 
     public static TranslationRules Load(string? filePath = null)
     {
@@ -46,53 +35,105 @@ public sealed class TranslationRules
 
     private void Validate()
     {
-        if (Replacements == null || Replacements.Any(r => r == null || string.IsNullOrEmpty(r.From) || r.To == null))
-            throw new InvalidDataException("翻译替换规则的 from 不能为空，to 不能为 null");
-        if (ValidEndCharacters == null || ClosingCharacters == null ||
-            MissingEndMessage == null || InvalidEndingMessage == null || DashMessage == null ||
-            InvalidEndings == null || InvalidEndings.Any(string.IsNullOrEmpty))
-            throw new InvalidDataException("翻译检查符号、提示及非法结尾配置不能为 null，非法结尾不能为空");
-        if (CheckEndPunctuation && ValidEndCharacters.Length == 0)
-            throw new InvalidDataException("启用结束标点检查时，合法结束符号不能为空");
-        if (DashCharacter == null || DashCharacter.Length != 1 || DashGroupLength < 1)
-            throw new InvalidDataException("破折号字符必须为单个字符，分组长度必须大于零");
-        if (MaxLineLength < 1 || ThreeLineMaxLength < 1)
-            throw new InvalidDataException("翻译行长阈值必须大于零");
+        if (Replacements == null || Checks == null)
+            throw new InvalidDataException("翻译配置必须包含 replacements 和 checks 数组");
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var rule in Replacements)
+        {
+            if (rule == null || rule.Replacement == null)
+                throw new InvalidDataException("替换规则及 replacement 不能为 null");
+            AddPattern(rule.Pattern, "替换规则");
+        }
+        foreach (var rule in Checks)
+        {
+            if (rule == null || string.IsNullOrWhiteSpace(rule.Id) || !ids.Add(rule.Id))
+                throw new InvalidDataException("检查项 id 必须非空且唯一");
+            if (rule.Scope is not ("line" or "content"))
+                throw new InvalidDataException($"检查项 {rule.Id} 的 scope 必须为 line 或 content");
+            if (rule.Conditions == null || rule.Conditions.Count == 0 ||
+                rule.Feedback == null || string.IsNullOrWhiteSpace(rule.Feedback.Message) || rule.Feedback.Tags == null)
+                throw new InvalidDataException($"检查项 {rule.Id} 必须包含条件和反馈文字");
+            foreach (var condition in rule.Conditions)
+            {
+                if (condition == null || string.IsNullOrWhiteSpace(condition.Target))
+                    throw new InvalidDataException($"检查项 {rule.Id} 的条件必须指定 target");
+                AddPattern(condition.Pattern, rule.Id);
+            }
+        }
+    }
+
+    private void AddPattern(string pattern, string id)
+    {
+        if (string.IsNullOrEmpty(pattern)) throw new InvalidDataException($"规则 {id} 的 pattern 不能为空");
+        try { _patterns.TryAdd(pattern, new Regex(pattern, RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100))); }
+        catch (ArgumentException exception) { throw new InvalidDataException($"规则 {id} 的正则表达式无效：{exception.Message}", exception); }
     }
 
     public string Format(string content)
     {
-        foreach (var rule in Replacements)
-            content = content.Replace(rule.From, rule.To, StringComparison.Ordinal);
+        foreach (var rule in Replacements.Where(rule => rule.Enabled))
+            content = _patterns[rule.Pattern].Replace(content, rule.Replacement);
         return content;
     }
 
-    public string Check(string content)
+    public IReadOnlyList<TranslationCheckResult> Evaluate(string content, IReadOnlyDictionary<string, string>? context = null)
     {
-        var result = new List<string>();
+        var results = new List<TranslationCheckResult>();
         var lines = content.Split('\n').Where(line => line.Length > 0).ToArray();
-        var closings = ClosingCharacters.ToCharArray();
-        var dashGroup = new string(DashCharacter[0], DashGroupLength);
-        for (var i = 0; i < lines.Length; i++)
+        foreach (var rule in Checks.Where(rule => rule.Enabled))
         {
-            var line = lines[i].TrimEnd();
-            var ending = line.TrimEnd(closings);
-            var messages = "";
-            if (CheckEndPunctuation && (ending.Length == 0 || !ValidEndCharacters.Contains(ending[^1])))
-                messages += $"【{MissingEndMessage}】";
-            if (CheckEllipsisPunctuation && InvalidEndings.Any(suffix => ending.EndsWith(suffix, StringComparison.Ordinal)))
-                messages += $"【{InvalidEndingMessage}】";
-            if (CheckDash && line.Contains(dashGroup, StringComparison.Ordinal) &&
-                line.Split(DashCharacter).Length != (line.Split(dashGroup).Length - 1) * DashGroupLength + 1)
-                messages += $"【{DashMessage}】";
-            if (messages.Length > 0) result.Add($"行{i + 1}:{messages}");
+            if (rule.Scope == "content") EvaluateText(content, null);
+            else for (var i = 0; i < lines.Length; i++) EvaluateText(lines[i].TrimEnd(), i + 1);
+
+            void EvaluateText(string text, int? line)
+            {
+                foreach (var condition in rule.Conditions)
+                {
+                    var value = condition.Target == "text" ? text : context?.GetValueOrDefault(condition.Target);
+                    // 未提供的指标不参与检查，包括否定条件。
+                    if (value == null || _patterns[condition.Pattern].IsMatch(value) != condition.Match) return;
+                }
+                results.Add(new TranslationCheckResult(rule.Id, line, rule.Feedback));
+            }
         }
-        return string.Join("\n", result);
+        return results;
     }
+
+    public string Check(string content) => FormatResults(Evaluate(content));
+
+    public static string FormatResults(IEnumerable<TranslationCheckResult> results) => string.Join("\n",
+        results.GroupBy(result => result.Line).OrderBy(group => group.Key ?? int.MaxValue)
+            .Select(group => (group.Key is { } line ? $"行{line}:" : "") +
+                             string.Concat(group.Select(result => $"【{result.Feedback.Message}】"))));
 }
 
 public sealed class TranslationReplacement
 {
-    public required string From { get; init; }
-    public required string To { get; init; }
+    public bool Enabled { get; init; } = true;
+    public required string Pattern { get; init; }
+    public required string Replacement { get; init; }
 }
+
+public sealed class TranslationCheck
+{
+    public required string Id { get; init; }
+    public bool Enabled { get; init; } = true;
+    public string Scope { get; init; } = "line";
+    public required List<TranslationCondition> Conditions { get; init; }
+    public required TranslationFeedback Feedback { get; init; }
+}
+
+public sealed class TranslationCondition
+{
+    public string Target { get; init; } = "text";
+    public required string Pattern { get; init; }
+    public bool Match { get; init; } = true;
+}
+
+public sealed class TranslationFeedback
+{
+    public required string Message { get; init; }
+    public List<string> Tags { get; init; } = [];
+}
+
+public sealed record TranslationCheckResult(string Id, int? Line, TranslationFeedback Feedback);

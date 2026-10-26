@@ -10,8 +10,6 @@ public class TranslationRulesTests
     public void MissingFileUsesEmbeddedDefaults()
     {
         var rules = TranslationRules.Load(Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"));
-        Assert.Equal(37, rules.MaxLineLength);
-        Assert.Equal(45, rules.ThreeLineMaxLength);
         Assert.Equal("你好？！", rules.Format("你好?!"));
         Assert.Empty(rules.Check("「你好？！」"));
         Assert.Contains("省略号", rules.Check("你好...。"));
@@ -19,47 +17,79 @@ public class TranslationRulesTests
     }
 
     [Fact]
-    public void ExternalFileChangesRulesReplacementsAndThresholds()
+    public void NewRegexCheckIncludesItsOwnConditionsAndFeedback()
     {
         var rules = LoadModified(json =>
         {
-            json["ValidEndCharacters"] = "♡";
-            json["ClosingCharacters"] = "]";
-            json["MissingEndMessage"] = "自定义句尾提示";
-            json["Replacements"] = new JsonArray(new JsonObject { ["From"] = "!", ["To"] = "♡" });
-            json["MaxLineLength"] = 20;
-            json["ThreeLineMaxLength"] = 30;
+            json["Checks"] = new JsonArray(new JsonObject
+            {
+                ["Id"] = "custom", ["Scope"] = "line",
+                ["Conditions"] = new JsonArray(new JsonObject { ["Pattern"] = "重复(.+)重复" }),
+                ["Feedback"] = new JsonObject { ["Message"] = "自定义提示" }
+            });
+            json["Replacements"] = new JsonArray(new JsonObject { ["Pattern"] = "([A-Z]+)!", ["Replacement"] = "$1♡" });
         });
-        Assert.Equal("你好♡", rules.Format("你好!"));
-        Assert.Empty(rules.Check("[你好♡]"));
-        Assert.Contains("自定义句尾提示", rules.Check("你好！"));
-        Assert.Equal(20, rules.MaxLineLength);
-        Assert.Equal(30, rules.ThreeLineMaxLength);
+        Assert.Equal("ABC♡", rules.Format("ABC!"));
+        Assert.Equal("行2:【自定义提示】", rules.Check("普通文本\n重复内容重复"));
+        Assert.Empty(rules.Check("普通文本"));
     }
 
     [Fact]
-    public void ChecksAndFormattingCanBeDisabled()
+    public void DisabledRulesDoNotCheckOrReplace()
     {
         var rules = LoadModified(json =>
         {
-            json["CheckEndPunctuation"] = false;
-            json["CheckEllipsisPunctuation"] = false;
-            json["CheckDash"] = false;
-            json["CheckLineLength"] = false;
-            json["Replacements"] = new JsonArray();
+            foreach (var check in json["Checks"]!.AsArray()) check!["Enabled"] = false;
+            foreach (var replacement in json["Replacements"]!.AsArray()) replacement!["Enabled"] = false;
         });
         Assert.Empty(rules.Check("无标点\n省略号...。\n——混合—！"));
         Assert.Equal("你好!", rules.Format("你好!"));
-        Assert.False(rules.CheckLineLength);
     }
 
     [Theory]
-    [InlineData("MaxLineLength", 0)]
-    [InlineData("ThreeLineMaxLength", -1)]
-    [InlineData("DashGroupLength", 0)]
-    public void InvalidThresholdIsRejected(string property, int value)
+    [InlineData(2, 37, false)]
+    [InlineData(2, 38, true)]
+    [InlineData(3, 45, false)]
+    [InlineData(3, 46, true)]
+    [InlineData(2, 100, true)]
+    public void LengthRulesUseGenericContextConditions(int originalLines, int length, bool expected)
     {
-        Assert.Throws<InvalidDataException>(() => LoadModified(json => json[property] = value));
+        var results = TranslationRules.Current.Evaluate("你好！", new Dictionary<string, string>
+        {
+            ["originalLineCount"] = originalLines.ToString(), ["maxLineLength"] = length.ToString()
+        });
+        Assert.Equal(expected, results.Any(result => result.Feedback.Tags.Contains("length")));
+    }
+
+    [Theory]
+    [InlineData("——你好——！", false)]
+    [InlineData("——你好—！", true)]
+    [InlineData("———你好！", true)]
+    [InlineData("—你好！", false)]
+    public void DashRegexPreservesExistingChecks(string text, bool expected)
+    {
+        Assert.Equal(expected, TranslationRules.Current.Check(text).Contains("破折号"));
+    }
+
+    [Fact]
+    public void InvalidRegexReportsRuleId()
+    {
+        var exception = Assert.Throws<InvalidDataException>(() => LoadModified(json =>
+            json["Checks"]![0]!["Conditions"]![0]!["Pattern"] = "["));
+        Assert.Contains("missing-end-punctuation", exception.Message);
+    }
+
+    [Fact]
+    public void DuplicateCheckIdIsRejected()
+    {
+        Assert.Throws<InvalidDataException>(() => LoadModified(json =>
+            json["Checks"]![1]!["Id"] = json["Checks"]![0]!["Id"]!.GetValue<string>()));
+    }
+
+    [Fact]
+    public void AbsentContextDoesNotTriggerNegativeConditions()
+    {
+        Assert.DoesNotContain(TranslationRules.Current.Evaluate("你好！"), result => result.Feedback.Tags.Contains("length"));
     }
 
     private static TranslationRules LoadModified(Action<JsonObject> modify)

@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Globalization;
 using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsBase.Utils;
 using SekaiToolsBase.Story.Translation;
@@ -105,12 +106,14 @@ public partial class LineDialogModel : LineModel
             return;
         }
 
-        // 这里的逻辑就是你原本在父级写的逻辑
-        Check = CheckContent(Content.Translated);
         MaxLineLength = (Content.Translated + "\n").MaxLineLength();
-        var rules = TranslationRules.Current;
-        TooLong = rules.CheckLineLength && MaxLineLength >
-            (Content.Original.LineCount() == 3 ? rules.ThreeLineMaxLength : rules.MaxLineLength);
+        var results = TranslationRules.Current.Evaluate(Content.Translated, new Dictionary<string, string>
+        {
+            ["originalLineCount"] = Content.Original.LineCount().ToString(CultureInfo.InvariantCulture),
+            ["maxLineLength"] = MaxLineLength.ToString(CultureInfo.InvariantCulture)
+        });
+        Check = TranslationRules.FormatResults(results);
+        TooLong = results.Any(result => result.Feedback.Tags.Contains("length"));
     }
 }
 
@@ -130,8 +133,4 @@ public partial class LineDialogModel
         return TranslationRules.Current.Format(content);
     }
 
-    private static string CheckContent(string content)
-    {
-        return TranslationRules.Current.Check(content);
-    }
 }
