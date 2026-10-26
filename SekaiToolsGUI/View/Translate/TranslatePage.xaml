@@ -29,28 +29,31 @@
                      HorizontalAlignment="Stretch">
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="120" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="400" />
                         <ColumnDefinition Width="210" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Margin="0,0,10,0">
                         <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="在线载入" />
                         <ui:Button Content="前往数据下载" Click="OpenDownloadPageButton_OnClick" />
                     </StackPanel>
-                    <StackPanel Grid.Column="1">
+                    <StackPanel Grid.Column="1" Margin="0,0,0,8">
                         <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="本地载入" />
                         <WrapPanel Orientation="Horizontal">
                             <ui:Button Margin="0,0,8,0" Click="LoadFileButton_OnClick"
                                        Name="LoadScriptButton" Content="载入剧本" />
                             <ui:Button Name="LoadTranslationButton" Margin="0,0,8,0"
                                        Click="LoadTranslationButton_OnClick"
+                                       Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}"
                                        IsEnabled="{Binding HasScript}"
                                        Content="载入翻译文件" />
                             <ui:Button Name="ReferenceTranslationButton" Click="LoadReviewButton_OnClick"
+                                       Margin="0,0,8,0"
+                                       Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}"
                                        IsEnabled="{Binding HasScript}"
                                        Content="载入参考翻译文件" />
-                            <control:Popover x:Name="SpecialCharPopover" Margin="8,0,0,0"
+                            <control:Popover x:Name="SpecialCharPopover" Margin="0,0,0,0"
                                              Padding="0" StaysOpen="False">
                                 <control:Popover.Target>
                                     <ui:Button Click="SpecialCharButton_OnClick" Content="复制特殊字符" />
@@ -86,7 +89,6 @@
                     <StackPanel Grid.Column="3" HorizontalAlignment="Right">
                         <TextBlock FontSize="12" Opacity="0.65" Text="任务控制" VerticalAlignment="Center" Margin="0,0,0,8" />
 
-
                         <WrapPanel Orientation="Horizontal">
                             <ui:Button Margin="0,0,8,0" Click="UndoButton_OnClick" IsEnabled="{Binding CanUndo}"
                                        ToolTip="撤销 (Ctrl+Z)" AutomationProperties.Name="撤销">
@@ -104,15 +106,6 @@
                     </StackPanel>
                 </Grid>
             </ui:Card>
-            <!-- <ui:Card Grid.Column="1" Margin="5,0,0,0"  -->
-            <!--          Grid.Row="1" Name="TranslateContainer" -->
-            <!--          VerticalContentAlignment="Top" VerticalAlignment="Stretch" Padding="2"> -->
-            <!--     <ui:PassiveScrollViewer Padding="0" -->
-            <!--         VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" -->
-            <!--         MaxHeight="{Binding ElementName=TranslateContainer, Path=ActualHeight}"> -->
-            <!--         <StackPanel Orientation="Vertical" Name="TranslatePanel" Margin="5,5,5,15"  /> -->
-            <!--     </ui:PassiveScrollViewer> -->
-            <!-- </ui:Card> -->
 
             <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="24"
                         VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False"
