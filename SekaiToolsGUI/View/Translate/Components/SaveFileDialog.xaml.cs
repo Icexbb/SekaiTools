@@ -1,4 +1,5 @@
 using System.IO;
+using System.Windows;
 using SekaiToolsGUI.ViewModel.Subtitle;
 using Wpf.Ui.Controls;
 
@@ -31,7 +32,7 @@ public partial class SaveFileDialog : ContentDialog
                 base.OnButtonClick(button);
                 break;
             case ContentDialogButton.Secondary:
-                ViewModel.FileName = SelectFile() ?? ViewModel.FileName;
+                SelectFile();
                 break;
             case ContentDialogButton.Close:
                 base.OnButtonClick(button);
@@ -41,18 +42,25 @@ public partial class SaveFileDialog : ContentDialog
         }
     }
 
-    private string? SelectFile()
+    private void SelectFile()
     {
         var openFileDialog = new Microsoft.Win32.SaveFileDialog
         {
+            OverwritePrompt = true,
             Filter = "文本文件|*.txt;",
-            DefaultDirectory = Path.GetDirectoryName(TranslationFile == "" ? ScriptFile : TranslationFile),
+            DefaultDirectory = Path.GetDirectoryName(ViewModel.FileName),
             DefaultExt = ".txt",
-            FileName = TranslationFile == ""
-                ? Path.ChangeExtension(Path.GetFileName(ScriptFile), ".txt")
-                : Path.GetFileName(TranslationFile)
+            FileName = Path.GetFileName(ViewModel.FileName)
         };
-        var result = openFileDialog.ShowDialog();
-        return result == true ? openFileDialog.FileName : null;
+        var existingFileConfirmed = false;
+        openFileDialog.FileOk += (_, _) => existingFileConfirmed = File.Exists(openFileDialog.FileName);
+        if (openFileDialog.ShowDialog() == true)
+            ViewModel.SetSelectedPath(openFileDialog.FileName, existingFileConfirmed);
+    }
+
+    private void TranslationTag_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button { Tag: string tag })
+            ViewModel.ApplyTranslationTag(tag);
     }
 }

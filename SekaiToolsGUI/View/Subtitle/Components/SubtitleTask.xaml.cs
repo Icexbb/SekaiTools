@@ -484,6 +484,9 @@ public partial class SubtitleTask : UserControl
                 subtitle.Events.Insert(0, staffEvent);
             }
 
+            if (!await ExportOverwriteConfirmation.ConfirmAsync(dialogService, dialog.ViewModel, token))
+                return;
+
             await File.WriteAllTextAsync(fileName, subtitle.ToString(), Encoding.UTF8, token);
 
             if (CanDeleteSavedProgress?.Invoke() == true)

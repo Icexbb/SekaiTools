@@ -21,6 +21,7 @@
         <Compile Include="..\Tools\DecoderProbe\BytePixelComparison.cs" Link="Tools\BytePixelComparison.cs"/>
         <Compile Include="..\Updater\UpdateProxySettings.cs" Link="Updater\UpdateProxySettings.cs"/>
         <Compile Include="..\SekaiToolsGUI\ViewModel\ViewModelBase.cs" Link="ViewModel\ViewModelBase.cs"/>
+        <Compile Include="..\SekaiToolsGUI\ViewModel\Subtitle\SaveFileDialogModel.cs" Link="ViewModel\Subtitle\SaveFileDialogModel.cs"/>
         <Compile Include="..\SekaiToolsGUI\ViewModel\Translate\TranslatePageModel.cs" Link="ViewModel\Translate\TranslatePageModel.cs"/>
         <Compile Include="..\SekaiToolsGUI\ViewModel\Translate\TranslateItemModel.cs" Link="ViewModel\Translate\TranslateItemModel.cs"/>
         <Compile Include="..\SekaiToolsGUI\ViewModel\Translate\LineModel.cs" Link="ViewModel\Translate\LineModel.cs"/>

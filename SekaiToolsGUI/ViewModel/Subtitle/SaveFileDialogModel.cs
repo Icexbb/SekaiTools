@@ -1,9 +1,34 @@
+using System.IO;
+using System.Text.RegularExpressions;
 using SekaiToolsCore.Process.Config;
 
 namespace SekaiToolsGUI.ViewModel.Subtitle;
 
 public class SaveFileDialogModel : ViewModelBase
 {
+    private string? _confirmedOverwritePath;
+
+    public bool NeedsOverwriteConfirmation => File.Exists(FileName) &&
+        !string.Equals(_confirmedOverwritePath, FileName, StringComparison.OrdinalIgnoreCase);
+
+    public void SetSelectedPath(string path, bool overwriteConfirmed)
+    {
+        FileName = path;
+        _confirmedOverwritePath = overwriteConfirmed ? path : null;
+    }
+
+    public void ApplyTranslationTag(string tag)
+    {
+        if (tag is not ("翻译" or "校对" or "合意"))
+            throw new ArgumentOutOfRangeException(nameof(tag));
+        var name = Path.GetFileName(FileName);
+        var prefix = Regex.Match(name, "^【[^】]*】");
+        FileName = Path.Combine(Path.GetDirectoryName(FileName) ?? "",
+            $"【{tag}】" + (prefix.Success ? name[prefix.Length..] : name));
+        // Clicking a tag always invalidates consent, even when the path is unchanged.
+        _confirmedOverwritePath = null;
+    }
+
     public void LoadExportOptions(ExportStyleConfig config)
     {
         ExportLine1 = config.ExportLine1;
@@ -178,6 +203,11 @@ public class SaveFileDialogModel : ViewModelBase
     public string FileName
     {
         get => GetProperty("");
-        set => SetProperty(value);
+        set
+        {
+            if (!string.Equals(FileName, value, StringComparison.Ordinal))
+                _confirmedOverwritePath = null;
+            SetProperty(value);
+        }
     }
 }

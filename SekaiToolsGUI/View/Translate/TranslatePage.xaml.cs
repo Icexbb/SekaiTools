@@ -10,6 +10,7 @@ using SekaiToolsBase;
 using SekaiToolsBase.GameScript;
 using SekaiToolsBase.Story;
 using SekaiToolsBase.Story.Translation;
+using SekaiToolsGUI.Service;
 using SekaiToolsGUI.View.Download;
 using SekaiToolsGUI.ViewModel.Translate;
 using Wpf.Ui;
@@ -480,6 +481,9 @@ public partial class TranslatePage : UserControl
         try
         {
             var content = ExportTranslation();
+            if (!await ExportOverwriteConfirmation.ConfirmAsync(dialogService, dialog.ViewModel, token))
+                return false;
+
             await File.WriteAllTextAsync(fileName, content, token);
             ViewModel.MarkSaved();
         }

@@ -31,6 +31,16 @@
                 <ComboBoxItem Content="TXT v2（按剧本标识匹配，推荐）" />
                 <ComboBoxItem Content="旧 TXT（按行顺序匹配）" />
             </ComboBox>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                <ui:SymbolIcon Symbol="Tag24" Margin="0,0,8,0" VerticalAlignment="Center" />
+                <TextBlock Text="文件名标签" VerticalAlignment="Center" Margin="0,0,10,0" />
+                <ui:Button Content="翻译" Tag="翻译" Click="TranslationTag_OnClick" Margin="0,0,6,0"
+                           AutomationProperties.Name="使用翻译文件名标签" />
+                <ui:Button Content="校对" Tag="校对" Click="TranslationTag_OnClick" Margin="0,0,6,0"
+                           AutomationProperties.Name="使用校对文件名标签" />
+                <ui:Button Content="合意" Tag="合意" Click="TranslationTag_OnClick"
+                           AutomationProperties.Name="使用合意文件名标签" />
+            </StackPanel>
             <TextBlock Text="文件将保存到：" HorizontalAlignment="Left" VerticalAlignment="Center" />
             <TextBox IsReadOnly="True" Margin="5,15,5,5"
                      Text="{Binding Path=FileName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
