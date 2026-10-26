@@ -17,6 +17,34 @@ namespace SekaiTools.Tests;
 public class UnnamedDialogTests
 {
     [Theory]
+    [InlineData(false, "")]
+    [InlineData(true, "")]
+    [InlineData(false, "译者补充的名字")]
+    public void UnnamedOpeningDoesNotShiftNamedDialogueLayout(bool shake, string translatedName)
+    {
+        using var fixture = new Fixture();
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        var unnamedData = new SekaiToolsBase.Story.StoryEvent.DialogStoryEvent(0, "Music", 0, "", false, false);
+        unnamedData.SetTranslation(translatedName, "Music");
+        var namedData = new SekaiToolsBase.Story.StoryEvent.DialogStoryEvent(1, "Hello", 0, "Speaker", false, shake);
+        var unnamed = new SekaiToolsCore.Process.FrameSet.DialogBaseFrameSet(unnamedData, fixture.Info.Fps);
+        var named = new SekaiToolsCore.Process.FrameSet.DialogBaseFrameSet(namedData, fixture.Info.Fps);
+        unnamed.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(0, fixture.Info.Fps, new Point(174, 551)));
+        named.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(10, fixture.Info.Fps, new Point(150, 500)));
+        named.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(11, fixture.Info.Fps, new Point(152, 502)));
+        var info = new SubtitleExportInfo("test", "1", "done", "", "", "");
+        var baseline = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([named], [], [], info);
+        var actual = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([unnamed, named], [], [], info);
+
+        var expectedStyles = baseline.ToString().Split('\n').Where(line => line.StartsWith("Style: Line"));
+        var actualStyles = actual.ToString().Split('\n').Where(line => line.StartsWith("Style: Line"));
+        Assert.Equal(expectedStyles, actualStyles);
+        // 命名台词的正文位置与单独导出时相同，覆盖抖动逐帧定位标签。
+        var namedLines = baseline.Events.ToString().Split('\n').Where(line => line.StartsWith("Dialogue:") && line.Contains(",Line1,"));
+        foreach (var line in namedLines) Assert.Contains(line, actual.Events.ToString());
+    }
+
+    [Theory]
     [InlineData(false, "Hello")]
     [InlineData(true, "Hello")]
     [InlineData(false, "A")]

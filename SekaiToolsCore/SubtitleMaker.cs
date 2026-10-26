@@ -35,7 +35,10 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
 
         if (dialogList.Count != 0)
         {
-            _nameTagPosition = dialogList[0].Frames[0].Point;
+            // 无名台词保存的是正文推算锚点，不能覆盖真实名字栏的全局排版基准。
+            var layoutReference = dialogList.FirstOrDefault(set =>
+                !set.IsEmpty() && !string.IsNullOrWhiteSpace(set.Data.CharacterOriginal)) ?? dialogList[0];
+            _nameTagPosition = layoutReference.Start().Point;
             _styles.AddRange(MakeDialogStyles());
             events.AddRange(MakeDialogEvents(dialogList));
         }
