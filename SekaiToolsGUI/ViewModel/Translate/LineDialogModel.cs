@@ -15,6 +15,7 @@ public partial class LineDialogModel : LineModel
     {
         Flashback = flashback;
         EndLine = dialogStoryEvent.CloseWindow;
+        Shake = dialogStoryEvent.Shake;
 
         CharacterId = dialogStoryEvent.CharacterId;
 
@@ -35,6 +36,7 @@ public partial class LineDialogModel : LineModel
         UpdateMetrics();
     }
 
+    public bool Shake { get; }
     public SekaiToolsBase.Story.FlashbackInfo? Flashback { get; }
     public bool IsFlashback => Flashback?.IsFlashback == true;
     public string FlashbackHint => IsFlashback ? Flashback!.Hint : string.Empty;

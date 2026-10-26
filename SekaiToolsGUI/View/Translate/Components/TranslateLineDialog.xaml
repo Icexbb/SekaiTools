@@ -29,6 +29,10 @@
                         Width="28" Height="28" />
                     <ui:SymbolIcon Symbol="Comment28"
                                    Visibility="{c:Binding 'Icon.Length==0',FalseToVisibility=Collapsed}" />
+                    <ui:SymbolIcon x:Name="ShakeIndicator" Symbol="PhoneShake24" Margin="0,6,0,0"
+                                   ToolTip="抖动行" AutomationProperties.Name="抖动行"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="{c:Binding Shake,FalseToVisibility=Collapsed}" />
                 </StackPanel>
                 <Grid Grid.Column="2" Margin="0" VerticalAlignment="Stretch">
                     <Grid.RowDefinitions>
