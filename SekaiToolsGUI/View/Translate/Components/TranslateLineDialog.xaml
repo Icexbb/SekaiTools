@@ -10,11 +10,24 @@
              d:DesignWidth="800"
              HorizontalAlignment="Stretch">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="150" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <ui:Card Grid.Column="0" Margin="0" Padding="5,2" VerticalAlignment="Stretch">
+        <Border Grid.Row="0" Grid.ColumnSpan="2" Padding="8,4" Margin="0,0,0,2"
+                Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                ToolTip="{Binding FlashbackHint}"
+                Visibility="{c:Binding IsFlashback,FalseToVisibility=Collapsed}">
+            <StackPanel Orientation="Horizontal">
+                <ui:SymbolIcon Symbol="History24" Margin="0,0,6,0" />
+                <TextBlock Text="疑似闪回" />
+            </StackPanel>
+        </Border>
+        <ui:Card Grid.Row="1" Grid.Column="0" Margin="0" Padding="5,2" VerticalAlignment="Stretch">
             <Grid VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="30" />
@@ -68,7 +81,7 @@
                 </Grid>
             </Grid>
         </ui:Card>
-        <ui:Card Grid.Column="1" Margin="0" Padding="5,2" VerticalAlignment="Stretch">
+        <ui:Card Grid.Row="1" Grid.Column="1" Margin="0" Padding="5,2" VerticalAlignment="Stretch">
             <Grid VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

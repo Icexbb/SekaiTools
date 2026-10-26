@@ -10,8 +10,9 @@ namespace SekaiToolsGUI.ViewModel.Translate;
 public partial class LineDialogModel : LineModel
 {
     private bool _isFormatting;
-    public LineDialogModel(DialogStoryEvent dialogStoryEvent)
+    public LineDialogModel(DialogStoryEvent dialogStoryEvent, SekaiToolsBase.Story.FlashbackInfo? flashback = null)
     {
+        Flashback = flashback;
         EndLine = dialogStoryEvent.CloseWindow;
 
         CharacterId = dialogStoryEvent.CharacterId;
@@ -32,6 +33,10 @@ public partial class LineDialogModel : LineModel
         Character.PropertyChanged += OnCharacterPropertyChanged;
         UpdateMetrics();
     }
+
+    public SekaiToolsBase.Story.FlashbackInfo? Flashback { get; }
+    public bool IsFlashback => Flashback?.IsFlashback == true;
+    public string FlashbackHint => IsFlashback ? Flashback!.Hint : string.Empty;
 
     public bool EndLine
     {

@@ -94,12 +94,14 @@ public class TranslatePageModel : ViewModelBase
         {
             ClearEventRegisters();
             SetProperty(value);
+            var flashbacks = FlashbackAnalyzer.Analyze(_loadedScript?.TalkData ?? []);
             var events = new List<LineModel>();
             foreach (var baseStoryEvent in value.Events)
                 switch (baseStoryEvent)
                 {
                     case DialogStoryEvent dialogStoryEvent:
-                        var lineDialogModel = new LineDialogModel(dialogStoryEvent);
+                        var lineDialogModel = new LineDialogModel(dialogStoryEvent,
+                            (uint)dialogStoryEvent.Index < (uint)flashbacks.Length ? flashbacks[dialogStoryEvent.Index] : null);
                         lineDialogModel.CharacterTranslateChanged += OnLineDialogModelOnCharacterTranslateChanged;
                         events.Add(lineDialogModel);
                         break;
