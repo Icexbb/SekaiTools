@@ -10,6 +10,7 @@
     <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <ComboBox
@@ -17,9 +18,35 @@
             Margin="0,0,0,5" HorizontalContentAlignment="Stretch"
             SelectionChanged="SpecialStoryTypeSelector_OnSelectionChanged" />
 
-        <ui:Card Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
+        <ui:Card x:Name="StoryInformation" Grid.Row="1" Margin="0,0,0,5" Padding="12"
+                 Visibility="Collapsed" HorizontalContentAlignment="Stretch">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <ui:SymbolIcon Symbol="Info24" Margin="0,0,8,0" />
+                    <TextBlock Text="特殊剧情信息" FontWeight="DemiBold" />
+                    <TextBlock Text="（本地时间）" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Margin="0,0,12,0">
+                        <TextBlock Text="开始时间" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock x:Name="StartTimeText" Margin="0,4,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="结束时间" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock x:Name="EndTimeText" Margin="0,4,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </ui:Card>
+
+        <ui:Card Grid.Row="2" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
+                 HorizontalContentAlignment="Stretch">
             <ui:PassiveScrollViewer HorizontalScrollBarVisibility="Disabled">
-                <Grid Margin="5" Name="CardContents" />
+                <StackPanel Margin="5" Name="CardContents" VerticalAlignment="Top" />
             </ui:PassiveScrollViewer>
         </ui:Card>
     </Grid>

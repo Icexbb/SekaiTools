@@ -30,31 +30,33 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
 
     private void RefreshCombo()
     {
-        CardContents.Children.Clear();
-        CardContents.RowDefinitions.Clear();
-        CardContents.ColumnDefinitions.Clear();
-        if (ListSpecialStory.Data.Count == 0) return;
-        foreach (var (key, _) in ListSpecialStory.Data)
+        var selected = SpecialStoryTypeSelector.SelectedItem as string;
+        ClearItems();
+        SpecialStoryTypeSelector.Items.Clear();
+        foreach (var key in ListSpecialStory.Data.Keys)
             SpecialStoryTypeSelector.Items.Add(key);
+        if (selected != null && ListSpecialStory.Data.ContainsKey(selected))
+            SpecialStoryTypeSelector.SelectedItem = selected;
+        else if (SpecialStoryTypeSelector.Items.Count > 0)
+            SpecialStoryTypeSelector.SelectedIndex = 0;
+    }
 
-        SpecialStoryTypeSelector.SelectedIndex = 0;
-        RefreshSelection();
+    private void ClearItems()
+    {
+        foreach (var item in CardContents.Children.OfType<DownloadItem>().ToArray()) item.Recycle();
+        StoryInformation.Visibility = Visibility.Collapsed;
+        StartTimeText.Text = EndTimeText.Text = string.Empty;
     }
 
     private void RefreshSelection()
     {
-        if (ListSpecialStory.Data.Count == 0) return;
-        if (SpecialStoryTypeSelector.SelectedIndex == -1) return;
-        var selectedUnit = SpecialStoryTypeSelector.SelectedItem.ToString()!;
-        CardContents.Children.Clear();
-        CardContents.RowDefinitions.Clear();
-        CardContents.ColumnDefinitions.Clear();
-        var set = ListSpecialStory.Data[selectedUnit];
-        const int itemPreRow = 4;
-        for (var column = 0; column < itemPreRow; column++)
-            CardContents.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        ClearItems();
+        if (SpecialStoryTypeSelector.SelectedItem is not string selected ||
+            !ListSpecialStory.Data.TryGetValue(selected, out var set)) return;
+        StartTimeText.Text = FormatTime(set.SpecialStory.StartAt);
+        EndTimeText.Text = FormatTime(set.SpecialStory.EndAt);
+        StoryInformation.Visibility = Visibility.Visible;
 
-        var index = 0;
         foreach (var episode in set.Episodes)
         {
             var item = DownloadItem.GetItem(() => SourceList.Instance.SpecialStory(episode),
@@ -62,14 +64,20 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
                 episode.ScenarioId,
                 $"SpecialStory|{set.SpecialStory.AssetBundleName}-{set.SpecialStory.Title}|{episode.ScenarioId}-{episode.Title}"
             );
-            if (index % itemPreRow == 0)
-                CardContents.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            Grid.SetRow(item, index / itemPreRow);
-            Grid.SetColumn(item, index % itemPreRow);
-            item.Margin = new Thickness(0, 0, index % itemPreRow == itemPreRow - 1 ? 0 : 5, 5);
+            item.Margin = new Thickness(0, 0, 0, 5);
             CardContents.Children.Add(item);
-            index++;
         }
+    }
+
+    private static string FormatTime(long timestamp)
+    {
+        if (timestamp <= 0) return "未提供";
+        try
+        {
+            return DateTimeOffset.FromUnixTimeMilliseconds(timestamp).ToLocalTime()
+                .ToString("yyyy-MM-dd HH:mm:ss zzz", System.Globalization.CultureInfo.InvariantCulture);
+        }
+        catch (ArgumentOutOfRangeException) { return "时间无效"; }
     }
 
     private void SpecialStoryTab_OnLoaded(object sender, RoutedEventArgs e)
