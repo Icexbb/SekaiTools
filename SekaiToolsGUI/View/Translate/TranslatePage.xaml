@@ -66,26 +66,42 @@
                             </control:Popover>
                         </WrapPanel>
                     </StackPanel>
-                    <StackPanel Grid.Column="2" Orientation="Horizontal">
-                        <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="任务信息" VerticalAlignment="Top" />
-                        <StackPanel VerticalAlignment="Top" Margin="10,0,0,0">
-                            <StackPanel VerticalAlignment="Top" Orientation="Horizontal">
-                                <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="剧本文件：" />
-                                <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" MaxWidth="250"
-                                           Name="TextBlockScriptFile" />
-                            </StackPanel>
-                            <StackPanel VerticalAlignment="Top" Orientation="Horizontal">
-                                <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="翻译文件：" />
-                                <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" MaxWidth="250"
-                                           Name="TextBlockTranslation" />
-                            </StackPanel>
-                            <StackPanel VerticalAlignment="Top" Orientation="Horizontal">
-                                <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="参考文件：" />
-                                <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" MaxWidth="250"
-                                           Name="TextBlockTranslationReference" />
-                            </StackPanel>
-                        </StackPanel>
-                    </StackPanel>
+                    <Grid Grid.Column="2" Margin="0,0,12,0" ClipToBounds="True">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="任务信息" />
+                        <Grid Grid.Row="1" Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock FontSize="12" Opacity="0.65" Text="剧本文件：" />
+                            <TextBlock Grid.Column="1" FontSize="12" Opacity="0.65" MaxWidth="250"
+                                       HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" Name="TextBlockScriptFile" />
+                        </Grid>
+                        <Grid Grid.Row="2" Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock FontSize="12" Opacity="0.65" Text="翻译文件：" />
+                            <TextBlock Grid.Column="1" FontSize="12" Opacity="0.65" MaxWidth="250"
+                                       HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" Name="TextBlockTranslation" />
+                        </Grid>
+                        <Grid Grid.Row="3" Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock FontSize="12" Opacity="0.65" Text="参考文件：" />
+                            <TextBlock Grid.Column="1" FontSize="12" Opacity="0.65" MaxWidth="250"
+                                       HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" Name="TextBlockTranslationReference" />
+                        </Grid>
+                    </Grid>
                     <StackPanel Grid.Column="3" HorizontalAlignment="Right">
                         <TextBlock FontSize="12" Opacity="0.65" Text="任务控制" VerticalAlignment="Center" Margin="0,0,0,8" />
 
