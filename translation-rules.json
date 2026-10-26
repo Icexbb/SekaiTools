@@ -1,0 +1,25 @@
+{
+  "replacements": [
+    { "from": "…", "to": "..." },
+    { "from": "(", "to": "（" },
+    { "from": ")", "to": "）" },
+    { "from": ",", "to": "，" },
+    { "from": "?", "to": "？" },
+    { "from": "!", "to": "！" },
+    { "from": "欸", "to": "诶" }
+  ],
+  "checkEndPunctuation": true,
+  "validEndCharacters": "、，。？！~♪☆.—",
+  "closingCharacters": "）」』”",
+  "missingEndMessage": "句尾缺少结束标点（如逗号、句号、问号、感叹号）",
+  "checkEllipsisPunctuation": true,
+  "invalidEndings": [".，", ".。"],
+  "invalidEndingMessage": "「……。」和「……，」只保留省略号",
+  "checkDash": true,
+  "dashCharacter": "—",
+  "dashGroupLength": 2,
+  "dashMessage": "破折号使用错误",
+  "checkLineLength": true,
+  "maxLineLength": 37,
+  "threeLineMaxLength": 45
+}

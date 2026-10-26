@@ -9,7 +9,7 @@
 | 项目 | 职责 | 不应包含 |
 |---|---|---|
 | `SekaiToolsBase` | 游戏数据 DTO、剧本解析、翻译合并、共享日志与代理配置 | OpenCV、WPF、资源下载、处理进度存储 |
-| `SekaiToolsConfiguration` | 统一加载、校验并发布网络端点配置 | 业务模型、网络请求、UI 状态 |
+| `SekaiToolsConfiguration` | 统一加载、校验并发布网络端点和翻译文本规则配置 | 业务模型、网络请求、UI 状态 |
 | `SekaiToolsSubtitles` | ASS 文档、样式、事件、标签与绘图模型 | 游戏数据、视频识别、文件下载 |
 | `SekaiToolsCore` | 视频读取、模板匹配、FrameSet、字幕生成、处理状态模型与基础设施契约 | HTTP 下载、用户目录、JSON 文件存储、WPF |
 | `SekaiToolsMedia` | VSPipe/FFmpeg 压制管线、编码参数和进度模型 | WPF ViewModel、Snackbar、Windows 电源管理 |

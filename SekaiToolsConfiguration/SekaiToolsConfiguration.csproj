@@ -7,6 +7,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <EmbeddedResource Include="..\translation-rules.json"
+                          LogicalName="SekaiToolsConfiguration.translation-rules.json"/>
+        <None Include="..\translation-rules.json" Link="translation-rules.json"
+              CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"/>
         <EmbeddedResource Include="..\network-endpoints.json"
                           LogicalName="SekaiToolsConfiguration.network-endpoints.json"/>
         <None Include="..\network-endpoints.json"

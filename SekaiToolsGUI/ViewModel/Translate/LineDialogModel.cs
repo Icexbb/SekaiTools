@@ -2,11 +2,13 @@ using System.ComponentModel;
 using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsBase.Utils;
 using SekaiToolsBase.Story.Translation;
+using SekaiToolsConfiguration;
 
 namespace SekaiToolsGUI.ViewModel.Translate;
 
 public partial class LineDialogModel : LineModel
 {
+    private bool _isFormatting;
     public LineDialogModel(DialogStoryEvent dialogStoryEvent)
     {
         EndLine = dialogStoryEvent.CloseWindow;
@@ -94,17 +96,21 @@ public partial class LineDialogModel : LineModel
 
     private void UpdateMetrics()
     {
-        var formatted = FormatContent(Content.Translated);
+        var formatted = _isFormatting ? Content.Translated : FormatContent(Content.Translated);
         if (formatted != Content.Translated)
         {
-            Content.Translated = formatted;
+            _isFormatting = true;
+            try { Content.Translated = formatted; }
+            finally { _isFormatting = false; }
             return;
         }
 
         // 这里的逻辑就是你原本在父级写的逻辑
         Check = CheckContent(Content.Translated);
         MaxLineLength = (Content.Translated + "\n").MaxLineLength();
-        TooLong = Content.Original.LineCount() == 3 ? MaxLineLength > 45 : MaxLineLength > 37;
+        var rules = TranslationRules.Current;
+        TooLong = rules.CheckLineLength && MaxLineLength >
+            (Content.Original.LineCount() == 3 ? rules.ThreeLineMaxLength : rules.MaxLineLength);
     }
 }
 
@@ -121,43 +127,11 @@ public partial class LineDialogModel
 
     private static string FormatContent(string content)
     {
-        return content.Replace("…", "...")
-            .Replace('(', '（')
-            .Replace(')', '）')
-            .Replace(',', '，')
-            .Replace('?', '？')
-            .Replace('!', '！')
-            .Replace('欸', '诶');
+        return TranslationRules.Current.Format(content);
     }
 
     private static string CheckContent(string content)
     {
-        var result = "";
-        var normalEnds = new[] { '、', '，', '。', '？', '！', '~', '♪', '☆', '.', '—' };
-        var abnormalEnds = new[] { '）', '」', '』', '”' };
-        var contentArray = content.Split("\n").Where(s => s.Length > 0).ToList();
-        for (var i = 0; i < contentArray.Count; i++)
-        {
-            var line = contentArray[i].TrimEnd();
-            var lineRes = "";
-            var ending = line.TrimEnd(abnormalEnds);
-            if (ending.Length > 0 && normalEnds.Contains(ending[^1]))
-            {
-                if (ending.EndsWith(".，") || ending.EndsWith(".。"))
-                    lineRes += "【「……。」和「……，」只保留省略号】";
-            }
-            else
-            {
-                lineRes += "【句尾缺少结束标点（如逗号、句号、问号、感叹号）】";
-            }
-
-            if (line.Contains('—') && line.Contains("——") &&
-                line.Split("—").Length != line.Split("——").Length * 2 - 1)
-                lineRes += "【破折号使用错误】";
-
-            if (lineRes != "") result += $"行{i + 1}:{lineRes}\n";
-        }
-
-        return result.Trim();
+        return TranslationRules.Current.Check(content);
     }
 }
