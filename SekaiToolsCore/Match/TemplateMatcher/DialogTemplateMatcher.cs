@@ -27,6 +27,7 @@ public class DialogTemplateMatcher(
     private readonly AdaptiveSearchScheduler _searchScheduler = new();
     private Point _nameTagPosition;
     private MatchStatus _status;
+    private readonly DialogTrackingGrace _trackingGrace = new(videoInfo.Fps.Fps());
     private readonly Dictionary<string, GaMat> _nameTemplates = new(StringComparer.Ordinal);
     private readonly Dictionary<string, (GaMat First, GaMat Second, GaMat Third)> _contentTemplates = new(StringComparer.Ordinal);
 
@@ -168,10 +169,19 @@ public class DialogTemplateMatcher(
                 return matchRes ? MatchStatus.DialogMatched2 : MatchStatus.DialogDropped;
             }
             case MatchStatus.DialogMatched3:
+            case MatchStatus.DialogPending:
             {
                 matchRes = LocalMatch(frame, template3, matchingThreshold,
                     TemplateMatchCachePool.MatchUsage.DialogContent3);
-                return matchRes ? MatchStatus.DialogMatched3 : MatchStatus.DialogDropped;
+                if (matchRes) return MatchStatus.DialogMatched3;
+                // Only a fresh name match plus a two-glyph match may bridge a
+                // short loss of the three-glyph template. Never lower thresholds.
+                if (!string.IsNullOrWhiteSpace(dialogBase.Data.CharacterOriginal) &&
+                    !DialogMatchNameTag(frame, dialogBase, frameIndex).IsEmpty &&
+                    LocalMatch(frame, template2, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent2))
+                    return MatchStatus.DialogPending;
+                return MatchStatus.DialogDropped;
             }
             case MatchStatus.NameTagNotMatched:
             case MatchStatus.DialogDropped:
@@ -385,12 +395,17 @@ public class DialogTemplateMatcher(
                 }
             }
 
+            if (matchResult.Status == MatchStatus.DialogPending &&
+                !_trackingGrace.Hold(frameIndex, matchResult.Point))
+                matchResult = new MatchResult(matchResult.Point, MatchStatus.DialogDropped);
+
             _status = matchResult.Status;
             firstStatus ??= matchResult.Status;
 
             switch (_status)
             {
                 case MatchStatus.DialogDropped:
+                    _trackingGrace.Clear();
                     MarkDropped(dIndex);
                     _searchScheduler.Reset();
                     _lookaheadTracker.Reset();
@@ -399,7 +414,11 @@ public class DialogTemplateMatcher(
                 case MatchStatus.DialogNotMatched or MatchStatus.NameTagNotMatched:
                     if (TryEnterFallback()) continue;
                     return IsStatusMatched(firstStatus.Value);
+                case MatchStatus.DialogPending:
+                    // Do not export uncertain frames until full evidence returns.
+                    return true;
                 default:
+                    _trackingGrace.Commit(Set[dIndex]);
                     MatchedFrameRecorder.Record(Set[dIndex], matchedFrameIndex, matchResult.Point,
                         frameIndex, currentMatchPoint);
                     MarkSucceeded();
@@ -415,7 +434,8 @@ public class DialogTemplateMatcher(
     {
         return status is MatchStatus.DialogMatched1
             or MatchStatus.DialogMatched2
-            or MatchStatus.DialogMatched3;
+            or MatchStatus.DialogMatched3
+            or MatchStatus.DialogPending;
     }
 
     private MatchResult MatchForDialog(FrameMatchContext frame, DialogBaseFrameSet dialogBase, int frameIndex)
@@ -446,6 +466,7 @@ public class DialogTemplateMatcher(
         {
             SearchState = _searchScheduler.CaptureState(),
             LookaheadState = _lookaheadTracker.CaptureState(),
+            PendingTrackingFrames = _trackingGrace.CaptureState(),
             Status = (int)_status,
             ConsecutiveFailures = cf,
             LastFailedIndex = lfi,
@@ -470,6 +491,7 @@ public class DialogTemplateMatcher(
         _searchScheduler.RestoreState(state.SearchState);
         _lookaheadTracker.RestoreState(state.LookaheadState);
         _status = (MatchStatus)state.Status;
+        _trackingGrace.RestoreState(state.PendingTrackingFrames);
         RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold);
         _nameTagPosition = state.NameTagPosition is { } p
             ? new Point(p.X, p.Y)
@@ -498,6 +520,7 @@ public class DialogTemplateMatcher(
         DialogMatched1 = 1,
         DialogMatched2 = 2,
         DialogMatched3 = 3,
+        DialogPending = 4,
         DialogDropped = -1
     }
 
