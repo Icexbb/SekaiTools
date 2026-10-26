@@ -4,6 +4,8 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Input;
+using System.Windows.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SekaiToolsBase;
@@ -27,6 +29,10 @@ namespace SekaiToolsGUI.View.Translate;
 
 public partial class TranslatePage : UserControl
 {
+    private readonly EditorSessionStore _sessions;
+    private readonly DispatcherTimer _draftTimer = new() { Interval = TimeSpan.FromMilliseconds(600) };
+    private bool _draftChecked;
+    private bool _restoringDraft;
     private bool _isLoadingScript;
     private string? _dragTranslationPath;
     private Story? _dragStory;
@@ -35,8 +41,11 @@ public partial class TranslatePage : UserControl
     private CancellationTokenSource? _flashbackLookup;
     private readonly FlashbackEventService _flashbackEvents = new();
 
-    public TranslatePage()
+    public TranslatePage() : this(new EditorSessionStore()) { }
+
+    internal TranslatePage(EditorSessionStore sessions)
     {
+        _sessions = sessions;
         InitializeComponent();
         DataContext = new TranslatePageModel();
         ViewModel.PropertyChanged += (_, e) =>
@@ -49,6 +58,91 @@ public partial class TranslatePage : UserControl
                 UpdateFlashbackOrigins();
         };
         UpdateLoadButtons();
+        _draftTimer.Tick += (_, _) => FlushDraft();
+        ViewModel.ContentChanged += (_, _) =>
+        {
+            if (_restoringDraft) return;
+            _draftTimer.Stop();
+            _draftTimer.Start();
+        };
+        Loaded += async (_, _) => await OfferRestoreDraftAsync();
+        PreviewKeyDown += OnHistoryKeyDown;
+        AddHandler(CommandManager.PreviewCanExecuteEvent, new CanExecuteRoutedEventHandler((_, e) =>
+        {
+            if (e.Command != ApplicationCommands.Undo && e.Command != ApplicationCommands.Redo) return;
+            e.CanExecute = e.Command == ApplicationCommands.Undo ? ViewModel.CanUndo : ViewModel.CanRedo;
+            e.Handled = true;
+        }));
+        AddHandler(CommandManager.PreviewExecutedEvent, new ExecutedRoutedEventHandler((_, e) =>
+        {
+            if (e.Command != ApplicationCommands.Undo && e.Command != ApplicationCommands.Redo) return;
+            if (e.Command == ApplicationCommands.Undo) ViewModel.Undo();
+            else ViewModel.Redo();
+            e.Handled = true;
+        }));
+    }
+
+    public bool FlushDraft()
+    {
+        _draftTimer.Stop();
+        if (_restoringDraft || !_draftChecked && !ViewModel.HasScript) return true;
+        if (_sessions.SaveDraft(ViewModel)) return true;
+        SnackbarService.Show("草稿保存失败", "无法写入本地恢复草稿，请保存翻译文件后再退出。", ControlAppearance.Danger,
+            new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(5));
+        return false;
+    }
+
+    private void OnHistoryKeyDown(object sender, KeyEventArgs e)
+    {
+        if ((Keyboard.Modifiers & ModifierKeys.Control) == 0 ||
+            (Keyboard.Modifiers & ModifierKeys.Alt) != 0) return;
+        if (e.Key == Key.Z && (Keyboard.Modifiers & ModifierKeys.Shift) == 0)
+        {
+            ViewModel.Undo();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Y || e.Key == Key.Z && (Keyboard.Modifiers & ModifierKeys.Shift) != 0)
+        {
+            ViewModel.Redo();
+            e.Handled = true;
+        }
+    }
+
+    private void UndoButton_OnClick(object sender, RoutedEventArgs e) => ViewModel.Undo();
+    private void RedoButton_OnClick(object sender, RoutedEventArgs e) => ViewModel.Redo();
+
+    private async Task OfferRestoreDraftAsync()
+    {
+        if (_draftChecked) return;
+        _draftChecked = true;
+        var draft = _sessions.ReadDraft();
+        if (draft == null || ViewModel.HasScript) return;
+        // Loaded may precede the main window's dialog-host initialization.
+        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+        var result = await ((MainWindow)Application.Current.MainWindow!).WindowContentDialogService
+            .ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
+            {
+                Title = "重新打开上次未保存的翻译？",
+                Content = $"上次编辑的翻译尚未保存。是否恢复？\n{draft.ScriptPath}",
+                PrimaryButtonText = "重新打开",
+                SecondaryButtonText = "丢弃草稿",
+                CloseButtonText = "稍后"
+            }, CancellationToken.None);
+        if (result == ContentDialogResult.Secondary) { _sessions.DeleteDraft(); return; }
+        if (result != ContentDialogResult.Primary) { _draftChecked = false; return; }
+        _restoringDraft = true;
+        try
+        {
+            draft.Script.OriginalEffectIndices = draft.OriginalEffectIndices;
+            ViewModel.RestoreDraft(draft.Script, draft.ScriptPath, draft.TranslationPath, draft.Values, draft.SavedValues);
+        }
+        catch (Exception exception)
+        {
+            _draftChecked = false;
+            SnackbarService.Show("恢复失败", exception.Message, ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(5));
+        }
+        finally { _restoringDraft = false; }
     }
 
     public TranslatePageModel ViewModel => (TranslatePageModel)DataContext;
@@ -190,7 +284,11 @@ public partial class TranslatePage : UserControl
         ResetDragState();
     }
 
-    private void Page_OnUnloaded(object sender, RoutedEventArgs e) => ResetDragState();
+    private void Page_OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        ResetDragState();
+        FlushDraft();
+    }
 
     private void ResetDragState()
     {
@@ -273,6 +371,11 @@ public partial class TranslatePage : UserControl
             return;
         }
 
+        if (!_draftChecked)
+        {
+            await OfferRestoreDraftAsync();
+            if (!_draftChecked) return;
+        }
         if (!ViewModel.IsEmpty && !await ConfirmReplaceCurrentContentAsync()) return;
 
         ViewModel.LoadScript(script, path);
@@ -467,11 +570,9 @@ public partial class TranslatePage : UserControl
         return result == ContentDialogResult.Primary;
     }
 
-    public Task<bool> ConfirmNavigationAsync() => ConfirmUnsavedChangesAsync("离开翻译页面？");
+    public Task<bool> ConfirmCloseAsync() => ConfirmUnsavedChangesAsync("退出程序？", keepDraft: true);
 
-    public Task<bool> ConfirmCloseAsync() => ConfirmUnsavedChangesAsync("退出程序？");
-
-    private async Task<bool> ConfirmUnsavedChangesAsync(string title)
+    private async Task<bool> ConfirmUnsavedChangesAsync(string title, bool keepDraft = false)
     {
         if (!ViewModel.IsDirty) return true;
 
@@ -481,7 +582,7 @@ public partial class TranslatePage : UserControl
             Title = title,
             Content = "当前翻译有未保存的修改。",
             PrimaryButtonText = "保存",
-            SecondaryButtonText = "不保存",
+            SecondaryButtonText = keepDraft ? "保留草稿并退出" : "不保存",
             CloseButtonText = "取消"
         }, CancellationToken.None);
 
@@ -494,8 +595,7 @@ public partial class TranslatePage : UserControl
 
         bool DiscardChanges()
         {
-            ViewModel.MarkSaved();
-            return true;
+            return !keepDraft || FlushDraft();
         }
     }
 
@@ -522,11 +622,13 @@ public partial class TranslatePage : UserControl
         try
         {
             var content = ExportTranslation();
+            var savedValues = ViewModel.ReadValues();
             if (!await ExportOverwriteConfirmation.ConfirmAsync(dialogService, dialog.ViewModel, token))
                 return false;
 
             await File.WriteAllTextAsync(fileName, content, token);
-            ViewModel.MarkSaved();
+            ViewModel.MarkSaved(savedValues, fileName);
+            FlushDraft();
         }
         catch (Exception ex)
         {

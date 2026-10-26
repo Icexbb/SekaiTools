@@ -5,7 +5,7 @@ using SekaiToolsBase.Story.Translation;
 
 namespace SekaiToolsGUI.ViewModel.Translate;
 
-public class TranslatePageModel : ViewModelBase
+public partial class TranslatePageModel : ViewModelBase
 {
     private GameScript? _loadedScript;
     private Story? _referenceStory;
@@ -48,7 +48,13 @@ public class TranslatePageModel : ViewModelBase
         private set => SetProperty(value);
     }
 
-    public void MarkSaved() => IsDirty = false;
+    public void MarkSaved(EditValue[]? values = null, string? path = null)
+    {
+        _savedValues = values ?? ReadValues();
+        if (path != null) TranslationPath = path;
+        IsDirty = !ReadValues().SequenceEqual(_savedValues);
+        ContentChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     public void LoadScript(GameScript script, string path)
     {
@@ -114,6 +120,7 @@ public class TranslatePageModel : ViewModelBase
                             (uint)dialogStoryEvent.Index < (uint)flashbacks.Length ? flashbacks[dialogStoryEvent.Index] : null);
                         lineDialogModel.ApplyFlashbackOrigins(_flashbackOrigins);
                         lineDialogModel.CharacterTranslateChanged += OnLineDialogModelOnCharacterTranslateChanged;
+                        lineDialogModel.ContentTranslateChanged += OnDialogContentChanged;
                         events.Add(lineDialogModel);
                         break;
                     default:
@@ -124,6 +131,7 @@ public class TranslatePageModel : ViewModelBase
                 }
 
             Events = events.ToArray();
+            ResetHistory();
         }
     }
 
@@ -175,6 +183,7 @@ public class TranslatePageModel : ViewModelBase
             {
                 case LineDialogModel lineDialogModel:
                     lineDialogModel.CharacterTranslateChanged -= OnLineDialogModelOnCharacterTranslateChanged;
+                    lineDialogModel.ContentTranslateChanged -= OnDialogContentChanged;
                     break;
                 case LineEffectModel lineEffectModel:
                     lineEffectModel.ContentTranslateChanged -= OnLineEffectModelOnContentTranslateChanged;
@@ -185,7 +194,7 @@ public class TranslatePageModel : ViewModelBase
     private void OnLineDialogModelOnCharacterTranslateChanged(object? sender, EventArgs args)
     {
         if (sender is not LineDialogModel changedLine) return;
-        IsDirty = true;
+        if (_restoringHistory) return;
         changedLine.CharacterTranslateChangedEnabled = false; // 防止递归调用
 
         // 当角色名称翻译发生变化时，更新所有 LineDialogModel 的 Check
@@ -199,12 +208,13 @@ public class TranslatePageModel : ViewModelBase
         }
 
         changedLine.CharacterTranslateChangedEnabled = true; // 防止递归调用
+        RecordEdit();
     }
 
     private void OnLineEffectModelOnContentTranslateChanged(object? sender, EventArgs args)
     {
         if (sender is not LineEffectModel changedLine) return;
-        IsDirty = true;
+        if (_restoringHistory) return;
         changedLine.ContentTranslateChangedEnabled = false;
         foreach (var line in Events.OfType<LineEffectModel>())
         {
@@ -216,6 +226,7 @@ public class TranslatePageModel : ViewModelBase
         }
 
         changedLine.ContentTranslateChangedEnabled = true;
+        RecordEdit();
     }
 
     public void ApplyReference(Story story)

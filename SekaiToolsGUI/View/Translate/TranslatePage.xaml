@@ -15,149 +15,160 @@
              d:DesignHeight="960" d:DesignWidth="1280" d:Background="White"
              d:DataContext="{d:DesignInstance translate:TranslatePageModel, IsDesignTimeCreatable=True}">
     <Grid>
-    <Grid Margin="8">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <ui:Card Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,8"
-                 Padding="15,10,15,5" VerticalContentAlignment="Center"
-                 HorizontalAlignment="Stretch">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                    <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="在线载入" />
-                    <ui:Button Content="前往数据下载" Click="OpenDownloadPageButton_OnClick" />
-                </StackPanel>
-                <StackPanel Grid.Column="1">
-                    <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="本地载入" />
-                    <StackPanel Orientation="Horizontal">
-                        <ui:Button Margin="0,0,8,0" Click="LoadFileButton_OnClick"
-                                   Name="LoadScriptButton" Content="载入剧本" />
-                        <ui:Button Name="LoadTranslationButton" Margin="0,0,8,0" Click="LoadTranslationButton_OnClick"
-                                   IsEnabled="{Binding HasScript}"
-                                   Content="载入翻译文件" />
-                        <ui:Button Name="ReferenceTranslationButton" Click="LoadReviewButton_OnClick"
-                                   IsEnabled="{Binding HasScript}"
-                                   Content="载入参考翻译文件" />
-                        <control:Popover x:Name="SpecialCharPopover" Margin="8,0,0,0"
-                                         Padding="0" StaysOpen="False">
-                            <control:Popover.Target>
-                                <ui:Button Click="SpecialCharButton_OnClick" Content="复制特殊字符" />
-                            </control:Popover.Target>
-                            <control:Popover.Content>
-                                <components:TranslateFastCopy Width="240" MaxHeight="420"
-                                                              CustomCharacterAdding="SpecialCharacters_OnCustomCharacterAdding" />
-                            </control:Popover.Content>
-
-                        </control:Popover>
+        <Grid Margin="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <ui:Card Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,8"
+                     Padding="15,10,15,5" VerticalContentAlignment="Center"
+                     HorizontalAlignment="Stretch">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="400" />
+                        <ColumnDefinition Width="210" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                        <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="在线载入" />
+                        <ui:Button Content="前往数据下载" Click="OpenDownloadPageButton_OnClick" />
                     </StackPanel>
-                </StackPanel>
-                <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="任务信息" VerticalAlignment="Top" />
-                    <StackPanel VerticalAlignment="Top" Margin="10,0,0,0">
-                        <StackPanel VerticalAlignment="Top" Orientation="Horizontal">
-                            <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="剧本文件：" />
-                            <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" MaxWidth="250"
-                                       Name="TextBlockScriptFile" />
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="本地载入" />
+                        <WrapPanel Orientation="Horizontal">
+                            <ui:Button Margin="0,0,8,0" Click="LoadFileButton_OnClick"
+                                       Name="LoadScriptButton" Content="载入剧本" />
+                            <ui:Button Name="LoadTranslationButton" Margin="0,0,8,0"
+                                       Click="LoadTranslationButton_OnClick"
+                                       IsEnabled="{Binding HasScript}"
+                                       Content="载入翻译文件" />
+                            <ui:Button Name="ReferenceTranslationButton" Click="LoadReviewButton_OnClick"
+                                       IsEnabled="{Binding HasScript}"
+                                       Content="载入参考翻译文件" />
+                            <control:Popover x:Name="SpecialCharPopover" Margin="8,0,0,0"
+                                             Padding="0" StaysOpen="False">
+                                <control:Popover.Target>
+                                    <ui:Button Click="SpecialCharButton_OnClick" Content="复制特殊字符" />
+                                </control:Popover.Target>
+                                <control:Popover.Content>
+                                    <components:TranslateFastCopy Width="240" MaxHeight="420"
+                                                                  CustomCharacterAdding="SpecialCharacters_OnCustomCharacterAdding" />
+                                </control:Popover.Content>
+
+                            </control:Popover>
+                        </WrapPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="任务信息" VerticalAlignment="Top" />
+                        <StackPanel VerticalAlignment="Top" Margin="10,0,0,0">
+                            <StackPanel VerticalAlignment="Top" Orientation="Horizontal">
+                                <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="剧本文件：" />
+                                <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" MaxWidth="250"
+                                           Name="TextBlockScriptFile" />
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Top" Orientation="Horizontal">
+                                <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="翻译文件：" />
+                                <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" MaxWidth="250"
+                                           Name="TextBlockTranslation" />
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Top" Orientation="Horizontal">
+                                <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="参考文件：" />
+                                <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" MaxWidth="250"
+                                           Name="TextBlockTranslationReference" />
+                            </StackPanel>
                         </StackPanel>
-                        <StackPanel VerticalAlignment="Top" Orientation="Horizontal">
-                            <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="翻译文件：" />
-                            <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" MaxWidth="250"
-                                       Name="TextBlockTranslation" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" HorizontalAlignment="Right">
+                        <TextBlock FontSize="12" Opacity="0.65" Text="任务控制" VerticalAlignment="Center" Margin="0,0,0,8" />
+
+
+                        <WrapPanel Orientation="Horizontal">
+                            <ui:Button Margin="0,0,8,0" Click="UndoButton_OnClick" IsEnabled="{Binding CanUndo}"
+                                       ToolTip="撤销 (Ctrl+Z)" AutomationProperties.Name="撤销">
+                                <ui:SymbolIcon Symbol="ArrowUndo24" />
+                            </ui:Button>
+                            <ui:Button Margin="0,0,8,0" Click="RedoButton_OnClick" IsEnabled="{Binding CanRedo}"
+                                       ToolTip="重做 (Ctrl+Y / Ctrl+Shift+Z)" AutomationProperties.Name="重做">
+                                <ui:SymbolIcon Symbol="ArrowRedo24" />
+                            </ui:Button>
+                            <ui:Button Margin="0,0,8,0" Click="ResetButton_OnClick" Name="ResetButton"
+                                       Content="重置" IsEnabled="{Binding HasScript}" />
+                            <ui:Button Click="SaveButton_OnClick" Name="SaveButton" Content="保存"
+                                       Appearance="Primary" IsEnabled="{c:Binding Path='Events.Length!=0'}" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Grid>
+            </ui:Card>
+            <!-- <ui:Card Grid.Column="1" Margin="5,0,0,0"  -->
+            <!--          Grid.Row="1" Name="TranslateContainer" -->
+            <!--          VerticalContentAlignment="Top" VerticalAlignment="Stretch" Padding="2"> -->
+            <!--     <ui:PassiveScrollViewer Padding="0" -->
+            <!--         VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" -->
+            <!--         MaxHeight="{Binding ElementName=TranslateContainer, Path=ActualHeight}"> -->
+            <!--         <StackPanel Orientation="Vertical" Name="TranslatePanel" Margin="5,5,5,15"  /> -->
+            <!--     </ui:PassiveScrollViewer> -->
+            <!-- </ui:Card> -->
+
+            <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="24"
+                        VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False"
+                        Visibility="{c:Binding !HasScript, FalseToVisibility=Collapsed}">
+                <ui:SymbolIcon Symbol="Document24" FontSize="40"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <TextBlock Text="点击按钮或拖入载入剧本" FontSize="20" Margin="0,16,0,8"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                           TextAlignment="Center" TextWrapping="Wrap" />
+                <TextBlock Text="载入剧本后可拖入翻译文件/翻译参考文件"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           TextAlignment="Center" TextWrapping="Wrap" />
+            </StackPanel>
+
+            <ListView Grid.Column="1" Grid.Row="1" ItemsSource="{c:Binding Events }"
+                      BorderBrush="Transparent"
+                      Background="Transparent"
+                      ScrollViewer.CanContentScroll="True"
+                      Name="TranslatePanel"
+                      VirtualizingStackPanel.ScrollUnit="Pixel">
+                <ListView.Resources>
+                    <DataTemplate DataType="{x:Type translate:LineDialogModel}">
+                        <StackPanel>
+                            <components:TranslateLineDialog
+                                LineDialogModel="{Binding }" HorizontalAlignment="Stretch" />
+                            <components:TranslateLineSeparator
+                                Visibility="{c:Binding EndLine,FalseToVisibility=Collapsed}" />
                         </StackPanel>
-                        <StackPanel VerticalAlignment="Top" Orientation="Horizontal">
-                            <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="参考文件：" />
-                            <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" MaxWidth="250"
-                                       Name="TextBlockTranslationReference" />
-                        </StackPanel>
-                    </StackPanel>
-                </StackPanel>
-                <StackPanel Grid.Column="3" HorizontalAlignment="Right">
-                    <TextBlock Margin="0,0,0,8" FontSize="12" Opacity="0.65" Text="任务控制" />
-                    <StackPanel Orientation="Horizontal">
-                        <ui:Button Margin="0,0,8,0" Click="ResetButton_OnClick" Name="ResetButton"
-                                   Content="重置" IsEnabled="{Binding HasScript}" />
-                        <ui:Button Click="SaveButton_OnClick" Name="SaveButton" Content="保存"
-                                   Appearance="Primary" IsEnabled="{c:Binding Path='Events.Length!=0'}" />
-                    </StackPanel>
-                </StackPanel>
-            </Grid>
-        </ui:Card>
-        <!-- <ui:Card Grid.Column="1" Margin="5,0,0,0"  -->
-        <!--          Grid.Row="1" Name="TranslateContainer" -->
-        <!--          VerticalContentAlignment="Top" VerticalAlignment="Stretch" Padding="2"> -->
-        <!--     <ui:PassiveScrollViewer Padding="0" -->
-        <!--         VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" -->
-        <!--         MaxHeight="{Binding ElementName=TranslateContainer, Path=ActualHeight}"> -->
-        <!--         <StackPanel Orientation="Vertical" Name="TranslatePanel" Margin="5,5,5,15"  /> -->
-        <!--     </ui:PassiveScrollViewer> -->
-        <!-- </ui:Card> -->
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type translate:LineEffectModel}">
+                        <components:TranslateLineEffect
+                            LineEffectModel="{Binding }" HorizontalAlignment="Stretch" />
+                    </DataTemplate>
+                </ListView.Resources>
 
-        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="24"
-                    VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False"
-                    Visibility="{c:Binding !HasScript, FalseToVisibility=Collapsed}">
-            <ui:SymbolIcon Symbol="Document24" FontSize="40"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-            <TextBlock Text="点击按钮或拖入载入剧本" FontSize="20" Margin="0,16,0,8"
-                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                       TextAlignment="Center" TextWrapping="Wrap" />
-            <TextBlock Text="载入剧本后可拖入翻译文件/翻译参考文件"
-                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                       TextAlignment="Center" TextWrapping="Wrap" />
-        </StackPanel>
-
-        <ListView Grid.Column="1" Grid.Row="1" ItemsSource="{c:Binding Events }"
-                  BorderBrush="Transparent"
-                  Background="Transparent"
-                  ScrollViewer.CanContentScroll="True"
-                  Name="TranslatePanel"
-                  VirtualizingStackPanel.ScrollUnit="Pixel">
-            <ListView.Resources>
-                <DataTemplate DataType="{x:Type translate:LineDialogModel}">
-                    <StackPanel>
-                        <components:TranslateLineDialog
-                            LineDialogModel="{Binding }" HorizontalAlignment="Stretch" />
-                        <components:TranslateLineSeparator
-                            Visibility="{c:Binding EndLine,FalseToVisibility=Collapsed}" />
-                    </StackPanel>
-                </DataTemplate>
-                <DataTemplate DataType="{x:Type translate:LineEffectModel}">
-                    <components:TranslateLineEffect
-                        LineEffectModel="{Binding }" HorizontalAlignment="Stretch" />
-                </DataTemplate>
-            </ListView.Resources>
-
-            <ListView.ItemContainerStyle>
-                <Style TargetType="ListViewItem">
-                    <!-- 禁用焦点和悬浮效果 -->
-                    <Setter Property="Focusable" Value="False" />
-                    <Setter Property="IsHitTestVisible" Value="True" />
-                    <Setter Property="Background" Value="Transparent" />
-                    <Setter Property="BorderBrush" Value="Transparent" />
-                    <Setter Property="BorderThickness" Value="0" />
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="ListViewItem">
-                                <Border Background="Transparent">
-                                    <ContentPresenter />
-                                </Border>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </ListView.ItemContainerStyle>
-        </ListView>
-    </Grid>
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <!-- 禁用焦点和悬浮效果 -->
+                        <Setter Property="Focusable" Value="False" />
+                        <Setter Property="IsHitTestVisible" Value="True" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="BorderBrush" Value="Transparent" />
+                        <Setter Property="BorderThickness" Value="0" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListViewItem">
+                                    <Border Background="Transparent">
+                                        <ContentPresenter />
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListView.ItemContainerStyle>
+            </ListView>
+        </Grid>
         <Grid x:Name="DropOverlay" Visibility="Collapsed" IsHitTestVisible="False"
               Background="#B0000000">
             <Grid.RowDefinitions>

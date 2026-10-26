@@ -67,7 +67,7 @@
                                 PlaceholderEnabled="True"
                                 PlaceholderText="{Binding Path= Character.Original}"
                                 TextAlignment="Center"
-                                Text="{Binding Path= Character.Translated}"
+                                Text="{Binding Path= Character.Translated, UpdateSourceTrigger=PropertyChanged}"
                                 TextChanged="NameEditBoxChanged" />
                 </Grid>
             </Grid>

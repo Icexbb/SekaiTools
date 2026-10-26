@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.ComponentModel;
 using System.IO;
 using System.Net;
@@ -30,7 +30,8 @@ namespace SekaiToolsGUI;
 public partial class MainWindow : FluentWindow
 {
     private object? _currentNavigatedPage;
-    private bool _navigationGuard;
+    private TranslatePage? _translationPage;
+    private readonly EditorSessionStore _sessions = new();
     private bool _closeInProgress;
     private bool _closeConfirmed;
 
@@ -97,8 +98,9 @@ public partial class MainWindow : FluentWindow
     private void NavigationView_OnLoaded(object sender, RoutedEventArgs e)
     {
         NavigationView.IsPaneOpen = false;
-        if (NavigationView.MenuItems.Count != 0)
-            NavigationView.Navigate((NavigationView.MenuItems[0] as NavigationViewItem)?.TargetPageType!);
+        var items = NavigationView.MenuItems.OfType<NavigationViewItem>().ToArray();
+        var pageType = _sessions.ResolveLastModule(items.Select(item => item.TargetPageType).OfType<Type>());
+        if (pageType != null) NavigationView.Navigate(pageType);
         // NavigationView_Debug();
     }
 
@@ -108,31 +110,9 @@ public partial class MainWindow : FluentWindow
         NavigationView.Navigate(typeof(TranslatePage));
     }
 
-    private async void NavigationView_OnNavigating(NavigationView sender, NavigatingCancelEventArgs args)
+    private void NavigationView_OnNavigating(NavigationView sender, NavigatingCancelEventArgs args)
     {
-        if (_navigationGuard || _currentNavigatedPage is not TranslatePage translatePage || !translatePage.ViewModel.IsDirty)
-            return;
-
-        var pageType = args.Page switch
-        {
-            Type type => type,
-            object page => page.GetType(),
-            _ => null
-        };
-        if (pageType == null) return;
-
-        args.Cancel = true;
-        if (!await translatePage.ConfirmNavigationAsync()) return;
-
-        _navigationGuard = true;
-        try
-        {
-            sender.Navigate(pageType);
-        }
-        finally
-        {
-            _navigationGuard = false;
-        }
+        if (_currentNavigatedPage is TranslatePage translatePage) translatePage.FlushDraft();
     }
 
     private async void MainWindow_OnClosing(object? sender, CancelEventArgs e)
@@ -152,12 +132,17 @@ public partial class MainWindow : FluentWindow
         e.Cancel = true;
         try
         {
-            if (_currentNavigatedPage is TranslatePage translatePage && !await translatePage.ConfirmCloseAsync())
+            if (_translationPage is { } translatePage && !await translatePage.ConfirmCloseAsync())
             {
                 _closeInProgress = false;
                 return;
             }
 
+            if (_translationPage != null && !_translationPage.FlushDraft())
+            {
+                _closeInProgress = false;
+                return;
+            }
             _closeConfirmed = true;
             SetWindowTitle("正在停止任务");
             SetTaskbarProgressState(TaskbarItemProgressState.Indeterminate, 0);
@@ -181,6 +166,9 @@ public partial class MainWindow : FluentWindow
     private void NavigationView_OnNavigated(NavigationView sender, NavigatedEventArgs args)
     {
         _currentNavigatedPage = args.Page;
+        if (args.Page is TranslatePage translatePage) _translationPage = translatePage;
+        _sessions.RecordModule(args.Page.GetType(), NavigationView.MenuItems.OfType<NavigationViewItem>()
+            .Select(item => item.TargetPageType).OfType<Type>());
         ResourceManager.Instance.SetProxy(SettingPageModel.Instance.GetProxy());
         switch (args.Page)
         {
