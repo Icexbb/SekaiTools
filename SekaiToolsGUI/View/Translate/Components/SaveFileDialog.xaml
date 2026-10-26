@@ -15,6 +15,7 @@
     d:DataContext="{d:DesignInstance subtitle:SaveFileDialogModel, IsDesignTimeCreatable=True}"
     IsPrimaryButtonEnabled="True" IsSecondaryButtonEnabled="True"
     Title="保存选项" DefaultButton="Primary"
+    DialogWidth="500" Width="500"
     PrimaryButtonText="保存" SecondaryButtonText="浏览" CloseButtonText="取消">
     <ui:ContentDialog.Resources>
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"

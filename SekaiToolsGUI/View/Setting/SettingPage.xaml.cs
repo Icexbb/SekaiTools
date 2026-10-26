@@ -21,12 +21,21 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
     {
         DataContext = model;
         InitializeComponent();
-        var specialSections = new Dictionary<string, FrameworkElement> { ["about"] = AboutSection };
+        var specialSections = new Dictionary<string, FrameworkElement>
+        {
+            ["about"] = AboutSection,
+            ["subtitle-export"] = new ExportOptionsControl
+            {
+                ShowResetButtons = true,
+                Description = "选择字幕输出的类别",
+                IsExpanded = false
+            }
+        };
         SettingsItems.Children.Clear();
         var builder = new SettingViewBuilder(OpenFontDialog, key => specialSections[key]);
         foreach (var section in SettingCatalog.Load())
-            SettingsItems.Children.Add(ExportOptionsControl.IsExportSection(section)
-                ? new ExportOptionsControl(section)
+            SettingsItems.Children.Add(section.Custom == null && section.Properties.Contains("ExportLine1")
+                ? new ExportOptionsControl
                 {
                     ShowResetButtons = true,
                     Description = section.Description,

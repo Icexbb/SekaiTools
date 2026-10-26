@@ -8,7 +8,6 @@ namespace SekaiToolsGUI.View.Setting;
 
 public sealed class SettingSection
 {
-    public string? Id { get; init; }
     public string Title { get; init; } = "";
     public string Description { get; init; } = "";
     public string Icon { get; init; } = "Settings24";
@@ -73,7 +72,7 @@ public static class SettingCatalog
             throw new InvalidDataException("设置卡片及其字段列表不能为 null");
         if (section.Custom is { } custom)
         {
-            if (custom is not ("logs" or "about") || !customs.Add(custom) || section.Fields.Length > 0 || section.Children.Length > 0)
+            if (custom is not ("logs" or "about" or "subtitle-export") || !customs.Add(custom) || section.Fields.Length > 0 || section.Children.Length > 0)
                 throw new InvalidDataException($"无效的自定义设置区域：{custom}");
             return;
         }
