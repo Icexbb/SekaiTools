@@ -138,19 +138,17 @@ public partial class LineDialogModel
         var contentArray = content.Split("\n").Where(s => s.Length > 0).ToList();
         for (var i = 0; i < contentArray.Count; i++)
         {
-            var line = contentArray[i];
+            var line = contentArray[i].TrimEnd();
             var lineRes = "";
-            var last = line.Last();
-            if (normalEnds.Contains(last) || abnormalEnds.Contains(last))
+            var ending = line.TrimEnd(abnormalEnds);
+            if (ending.Length > 0 && normalEnds.Contains(ending[^1]))
             {
-                if (normalEnds.Contains(last) && (line.EndsWith(".，") || line.EndsWith(".。")))
+                if (ending.EndsWith(".，") || ending.EndsWith(".。"))
                     lineRes += "【「……。」和「……，」只保留省略号】";
-                else if (line.Length > 1 && abnormalEnds.Contains(line[^2]))
-                    lineRes += "【句尾缺少逗号句号】";
             }
             else
             {
-                lineRes += "【句尾缺少逗号句号】";
+                lineRes += "【句尾缺少结束标点（如逗号、句号、问号、感叹号）】";
             }
 
             if (line.Contains('—') && line.Contains("——") &&
