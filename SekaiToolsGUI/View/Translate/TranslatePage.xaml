@@ -106,10 +106,13 @@
         <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="24"
                     VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False"
                     Visibility="{c:Binding !HasScript, FalseToVisibility=Collapsed}">
-            <ui:SymbolIcon Symbol="Document24" FontSize="40" Opacity="0.55" />
+            <ui:SymbolIcon Symbol="Document24" FontSize="40"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
             <TextBlock Text="点击按钮或拖入载入剧本" FontSize="20" Margin="0,16,0,8"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                        TextAlignment="Center" TextWrapping="Wrap" />
-            <TextBlock Text="载入剧本后可拖入翻译文件/翻译参考文件" Opacity="0.65"
+            <TextBlock Text="载入剧本后可拖入翻译文件/翻译参考文件"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                        TextAlignment="Center" TextWrapping="Wrap" />
         </StackPanel>
 
