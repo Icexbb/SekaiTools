@@ -9,6 +9,8 @@
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:control="clr-namespace:SekaiToolsGUI.Control"
              mc:Ignorable="d"
+             AllowDrop="True" Background="Transparent"
+             PreviewDragOver="Page_OnPreviewDragOver" PreviewDrop="Page_OnPreviewDrop"
              d:DesignHeight="960" d:DesignWidth="1280" d:Background="White"
              d:DataContext="{d:DesignInstance translate:TranslatePageModel, IsDesignTimeCreatable=True}">
     <Grid Margin="8">

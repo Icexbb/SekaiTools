@@ -21,6 +21,8 @@ namespace SekaiToolsGUI.View.Translate;
 
 public partial class TranslatePage : UserControl
 {
+    private bool _isLoadingScript;
+
     public TranslatePage()
     {
         InitializeComponent();
@@ -57,10 +59,64 @@ public partial class TranslatePage : UserControl
 
         if (openFileDialog.ShowDialog() != true) return;
 
+        await LoadScriptFileAsync(openFileDialog.FileName);
+    }
+
+    private void Page_OnPreviewDragOver(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+
+        e.Effects = !_isLoadingScript && GetDroppedScriptPath(e) != null
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private async void Page_OnPreviewDrop(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+
+        e.Handled = true;
+        e.Effects = DragDropEffects.None;
+        var path = GetDroppedScriptPath(e);
+        if (_isLoadingScript || path == null) return;
+
+        e.Effects = DragDropEffects.Copy;
+        await LoadScriptFileAsync(path);
+    }
+
+    private static string? GetDroppedScriptPath(DragEventArgs e)
+    {
+        if (e.Data.GetData(DataFormats.FileDrop) is not string[] { Length: 1 } paths) return null;
+
+        var path = paths[0];
+        var extension = Path.GetExtension(path);
+        return (extension.Equals(".json", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".asset", StringComparison.OrdinalIgnoreCase)) && File.Exists(path)
+            ? path
+            : null;
+    }
+
+    private async Task LoadScriptFileAsync(string path)
+    {
+        if (_isLoadingScript) return;
+        _isLoadingScript = true;
+        try
+        {
+            await LoadScriptCoreAsync(path);
+        }
+        finally
+        {
+            _isLoadingScript = false;
+        }
+    }
+
+    private async Task LoadScriptCoreAsync(string path)
+    {
         GameScript script;
         try
         {
-            script = new GameScript(openFileDialog.FileName);
+            script = new GameScript(path);
             // 先验证能够转换，再更新当前页面状态。
             _ = new Story(script, new TranslationData(null));
         }
@@ -73,7 +129,7 @@ public partial class TranslatePage : UserControl
 
         if (!ViewModel.IsEmpty && !await ConfirmReplaceCurrentContentAsync()) return;
 
-        ViewModel.LoadScript(script, openFileDialog.FileName);
+        ViewModel.LoadScript(script, path);
         SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
             new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
     }
