@@ -38,6 +38,7 @@ public struct Setting
     public bool ExportLine1 { get; init; } = true;
     public bool ExportLine2 { get; init; } = true;
     public bool ExportLine3 { get; init; } = true;
+    public bool ExportUnchangedCharacter { get; init; } = false;
     public bool ExportCharacter { get; init; } = true;
     public bool ExportBannerMask { get; init; } = true;
     public bool ExportBannerText { get; init; } = true;
@@ -61,6 +62,7 @@ public struct Setting
         ExportLine1 = true,
         ExportLine2 = true,
         ExportLine3 = true,
+        ExportUnchangedCharacter = false,
         ExportCharacter = true,
         ExportBannerMask = true,
         ExportBannerText = true,
@@ -99,6 +101,7 @@ public struct Setting
             ExportLine1 = model.ExportLine1,
             ExportLine2 = model.ExportLine2,
             ExportLine3 = model.ExportLine3,
+            ExportUnchangedCharacter = model.ExportUnchangedCharacter,
             ExportCharacter = model.ExportCharacter,
             ExportBannerMask = model.ExportBannerMask,
             ExportBannerText = model.ExportBannerText,

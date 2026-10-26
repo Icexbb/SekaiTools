@@ -9,6 +9,7 @@ public class SaveFileDialogModel : ViewModelBase
         ExportLine1 = config.ExportLine1;
         ExportLine2 = config.ExportLine2;
         ExportLine3 = config.ExportLine3;
+        ExportUnchangedCharacter = config.ExportUnchangedCharacter;
         ExportCharacter = config.ExportCharacter;
         ExportBannerMask = config.ExportBannerMask;
         ExportBannerText = config.ExportBannerText;
@@ -22,6 +23,7 @@ public class SaveFileDialogModel : ViewModelBase
         ExportLine1 = ExportLine1,
         ExportLine2 = ExportLine2,
         ExportLine3 = ExportLine3,
+        ExportUnchangedCharacter = ExportUnchangedCharacter,
         ExportCharacter = ExportCharacter,
         ExportBannerMask = ExportBannerMask,
         ExportBannerText = ExportBannerText,
@@ -45,6 +47,12 @@ public class SaveFileDialogModel : ViewModelBase
     public bool ExportLine3
     {
         get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool ExportUnchangedCharacter
+    {
+        get => GetProperty(false);
         set => SetProperty(value);
     }
 

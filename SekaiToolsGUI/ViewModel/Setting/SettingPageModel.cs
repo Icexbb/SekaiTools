@@ -228,6 +228,12 @@ public partial class SettingPageModel : ViewModelBase
         set => SetProperty(value);
     }
 
+    public bool ExportUnchangedCharacter
+    {
+        get => GetProperty(false);
+        set => SetProperty(value);
+    }
+
     public bool ExportCharacter
     {
         get => GetProperty(true);
@@ -295,6 +301,7 @@ public partial class SettingPageModel : ViewModelBase
             ExportLine1 = ExportLine1,
             ExportLine2 = ExportLine2,
             ExportLine3 = ExportLine3,
+            ExportUnchangedCharacter = ExportUnchangedCharacter,
             ExportCharacter = ExportCharacter,
             ExportBannerMask = ExportBannerMask,
             ExportBannerText = ExportBannerText,
@@ -385,6 +392,7 @@ partial class SettingPageModel
             ExportLine1 = Model.Setting.Default.ExportLine1;
             ExportLine2 = Model.Setting.Default.ExportLine2;
             ExportLine3 = Model.Setting.Default.ExportLine3;
+            ExportUnchangedCharacter = Model.Setting.Default.ExportUnchangedCharacter;
             ExportCharacter = Model.Setting.Default.ExportCharacter;
             ExportBannerMask = Model.Setting.Default.ExportBannerMask;
             ExportBannerText = Model.Setting.Default.ExportBannerText;
@@ -446,6 +454,7 @@ partial class SettingPageModel
             ExportLine1 = setting.ExportLine1;
             ExportLine2 = setting.ExportLine2;
             ExportLine3 = setting.ExportLine3;
+            ExportUnchangedCharacter = setting.ExportUnchangedCharacter;
             ExportCharacter = setting.ExportCharacter;
             ExportBannerMask = setting.ExportBannerMask;
             ExportBannerText = setting.ExportBannerText;

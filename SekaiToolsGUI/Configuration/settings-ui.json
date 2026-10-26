@@ -144,11 +144,23 @@
             "kind": "toggle",
             "property": "ExportLine3",
             "label": "三行"
-          },
+          }
+        ],
+        "columns": 2
+      },
+      {
+        "title": "说话人",
+        "icon": "Person24",
+        "fields": [
           {
             "kind": "toggle",
             "property": "ExportCharacter",
-            "label": "姓名"
+            "label": "与原文不同"
+          },
+          {
+            "kind": "toggle",
+            "property": "ExportUnchangedCharacter",
+            "label": "与原文相同"
           }
         ],
         "columns": 2

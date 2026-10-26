@@ -87,10 +87,18 @@
                                     <StackPanel Orientation="Horizontal" Margin="5,0">
                                         <CheckBox Content="三行" IsChecked="{Binding ExportLine3, Mode=TwoWay}" />
                                     </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="5,0">
-                                        <CheckBox Content="姓名" IsChecked="{Binding ExportCharacter, Mode=TwoWay}" />
-                                    </StackPanel>
                                 </StackPanel>
+                            </StackPanel>
+                        </ui:CardControl>
+                        <ui:CardControl Icon="{ui:SymbolIcon Person24}">
+                            <ui:CardControl.Header>
+                                <ui:TextBlock FontTypography="Body" Text="说话人" />
+                            </ui:CardControl.Header>
+                            <StackPanel>
+                                <CheckBox Content="与原文不同" Margin="5,0,5,5"
+                                          IsChecked="{Binding ExportCharacter, Mode=TwoWay}" />
+                                <CheckBox Content="与原文相同" Margin="5,0"
+                                          IsChecked="{Binding ExportUnchangedCharacter, Mode=TwoWay}" />
                             </StackPanel>
                         </ui:CardControl>
                         <ui:CardControl Icon="{ui:SymbolIcon Location24}">

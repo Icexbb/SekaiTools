@@ -21,6 +21,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
     private readonly List<Style> _styles = [];
 
     private Point _nameTagPosition = new(0, 0);
+    private ExportStyleConfig _outputOptions;
     private StyleFontConfig StyleFontConfig { get; } = config.StyleFontConfig;
     private TypewriterSetting TypewriterSetting { get; } = config.TyperSetting;
 
@@ -32,6 +33,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
     {
         Logger.Log($"开始生成字幕: 对话={dialogList.Count}, 横幅={bannerList.Count}, 标记={markerList.Count}");
         var events = new List<SubtitleEvent>();
+        _outputOptions = exportStyleConfig ?? config.ExportStyleConfig;
 
         if (dialogList.Count != 0)
         {
@@ -61,7 +63,6 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         if (!outputOptions.ExportLine1) events.RemoveAll(e => e.Style == "Line1");
         if (!outputOptions.ExportLine2) events.RemoveAll(e => e.Style == "Line2");
         if (!outputOptions.ExportLine3) events.RemoveAll(e => e.Style == "Line3");
-        if (!outputOptions.ExportCharacter) events.RemoveAll(e => e.Style == "Character");
         if (!outputOptions.ExportBannerMask) events.RemoveAll(e => e.Style == "BannerMask");
         if (!outputOptions.ExportBannerText) events.RemoveAll(e => e.Style == "BannerText");
         if (!outputOptions.ExportMarkerMask) events.RemoveAll(e => e.Style == "MarkerMask");
@@ -272,6 +273,9 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  End",
                 set.StartTime(), set.EndTime(), "Screen"));
 
+            var sameCharacter = string.Equals(set.Data.FinalCharacter, set.Data.CharacterOriginal, StringComparison.Ordinal);
+            var exportCharacter = sameCharacter ? _outputOptions.ExportUnchangedCharacter : _outputOptions.ExportCharacter;
+            if (!exportCharacter) dialogEvents.RemoveAll(item => item.Style == "Character");
             result.AddRange(dialogEvents);
 
             string GetLineTimingWarning(string lineName)

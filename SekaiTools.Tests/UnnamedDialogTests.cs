@@ -17,6 +17,32 @@ namespace SekaiTools.Tests;
 public class UnnamedDialogTests
 {
     [Theory]
+    [InlineData(false, "Speaker", false, true, false)]
+    [InlineData(true, "Speaker", false, true, false)]
+    [InlineData(false, "Speaker", true, false, true)]
+    [InlineData(true, "Speaker", true, false, true)]
+    [InlineData(false, "Translated", false, true, true)]
+    [InlineData(true, "Translated", false, true, true)]
+    [InlineData(false, "Translated", true, false, false)]
+    [InlineData(true, "Translated", true, false, false)]
+    public void SpeakerOutputCategoriesAreIndependent(bool shake, string translated, bool same, bool different, bool expected)
+    {
+        using var fixture = new Fixture();
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        var data = new SekaiToolsBase.Story.StoryEvent.DialogStoryEvent(0, "Hello", 0, "Speaker", false, shake);
+        data.SetTranslation(translated, "Hello");
+        var set = new SekaiToolsCore.Process.FrameSet.DialogBaseFrameSet(data, fixture.Info.Fps);
+        set.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(0, fixture.Info.Fps, new Point(150, 500)));
+        set.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(1, fixture.Info.Fps, new Point(152, 502)));
+        var options = new ExportStyleConfig { ExportUnchangedCharacter = same, ExportCharacter = different };
+        var result = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([set], [], [],
+            new SubtitleExportInfo("test", "1", "done", "", "", ""), options);
+        var dialogue = result.Events.ToString().Split('\n').Where(line => line.StartsWith("Dialogue:")).ToArray();
+        Assert.Equal(expected, dialogue.Any(line => line.Contains(",Character,")));
+        Assert.Contains(dialogue, line => line.Contains(",Line1,"));
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void UnnamedPositionUsesNonShakingNamedReference(bool shake)
