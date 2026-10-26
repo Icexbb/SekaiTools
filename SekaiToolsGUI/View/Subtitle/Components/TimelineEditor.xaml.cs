@@ -132,6 +132,12 @@ public partial class TimelineEditor : UserControl
         new FrameworkPropertyMetadata(false, OnIsReadOnlyChanged));
 
     private CancellationTokenSource? _nativePlaybackCancellation;
+    private CancellationTokenSource? _cursorScrubCancellation;
+    private Task _cursorScrubTask = Task.CompletedTask;
+    private int? _pendingCursorFrame;
+    private PlaybackMode _resumeCursorPlayback;
+    private TimeSpan _resumeCursorEnd;
+    private Action<ImageSource>? _cursorPreview;
     private long _lastPreviewLogTick;
     private string _activePlaybackBackend = "";
     private double? _playbackPositionMilliseconds;
@@ -384,6 +390,7 @@ public partial class TimelineEditor : UserControl
     private void UpdateReadOnlyState()
     {
         ViewModel.IsReadOnly = IsReadOnly;
+        if (IsReadOnly) CancelCursorScrub();
         if (!IsInitialized)
             return;
 
@@ -449,6 +456,12 @@ public partial class TimelineEditor : UserControl
         Focus();
         TimelineCanvas.Focus();
         var point = e.GetPosition(TimelineCanvas);
+        if (CanDragPlaybackCursor(point))
+        {
+            BeginCursorDrag(point.X);
+            e.Handled = true;
+            return;
+        }
         if (_selection != null && !IsReadOnly)
         {
             var startX = TimeToX(GetStartMilliseconds(_selection));
@@ -516,6 +529,16 @@ public partial class TimelineEditor : UserControl
 
     private void TimelineCanvas_OnMouseMove(object sender, MouseEventArgs e)
     {
+        if (_dragMode == DragMode.Playhead)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+                SeekCursor(e.GetPosition(TimelineCanvas).X);
+            else
+                CompleteCursorDrag();
+            e.Handled = true;
+            return;
+        }
+        TimelineCanvas.Cursor = CanDragPlaybackCursor(e.GetPosition(TimelineCanvas)) ? Cursors.SizeWE : Cursors.Arrow;
         if (_selection == null || _dragMode == DragMode.None || IsReadOnly)
             return;
         if (e.LeftButton != MouseButtonState.Pressed)
@@ -570,11 +593,17 @@ public partial class TimelineEditor : UserControl
 
     private void TimelineCanvas_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
+        if (_dragMode == DragMode.Playhead) SeekCursor(e.GetPosition(TimelineCanvas).X);
         CompleteDrag();
     }
 
     private void CompleteDrag()
     {
+        if (_dragMode == DragMode.Playhead)
+        {
+            CompleteCursorDrag();
+            return;
+        }
         if (_dragMode == DragMode.None)
             return;
 
@@ -615,6 +644,120 @@ public partial class TimelineEditor : UserControl
                 HideFramePreview();
             RenderTimeline();
         }
+    }
+
+    private bool CanDragPlaybackCursor(Point point) =>
+        !IsReadOnly && _selection != null && _framePreviewLoader != null &&
+        _playbackPositionMilliseconds.HasValue && _videoDurationMilliseconds > 0 &&
+        point.X >= TrackHeaderWidth &&
+        Math.Abs(point.X - TimeToX(_playbackPositionMilliseconds.Value)) <= (point.Y <= 14 ? 9 : 6);
+
+    private void BeginCursorDrag(double x)
+    {
+        var mode = _playbackMode;
+        var end = _playbackEnd;
+        var preview = _inlineVideoFrame ?? InlineVideoPreview;
+        StopPlayback(keepVideoPreview: true);
+        DeselectHandle();
+        _resumeCursorPlayback = mode;
+        _resumeCursorEnd = end;
+        _cursorPreview = preview;
+        _cursorScrubCancellation = new CancellationTokenSource();
+        _cursorScrubTask = Task.CompletedTask;
+        _dragMode = DragMode.Playhead;
+        TimelineCanvas.CaptureMouse();
+        TimelineCanvas.Cursor = Cursors.SizeWE;
+        SeekCursor(x);
+    }
+
+    private void SeekCursor(double x)
+    {
+        if (_selection == null || _cursorScrubCancellation == null) return;
+        var lastFrame = Math.Max(0, _selection.FrameRate.FrameAtTime(_videoDurationMilliseconds - 1));
+        var frame = Math.Clamp(PointToFrame(x), 0, lastFrame);
+        var time = _selection.FrameRate.TimeAtFrame(frame, FrameType.Start).Milliseconds;
+        _playbackPositionMilliseconds = time;
+        UpdatePlaybackCursor();
+        ViewModel.HasPlaybackPreviewInfo = true;
+        ViewModel.PreviewPlaybackProgress = Math.Clamp(
+            (time - GetStartMilliseconds(_selection)) * 100d /
+            Math.Max(1, GetEndMilliseconds(_selection) - GetStartMilliseconds(_selection)), 0, 100);
+        ViewModel.PreviewFrameInfo = $"帧 {frame} · 时间 {TimeSpan.FromMilliseconds(time):hh\\:mm\\:ss\\.fff}";
+        SetPlaybackStatus("拖动定位");
+        _pendingCursorFrame = frame;
+        if (_cursorScrubTask.IsCompleted)
+            _cursorScrubTask = UpdateCursorPreviewAsync(_cursorScrubCancellation);
+    }
+
+    private async Task UpdateCursorPreviewAsync(CancellationTokenSource cancellation)
+    {
+        var loader = _framePreviewLoader;
+        if (loader == null) return;
+        try
+        {
+            // Decode at most one request at a time; mouse moves replace the pending
+            // request so slow keyframe seeks cannot build an obsolete frame queue.
+            while (_pendingCursorFrame is { } frame && !cancellation.IsCancellationRequested)
+            {
+                _pendingCursorFrame = null;
+                var image = await loader.LoadFrameAsync(frame, cancellation.Token);
+                if (!ReferenceEquals(cancellation, _cursorScrubCancellation)) return;
+                if (_pendingCursorFrame != null) continue;
+                if (image != null)
+                {
+                    if (_cursorPreview != null) _cursorPreview(image);
+                    else if (_videoPlaybackWindow?.IsVisible == true)
+                        _videoPlaybackWindow.PlaybackImageElement.Source = image;
+                }
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            if (ReferenceEquals(cancellation, _cursorScrubCancellation))
+                SetPlaybackStatus($"定位失败：{ex.Message}");
+        }
+    }
+
+    private async void CompleteCursorDrag()
+    {
+        if (_dragMode != DragMode.Playhead) return;
+        _dragMode = DragMode.None;
+        TimelineCanvas.ReleaseMouseCapture();
+        TimelineCanvas.Cursor = Cursors.Arrow;
+        var cancellation = _cursorScrubCancellation;
+        var mode = _resumeCursorPlayback;
+        var preview = _cursorPreview;
+        var position = (int)(_playbackPositionMilliseconds ?? 0);
+        var end = position < _resumeCursorEnd.TotalMilliseconds
+            ? (int)_resumeCursorEnd.TotalMilliseconds : _videoDurationMilliseconds;
+        await _cursorScrubTask;
+        if (cancellation == null || !ReferenceEquals(cancellation, _cursorScrubCancellation)) return;
+        if (mode != PlaybackMode.None && position < end)
+            await StartPlaybackAsync(mode, requireFeatureSwitch: false, showFrame: preview,
+                startMillisecondsOverride: position, endMillisecondsOverride: end);
+        else
+            SetPlaybackStatus("已定位");
+    }
+
+    private void CancelCursorScrub()
+    {
+        _cursorScrubCancellation?.Cancel();
+        _cursorScrubCancellation?.Dispose();
+        _cursorScrubCancellation = null;
+        _pendingCursorFrame = null;
+        _cursorPreview = null;
+        if (_dragMode == DragMode.Playhead)
+        {
+            _dragMode = DragMode.None;
+            TimelineCanvas.ReleaseMouseCapture();
+            TimelineCanvas.Cursor = Cursors.Arrow;
+        }
+    }
+
+    private void TimelineCanvas_OnLostMouseCapture(object sender, MouseEventArgs e)
+    {
+        if (_dragMode == DragMode.Playhead) CompleteCursorDrag();
     }
 
     private async void UpdateFramePreview(DragMode handle, double handleX)
@@ -1210,7 +1353,7 @@ public partial class TimelineEditor : UserControl
         UpdatePlaybackCursor();
         var frameIndex = _selection == null ? 0 : Math.Clamp(
             _selection.FrameRate.FrameAtTime((int)time.TotalMilliseconds),
-            _selection.StartFrame, _selection.EndFrame);
+            0, Math.Max(0, _selection.FrameRate.FrameAtTime(Math.Max(0, _videoDurationMilliseconds - 1))));
         ViewModel.HasPlaybackPreviewInfo = true;
         ViewModel.PreviewPlaybackProgress = progress;
         ViewModel.PreviewFrameInfo = $"帧 {frameIndex} · 时间 {time:hh\\:mm\\:ss\\.fff} · 片段 {progress:F1}%";
@@ -1229,6 +1372,7 @@ public partial class TimelineEditor : UserControl
 
     private void StopPlayback(string status = "", bool keepVideoPreview = false)
     {
+        CancelCursorScrub();
         if (_playbackMode != PlaybackMode.None)
         {
             if (status == "播放完成") UpdatePlaybackStatus(_playbackEnd);
@@ -2159,6 +2303,7 @@ public partial class TimelineEditor : UserControl
         Start,
         End,
         Separator,
+        Playhead,
         Range
     }
 

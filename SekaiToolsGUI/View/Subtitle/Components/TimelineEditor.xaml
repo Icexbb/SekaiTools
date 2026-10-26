@@ -147,6 +147,7 @@
                                 MouseLeftButtonDown="TimelineCanvas_OnMouseLeftButtonDown"
                                 MouseMove="TimelineCanvas_OnMouseMove"
                                 MouseLeftButtonUp="TimelineCanvas_OnMouseLeftButtonUp"
+                                LostMouseCapture="TimelineCanvas_OnLostMouseCapture"
                                 MouseWheel="TimelineCanvas_OnMouseWheel" />
                         <Canvas x:Name="PlaybackCursorCanvas" IsHitTestVisible="False" Visibility="Collapsed">
                             <Line x:Name="PlaybackCursorLine" Stroke="{DynamicResource AccentFillColorDefaultBrush}"
