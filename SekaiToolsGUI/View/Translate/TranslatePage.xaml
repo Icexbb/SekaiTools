@@ -103,6 +103,16 @@
         <!--     </ui:PassiveScrollViewer> -->
         <!-- </ui:Card> -->
 
+        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="24"
+                    VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False"
+                    Visibility="{c:Binding !HasScript, FalseToVisibility=Collapsed}">
+            <ui:SymbolIcon Symbol="Document24" FontSize="40" Opacity="0.55" />
+            <TextBlock Text="点击按钮或拖入载入剧本" FontSize="20" Margin="0,16,0,8"
+                       TextAlignment="Center" TextWrapping="Wrap" />
+            <TextBlock Text="载入剧本后可拖入翻译文件/翻译参考文件" Opacity="0.65"
+                       TextAlignment="Center" TextWrapping="Wrap" />
+        </StackPanel>
+
         <ListView Grid.Column="1" Grid.Row="1" ItemsSource="{c:Binding Events }"
                   BorderBrush="Transparent"
                   Background="Transparent"
