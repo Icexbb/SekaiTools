@@ -3,15 +3,16 @@ using SekaiToolsBase.DataList;
 
 namespace SekaiToolsBase.Story;
 
-public sealed record FlashbackEventOrigin(int EventId, int Number, string Name)
+public sealed record FlashbackEventOrigin(int EventId, int Number, string Name, int? EpisodeNumber = null)
 {
-    public string DisplayName => $"第 {Number} 期 · {Name}";
+    public string DisplayName => $"第 {Number} 期 · {Name}" + (EpisodeNumber is { } episode ? $" · 第 {episode} 话" : "");
 }
 
 /// <summary>通过主数据的解锁关系关联语音前缀与活动，避免将团内序号当作活动期数。</summary>
 public sealed partial class FlashbackEventCatalog
 {
     private readonly Dictionary<string, FlashbackEventOrigin> _origins = new(StringComparer.Ordinal);
+    private readonly Dictionary<int, HashSet<int>> _episodeNumbers;
 
     [GeneratedRegex(@"^areatalk_(ev|wl)_(.+)_\d+$", RegexOptions.CultureInvariant)]
     private static partial Regex AreaPattern();
@@ -23,6 +24,9 @@ public sealed partial class FlashbackEventCatalog
             .DistinctBy(item => item.Id).ToDictionary(item => item.Id);
         var storyMap = stories.Where(item => item != null && item.Id > 0 && item.EventStoryEpisodes != null
                 && eventMap.ContainsKey(item.EventId)).DistinctBy(item => item.Id).ToArray();
+        _episodeNumbers = storyMap.GroupBy(story => story.EventId).ToDictionary(group => group.Key,
+            group => group.SelectMany(story => story.EventStoryEpisodes).Where(episode => episode != null)
+                .Select(episode => episode.EpisodeNo).Where(number => number > 0).ToHashSet());
         // EventStory.Id 是稳定的剧情活动期数；不能用当前缓存中的数组位置计算。
         var origins = storyMap.ToDictionary(item => item.Id,
             item => new FlashbackEventOrigin(item.EventId, item.Id, eventMap[item.EventId].Name));
@@ -70,8 +74,20 @@ public sealed partial class FlashbackEventCatalog
             if (byEvent.TryGetValue(eventId, out var origin)) _origins[key] = origin;
     }
 
-    public FlashbackEventOrigin? Resolve(string source) => GetEventKey(source) is { } key
-        ? _origins.GetValueOrDefault(key) : null;
+    public FlashbackEventOrigin? Resolve(string source)
+    {
+        if (GetEventKey(source) is not { } key || !_origins.TryGetValue(key, out var origin)) return null;
+        var normalized = source.StartsWith("sc_", StringComparison.Ordinal) ? source[3..] : source;
+        if (normalized.StartsWith("card_", StringComparison.Ordinal)) return origin;
+        // 来源最后一段是语音章节号；卡面最后一段为星数和前后篇，不属于活动正文话数。
+        var suffix = source[(source.LastIndexOf('_') + 1)..];
+        if (!int.TryParse(suffix, System.Globalization.NumberStyles.None,
+                System.Globalization.CultureInfo.InvariantCulture, out var voiceEpisode)) return origin;
+        // 第 9 期语音从 00 开始，对应主数据中的第 1 话，沿用参考项目的命名修正。
+        var episode = (long)voiceEpisode + (origin.EventId == 9 ? 1 : 0);
+        return episode <= int.MaxValue && _episodeNumbers[origin.EventId].Contains((int)episode)
+            ? origin with { EpisodeNumber = (int)episode } : origin;
+    }
 
     public static string? GetEventKey(string source)
     {

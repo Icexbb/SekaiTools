@@ -15,7 +15,8 @@ public sealed class FlashbackEventTests : IDisposable
     {
         ["events"] = JsonSerializer.Serialize(new[] { new GameEvent { Id = id, Name = "OVER RAD SQUAD!!" } }, JsonOptions),
         ["eventStories"] = JsonSerializer.Serialize(new[] { new EventStory { Id = id, EventId = id,
-            EventStoryEpisodes = [new EventEpisode { Id = 1000, ScenarioId = "event_135_01" }] } }, JsonOptions),
+            EventStoryEpisodes = [new EventEpisode { Id = 1000, EpisodeNo = 1, ScenarioId = "event_135_01" },
+                new EventEpisode { Id = 1001, EpisodeNo = 6, ScenarioId = "event_135_06" }] } }, JsonOptions),
         ["actionSets"] = JsonSerializer.Serialize(new[] {
             new ActionSet { Id = 1, ScenarioId = "areatalk_ev_street_18_001", ReleaseConditionId = 10 },
             new ActionSet { Id = 2, ScenarioId = "areatalk_ev_street_18_002", ReleaseConditionId = 11 }
@@ -57,8 +58,9 @@ public sealed class FlashbackEventTests : IDisposable
         var service = new FlashbackEventService((_, _) => throw new Exception("不应联网"), Cache);
         var result = await service.ResolveAsync(["ev_street_18_06", "card_ev_street_18_09_4a"], [source],
             loadAdditionalSources: _ => throw new Exception("不应获取源列表"));
-        Assert.Equal("第 135 期 · OVER RAD SQUAD!!", result["ev_street_18_06"].DisplayName);
+        Assert.Equal("第 135 期 · OVER RAD SQUAD!! · 第 6 话", result["ev_street_18_06"].DisplayName);
         Assert.Equal(135, result["card_ev_street_18_09_4a"].EventId);
+        Assert.Null(result["card_ev_street_18_09_4a"].EpisodeNumber);
     }
 
     [Fact]
@@ -166,6 +168,25 @@ public sealed class FlashbackEventTests : IDisposable
         Assert.Equal(53, catalog.Resolve("ev_night__06")!.Number);
         Assert.Equal(170, catalog.Resolve("ev_wl_night_02_01")!.Number);
         Assert.Null(catalog.Resolve("ev_loop_01_01"));
+    }
+
+    [Fact]
+    public void 话数按章节主数据校验并处理零起始和WorldLink()
+    {
+        var catalog = new FlashbackEventCatalog([
+            new GameEvent { Id = 9, Name = "新年活动" }, new GameEvent { Id = 137, Name = "World Link" }], [
+            new EventStory { Id = 9, EventId = 9, EventStoryEpisodes = [
+                new EventEpisode { EpisodeNo = 1 }, new EventEpisode { EpisodeNo = 2 }] },
+            new EventStory { Id = 137, EventId = 137, EventStoryEpisodes = [
+                new EventEpisode { EpisodeNo = 5, ScenarioId = "wl_band_01_05" }] }], [], []);
+        Assert.Equal(1, catalog.Resolve("ev_shuffle_03_00")!.EpisodeNumber);
+        Assert.Equal(2, catalog.Resolve("sc_ev_shuffle_03_01")!.EpisodeNumber);
+        Assert.Equal(5, catalog.Resolve("ev_wl_band_01_05")!.EpisodeNumber);
+        Assert.Null(catalog.Resolve("ev_shuffle_03_99")!.EpisodeNumber);
+        Assert.Null(catalog.Resolve("ev_shuffle_03_2147483647")!.EpisodeNumber);
+        Assert.Null(catalog.Resolve("ev_shuffle_03_unknown")!.EpisodeNumber);
+        Assert.Null(catalog.Resolve("ev_shuffle_03_09_4a")!.EpisodeNumber);
+        Assert.Null(catalog.Resolve("card_ev_shuffle_03_09_1")!.EpisodeNumber);
     }
 
     public void Dispose() { if (Directory.Exists(_directory)) Directory.Delete(_directory, true); }
