@@ -12,9 +12,15 @@
             <Setter Property="Visibility"
                     Value="{Binding ShowResetButtons, RelativeSource={RelativeSource AncestorType={x:Type local:ExportOptionsControl}}, Converter={StaticResource BooleanToVisibility}}" />
         </Style>
-        <Style TargetType="CheckBox">
-            <Setter Property="Margin" Value="5,2" />
+        <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+            <Setter Property="Margin" Value="5,0,5,0" />
             <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Width" Value="100" />
+        </Style>
+        <Style TargetType="WrapPanel">
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="ItemWidth" Value="80" />
+            <Setter Property="Orientation" Value="Horizontal" />
         </Style>
     </UserControl.Resources>
     <ui:CardExpander Icon="{ui:SymbolIcon CommentNote24}" Margin="0,0,0,8" ContentPadding="0"
@@ -30,7 +36,7 @@
                     </Border>
                 </StackPanel>
                 <TextBlock Text="{Binding Description, ElementName=Root}" TextWrapping="Wrap"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                           Foreground="{StaticResource TextFillColorSecondaryBrush}" />
             </StackPanel>
         </ui:CardExpander.Header>
         <StackPanel>
@@ -44,7 +50,7 @@
                         </Border>
                     </StackPanel>
                 </ui:CardControl.Header>
-                <WrapPanel HorizontalAlignment="Right" MaxWidth="220">
+                <WrapPanel HorizontalAlignment="Right">
                     <CheckBox Content="一行" IsChecked="{Binding ExportLine1, Mode=TwoWay}" />
                     <CheckBox Content="二行" IsChecked="{Binding ExportLine2, Mode=TwoWay}" />
                     <CheckBox Content="三行" IsChecked="{Binding ExportLine3, Mode=TwoWay}" />
@@ -60,7 +66,7 @@
                         </Border>
                     </StackPanel>
                 </ui:CardControl.Header>
-                <WrapPanel Orientation="Horizontal">
+                <WrapPanel Orientation="Horizontal" ItemWidth="120">
                     <CheckBox Content="与原文不同" IsChecked="{Binding ExportCharacter, Mode=TwoWay}" />
                     <CheckBox Content="与原文相同" IsChecked="{Binding ExportUnchangedCharacter, Mode=TwoWay}" />
                 </WrapPanel>
@@ -75,7 +81,7 @@
                         </Border>
                     </StackPanel>
                 </ui:CardControl.Header>
-                <WrapPanel HorizontalAlignment="Right" MaxWidth="220">
+                <WrapPanel HorizontalAlignment="Right">
                     <CheckBox Content="遮罩" IsChecked="{Binding ExportBannerMask, Mode=TwoWay}" />
                     <CheckBox Content="内容" IsChecked="{Binding ExportBannerText, Mode=TwoWay}" />
                 </WrapPanel>
@@ -90,7 +96,7 @@
                         </Border>
                     </StackPanel>
                 </ui:CardControl.Header>
-                <WrapPanel HorizontalAlignment="Right" MaxWidth="220">
+                <WrapPanel HorizontalAlignment="Right">
                     <CheckBox Content="遮罩" IsChecked="{Binding ExportMarkerMask, Mode=TwoWay}" />
                     <CheckBox Content="内容" IsChecked="{Binding ExportMarkerText, Mode=TwoWay}" />
                 </WrapPanel>
@@ -105,7 +111,9 @@
                         </Border>
                     </StackPanel>
                 </ui:CardControl.Header>
-                <CheckBox Content="注释" IsChecked="{Binding ExportScreenComment, Mode=TwoWay}" />
+                <WrapPanel>
+                    <CheckBox Content="注释" IsChecked="{Binding ExportScreenComment, Mode=TwoWay}" />
+                </WrapPanel>
             </ui:CardControl>
         </StackPanel>
     </ui:CardExpander>
