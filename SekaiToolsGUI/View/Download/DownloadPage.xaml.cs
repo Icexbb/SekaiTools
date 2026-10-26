@@ -74,8 +74,6 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
             task.RemoveRequested += DownloadTask_OnRemoveRequested;
             DownloadItemBox.Items.Add(task);
             UpdateTaskListState();
-            QueueSnackService.Show("已加入下载列表", tag, ControlAppearance.Success,
-                new SymbolIcon(SymbolRegular.AddCircle24), TimeSpan.FromSeconds(2));
             return true;
         });
     }
