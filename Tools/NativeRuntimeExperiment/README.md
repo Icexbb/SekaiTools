@@ -45,7 +45,7 @@ dotnet .codex-build/native/recognition-dispatch/RecognitionBenchmark.dll E:\Proj
 
 控制组使用相同参数，输出到另一新目录。递归查找 mp4，只选择同目录同名 json／txt 都存在的组；每换素材交换控制／候选顺序。比较 `StateHash`（包含尺度校准），同时核对实际 `state-1.json`、`subtitle-1.ass` 文件哈希及 StopReason；以 `Performance.ElapsedTime` 为识别耗时。单轮只用于筛选，稳定收益必须按独立进程多轮交替测量。正式测量期间不运行其他构建或性能作业。
 
-本次五组筛选全部结果一致，但耗时变化混合，尚无稳定收益结论，详见 `docs/opencv5-processing-performance.md`。实验没有修改产品配置。
+历史五组筛选全部结果一致，但耗时变化混合，尚无稳定收益结论，最终取舍见 [识别性能与诊断](../../docs/recognition-performance.md)。实验没有修改产品配置。
 
 三轮交替测量可使用专用 runner；每次独立进程，固定自动模式、关闭预览／详细计时／额外预热，默认 4 线程／8 帧缓冲：
 

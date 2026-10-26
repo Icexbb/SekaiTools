@@ -24,7 +24,7 @@ dotnet test SekaiTools.sln
 
 ## Git 提交规范
 
-在进行Git 提交和版本发布时必须按照 [Git 提交与版本发布规范（跨项目模板）](Docs/git-and-version-conventions.md) 执行。
+在进行Git 提交和版本发布时必须按照 [Git 提交与版本发布规范（跨项目模板）](docs/git-and-version-conventions.md) 执行。
 
 准备或发布版本时使用项目 skill [`sekai-release`](.agents/skills/sekai-release/SKILL.md)，也可通过 `$sekai-release` 显式调用；该 skill 汇总本项目的版本同步、发布说明、验证、提交与标签流程。
 

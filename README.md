@@ -68,7 +68,7 @@ Sekai Tools 是面向《Project SEKAI》剧情字幕制作的 Windows 桌面工�
 3. 点击需要的剧情，将其加入右侧“下载列表”，然后点击“下载”。下载完成后可使用下载的剧本文件。
 4. 地图对话可组合地点、角色、ID / TalkId 范围及活动等筛选条件。“全部加入下载列表”只添加当前筛选结果，需要再点击“下载”才会获取文件。
 
-切换数据源会重新加载对应列表，各数据源缓存独立保存。列表过旧时使用“刷新当前列表”；缓存异常时使用“清除缓存”后重新加载。活动追加等带“推断”标识的筛选结果不代表官方首次追加时间，详见[地图对话筛选说明](Docs/action-story-filtering.md)。
+切换数据源会重新加载对应列表，各数据源缓存独立保存。列表过旧时使用“刷新当前列表”；缓存异常时使用“清除缓存”后重新加载。活动追加等带“推断”标识的筛选结果不代表官方首次追加时间，详见[地图对话筛选说明](docs/action-story-filtering.md)。
 
 ### 3. 编辑翻译
 
@@ -77,7 +77,7 @@ Sekai Tools 是面向《Project SEKAI》剧情字幕制作的 Windows 桌面工�
 3. 已有翻译可通过“载入翻译文件”继续编辑；“载入参考翻译文件”可用于对照。
 4. 点击“保存”，将翻译保存为 `.txt`，供自动轴机使用。导出格式默认选择 TXT v2，也可切换为旧 TXT；两种格式导入导出时都会逐行去掉正文首尾空白再合并，并兼容 LF 和 CRLF 换行。
 
-建议使用内嵌编辑器生成翻译文件。TXT v2 使用 `@scenario` 对应剧本内部的 `ScenarioId`，使用 `@dialog:001[说话人]`、`@banner:001` 和 `@marker:005` 标记条目；正文支持多行，可以移动完整条目，但请保留标记及编号。以 `#` 开头的行为注释，特殊正文行首需要转义。完整规则见 [翻译 TXT 格式 v2](Docs/translation-format-v2.md)。
+建议使用内嵌编辑器生成翻译文件。TXT v2 使用 `@scenario` 对应剧本内部的 `ScenarioId`，使用 `@dialog:001[说话人]`、`@banner:001` 和 `@marker:005` 标记条目；正文支持多行，可以移动完整条目，但请保留标记及编号。以 `#` 开头的行为注释，特殊正文行首需要转义。完整规则见 [翻译 TXT 格式 v2](docs/translation-format-v2.md)，闪回来源与保存标签见 [翻译编辑](docs/translation.md)。
 
 旧 TXT 仍支持加载和导出，手动编辑旧格式时注意：
 
@@ -117,7 +117,7 @@ Sekai Tools 是面向《Project SEKAI》剧情字幕制作的 Windows 桌面工�
 4. 根据需要勾选“添加后自动开始执行任务”，点击“创建任务”；使用页面的“自动执行队列”控制后续任务执行。
 5. 等待任务结束，查看输出视频。需要停止时取消对应任务。
 
-画质提供高质量（CRF 18）、均衡（CRF 21）、小体积（CRF 25）和自定义选项。CRF 越低画质通常越高、文件越大；较慢的编码速度通常可提高同等画质下的压缩率。编码线程数 `0` 表示自动。详见[视频压制性能说明](Docs/video-suppression-performance.md)。
+画质提供高质量（CRF 18）、均衡（CRF 21）、小体积（CRF 25）和自定义选项。CRF 越低画质通常越高、文件越大；较慢的编码速度通常可提高同等画质下的压缩率。编码线程数 `0` 表示自动。详见[视频压制性能说明](docs/video-suppression-performance.md)。
 
 ## 常见问题
 
@@ -147,7 +147,7 @@ dotnet publish SekaiToolsGUI/SekaiToolsGUI.csproj -c Release -o Build/
 
 发布命令会构建独立 Updater 并整理依赖目录，输出主程序位于 `Build/SekaiToolsGUI.exe`。
 
-项目结构见[架构说明](ARCHITECTURE.md)，贡献和版本发布遵循[Git 提交与版本发布规范](Docs/git-and-version-conventions.md)。项目内可使用 [`sekai-release`](.agents/skills/sekai-release/SKILL.md) skill 执行版本发布流程。
+完整功能规则、配置说明及开发资料见[文档索引](docs/README.md)。项目结构见[架构说明](ARCHITECTURE.md)，贡献和版本发布遵循[Git 提交与版本发布规范](docs/git-and-version-conventions.md)。项目内可使用 [`sekai-release`](.agents/skills/sekai-release/SKILL.md) skill 执行版本发布流程。
 
 ## 许可与声明
 

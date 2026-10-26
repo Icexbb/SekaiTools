@@ -9,7 +9,7 @@ description: 整理并执行 SekaiTools 的版本发布流程，包括版本递�
 
 ## 项目依据
 
-从本文件所在目录向上三级定位仓库根目录，所有命令在该根目录运行。先阅读 [CLAUDE.md](../../../CLAUDE.md) 和 [Git 提交与版本发布规范](../../../Docs/git-and-version-conventions.md)，后者是版本和发布说明的维护来源。若规则已更新，以当前仓库规范为准。
+从本文件所在目录向上三级定位仓库根目录，所有命令在该根目录运行。先阅读 [CLAUDE.md](../../../CLAUDE.md) 和 [Git 提交与版本发布规范](../../../docs/git-and-version-conventions.md)，后者是版本和发布说明的维护来源。若规则已更新，以当前仓库规范为准。
 
 - 版本维护入口：[SekaiToolsGUI/AssemblyInfo.cs](../../../SekaiToolsGUI/AssemblyInfo.cs) 中的 `AssemblyVersion` 和 `AssemblyFileVersion`，必须相同。
 - 版本格式：`MAJOR.MINOR.PATCH.MMdd`，日期使用 Asia/Hong_Kong 的发布日；不要固定为本 skill 创建日期。

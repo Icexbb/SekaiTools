@@ -46,11 +46,10 @@ Host 的 `capabilities` 在不加载 OpenCV 的前提下报告运行环境。替
 3. macOS 15/26 ARM64：原生库加载、字体渲染、真实 H.264/HEVC 样本读取、帧数/时间戳/定位、取消恢复、ASS 与 Windows 对照。
 4. 分发：ARM64 .app 包、签名、公证、Gatekeeper 和干净设备启动。首个实现切片仅提供开发构建脚本，不属于正式分发。
 
-本地执行环境是 Windows；已通过 SSH 连接 Apple Silicon Mac 进行远程构建和命令行调试。窗口布局与交互仍需在 Mac 桌面验收。
+## 已有验证与缺口
 
-2026-10-24 当前切片验证：Host/测试项目构建通过；完整 .NET 回归 326/326 通过；`Tools/VerifyMacHostProtocol.ps1` 验证真实子进程的能力查询、结构化错误、中文路径、翻译载入/保存/重载及纯 JSON 标准输出。Windows 沙箱内 testhost 连接与临时目录写入受限，以上测试在获准的正常 Windows 环境通过。
-2026-10-24 远程验证：macOS 26.5.1 / arm64，Xcode Swift 6.3.3，.NET SDK 10.0.300（位于 `/usr/local/share/dotnet/dotnet`）。SwiftUI Debug 和 Release 构建均通过；ARM64 Host 自包含发布通过；开发 `.app` 的 plist 校验通过并成功启动进程。
-LLDB 经 SSH 能在 Swift 客户端 `main` 命中断点、读取调用栈并正常结束调试进程。
-发布 Host 的能力查询、中文路径、多行与显式空翻译往返、输入覆盖保护及结构化错误均通过。macOS 26 的轴机能力按预期返回不可用，不加载要求 27.0 的 cvextern。
-真实下载链路通过：默认数据源活动目录返回 1,796 个条目，首个剧本下载至临时目录后可由翻译接口载入；测试文件自动清理。此结果不代表五个分类及所有筛选条件都已验收。
-视频识别、macOS 15 实机、UI 交互和正式分发验收尚未完成。仓库包含 macOS CI，但当前会话未触发远端 Actions。
+2026-10-24 的 Windows Host 回归及 [协议验证脚本](../Tools/VerifyMacHostProtocol.ps1) 已覆盖能力查询、结构化错误、中文路径、翻译载入／保存／重载和纯 JSON 标准输出。
+
+同日 Apple Silicon macOS 26 的远程验证通过 SwiftUI Debug／Release 编译、ARM64 Host 自包含发布、开发 `.app` 校验与进程启动，以及 LLDB 入口断点。Host 的多行与显式空翻译往返、输入覆盖保护和首个活动剧本下载后载入均通过；轴机按预期报告不可用，不加载最低要求 macOS 27.0 的原生库。
+
+这些记录不是当前构建的完整验收，也不代表所有下载分类已通过。macOS 15 实机、视频识别、Mac 桌面窗口与输入交互、正式签名分发仍未验收；需按上方要求在目标设备补齐。
