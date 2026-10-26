@@ -9,6 +9,16 @@ public class TranslatePageModel : ViewModelBase
 {
     private GameScript? _loadedScript;
     private Story? _referenceStory;
+    private IReadOnlyDictionary<string, FlashbackEventOrigin> _flashbackOrigins = new Dictionary<string, FlashbackEventOrigin>();
+
+    public string[] FlashbackSources => Events.OfType<LineDialogModel>().Where(line => line.IsFlashback)
+        .SelectMany(line => line.Flashback!.Sources.Where(source => source != line.Flashback.MainSource)).Distinct().ToArray();
+
+    public void ApplyFlashbackOrigins(IReadOnlyDictionary<string, FlashbackEventOrigin> origins)
+    {
+        _flashbackOrigins = origins;
+        foreach (var line in Events.OfType<LineDialogModel>()) line.ApplyFlashbackOrigins(origins);
+    }
 
     public string ScriptPath
     {
@@ -102,6 +112,7 @@ public class TranslatePageModel : ViewModelBase
                     case DialogStoryEvent dialogStoryEvent:
                         var lineDialogModel = new LineDialogModel(dialogStoryEvent,
                             (uint)dialogStoryEvent.Index < (uint)flashbacks.Length ? flashbacks[dialogStoryEvent.Index] : null);
+                        lineDialogModel.ApplyFlashbackOrigins(_flashbackOrigins);
                         lineDialogModel.CharacterTranslateChanged += OnLineDialogModelOnCharacterTranslateChanged;
                         events.Add(lineDialogModel);
                         break;
@@ -146,6 +157,7 @@ public class TranslatePageModel : ViewModelBase
 
     public void Clear()
     {
+        _flashbackOrigins = new Dictionary<string, FlashbackEventOrigin>();
         Story = Story.Empty();
         _loadedScript = null;
         _referenceStory = null;

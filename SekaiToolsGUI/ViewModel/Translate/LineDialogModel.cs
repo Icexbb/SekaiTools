@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
 using SekaiToolsBase.Story.StoryEvent;
+using SekaiToolsBase.Story;
 using SekaiToolsBase.Utils;
 using SekaiToolsBase.Story.Translation;
 using SekaiToolsConfiguration;
@@ -37,6 +38,19 @@ public partial class LineDialogModel : LineModel
     public SekaiToolsBase.Story.FlashbackInfo? Flashback { get; }
     public bool IsFlashback => Flashback?.IsFlashback == true;
     public string FlashbackHint => IsFlashback ? Flashback!.Hint : string.Empty;
+    public string FlashbackLabel
+    {
+        get => GetProperty(IsFlashback ? "疑似闪回 · " + string.Join("；", Flashback!.Sources
+            .Where(source => source != Flashback.MainSource).Select(FlashbackAnalyzer.DescribeSource)) : string.Empty);
+        private set => SetProperty(value);
+    }
+
+    public void ApplyFlashbackOrigins(IReadOnlyDictionary<string, SekaiToolsBase.Story.FlashbackEventOrigin> origins)
+    {
+        if (!IsFlashback) return;
+        FlashbackLabel = "疑似闪回 · " + string.Join("；", Flashback!.Sources.Where(source => source != Flashback.MainSource)
+            .Select(source => origins.TryGetValue(source, out var origin) ? origin.DisplayName : FlashbackAnalyzer.DescribeSource(source)));
+    }
 
     public bool EndLine
     {

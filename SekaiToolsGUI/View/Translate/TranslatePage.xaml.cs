@@ -13,6 +13,11 @@ using SekaiToolsBase.Story.Translation;
 using SekaiToolsGUI.Service;
 using SekaiToolsGUI.View.Download;
 using SekaiToolsGUI.ViewModel.Translate;
+using SekaiDataFetch;
+using SekaiDataFetch.Source;
+using SekaiToolsConfiguration;
+using SekaiToolsGUI.ViewModel.Download;
+using SekaiToolsGUI.ViewModel.Setting;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
@@ -27,6 +32,8 @@ public partial class TranslatePage : UserControl
     private Story? _dragStory;
     private TranslationData? _dragTranslation;
     private string? _dragTranslationError;
+    private CancellationTokenSource? _flashbackLookup;
+    private readonly FlashbackEventService _flashbackEvents = new();
 
     public TranslatePage()
     {
@@ -38,11 +45,45 @@ public partial class TranslatePage : UserControl
                 or nameof(TranslatePageModel.TranslationPath)
                 or nameof(TranslatePageModel.ReferenceTranslationPath))
                 UpdateLoadButtons();
+            if (e.PropertyName == nameof(TranslatePageModel.ScriptPath))
+                UpdateFlashbackOrigins();
         };
         UpdateLoadButtons();
     }
 
     public TranslatePageModel ViewModel => (TranslatePageModel)DataContext;
+
+    private async void UpdateFlashbackOrigins()
+    {
+        _flashbackLookup?.Cancel();
+        var sources = ViewModel.FlashbackSources;
+        if (!ViewModel.HasScript || sources.Length == 0) return;
+        using var lookup = new CancellationTokenSource();
+        _flashbackLookup = lookup;
+        var downloads = DownloadPageModel.Instance;
+        var downloadSources = new[] { downloads.CurrentSource }.Concat(downloads.SourceData).ToArray();
+        Fetcher.Instance.SetProxy(SettingPageModel.Instance.GetProxy());
+        try
+        {
+            var origins = await Task.Run(() => _flashbackEvents.ResolveAsync(sources, downloadSources, lookup.Token,
+                async token =>
+                {
+                    var json = await Fetcher.Instance.FetchOnceAsync(NetworkEndpoints.Current.Resources.SourceListUrl, token);
+                    return System.Text.Json.JsonSerializer.Deserialize<SourceData[]>(json)
+                        ?? throw new InvalidDataException("数据源列表为空");
+                }), lookup.Token);
+            if (!lookup.IsCancellationRequested) ViewModel.ApplyFlashbackOrigins(origins);
+        }
+        catch (OperationCanceledException) when (lookup.IsCancellationRequested) { }
+        catch (Exception exception)
+        {
+            Logger.Log($"闪回活动来源解析失败: {exception.Message}", LogLevel.Warning);
+        }
+        finally
+        {
+            if (ReferenceEquals(_flashbackLookup, lookup)) _flashbackLookup = null;
+        }
+    }
 
 
     private static ISnackbarService SnackbarService =>

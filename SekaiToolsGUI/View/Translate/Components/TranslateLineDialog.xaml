@@ -10,24 +10,11 @@
              d:DesignWidth="800"
              HorizontalAlignment="Stretch">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="150" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <Border Grid.Row="0" Grid.ColumnSpan="2" Padding="8,4" Margin="0,0,0,2"
-                Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                ToolTip="{Binding FlashbackHint}"
-                Visibility="{c:Binding IsFlashback,FalseToVisibility=Collapsed}">
-            <StackPanel Orientation="Horizontal">
-                <ui:SymbolIcon Symbol="History24" Margin="0,0,6,0" />
-                <TextBlock Text="疑似闪回" />
-            </StackPanel>
-        </Border>
-        <ui:Card Grid.Row="1" Grid.Column="0" Margin="0" Padding="5,2" VerticalAlignment="Stretch">
+        <ui:Card Grid.Column="0" Margin="0" Padding="5,2" VerticalAlignment="Stretch">
             <Grid VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="30" />
@@ -81,7 +68,7 @@
                 </Grid>
             </Grid>
         </ui:Card>
-        <ui:Card Grid.Row="1" Grid.Column="1" Margin="0" Padding="5,2" VerticalAlignment="Stretch">
+        <ui:Card Grid.Column="1" Margin="0" Padding="5,2" VerticalAlignment="Stretch">
             <Grid VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -89,7 +76,12 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <TextBox Grid.Column="0" Name="OriginalContentTextBox"
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                <TextBox Grid.Row="0" Name="OriginalContentTextBox"
                          KeyboardNavigation.TabNavigation="Continue"
                          MinLines="2"
                          Margin="0"
@@ -101,6 +93,22 @@
                          Background="Transparent"
                          BorderBrush="Transparent"
                          Text="{Binding Content.Original}" />
+                    <Border x:Name="FlashbackBadge" Grid.Row="1" Padding="6,4" Margin="2,4,2,2" CornerRadius="4"
+                            Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                            ToolTip="{Binding FlashbackHint}"
+                            Visibility="{c:Binding IsFlashback,FalseToVisibility=Collapsed}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ui:SymbolIcon Symbol="History24" FontSize="14" Margin="0,1,6,0" VerticalAlignment="Top"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Grid.Column="1" Text="{Binding FlashbackLabel}" FontSize="12" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        </Grid>
+                    </Border>
+                </Grid>
                 <Grid Grid.Column="1">
                     <Grid.RowDefinitions>
                         <RowDefinition />

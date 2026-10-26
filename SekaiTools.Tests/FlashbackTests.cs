@@ -50,11 +50,17 @@ public class FlashbackTests
         var model = new TranslatePageModel();
         model.LoadScript(script, "test.json");
         var originalExport = model.Export();
+        model.ApplyFlashbackOrigins(new Dictionary<string, FlashbackEventOrigin>
+        {
+            ["ev_old_01"] = new(135, 135, "来源活动")
+        });
+        Assert.Contains("第 135 期 · 来源活动", ((LineDialogModel)model.Events[1]).FlashbackLabel);
         Assert.True(((LineDialogModel)model.Events[1]).IsFlashback);
         model.LoadTranslation(new TranslationData(null), "translation.txt");
         model.ClearTranslation();
         Assert.True(((LineDialogModel)model.Events[1]).IsFlashback);
         Assert.Equal(originalExport, model.Export());
+        Assert.Contains("第 135 期", ((LineDialogModel)model.Events[1]).FlashbackLabel);
         Assert.False(model.IsDirty);
         model.LoadScript(new Script { TalkData = [Line()], Snippets = [new() { Action = 1 }] }, "next.json");
         Assert.False(((LineDialogModel)model.Events[0]).IsFlashback);

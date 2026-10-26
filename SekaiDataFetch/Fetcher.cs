@@ -41,6 +41,14 @@ public class Fetcher
         };
     }
 
+    public async Task<string> FetchOnceAsync(string url, CancellationToken cancellationToken = default)
+    {
+        using var client = new HttpClient(GetHttpHandler()) { Timeout = TimeSpan.FromSeconds(10) };
+        using var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task<string> Fetch(string url)
     {
         return await TryGet();
