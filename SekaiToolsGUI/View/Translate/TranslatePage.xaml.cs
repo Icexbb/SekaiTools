@@ -22,6 +22,9 @@ namespace SekaiToolsGUI.View.Translate;
 public partial class TranslatePage : UserControl
 {
     private bool _isLoadingScript;
+    private string? _dragTranslationPath;
+    private Story? _dragStory;
+    private TranslationData? _dragTranslation;
 
     public TranslatePage()
     {
@@ -66,10 +69,23 @@ public partial class TranslatePage : UserControl
     {
         if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
 
-        e.Effects = !_isLoadingScript && GetDroppedScriptPath(e) != null
+        var path = GetDroppedFilePath(e);
+        var script = IsScriptPath(path);
+        var translation = !script && GetDragTranslation(path) != null;
+        var allowed = !_isLoadingScript && (script || translation);
+        e.Effects = allowed
             ? DragDropEffects.Copy
             : DragDropEffects.None;
         e.Handled = true;
+        DropOverlay.Visibility = allowed ? Visibility.Visible : Visibility.Collapsed;
+        if (!allowed) return;
+
+        ReferenceDropText.Text = script ? "松开以重新载入剧本" : "松开以载入参考翻译";
+        Grid.SetRowSpan(ReferenceDropRegion, script ? 2 : 1);
+        TranslationDropRegion.Visibility = script ? Visibility.Collapsed : Visibility.Visible;
+        var upper = e.GetPosition(this).Y < ActualHeight / 2;
+        ReferenceDropRegion.Background = script || upper ? new SolidColorBrush(Color.FromArgb(160, 0, 100, 180)) : Brushes.Transparent;
+        TranslationDropRegion.Background = !upper ? new SolidColorBrush(Color.FromArgb(160, 0, 100, 180)) : Brushes.Transparent;
     }
 
     private async void Page_OnPreviewDrop(object sender, DragEventArgs e)
@@ -78,24 +94,96 @@ public partial class TranslatePage : UserControl
 
         e.Handled = true;
         e.Effects = DragDropEffects.None;
-        var path = GetDroppedScriptPath(e);
+        var path = GetDroppedFilePath(e);
+        var reference = e.GetPosition(this).Y < ActualHeight / 2;
+        DropOverlay.Visibility = Visibility.Collapsed;
         if (_isLoadingScript || path == null) return;
 
+        if (IsScriptPath(path))
+        {
+            ResetDragState();
+            e.Effects = DragDropEffects.Copy;
+            await LoadScriptFileAsync(path);
+            return;
+        }
+
+        // 松开时重新读取，避免拖动期间文件被修改后绕过校验。
+        ResetDragState();
+        var translation = GetDragTranslation(path);
+        ResetDragState();
+        if (translation == null) return;
         e.Effects = DragDropEffects.Copy;
-        await LoadScriptFileAsync(path);
+        _isLoadingScript = true;
+        try
+        {
+            if (reference)
+                ViewModel.LoadReferenceTranslation(translation, path);
+            else
+            {
+                if (!await ConfirmReplaceCurrentContentAsync()) return;
+                ViewModel.LoadTranslation(translation, path);
+            }
+            SnackbarService.Show("成功", reference ? "参考翻译已载入" : "翻译已载入", ControlAppearance.Success,
+                new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
+        }
+        catch (Exception exception)
+        {
+            SnackbarService.Show("错误", exception.Message, ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
+        }
+        finally
+        {
+            _isLoadingScript = false;
+        }
     }
 
-    private static string? GetDroppedScriptPath(DragEventArgs e)
+    private void Page_OnPreviewDragLeave(object sender, DragEventArgs e)
+    {
+        ResetDragState();
+    }
+
+    private void Page_OnUnloaded(object sender, RoutedEventArgs e) => ResetDragState();
+
+    private void ResetDragState()
+    {
+        DropOverlay.Visibility = Visibility.Collapsed;
+        _dragTranslationPath = null;
+        _dragStory = null;
+        _dragTranslation = null;
+    }
+
+    private TranslationData? GetDragTranslation(string? path)
+    {
+        if (!ViewModel.HasScript || path == null || !Path.GetExtension(path).Equals(".txt", StringComparison.OrdinalIgnoreCase))
+            return null;
+        if (_dragTranslationPath == path && ReferenceEquals(_dragStory, ViewModel.Story)) return _dragTranslation;
+        _dragTranslationPath = path;
+        _dragStory = ViewModel.Story;
+        _dragTranslation = null;
+        try
+        {
+            var translation = new TranslationData(path);
+            if (!translation.IsEmpty() && ViewModel.IsTranslationApplicable(translation))
+                _dragTranslation = translation;
+        }
+        catch (Exception)
+        {
+            // 无效或不匹配的文件保持禁止拖入，不在拖动过程中弹出提示。
+        }
+        return _dragTranslation;
+    }
+
+    private static string? GetDroppedFilePath(DragEventArgs e)
     {
         if (e.Data.GetData(DataFormats.FileDrop) is not string[] { Length: 1 } paths) return null;
 
         var path = paths[0];
-        var extension = Path.GetExtension(path);
-        return (extension.Equals(".json", StringComparison.OrdinalIgnoreCase)
-                || extension.Equals(".asset", StringComparison.OrdinalIgnoreCase)) && File.Exists(path)
-            ? path
-            : null;
+        return File.Exists(path) ? path : null;
     }
+
+    private static bool IsScriptPath(string? path) => path != null &&
+        (Path.GetExtension(path).Equals(".json", StringComparison.OrdinalIgnoreCase)
+         || Path.GetExtension(path).Equals(".asset", StringComparison.OrdinalIgnoreCase));
 
     private async Task LoadScriptFileAsync(string path)
     {

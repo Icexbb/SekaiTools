@@ -11,8 +11,10 @@
              mc:Ignorable="d"
              AllowDrop="True" Background="Transparent"
              PreviewDragOver="Page_OnPreviewDragOver" PreviewDrop="Page_OnPreviewDrop"
+             PreviewDragLeave="Page_OnPreviewDragLeave" Unloaded="Page_OnUnloaded"
              d:DesignHeight="960" d:DesignWidth="1280" d:Background="White"
              d:DataContext="{d:DesignInstance translate:TranslatePageModel, IsDesignTimeCreatable=True}">
+    <Grid>
     <Grid Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -142,5 +144,29 @@
                 </Style>
             </ListView.ItemContainerStyle>
         </ListView>
+    </Grid>
+        <Grid x:Name="DropOverlay" Visibility="Collapsed" IsHitTestVisible="False"
+              Background="#B0000000">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Border x:Name="ReferenceDropRegion" Margin="12,12,12,6" CornerRadius="8"
+                    BorderBrush="White" BorderThickness="2">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <ui:SymbolIcon Symbol="Document24" Foreground="White" FontSize="32" />
+                    <TextBlock x:Name="ReferenceDropText" Text="松开以载入参考翻译" Foreground="White"
+                               FontSize="24" Margin="0,12,0,0" TextAlignment="Center" />
+                </StackPanel>
+            </Border>
+            <Border x:Name="TranslationDropRegion" Grid.Row="1" Margin="12,6,12,12" CornerRadius="8"
+                    BorderBrush="White" BorderThickness="2">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <ui:SymbolIcon Symbol="Document24" Foreground="White" FontSize="32" />
+                    <TextBlock Text="松开以载入翻译" Foreground="White" FontSize="24"
+                               Margin="0,12,0,0" TextAlignment="Center" />
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>
