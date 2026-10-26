@@ -79,7 +79,7 @@ Sekai Tools 是面向《Project SEKAI》剧情字幕制作的 Windows 桌面工�
 
 建议使用内嵌编辑器生成翻译文件。TXT v2 使用 `@scenario` 对应剧本内部的 `ScenarioId`，使用 `@dialog:001[说话人]`、`@banner:001` 和 `@marker:005` 标记条目；正文支持多行，可以移动完整条目，但请保留标记及编号。以 `#` 开头的行为注释，特殊正文行首需要转义。完整规则见 [翻译 TXT 格式 v2](docs/translation-format-v2.md)，闪回来源与保存标签见 [翻译编辑](docs/translation.md)。
 
-旧 TXT 仍支持加载和导出，手动编辑旧格式时注意：
+旧 TXT（v1）仍支持加载和导出，完整语法见 [翻译 TXT 格式 v1](docs/translation-format-v1.md)。手动编辑旧格式时注意：
 
 - 对话使用全角冒号 `：` 分隔角色名与正文，例如 `初音未来：大家好！`。
 - 效果文本独占一行，不使用角色名与冒号前缀。

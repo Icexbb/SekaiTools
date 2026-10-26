@@ -8,6 +8,7 @@
 | --- | --- |
 | [地图对话筛选](action-story-filtering.md) | 下载筛选、活动关联、追加推断与缺失数据降级 |
 | [翻译编辑](translation.md) | 普通与参考翻译、闪回来源、保存标签与覆盖确认 |
+| [翻译 TXT 格式 v1（旧 TXT）](translation-format-v1.md) | 顺序匹配、全角冒号、`\N` 换行、注释及旧格式限制 |
 | [翻译 TXT 格式 v2](translation-format-v2.md) | 标签、编号、转义、空正文及旧格式兼容 |
 | [字幕任务与复核](subtitle-workflow.md) | 一次性恢复、历史按需加载、时间轴定位及输出保护 |
 | [字幕识别规则](recognition.md) | 匹配状态机、无名对话、短暂失配容错与识别边界 |
