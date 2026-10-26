@@ -18,7 +18,7 @@
             SelectionChanged="SpecialStoryTypeSelector_OnSelectionChanged" />
 
         <ui:Card Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
-            <ui:PassiveScrollViewer>
+            <ui:PassiveScrollViewer HorizontalScrollBarVisibility="Disabled">
                 <Grid Margin="5" Name="CardContents" />
             </ui:PassiveScrollViewer>
         </ui:Card>

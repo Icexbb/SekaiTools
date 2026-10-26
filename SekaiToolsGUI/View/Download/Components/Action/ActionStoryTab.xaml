@@ -169,6 +169,7 @@
                   Background="Transparent"
                   Padding="0"
                   ScrollViewer.CanContentScroll="True"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                   VirtualizingStackPanel.ScrollUnit="Pixel">
             <ui:ListView.ItemTemplate>
                 <DataTemplate>
@@ -178,6 +179,7 @@
 
             <ui:ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="Focusable" Value="False" />
                     <Setter Property="IsHitTestVisible" Value="True" />
                     <Setter Property="Background" Value="Transparent" />

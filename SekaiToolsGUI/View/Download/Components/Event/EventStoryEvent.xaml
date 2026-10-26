@@ -5,20 +5,21 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d">
-    <ui:CardExpander VerticalContentAlignment="Center" HorizontalAlignment="Stretch" ContentPadding="10,5">
+    <ui:CardExpander VerticalContentAlignment="Center" HorizontalAlignment="Stretch"
+                     HorizontalContentAlignment="Stretch" ContentPadding="10,5">
         <ui:CardExpander.Header>
             <Grid Margin="0,0,0,5">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition MinWidth="20" Width="*" />
+                    <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <ui:InfoBadge Name="IndexInfoBadge" Severity="Attention" />
                     <ui:InfoBadge Name="IndexInfoBadgeEx" Severity="Informational" />
-                    <ui:TextBlock Name="TextBlockTitle" Text="TitleHere" VerticalAlignment="Center"
-                                  FontWeight="DemiBold" />
                 </StackPanel>
+                <ui:TextBlock Grid.Column="1" Name="TextBlockTitle" Text="TitleHere" VerticalAlignment="Center"
+                              TextWrapping="Wrap" FontWeight="DemiBold" />
 
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal">

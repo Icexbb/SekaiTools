@@ -58,7 +58,7 @@
             </ComboBoxItem>
         </ComboBox>
         <UserControl Grid.Row="1" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
-            <ui:PassiveScrollViewer>
+            <ui:PassiveScrollViewer HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Name="CardContents" />
             </ui:PassiveScrollViewer>
         </UserControl>

@@ -9,22 +9,26 @@
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="2*" />
             </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Horizontal">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
                 <Image Width="24" Height="24" Name="IconImage" Margin="0,0,10,0" />
 
-                <StackPanel VerticalAlignment="Center">
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Name="TextBlockTitle"
                                Text="# 1" />
                     <TextBlock Name="TextBlockName" FontWeight="DemiBold"
-                               Text="★2 XXX" />
+                               Text="★2 XXX" TextWrapping="Wrap" />
                 </StackPanel>
 
-            </StackPanel>
+            </Grid>
 
-            <Grid Grid.Column="2" Name="PanelItems" HorizontalAlignment="Right">
+            <Grid Grid.Column="2" Name="PanelItems" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />

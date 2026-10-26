@@ -8,11 +8,16 @@
              mc:Ignorable="d" Margin="0"
              d:DataContext="{d:DesignInstance local:DownloadItem}"
              HorizontalAlignment="Stretch">
-    <ui:CardAction HorizontalAlignment="Stretch" Click="ButtonBase_OnClick" Padding="10">
-        <StackPanel Orientation="Horizontal">
-            <ui:InfoBadge Name="IndexInfoBadge" Severity="Attention" Margin="0,0,5,0" Value="1" />
-            <ui:TextBlock Name="TitleTextBlock" VerticalAlignment="Center" TextWrapping="Wrap"
+    <ui:CardAction HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                   Click="ButtonBase_OnClick" Padding="10">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <ui:InfoBadge Name="IndexInfoBadge" Severity="Attention" Margin="0,0,5,0" Value="1" VerticalAlignment="Center" />
+            <ui:TextBlock Grid.Column="1" Name="TitleTextBlock" VerticalAlignment="Center" TextWrapping="Wrap"
                           Text="Download Item Title" />
-        </StackPanel>
+        </Grid>
     </ui:CardAction>
 </UserControl>
