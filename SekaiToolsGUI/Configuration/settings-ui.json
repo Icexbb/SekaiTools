@@ -122,6 +122,7 @@
     ]
   },
   {
+    "id": "subtitle-export",
     "title": "输出注释",
     "icon": "CommentNote24",
     "description": "选择字幕输出的类别",

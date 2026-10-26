@@ -8,6 +8,7 @@ namespace SekaiToolsGUI.View.Setting;
 
 public sealed class SettingSection
 {
+    public string? Id { get; init; }
     public string Title { get; init; } = "";
     public string Description { get; init; } = "";
     public string Icon { get; init; } = "Settings24";

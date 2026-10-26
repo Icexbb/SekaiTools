@@ -11,6 +11,7 @@ namespace SekaiToolsGUI.View.Setting;
 /// <summary>Generic editor construction; setting-specific choices live in settings-ui.json.</summary>
 public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Func<string, FrameworkElement> customContent)
 {
+    public bool ShowResetButtons { get; init; } = true;
     public FrameworkElement Build(SettingSection section, bool nested = false)
     {
         // Older external catalogs may still contain the former inline log section.
@@ -42,13 +43,16 @@ public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Fu
         return new CardControl { Header = header, Icon = icon, Content = editors, Margin = new Thickness(0, 0, 0, nested ? 0 : 8) };
     }
 
-    private static StackPanel Header(SettingSection section)
+    private StackPanel Header(SettingSection section)
     {
         var heading = new StackPanel { Orientation = Orientation.Horizontal };
         heading.Children.Add(new TextBlock { Text = section.Title, VerticalAlignment = VerticalAlignment.Center });
-        var reset = new SettingResetButton { Properties = string.Join(',', section.Properties) };
-        System.Windows.Automation.AutomationProperties.SetName(reset, $"还原{section.Title}默认设置");
-        heading.Children.Add(reset);
+        if (ShowResetButtons)
+        {
+            var reset = new SettingResetButton { Properties = string.Join(',', section.Properties) };
+            System.Windows.Automation.AutomationProperties.SetName(reset, $"还原{section.Title}默认设置");
+            heading.Children.Add(reset);
+        }
         var panel = new StackPanel(); panel.Children.Add(heading);
         if (!string.IsNullOrEmpty(section.Description)) panel.Children.Add(Description(section.Description));
         if (section.StatusProperty is { } status)

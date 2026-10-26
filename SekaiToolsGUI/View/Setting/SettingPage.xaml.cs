@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using SekaiToolsGUI.Interface;
+using SekaiToolsGUI.Control;
 using SekaiToolsGUI.View.Setting.Components;
 using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Setting;
@@ -23,7 +24,15 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
         var specialSections = new Dictionary<string, FrameworkElement> { ["about"] = AboutSection };
         SettingsItems.Children.Clear();
         var builder = new SettingViewBuilder(OpenFontDialog, key => specialSections[key]);
-        foreach (var section in SettingCatalog.Load()) SettingsItems.Children.Add(builder.Build(section));
+        foreach (var section in SettingCatalog.Load())
+            SettingsItems.Children.Add(ExportOptionsControl.IsExportSection(section)
+                ? new ExportOptionsControl(section)
+                {
+                    ShowResetButtons = true,
+                    Description = section.Description,
+                    IsExpanded = section.IsExpanded
+                }
+                : builder.Build(section));
     }
 
     private static ISnackbarService SnackService =>
