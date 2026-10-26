@@ -57,9 +57,15 @@ while (limit == 0 || frames < limit)
         colorFingerprint.AppendData((byte[])capture.Color.GetData(false));
         grayFingerprint.AppendData((byte[])capture.Gray.GetData(false));
         if (timestamp != 0 || color.Maximum != 0 || gray.Maximum != 0)
-            differences.Add(new { Frame = frames, TimestampDifference = timestamp,
-                ColorMaximum = color.Maximum, ColorUnequalBytes = color.UnequalBytes,
-                GrayMaximum = gray.Maximum, GrayUnequalBytes = gray.UnequalBytes });
+            differences.Add(new
+            {
+                Frame = frames,
+                TimestampDifference = timestamp,
+                ColorMaximum = color.Maximum,
+                ColorUnequalBytes = color.UnequalBytes,
+                GrayMaximum = gray.Maximum,
+                GrayUnequalBytes = gray.UnequalBytes
+            });
     }
 }
 var elapsed = Stopwatch.GetElapsedTime(started);
@@ -69,18 +75,35 @@ if (differences.Count != 0) Environment.ExitCode = 1;
 var native = Process.GetCurrentProcess().Modules.Cast<ProcessModule>()
     .Where(m => m.ModuleName.Contains("cvextern", StringComparison.OrdinalIgnoreCase) || m.ModuleName.Contains("videoio_ffmpeg", StringComparison.OrdinalIgnoreCase))
     .Select(m => new { Path = m.FileName, Hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(m.FileName))) }).ToArray();
-var report = new { Video = video, InputHash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(video))),
-    Plugin = plugin, PluginHash = PluginCapture.SupportedPluginHash, capture.PluginVersion, capture.ProvidedApi,
-    Mode = mode, Frames = frames, DeclaredFrames = declared, ReachedEof = eof, FrameLimit = limit,
-    DecoderThreads = (int)capture.Get(70), OpenCvThreads = CvInvoke.NumThreads,
-    capture.Width, capture.Height, capture.CallbackType,
-    ElapsedSeconds = elapsed.TotalSeconds, GrabSeconds = (double)grabTicks / Stopwatch.Frequency,
+var report = new
+{
+    Video = video,
+    InputHash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(video))),
+    Plugin = plugin,
+    PluginHash = PluginCapture.SupportedPluginHash,
+    capture.PluginVersion,
+    capture.ProvidedApi,
+    Mode = mode,
+    Frames = frames,
+    DeclaredFrames = declared,
+    ReachedEof = eof,
+    FrameLimit = limit,
+    DecoderThreads = (int)capture.Get(70),
+    OpenCvThreads = CvInvoke.NumThreads,
+    capture.Width,
+    capture.Height,
+    capture.CallbackType,
+    ElapsedSeconds = elapsed.TotalSeconds,
+    GrabSeconds = (double)grabTicks / Stopwatch.Frequency,
     RetrieveSeconds = (double)retrieveTicks / Stopwatch.Frequency,
     CallbackSeconds = (double)capture.CallbackTicks / Stopwatch.Frequency,
     VerificationPassed = mode == "verify" ? differences.Count == 0 : (bool?)null,
     ColorFingerprint = mode == "verify" ? Convert.ToHexString(colorFingerprint.GetHashAndReset()) : null,
     GrayFingerprint = mode == "verify" ? Convert.ToHexString(grayFingerprint.GetHashAndReset()) : null,
-    Differences = differences, NoPerformanceConclusion = mode == "verify", NativeLibraries = native };
+    Differences = differences,
+    NoPerformanceConclusion = mode == "verify",
+    NativeLibraries = native
+};
 Directory.CreateDirectory(Path.GetDirectoryName(output)!);
 var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
 File.WriteAllText(output, json);

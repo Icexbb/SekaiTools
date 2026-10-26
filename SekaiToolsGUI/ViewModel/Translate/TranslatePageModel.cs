@@ -238,20 +238,20 @@ public partial class TranslatePageModel : ViewModelBase
             switch (line)
             {
                 case LineDialogModel lineDialogModel when ev is DialogStoryEvent dialogStoryEvent:
-                {
-                    if (lineDialogModel.Character.Original != dialogStoryEvent.CharacterOriginal
-                        || lineDialogModel.Content.Original != dialogStoryEvent.BodyOriginal) continue;
-                    lineDialogModel.Character.Reference = dialogStoryEvent.CharacterTranslated;
-                    lineDialogModel.Content.Reference = dialogStoryEvent.BodyTranslated;
-                    break;
-                }
+                    {
+                        if (lineDialogModel.Character.Original != dialogStoryEvent.CharacterOriginal
+                            || lineDialogModel.Content.Original != dialogStoryEvent.BodyOriginal) continue;
+                        lineDialogModel.Character.Reference = dialogStoryEvent.CharacterTranslated;
+                        lineDialogModel.Content.Reference = dialogStoryEvent.BodyTranslated;
+                        break;
+                    }
                 case LineEffectModel lineEffectModel:
-                {
-                    if (lineEffectModel.Content.Original != ev.BodyOriginal) continue;
-                    lineEffectModel.Content.Reference = ev.BodyTranslated;
+                    {
+                        if (lineEffectModel.Content.Original != ev.BodyOriginal) continue;
+                        lineEffectModel.Content.Reference = ev.BodyTranslated;
 
-                    break;
-                }
+                        break;
+                    }
             }
         }
     }

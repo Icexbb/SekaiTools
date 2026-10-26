@@ -108,8 +108,16 @@ internal static class Program
             null, [typeof(EditorSessionStore)], null)!;
         var page = (TranslatePage)constructor.Invoke([store]);
         page.ViewModel.LoadScript(script, "probe.json");
-        var window = new Window { Content = page, Width = 1280, Height = 800,
-            Left = -15000, Top = -15000, ShowActivated = false, ShowInTaskbar = false };
+        var window = new Window
+        {
+            Content = page,
+            Width = 1280,
+            Height = 800,
+            Left = -15000,
+            Top = -15000,
+            ShowActivated = false,
+            ShowInTaskbar = false
+        };
         window.Show();
         Pump();
         var undo = Nodes(page).OfType<Wpf.Ui.Controls.Button>().Single(button => Equals(button.ToolTip, "撤销 (Ctrl+Z)"));

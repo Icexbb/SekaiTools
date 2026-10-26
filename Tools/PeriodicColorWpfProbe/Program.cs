@@ -69,12 +69,27 @@ internal static class Program
         using (var stream = new FileStream(imagePath, FileMode.CreateNew)) encoder.Save(stream);
         if (Hash(video) != inputHash) throw new InvalidDataException("Input changed during probe");
         var wpfAssembly = typeof(BitmapSourceExtension).Assembly.Location;
-        File.WriteAllText(report, JsonSerializer.Serialize(new { Video = video, InputHash = inputHash, owner.NativePath, owner.NativeHash,
-            owner.PluginPath, owner.PluginHash, PreviewInterval = interval, PreviewsChecked = checkedPreviews,
-            DispatcherConversionEquivalent = true, OffscreenImageRenderEquivalent = true,
-            ConvertedImageSurvivesSourceDisposal = true, RenderPath = imagePath, RenderHash = Hash(imagePath),
-            WpfAssemblyPath = wpfAssembly, WpfAssemblyHash = Hash(wpfAssembly),
-            CaptureDisposed = true, LiveGuiQualified = false, NoPerformanceConclusion = true }, new JsonSerializerOptions { WriteIndented = true }));
+        File.WriteAllText(report, JsonSerializer.Serialize(new
+        {
+            Video = video,
+            InputHash = inputHash,
+            owner.NativePath,
+            owner.NativeHash,
+            owner.PluginPath,
+            owner.PluginHash,
+            PreviewInterval = interval,
+            PreviewsChecked = checkedPreviews,
+            DispatcherConversionEquivalent = true,
+            OffscreenImageRenderEquivalent = true,
+            ConvertedImageSurvivesSourceDisposal = true,
+            RenderPath = imagePath,
+            RenderHash = Hash(imagePath),
+            WpfAssemblyPath = wpfAssembly,
+            WpfAssemblyHash = Hash(wpfAssembly),
+            CaptureDisposed = true,
+            LiveGuiQualified = false,
+            NoPerformanceConclusion = true
+        }, new JsonSerializerOptions { WriteIndented = true }));
     }
 
     private static byte[] Pixels(BitmapSource source)

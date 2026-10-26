@@ -29,8 +29,14 @@ public sealed class FlashbackEventTests : IDisposable
 
     private static SourceData Source(string name) => new()
     {
-        SourceName = name, SourceTemplate = $"https://{name}.example/{{type}}.json", StorageBaseUrl = "https://assets.example/",
-        ActionSetTemplate = "", MemberStoryTemplate = "", EventStoryTemplate = "", SpecialStoryTemplate = "", UnitStoryTemplate = ""
+        SourceName = name,
+        SourceTemplate = $"https://{name}.example/{{type}}.json",
+        StorageBaseUrl = "https://assets.example/",
+        ActionSetTemplate = "",
+        MemberStoryTemplate = "",
+        EventStoryTemplate = "",
+        SpecialStoryTemplate = "",
+        UnitStoryTemplate = ""
     };
     private string Cache(SourceData source) => Path.Combine(_directory, source.SourceName);
     private async Task Seed(SourceData source, Dictionary<string, string> data)

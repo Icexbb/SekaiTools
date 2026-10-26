@@ -68,10 +68,21 @@ try
     candidate.Dispose();
     disposed = candidate.Ptr == IntPtr.Zero;
     if (!disposed) throw new InvalidDataException("Capture pointer not released");
-    File.WriteAllText(report, JsonSerializer.Serialize(new { Video = video, InputHash = Hash(video),
-        Plugin = plugin, PluginHash = qualifiedHash, Native = native, NativeHash = nativeHash,
-        FramesVerified = verified, SeekPoints = 5, Disposed = disposed, Differences = differences,
-        VerificationPassed = differences.Count == 0, NoPerformanceConclusion = true }, new JsonSerializerOptions { WriteIndented = true }));
+    File.WriteAllText(report, JsonSerializer.Serialize(new
+    {
+        Video = video,
+        InputHash = Hash(video),
+        Plugin = plugin,
+        PluginHash = qualifiedHash,
+        Native = native,
+        NativeHash = nativeHash,
+        FramesVerified = verified,
+        SeekPoints = 5,
+        Disposed = disposed,
+        Differences = differences,
+        VerificationPassed = differences.Count == 0,
+        NoPerformanceConclusion = true
+    }, new JsonSerializerOptions { WriteIndented = true }));
     if (differences.Count != 0) Environment.ExitCode = 1;
 }
 finally

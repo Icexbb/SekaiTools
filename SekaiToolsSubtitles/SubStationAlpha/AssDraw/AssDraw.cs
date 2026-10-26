@@ -17,35 +17,35 @@ public class AssDraw(params AssDrawPart[] parts) : AssDrawPart("")
             switch (sourceParts[i][0])
             {
                 case 'm':
-                {
-                    var x = int.Parse(sourceParts[i + 1]);
-                    var y = int.Parse(sourceParts[i + 2]);
-                    AssDrawMove move = new(new AssDrawPoint(x, y));
-                    partList.Add(move);
-                }
+                    {
+                        var x = int.Parse(sourceParts[i + 1]);
+                        var y = int.Parse(sourceParts[i + 2]);
+                        AssDrawMove move = new(new AssDrawPoint(x, y));
+                        partList.Add(move);
+                    }
                     i += 2;
                     break;
                 case 'l':
-                {
-                    var x = int.Parse(sourceParts[i + 1]);
-                    var y = int.Parse(sourceParts[i + 2]);
-                    AssDrawLine line = new(new AssDrawPoint(x, y));
-                    partList.Add(line);
-                }
+                    {
+                        var x = int.Parse(sourceParts[i + 1]);
+                        var y = int.Parse(sourceParts[i + 2]);
+                        AssDrawLine line = new(new AssDrawPoint(x, y));
+                        partList.Add(line);
+                    }
                     i += 2;
                     break;
                 case 'b':
-                {
-                    var x1 = int.Parse(sourceParts[i + 1]);
-                    var y1 = int.Parse(sourceParts[i + 2]);
-                    var x2 = int.Parse(sourceParts[i + 3]);
-                    var y2 = int.Parse(sourceParts[i + 4]);
-                    var x3 = int.Parse(sourceParts[i + 5]);
-                    var y3 = int.Parse(sourceParts[i + 6]);
-                    var bezier = new Bezier(new AssDrawPoint(x1, y1), new AssDrawPoint(x2, y2),
-                        new AssDrawPoint(x3, y3));
-                    partList.Add(bezier);
-                }
+                    {
+                        var x1 = int.Parse(sourceParts[i + 1]);
+                        var y1 = int.Parse(sourceParts[i + 2]);
+                        var x2 = int.Parse(sourceParts[i + 3]);
+                        var y2 = int.Parse(sourceParts[i + 4]);
+                        var x3 = int.Parse(sourceParts[i + 5]);
+                        var y3 = int.Parse(sourceParts[i + 6]);
+                        var bezier = new Bezier(new AssDrawPoint(x1, y1), new AssDrawPoint(x2, y2),
+                            new AssDrawPoint(x3, y3));
+                        partList.Add(bezier);
+                    }
                     i += 6;
                     break;
             }

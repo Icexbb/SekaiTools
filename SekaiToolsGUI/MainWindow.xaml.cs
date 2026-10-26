@@ -317,11 +317,13 @@ partial class MainWindow
                 Proxy.Type.None or Proxy.Type.System => new HttpClientHandler(),
                 Proxy.Type.Http => new HttpClientHandler
                 {
-                    Proxy = new WebProxy(new Uri($"http://{proxyInfo.Host}:{proxyInfo.Port}")), UseProxy = true
+                    Proxy = new WebProxy(new Uri($"http://{proxyInfo.Host}:{proxyInfo.Port}")),
+                    UseProxy = true
                 },
                 Proxy.Type.Socks5 => new SocketsHttpHandler
                 {
-                    Proxy = new WebProxy(new UriBuilder("socks5", proxyInfo.Host, proxyInfo.Port).Uri), UseProxy = true
+                    Proxy = new WebProxy(new UriBuilder("socks5", proxyInfo.Host, proxyInfo.Port).Uri),
+                    UseProxy = true
                 },
                 _ => throw new ArgumentOutOfRangeException()
             };

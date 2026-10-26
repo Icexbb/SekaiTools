@@ -71,7 +71,7 @@ internal static class Program
         application.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary());
         application.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
         application.Resources.MergedDictionaries.Add(new ResourceDictionary
-            { Source = new Uri("/SekaiToolsGUI;component/Converter/Converters.xaml", UriKind.Relative) });
+        { Source = new Uri("/SekaiToolsGUI;component/Converter/Converters.xaml", UriKind.Relative) });
         var page = new SekaiToolsGUI.View.Setting.SettingPage { DataContext = legacy };
         var nodes = Descendants(page).ToArray();
         foreach (var expander in nodes.OfType<Wpf.Ui.Controls.CardExpander>()) expander.IsExpanded = true;
@@ -107,12 +107,20 @@ internal static class Program
         if (Hash(userSetting) != before) throw new InvalidDataException("User settings changed");
         File.WriteAllText(Path.Combine(output, "report.json"), JsonSerializer.Serialize(new
         {
-            VerificationPassed = true, DefaultDisabled = true, MutualExclusionPersisted = true,
-            EnabledSettingReloaded = true, ResetDisabled = true, LegacyDefaultsPreserved = true,
-            UserSettingsUnchanged = true, ActualSettingsPageBindingQualified = true,
-            OffscreenSettingsPageRendered = true, LiveGuiQualified = false,
-            SavedCaptureSelectionChecked = true, UnknownCaptureIdentityRejected = true,
-            NativeMainWindowSettingsNavigationAndCloseQualified = true, ActiveQueueWindowCloseQualified = args.Length == 3,
+            VerificationPassed = true,
+            DefaultDisabled = true,
+            MutualExclusionPersisted = true,
+            EnabledSettingReloaded = true,
+            ResetDisabled = true,
+            LegacyDefaultsPreserved = true,
+            UserSettingsUnchanged = true,
+            ActualSettingsPageBindingQualified = true,
+            OffscreenSettingsPageRendered = true,
+            LiveGuiQualified = false,
+            SavedCaptureSelectionChecked = true,
+            UnknownCaptureIdentityRejected = true,
+            NativeMainWindowSettingsNavigationAndCloseQualified = true,
+            ActiveQueueWindowCloseQualified = args.Length == 3,
             ActualTaskPreviewToggleAndCancelQualified = args.Length >= 2,
             PeriodicQueuePreviewToggleQualified = args.Length == 3,
             ProductFactoryFailureRecoveryQualified = args.Length == 3,
@@ -138,11 +146,18 @@ internal static class Program
         application.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary());
         application.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
         application.Resources.MergedDictionaries.Add(new ResourceDictionary
-            { Source = new Uri("/SekaiToolsGUI;component/Converter/Converters.xaml", UriKind.Relative) });
+        { Source = new Uri("/SekaiToolsGUI;component/Converter/Converters.xaml", UriKind.Relative) });
         var state = new SekaiToolsGUI.ViewModel.Subtitle.SubtitlePageModel();
         var setup = new SekaiToolsGUI.View.Subtitle.Components.SubtitleTaskSetup { DataContext = state };
-        var window = new Window { Content = setup, Width = 800, Height = 500, Opacity = 0,
-            ShowInTaskbar = false, ShowActivated = false };
+        var window = new Window
+        {
+            Content = setup,
+            Width = 800,
+            Height = 500,
+            Opacity = 0,
+            ShowInTaskbar = false,
+            ShowActivated = false
+        };
         application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         window.Show();
         var method = setup.GetType().GetMethod("SelectSameNameFileAsync", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -171,8 +186,13 @@ internal static class Program
                     if (state.VideoFilePath != video || state.ScriptFilePath != Path.ChangeExtension(video, ".json") ||
                         state.TranslateFilePath != Path.ChangeExtension(video, ".txt"))
                         throw new InvalidDataException("Companion group mismatch");
-                    timings.Add(new { File = Path.GetFileName(video), SelectedExtension = ext,
-                        Repeat = repeat, Milliseconds = timer.Elapsed.TotalMilliseconds });
+                    timings.Add(new
+                    {
+                        File = Path.GetFileName(video),
+                        SelectedExtension = ext,
+                        Repeat = repeat,
+                        Milliseconds = timer.Elapsed.TotalMilliseconds
+                    });
                 }
         state.Reset();
         var earlier = Select(videos[0]);
@@ -186,18 +206,26 @@ internal static class Program
         if (state.ScriptFilePath != "" || state.TranslateFilePath != "")
             throw new InvalidDataException("Disabled auto-selection changed companions");
         window.Close();
-        File.WriteAllText(Path.Combine(output, "report.json"), JsonSerializer.Serialize(new {
-            VerificationPassed = true, StartupEligibilityMilliseconds = startupMilliseconds,
+        File.WriteAllText(Path.Combine(output, "report.json"), JsonSerializer.Serialize(new
+        {
+            VerificationPassed = true,
+            StartupEligibilityMilliseconds = startupMilliseconds,
             TwentyCachedInitializationsMilliseconds = repeatedMilliseconds,
-            LatestSelectionWins = true, DisabledAutoSelectionPreserved = true, Timings = timings
+            LatestSelectionWins = true,
+            DisabledAutoSelectionPreserved = true,
+            Timings = timings
         }, new JsonSerializerOptions { WriteIndented = true }));
     }
 
     private static void VerifyUnavailableRuntime(Application application, string path,
         Func<SettingPageModel> create, string output)
     {
-        File.WriteAllText(path, new Setting { RecognitionPeriodicColor = true,
-            RecognitionPrepareGray = true, RecognitionThreadChoice = 2 }.Dump());
+        File.WriteAllText(path, new Setting
+        {
+            RecognitionPeriodicColor = true,
+            RecognitionPrepareGray = true,
+            RecognitionThreadChoice = 2
+        }.Dump());
         var model = create();
         var saved = Setting.Load(path);
         if (model.IsPeriodicColorAvailable || model.RecognitionPeriodicColor || saved.RecognitionPeriodicColor ||
@@ -209,20 +237,26 @@ internal static class Program
         application.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary());
         application.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
         application.Resources.MergedDictionaries.Add(new ResourceDictionary
-            { Source = new Uri("/SekaiToolsGUI;component/Converter/Converters.xaml", UriKind.Relative) });
+        { Source = new Uri("/SekaiToolsGUI;component/Converter/Converters.xaml", UriKind.Relative) });
         var pageConstructor = typeof(SekaiToolsGUI.View.Setting.SettingPage).GetConstructor(
             BindingFlags.Instance | BindingFlags.NonPublic, null, [typeof(SettingPageModel)], null)!;
         var page = (FrameworkElement)pageConstructor.Invoke([model]);
-        page.Measure(new Size(1000,900));
-        page.Arrange(new Rect(0,0,1000,900));
+        page.Measure(new Size(1000, 900));
+        page.Arrange(new Rect(0, 0, 1000, 900));
         page.UpdateLayout();
         var checkbox = Descendants(page).OfType<CheckBox>().Single(c =>
             BindingOperations.GetBinding(c, System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty)?.Path?.Path == "RecognitionPeriodicColor");
         if (checkbox.IsEnabled || checkbox.IsChecked == true) throw new InvalidDataException("Unsupported checkbox enabled or checked");
-        File.WriteAllText(Path.Combine(output,"report.json"), JsonSerializer.Serialize(new {
-            VerificationPassed=true, UnsupportedSavedOptionCleared=true, UnsupportedCheckboxDisabled=true,
-            ReenableRejected=true, OtherSettingsPreserved=true, Reason=model.PeriodicColorAvailabilityReason,
-            UserStoresUnchanged=true }, new JsonSerializerOptions { WriteIndented=true }));
+        File.WriteAllText(Path.Combine(output, "report.json"), JsonSerializer.Serialize(new
+        {
+            VerificationPassed = true,
+            UnsupportedSavedOptionCleared = true,
+            UnsupportedCheckboxDisabled = true,
+            ReenableRejected = true,
+            OtherSettingsPreserved = true,
+            Reason = model.PeriodicColorAvailabilityReason,
+            UserStoresUnchanged = true
+        }, new JsonSerializerOptions { WriteIndented = true }));
     }
 
     private static void VerifyMainWindowClose(Application application, string? video, string output, bool queue)
@@ -370,8 +404,10 @@ internal static class Program
     {
         var model = new SekaiToolsGUI.ViewModel.Subtitle.SubtitlePageModel
         {
-            VideoFilePath = video, ScriptFilePath = Path.ChangeExtension(video, ".json"),
-            TranslateFilePath = Path.ChangeExtension(video, ".txt"), ShowPreview = true
+            VideoFilePath = video,
+            ScriptFilePath = Path.ChangeExtension(video, ".json"),
+            TranslateFilePath = Path.ChangeExtension(video, ".txt"),
+            ShowPreview = true
         };
         var persistence = new IsolatedPersistence(Path.Combine(output, "task-progress.json"));
         var type = typeof(SekaiToolsGUI.View.Subtitle.Components.SubtitleTask);
@@ -445,8 +481,12 @@ internal static class Program
         var ordinary = new ProcessingState();
         if (choose.Invoke(null, [ordinary]) != null) throw new InvalidDataException("Ordinary saved task changed capture mode");
         var fingerprint = new FileFingerprint(0, 0, "fixture");
-        var periodic = new ProcessingState { Metadata = new ProcessingStateMetadata(fingerprint, fingerprint, null,
-            new VideoStateMetadata(1920, 1080, 100, 60), "fixture") { CaptureIdentity = "PeriodicColor:fixture" } };
+        var periodic = new ProcessingState
+        {
+            Metadata = new ProcessingStateMetadata(fingerprint, fingerprint, null,
+            new VideoStateMetadata(1920, 1080, 100, 60), "fixture")
+            { CaptureIdentity = "PeriodicColor:fixture" }
+        };
         if (((RecognitionPerformanceOptions)options.Invoke(null, [periodic])!).PrepareGrayFrames)
             throw new InvalidDataException("Periodic saved task enabled BGR-only preprocessing");
         periodic.Metadata = periodic.Metadata with { CaptureIdentity = "UnknownCapture:fixture" };

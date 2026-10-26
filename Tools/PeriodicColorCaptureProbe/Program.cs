@@ -77,9 +77,23 @@ foreach (var position in new[] { 0, interval - 1 })
 candidate.Dispose();
 if (candidate.Ptr != IntPtr.Zero || colorFrames == 0) throw new InvalidDataException("Release or color coverage failed");
 if (Hash(video) != inputHash) throw new InvalidDataException("Input changed during probe");
-File.WriteAllText(report, JsonSerializer.Serialize(new { Video = video, InputHash = inputHash,
-    owner.NativePath, owner.NativeHash, owner.PluginPath, owner.PluginHash,
-    PublicCaptureBinding = publicBinding, FailedBindingsPreservedCapture = publicBinding,
-    PreviewInterval = interval, FramesVerified = verified, ColorFramesVerified = colorFrames,
-    SeekPoints = seeks.Length, RetainedColorAndGrayFramesUnchanged = interval > 1, CaptureDisposed = true, VerificationPassed = true,
-    GuiPreviewQualified = false, NoPerformanceConclusion = true }, new JsonSerializerOptions { WriteIndented = true }));
+File.WriteAllText(report, JsonSerializer.Serialize(new
+{
+    Video = video,
+    InputHash = inputHash,
+    owner.NativePath,
+    owner.NativeHash,
+    owner.PluginPath,
+    owner.PluginHash,
+    PublicCaptureBinding = publicBinding,
+    FailedBindingsPreservedCapture = publicBinding,
+    PreviewInterval = interval,
+    FramesVerified = verified,
+    ColorFramesVerified = colorFrames,
+    SeekPoints = seeks.Length,
+    RetainedColorAndGrayFramesUnchanged = interval > 1,
+    CaptureDisposed = true,
+    VerificationPassed = true,
+    GuiPreviewQualified = false,
+    NoPerformanceConclusion = true
+}, new JsonSerializerOptions { WriteIndented = true }));

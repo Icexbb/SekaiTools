@@ -66,10 +66,10 @@ using var processor = new VideoProcessor(config, new VideoProcessCallbacks
 active = processor;
 if (!factoryMode)
 {
-var captureProperty = typeof(VideoProcessor).GetProperty("Capture", BindingFlags.Instance | BindingFlags.NonPublic)
-    ?? throw new MissingMemberException("VideoProcessor.Capture");
-(captureProperty.GetValue(processor) as VideoCapture)?.Dispose();
-captureProperty.SetValue(processor, owner!.Capture);
+    var captureProperty = typeof(VideoProcessor).GetProperty("Capture", BindingFlags.Instance | BindingFlags.NonPublic)
+        ?? throw new MissingMemberException("VideoProcessor.Capture");
+    (captureProperty.GetValue(processor) as VideoCapture)?.Dispose();
+    captureProperty.SetValue(processor, owner!.Capture);
 }
 var metadata = processor.CaptureState().Metadata ?? throw new InvalidDataException("Missing original metadata");
 persistence.Initialize(metadata);
@@ -128,13 +128,26 @@ File.WriteAllText(Path.Combine(output, "state.json"), stateJson);
 if (factoryMode) processor.Dispose();
 var report = new
 {
-    Video = video, InputHash = HashFile(video), Mode = mode, CancelFrame = cancelFrame,
-    ResumeFrame = restored?.FrameIndex, SourceCheckpointHash = sourceCheckpointHash,
-    OriginalConfigHash = metadata.ConfigHash, ExperimentConfigHash = tagged.Metadata!.ConfigHash,
-    NativePath = nativePath, NativeHash = nativeHash, PluginPath = plugin, PluginHash = pluginHash,
-    MatchingThreads = CvInvoke.NumThreads, Buffer = buffer, DecoderThreads = 16,
-    FrameIndex = state.FrameIndex, StopReason = processor.StopReason.ToString(),
-    persistence.SaveCount, persistence.HistoryWritten, CheckpointEquivalent = checkpointEquivalent,
+    Video = video,
+    InputHash = HashFile(video),
+    Mode = mode,
+    CancelFrame = cancelFrame,
+    ResumeFrame = restored?.FrameIndex,
+    SourceCheckpointHash = sourceCheckpointHash,
+    OriginalConfigHash = metadata.ConfigHash,
+    ExperimentConfigHash = tagged.Metadata!.ConfigHash,
+    NativePath = nativePath,
+    NativeHash = nativeHash,
+    PluginPath = plugin,
+    PluginHash = pluginHash,
+    MatchingThreads = CvInvoke.NumThreads,
+    Buffer = buffer,
+    DecoderThreads = 16,
+    FrameIndex = state.FrameIndex,
+    StopReason = processor.StopReason.ToString(),
+    persistence.SaveCount,
+    persistence.HistoryWritten,
+    CheckpointEquivalent = checkpointEquivalent,
     HistoryEquivalent = historyEquivalent,
     HistoryPath = persistence.HistoryWritten ? persistence.HistoryPath : null,
     HistoryHash = persistence.HistoryWritten ? HashFile(persistence.HistoryPath) : null,
@@ -144,11 +157,16 @@ var report = new
     SubtitleHash = mode == "cancel" ? null : HashFile(Path.Combine(output, "subtitle.ass")),
     ProductRejectsExperimentState = !ProcessingStateCompatibility.ValidateAndMigrate(tagged, config,
         factoryMode ? metadata with { CaptureIdentity = null } : metadata).CanRestore,
-    ProcessorFactoryCapture = factoryMode, CaptureIdentity = metadata.CaptureIdentity,
+    ProcessorFactoryCapture = factoryMode,
+    CaptureIdentity = metadata.CaptureIdentity,
     SessionDisposed = factory?.Session?.Disposed,
     ProductFactoryImplementation = factoryMode,
     CaptureDisposed = actualCapture.Ptr == IntPtr.Zero,
-    NoPerformanceConclusion = true, PreviewQualified = false, PreviewInterval = previewInterval, PreviewFrames = previewFrames, NonColorPreviewFrames = nonColorPreviewFrames
+    NoPerformanceConclusion = true,
+    PreviewQualified = false,
+    PreviewInterval = previewInterval,
+    PreviewFrames = previewFrames,
+    NonColorPreviewFrames = nonColorPreviewFrames
 };
 File.WriteAllText(Path.Combine(output, "report.json"), JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
 Console.WriteLine(JsonSerializer.Serialize(report));

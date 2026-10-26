@@ -25,8 +25,12 @@ public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Fu
             foreach (var child in section.Children) children.Children.Add(Build(child, true));
             return new CardExpander
             {
-                Header = header, Icon = icon, Content = children, ContentPadding = new Thickness(0),
-                IsExpanded = section.IsExpanded, Margin = new Thickness(0, 0, 0, nested ? 0 : 8)
+                Header = header,
+                Icon = icon,
+                Content = children,
+                ContentPadding = new Thickness(0),
+                IsExpanded = section.IsExpanded,
+                Margin = new Thickness(0, 0, 0, nested ? 0 : 8)
             };
         }
         var editors = new Grid { HorizontalAlignment = HorizontalAlignment.Right };
@@ -57,7 +61,7 @@ public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Fu
         if (!string.IsNullOrEmpty(section.Description)) panel.Children.Add(Description(section.Description));
         if (section.StatusProperty is { } status)
         {
-            var text = Description(""); text.Margin = new Thickness(0,4,0,0);
+            var text = Description(""); text.Margin = new Thickness(0, 4, 0, 0);
             text.SetBinding(TextBlock.TextProperty, new Binding(status));
             var style = new Style(typeof(TextBlock));
             var trigger = new DataTrigger { Binding = new Binding(status), Value = "" };
@@ -88,8 +92,11 @@ public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Fu
             case "number":
                 var number = new NumberBox
                 {
-                    Minimum = field.Minimum, Maximum = field.Maximum, SmallChange = field.SmallChange,
-                    LargeChange = field.LargeChange, ClearButtonEnabled = false
+                    Minimum = field.Minimum,
+                    Maximum = field.Maximum,
+                    SmallChange = field.SmallChange,
+                    LargeChange = field.LargeChange,
+                    ClearButtonEnabled = false
                 };
                 number.SetBinding(NumberBox.ValueProperty, Value(field.Property));
                 number.ValueChanged += (_, _) => number.GetBindingExpression(NumberBox.ValueProperty)?.UpdateSource();
@@ -100,14 +107,17 @@ public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Fu
             case "directory":
                 var text = new Wpf.Ui.Controls.TextBox
                 {
-                    AcceptsReturn = false, AcceptsTab = false, TextWrapping = TextWrapping.NoWrap,
-                    ClearButtonEnabled = false, Width = field.Width
+                    AcceptsReturn = false,
+                    AcceptsTab = false,
+                    TextWrapping = TextWrapping.NoWrap,
+                    ClearButtonEnabled = false,
+                    Width = field.Width
                 };
                 text.SetBinding(System.Windows.Controls.TextBox.TextProperty, Value(field.Property));
                 editor = text;
                 if (field.Kind is "font" or "directory")
                 {
-                    var choose = new Wpf.Ui.Controls.Button { Content = "选择", Margin = new Thickness(5,0,0,0) };
+                    var choose = new Wpf.Ui.Controls.Button { Content = "选择", Margin = new Thickness(5, 0, 0, 0) };
                     choose.Click += async (_, args) =>
                     {
                         args.Handled = true;
@@ -129,7 +139,7 @@ public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Fu
                 var toggle = new ToggleSwitch { VerticalAlignment = VerticalAlignment.Center };
                 toggle.SetBinding(ToggleButton.IsCheckedProperty, Value(field.Property));
                 var labeled = new StackPanel { Orientation = Orientation.Horizontal };
-                labeled.Children.Add(new TextBlock { Text = field.Label, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0,0,5,0) });
+                labeled.Children.Add(new TextBlock { Text = field.Label, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 5, 0) });
                 labeled.Children.Add(toggle); editor = labeled;
                 break;
             case "check":

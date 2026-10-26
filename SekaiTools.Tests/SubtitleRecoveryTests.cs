@@ -42,13 +42,13 @@ public sealed class SubtitleRecoveryTests
         var root = Path.Combine(Path.GetTempPath(), "SekaiTools-recovery-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var path = Path.Combine(root,"Progress","legacy.json");
+            var path = Path.Combine(root, "Progress", "legacy.json");
             ProgressStore.SaveToPath(path, new ProcessingState { VideoFilePath = "legacy.mp4", StopReason = ProcessStopReason.EndOfStream });
             Assert.Equal("legacy", Assert.Single(SubtitleRecoveryStore.TakeOnce(root)).SaveKey);
             Assert.False(File.Exists(path));
             Assert.Empty(SubtitleRecoveryStore.TakeOnce(root));
         }
-        finally { if (Directory.Exists(root)) Directory.Delete(root,true); }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 
     [Fact]

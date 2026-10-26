@@ -14,11 +14,11 @@ public sealed class SubtitleQueueProgressTests
         try
         {
             ProgressStore.SaveToPath(Path.Combine(directory, "canceled.json"), new ProcessingState
-                { StopReason = ProcessStopReason.Canceled, VideoFilePath = "canceled.mp4" });
+            { StopReason = ProcessStopReason.Canceled, VideoFilePath = "canceled.mp4" });
             ProgressStore.SaveToPath(Path.Combine(directory, "partial.json"), new ProcessingState
-                { StopReason = ProcessStopReason.EndOfStream, VideoFilePath = "partial.mp4" });
+            { StopReason = ProcessStopReason.EndOfStream, VideoFilePath = "partial.mp4" });
             ProgressStore.SaveToPath(Path.Combine(directory, "finished.json"), new ProcessingState
-                { StopReason = ProcessStopReason.Completed });
+            { StopReason = ProcessStopReason.Completed });
             File.WriteAllText(Path.Combine(directory, "invalid.json"), "broken JSON");
             var entries = SubtitleQueueProgressStore.EnumerateProgressFiles(directory);
             Assert.Equal(new[] { "canceled", "partial" }, entries.Select(entry => entry.SaveKey).Order());

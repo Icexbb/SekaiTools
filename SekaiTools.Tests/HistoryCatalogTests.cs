@@ -13,8 +13,10 @@ public sealed class HistoryCatalogTests : IDisposable
     {
         var state = new ProcessingState
         {
-            StopReason = ProcessStopReason.Completed, VideoFilePath = "video.mp4",
-            Timecodes = [0, 40, 80], Dialog = new DialogMatcherStateDto
+            StopReason = ProcessStopReason.Completed,
+            VideoFilePath = "video.mp4",
+            Timecodes = [0, 40, 80],
+            Dialog = new DialogMatcherStateDto
             {
                 FrameSets = [new DialogFrameSetDto { Frames = [new FrameResultDto(1, 2, 3)] }]
             }

@@ -128,7 +128,7 @@ public class UnnamedDialogTests
         var checkpoint = matcher.SaveState();
         if (shake)
         {
-            using var moved = fixture.Frame(manager, body[..Math.Min(3, body.Length)], new Point(162,582));
+            using var moved = fixture.Frame(manager, body[..Math.Min(3, body.Length)], new Point(162, 582));
             context.Update(moved);
         }
         using var resumed = new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
@@ -161,8 +161,8 @@ public class UnnamedDialogTests
         using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
         var cache = new TemplateMatchCachePool();
         using var matcher = new DialogTemplateMatcher(fixture.Info, story, manager, cache, fixture.Config);
-        using var first = fixture.Frame(manager, "Hel", new Point(160,580));
-        using var second = fixture.Frame(manager, "Wor", new Point(160,580));
+        using var first = fixture.Frame(manager, "Hel", new Point(160, 580));
+        using var second = fixture.Frame(manager, "Wor", new Point(160, 580));
         using var context = new FrameMatchContext();
         for (var i = 0; i < 3; i++)
         {
@@ -297,8 +297,8 @@ public class UnnamedDialogTests
             var bytes = new byte[stream.Length];
             stream.Read(bytes, bytes.Length);
             File.WriteAllBytes(_font, bytes);
-            using (var writer = new VideoWriter(_video, VideoWriter.Fourcc('M','J','P','G'), 30, new Size(1280,720), true))
-            using (var frame = new Mat(720,1280,DepthType.Cv8U,3))
+            using (var writer = new VideoWriter(_video, VideoWriter.Fourcc('M', 'J', 'P', 'G'), 30, new Size(1280, 720), true))
+            using (var frame = new Mat(720, 1280, DepthType.Cv8U, 3))
             {
                 Assert.True(writer.IsOpened);
                 frame.SetTo(new MCvScalar(0));
@@ -309,7 +309,7 @@ public class UnnamedDialogTests
         }
         public Mat Frame(TemplateManager manager, string text, Point position)
         {
-            var frame = new Mat(720,1280,DepthType.Cv8U,3);
+            var frame = new Mat(720, 1280, DepthType.Cv8U, 3);
             frame.SetTo(new MCvScalar(0));
             using var source = manager.CreateTemplate(TemplateUsage.DialogContent, text);
             using var bgr = new Mat();

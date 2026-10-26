@@ -148,11 +148,24 @@ internal static class Program
             var stateJson = JsonSerializer.Serialize(state);
             File.WriteAllText(Path.Combine(directory, "state.json"), stateJson);
             File.WriteAllText(Path.Combine(directory, "subtitle.ass"), subtitle);
-            var result = new { Video = video, Threads = CvInvoke.NumThreads, Buffer = buffer, CancelFraction = cancelFraction, CancelFrame = cancelFrame,
-                ResumeFrame = resume?.FrameIndex, StopReason = processor.StopReason.ToString(), ElapsedSeconds = Stopwatch.GetElapsedTime(started).TotalSeconds,
-                PreviewCount = previewCount, PreviewMilliseconds = previewTicks * 1000d / Stopwatch.Frequency,
-                persistence.SaveCount, persistence.SaveMilliseconds, PeakMiB = Process.GetCurrentProcess().PeakWorkingSet64 / 1048576d,
-                StateHash = Hash(stateJson), SubtitleHash = Hash(subtitle) };
+            var result = new
+            {
+                Video = video,
+                Threads = CvInvoke.NumThreads,
+                Buffer = buffer,
+                CancelFraction = cancelFraction,
+                CancelFrame = cancelFrame,
+                ResumeFrame = resume?.FrameIndex,
+                StopReason = processor.StopReason.ToString(),
+                ElapsedSeconds = Stopwatch.GetElapsedTime(started).TotalSeconds,
+                PreviewCount = previewCount,
+                PreviewMilliseconds = previewTicks * 1000d / Stopwatch.Frequency,
+                persistence.SaveCount,
+                persistence.SaveMilliseconds,
+                PeakMiB = Process.GetCurrentProcess().PeakWorkingSet64 / 1048576d,
+                StateHash = Hash(stateJson),
+                SubtitleHash = Hash(subtitle)
+            };
             File.WriteAllText(Path.Combine(directory, "report.json"), JsonSerializer.Serialize(result));
             Console.WriteLine(JsonSerializer.Serialize(result));
         }

@@ -17,8 +17,11 @@ public class TemplateMatchResultTests
         using var scores = new Mat(parent, new Rectangle(2, 1, 35, 2));
         var values = Enumerable.Range(0, 35).Select(i => (i % 5) switch
         {
-            0 => float.NaN, 1 => float.PositiveInfinity, 2 => float.NegativeInfinity,
-            3 => float.MaxValue, _ => -0.5f
+            0 => float.NaN,
+            1 => float.PositiveInfinity,
+            2 => float.NegativeInfinity,
+            3 => float.MaxValue,
+            _ => -0.5f
         }).ToArray();
         for (var row = 0; row < 2; row++)
             System.Runtime.InteropServices.Marshal.Copy(values, 0, scores.DataPointer + row * scores.Step, values.Length);

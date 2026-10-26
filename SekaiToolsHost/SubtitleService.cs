@@ -58,7 +58,13 @@ public static class SubtitleService
         foreach (var set in markers) Add(set, "Marker", set.Data.Index, set.Data.FinalContent);
         if (rows.Count == 0) throw new InvalidDataException($"没有可导出的结果：{processor.StopReason}");
         Protocol.AtomicWrite(args.Output, processor.GenerateSubtitle(banners, dialogs, markers).ToString());
-        return new { canceled = false, stopReason = processor.StopReason.ToString(),
-            summary = processor.ResultReport.Summary, output = args.Output, rows };
+        return new
+        {
+            canceled = false,
+            stopReason = processor.StopReason.ToString(),
+            summary = processor.ResultReport.Summary,
+            output = args.Output,
+            rows
+        };
     }
 }

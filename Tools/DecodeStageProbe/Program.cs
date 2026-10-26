@@ -75,12 +75,24 @@ if (mode == "verify")
         }
         var bytes = BytePixelComparison.Compare(expected, comparable);
         if (delta != 0 || bytes.Maximum != 0 || grayMaximum != 0 || nonOpaquePixels != 0)
-            differences.Add(new { Frame = frames, TimestampDifference = delta, bytes.Maximum, bytes.UnequalBytes,
-                GrayMaximum = grayMaximum, GrayUnequalBytes = grayUnequalBytes, NonOpaquePixels = nonOpaquePixels });
+            differences.Add(new
+            {
+                Frame = frames,
+                TimestampDifference = delta,
+                bytes.Maximum,
+                bytes.UnequalBytes,
+                GrayMaximum = grayMaximum,
+                GrayUnequalBytes = grayUnequalBytes,
+                NonOpaquePixels = nonOpaquePixels
+            });
     }
-    result = new { ReferenceDecoderThreads = (int)reference.Get((CapProp)70),
-        VerificationPassed = differences.Count == 0, Differences = differences,
-        NoPerformanceConclusion = true };
+    result = new
+    {
+        ReferenceDecoderThreads = (int)reference.Get((CapProp)70),
+        VerificationPassed = differences.Count == 0,
+        Differences = differences,
+        NoPerformanceConclusion = true
+    };
     if (differences.Count != 0) Environment.ExitCode = 1;
 }
 else
@@ -116,11 +128,14 @@ else
         if ((int)capture.Get(CapProp.PosFrames) != frames) throw new InvalidDataException("Unexpected frame index");
     }
     var elapsed = Stopwatch.GetElapsedTime(started);
-    result = new { ElapsedSeconds = elapsed.TotalSeconds,
+    result = new
+    {
+        ElapsedSeconds = elapsed.TotalSeconds,
         GrabSeconds = (double)grabTicks / Stopwatch.Frequency,
         RetrieveSeconds = (double)retrieveTicks / Stopwatch.Frequency,
         ReadSeconds = (double)readTicks / Stopwatch.Frequency,
-        NoRecognitionOrPrefetch = true };
+        NoRecognitionOrPrefetch = true
+    };
 }
 if (limit == 0 && (!eof || frames != declaredFrames))
     throw new InvalidDataException("Full decode did not reach the declared frame count");
@@ -129,16 +144,33 @@ if (limit > 0 && frames != Math.Min(limit, declaredFrames))
 var native = Process.GetCurrentProcess().Modules.Cast<ProcessModule>()
     .Where(module => module.ModuleName.Contains("cvextern", StringComparison.OrdinalIgnoreCase)
                   || module.ModuleName.Contains("videoio_ffmpeg", StringComparison.OrdinalIgnoreCase))
-    .Select(module => new { Path = module.FileName,
-        Sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(module.FileName))) }).ToArray();
+    .Select(module => new
+    {
+        Path = module.FileName,
+        Sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(module.FileName)))
+    }).ToArray();
 if (!native.Any(module => Path.GetFileName(module.Path).Contains("cvextern", StringComparison.OrdinalIgnoreCase)))
     throw new InvalidOperationException("Cannot identify the loaded native runtime");
-var report = new { Video = video, InputSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(video))),
-    Mode = mode, OutputFormat = format, ActualFormat = (int)capture.Get(CapProp.Format),
-    FrameLimit = limit, Frames = frames, DeclaredFrames = declaredFrames, ReachedEof = eof,
-    Backend = capture.BackendName, DecoderThreads = (int)capture.Get((CapProp)70), OpenCvThreads = CvInvoke.NumThreads,
-    Width = (int)capture.Get(CapProp.FrameWidth), Height = (int)capture.Get(CapProp.FrameHeight), Channels = lastChannels,
-    NativeLibraries = native, Result = result };
+var report = new
+{
+    Video = video,
+    InputSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(video))),
+    Mode = mode,
+    OutputFormat = format,
+    ActualFormat = (int)capture.Get(CapProp.Format),
+    FrameLimit = limit,
+    Frames = frames,
+    DeclaredFrames = declaredFrames,
+    ReachedEof = eof,
+    Backend = capture.BackendName,
+    DecoderThreads = (int)capture.Get((CapProp)70),
+    OpenCvThreads = CvInvoke.NumThreads,
+    Width = (int)capture.Get(CapProp.FrameWidth),
+    Height = (int)capture.Get(CapProp.FrameHeight),
+    Channels = lastChannels,
+    NativeLibraries = native,
+    Result = result
+};
 Directory.CreateDirectory(Path.GetDirectoryName(output)!);
 var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
 File.WriteAllText(output, json);

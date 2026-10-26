@@ -21,8 +21,15 @@ try
     {
         // The default device is owned by OpenCV and must not be disposed.
         var device = Emgu.CV.Ocl.Device.Default;
-        deviceReport = new { device.Name, device.VendorName, device.Version,
-            device.DriverVersion, device.Available, device.CompilerAvailable };
+        deviceReport = new
+        {
+            device.Name,
+            device.VendorName,
+            device.Version,
+            device.DriverVersion,
+            device.Available,
+            device.CompilerAvailable
+        };
     }
 }
 catch (Exception error) { deviceError = error.ToString(); }
@@ -33,8 +40,11 @@ try
     loadedNativeLibraries = Process.GetCurrentProcess().Modules.Cast<ProcessModule>()
         .Where(module => module.ModuleName.Equals("cvextern.dll", StringComparison.OrdinalIgnoreCase)
             || module.ModuleName.StartsWith("libcvextern", StringComparison.Ordinal))
-        .Select(module => new { Path = module.FileName,
-            Hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(module.FileName))) }).ToArray();
+        .Select(module => new
+        {
+            Path = module.FileName,
+            Hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(module.FileName)))
+        }).ToArray();
 }
 catch (Exception error) { loadedNativeError = error.ToString(); }
 object? nativeExperimentInfo = null;
@@ -77,16 +87,26 @@ var report = new
     // These are managed-process feature checks, not evidence of native dispatch.
     ManagedCpuFeatures = new
     {
-        Sse2 = Sse2.IsSupported, Sse3 = Sse3.IsSupported, Ssse3 = Ssse3.IsSupported,
-        Sse41 = Sse41.IsSupported, Sse42 = Sse42.IsSupported,
-        Avx = Avx.IsSupported, Avx2 = Avx2.IsSupported, Fma = Fma.IsSupported,
+        Sse2 = Sse2.IsSupported,
+        Sse3 = Sse3.IsSupported,
+        Ssse3 = Ssse3.IsSupported,
+        Sse41 = Sse41.IsSupported,
+        Sse42 = Sse42.IsSupported,
+        Avx = Avx.IsSupported,
+        Avx2 = Avx2.IsSupported,
+        Fma = Fma.IsSupported,
         Avx512F = Avx512F.IsSupported
     },
-    CvInvoke.UseOptimized, CvInvoke.NumThreads,
-    HaveOpenCl = haveOpenCl, UseOpenCl = useOpenCl,
-    Device = deviceReport, DeviceError = deviceError,
-    LoadedNativeLibraries = loadedNativeLibraries, LoadedNativeError = loadedNativeError,
-    NativeExperimentInfo = nativeExperimentInfo, NativeExperimentError = nativeExperimentError,
+    CvInvoke.UseOptimized,
+    CvInvoke.NumThreads,
+    HaveOpenCl = haveOpenCl,
+    UseOpenCl = useOpenCl,
+    Device = deviceReport,
+    DeviceError = deviceError,
+    LoadedNativeLibraries = loadedNativeLibraries,
+    LoadedNativeError = loadedNativeError,
+    NativeExperimentInfo = nativeExperimentInfo,
+    NativeExperimentError = nativeExperimentError,
     IppEnvironment = Environment.GetEnvironmentVariable("OPENCV_IPP"),
     ManagedVersion = typeof(CvInvoke).Assembly.GetName().Version?.ToString(),
     Binaries = Directory.EnumerateFiles(AppContext.BaseDirectory, "*.dll", SearchOption.AllDirectories)

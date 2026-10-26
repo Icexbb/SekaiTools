@@ -63,7 +63,10 @@ public partial class RuntimeLogWindow : FluentWindow
         var view = new ListCollectionView(InMemoryLogSink.Snapshot().ToList());
         var minimum = LevelFilter.SelectedIndex switch
         {
-            1 => LogLevel.Information, 2 => LogLevel.Warning, 3 => LogLevel.Error, _ => LogLevel.Trace
+            1 => LogLevel.Information,
+            2 => LogLevel.Warning,
+            3 => LogLevel.Error,
+            _ => LogLevel.Trace
         };
         view.Filter = item => item is LogEntry entry && entry.Level >= minimum;
         LogListBox.ItemsSource = view;

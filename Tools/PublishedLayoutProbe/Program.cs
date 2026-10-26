@@ -48,11 +48,20 @@ internal static class Program
         if (!qualifiedPaths.Contains(native, StringComparer.OrdinalIgnoreCase) ||
             Hash(native) != experiment.RootElement.GetProperty("NativeHash").GetString())
             throw new InvalidDataException("Loaded native runtime outside qualified replacement paths");
-        File.WriteAllText(layoutReport, JsonSerializer.Serialize(new { PublishedRoot = root,
-            ProductResolverAssembly = guiPath, ProductResolverHash = Hash(guiPath), Assemblies = assemblies,
-            NativePath = native, NativeHash = Hash(native), DisplayReport = report, DisplayReportHash = Hash(report),
-            PublishedDependencyLoadingPassed = true, LiveGuiQualified = false,
-            ProductPeriodicCaptureIntegrated = false }, new JsonSerializerOptions { WriteIndented = true }));
+        File.WriteAllText(layoutReport, JsonSerializer.Serialize(new
+        {
+            PublishedRoot = root,
+            ProductResolverAssembly = guiPath,
+            ProductResolverHash = Hash(guiPath),
+            Assemblies = assemblies,
+            NativePath = native,
+            NativeHash = Hash(native),
+            DisplayReport = report,
+            DisplayReportHash = Hash(report),
+            PublishedDependencyLoadingPassed = true,
+            LiveGuiQualified = false,
+            ProductPeriodicCaptureIntegrated = false
+        }, new JsonSerializerOptions { WriteIndented = true }));
     }
 
     private static string Hash(string path) { using var stream = File.OpenRead(path); return Convert.ToHexString(SHA256.HashData(stream)); }
@@ -75,8 +84,14 @@ internal static class Program
         try { session = factory.GetType().GetMethod("Open")!.Invoke(factory, [video, interval])!; }
         catch (TargetInvocationException exception) when (reject && exception.InnerException is InvalidDataException)
         {
-            File.WriteAllText(report, JsonSerializer.Serialize(new { VerificationPassed=true, UnqualifiedRuntimeRejected=true,
-                ProductAssemblyHash=Hash(gui.Location), StateHash=Hash(statePath), LiveGuiQualified=false }));
+            File.WriteAllText(report, JsonSerializer.Serialize(new
+            {
+                VerificationPassed = true,
+                UnqualifiedRuntimeRejected = true,
+                ProductAssemblyHash = Hash(gui.Location),
+                StateHash = Hash(statePath),
+                LiveGuiQualified = false
+            }));
             return;
         }
         using var disposable = (IDisposable)session;
@@ -98,11 +113,22 @@ internal static class Program
             .Single(m => m.ModuleName.Equals("cvextern.dll", StringComparison.OrdinalIgnoreCase)).FileName;
         if (Hash(native) != identity.Split(':')[5] || Hash(video) != before ||
             !native.StartsWith(AppContext.BaseDirectory, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Runtime or input differs");
-        if (!emgu.Location.StartsWith(Path.Combine(AppContext.BaseDirectory,"libs") + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        if (!emgu.Location.StartsWith(Path.Combine(AppContext.BaseDirectory, "libs") + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("Emgu outside published libs");
-        File.WriteAllText(report, JsonSerializer.Serialize(new { VerificationPassed=true, SavedIdentitySelectedFactory=true,
-            CaptureIdentity=identity, CaptureDisposed=true, FramesChecked=interval+1, NativePath=native, NativeHash=Hash(native),
-            ProductAssemblyHash=Hash(gui.Location), StateHash=Hash(statePath), InputHash=before, LiveGuiQualified=false }));
+        File.WriteAllText(report, JsonSerializer.Serialize(new
+        {
+            VerificationPassed = true,
+            SavedIdentitySelectedFactory = true,
+            CaptureIdentity = identity,
+            CaptureDisposed = true,
+            FramesChecked = interval + 1,
+            NativePath = native,
+            NativeHash = Hash(native),
+            ProductAssemblyHash = Hash(gui.Location),
+            StateHash = Hash(statePath),
+            InputHash = before,
+            LiveGuiQualified = false
+        }));
     }
 
     private static void TimelineAudit(Assembly gui, string video, string report)
@@ -125,8 +151,13 @@ internal static class Program
             var stride = (source.PixelWidth * source.Format.BitsPerPixel + 7) / 8;
             var bytes = new byte[stride * source.PixelHeight];
             source.CopyPixels(bytes, stride, 0);
-            return new { Width = source.PixelWidth, Height = source.PixelHeight, Format = source.Format.ToString(),
-                Hash = Convert.ToHexString(SHA256.HashData(bytes)) };
+            return new
+            {
+                Width = source.PixelWidth,
+                Height = source.PixelHeight,
+                Format = source.Format.ToString(),
+                Hash = Convert.ToHexString(SHA256.HashData(bytes))
+            };
         }
         var rows = new List<object>();
         try
@@ -165,9 +196,18 @@ internal static class Program
             .Single(m => m.ModuleName.Equals("cvextern.dll", StringComparison.OrdinalIgnoreCase)).FileName;
         if (!native.StartsWith(AppContext.BaseDirectory, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("Timeline runtime outside published package");
-        File.WriteAllText(report, JsonSerializer.Serialize(new { Video = Path.GetFullPath(video), InputHash = inputHash,
-            ProductAssemblyHash = Hash(gui.Location), NativePath = native, NativeHash = Hash(native), Images = rows,
-            CancellationChecked = true, InvalidFrameChecked = true, CaptureDisposed = true,
-            LiveGuiQualified = false }, new JsonSerializerOptions { WriteIndented = true }));
+        File.WriteAllText(report, JsonSerializer.Serialize(new
+        {
+            Video = Path.GetFullPath(video),
+            InputHash = inputHash,
+            ProductAssemblyHash = Hash(gui.Location),
+            NativePath = native,
+            NativeHash = Hash(native),
+            Images = rows,
+            CancellationChecked = true,
+            InvalidFrameChecked = true,
+            CaptureDisposed = true,
+            LiveGuiQualified = false
+        }, new JsonSerializerOptions { WriteIndented = true }));
     }
 }

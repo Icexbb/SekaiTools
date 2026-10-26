@@ -93,7 +93,8 @@ public static class TemplateMatcher
         var templateLayer = tmp.GetScaledLayer(scale, 1);
         if (templateLayer.Size.Width > region.Width || templateLayer.Size.Height > region.Height)
             return new TemplateMatchResult(double.NegativeInfinity, double.PositiveInfinity,
-                Point.Empty, Point.Empty) { Scale = scale };
+                Point.Empty, Point.Empty)
+            { Scale = scale };
 
         if (templateLayer.Size.Width / SearchDownscaleDivisor >= MinTemplateDimAfterScale
             && templateLayer.Size.Height / SearchDownscaleDivisor >= MinTemplateDimAfterScale)

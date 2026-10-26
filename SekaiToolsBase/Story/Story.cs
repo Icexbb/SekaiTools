@@ -31,45 +31,45 @@ public class Story
                 switch (snippet.Action)
                 {
                     case 1:
-                    {
-                        if (dialogCount < gameScript.TalkData.Length)
                         {
-                            var talkData = gameScript.TalkData[dialogCount];
-                            var storyDialogEvent = new DialogStoryEvent(
-                                dialogCount,
-                                talkData.Body, talkData.GetCharacterId(),
-                                talkData.WindowDisplayName,
-                                talkData.WhenFinishCloseWindow == 1,
-                                talkData.Shake,
-                                events.Count
-                            );
-                            events.Add(storyDialogEvent);
-                        }
+                            if (dialogCount < gameScript.TalkData.Length)
+                            {
+                                var talkData = gameScript.TalkData[dialogCount];
+                                var storyDialogEvent = new DialogStoryEvent(
+                                    dialogCount,
+                                    talkData.Body, talkData.GetCharacterId(),
+                                    talkData.WindowDisplayName,
+                                    talkData.WhenFinishCloseWindow == 1,
+                                    talkData.Shake,
+                                    events.Count
+                                );
+                                events.Add(storyDialogEvent);
+                            }
 
-                        dialogCount += 1;
-                        break;
-                    }
-                    case 6:
-                    {
-                        if (effectCount >= gameScript.SpecialEffectData.Length)
+                            dialogCount += 1;
                             break;
-
-                        var seData = gameScript.SpecialEffectData[effectCount];
-                        switch (seData.EffectType)
-                        {
-                            case 8:
-                                events.Add(new BannerStoryEvent(seData.StringVal, bannerCount, events.Count));
-                                bannerCount++;
-                                break;
-                            case 18:
-                                events.Add(new MarkerStoryEvent(seData.StringVal, markerCount, events.Count));
-                                markerCount++;
-                                break;
                         }
+                    case 6:
+                        {
+                            if (effectCount >= gameScript.SpecialEffectData.Length)
+                                break;
 
-                        effectCount += 1;
-                        break;
-                    }
+                            var seData = gameScript.SpecialEffectData[effectCount];
+                            switch (seData.EffectType)
+                            {
+                                case 8:
+                                    events.Add(new BannerStoryEvent(seData.StringVal, bannerCount, events.Count));
+                                    bannerCount++;
+                                    break;
+                                case 18:
+                                    events.Add(new MarkerStoryEvent(seData.StringVal, markerCount, events.Count));
+                                    markerCount++;
+                                    break;
+                            }
+
+                            effectCount += 1;
+                            break;
+                        }
                 }
         }
 

@@ -145,44 +145,44 @@ public class DialogTemplateMatcher(
         switch (lastStatus)
         {
             case MatchStatus.DialogNotMatched:
-            {
-                matchRes = LocalMatch(frame, template1, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent1);
-                return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogNotMatched;
-            }
+                {
+                    matchRes = LocalMatch(frame, template1, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent1);
+                    return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogNotMatched;
+                }
             case MatchStatus.DialogMatched1:
-            {
-                matchRes = LocalMatch(frame, template2, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent2);
-                if (matchRes) return MatchStatus.DialogMatched2;
-                matchRes = LocalMatch(frame, template1, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent1);
-                return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogDropped;
-            }
+                {
+                    matchRes = LocalMatch(frame, template2, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent2);
+                    if (matchRes) return MatchStatus.DialogMatched2;
+                    matchRes = LocalMatch(frame, template1, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent1);
+                    return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogDropped;
+                }
             case MatchStatus.DialogMatched2:
-            {
-                matchRes = LocalMatch(frame, template3, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent3);
-                if (matchRes) return MatchStatus.DialogMatched3;
-                matchRes = LocalMatch(frame, template2, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent2);
-                return matchRes ? MatchStatus.DialogMatched2 : MatchStatus.DialogDropped;
-            }
+                {
+                    matchRes = LocalMatch(frame, template3, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent3);
+                    if (matchRes) return MatchStatus.DialogMatched3;
+                    matchRes = LocalMatch(frame, template2, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent2);
+                    return matchRes ? MatchStatus.DialogMatched2 : MatchStatus.DialogDropped;
+                }
             case MatchStatus.DialogMatched3:
             case MatchStatus.DialogPending:
-            {
-                matchRes = LocalMatch(frame, template3, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent3);
-                if (matchRes) return MatchStatus.DialogMatched3;
-                // Only a fresh name match plus a two-glyph match may bridge a
-                // short loss of the three-glyph template. Never lower thresholds.
-                if (!string.IsNullOrWhiteSpace(dialogBase.Data.CharacterOriginal) &&
-                    !DialogMatchNameTag(frame, dialogBase, frameIndex).IsEmpty &&
-                    LocalMatch(frame, template2, matchingThreshold,
-                        TemplateMatchCachePool.MatchUsage.DialogContent2))
-                    return MatchStatus.DialogPending;
-                return MatchStatus.DialogDropped;
-            }
+                {
+                    matchRes = LocalMatch(frame, template3, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent3);
+                    if (matchRes) return MatchStatus.DialogMatched3;
+                    // Only a fresh name match plus a two-glyph match may bridge a
+                    // short loss of the three-glyph template. Never lower thresholds.
+                    if (!string.IsNullOrWhiteSpace(dialogBase.Data.CharacterOriginal) &&
+                        !DialogMatchNameTag(frame, dialogBase, frameIndex).IsEmpty &&
+                        LocalMatch(frame, template2, matchingThreshold,
+                            TemplateMatchCachePool.MatchUsage.DialogContent2))
+                        return MatchStatus.DialogPending;
+                    return MatchStatus.DialogDropped;
+                }
             case MatchStatus.NameTagNotMatched:
             case MatchStatus.DialogDropped:
             default:

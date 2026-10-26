@@ -51,7 +51,8 @@ public class DialogTrackingGraceTests
         continuous.Hold(86, new Point(10, 20));
         var json = JsonSerializer.Serialize(new DialogMatcherStateDto
         {
-            Status = 4, PendingTrackingFrames = continuous.CaptureState()
+            Status = 4,
+            PendingTrackingFrames = continuous.CaptureState()
         });
         var checkpoint = JsonSerializer.Deserialize<DialogMatcherStateDto>(json)!;
         var restored = new DialogTrackingGrace(60);

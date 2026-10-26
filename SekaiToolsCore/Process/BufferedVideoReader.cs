@@ -35,7 +35,9 @@ public sealed class BufferedVideoReader : IDisposable
         if (Capacity == 0) return;
         _frames = Channel.CreateBounded<DecodedVideoFrame>(new BoundedChannelOptions(count)
         {
-            SingleWriter = true, SingleReader = true, FullMode = BoundedChannelFullMode.Wait
+            SingleWriter = true,
+            SingleReader = true,
+            FullMode = BoundedChannelFullMode.Wait
         });
         var frameCount = capture.Get(CapProp.FrameCount);
         _producer = Task.Run(() => ProduceAsync(frameCount));

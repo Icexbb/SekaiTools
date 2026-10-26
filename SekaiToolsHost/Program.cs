@@ -47,8 +47,12 @@ try
     {
         case "capabilities":
             var native = NativeRuntime.Check();
-            result = new { subtitleAvailable = native.Available, subtitleReason = native.Reason,
-                sources = SourceData.Default.Select((source, id) => new { id, name = source.SourceName }) };
+            result = new
+            {
+                subtitleAvailable = native.Available,
+                subtitleReason = native.Reason,
+                sources = SourceData.Default.Select((source, id) => new { id, name = source.SourceName })
+            };
             break;
         case "translation.load": result = TranslationService.Load(Protocol.Arguments<TranslationLoad>(request)); break;
         case "translation.save":

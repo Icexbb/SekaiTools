@@ -77,13 +77,13 @@ public class Event : ICloneable
             case < 10:
                 throw new Exception("Source Parameter not Enough");
             case > 10:
-            {
-                var text = sourcePart[9];
-                for (var i = 10; i < sourcePart.Length; i++) text += $",{sourcePart[i]}";
+                {
+                    var text = sourcePart[9];
+                    for (var i = 10; i < sourcePart.Length; i++) text += $",{sourcePart[i]}";
 
-                sourcePart[9] = text;
-                break;
-            }
+                    sourcePart[9] = text;
+                    break;
+                }
         }
 
         return new Event(

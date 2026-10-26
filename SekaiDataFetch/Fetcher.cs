@@ -31,11 +31,13 @@ public class Fetcher
             Proxy.Type.System => new HttpClientHandler(),
             Proxy.Type.Http => new HttpClientHandler
             {
-                Proxy = new WebProxy(UserProxy.Host, UserProxy.Port), UseProxy = true
+                Proxy = new WebProxy(UserProxy.Host, UserProxy.Port),
+                UseProxy = true
             },
             Proxy.Type.Socks5 => new SocketsHttpHandler
             {
-                Proxy = new WebProxy(UserProxy.Host, UserProxy.Port), UseProxy = true
+                Proxy = new WebProxy(UserProxy.Host, UserProxy.Port),
+                UseProxy = true
             },
             _ => throw new ArgumentOutOfRangeException()
         };

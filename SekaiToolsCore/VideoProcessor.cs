@@ -134,7 +134,8 @@ public class VideoProcessor : IDisposable
             BannerMatcher = Creator.BannerMatcher();
             MarkerMatcher = Creator.MarkerMatcher();
             _stateMetadata = ProcessingStateMetadata.Create(config,
-                VideoStateMetadata.From(Creator.VideoInfo)) with { CaptureIdentity = _captureSession?.Identity };
+                VideoStateMetadata.From(Creator.VideoInfo)) with
+            { CaptureIdentity = _captureSession?.Identity };
         }
         catch
         {

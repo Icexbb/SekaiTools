@@ -14,12 +14,12 @@ public class Bold : Tag
             case > 1000:
                 throw new ArgumentOutOfRangeException(nameof(weight), "Weight must be less than or equal to 1000.");
             default:
-            {
-                if (weight % 100 != 0)
-                    throw new ArgumentOutOfRangeException(nameof(weight), "Weight must be a multiple of 100.");
-                Weight = weight;
-                break;
-            }
+                {
+                    if (weight % 100 != 0)
+                        throw new ArgumentOutOfRangeException(nameof(weight), "Weight must be a multiple of 100.");
+                    Weight = weight;
+                    break;
+                }
         }
     }
 

@@ -107,13 +107,26 @@ var stateJson = JsonSerializer.Serialize(tagged);
 File.WriteAllText(Path.Combine(output, "state.json"), stateJson);
 var report = new
 {
-    Video = video, InputHash = HashFile(video), Mode = mode, CancelFrame = cancelFrame,
-    ResumeFrame = restored?.FrameIndex, SourceCheckpointHash = sourceCheckpointHash,
-    OriginalConfigHash = metadata.ConfigHash, ExperimentConfigHash = tagged.Metadata!.ConfigHash,
-    NativePath = owner.NativePath, NativeHash = owner.NativeHash, PluginPath = owner.PluginPath, PluginHash = owner.PluginHash,
-    MatchingThreads = CvInvoke.NumThreads, Buffer = buffer, DecoderThreads = 16,
-    FrameIndex = state.FrameIndex, StopReason = processor.StopReason.ToString(),
-    persistence.SaveCount, persistence.HistoryWritten, CheckpointEquivalent = checkpointEquivalent,
+    Video = video,
+    InputHash = HashFile(video),
+    Mode = mode,
+    CancelFrame = cancelFrame,
+    ResumeFrame = restored?.FrameIndex,
+    SourceCheckpointHash = sourceCheckpointHash,
+    OriginalConfigHash = metadata.ConfigHash,
+    ExperimentConfigHash = tagged.Metadata!.ConfigHash,
+    NativePath = owner.NativePath,
+    NativeHash = owner.NativeHash,
+    PluginPath = owner.PluginPath,
+    PluginHash = owner.PluginHash,
+    MatchingThreads = CvInvoke.NumThreads,
+    Buffer = buffer,
+    DecoderThreads = 16,
+    FrameIndex = state.FrameIndex,
+    StopReason = processor.StopReason.ToString(),
+    persistence.SaveCount,
+    persistence.HistoryWritten,
+    CheckpointEquivalent = checkpointEquivalent,
     HistoryEquivalent = historyEquivalent,
     HistoryPath = persistence.HistoryWritten ? persistence.HistoryPath : null,
     HistoryHash = persistence.HistoryWritten ? HashFile(persistence.HistoryPath) : null,
@@ -123,7 +136,8 @@ var report = new
     SubtitleHash = mode == "cancel" ? null : HashFile(Path.Combine(output, "subtitle.ass")),
     ProductRejectsExperimentState = !ProcessingStateCompatibility.ValidateAndMigrate(tagged, config, metadata).CanRestore,
     CaptureDisposed = owner.Capture.Ptr == IntPtr.Zero,
-    NoPerformanceConclusion = true, PreviewQualified = false
+    NoPerformanceConclusion = true,
+    PreviewQualified = false
 };
 File.WriteAllText(Path.Combine(output, "report.json"), JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
 Console.WriteLine(JsonSerializer.Serialize(report));

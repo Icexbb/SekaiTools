@@ -71,12 +71,12 @@ internal static class Program
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
         timer.Tick += (_, _) => { timer.Stop(); animationFrame.Continue = false; };
         timer.Start(); Dispatcher.PushFrame(animationFrame);
-        var bitmap = new RenderTargetBitmap((int)page.ActualWidth, (int)page.ActualHeight, 96,96,PixelFormats.Pbgra32);
+        var bitmap = new RenderTargetBitmap((int)page.ActualWidth, (int)page.ActualHeight, 96, 96, PixelFormats.Pbgra32);
         bitmap.Render(page);
-        var encoder = new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        using (var file = File.Create(Path.Combine(output,"settings.png"))) encoder.Save(file);
+        var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using (var file = File.Create(Path.Combine(output, "settings.png"))) encoder.Save(file);
         Console.WriteLine($"PASS: {buttons.Length} cards, visibility, grouped reset, isolation, persistence; periodic available={model.IsPeriodicColorAvailable}");
-        window.Close();app.Shutdown();
+        window.Close(); app.Shutdown();
     }
 
     private static void VerifyRuntimeLogWindow(Window owner, string output)
@@ -100,17 +100,17 @@ internal static class Program
         filter.SelectedIndex = 2; Pump();
         Require(list.Items.Count == 2 && list.Items.Cast<SekaiToolsBase.LogEntry>().All(entry => entry.Level >= Microsoft.Extensions.Logging.LogLevel.Warning), "WARN+ filter incorrect");
         filter.SelectedIndex = 3; Pump(); Require(list.Items.Count == 1, "ERROR+ filter incorrect");
-        var logBitmap = new RenderTargetBitmap((int)logs.ActualWidth, (int)logs.ActualHeight, 96,96,PixelFormats.Pbgra32);
+        var logBitmap = new RenderTargetBitmap((int)logs.ActualWidth, (int)logs.ActualHeight, 96, 96, PixelFormats.Pbgra32);
         logBitmap.Render(logs);
-        var logEncoder = new PngBitmapEncoder();logEncoder.Frames.Add(BitmapFrame.Create(logBitmap));
-        using (var file = File.Create(Path.Combine(output,"runtime-logs.png"))) logEncoder.Save(file);
+        var logEncoder = new PngBitmapEncoder(); logEncoder.Frames.Add(BitmapFrame.Create(logBitmap));
+        using (var file = File.Create(Path.Combine(output, "runtime-logs.png"))) logEncoder.Save(file);
         logs.Close();
         logger.Log(Microsoft.Extensions.Logging.LogLevel.Error, new Microsoft.Extensions.Logging.EventId(), "after-close", null, (value, _) => value);
         Pump();
         var reopened = RuntimeLogWindow.Open(owner);
         reopened.Left = -15000; reopened.Top = -15000; Pump();
-        Require(!ReferenceEquals(logs,reopened) && ((ListBox)reopened.FindName("LogListBox")).Items.Count == 4, "Reopened window lost logs");
-        Nodes(reopened).OfType<Wpf.Ui.Controls.Button>().Single(button => Equals(button.Content,"清空日志"))
+        Require(!ReferenceEquals(logs, reopened) && ((ListBox)reopened.FindName("LogListBox")).Items.Count == 4, "Reopened window lost logs");
+        Nodes(reopened).OfType<Wpf.Ui.Controls.Button>().Single(button => Equals(button.Content, "清空日志"))
             .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
         Pump();
         Require(((ListBox)reopened.FindName("LogListBox")).Items.Count == 0, "Log clearing failed");
@@ -154,7 +154,7 @@ internal static class Program
         var section = SettingCatalog.Parse(custom).Single();
         Require(section.Properties.Order().SequenceEqual(new[] { "PreviewPlaybackBackend", "RecognitionMemoryBudgetMiB" }.Order()), "Derived reset group incorrect");
         var built = new SettingViewBuilder(_ => Task.FromResult(""), _ => throw new InvalidOperationException()).Build(section);
-        var variantPath = Path.Combine(output,"config-variant.json");
+        var variantPath = Path.Combine(output, "config-variant.json");
         File.Delete(variantPath);
         var model = (SettingPageModel)constructor.Invoke([variantPath]);
         built.DataContext = model;
@@ -182,12 +182,12 @@ internal static class Program
         }
         window.Close();
     }
-    private static void Pump() => Dispatcher.CurrentDispatcher.Invoke(() => {}, DispatcherPriority.ApplicationIdle);
+    private static void Pump() => Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
     private static IEnumerable<DependencyObject> Nodes(DependencyObject node)
     {
         yield return node;
         for (var i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++)
-            foreach (var child in Nodes(VisualTreeHelper.GetChild(node,i))) yield return child;
+            foreach (var child in Nodes(VisualTreeHelper.GetChild(node, i))) yield return child;
     }
 }

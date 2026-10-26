@@ -126,24 +126,37 @@ foreach (var video in videos)
         var actualThreads = (int)candidate.Get(decoderThreadsProperty);
         var threadRequestApplied = requestedThreads == null || actualThreads == requestedThreads;
         var actualAcceleration = (VideoAccelerationType)(int)candidate.Get(CapProp.HwAcceleration);
-        reports.Add(new { Video = video, Candidate = selection,
+        reports.Add(new
+        {
+            Video = video,
+            Candidate = selection,
             RequestedByteAuditFrames = extraByteAuditFrames.Order().ToArray(),
-            ByteAudits = byteAudits, ByteMismatchFrames = byteMismatchFrames,
+            ByteAudits = byteAudits,
+            ByteMismatchFrames = byteMismatchFrames,
             NormByteDisagreements = normByteDisagreements,
             LogicalProcessors = Environment.ProcessorCount,
             SequentialPixelDifferenceFrames = sequentialPixelDifferenceFrames,
             FirstSequentialDifferenceFrame = firstSequentialDifferenceFrame,
             SequentialDifferenceSamples = sequentialDifferenceSamples,
-            FrameLimit = frameLimit, SeekChecks = seekChecks, RequestedThreads = requestedThreads,
-            ReferenceThreads = (int)reference.Get(decoderThreadsProperty), ActualThreads = actualThreads,
+            FrameLimit = frameLimit,
+            SeekChecks = seekChecks,
+            RequestedThreads = requestedThreads,
+            ReferenceThreads = (int)reference.Get(decoderThreadsProperty),
+            ActualThreads = actualThreads,
             ThreadRequestApplied = threadRequestApplied,
-            RequestedAcceleration = requestedAcceleration?.ToString(), ActualAcceleration = actualAcceleration.ToString(),
+            RequestedAcceleration = requestedAcceleration?.ToString(),
+            ActualAcceleration = actualAcceleration.ToString(),
             ReferenceAcceleration = ((VideoAccelerationType)(int)reference.Get(CapProp.HwAcceleration)).ToString(),
             Status = normByteDisagreements != 0 ? "Inconclusive: norm and byte checks disagree" : !threadRequestApplied ? "Rejected: thread request not applied" : frames > 0 && maxPixelDifference == 0 && byteMismatchFrames == 0 && maxTimestampDifference < 0.01 && sameFrameIndices
                 ? (frameLimit == 0 ? "Full sequential decode equivalent; recognition still required" : "Prefix equivalent; full verification still required") : "Rejected: decoded output differs",
-            Frames = frames, MaxPixelDifference = maxPixelDifference, MaxTimestampDifference = maxTimestampDifference,
-            SameFrameIndices = sameFrameIndices, ProbeSeconds = Stopwatch.GetElapsedTime(start).TotalSeconds,
-            ReferenceBackend = reference.BackendName, CandidateBackend = candidate.BackendName });
+            Frames = frames,
+            MaxPixelDifference = maxPixelDifference,
+            MaxTimestampDifference = maxTimestampDifference,
+            SameFrameIndices = sameFrameIndices,
+            ProbeSeconds = Stopwatch.GetElapsedTime(start).TotalSeconds,
+            ReferenceBackend = reference.BackendName,
+            CandidateBackend = candidate.BackendName
+        });
     }
     catch (Exception error) { reports.Add(new { Video = video, Candidate = selection, Status = "Probe failed", Error = error.Message }); }
 }

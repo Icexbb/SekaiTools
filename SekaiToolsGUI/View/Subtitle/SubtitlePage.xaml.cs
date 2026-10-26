@@ -195,8 +195,10 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
             {
                 var clear = await DialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
                 {
-                    Title = "清除已完成历史记录？", Content = "此操作不可恢复，但不会删除未完成任务。",
-                    PrimaryButtonText = "清除", CloseButtonText = "取消"
+                    Title = "清除已完成历史记录？",
+                    Content = "此操作不可恢复，但不会删除未完成任务。",
+                    PrimaryButtonText = "清除",
+                    CloseButtonText = "取消"
                 }, CancellationToken.None);
                 if (clear == ContentDialogResult.Primary) await Task.Run(HistoryStore.Clear);
                 return;
@@ -250,8 +252,10 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
         {
             var result = await DialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
             {
-                Title = "移除字幕任务？", Content = "该任务的处理结果和手动调整将从列表清除，已保存的文件和历史记录仍会保留。",
-                PrimaryButtonText = "移除", CloseButtonText = "取消"
+                Title = "移除字幕任务？",
+                Content = "该任务的处理结果和手动调整将从列表清除，已保存的文件和历史记录仍会保留。",
+                PrimaryButtonText = "移除",
+                CloseButtonText = "取消"
             }, CancellationToken.None);
             if (result != ContentDialogResult.Primary) return;
         }

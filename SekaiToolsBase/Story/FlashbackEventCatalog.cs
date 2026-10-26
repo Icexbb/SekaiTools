@@ -63,12 +63,12 @@ public sealed partial class FlashbackEventCatalog
             Add((match.Groups[1].Value == "wl" ? "wl_" : "") + match.Groups[2].Value, origin);
         }
         foreach (var story in storyMap)
-        foreach (var episode in story.EventStoryEpisodes.Where(episode => episode != null))
-        {
-            var scenario = episode.ScenarioId ?? "";
-            if (scenario.StartsWith("wl_", StringComparison.Ordinal) && scenario.LastIndexOf('_') is var end && end > 3)
-                Add(scenario[..end], origins[story.Id]);
-        }
+            foreach (var episode in story.EventStoryEpisodes.Where(episode => episode != null))
+            {
+                var scenario = episode.ScenarioId ?? "";
+                if (scenario.StartsWith("wl_", StringComparison.Ordinal) && scenario.LastIndexOf('_') is var end && end > 3)
+                    Add(scenario[..end], origins[story.Id]);
+            }
         // 参考项目记录的早期命名例外，无对应活动数据时不生成虚假的标题。
         foreach (var (key, eventId) in new[] { ("band_01", 1), ("shuffle_03", 9), ("night_", 53) })
             if (byEvent.TryGetValue(eventId, out var origin)) _origins[key] = origin;

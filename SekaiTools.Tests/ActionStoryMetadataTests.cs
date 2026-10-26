@@ -120,10 +120,17 @@ public class ActionStoryMetadataTests
     [Fact]
     public void MetadataAndBaseFiltersIntersectAndUnknownEntriesRemainSelectable()
     {
-        var story = new AreaStorySet(new ActionSet { Id = 10, AreaId = 2, ActionSetType = "normal",
-            ArchivePublishedAt = new DateTimeOffset(2026, 9, 26, 16, 0, 0, TimeSpan.Zero).ToUnixTimeMilliseconds() })
+        var story = new AreaStorySet(new ActionSet
         {
-            CharacterIds = [3], ReleaseActivity = new(99, 1, "活动"), BatchKey = "monthly:2609"
+            Id = 10,
+            AreaId = 2,
+            ActionSetType = "normal",
+            ArchivePublishedAt = new DateTimeOffset(2026, 9, 26, 16, 0, 0, TimeSpan.Zero).ToUnixTimeMilliseconds()
+        })
+        {
+            CharacterIds = [3],
+            ReleaseActivity = new(99, 1, "活动"),
+            BatchKey = "monthly:2609"
         };
         Assert.True(new ActionStoryFilter(2, 3, 10, 10, ActionStoryFilterMode.ReleaseActivity, "99").Matches(story));
         Assert.False(new ActionStoryFilter(1, Mode: ActionStoryFilterMode.ReleaseActivity, Value: "99").Matches(story));

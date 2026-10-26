@@ -273,27 +273,27 @@ public class FrameRate
             switch (type)
             {
                 case FrameType.Start:
-                {
-                    var prev = TimeAtFrame(frame - 1).Milliseconds;
-                    var cur = TimeAtFrame(frame).Milliseconds;
-                    return new SubtitleTime(prev + (cur - prev + 1) / 2);
-                }
+                    {
+                        var prev = TimeAtFrame(frame - 1).Milliseconds;
+                        var cur = TimeAtFrame(frame).Milliseconds;
+                        return new SubtitleTime(prev + (cur - prev + 1) / 2);
+                    }
                 case FrameType.End:
-                {
-                    var cur = TimeAtFrame(frame).Milliseconds;
-                    var next = TimeAtFrame(frame + 1).Milliseconds;
-                    return new SubtitleTime(cur + (next - cur + 1) / 2);
-                }
+                    {
+                        var cur = TimeAtFrame(frame).Milliseconds;
+                        var next = TimeAtFrame(frame + 1).Milliseconds;
+                        return new SubtitleTime(cur + (next - cur + 1) / 2);
+                    }
                 case FrameType.Exact:
-                {
-                    if (frame < 0) return new SubtitleTime((int)(frame * _denominator * 1000 / _numerator));
+                    {
+                        if (frame < 0) return new SubtitleTime((int)(frame * _denominator * 1000 / _numerator));
 
-                    if (frame < _timecodes.Count) return new SubtitleTime(_timecodes[frame]);
+                        if (frame < _timecodes.Count) return new SubtitleTime(_timecodes[frame]);
 
-                    var framesPastEnd = frame - _timecodes.Count + 1;
-                    return new SubtitleTime((int)(
-                        (framesPastEnd * 1000 * _denominator + Last + _numerator / 2) / _numerator));
-                }
+                        var framesPastEnd = frame - _timecodes.Count + 1;
+                        return new SubtitleTime((int)(
+                            (framesPastEnd * 1000 * _denominator + Last + _numerator / 2) / _numerator));
+                    }
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }
@@ -381,20 +381,20 @@ public class SubtitleTime(int ms = 0)
                 case < '0' or > '9':
                     continue;
                 default:
-                {
-                    if (afterDecimal < 0)
                     {
-                        current *= 10;
-                        current += c - '0';
-                    }
-                    else
-                    {
-                        Milliseconds += (c - '0') * afterDecimal;
-                        afterDecimal /= 10;
-                    }
+                        if (afterDecimal < 0)
+                        {
+                            current *= 10;
+                            current += c - '0';
+                        }
+                        else
+                        {
+                            Milliseconds += (c - '0') * afterDecimal;
+                            afterDecimal /= 10;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
             }
 
         if (afterDecimal < 0) Milliseconds = (Milliseconds * 60 + current) * 1000;

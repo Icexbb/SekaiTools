@@ -62,15 +62,27 @@ for (var run = warmup ? 0 : 1; run <= runs; run++)
             frames++;
         }
         var elapsed = Stopwatch.GetElapsedTime(start);
-        var decoded = new { Run = run, Warmup = run == 0, Video = video, DecodeOnly = true,
-            Backend = capture.BackendName, HardwareDecode = hardwareDecode,
+        var decoded = new
+        {
+            Run = run,
+            Warmup = run == 0,
+            Video = video,
+            DecodeOnly = true,
+            Backend = capture.BackendName,
+            HardwareDecode = hardwareDecode,
             Acceleration = ((Emgu.CV.CvEnum.VideoAccelerationType)(int)capture.Get(Emgu.CV.CvEnum.CapProp.HwAcceleration)).ToString(),
-            Frames = frames, ElapsedMilliseconds = elapsed.TotalMilliseconds,
-            Width = (int)capture.Get(Emgu.CV.CvEnum.CapProp.FrameWidth), Height = (int)capture.Get(Emgu.CV.CvEnum.CapProp.FrameHeight),
-            Fps = capture.Get(Emgu.CV.CvEnum.CapProp.Fps), DeclaredFrames = capture.Get(Emgu.CV.CvEnum.CapProp.FrameCount),
-            DecodeMilliseconds = decode.TotalMilliseconds, PreprocessMilliseconds = preprocess.TotalMilliseconds,
-            Capacity = reader.Capacity, OpenCvThreads = CvInvoke.NumThreads,
-            PeakWorkingSet = Process.GetCurrentProcess().PeakWorkingSet64 };
+            Frames = frames,
+            ElapsedMilliseconds = elapsed.TotalMilliseconds,
+            Width = (int)capture.Get(Emgu.CV.CvEnum.CapProp.FrameWidth),
+            Height = (int)capture.Get(Emgu.CV.CvEnum.CapProp.FrameHeight),
+            Fps = capture.Get(Emgu.CV.CvEnum.CapProp.Fps),
+            DeclaredFrames = capture.Get(Emgu.CV.CvEnum.CapProp.FrameCount),
+            DecodeMilliseconds = decode.TotalMilliseconds,
+            PreprocessMilliseconds = preprocess.TotalMilliseconds,
+            Capacity = reader.Capacity,
+            OpenCvThreads = CvInvoke.NumThreads,
+            PeakWorkingSet = Process.GetCurrentProcess().PeakWorkingSet64
+        };
         File.WriteAllText(Path.Combine(output, $"run-{run}.json"), JsonSerializer.Serialize(decoded));
         Console.WriteLine(JsonSerializer.Serialize(decoded));
         continue;
@@ -79,8 +91,12 @@ for (var run = warmup ? 0 : 1; run <= runs; run++)
     var dialogs = new List<DialogBaseFrameSet>();
     var banners = new List<BannerBaseFrameSet>();
     var markers = new List<MarkerBaseFrameSet>();
-    var options = new RecognitionPerformanceOptions { Mode = mode, PrepareGrayFrames = prepareGray,
-        EnableFramePrefetch = capacity != 0 };
+    var options = new RecognitionPerformanceOptions
+    {
+        Mode = mode,
+        PrepareGrayFrames = prepareGray,
+        EnableFramePrefetch = capacity != 0
+    };
     // Keep the same runner source buildable against older baseline revisions.
     typeof(RecognitionPerformanceOptions).GetProperty("CollectDetailedMetrics")?.SetValue(options, profile);
     typeof(RecognitionPerformanceOptions).GetProperty("FrameBufferCapacity")?.SetValue(options, capacity);
@@ -102,9 +118,14 @@ for (var run = warmup ? 0 : 1; run <= runs; run++)
     var previewFrames = 0;
     var nonColorPreviewFrames = 0;
     using var processor = new VideoProcessor(config, new VideoProcessCallbacks
-        { IsPreviewEnabled = () => preview, OnException = e => failure = e,
-            OnFramePreviewImage = image => { Interlocked.Increment(ref previewFrames); if (image.NumberOfChannels != 3) Interlocked.Increment(ref nonColorPreviewFrames); },
-            OnNewDialog = dialogs.Add, OnNewBanner = banners.Add, OnNewMarker = markers.Add },
+    {
+        IsPreviewEnabled = () => preview,
+        OnException = e => failure = e,
+        OnFramePreviewImage = image => { Interlocked.Increment(ref previewFrames); if (image.NumberOfChannels != 3) Interlocked.Increment(ref nonColorPreviewFrames); },
+        OnNewDialog = dialogs.Add,
+        OnNewBanner = banners.Add,
+        OnNewMarker = markers.Add
+    },
         ResourceManager.Instance, new NoPersistence(), factory);
     if (factoryMode) previewInterval = factory!.PreviewInterval;
     // Experimental decoder replacement stays in this isolated benchmark, never in product options.
@@ -176,10 +197,16 @@ for (var run = warmup ? 0 : 1; run <= runs; run++)
     File.WriteAllText(Path.Combine(output, $"subtitle-{run}.ass"), subtitle);
     var result = new
     {
-        Run = run, Warmup = run == 0, Video = video, Preview = preview, Mode = mode.ToString(), PrepareGray = prepareGray,
+        Run = run,
+        Warmup = run == 0,
+        Video = video,
+        Preview = preview,
+        Mode = mode.ToString(),
+        PrepareGray = prepareGray,
         OpenCvThreads = CvInvoke.NumThreads,
         DetailedProfile = profile,
-        Resolution = processor.VideoInfo.Resolution, VideoFrames = processor.VideoInfo.FrameCount,
+        Resolution = processor.VideoInfo.Resolution,
+        VideoFrames = processor.VideoInfo.FrameCount,
         FrameBufferCapacity = capacity,
         ContentPositionHints = positionHints,
         HardwareDecode = hardwareDecode,
@@ -194,22 +221,26 @@ for (var run = warmup ? 0 : 1; run <= runs; run++)
             ? nativeLibraries.Single(x => Path.GetFileName(x.Path).Equals("opencv_videoio_ffmpeg500_64.dll", StringComparison.OrdinalIgnoreCase)).Hash
             : periodicCapture?.PluginHash,
         PeriodicColorInterval = previewInterval,
-        PreviewFrames = previewFrames, NonColorPreviewFrames = nonColorPreviewFrames,
+        PreviewFrames = previewFrames,
+        NonColorPreviewFrames = nonColorPreviewFrames,
         GrayCaptureNativeHash = grayCapture?.NativeHash,
         GrayCapturePluginHash = grayCapture?.PluginHash,
         NativeLibraries = nativeLibraries,
-        RequestedDecoderThreads = decoderThreads, ActualDecoderThreads = actualDecoderThreads,
-        OriginalConfigHash = originalConfigHash, StateHashBeforeExperimentTag = stateHashBeforeExperimentTag,
+        RequestedDecoderThreads = decoderThreads,
+        ActualDecoderThreads = actualDecoderThreads,
+        OriginalConfigHash = originalConfigHash,
+        StateHashBeforeExperimentTag = stateHashBeforeExperimentTag,
         DecodeBackend = decodeBackend,
         DecodeAcceleration = decodeAcceleration,
         WallMilliseconds = Stopwatch.GetElapsedTime(started).TotalMilliseconds,
         PeakWorkingSet = Process.GetCurrentProcess().PeakWorkingSet64,
-        StopReason = processor.StopReason.ToString(), Performance = processor.Performance,
+        StopReason = processor.StopReason.ToString(),
+        Performance = processor.Performance,
         // Reflection keeps this runner usable against the pre-instrumentation baseline.
         Matching = typeof(VideoProcessor).GetProperty("MatchingPerformance")?.GetValue(processor),
         StateHash = Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(stateJson))),
         RecognitionHash = Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new
-            { state.FrameIndex, state.ContentFinished, state.StopReason, state.Timecodes, state.Dialog, state.Banner, state.Marker })))),
+        { state.FrameIndex, state.ContentFinished, state.StopReason, state.Timecodes, state.Dialog, state.Banner, state.Marker })))),
         SubtitleHash = Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(subtitle)))
     };
     if (factoryMode)
@@ -218,7 +249,7 @@ for (var run = warmup ? 0 : 1; run <= runs; run++)
         if (!factory!.Session.Disposed || factory.Session.Capture.Ptr != 0)
             throw new InvalidDataException("Processor did not release its capture session");
         File.WriteAllText(Path.Combine(output, $"ownership-{run}.json"), JsonSerializer.Serialize(new
-            { CaptureDisposed = true, SessionDisposed = true, ProcessorFactoryCapture = true, factory.Session.Identity }));
+        { CaptureDisposed = true, SessionDisposed = true, ProcessorFactoryCapture = true, factory.Session.Identity }));
     }
     File.WriteAllText(Path.Combine(output, $"run-{run}.json"), JsonSerializer.Serialize(result,
         new JsonSerializerOptions { WriteIndented = true }));

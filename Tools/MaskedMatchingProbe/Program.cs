@@ -79,12 +79,21 @@ foreach (var video in Directory.EnumerateFiles(args[0], "*.mp4", SearchOption.Al
             // Recheck after all timed calls to catch unintended mutation of prepared inputs.
             if (!ReadScores(reference).Select(BitConverter.SingleToInt32Bits)
                 .SequenceEqual(ReadScores(candidate).Select(BitConverter.SingleToInt32Bits))) throw new InvalidOperationException("Post-run score mismatch");
-            rows.Add(new { Video = Path.GetFullPath(video), Usage = usage.ToString(), Scale = scale,
-                Image = small.Size, Template = layer.Size, ScoreCount = left.Length,
-                SameScoreBits = true, ByteMilliseconds = byteTimes.Order().ElementAt(1),
+            rows.Add(new
+            {
+                Video = Path.GetFullPath(video),
+                Usage = usage.ToString(),
+                Scale = scale,
+                Image = small.Size,
+                Template = layer.Size,
+                ScoreCount = left.Length,
+                SameScoreBits = true,
+                ByteMilliseconds = byteTimes.Order().ElementAt(1),
                 PreparedMilliseconds = preparedTimes.Order().ElementAt(1),
                 ImageConversionMilliseconds = conversionTimes.Order().ElementAt(1),
-                ByteRounds = byteTimes, PreparedRounds = preparedTimes });
+                ByteRounds = byteTimes,
+                PreparedRounds = preparedTimes
+            });
         }
     }
 }

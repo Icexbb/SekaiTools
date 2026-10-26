@@ -22,6 +22,16 @@ dotnet test SekaiTools.sln
 
 基于 .NET 10 的解决方案。所有项目通过 `Directory.Build.props` 全局启用可空引用类型。
 
+## 代码格式
+
+统一使用 .NET SDK 自带的 `dotnet format` 格式化 C# 代码，遵循根目录 `.editorconfig`（四个空格缩进），不要以 IDE 的个人格式设置覆盖仓库规范。
+
+修改 C# 文件后、提交前，运行 `dotnet format SekaiTools.sln --no-restore`；首次使用或依赖变化时先执行 `dotnet restore SekaiTools.sln`。`Tools/` 下未加入主解决方案的工具项目，须对相应 `.csproj` 单独执行 `dotnet format <项目路径> --no-restore`，必要时先还原该项目。
+
+格式验证使用同一命令附加 `--verify-no-changes`，必须成功退出。日常改动可用 `--include <文件或目录>` 限定本次修改范围；全仓库格式整理不使用范围限制，不包含生成文件。`dotnet format` 不负责格式化 XAML、MSBuild XML（`.csproj` / `.props` / `.targets`）或 Markdown，不能据此宣称这些文件也已格式化。
+
+全仓库格式整理应独立提交，并完成解决方案构建及测试；日常格式化随对应功能提交，避免夹带无关文件改动。
+
 ## Git 提交规范
 
 在进行Git 提交和版本发布时必须按照 [Git 提交与版本发布规范（跨项目模板）](docs/git-and-version-conventions.md) 执行。

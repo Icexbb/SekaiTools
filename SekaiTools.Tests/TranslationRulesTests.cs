@@ -23,7 +23,8 @@ public class TranslationRulesTests
         {
             json["Checks"] = new JsonArray(new JsonObject
             {
-                ["Id"] = "custom", ["Scope"] = "line",
+                ["Id"] = "custom",
+                ["Scope"] = "line",
                 ["Conditions"] = new JsonArray(new JsonObject { ["Pattern"] = "重复(.+)重复" }),
                 ["Feedback"] = new JsonObject { ["Message"] = "自定义提示" }
             });
@@ -56,7 +57,8 @@ public class TranslationRulesTests
     {
         var results = TranslationRules.Current.Evaluate("你好！", new Dictionary<string, string>
         {
-            ["originalLineCount"] = originalLines.ToString(), ["maxLineLength"] = length.ToString()
+            ["originalLineCount"] = originalLines.ToString(),
+            ["maxLineLength"] = length.ToString()
         });
         Assert.Equal(expected, results.Any(result => result.Feedback.Tags.Contains("length")));
     }
