@@ -4,6 +4,7 @@ using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
+using SekaiToolsCore.Process.Performance;
 using SekaiToolsCore.Utils;
 using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiStory = SekaiToolsBase.Story.Story;
@@ -62,6 +63,9 @@ public class BannerTemplateMatcher(
 
     private MatchStatus BannerMatch(FrameMatchContext frame, string text, int frameIndex = -1)
     {
+        using var measurement = cachePool.Metrics.Enter(cachePool.Metrics.CurrentState == TemplateMatchingState.Lookahead
+            ? TemplateMatchingState.Lookahead : IsUsingFallback ? TemplateMatchingState.Recovering
+            : _status == MatchStatus.Matched ? TemplateMatchingState.Tracking : TemplateMatchingState.Searching);
         if (string.IsNullOrWhiteSpace(text)) return MatchStatus.NotMatched;
         var sText = TrimContent(text);
         if (string.IsNullOrWhiteSpace(sText)) return MatchStatus.NotMatched;
@@ -135,6 +139,7 @@ public class BannerTemplateMatcher(
             if (matchResult == MatchStatus.NotMatched &&
                 _lookaheadTracker.ShouldProbe(index, frameIndex, _lookaheadTriggerFrames))
             {
+                using var measurement = cachePool.Metrics.Enter(TemplateMatchingState.Lookahead);
                 var originalStatus = _status;
                 var lookaheadEnd = Math.Min(Set.Count, index + MaxLookaheadTargets + 1);
                 var foundIndex = -1;

@@ -35,6 +35,7 @@ public static class TemplateMatcher
         TemplateMatchingType matchingType, string memberName, double? acceptanceThreshold, bool allowScaleRecovery = false)
     {
         var metrics = cachePool.Metrics.Enabled ? cachePool.Metrics : null;
+        using var measurement = metrics?.Enter(metrics.CurrentState, usage) ?? default;
         var started = metrics != null ? Stopwatch.GetTimestamp() : 0;
         frame.Metrics = metrics;
         if (cachePool.TryGet(usage, frame.Gray, region, tmp, matchingType, out var cachedResult) &&

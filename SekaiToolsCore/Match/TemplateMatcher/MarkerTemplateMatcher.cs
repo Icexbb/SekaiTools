@@ -6,6 +6,7 @@ using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
+using SekaiToolsCore.Process.Performance;
 using SekaiToolsCore.Utils;
 using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiStory = SekaiToolsBase.Story.Story;
@@ -46,6 +47,9 @@ public class MarkerTemplateMatcher(
 
     private MatchResult MarkerMatch(FrameMatchContext frame, string text, int frameIndex = -1)
     {
+        using var measurement = cachePool.Metrics.Enter(cachePool.Metrics.CurrentState == TemplateMatchingState.Lookahead
+            ? TemplateMatchingState.Lookahead : IsUsingFallback ? TemplateMatchingState.Recovering
+            : _status == MatchStatus.Matched ? TemplateMatchingState.Tracking : TemplateMatchingState.Searching);
         if (string.IsNullOrWhiteSpace(text))
             return new MatchResult(Point.Empty, MatchStatus.NotMatched);
 
@@ -141,6 +145,7 @@ public class MarkerTemplateMatcher(
             if (matchResult.Status == MatchStatus.NotMatched &&
                 _lookaheadTracker.ShouldProbe(index, frameIndex, _lookaheadTriggerFrames))
             {
+                using var measurement = cachePool.Metrics.Enter(TemplateMatchingState.Lookahead);
                 var originalStatus = _status;
                 var lookaheadEnd = Math.Min(Set.Count, index + MaxLookaheadTargets + 1);
                 var foundIndex = -1;

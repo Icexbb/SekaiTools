@@ -23,6 +23,7 @@ public abstract class MatcherStateMachine<T> where T : BaseFrameSet
     public List<T> Set { get; }
     public List<MatcherDiagnostic> Diagnostics { get; } = [];
     protected int FallbackTriggerFrames { get; }
+    protected bool IsUsingFallback => _useFallbackThreshold;
 
     public bool Finished => Set.Count == 0 || Set.TrueForAll(d => d.Finished);
 

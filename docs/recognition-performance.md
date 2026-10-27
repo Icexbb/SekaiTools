@@ -6,6 +6,8 @@
 
 逐帧上下文共享灰度图，按 ROI 延迟生成缩放层；匹配模板及 Gray/Alpha 多尺度层按任务复用。结果缓存只复用同一帧、同一图像、ROI、模板及匹配算法的结果，不跨任务共享，也不做跨帧逐像素比较和整图克隆缓存。相关实现见 [FrameMatchContext](../SekaiToolsCore/Match/TemplateMatcher/FrameMatchContext.cs) 和 [TemplateMatchCachePool](../SekaiToolsCore/Match/TemplateMatcher/TemplateMatchCachePool.cs)。
 
+开启详细匹配计时后，任务报告按模板用途和搜索、逐字出现、稳定跟踪、失配恢复、前瞻五类调用状态统计请求、缓存命中、相关计算次数和请求耗时，包含前瞻的独立正文复核。状态表示请求进入时的阶段，内部尺度复核仍归调用方；用于区分持续跟踪和失败搜索的成本，不作为置信度。分组与用途汇总不能重复相加，关闭详细计时不采集。字段及使用方式见 RecognitionBenchmark 说明。
+
 性能模式由 [RecognitionPerformanceOptions](../SekaiToolsCore/Process/Config/RecognitionPerformanceOptions.cs) 定义：
 
 | 模式 | 新增缓存预算上限 | 帧池上限 |

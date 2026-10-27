@@ -13,7 +13,7 @@ namespace SekaiToolsCore.Match.TemplateMatcher;
 /// </summary>
 public sealed class TemplateMatchCachePool
 {
-    public TemplateMatchingMetrics Metrics { get; } = new();
+    public TemplateMatchingMetrics Metrics { get; internal init; } = new();
     internal bool UseContentPositionHints { get; init; }
     public enum MatchUsage
     {

@@ -26,6 +26,8 @@ dotnet run --project Tools/RecognitionBenchmark -c Release -- "E:/ProjectSekai/t
 解码和预处理可以与匹配重叠，因此算子时间之和不能用于计算总耗时或加速比。
 
 `Matching` 提供各用途的请求数、缓存命中、总耗时，以及 ROI 缩放、相关计算、分数清理和极值查找耗时。
+`Matching.States` 进一步按用途和调用时的识别状态分组：Searching（搜索）、Acquiring（对话逐字出现）、Tracking（稳定跟踪）、Recovering（阈值回退或待确认失配）、Lookahead（后续事件探测及正文复核）。每组提供 Requests、CacheHits、CorrelationCalls 和 Elapsed；请求数包含缓存命中，相关计算数包含多尺度及精修调用。状态记录请求进入时的阶段，不表示匹配成功或失败；尺度复核等内部子步骤仍计入调用方状态。
+前瞻正文复核使用独立匹配缓存，但共享任务统计，避免遗漏其计算成本。分组耗时与 Usages 是同一批请求的不同汇总，不能相加；默认关闭详细计时时不会采集这些分组，不改变检查点或 ASS。
 这些细分计时包含于处理阶段计时中，不能再次相加。`ReadWaitTime` 测量有缓冲模式下消费者读取一帧的时间；`PreviewTime` 仅测量预览生成与入队，不含 UI 渲染。
 
 比较所有正式轮次的 `StateHash` 和 `SubtitleHash`。状态包含起止帧、坐标、时间码、匹配器状态及素材元数据。

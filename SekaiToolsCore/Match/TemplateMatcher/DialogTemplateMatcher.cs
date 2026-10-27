@@ -6,6 +6,7 @@ using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
+using SekaiToolsCore.Process.Performance;
 using SekaiToolsCore.Utils;
 using ExtLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
@@ -31,7 +32,7 @@ public class DialogTemplateMatcher(
     private readonly DialogTrackingGrace _trackingGrace = new(videoInfo.Fps.Fps());
     private readonly Dictionary<string, GaMat> _nameTemplates = new(StringComparer.Ordinal);
     private readonly Dictionary<string, (GaMat First, GaMat Second, GaMat Third)> _contentTemplates = new(StringComparer.Ordinal);
-    private readonly TemplateMatchCachePool _lookaheadEvidencePool = new();
+    private readonly TemplateMatchCachePool _lookaheadEvidencePool = new() { Metrics = cachePool.Metrics };
 
     public void Dispose()
     {
@@ -402,6 +403,7 @@ public class DialogTemplateMatcher(
             if (!IsStatusMatched(matchResult.Status) && matchResult.Status != MatchStatus.DialogDropped &&
                 _lookaheadTracker.ShouldProbe(dIndex, frameIndex, _lookaheadTriggerFrames))
             {
+                using var measurement = cachePool.Metrics.Enter(TemplateMatchingState.Lookahead);
                 var originalStatus = _status;
                 var originalNameTagPosition = _nameTagPosition;
                 var lookaheadEnd = Math.Min(Set.Count, dIndex + MaxLookaheadTargets + 1);
@@ -499,6 +501,11 @@ public class DialogTemplateMatcher(
 
     private MatchResult MatchForDialog(FrameMatchContext frame, DialogBaseFrameSet dialogBase, int frameIndex)
     {
+        using var measurement = cachePool.Metrics.Enter(cachePool.Metrics.CurrentState == TemplateMatchingState.Lookahead
+            ? TemplateMatchingState.Lookahead
+            : IsUsingFallback || _status == MatchStatus.DialogPending ? TemplateMatchingState.Recovering
+            : _status == MatchStatus.DialogMatched3 ? TemplateMatchingState.Tracking
+            : IsStatusMatched(_status) ? TemplateMatchingState.Acquiring : TemplateMatchingState.Searching);
         var lastStatus = _status;
         if (lastStatus is MatchStatus.DialogDropped && dialogBase.IsEmpty())
             lastStatus = MatchStatus.DialogNotMatched;
