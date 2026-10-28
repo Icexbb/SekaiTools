@@ -329,8 +329,9 @@ public class UnnamedDialogTests
         Assert.False(matcher.Set[1].Finished);
         Assert.Empty(matcher.Set[2].Frames);
         Assert.Empty(matcher.Diagnostics);
+        CvInvoke.Rectangle(newFrame, new Rectangle(640, 504, 640, 216), new MCvScalar(80, 80, 80), -1);
         context.Update(newFrame);
-        for (var index = 121; index <= 240; index++)
+        for (var index = 121; index <= 135; index++)
         {
             cache.SetFrameIndex(index);
             matcher.Process(context, index);

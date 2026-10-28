@@ -158,7 +158,7 @@ public class MarkerTemplateMatcher(
                 _searchScheduler.CompleteSample(frameIndex);
 
             if (matchResult.Status == MatchStatus.NotMatched &&
-                _lookaheadTracker.ShouldProbe(index, frameIndex, _lookaheadTriggerFrames))
+                _lookaheadTracker.ShouldProbe(index, frameIndex, _lookaheadTriggerFrames, VisualChangeEvidence.Sample(frame, EvidenceRegion.Marker)))
             {
                 using var measurement = cachePool.Metrics.Enter(TemplateMatchingState.Lookahead);
                 var originalStatus = _status;

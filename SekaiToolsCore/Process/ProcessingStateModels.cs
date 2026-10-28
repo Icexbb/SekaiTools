@@ -36,7 +36,13 @@ public class MarkerFrameSetDto
 
 public sealed record AdaptiveSearchStateDto(int LastSampleFrameIndex, int PreviousSkippedFrameIndex);
 
-public sealed record LookaheadStateDto(int FirstFailureFrame, int TargetIndex);
+public sealed record LookaheadStateDto(int FirstFailureFrame, int TargetIndex)
+{
+    public int FailedProbes { get; init; }
+    public int LastProbeFrame { get; init; } = -1;
+    public byte[]? Evidence { get; init; }
+    public bool ChangePending { get; init; }
+}
 
 public class DialogMatcherStateDto
 {

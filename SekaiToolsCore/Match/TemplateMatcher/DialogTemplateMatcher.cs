@@ -402,7 +402,7 @@ public class DialogTemplateMatcher(
                 _searchScheduler.CompleteSample(frameIndex);
 
             if (!IsStatusMatched(matchResult.Status) && matchResult.Status != MatchStatus.DialogDropped &&
-                _lookaheadTracker.ShouldProbe(dIndex, frameIndex, _lookaheadTriggerFrames))
+                _lookaheadTracker.ShouldProbe(dIndex, frameIndex, _lookaheadTriggerFrames, VisualChangeEvidence.Sample(frame, EvidenceRegion.Dialog)))
             {
                 using var measurement = cachePool.Metrics.Enter(TemplateMatchingState.Lookahead);
                 var originalStatus = _status;

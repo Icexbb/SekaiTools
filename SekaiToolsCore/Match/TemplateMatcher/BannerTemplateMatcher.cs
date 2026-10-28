@@ -152,7 +152,7 @@ public class BannerTemplateMatcher(
                 _searchScheduler.CompleteSample(frameIndex);
 
             if (matchResult == MatchStatus.NotMatched &&
-                _lookaheadTracker.ShouldProbe(index, frameIndex, _lookaheadTriggerFrames))
+                _lookaheadTracker.ShouldProbe(index, frameIndex, _lookaheadTriggerFrames, VisualChangeEvidence.Sample(frame, EvidenceRegion.Banner)))
             {
                 using var measurement = cachePool.Metrics.Enter(TemplateMatchingState.Lookahead);
                 var originalStatus = _status;

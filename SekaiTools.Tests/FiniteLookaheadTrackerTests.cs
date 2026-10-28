@@ -5,6 +5,32 @@ namespace SekaiTools.Tests;
 public class FiniteLookaheadTrackerTests
 {
     [Fact]
+    public void RepeatedFailuresBackOffButVisualChangeCanWakeProbeAfterCooldown()
+    {
+        var tracker = new FiniteLookaheadTracker();
+        var before = new byte[128];
+        var after = Enumerable.Repeat((byte)80, 128).ToArray();
+        Assert.False(tracker.ShouldProbe(0, 0, 90, before));
+        Assert.True(tracker.ShouldProbe(0, 90, 90, before));
+        tracker.Postpone(90);
+        Assert.True(tracker.ShouldProbe(0, 180, 90, before));
+        tracker.Postpone(180);
+        Assert.False(tracker.ShouldProbe(0, 270, 90, before));
+        Assert.True(tracker.ShouldProbe(0, 360, 90, before));
+        tracker.Postpone(360);
+        Assert.False(tracker.ShouldProbe(0, 361, 90, after));
+        var saved = System.Text.Json.JsonSerializer.Deserialize<SekaiToolsCore.Process.LookaheadStateDto>(
+            System.Text.Json.JsonSerializer.Serialize(tracker.CaptureState()))!;
+        var restored = new FiniteLookaheadTracker();
+        restored.RestoreState(saved);
+        Assert.False(restored.ShouldProbe(0, 374, 90, after));
+        Assert.True(restored.ShouldProbe(0, 375, 90, after));
+        Assert.False(restored.ShouldProbe(0, 375, 90, after));
+        Assert.True(tracker.ShouldProbe(0, 375, 90, after));
+        Assert.False(VisualChangeEvidence.HasChanged(before, Enumerable.Repeat((byte)4, 128).ToArray()));
+    }
+
+    [Fact]
     public void ShouldProbe_TriggersAfterConfiguredFrameWindow()
     {
         var tracker = new FiniteLookaheadTracker();
