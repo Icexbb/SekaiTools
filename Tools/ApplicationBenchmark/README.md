@@ -69,3 +69,14 @@ try {
 ```
 
 现有 `RunComparison.ps1` 拒绝分块模式，防止复用未记录该模式的旧报告。分块恢复验证需单独运行并比较实际输出文件。
+
+`VerifyChunkedResume.ps1` 将新连续运行与多个精确取消边界顺序对照，默认使用 4095、4096、4097 帧。它要求新的输出目录，记录输入三件套和工具目录内 DLL/JSON 的 SHA256，运行结束再次核对身份；每次运行必须声明分块模式，实际取消和恢复帧必须等于请求值，最终状态和 ASS 文件长度及摘要均必须一致。只有全部通过才生成 `verification.json`。运行时临时设置环境变量，结束或失败均恢复原值。
+
+```powershell
+./Tools/ApplicationBenchmark/VerifyChunkedResume.ps1 `
+  -BenchmarkDll .codex-build/recognition-plan/checkpoint/ApplicationBenchmark.dll `
+  -Video E:/ProjectSekai/test/event200_tsukasa_01.mp4 `
+  -OutputDirectory .codex-build/recognition-plan/chunked-boundaries
+```
+
+自定义边界使用 `-CancelFrames 1029,8192`；边界超出实际识别范围会失败。脚本固定同一构建、配置和素材，仅用于恢复正确性，不进行版本性能比较，也不能据此声称所有视频或取消时刻均等价。运行期间不要构建或更改模板资源。

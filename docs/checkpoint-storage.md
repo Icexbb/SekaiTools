@@ -33,3 +33,9 @@ Windows 字幕队列通过 `IncrementalProgressStore` 保存进度；模型与�
 最终完整状态 694910 字节、ASS 52154 字节均逐字节一致，状态 SHA256 为 `3EFF26D272EF864B019E22DCB3E4A56DF7708F40964C15BDCEB96B43E62037A1`，ASS SHA256 为 `6BB223DCE391EAC853F62D175B925D730E561D6C89C64616548B53BCBB4AAC6F`。本地输入摘要和报告保留在 `.codex-build/recognition-plan/chunked-long/verification.json`。
 
 本轮只证明该素材、配置及取消边界的恢复一致性；单轮耗时不用于提速结论。仍需扩展其他素材、取消边界及多轮性能比较，也未覆盖真实窗口交互。
+
+### 时间码块边界取消
+
+同日以同一素材、4 线程、8 帧预读和分块保存模式重新运行连续基准，并分别在 4095、4096、4097 帧精确取消。三次磁盘恢复均从请求帧开始，最终均为 Completed；最终完整状态和 ASS 的文件长度、SHA256 及额外逐字节对照全部一致，摘要与上节相同。该组覆盖首个 4096 项时间码块形成前后的处理帧边界。
+
+使用 [VerifyChunkedResume.ps1](../Tools/ApplicationBenchmark/VerifyChunkedResume.ps1) 顺序运行，运行前后输入三件套及工具目录 DLL/JSON 摘要一致。报告与身份清单保留在 `.codex-build/recognition-plan/chunked-boundaries/verification.json` 和 `identity.json`。该组不构成多素材、多轮性能结论；还需扩展其他素材、事件状态边界及长公共前缀场景。
