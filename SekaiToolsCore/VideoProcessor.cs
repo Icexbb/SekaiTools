@@ -64,7 +64,7 @@ public class VideoProcessor : IDisposable
     private readonly Config _config;
     private readonly ProcessingPerformanceMetrics _performanceMetrics = new();
     private readonly IProcessingStatePersistence _persistence;
-    private readonly object _progressSaveLock = new();
+    private readonly CoalescingProgressWriter _progressWriter;
     private readonly string _scriptPath;
     private readonly ProcessingStateMetadata _stateMetadata;
     private readonly string _translatePath;
@@ -86,7 +86,6 @@ public class VideoProcessor : IDisposable
     // 预览图像有界队列（长度 1，只保留最新帧）
     private Channel<(Mat Image, int FrameIndex)>? _previewChannel;
     private Task? _previewConsumerTask;
-    private Task _progressSaveTask = Task.CompletedTask;
 
     // 进度保存
     private string? _saveKey;
@@ -109,6 +108,8 @@ public class VideoProcessor : IDisposable
     {
         _config = config;
         _persistence = persistence;
+        _progressWriter = new CoalescingProgressWriter(persistence.SaveProgress,
+            exception => Logger.Log($"保存处理进度失败: {exception.Message}", ExtLogLevel.Error));
         _videoPath = config.VideoFilePath;
         _scriptPath = config.ScriptFilePath;
         _translatePath = config.TranslateFilePath;
@@ -613,7 +614,7 @@ public class VideoProcessor : IDisposable
                     break;
                 }
 
-                if (BannerMatcher is { Finished: false } && matchBannerNow)
+                if (BannerMatcher is { Finished: false } && (matchBannerNow || BannerMatcher.IsTracking))
                 {
                     var bannerIndex = BannerMatcher.LastNotProcessedIndex();
                     BannerMatcher.Process(matchFrame, frameIndex, backcheckFrame, backcheckFrameIndex);
@@ -803,27 +804,7 @@ public class VideoProcessor : IDisposable
         }
     }
 
-    private void QueueProgressSave(string saveKey, ProcessingState state)
-    {
-        lock (_progressSaveLock)
-        {
-            _progressSaveTask = SaveAfterPreviousAsync(_progressSaveTask, saveKey, state);
-        }
-    }
-
-    private async Task SaveAfterPreviousAsync(Task previousSave, string saveKey, ProcessingState state)
-    {
-        try
-        {
-            await previousSave.ConfigureAwait(false);
-        }
-        catch (Exception e)
-        {
-            Logger.Log($"保存上一份处理进度失败: {e.Message}", ExtLogLevel.Error);
-        }
-
-        await Task.Run(() => _persistence.SaveProgress(saveKey, state)).ConfigureAwait(false);
-    }
+    private void QueueProgressSave(string saveKey, ProcessingState state) => _progressWriter.Enqueue(saveKey, state);
 
     private void WaitForProgressSave()
     {
@@ -832,11 +813,7 @@ public class VideoProcessor : IDisposable
 
     private async Task WaitForProgressSaveAsync()
     {
-        Task saveTask;
-        lock (_progressSaveLock)
-        {
-            saveTask = _progressSaveTask;
-        }
+        var saveTask = _progressWriter.Completion;
 
         try
         {
