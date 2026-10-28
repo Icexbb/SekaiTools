@@ -304,6 +304,61 @@ public class UnnamedDialogTests
         Assert.Empty(matcher.SaveState().PendingTrackingFrames);
     }
 
+    [Theory]
+    [InlineData("ABC", false)]
+    [InlineData("ABCDEFGHIJKLM", false)]
+    [InlineData("ABCDEFGHIJKLM", true)]
+    public void SharedPrefixTransitionUsesDistinctiveTextAndSurvivesDiskRestore(string prefix, bool unnamed)
+    {
+        using var fixture = new Fixture();
+        var speaker = unnamed ? "" : "A";
+        var oldBody = prefix + "WWWW";
+        var nextBody = prefix + "....";
+        var story = new Story(new SekaiToolsBase.GameScript.GameScript
+        {
+            TalkData = [new Talk(speaker, oldBody, 0), new Talk(speaker, nextBody, 0)],
+            Snippets = [new Snippet { Action = 1 }, new Snippet { Action = 1 }]
+        }, new TranslationData(null));
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        var cache = new TemplateMatchCachePool();
+        using var matcher = new DialogTemplateMatcher(fixture.Info, story, manager, cache, fixture.Config);
+        using var oldFrame = unnamed ? fixture.Frame(manager, oldBody, new Point(160, 555)) : fixture.NamedFrame(manager, oldBody, 0);
+        using var newFrame = unnamed ? fixture.Frame(manager, nextBody, new Point(160, 555)) : fixture.NamedFrame(manager, nextBody, 0);
+        using var context = new FrameMatchContext();
+        context.Update(oldFrame);
+        for (var index = 1; index <= 12; index++)
+        {
+            cache.SetFrameIndex(index);
+            matcher.Process(context, index);
+        }
+        Assert.False(matcher.Set[0].Finished);
+        Assert.Empty(matcher.Set[1].Frames);
+        using var restored = new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
+        restored.RestoreState(DiskRoundtrip(matcher.SaveState()));
+        using var partial = unnamed ? fixture.Frame(manager, prefix, new Point(160, 555)) : fixture.NamedFrame(manager, prefix, 0);
+        context.Update(partial);
+        for (var index = 13; index <= 18; index++)
+        {
+            cache.SetFrameIndex(index);
+            matcher.Process(context, index);
+            restored.Process(context, index);
+        }
+        Assert.False(matcher.Set[0].Finished);
+        Assert.Empty(matcher.Set[1].Frames);
+        context.Update(newFrame);
+        for (var index = 19; index <= 30; index++)
+        {
+            cache.SetFrameIndex(index);
+            matcher.Process(context, index);
+            restored.Process(context, index);
+        }
+        Assert.True(matcher.Set[0].Finished);
+        Assert.NotEmpty(matcher.Set[1].Frames);
+        Assert.True(matcher.Set[0].End().Index < matcher.Set[1].Start().Index);
+        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(matcher.SaveState()),
+            System.Text.Json.JsonSerializer.Serialize(restored.SaveState()));
+    }
+
     [Fact]
     public void LookaheadRejectsLastVisibleSharedPrefixButCanSkipTrulyMissingDialogue()
     {

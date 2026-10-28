@@ -243,7 +243,7 @@ public class DialogTemplateMatcher(
 
     // Lookahead must identify a different line, rather than another instance of
     // the same speaker's opening parenthesis or shared punctuation prefix.
-    internal static string LookaheadContentPrefix(DialogStoryEvent candidate, IEnumerable<DialogStoryEvent> earlier)
+    internal static string LookaheadContentPrefix(DialogStoryEvent candidate, IEnumerable<DialogStoryEvent> earlier, int maxLength = 12)
     {
         var content = FirstLine(candidate.BodyOriginal);
         if (content.Length == 0) return string.Empty;
@@ -257,8 +257,8 @@ public class DialogTemplateMatcher(
             while (shared < content.Length && shared < other.Length && content[shared] == other[shared]) shared++;
             // Identical first lines and very long shared prefixes cannot be
             // distinguished by this bounded verification window.
-            if (shared == content.Length || shared >= 12) return string.Empty;
-            length = Math.Max(length, Math.Min(12, Math.Min(content.Length, shared + 3)));
+            if (shared == content.Length || shared >= maxLength) return string.Empty;
+            length = Math.Max(length, Math.Min(maxLength, Math.Min(content.Length, shared + 3)));
         }
         return content[..length];
 
@@ -276,22 +276,48 @@ public class DialogTemplateMatcher(
         var prefix = LookaheadContentPrefix(candidate.Data,
             Set.Skip(Math.Max(0, currentIndex - 1)).Take(candidateIndex - Math.Max(0, currentIndex - 1))
                 .Select(dialog => dialog.Data));
-        if (prefix.Length == 0 || point.IsEmpty) return false;
+        var threshold = Math.Max(0.85, candidate.Data.Shake
+            ? config.MatchingThreshold.DialogContentSpecial : config.MatchingThreshold.DialogContentNormal);
+        return HasContentEvidence(frame, prefix, point, candidate.IsJitter, frameIndex, threshold) == true;
+    }
+
+    private bool? HasContentEvidence(FrameMatchContext frame, string prefix, Point point, bool jitter,
+        int frameIndex, double threshold)
+    {
+        if (prefix.Length == 0 || point.IsEmpty) return null;
         var template = templateManager.GetMatchTemplate(TemplateUsage.DialogContent, prefix);
         var font = TemplateManager.GetFontSize(frame.Size);
         var region = new Rectangle(point.X - (int)(0.5f * font), point.Y + font,
             Math.Max(font * 5, template.Size.Width + font * 2), font * 2);
-        if (candidate.IsJitter) region.Extend(1.5);
+        if (jitter) region.Extend(1.5);
         region.Limit(new Rectangle(Point.Empty, frame.Size));
-        if (region.Width < template.Size.Width || region.Height < template.Size.Height) return false;
-        // Verification is transient and searches all supported scales. It must
-        // not calibrate the main matcher or become part of checkpoint state.
+        if (region.Width < template.Size.Width || region.Height < template.Size.Height) return null;
+        // Independent evidence never calibrates the main tracking pool.
         _lookaheadEvidencePool.ResetAll();
         _lookaheadEvidencePool.SetFrameIndex(frameIndex);
         var result = TemplateMatcher.Match(frame, region, template, _lookaheadEvidencePool);
-        var threshold = Math.Max(0.85, candidate.Data.Shake
-            ? config.MatchingThreshold.DialogContentSpecial : config.MatchingThreshold.DialogContentNormal);
         return result.IsMatch(threshold);
+    }
+
+    private bool ConfirmsSharedPrefixTransition(FrameMatchContext frame, int index, Point point, int frameIndex)
+    {
+        // Absolute video cadence needs no checkpoint-only timer state. Only the
+        // immediate next target is eligible; this is not missing-line lookahead.
+        if (frameIndex % Math.Max(1, (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.1)) != 0 || index + 1 >= Set.Count)
+            return false;
+        var current = Set[index].Data;
+        var next = Set[index + 1].Data;
+        if (Set[index + 1].Finished || TrimTemplateContent(current.CharacterOriginal) != TrimTemplateContent(next.CharacterOriginal) ||
+            current.BodyOriginal.Length < 3 || next.BodyOriginal.Length < 3 || current.BodyOriginal[..3] != next.BodyOriginal[..3])
+            return false;
+        var nextPrefix = LookaheadContentPrefix(next, [current], 48);
+        var currentPrefix = LookaheadContentPrefix(current, [next], 48);
+        if (nextPrefix.Length == 0 || currentPrefix.Length == 0) return false;
+        using var measurement = cachePool.Metrics.Enter(TemplateMatchingState.Lookahead);
+        var nextThreshold = Math.Max(0.90, next.Shake ? config.MatchingThreshold.DialogContentSpecial : config.MatchingThreshold.DialogContentNormal);
+        var currentThreshold = Math.Max(0.85, current.Shake ? config.MatchingThreshold.DialogContentSpecial : config.MatchingThreshold.DialogContentNormal);
+        return HasContentEvidence(frame, nextPrefix, point, Set[index + 1].IsJitter, frameIndex, nextThreshold) == true &&
+            HasContentEvidence(frame, currentPrefix, point, Set[index].IsJitter, frameIndex, currentThreshold) == false;
     }
 
     // Frame sets retain a name-tag-equivalent anchor so tracking, checkpoints and
@@ -384,6 +410,9 @@ public class DialogTemplateMatcher(
             }
 
             var matchResult = MatchForDialog(frame, dialogRefers, frameIndex);
+            if (_status == MatchStatus.DialogMatched3 && matchResult.Status == MatchStatus.DialogMatched3 &&
+                ConfirmsSharedPrefixTransition(frame, dIndex, matchResult.Point, frameIndex))
+                matchResult = new MatchResult(matchResult.Point, MatchStatus.DialogDropped);
             var currentMatchPoint = matchResult.Point;
             var matchedFrameIndex = frameIndex;
             FrameMatchContext? backcheckFrame = null;
