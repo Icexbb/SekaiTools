@@ -35,6 +35,19 @@ public class BannerTemplateMatcher(
         _searchScheduler.Dispose();
     }
 
+    internal bool Probe(FrameMatchContext frame)
+    {
+        var index = LastNotProcessedIndex();
+        if (index < 0) return false;
+        var text = Set[index].Data.BodyOriginal;
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        var template = GetTemplate(text);
+        var region = UtilFunc.FromCenter(frame.Size.Center(),
+            new Size(template.Size.Width * 2, template.Size.Height * 2));
+        return IndependentEventProbe.Confirm(frame, template, region, cachePool.Metrics,
+            config.MatchingThreshold.BannerNormal);
+    }
+
     public int LastNotProcessedIndex()
     {
         return NextUnfinishedIndex();

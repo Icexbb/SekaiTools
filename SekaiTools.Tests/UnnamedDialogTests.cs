@@ -411,6 +411,73 @@ public class UnnamedDialogTests
         Assert.Equal(4, marker.Set[0].End().Index);
     }
 
+    [Fact]
+    public void IndependentProbesConfirmFullTextWithoutAdvancingMatchers()
+    {
+        Assert.True(IndependentEventProbe.IsDue(15, 30));
+        Assert.False(IndependentEventProbe.IsDue(16, 30));
+        using var fixture = new Fixture();
+        var story = new Story(new SekaiToolsBase.GameScript.GameScript(), new TranslationData(null));
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        var bannerCache = new TemplateMatchCachePool();
+        var markerCache = new TemplateMatchCachePool();
+        using var banner = new BannerTemplateMatcher(fixture.Info, story, manager, bannerCache, fixture.Config);
+        using var marker = new MarkerTemplateMatcher(fixture.Info, story, manager, markerCache, fixture.Config);
+        banner.Set.Add(new(new("Title", 0), fixture.Info.Fps));
+        marker.Set.Add(new(new("Place", 0), fixture.Info.Fps));
+        using var image = new Mat(720, 1280, DepthType.Cv8U, 1);
+        image.SetTo(new MCvScalar(12));
+        var title = manager.GetMatchTemplate(TemplateUsage.BannerContent, "Title").GetScaledLayer(1, 1).Gray;
+        var place = manager.GetMarkerMatchTemplate("Place").GetScaledLayer(1, 1).Gray;
+        using (var roi = new Mat(image, new Rectangle((1280 - title.Width) / 2, (720 - title.Height) / 2, title.Width, title.Height)))
+            title.CopyTo(roi);
+        using (var roi = new Mat(image, new Rectangle(10, 10, place.Width, place.Height)))
+            place.CopyTo(roi);
+        using var context = new FrameMatchContext();
+        context.Update(image);
+        Assert.True(banner.Probe(context));
+        Assert.True(marker.Probe(context));
+        Assert.True(banner.Set[0].IsEmpty());
+        Assert.True(marker.Set[0].IsEmpty());
+        bannerCache.SetFrameIndex(30);
+        markerCache.SetFrameIndex(30);
+        banner.Process(context, 30);
+        marker.Process(context, 30);
+        Assert.False(banner.Set[0].IsEmpty());
+        Assert.False(marker.Set[0].IsEmpty());
+        image.SetTo(new MCvScalar(12));
+        context.Update(image);
+        Assert.False(banner.Probe(context));
+        Assert.False(marker.Probe(context));
+        bannerCache.SetFrameIndex(31);
+        markerCache.SetFrameIndex(31);
+        banner.Process(context, 31);
+        marker.Process(context, 31);
+        Assert.True(banner.IsTracking);
+        Assert.True(marker.IsTracking);
+        Assert.Equal(31, banner.SaveState().PendingLossFrame);
+        Assert.Equal(31, marker.SaveState().PendingLossFrame);
+        banner.RestoreState(System.Text.Json.JsonSerializer.Deserialize<SekaiToolsCore.Process.BannerMatcherStateDto>(
+            System.Text.Json.JsonSerializer.Serialize(banner.SaveState()))!);
+        marker.RestoreState(System.Text.Json.JsonSerializer.Deserialize<SekaiToolsCore.Process.MarkerMatcherStateDto>(
+            System.Text.Json.JsonSerializer.Serialize(marker.SaveState()))!);
+        using (var roi = new Mat(image, new Rectangle((1280 - title.Width) / 2, (720 - title.Height) / 2, title.Width, title.Height)))
+            title.CopyTo(roi);
+        using (var roi = new Mat(image, new Rectangle(10, 10, place.Width, place.Height)))
+            place.CopyTo(roi);
+        context.Update(image);
+        bannerCache.SetFrameIndex(32);
+        markerCache.SetFrameIndex(32);
+        banner.Process(context, 32);
+        marker.Process(context, 32);
+        Assert.Null(banner.SaveState().PendingLossFrame);
+        Assert.Null(marker.SaveState().PendingLossFrame);
+        Assert.Equal(32, banner.Set[0].End().Index);
+        Assert.Equal(31, marker.Set[0].End().Index);
+        Assert.DoesNotContain(marker.Set[0].Frames, f => f.Index == 30);
+
+    }
+
     private sealed class Fixture : ITemplateResourceProvider, IDisposable
     {
         private readonly string _video = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".avi");

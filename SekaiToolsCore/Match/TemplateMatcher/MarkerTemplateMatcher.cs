@@ -29,11 +29,25 @@ public class MarkerTemplateMatcher(
     private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
     private readonly AdaptiveSearchScheduler _searchScheduler = new();
     private MatchStatus _status;
+    internal bool IsTracking => _status == MatchStatus.Matched;
     private readonly TrackingLossWindow _trackingLoss = new(videoInfo.Fps.Fps());
 
     public void Dispose()
     {
         _searchScheduler.Dispose();
+    }
+
+    internal bool Probe(FrameMatchContext frame)
+    {
+        var index = LastNotProcessedIndex();
+        if (index < 0) return false;
+        var text = Set[index].Data.BodyOriginal;
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        var template = GetTemplate(text);
+        var region = new Rectangle(Point.Empty,
+            new Size((int)(template.Size.Width * 1.5), template.Size.Height * 3));
+        return IndependentEventProbe.Confirm(frame, template, region, cachePool.Metrics,
+            config.MatchingThreshold.MarkerNormal);
     }
 
     public int LastNotProcessedIndex()

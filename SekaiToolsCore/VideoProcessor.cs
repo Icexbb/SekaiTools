@@ -614,7 +614,9 @@ public class VideoProcessor : IDisposable
                     break;
                 }
 
-                if (BannerMatcher is { Finished: false } && (matchBannerNow || BannerMatcher.IsTracking))
+                var independentProbeDue = IndependentEventProbe.IsDue(frameIndex, VideoInfo.Fps.Fps());
+                if (BannerMatcher is { Finished: false } && (matchBannerNow || BannerMatcher.IsTracking ||
+                    (independentProbeDue && BannerMatcher.Probe(matchFrame))))
                 {
                     var bannerIndex = BannerMatcher.LastNotProcessedIndex();
                     BannerMatcher.Process(matchFrame, frameIndex, backcheckFrame, backcheckFrameIndex);
@@ -625,7 +627,8 @@ public class VideoProcessor : IDisposable
                     }
                 }
 
-                if (MarkerMatcher is { Finished: false } && MatchMarkerNow())
+                if (MarkerMatcher is { Finished: false } && (MarkerMatcher.IsTracking || MatchMarkerNow() ||
+                    (independentProbeDue && MarkerMatcher.Probe(matchFrame))))
                 {
                     var markerIndex = MarkerMatcher.LastNotProcessedIndex();
                     MarkerMatcher.Process(matchFrame, frameIndex, backcheckFrame, backcheckFrameIndex);
