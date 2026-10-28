@@ -40,6 +40,7 @@ public sealed record LookaheadStateDto(int FirstFailureFrame, int TargetIndex);
 
 public class DialogMatcherStateDto
 {
+    public int PendingResumeStatus { get; init; } = 3;
     public List<FrameResultDto> PendingTrackingFrames { get; init; } = [];
     public AdaptiveSearchStateDto? SearchState { get; init; }
     public LookaheadStateDto? LookaheadState { get; init; }

@@ -71,6 +71,7 @@ public class DialogTrackingGraceTests
     public void LegacyCheckpointClearsPendingFrames()
     {
         var state = JsonSerializer.Deserialize<DialogMatcherStateDto>("{\"Status\":3}")!;
+        Assert.Equal(3, state.PendingResumeStatus);
         var grace = new DialogTrackingGrace(60);
         grace.Hold(10, Point.Empty);
         grace.RestoreState(state.PendingTrackingFrames);

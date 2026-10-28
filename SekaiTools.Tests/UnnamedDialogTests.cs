@@ -142,7 +142,15 @@ public class UnnamedDialogTests
         context.Update(blank);
         cache.SetFrameIndex(2);
         matcher.Process(context, 2);
+        Assert.False(matcher.Set[0].Finished);
+        var reliableEnd = matcher.Set[0].End().Index;
+        for (var frame = 3; frame <= 4; frame++)
+        {
+            cache.SetFrameIndex(frame);
+            matcher.Process(context, frame);
+        }
         Assert.True(matcher.Set[0].Finished);
+        Assert.Equal(reliableEnd, matcher.Set[0].End().Index);
         var maker = new SubtitleMaker(fixture.Info, manager, fixture.Config);
         var result = maker.Make(matcher.Set, [], [], new SubtitleExportInfo("test", "1", "done", "", "", ""), new ExportStyleConfig());
         Assert.Contains(body.Contains('\n') ? ",Line2," : ",Line1,", result.Events.ToString());
@@ -476,6 +484,59 @@ public class UnnamedDialogTests
         Assert.Equal(31, marker.Set[0].End().Index);
         Assert.DoesNotContain(marker.Set[0].Frames, f => f.Index == 30);
 
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void AcquisitionLossRestoresOriginalStageInsteadOfRequiringThreeGlyphs(int stage)
+    {
+        using var fixture = new Fixture();
+        var story = new Story(new SekaiToolsBase.GameScript.GameScript
+        {
+            TalkData = [new Talk("A", "WXYZ", 0) { Shake = true }],
+            Snippets = [new Snippet { Action = 1 }]
+        }, new TranslationData(null));
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        var cache = new TemplateMatchCachePool();
+        using var matcher = new DialogTemplateMatcher(fixture.Info, story, manager, cache, fixture.Config);
+        using var partial = fixture.NamedFrame(manager, "WXYZ"[..stage], 0);
+        using var blank = new Mat(720, 1280, DepthType.Cv8U, 3);
+        blank.SetTo(new MCvScalar(0));
+        using var context = new FrameMatchContext();
+        context.Update(partial);
+        for (var index = 1; index <= stage; index++)
+        {
+            cache.SetFrameIndex(index);
+            matcher.Process(context, index);
+        }
+        Assert.Equal(stage, matcher.SaveState().Status);
+        var count = matcher.Set[0].Frames.Count;
+        context.Update(blank);
+        cache.SetFrameIndex(stage + 1);
+        matcher.Process(context, stage + 1);
+        var checkpoint = System.Text.Json.JsonSerializer.Deserialize<SekaiToolsCore.Process.DialogMatcherStateDto>(
+            System.Text.Json.JsonSerializer.Serialize(matcher.SaveState()))!;
+        Assert.Equal(4, checkpoint.Status);
+        Assert.Equal(stage, checkpoint.PendingResumeStatus);
+        using var restored = new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
+        restored.RestoreState(checkpoint);
+        context.Update(partial);
+        cache.SetFrameIndex(stage + 2);
+        matcher.Process(context, stage + 2);
+        restored.Process(context, stage + 2);
+        Assert.Equal(stage, matcher.SaveState().Status);
+        Assert.Equal(count + 1, matcher.Set[0].Frames.Count);
+        Assert.Equal(matcher.Set[0].Frames.Select(f => (f.Index, f.Point)), restored.Set[0].Frames.Select(f => (f.Index, f.Point)));
+        var end = matcher.Set[0].End().Index;
+        context.Update(blank);
+        for (var index = stage + 3; index <= stage + 5; index++)
+        {
+            cache.SetFrameIndex(index);
+            matcher.Process(context, index);
+        }
+        Assert.True(matcher.Finished);
+        Assert.Equal(end, matcher.Set[0].End().Index);
     }
 
     private sealed class Fixture : ITemplateResourceProvider, IDisposable
