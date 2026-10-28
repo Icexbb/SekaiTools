@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Runtime.InteropServices;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -34,6 +35,54 @@ public class TemplateMatcherRefinementTests
 
         Assert.Equal(expected, result.MaxLoc);
         Assert.True(result.MaxVal > 0.99);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FailedRefinementRequiresStrongEvidenceFromDistinctCandidate(bool weakCandidate)
+    {
+        using var gray = new Mat(32, 32, DepthType.Cv8U, 1);
+        var pixels = new byte[32 * 32];
+        new Random(42).NextBytes(pixels);
+        Marshal.Copy(pixels, 0, gray.DataPointer, pixels.Length);
+        using var source = new Mat();
+        CvInvoke.CvtColor(gray, source, ColorConversion.Gray2Bgra);
+        using var template = new GaMat(source, false);
+        using var small = new Mat();
+        using var distractor = new Mat();
+        CvInvoke.Resize(gray, small, new Size(16, 16), interpolation: Inter.Area);
+        CvInvoke.Resize(small, distractor, gray.Size, interpolation: Inter.Nearest);
+        using var image = new Mat(120, 180, DepthType.Cv8U, 1);
+        image.SetTo(new MCvScalar(12));
+        using (var roi = new Mat(image, new Rectangle(10, 10, 32, 32))) distractor.CopyTo(roi);
+        var expected = new Point(91, 51);
+        using (var roi = new Mat(image, new Rectangle(expected, gray.Size)))
+        {
+            gray.CopyTo(roi);
+            if (weakCandidate)
+            {
+                var noise = new byte[pixels.Length];
+                new Random(84).NextBytes(noise);
+                var blended = pixels.Select((p, i) => (byte)(p * 0.6 + noise[i] * 0.4)).ToArray();
+                using var noisy = new Mat(32, 32, DepthType.Cv8U, 1);
+                Marshal.Copy(blended, 0, noisy.DataPointer, blended.Length);
+                noisy.CopyTo(roi);
+            }
+        }
+        using var context = new FrameMatchContext();
+        context.Update(image);
+        var pool = new TemplateMatchCachePool();
+        const TemplateMatchCachePool.MatchUsage usage = TemplateMatchCachePool.MatchUsage.DialogContent3;
+        pool.ObserveScale(usage, 1, 0.99);
+        pool.SetFrameIndex(1);
+        var region = new Rectangle(Point.Empty, image.Size);
+        var threshold = weakCandidate ? 0.7 : 0.95;
+        var original = Matcher.Match(context, region, template, pool, usage);
+        Assert.False(original.IsMatch(threshold));
+        var result = Matcher.MatchContent(context, region, template, pool, usage, threshold);
+        Assert.Equal(!weakCandidate, result.IsMatch(threshold));
+        if (!weakCandidate) Assert.Equal(expected, result.MaxLoc);
     }
 
     private static Mat CreateTemplate()

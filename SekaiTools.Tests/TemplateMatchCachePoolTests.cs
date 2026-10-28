@@ -31,6 +31,9 @@ public class TemplateMatchCachePoolTests
             TemplateMatchingType.CcoeffNormed, out var cached));
         Assert.Equal(result, cached);
         Assert.False(pool.TryGet(TemplateMatchCachePool.MatchUsage.Banner, image,
+            new Rectangle(0, 0, 16, 16), template1,
+            TemplateMatchingType.CcoeffNormed, out _, acceptanceThreshold: 0.8));
+        Assert.False(pool.TryGet(TemplateMatchCachePool.MatchUsage.Banner, image,
             new Rectangle(0, 0, 16, 16), template2,
             TemplateMatchingType.CcoeffNormed, out _));
         Assert.False(pool.TryGet(TemplateMatchCachePool.MatchUsage.Banner, image,

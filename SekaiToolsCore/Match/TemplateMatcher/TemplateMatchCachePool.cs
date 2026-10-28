@@ -48,14 +48,14 @@ public sealed class TemplateMatchCachePool
         Rectangle region,
         GaMat template,
         TemplateMatchingType matchingType,
-        out TemplateMatchResult result)
+        out TemplateMatchResult result, double? acceptanceThreshold = null)
     {
         var entry = _entries[(int)usage];
         if (entry.FrameIndex == _currentFrameIndex &&
             ReferenceEquals(entry.Image, image) &&
             entry.Region == region &&
             ReferenceEquals(entry.Template, template) &&
-            entry.MatchingType == matchingType)
+            entry.MatchingType == matchingType && entry.AcceptanceThreshold == acceptanceThreshold)
         {
             result = entry.Result;
             return true;
@@ -71,7 +71,7 @@ public sealed class TemplateMatchCachePool
         Rectangle region,
         GaMat template,
         TemplateMatchingType matchingType,
-        TemplateMatchResult result)
+        TemplateMatchResult result, double? acceptanceThreshold = null)
     {
         _entries[(int)usage] = new MatchCacheEntry(
             _currentFrameIndex,
@@ -79,7 +79,7 @@ public sealed class TemplateMatchCachePool
             region,
             template,
             matchingType,
-            result);
+            result, acceptanceThreshold);
     }
 
     internal IReadOnlyList<double> GetCandidateScales(MatchUsage usage)
@@ -151,5 +151,5 @@ public sealed class TemplateMatchCachePool
         Rectangle Region,
         GaMat? Template,
         TemplateMatchingType MatchingType,
-        TemplateMatchResult Result);
+        TemplateMatchResult Result, double? AcceptanceThreshold);
 }
