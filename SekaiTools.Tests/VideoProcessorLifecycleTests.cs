@@ -13,8 +13,10 @@ namespace SekaiTools.Tests;
 
 public class VideoProcessorLifecycleTests
 {
-    [Fact]
-    public async Task DiskChunkedCheckpointRestoresRealDecoderStateWithoutChangingResult()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DiskCheckpointRestoresRealDecoderStateWithoutChangingResult(bool forceChunks)
     {
         using var fixture = new Fixture();
         using var original = fixture.Create(new VideoProcessCallbacks { IsPreviewEnabled = () => false }, persistence: new ChunkedSink());
@@ -29,7 +31,8 @@ public class VideoProcessorLifecycleTests
                 .Invoke(original, [true])!;
             Assert.Empty(checkpoint.Timecodes);
             Assert.NotNull(checkpoint.CheckpointTimecodeBlocks);
-            SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.Save(path, checkpoint);
+            if (forceChunks) SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.SaveChunked(path, checkpoint);
+            else SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.Save(path, checkpoint);
             var loaded = SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.Load(path);
             using var resumed = fixture.Create(new VideoProcessCallbacks { IsPreviewEnabled = () => false });
             resumed.ApplyState(loaded);

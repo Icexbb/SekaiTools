@@ -6,6 +6,70 @@ namespace SekaiTools.Tests;
 
 public class IncrementalProgressStoreTests
 {
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void AdaptiveSelectionHonorsExactSerializedByteBoundary(int delta)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "SekaiTools-inline-limit-" + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(root, "task.json");
+        try
+        {
+            var overhead = JsonSerializer.SerializeToUtf8Bytes(new ProcessingState()).Length;
+            var state = new ProcessingState { VideoFilePath = new string('x', IncrementalProgressStore.InlineLimitBytes + delta - overhead) };
+            Assert.Equal(IncrementalProgressStore.InlineLimitBytes + delta, JsonSerializer.SerializeToUtf8Bytes(state).Length);
+            IncrementalProgressStore.Save(path, state);
+            using var document = JsonDocument.Parse(File.ReadAllBytes(path));
+            Assert.Equal(delta > 0, document.RootElement.TryGetProperty("CheckpointStorage", out _));
+            Assert.Equal(state.VideoFilePath, IncrementalProgressStore.Load(path).VideoFilePath);
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Theory]
+    [InlineData(40000)]
+    [InlineData(60000)]
+    public void AdaptiveStorageUsesFlatFrozenTimecodesAndSwitchesFormatsWithoutLosingState(int frameCount)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "SekaiTools-adaptive-" + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(root, "task.json");
+        try
+        {
+            var times = Enumerable.Range(0, 5000).Select(i => i * 33 + i / 10).ToArray();
+            var small = new ProcessingState { CheckpointTimecodeBlocks = times.Chunk(4096).ToArray(), FrameIndex = 5000 };
+            IncrementalProgressStore.Save(path, small);
+            Assert.False(Directory.Exists(path + ".chunks"));
+            Assert.Equal(times, IncrementalProgressStore.Load(path).Timecodes);
+            Assert.Equal(times, JsonSerializer.Deserialize<ProcessingState>(File.ReadAllText(path))!.Timecodes);
+            var done = new DialogFrameSetDto
+            {
+                Finished = true,
+                Frames = Enumerable.Range(0, frameCount).Select(i => new FrameResultDto(i, 1234, 2345)).ToList()
+            };
+            var large = new ProcessingState { ReusesCompletedFrames = true, Dialog = new() { FrameSets = [done] } };
+            IncrementalProgressStore.Save(path, large);
+            Assert.True(Directory.Exists(path + ".chunks"));
+            Assert.Equal(done.Frames, IncrementalProgressStore.Load(path).Dialog!.FrameSets[0].Frames);
+            var files = Directory.GetFiles(path + ".chunks").ToDictionary(p => p, File.GetLastWriteTimeUtc);
+            IncrementalProgressStore.Save(path, large);
+            Assert.All(files, item => Assert.Equal(item.Value, File.GetLastWriteTimeUtc(item.Key)));
+            IncrementalProgressStore.Save(path, small);
+            Assert.Equal(times, IncrementalProgressStore.Load(path).Timecodes);
+            // Keep prior generation blocks until task cleanup; an already-open reader may still need them.
+            Assert.All(files, item => Assert.True(File.Exists(item.Key)));
+            using (var locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                Assert.NotNull(Record.Exception(() => IncrementalProgressStore.Save(path, large)));
+                Assert.NotNull(Record.Exception(() => IncrementalProgressStore.Save(path, new ProcessingState { FrameIndex = 123 })));
+            }
+            Assert.Equal(times, IncrementalProgressStore.Load(path).Timecodes);
+            IncrementalProgressStore.Delete(path);
+            Assert.False(Directory.Exists(path + ".chunks"));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
     [Fact]
     public void TimecodeBlocksReusePrefixAndRestoreFlatTimesIncludingVariableIntervals()
     {
@@ -16,10 +80,10 @@ public class IncrementalProgressStoreTests
             var rate = new SekaiToolsCore.Process.Model.FrameRate(30);
             rate.RestoreTimecodes(Enumerable.Range(0, 5000).Select(i => i * 40 + i / 10));
             var blocks = rate.CaptureTimecodeBlocks();
-            IncrementalProgressStore.Save(path, new ProcessingState { ReusesCompletedFrames = true, CheckpointTimecodeBlocks = blocks });
+            IncrementalProgressStore.SaveChunked(path, new ProcessingState { ReusesCompletedFrames = true, CheckpointTimecodeBlocks = blocks });
             var stamp = Directory.GetFiles(path + ".chunks").ToDictionary(p => p, File.GetLastWriteTimeUtc);
             rate.RecordTimecode(5000, 200501);
-            IncrementalProgressStore.Save(path, new ProcessingState { ReusesCompletedFrames = true, CheckpointTimecodeBlocks = rate.CaptureTimecodeBlocks() });
+            IncrementalProgressStore.SaveChunked(path, new ProcessingState { ReusesCompletedFrames = true, CheckpointTimecodeBlocks = rate.CaptureTimecodeBlocks() });
             Assert.Equal(rate.ExportTimecodes(), IncrementalProgressStore.Load(path).Timecodes);
             Assert.True(stamp.Count(p => File.GetLastWriteTimeUtc(p.Key) == p.Value) == stamp.Count);
             Assert.True(new FileInfo(path).Length < 2000);
@@ -36,7 +100,7 @@ public class IncrementalProgressStoreTests
         var path = Path.Combine(root, "SubtitleQueueProgress", "task.json");
         try
         {
-            IncrementalProgressStore.Save(path, new ProcessingState
+            IncrementalProgressStore.SaveChunked(path, new ProcessingState
             {
                 VideoFilePath = "video.mp4",
                 Banner = new() { FrameSets = [new() { Finished = true, Start = 2, End = 8 }] }
@@ -59,10 +123,10 @@ public class IncrementalProgressStoreTests
         var path = Path.Combine(root, "task.json");
         try
         {
-            IncrementalProgressStore.Save(path, new ProcessingState { FrameIndex = 10 });
+            IncrementalProgressStore.SaveChunked(path, new ProcessingState { FrameIndex = 10 });
             using (var locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                var failure = Record.Exception(() => IncrementalProgressStore.Save(path, new ProcessingState
+                var failure = Record.Exception(() => IncrementalProgressStore.SaveChunked(path, new ProcessingState
                 { FrameIndex = 20, Dialog = new() { FrameSets = [new() { Finished = true, Frames = [new(3, 4, 5)] }] } }));
                 Assert.True(failure is IOException or UnauthorizedAccessException);
             }
@@ -86,12 +150,12 @@ public class IncrementalProgressStoreTests
             };
             var active = new DialogFrameSetDto { Frames = [new(1001, 30, 40)] };
             var state = new ProcessingState { ReusesCompletedFrames = true, Dialog = new() { FrameSets = [done, active] } };
-            IncrementalProgressStore.Save(path, state);
+            IncrementalProgressStore.SaveChunked(path, state);
             var chunk = Assert.Single(Directory.GetFiles(path + ".chunks"));
             File.SetLastWriteTimeUtc(chunk, DateTime.UtcNow.AddDays(-1));
             var stamp = File.GetLastWriteTimeUtc(chunk);
             active.Frames.Add(new(1002, 31, 41));
-            IncrementalProgressStore.Save(path, state);
+            IncrementalProgressStore.SaveChunked(path, state);
             Assert.Equal(stamp, File.GetLastWriteTimeUtc(chunk));
             Assert.True(new FileInfo(path).Length < JsonSerializer.SerializeToUtf8Bytes(state).Length / 10,
                 "Repeated manifest writes must exclude completed per-frame payloads");
@@ -105,7 +169,7 @@ public class IncrementalProgressStoreTests
             // A full capture after manual editing must not use the immutable-checkpoint identity cache.
             done.Frames.Add(new(1003, 50, 60));
             var edited = new ProcessingState { Dialog = state.Dialog };
-            IncrementalProgressStore.Save(path, edited);
+            IncrementalProgressStore.SaveChunked(path, edited);
             Assert.Equal(done.Frames, IncrementalProgressStore.Load(path).Dialog!.FrameSets[0].Frames);
             IncrementalProgressStore.Delete(path);
             Assert.False(File.Exists(path));
@@ -123,7 +187,7 @@ public class IncrementalProgressStoreTests
         {
             ProgressStore.SaveToPath(path, new ProcessingState { FrameIndex = 12 });
             Assert.Equal(12, IncrementalProgressStore.Load(path).FrameIndex);
-            IncrementalProgressStore.Save(path, new ProcessingState
+            IncrementalProgressStore.SaveChunked(path, new ProcessingState
             {
                 FrameIndex = 20,
                 Marker = new() { FrameSets = [new() { Finished = true, Frames = [new(4, 10, 20)] }] }

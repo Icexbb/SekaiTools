@@ -22,7 +22,7 @@
 | [翻译检查配置](translation-rules.md) | `translation-rules.json` 的正则替换与反馈 |
 | [设置页界面配置](settings-ui-configuration.md) | `settings-ui.json` 的控件、绑定、图标及还原范围 |
 | [识别性能与诊断](recognition-performance.md) | 帧池、内存、实验取舍、复测工具及文件选择延迟排查 |
-| [队列检查点分块存储](checkpoint-storage.md) | 完成事件增量、原子主文件、版本兼容及恢复清理 |
+| [队列检查点存储](checkpoint-storage.md) | 按规模选择全量/分块、原子主文件、版本兼容及恢复清理 |
 | [macOS 首版移植](macos-port.md) | 已确认范围、Host 协议、原生依赖门槛及未完成验收 |
 | [Git 提交与版本发布规范](git-and-version-conventions.md) | 提交格式、版本同步、发布说明和发布检查 |
 

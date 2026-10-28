@@ -16,12 +16,100 @@ internal static class IncrementalProgressStore
     private sealed record ChunkIdentity(string Hash);
     private static readonly ConditionalWeakTable<object, ChunkIdentity> Identities = new();
 
+    internal const int InlineLimitBytes = 1024 * 1024;
+    private static readonly JsonSerializerOptions InlineJsonOptions = CreateInlineOptions();
+
     public static void Save(string path, ProcessingState state)
+    {
+        // Even zero-valued coordinates need more than 20 JSON bytes per row;
+        // integers need at least one digit and a separator. This lower bound
+        // skips speculative work only when inline storage is impossible.
+        var rows = (state.Dialog?.FrameSets.Sum(item => (long)item.Frames.Count) ?? 0) +
+            (state.Marker?.FrameSets.Sum(item => (long)item.Frames.Count) ?? 0);
+        var times = state.CheckpointTimecodeBlocks?.Sum(block => (long)block.Length) ?? state.Timecodes.Count;
+        if (rows * 20 + times * 2 > InlineLimitBytes) { SaveChunked(path, state); return; }
+        // Bound the speculative full serialization for uncertain sizes.
+        using var inline = new LimitedInlineStream();
+        try
+        {
+            using (var writer = new Utf8JsonWriter(inline))
+            {
+                JsonSerializer.Serialize(writer, state, InlineJsonOptions);
+                writer.Flush();
+            }
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+            WriteAtomic(path, inline.ToArray());
+        }
+        catch (InlineLimitExceededException) { SaveChunked(path, state); }
+    }
+
+    public static void SaveChunked(string path, ProcessingState state)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
         var bytes = JsonSerializer.SerializeToUtf8Bytes(state, Options(path, state.ReusesCompletedFrames,
             timecodeBlocks: state.CheckpointTimecodeBlocks));
         WriteAtomic(path, bytes);
+    }
+
+    private sealed class InlineLimitExceededException : Exception { }
+
+    private sealed class LimitedInlineStream : Stream
+    {
+        private readonly MemoryStream _buffer = new();
+        public byte[] ToArray() => _buffer.ToArray();
+        public override bool CanRead => false;
+        public override bool CanSeek => false;
+        public override bool CanWrite => true;
+        public override long Length => _buffer.Length;
+        public override long Position { get => _buffer.Position; set => throw new NotSupportedException(); }
+        public override void Flush() { }
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(ReadOnlySpan<byte> buffer)
+        {
+            if (Length + buffer.Length > InlineLimitBytes) throw new InlineLimitExceededException();
+            _buffer.Write(buffer);
+        }
+        public override void Write(byte[] buffer, int offset, int count) => Write(buffer.AsSpan(offset, count));
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) _buffer.Dispose();
+            base.Dispose(disposing);
+        }
+    }
+
+    private static JsonSerializerOptions CreateInlineOptions()
+    {
+        var resolver = new DefaultJsonTypeInfoResolver();
+        resolver.Modifiers.Add(info =>
+        {
+            if (info.Type != typeof(ProcessingState)) return;
+            var property = info.Properties.Single(item => item.Name == nameof(ProcessingState.Timecodes));
+            var index = info.Properties.IndexOf(property);
+            // A lazy enumerable preserves the existing DTO API and JSON array
+            // shape while sharing serializer metadata across all snapshots.
+            var flat = info.CreateJsonPropertyInfo(typeof(IEnumerable<int>), property.Name);
+            flat.Get = value => FlatTimecodes((ProcessingState)value);
+            info.Properties[index] = flat;
+        });
+        return new JsonSerializerOptions { TypeInfoResolver = resolver };
+    }
+
+    private static IEnumerable<int> FlatTimecodes(ProcessingState state)
+    {
+        if (state.CheckpointTimecodeBlocks == null)
+        {
+            foreach (var time in state.Timecodes) yield return time;
+        }
+        else
+        {
+            foreach (var block in state.CheckpointTimecodeBlocks)
+            {
+                if (block.Length is < 1 or > 4096) throw new InvalidDataException("Invalid timecode block length");
+                foreach (var time in block) yield return time;
+            }
+        }
     }
 
     public static ProcessingState Load(string path)
