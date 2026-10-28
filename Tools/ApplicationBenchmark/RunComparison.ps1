@@ -8,6 +8,7 @@ param(
     [int]$Buffer = 8
 )
 $ErrorActionPreference = 'Stop'
+if ($env:SEKAI_BENCHMARK_CHUNKED -eq 'true') { throw 'Clear chunked checkpoint mode before legacy continuous comparison' }
 if (-not [string]::IsNullOrEmpty($env:SEKAI_BENCHMARK_RESUME_STATE)) { throw 'Clear external resume state before continuous comparison' }
 if (-not [string]::IsNullOrEmpty($env:SEKAI_BENCHMARK_CANCEL_FRAME)) { throw 'Clear exact cancellation frame before continuous comparison' }
 if ($Rounds -lt 3) { throw 'At least three rounds required' }

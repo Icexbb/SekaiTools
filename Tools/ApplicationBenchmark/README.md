@@ -52,3 +52,20 @@ try {
 ```
 
 不能与比例取消或外部检查点重放组合，超出实际处理范围的请求会因未发生取消而失败。反射与额外读索引仅用于正确性验证，不能用这些耗时作性能结论。连续比较脚本拒绝带此环境变量运行，避免把取消恢复混入普通性能比较。
+
+## 分块队列检查点验证
+
+设置 `SEKAI_BENCHMARK_CHUNKED=true` 后，工具通过隔离路径调用产品 `IncrementalProgressStore`，并声明增量快照能力，使处理器实际使用完成事件和时间码分块。默认仍使用旧全量原子 JSON，便于同一工具对照。历史输出仍为完整 JSON。报告的 `ChunkedCheckpoint` 标记本次模式。
+
+取消比例或精确帧入口均可与此模式组合。工具要求最终磁盘检查点恢复后的完整 JSON 与取消时公开捕获的状态完全一致，再创建新处理器恢复。最终的 `state.json` 和 `subtitle.ass` 必须与连续运行比较；单次通过仅证明对应素材和取消边界，不能外推全部视频或作为性能提升结论。外部检查点入口仍只接收已展开的完整 JSON。
+
+```powershell
+$previousChunked = $env:SEKAI_BENCHMARK_CHUNKED
+try {
+    $env:SEKAI_BENCHMARK_CHUNKED = 'true'
+    dotnet .codex-build/recognition-plan/checkpoint/ApplicationBenchmark.dll .codex-build/recognition-plan/chunked-long/continuous 4 8 0 E:/ProjectSekai/test/event200_tsukasa_01.mp4
+    dotnet .codex-build/recognition-plan/checkpoint/ApplicationBenchmark.dll .codex-build/recognition-plan/chunked-long/resumed 4 8 0.35 E:/ProjectSekai/test/event200_tsukasa_01.mp4
+} finally { $env:SEKAI_BENCHMARK_CHUNKED = $previousChunked }
+```
+
+现有 `RunComparison.ps1` 拒绝分块模式，防止复用未记录该模式的旧报告。分块恢复验证需单独运行并比较实际输出文件。

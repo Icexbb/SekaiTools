@@ -62,7 +62,10 @@ internal static class Program
     {
         var directory = Path.Combine(output, Path.GetFileName(video));
         Directory.CreateDirectory(directory);
-        var persistence = new ScopedPersistence(Path.Combine(directory, "persistence"));
+        var chunked = Environment.GetEnvironmentVariable("SEKAI_BENCHMARK_CHUNKED") == "true";
+        ScopedPersistence persistence = chunked
+            ? new ChunkedScopedPersistence(Path.Combine(directory, "persistence"))
+            : new ScopedPersistence(Path.Combine(directory, "persistence"));
         var config = new Config(video, Path.ChangeExtension(video, ".json"), Path.ChangeExtension(video, ".txt"),
             new StyleFontConfig(), new ExportStyleConfig(), new TypewriterSetting(),
             performanceOptions: new RecognitionPerformanceOptions { FrameBufferCapacity = buffer });
@@ -131,7 +134,8 @@ internal static class Program
                 if (cancelFrame != null && state.FrameIndex != cancelFrame.Value)
                     throw new InvalidOperationException($"Expected exact cancellation at {cancelFrame}, got {state.FrameIndex}");
                 var saved = persistence.LoadCheckpoint();
-                if (saved.FrameIndex != state.FrameIndex) throw new InvalidOperationException("Final checkpoint was not saved");
+                if (JsonSerializer.Serialize(saved) != JsonSerializer.Serialize(state))
+                    throw new InvalidOperationException("Final disk checkpoint differs from captured state");
                 resume = saved;
                 File.WriteAllText(Path.Combine(directory, "canceled-state.json"), JsonSerializer.Serialize(state));
                 continue;
@@ -151,6 +155,7 @@ internal static class Program
             var result = new
             {
                 Video = video,
+                ChunkedCheckpoint = chunked,
                 Threads = CvInvoke.NumThreads,
                 Buffer = buffer,
                 CancelFraction = cancelFraction,
@@ -181,29 +186,47 @@ internal static class Program
     private static string Hash(string text) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
 }
 
-internal sealed class ScopedPersistence(string directory) : IProcessingStatePersistence
+internal class ScopedPersistence(string directory) : IProcessingStatePersistence
 {
     // Invoke the actual application's atomic JSON writer with an isolated test path.
     private static readonly Action<string, ProcessingState> Save = typeof(ProgressStore)
         .GetMethod("SaveToPath", BindingFlags.Static | BindingFlags.NonPublic)!
         .CreateDelegate<Action<string, ProcessingState>>();
-    private string? _checkpoint;
+    protected string DirectoryPath { get; } = directory;
+    protected string? Checkpoint;
     public int SaveCount { get; private set; }
     public double SaveMilliseconds { get; private set; }
     public void SaveProgress(string key, ProcessingState state)
     {
-        _checkpoint = Path.Combine(directory, $"{key}.json");
+        Checkpoint = Path.Combine(DirectoryPath, $"{key}.json");
         var start = Stopwatch.GetTimestamp();
-        Save(_checkpoint, state);
+        WriteCheckpoint(Checkpoint, state);
         SaveCount++;
         SaveMilliseconds += Stopwatch.GetElapsedTime(start).TotalMilliseconds;
     }
-    public void DeleteProgress(string key)
+    protected virtual void WriteCheckpoint(string path, ProcessingState state) => Save(path, state);
+    public virtual void DeleteProgress(string key)
     {
-        var path = Path.Combine(directory, $"{key}.json");
+        var path = Path.Combine(DirectoryPath, $"{key}.json");
         if (File.Exists(path)) File.Delete(path);
     }
-    public void AddHistory(ProcessingState state) => Save(Path.Combine(directory, "history-state.json"), state);
-    public ProcessingState LoadCheckpoint() => JsonSerializer.Deserialize<ProcessingState>(File.ReadAllText(
-        _checkpoint ?? throw new InvalidOperationException("No checkpoint"))) ?? throw new InvalidDataException("Invalid checkpoint");
+    public void AddHistory(ProcessingState state) => Save(Path.Combine(DirectoryPath, "history-state.json"), state);
+    public virtual ProcessingState LoadCheckpoint() => JsonSerializer.Deserialize<ProcessingState>(File.ReadAllText(
+        Checkpoint ?? throw new InvalidOperationException("No checkpoint"))) ?? throw new InvalidDataException("Invalid checkpoint");
+}
+
+internal sealed class ChunkedScopedPersistence(string directory) : ScopedPersistence(directory), IIncrementalCheckpointPersistence
+{
+    // Use the production queue codec while keeping all files inside the benchmark output.
+    private static readonly Type Store = typeof(SubtitleQueueProgressStore).Assembly.GetType(
+        "SekaiToolsInfrastructure.Persistence.IncrementalProgressStore", throwOnError: true)!;
+    private static readonly Action<string, ProcessingState> SaveChunked = Store.GetMethod("Save")!
+        .CreateDelegate<Action<string, ProcessingState>>();
+    private static readonly Func<string, ProcessingState> LoadChunked = Store.GetMethod("Load")!
+        .CreateDelegate<Func<string, ProcessingState>>();
+    private static readonly Action<string> DeleteChunked = Store.GetMethod("Delete")!
+        .CreateDelegate<Action<string>>();
+    protected override void WriteCheckpoint(string path, ProcessingState state) => SaveChunked(path, state);
+    public override ProcessingState LoadCheckpoint() => LoadChunked(Checkpoint ?? throw new InvalidOperationException("No checkpoint"));
+    public override void DeleteProgress(string key) => DeleteChunked(Path.Combine(DirectoryPath, $"{key}.json"));
 }
