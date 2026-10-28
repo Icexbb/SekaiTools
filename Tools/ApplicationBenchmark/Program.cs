@@ -88,6 +88,7 @@ internal static class Program
         {
             Exception? failure = null;
             VideoProcessor? active = null;
+            var nextProgress = 10;
             using var processor = new VideoProcessor(config, new VideoProcessCallbacks
             {
                 // Called on the processing thread after decode, before matching. StopProcess
@@ -99,7 +100,14 @@ internal static class Program
                     return true;
                 },
                 OnException = error => failure = error,
-                OnProgress = progress => { if (segment == 0 && cancelFraction > 0 && progress >= cancelFraction) active?.StopProcess(); },
+                OnProgress = progress =>
+                {
+                    if (segment == 0 && cancelFraction > 0 && progress >= cancelFraction) active?.StopProcess();
+                    var percent = Math.Clamp((int)(progress * 100), 0, 100);
+                    if (percent < nextProgress) return;
+                    Console.WriteLine($"PROGRESS {Path.GetFileName(video)} segment={segment} percent={percent}");
+                    nextProgress = (percent / 10 + 1) * 10;
+                },
                 OnFramePreviewImage = frame =>
                 {
                     var time = Stopwatch.GetTimestamp();
@@ -170,6 +178,10 @@ internal static class Program
                 PreviewMilliseconds = previewTicks * 1000d / Stopwatch.Frequency,
                 persistence.SaveCount,
                 persistence.SaveMilliseconds,
+                persistence.FullSaveCount,
+                persistence.Version1SaveCount,
+                persistence.Version2SaveCount,
+                persistence.FormatInspectionMilliseconds,
                 PeakMiB = Process.GetCurrentProcess().PeakWorkingSet64 / 1048576d,
                 StateHash = Hash(stateJson),
                 SubtitleHash = Hash(subtitle)
@@ -199,6 +211,10 @@ internal class ScopedPersistence(string directory) : IProcessingStatePersistence
     protected string? Checkpoint;
     public int SaveCount { get; private set; }
     public double SaveMilliseconds { get; private set; }
+    public int FullSaveCount { get; private set; }
+    public int Version1SaveCount { get; private set; }
+    public int Version2SaveCount { get; private set; }
+    public double FormatInspectionMilliseconds { get; private set; }
     public void SaveProgress(string key, ProcessingState state)
     {
         Checkpoint = Path.Combine(DirectoryPath, $"{key}.json");
@@ -206,6 +222,27 @@ internal class ScopedPersistence(string directory) : IProcessingStatePersistence
         WriteCheckpoint(Checkpoint, state);
         SaveCount++;
         SaveMilliseconds += Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+        var inspection = Stopwatch.GetTimestamp();
+        InspectFormat(Checkpoint);
+        FormatInspectionMilliseconds += Stopwatch.GetElapsedTime(inspection).TotalMilliseconds;
+    }
+    private void InspectFormat(string path)
+    {
+        // Both owned codecs put Version first. Read only the small header;
+        // report this diagnostic overhead separately from the save itself.
+        using var stream = File.OpenRead(path);
+        Span<byte> header = stackalloc byte[256];
+        var count = stream.ReadAtLeast(header, 128, throwOnEndOfStream: false);
+        var reader = new Utf8JsonReader(header[..count], isFinalBlock: false, state: default);
+        if (!reader.Read() || reader.TokenType != JsonTokenType.StartObject ||
+            !reader.Read() || reader.TokenType != JsonTokenType.PropertyName || !reader.ValueTextEquals("Version") ||
+            !reader.Read() || reader.TokenType != JsonTokenType.String)
+            throw new InvalidDataException("Unable to inspect checkpoint version header");
+        var version = reader.GetString()!;
+        if (version.StartsWith("chunks2:", StringComparison.Ordinal)) Version2SaveCount++;
+        else if (version.StartsWith("chunks1:", StringComparison.Ordinal)) Version1SaveCount++;
+        else if (version.StartsWith("chunks", StringComparison.Ordinal)) throw new InvalidDataException("Unknown checkpoint storage version prefix");
+        else FullSaveCount++;
     }
     protected virtual void WriteCheckpoint(string path, ProcessingState state) => Save(path, state);
     public virtual void DeleteProgress(string key)

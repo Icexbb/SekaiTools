@@ -109,3 +109,20 @@ try {
 ```
 
 该入口临时设置 `SEKAI_BENCHMARK_FORCE_PACKS=true`，需要增量接口模式，并在结束时恢复原环境变量。大于包目标的单个事件仍允许独立内容文件；强制的是 v2 存储路径，不是强迫所有载荷包装。它不是产品设置，不能用于默认策略性能结论。普通 `RunComparison.ps1` 拒绝该环境变量及带强制标记的报告，避免混入策略比较。
+
+## 实际格式覆盖与长素材门禁
+
+报告增加 `FullSaveCount`、`Version1SaveCount`、`Version2SaveCount`，统计实际写出的进度文件，不包含最终历史文件。工具读取已知自有格式的首个 `Version` 字段，仅检查小段文件头。`FormatInspectionMilliseconds` 单独记录此诊断开销，不计入 `SaveMilliseconds`；总处理耗时仍包括它。比较脚本检查格式计数之和等于保存调用数，旧工具缺少计数时汇总标记 `FormatCountsAvailable=false`，不把不可用当作零。
+
+`-RequirePackedCandidate` 要求候选模式为 `chunked`，并要求每一轮候选实际出现至少一次 v2 保存；仅声明增量接口、仅全量回退、只有旧 v1 或缺少计数均不算覆盖。该要求进入输入身份清单，因此不能与旧设置复用同一输出目录。失败不生成成功汇总。长测试每约 10% 视频帧进度写一行 `PROGRESS` 到逐进程日志，百分比不是运行时间或预计剩余时间。
+
+```powershell
+./Tools/ApplicationBenchmark/RunComparison.ps1 `
+  -ReferenceDll .codex-build/recognition-plan/checkpoint/ApplicationBenchmark.dll `
+  -CandidateDll .codex-build/recognition-plan/checkpoint/ApplicationBenchmark.dll `
+  -OutputDirectory .codex-build/recognition-plan/long-default-v2-comparison `
+  -Videos E:/ProjectSekai/test/wl_3rd_group4_05.mp4 `
+  -ReferenceCheckpointMode legacy -CandidateCheckpointMode chunked -RequirePackedCandidate
+```
+
+2026-10-28 工具验证：短素材三轮交替的完整状态及 ASS 一致，两边每轮均四次全量保存，v2 次数为零；文件头检查累计中位数约 1.3–1.4 ms。独立负例夹具复用这些实际报告，只改变覆盖要求，确认脚本拒绝并且没有 `summary.json`，未额外运行视频。报告及负例记录保留在 `.codex-build/recognition-plan/format-coverage-smoke/` 和 `format-coverage-required-negative/`。它们是工具验证，不能作为 v2 性能收益证据。

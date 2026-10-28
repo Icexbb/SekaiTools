@@ -7,9 +7,11 @@ param(
     [int]$Threads = 4,
     [int]$Buffer = 8,
     [ValidateSet('legacy', 'chunked')][string]$ReferenceCheckpointMode = 'legacy',
-    [ValidateSet('legacy', 'chunked')][string]$CandidateCheckpointMode = 'legacy'
+    [ValidateSet('legacy', 'chunked')][string]$CandidateCheckpointMode = 'legacy',
+    [switch]$RequirePackedCandidate
 )
 $ErrorActionPreference = 'Stop'
+if ($RequirePackedCandidate -and $CandidateCheckpointMode -ne 'chunked') { throw 'Packed coverage requires candidate checkpoint mode chunked' }
 if ($env:SEKAI_BENCHMARK_FORCE_PACKS -eq 'true') { throw 'Clear forced pack mode before policy comparison' }
 if ($env:SEKAI_BENCHMARK_CHUNKED -eq 'true') { throw 'Clear ambient chunked mode; select checkpoint modes explicitly with parameters' }
 if (-not [string]::IsNullOrEmpty($env:SEKAI_BENCHMARK_RESUME_STATE)) { throw 'Clear external resume state before continuous comparison' }
@@ -30,6 +32,7 @@ function GetIdentity {
     [ordered]@{
         Rounds = $Rounds; Threads = $Threads; Buffer = $Buffer
         CheckpointModes = $checkpointModes
+        RequirePackedCandidate = $RequirePackedCandidate.IsPresent
         Templates = @(Get-ChildItem -LiteralPath $templateDirectory -Recurse -File | Sort-Object FullName |
             ForEach-Object { [ordered]@{ Path = $_.FullName; Hash = (Get-FileHash -LiteralPath $_.FullName).Hash } })
         Binaries = @($binaries | ForEach-Object {
@@ -83,6 +86,14 @@ foreach ($video in $inputs) {
             }
             $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
             if ($report.ForcedChunkedCheckpoint -eq $true) { throw "Forced pack report cannot enter policy comparison: $reportPath" }
+            if ($report.PSObject.Properties.Name -contains 'FullSaveCount') {
+                if (($report.FullSaveCount + $report.Version1SaveCount + $report.Version2SaveCount) -ne $report.SaveCount) {
+                    throw "Incomplete checkpoint format inspection: $reportPath"
+                }
+            }
+            if ($RequirePackedCandidate -and $index -eq 1 -and [int]$report.Version2SaveCount -le 0) {
+                throw "Candidate did not exercise default v2 storage: $reportPath"
+            }
             if (($report.ChunkedCheckpoint -eq $true) -ne ($checkpointModes[$index] -eq 'chunked') -or
                 $report.Video -cne $video -or $report.Threads -ne $Threads -or $report.Buffer -ne $Buffer -or
                 $report.CancelFraction -ne 0 -or $null -ne $report.ResumeFrame -or $report.ElapsedSeconds -le 0 -or
@@ -104,6 +115,8 @@ foreach ($video in $inputs) {
     $paired = @(for ($i = 0; $i -lt $Rounds; $i++) {
         100 * (1 - $reports.candidate[$i].ElapsedSeconds / $reports.reference[$i].ElapsedSeconds)
     })
+    $allReports = @($reports.reference) + @($reports.candidate)
+    $hasFormats = @($allReports | Where-Object { -not ($_.PSObject.Properties.Name -contains 'FullSaveCount') }).Count -eq 0
     $summary += [ordered]@{ Video = $video; Rounds = $Rounds
         ReferenceCheckpointMode = $ReferenceCheckpointMode
         CandidateCheckpointMode = $CandidateCheckpointMode
@@ -118,6 +131,12 @@ foreach ($video in $inputs) {
         CandidateSaveMilliseconds = Median $reports.candidate.SaveMilliseconds
         ReferenceSaveCount = Median $reports.reference.SaveCount
         CandidateSaveCount = Median $reports.candidate.SaveCount
+        FormatCountsAvailable = $hasFormats
+        ReferenceFullSaveCount = if ($hasFormats) { Median $reports.reference.FullSaveCount } else { $null }
+        CandidateFullSaveCount = if ($hasFormats) { Median $reports.candidate.FullSaveCount } else { $null }
+        CandidateVersion2SaveCount = if ($hasFormats) { Median $reports.candidate.Version2SaveCount } else { $null }
+        ReferenceFormatInspectionMilliseconds = if ($hasFormats) { Median $reports.reference.FormatInspectionMilliseconds } else { $null }
+        CandidateFormatInspectionMilliseconds = if ($hasFormats) { Median $reports.candidate.FormatInspectionMilliseconds } else { $null }
         SameStateAndSubtitle = $true
     }
 }
