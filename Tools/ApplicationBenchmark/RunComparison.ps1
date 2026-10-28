@@ -5,14 +5,17 @@ param(
     [Parameter(Mandatory)][string[]]$Videos,
     [int]$Rounds = 3,
     [int]$Threads = 4,
-    [int]$Buffer = 8
+    [int]$Buffer = 8,
+    [ValidateSet('legacy', 'chunked')][string]$ReferenceCheckpointMode = 'legacy',
+    [ValidateSet('legacy', 'chunked')][string]$CandidateCheckpointMode = 'legacy'
 )
 $ErrorActionPreference = 'Stop'
-if ($env:SEKAI_BENCHMARK_CHUNKED -eq 'true') { throw 'Clear chunked checkpoint mode before legacy continuous comparison' }
+if ($env:SEKAI_BENCHMARK_CHUNKED -eq 'true') { throw 'Clear ambient chunked mode; select checkpoint modes explicitly with parameters' }
 if (-not [string]::IsNullOrEmpty($env:SEKAI_BENCHMARK_RESUME_STATE)) { throw 'Clear external resume state before continuous comparison' }
 if (-not [string]::IsNullOrEmpty($env:SEKAI_BENCHMARK_CANCEL_FRAME)) { throw 'Clear exact cancellation frame before continuous comparison' }
 if ($Rounds -lt 3) { throw 'At least three rounds required' }
 $binaries = @((Resolve-Path -LiteralPath $ReferenceDll).Path, (Resolve-Path -LiteralPath $CandidateDll).Path)
+$checkpointModes = @($ReferenceCheckpointMode, $CandidateCheckpointMode)
 $inputs = @($Videos | ForEach-Object { (Resolve-Path -LiteralPath $_).Path })
 if (@($inputs | Select-Object -Unique).Count -ne $inputs.Count) { throw 'Duplicate videos' }
 if (@($inputs | ForEach-Object { [IO.Path]::GetFileName($_) } | Select-Object -Unique).Count -ne $inputs.Count) {
@@ -20,22 +23,30 @@ if (@($inputs | ForEach-Object { [IO.Path]::GetFileName($_) } | Select-Object -U
 }
 $root = [IO.Path]::GetFullPath($OutputDirectory)
 New-Item -ItemType Directory -Force $root | Out-Null
-$identity = [ordered]@{
-    Rounds = $Rounds; Threads = $Threads; Buffer = $Buffer
-    Binaries = @($binaries | ForEach-Object {
-        $directory = Split-Path $_
-        # Include managed and native dependencies, not just the entry assembly.
-        [ordered]@{ Entry = $_; Files = @(Get-ChildItem $directory -Recurse -File |
-            Where-Object { $_.Extension -in '.dll', '.json' } | Sort-Object FullName |
-            ForEach-Object { [ordered]@{ Path = $_.FullName; Hash = (Get-FileHash -LiteralPath $_.FullName).Hash } }) }
-    })
-    Inputs = @($inputs | ForEach-Object {
-        [ordered]@{ Video = $_; Files = @($_, [IO.Path]::ChangeExtension($_, '.json'),
-            [IO.Path]::ChangeExtension($_, '.txt')) | ForEach-Object {
-                [ordered]@{ Path = $_; Hash = (Get-FileHash -LiteralPath $_).Hash }
-            } }
-    })
-} | ConvertTo-Json -Depth 10
+$templateDirectory = Join-Path ([Environment]::GetFolderPath('UserProfile')) 'SekaiTools/Resource/videoProcess'
+if (-not (Test-Path -LiteralPath $templateDirectory -PathType Container)) { throw 'Recognition templates missing' }
+function GetIdentity {
+    [ordered]@{
+        Rounds = $Rounds; Threads = $Threads; Buffer = $Buffer
+        CheckpointModes = $checkpointModes
+        Templates = @(Get-ChildItem -LiteralPath $templateDirectory -Recurse -File | Sort-Object FullName |
+            ForEach-Object { [ordered]@{ Path = $_.FullName; Hash = (Get-FileHash -LiteralPath $_.FullName).Hash } })
+        Binaries = @($binaries | ForEach-Object {
+            $directory = Split-Path $_
+            # Include managed and native dependencies, not just the entry assembly.
+            [ordered]@{ Entry = $_; Files = @(Get-ChildItem $directory -Recurse -File |
+                Where-Object { $_.Extension -in '.dll', '.json' } | Sort-Object FullName |
+                ForEach-Object { [ordered]@{ Path = $_.FullName; Hash = (Get-FileHash -LiteralPath $_.FullName).Hash } }) }
+        })
+        Inputs = @($inputs | ForEach-Object {
+            [ordered]@{ Video = $_; Files = @($_, [IO.Path]::ChangeExtension($_, '.json'),
+                [IO.Path]::ChangeExtension($_, '.txt')) | ForEach-Object {
+                    [ordered]@{ Path = $_; Hash = (Get-FileHash -LiteralPath $_).Hash }
+                } }
+        })
+    } | ConvertTo-Json -Depth 10
+}
+$identity = GetIdentity
 $manifest = Join-Path $root 'manifest.json'
 if (Test-Path -LiteralPath $manifest) {
     if ((Get-Content -LiteralPath $manifest -Raw).Trim() -cne $identity.Trim()) {
@@ -62,11 +73,16 @@ foreach ($video in $inputs) {
             New-Item -ItemType Directory -Force $out | Out-Null
             if (-not (Test-Path -LiteralPath $reportPath)) {
                 Write-Output "START $name round=$round $label"
-                & dotnet $binaries[$index] $out $Threads $Buffer 0 $video *> (Join-Path $out 'process.log')
+                $priorChunked = $env:SEKAI_BENCHMARK_CHUNKED
+                try {
+                    $env:SEKAI_BENCHMARK_CHUNKED = if ($checkpointModes[$index] -eq 'chunked') { 'true' } else { $null }
+                    & dotnet $binaries[$index] $out $Threads $Buffer 0 $video *> (Join-Path $out 'process.log')
+                } finally { $env:SEKAI_BENCHMARK_CHUNKED = $priorChunked }
                 if ($LASTEXITCODE) { throw "Failed: $out/process.log" }
             }
             $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
-            if ($report.Video -cne $video -or $report.Threads -ne $Threads -or $report.Buffer -ne $Buffer -or
+            if (($report.ChunkedCheckpoint -eq $true) -ne ($checkpointModes[$index] -eq 'chunked') -or
+                $report.Video -cne $video -or $report.Threads -ne $Threads -or $report.Buffer -ne $Buffer -or
                 $report.CancelFraction -ne 0 -or $null -ne $report.ResumeFrame -or $report.ElapsedSeconds -le 0 -or
                 $report.PreviewCount -le 0 -or $report.SaveCount -le 0 -or
                 $report.StopReason -notin 'Completed', 'EndOfStream') { throw "Invalid report: $reportPath" }
@@ -87,6 +103,8 @@ foreach ($video in $inputs) {
         100 * (1 - $reports.candidate[$i].ElapsedSeconds / $reports.reference[$i].ElapsedSeconds)
     })
     $summary += [ordered]@{ Video = $video; Rounds = $Rounds
+        ReferenceCheckpointMode = $ReferenceCheckpointMode
+        CandidateCheckpointMode = $CandidateCheckpointMode
         ReferenceSeconds = Median $reports.reference.ElapsedSeconds
         CandidateSeconds = Median $reports.candidate.ElapsedSeconds
         PairedReductionPercent = Median $paired
@@ -94,7 +112,12 @@ foreach ($video in $inputs) {
         CandidatePreviewMilliseconds = Median $reports.candidate.PreviewMilliseconds
         ReferencePreviews = Median $reports.reference.PreviewCount
         CandidatePreviews = Median $reports.candidate.PreviewCount
+        ReferenceSaveMilliseconds = Median $reports.reference.SaveMilliseconds
+        CandidateSaveMilliseconds = Median $reports.candidate.SaveMilliseconds
+        ReferenceSaveCount = Median $reports.reference.SaveCount
+        CandidateSaveCount = Median $reports.candidate.SaveCount
         SameStateAndSubtitle = $true
     }
-    $summary | ConvertTo-Json -Depth 8 | Set-Content (Join-Path $root 'summary.json') -Encoding utf8
 }
+if ((GetIdentity).Trim() -cne $identity.Trim()) { throw 'Inputs, templates, binaries or settings changed during comparison' }
+$summary | ConvertTo-Json -Depth 8 | Set-Content (Join-Path $root 'summary.json') -Encoding utf8

@@ -27,7 +27,7 @@ dotnet .codex-build/application/tool/ApplicationBenchmark.dll .codex-build/appli
 
 默认三轮，4 线程、8 帧预读。结果包含各版本耗时中位数、每轮配对降幅的中位数，以及预览次数与累计转换渲染耗时。配对降幅与两个耗时中位数之比不是同一统计量。
 
-脚本校验所有轮次的完整状态与 ASS 一致，并对实际文件重新计算哈希；报告存在时可继续验证，输入、DLL、运行配置与轮次数变化会拒绝复用。模板资源需保持不变；它们不在本脚本的输入指纹中，变更资源必须使用新输出目录。不同目录的同名视频不能混入同一次比较，避免输出覆盖。独立进程没有额外预热，测量包括初始化；测试期间应避免其他构建或性能测试负载。全部比较仍为离屏应用链，不能替代完整窗口测量。
+脚本校验所有轮次的完整状态与 ASS 一致，并对实际文件重新计算哈希；报告存在时可继续验证，输入、DLL、运行配置与轮次数变化会拒绝复用。模板资源纳入输入指纹并在结束时复核；变更资源必须使用新输出目录。不同目录的同名视频不能混入同一次比较，避免输出覆盖。独立进程没有额外预热，测量包括初始化；测试期间应避免其他构建或性能测试负载。全部比较仍为离屏应用链，不能替代完整窗口测量。
 
 为隔离恢复边界与原生后端，工具可读取 SEKAI_BENCHMARK_RESUME_STATE 指定的 JSON 检查点。将 cancelFraction 设为 0；该路径只能用于研究工具，运行后恢复环境变量。检查点会通过现有 ApplyState 验证视频、剧本、翻译及配置，不跳过兼容性检查。报告 ResumeFrame 记录实际重放起点，仍保存最终状态和 ASS；与连续处理完整结果比较，不能只看字幕。
 
@@ -68,7 +68,7 @@ try {
 } finally { $env:SEKAI_BENCHMARK_CHUNKED = $previousChunked }
 ```
 
-现有 `RunComparison.ps1` 拒绝分块模式，防止复用未记录该模式的旧报告。分块恢复验证需单独运行并比较实际输出文件。
+`RunComparison.ps1` 拒绝环境变量隐式启用分块模式；比较时通过 `-ReferenceCheckpointMode legacy|chunked` 和 `-CandidateCheckpointMode legacy|chunked` 显式选择，默认两边均为 legacy。模式、模板摘要和输入及二进制摘要进入身份清单，运行结束再次核对身份。模式变化必须使用新输出目录；分块模式要求报告确实声明该能力，旧工具不能冒充支持分块。取消恢复仍通过单独入口验证。
 
 `VerifyChunkedResume.ps1` 将新连续运行与多个精确取消边界顺序对照，默认使用 4095、4096、4097 帧。它要求新的输出目录，记录输入三件套和工具目录内 DLL/JSON 的 SHA256，运行结束再次核对身份；每次运行必须声明分块模式，实际取消和恢复帧必须等于请求值，最终状态和 ASS 文件长度及摘要均必须一致。只有全部通过才生成 `verification.json`。运行时临时设置环境变量，结束或失败均恢复原值。
 
@@ -80,3 +80,18 @@ try {
 ```
 
 自定义边界使用 `-CancelFrames 1029,8192`；边界超出实际识别范围会失败。脚本固定同一构建、配置和素材，仅用于恢复正确性，不进行版本性能比较，也不能据此声称所有视频或取消时刻均等价。运行期间不要构建或更改模板资源。
+
+## 同构建检查点模式比较
+
+参考和候选可以指向同一个固定构建，将全量和分块保存作为唯一变量。三轮、独立进程、交替先后顺序，并启用真实 WPF 离屏预览；每轮核对完整状态与 ASS 的实际文件摘要。除总处理时间外，汇总保存调用累计耗时与保存次数中位数。保存耗时只统计持久化接口内的序列化和写盘，不包含处理线程上的快照构造。保存是后台异步的，保存耗时不能直接从总耗时扣除；合并待写快照会影响调用次数，两者应结合报告判断。
+
+```powershell
+./Tools/ApplicationBenchmark/RunComparison.ps1 `
+  -ReferenceDll .codex-build/recognition-plan/checkpoint/ApplicationBenchmark.dll `
+  -CandidateDll .codex-build/recognition-plan/checkpoint/ApplicationBenchmark.dll `
+  -OutputDirectory .codex-build/recognition-plan/checkpoint-modes-comparison `
+  -Videos E:/ProjectSekai/test/1963_areatalk_ev_street_16_003.mp4,E:/ProjectSekai/test/event200_tsukasa_01.mp4 `
+  -ReferenceCheckpointMode legacy -CandidateCheckpointMode chunked
+```
+
+只有整组运行及结束身份核对通过后才生成 `summary.json`，中断时保留逐轮报告用于身份一致的续跑。模板资源也纳入身份核对；这些保证不能替代控制外部系统负载和温度。该比较仅隔离检查点模式，不代表全部识别算法改进的累计收益。
