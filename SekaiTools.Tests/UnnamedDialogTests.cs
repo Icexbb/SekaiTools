@@ -193,9 +193,10 @@ public class UnnamedDialogTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void NamedTrackingRecoversShortLossAndRestoresPendingCheckpoint(bool shake)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void NamedTrackingRecoversShortLossAndRestoresPendingCheckpoint(bool shake, bool missingName)
     {
         using var fixture = new Fixture();
         var script = new SekaiToolsBase.GameScript.GameScript
@@ -208,7 +209,9 @@ public class UnnamedDialogTests
         var cache = new TemplateMatchCachePool();
         using var matcher = new DialogTemplateMatcher(fixture.Info, story, manager, cache, fixture.Config);
         using var full = fixture.NamedFrame(manager, "WXY", 0);
-        using var partial = fixture.NamedFrame(manager, "WX", 2);
+        using var partial = missingName
+            ? fixture.Frame(manager, "WXY", new Point(160, 555))
+            : fixture.NamedFrame(manager, "WX", 2);
         using var context = new FrameMatchContext();
         context.Update(full);
         for (var frame = 1; frame <= 4; frame++)
@@ -233,7 +236,7 @@ public class UnnamedDialogTests
         matcher.Process(context, 6);
         resumed.Process(context, 6);
         Assert.Equal(3, matcher.SaveState().Status);
-        Assert.Equal(count + 2, matcher.Set[0].Frames.Count);
+        Assert.Equal(count + (missingName ? 1 : 2), matcher.Set[0].Frames.Count);
         Assert.Equal(matcher.Set[0].Frames.Select(f => (f.Index, f.Point)), resumed.Set[0].Frames.Select(f => (f.Index, f.Point)));
         using var blank = new Mat(720, 1280, DepthType.Cv8U, 3);
         blank.SetTo(new MCvScalar(0));
@@ -244,6 +247,12 @@ public class UnnamedDialogTests
         context.Update(blank);
         cache.SetFrameIndex(8);
         matcher.Process(context, 8);
+        if (shake)
+        {
+            Assert.False(matcher.Finished);
+            cache.SetFrameIndex(9);
+            matcher.Process(context, 9);
+        }
         Assert.True(matcher.Finished);
         Assert.Empty(matcher.SaveState().PendingTrackingFrames);
         Assert.Equal(lastReliable, matcher.Set[0].End().Index);

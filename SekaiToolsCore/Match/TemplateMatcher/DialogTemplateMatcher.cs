@@ -457,7 +457,8 @@ public class DialogTemplateMatcher(
             }
 
             if (matchResult.Status == MatchStatus.DialogPending &&
-                !_trackingGrace.Hold(frameIndex, matchResult.Point))
+                !(matchResult.Point.IsEmpty ? _trackingGrace.HoldUnlocated(frameIndex)
+                    : _trackingGrace.Hold(frameIndex, matchResult.Point)))
                 matchResult = new MatchResult(matchResult.Point, MatchStatus.DialogDropped);
 
             _status = matchResult.Status;
@@ -518,9 +519,16 @@ public class DialogTemplateMatcher(
             point = dialogBase.Start().Point;
 
         if (point.IsEmpty)
+        {
+            // Losing the name anchor is uncertain disappearance, not a confirmed
+            // end. Keep no estimated coordinates for these frames.
+            if (!string.IsNullOrWhiteSpace(dialogBase.Data.CharacterOriginal) &&
+                lastStatus is MatchStatus.DialogMatched3 or MatchStatus.DialogPending)
+                return new MatchResult(Point.Empty, MatchStatus.DialogPending);
             return new MatchResult(Point.Empty, IsStatusMatched(lastStatus)
                 ? MatchStatus.DialogDropped
                 : MatchStatus.NameTagNotMatched);
+        }
 
         return new MatchResult(point, DialogMatchContent(frame, dialogBase, point, lastStatus, frameIndex));
     }
