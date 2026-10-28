@@ -286,7 +286,7 @@ public class VideoProcessor : IDisposable
             TranslateFilePath = _translatePath,
             Timecodes = blockedTimecodes ? [] : Creator?.FrameRate.ExportTimecodes().ToList() ?? [],
             Dialog = DialogMatcher?.SaveState(checkpoint),
-            Banner = BannerMatcher?.SaveState(),
+            Banner = BannerMatcher?.SaveState(checkpoint),
             Marker = MarkerMatcher?.SaveState(checkpoint),
             TemplateScales = Creator?.CachePool.CaptureScaleState()
         };

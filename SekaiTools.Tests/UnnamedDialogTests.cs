@@ -443,6 +443,37 @@ public class UnnamedDialogTests
     }
 
     [Fact]
+    public void BannerCheckpointReusesOnlyCompletedSnapshotsAndInvalidatesOnPublicCaptureAndRestore()
+    {
+        using var fixture = new Fixture();
+        var story = new Story(new SekaiToolsBase.GameScript.GameScript(), new TranslationData(null));
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        using var banner = new BannerTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
+        banner.Set.Add(new(new("Title", 0), fixture.Info.Fps));
+        banner.Set.Add(new(new("Active", 1), fixture.Info.Fps));
+        banner.RestoreState(new() { FrameSets = [new() { Finished = true, Start = 1, End = 4 }, new() { Start = 8, End = 9 }] });
+        var first = banner.SaveState(true);
+        banner.Set[1].SetFrameRange(8, 10);
+        var next = banner.SaveState(true);
+        Assert.Same(first.FrameSets[0], next.FrameSets[0]);
+        Assert.NotSame(first.FrameSets[1], next.FrameSets[1]);
+        Assert.Equal(9, first.FrameSets[1].End);
+        Assert.Equal(10, next.FrameSets[1].End);
+        banner.Set[0].SetFrameRange(2, 5);
+        var full = banner.SaveState();
+        Assert.NotSame(first.FrameSets[0], full.FrameSets[0]);
+        Assert.Equal(5, full.FrameSets[0].End);
+        var refreshed = banner.SaveState(true);
+        Assert.NotSame(first.FrameSets[0], refreshed.FrameSets[0]);
+        Assert.Equal(5, refreshed.FrameSets[0].End);
+        banner.RestoreState(first);
+        var restored = banner.SaveState(true);
+        Assert.NotSame(refreshed.FrameSets[0], restored.FrameSets[0]);
+        Assert.Equal(4, restored.FrameSets[0].End);
+        Assert.Equal(4, first.FrameSets[0].End);
+    }
+
+    [Fact]
     public void BannerAndMarkerConfirmDisappearanceWithoutExtendingLastReliableFrame()
     {
         using var fixture = new Fixture();

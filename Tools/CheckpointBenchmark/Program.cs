@@ -4,9 +4,11 @@ using System.Text.Json;
 using SekaiToolsCore.Process;
 using SekaiToolsInfrastructure.Persistence;
 
-if (args.Length != 2) throw new ArgumentException("CheckpointBenchmark <new-output-directory> <round=1..4>");
+if (args.Length is < 2 or > 3) throw new ArgumentException("CheckpointBenchmark <new-output-directory> <round=1..4> [banners=none|fresh|reused]");
 var output = Path.GetFullPath(args[0]);
 var round = int.Parse(args[1]);
+var bannerMode = args.Length > 2 ? args[2] : "none";
+if (bannerMode is not ("none" or "fresh" or "reused")) throw new ArgumentException("Unknown banner snapshot mode");
 if (round is < 1 or > 4 || Directory.Exists(output)) throw new ArgumentException("Use a new output directory and round 1..4");
 Directory.CreateDirectory(output);
 var store = typeof(SubtitleQueueProgressStore).Assembly.GetType("SekaiToolsInfrastructure.Persistence.IncrementalProgressStore", true)!;
@@ -35,6 +37,7 @@ foreach (var eventCount in new[] { 4, 64 })
         var times = Enumerable.Range(0, eventCount == 4 ? 20000 : 300000).Select(i => i * 17 + i / 3).ToList();
         var initialTimeCount = times.Count;
         var frozenPrefix = times.Take(times.Count / 4096 * 4096).Chunk(4096).ToArray();
+        var banners = Enumerable.Range(0, 4).Select(i => new BannerFrameSetDto { Finished = true, Start = i * 100, End = i * 100 + 60 }).ToList();
         var saves = new List<double>();
         var sizes = new List<long>();
         var chunkFiles = new List<int>();
@@ -47,11 +50,17 @@ foreach (var eventCount in new[] { 4, 64 })
                 FrameSets = [.. completed, new DialogFrameSetDto
                 { Frames = Enumerable.Range(initialTimeCount, 64 * (step + 1)).Select(i => new FrameResultDto(i, 1234, 2345)).ToList() }]
             };
-            var expected = new ProcessingState { FrameIndex = times.Count - 1, Timecodes = times, Dialog = dialog };
+            var banner = bannerMode == "none" ? null : new BannerMatcherStateDto
+            {
+                FrameSets = bannerMode == "fresh"
+                ? banners.Select(b => new BannerFrameSetDto { Finished = b.Finished, Start = b.Start, End = b.End }).ToList() : banners
+            };
+            var expected = new ProcessingState { FrameIndex = times.Count - 1, Timecodes = times, Dialog = dialog, Banner = banner };
             var state = mode.Name is "legacy" or "compact" ? expected : new ProcessingState
             {
                 FrameIndex = expected.FrameIndex,
                 Dialog = dialog,
+                Banner = banner,
                 ReusesCompletedFrames = true,
                 CheckpointTimecodeBlocks = blocks
             };
@@ -70,6 +79,7 @@ foreach (var eventCount in new[] { 4, 64 })
             Round = round,
             Events = eventCount,
             Mode = mode.Name,
+            BannerSnapshotMode = bannerMode,
             SaveMilliseconds = saves,
             TotalMilliseconds = saves.Sum(),
             BytesOnDisk = sizes,

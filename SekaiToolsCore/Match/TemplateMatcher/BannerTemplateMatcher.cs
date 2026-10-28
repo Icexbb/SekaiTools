@@ -26,12 +26,14 @@ public class BannerTemplateMatcher(
     private readonly FiniteLookaheadTracker _lookaheadTracker = new();
     private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
     private readonly AdaptiveSearchScheduler _searchScheduler = new();
+    private readonly CompletedFrameSnapshotCache<BannerBaseFrameSet, BannerFrameSetDto> _checkpointFrames = new();
     private MatchStatus _status;
     private readonly TrackingLossWindow _trackingLoss = new(videoInfo.Fps.Fps());
     internal bool IsTracking => _status == MatchStatus.Matched;
 
     public void Dispose()
     {
+        _checkpointFrames.Clear();
         _searchScheduler.Dispose();
     }
 
@@ -226,8 +228,11 @@ public class BannerTemplateMatcher(
         }
     }
 
-    public BannerMatcherStateDto SaveState()
+    public BannerMatcherStateDto SaveState() => SaveState(false);
+
+    internal BannerMatcherStateDto SaveState(bool checkpoint)
     {
+        if (!checkpoint) _checkpointFrames.Clear();
         var (cf, lfi, uft) = SaveFallbackState();
         return new BannerMatcherStateDto
         {
@@ -240,17 +245,18 @@ public class BannerTemplateMatcher(
             LastFailedIndex = lfi,
             UseFallbackThreshold = uft,
             Diagnostics = SaveDiagnostics(),
-            FrameSets = Set.Select(b => new BannerFrameSetDto
+            FrameSets = Set.Select(b => _checkpointFrames.Capture(b, b.Finished, checkpoint, b => new BannerFrameSetDto
             {
                 Finished = b.Finished,
                 Start = b.IsEmpty() ? -1 : b.StartIndex(),
                 End = b.IsEmpty() ? -1 : b.EndIndex()
-            }).ToList()
+            })).ToList()
         };
     }
 
     public void RestoreState(BannerMatcherStateDto state)
     {
+        _checkpointFrames.Clear();
         _searchScheduler.RestoreState(state.SearchState);
         _lookaheadTracker.RestoreState(state.LookaheadState);
         _status = (MatchStatus)state.Status;
