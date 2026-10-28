@@ -27,6 +27,7 @@ public class BannerTemplateMatcher(
     private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
     private readonly AdaptiveSearchScheduler _searchScheduler = new();
     private MatchStatus _status;
+    private readonly TrackingLossWindow _trackingLoss = new(videoInfo.Fps.Fps());
     internal bool IsTracking => _status == MatchStatus.Matched;
 
     public void Dispose()
@@ -186,6 +187,11 @@ public class BannerTemplateMatcher(
                 }
             }
 
+            if (matchResult == MatchStatus.Dropped && _trackingLoss.ShouldWait(frameIndex))
+                return;
+            if (matchResult is MatchStatus.Matched or MatchStatus.Dropped)
+                _trackingLoss.Clear();
+
             _status = matchResult;
             switch (matchResult)
             {
@@ -215,6 +221,7 @@ public class BannerTemplateMatcher(
             SearchState = _searchScheduler.CaptureState(),
             LookaheadState = _lookaheadTracker.CaptureState(),
             Status = (int)_status,
+            PendingLossFrame = _trackingLoss.FirstMissingFrame,
             ConsecutiveFailures = cf,
             LastFailureFrame = LastFailureFrame,
             LastFailedIndex = lfi,
@@ -234,6 +241,7 @@ public class BannerTemplateMatcher(
         _searchScheduler.RestoreState(state.SearchState);
         _lookaheadTracker.RestoreState(state.LookaheadState);
         _status = (MatchStatus)state.Status;
+        _trackingLoss.Restore(state.PendingLossFrame);
         RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold, state.LastFailureFrame);
         RestoreDiagnostics(state.Diagnostics);
 

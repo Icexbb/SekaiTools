@@ -29,6 +29,7 @@ public class MarkerTemplateMatcher(
     private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
     private readonly AdaptiveSearchScheduler _searchScheduler = new();
     private MatchStatus _status;
+    private readonly TrackingLossWindow _trackingLoss = new(videoInfo.Fps.Fps());
 
     public void Dispose()
     {
@@ -192,6 +193,11 @@ public class MarkerTemplateMatcher(
                 }
             }
 
+            if (matchResult.Status == MatchStatus.Dropped && _trackingLoss.ShouldWait(frameIndex))
+                return;
+            if (matchResult.Status is MatchStatus.Matched or MatchStatus.Dropped)
+                _trackingLoss.Clear();
+
             _status = matchResult.Status;
 
             switch (matchResult.Status)
@@ -223,6 +229,7 @@ public class MarkerTemplateMatcher(
             SearchState = _searchScheduler.CaptureState(),
             LookaheadState = _lookaheadTracker.CaptureState(),
             Status = (int)_status,
+            PendingLossFrame = _trackingLoss.FirstMissingFrame,
             ConsecutiveFailures = cf,
             LastFailureFrame = LastFailureFrame,
             LastFailedIndex = lfi,
@@ -241,6 +248,7 @@ public class MarkerTemplateMatcher(
         _searchScheduler.RestoreState(state.SearchState);
         _lookaheadTracker.RestoreState(state.LookaheadState);
         _status = (MatchStatus)state.Status;
+        _trackingLoss.Restore(state.PendingLossFrame);
         RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold, state.LastFailureFrame);
         RestoreDiagnostics(state.Diagnostics);
 

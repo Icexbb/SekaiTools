@@ -55,6 +55,7 @@ public class DialogMatcherStateDto
 
 public class BannerMatcherStateDto
 {
+    public int? PendingLossFrame { get; init; }
     public AdaptiveSearchStateDto? SearchState { get; init; }
     public LookaheadStateDto? LookaheadState { get; init; }
     public int Status { get; init; }
@@ -68,6 +69,7 @@ public class BannerMatcherStateDto
 
 public class MarkerMatcherStateDto
 {
+    public int? PendingLossFrame { get; init; }
     public AdaptiveSearchStateDto? SearchState { get; init; }
     public LookaheadStateDto? LookaheadState { get; init; }
     public int Status { get; init; }

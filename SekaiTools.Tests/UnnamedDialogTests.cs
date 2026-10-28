@@ -377,6 +377,40 @@ public class UnnamedDialogTests
         Assert.Equal(end, matcher.Set[0].End().Index);
     }
 
+    [Fact]
+    public void BannerAndMarkerConfirmDisappearanceWithoutExtendingLastReliableFrame()
+    {
+        using var fixture = new Fixture();
+        var story = new Story(new SekaiToolsBase.GameScript.GameScript(), new TranslationData(null));
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        using var banner = new BannerTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
+        using var marker = new MarkerTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
+        banner.Set.Add(new(new("Title", 0), fixture.Info.Fps));
+        marker.Set.Add(new(new("Place", 0), fixture.Info.Fps));
+        banner.RestoreState(new() { Status = 1, FrameSets = [new() { Start = 1, End = 4 }] });
+        marker.RestoreState(new() { Status = 2, FrameSets = [new() { Frames = [new(4, 10, 20)] }] });
+        using var blank = new Mat(720, 1280, DepthType.Cv8U, 3);
+        blank.SetTo(new MCvScalar(0));
+        using var context = new FrameMatchContext();
+        context.Update(blank);
+        banner.Process(context, 5);
+        marker.Process(context, 5);
+        Assert.False(banner.Finished);
+        Assert.False(marker.Finished);
+        Assert.Equal(5, banner.SaveState().PendingLossFrame);
+        Assert.Equal(5, marker.SaveState().PendingLossFrame);
+        banner.RestoreState(System.Text.Json.JsonSerializer.Deserialize<SekaiToolsCore.Process.BannerMatcherStateDto>(
+            System.Text.Json.JsonSerializer.Serialize(banner.SaveState()))!);
+        marker.RestoreState(System.Text.Json.JsonSerializer.Deserialize<SekaiToolsCore.Process.MarkerMatcherStateDto>(
+            System.Text.Json.JsonSerializer.Serialize(marker.SaveState()))!);
+        banner.Process(context, 7);
+        marker.Process(context, 7);
+        Assert.True(banner.Finished);
+        Assert.True(marker.Finished);
+        Assert.Equal(4, banner.Set[0].End().Index);
+        Assert.Equal(4, marker.Set[0].End().Index);
+    }
+
     private sealed class Fixture : ITemplateResourceProvider, IDisposable
     {
         private readonly string _video = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".avi");
