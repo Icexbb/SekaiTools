@@ -412,7 +412,10 @@ public class DialogTemplateMatcher(
             var matchResult = MatchForDialog(frame, dialogRefers, frameIndex);
             if (_status == MatchStatus.DialogMatched3 && matchResult.Status == MatchStatus.DialogMatched3 &&
                 ConfirmsSharedPrefixTransition(frame, dIndex, matchResult.Point, frameIndex))
+            {
+                Logger.Log($"共享前缀区分文本确认相邻对话切换: {dIndex} -> {dIndex + 1}, 帧={frameIndex}", ExtLogLevel.Information);
                 matchResult = new MatchResult(matchResult.Point, MatchStatus.DialogDropped);
+            }
             var currentMatchPoint = matchResult.Point;
             var matchedFrameIndex = frameIndex;
             FrameMatchContext? backcheckFrame = null;
