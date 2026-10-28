@@ -522,8 +522,7 @@ public class DialogTemplateMatcher(
         {
             // Losing the name anchor is uncertain disappearance, not a confirmed
             // end. Keep no estimated coordinates for these frames.
-            if (!string.IsNullOrWhiteSpace(dialogBase.Data.CharacterOriginal) &&
-                lastStatus is MatchStatus.DialogMatched3 or MatchStatus.DialogPending)
+            if (lastStatus is MatchStatus.DialogMatched3 or MatchStatus.DialogPending)
                 return new MatchResult(Point.Empty, MatchStatus.DialogPending);
             return new MatchResult(Point.Empty, IsStatusMatched(lastStatus)
                 ? MatchStatus.DialogDropped

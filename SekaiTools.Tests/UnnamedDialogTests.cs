@@ -334,6 +334,49 @@ public class UnnamedDialogTests
         Assert.Equal(1, matcher.Diagnostics[0].TargetIndex);
     }
 
+    [Fact]
+    public void StableUnnamedDialogueRecoversMissingAnchorWithoutInventingFrames()
+    {
+        using var fixture = new Fixture();
+        var story = new Story(new SekaiToolsBase.GameScript.GameScript
+        {
+            TalkData = [new Talk("", "Hello", 0)],
+            Snippets = [new Snippet { Action = 1 }]
+        }, new TranslationData(null));
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        var cache = new TemplateMatchCachePool();
+        using var matcher = new DialogTemplateMatcher(fixture.Info, story, manager, cache, fixture.Config);
+        using var visible = fixture.Frame(manager, "Hel", new Point(160, 580));
+        using var blank = new Mat(720, 1280, DepthType.Cv8U, 3);
+        blank.SetTo(new MCvScalar(0));
+        using var context = new FrameMatchContext();
+        void Process(Mat frame, int index)
+        {
+            context.Update(frame);
+            cache.SetFrameIndex(index);
+            matcher.Process(context, index);
+        }
+        for (var index = 1; index <= 4; index++) Process(visible, index);
+        Assert.Equal(3, matcher.SaveState().Status);
+        var count = matcher.Set[0].Frames.Count;
+        Process(blank, 5);
+        Assert.Equal(4, matcher.SaveState().Status);
+        var checkpoint = System.Text.Json.JsonSerializer.Deserialize<SekaiToolsCore.Process.DialogMatcherStateDto>(
+            System.Text.Json.JsonSerializer.Serialize(matcher.SaveState()))!;
+        using var restored = new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
+        restored.RestoreState(checkpoint);
+        Process(visible, 6);
+        restored.Process(context, 6);
+        Assert.Equal(count + 1, matcher.Set[0].Frames.Count);
+        Assert.Equal(matcher.Set[0].Frames.Select(f => (f.Index, f.Point)), restored.Set[0].Frames.Select(f => (f.Index, f.Point)));
+        var end = matcher.Set[0].End().Index;
+        Process(blank, 7);
+        Process(blank, 8);
+        Process(blank, 9);
+        Assert.True(matcher.Finished);
+        Assert.Equal(end, matcher.Set[0].End().Index);
+    }
+
     private sealed class Fixture : ITemplateResourceProvider, IDisposable
     {
         private readonly string _video = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".avi");
