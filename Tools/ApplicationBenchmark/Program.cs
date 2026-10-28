@@ -143,6 +143,7 @@ internal static class Program
                     throw new InvalidOperationException("Cancellation was not exercised");
                 if (cancelFrame != null && state.FrameIndex != cancelFrame.Value)
                     throw new InvalidOperationException($"Expected exact cancellation at {cancelFrame}, got {state.FrameIndex}");
+                persistence.CopyCheckpointManifest(Path.Combine(directory, "canceled-manifest.json"));
                 var saved = persistence.LoadCheckpoint();
                 if (JsonSerializer.Serialize(saved) != JsonSerializer.Serialize(state))
                     throw new InvalidOperationException("Final disk checkpoint differs from captured state");
@@ -251,6 +252,8 @@ internal class ScopedPersistence(string directory) : IProcessingStatePersistence
         if (File.Exists(path)) File.Delete(path);
     }
     public void AddHistory(ProcessingState state) => Save(Path.Combine(DirectoryPath, "history-state.json"), state);
+    public void CopyCheckpointManifest(string destination) => File.Copy(
+        Checkpoint ?? throw new InvalidOperationException("No checkpoint"), destination, overwrite: false);
     public virtual ProcessingState LoadCheckpoint() => JsonSerializer.Deserialize<ProcessingState>(File.ReadAllText(
         Checkpoint ?? throw new InvalidOperationException("No checkpoint"))) ?? throw new InvalidDataException("Invalid checkpoint");
 }

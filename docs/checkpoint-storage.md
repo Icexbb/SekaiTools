@@ -51,3 +51,19 @@ Windows 字幕队列通过 `IncrementalProgressStore` 保存进度；模型与�
 ## v2 包协议额外验证
 
 新增回归覆盖 v1 读取与不重写复用、多个事件和时间码共包、包缺失后的重建、外层摘要正确但内层载荷被改动、成员缺失、路径与版本拒绝，以及冷/热缓存下错误旧包绑定不得污染新保存。还覆盖包发布失败、主文件替换失败和流式写入中途异常：旧主文件保持不变，临时文件清理，孤立包不影响旧一代恢复。大活动轨迹保持内联，并验证超过 1 MiB 的主文件仍完整往返；超大完成事件以未包装内容文件保存，避免大对象再次套包。
+
+
+### 默认策略取消点格式校验入口
+
+`VerifyChunkedResume.ps1 -RequirePackedCancellation` 要求每个取消点留存的 `canceled-manifest.json` 使用 `CheckpointStorage: 2` 和 `chunks2:` 版本前缀。该参数仅检查默认策略的实际选择，不强制切换格式；需要强制模式时另传 `-ForcePacks`。工具先从原检查点加载并比较取消时完整状态，再交给新处理器恢复，最终与同轮新生成的连续识别状态及 ASS 比较。原始清单副本用于格式证据，恢复读取的仍是原路径和原分块目录。运行前后还比较输入、模板及工具目录 DLL/JSON 的 SHA256。
+
+
+## 默认 v2 长素材恢复（2026-10-28）
+
+横幅完成快照复用修正后，以 `wl_3rd_group4_05.mp4` 三件套（3008×1880、60 fps、声明 81072 帧）运行全新连续识别及第 60000 帧精确取消恢复，固定 4 匹配线程、8 帧预读、WPF 离屏预览；未启用 `ForcePacks`，启用 `RequirePackedCancellation`。取消点留存清单为 `CheckpointStorage: 2`、`Version: chunks2:2.0`，展开状态 2176483 字节。磁盘恢复状态与取消时公开完整快照序列化一致，新处理器从 60000 帧恢复，两次均以 Completed 结束，共识别 196 个对话、4 个横幅。
+
+最终完整状态 2913291 字节，SHA256 `954DBB584C53BFAB13AE2C8C0739A3CBBB933176999A1F65B2AB8FA597D8CF64`；ASS 217531 字节，SHA256 `DD2E85662C016C535DF5AE4EAC506E6F41EB0483631675E2629A9F68E9296FB8`。脚本长度与摘要检查以及额外逐字节对照均一致，运行前后输入、模板和工具 DLL/JSON 身份一致。证据保留于 `.codex-build/recognition-plan/long-default-v2-resume/` 的 `verification.json`、`byte-verification.json`、`identity.json` 和取消点原始清单。
+
+连续运行 437.30 秒，取消并恢复总计 430.83 秒；两种生命周期不同且各仅一次，这些数据只记录验证成本，不支持提速结论。本组补足默认策略实际 v2 的长素材恢复证据，尚不覆盖全部取消边界、真实窗口交互或真实瞬时同前缀切换正例。
+
+反例验证使用小素材 `1963_areatalk_ev_street_16_003` 在第 1029 帧取消：实际为全量清单，开启 `RequirePackedCancellation` 后脚本按预期报错且未生成成功验证报告，避免把增量接口启用误当作实际 v2 覆盖。证据位于 `.codex-build/recognition-plan/require-packed-cancel-negative/`。

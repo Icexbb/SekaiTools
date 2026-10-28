@@ -5,6 +5,7 @@ param(
     [int[]]$CancelFrames = @(4095, 4096, 4097),
     [int]$Threads = 4,
     [int]$Buffer = 8,
+    [switch]$RequirePackedCancellation,
     [switch]$ForcePacks
 )
 $ErrorActionPreference = 'Stop'
@@ -15,7 +16,9 @@ $inputVideo = (Resolve-Path -LiteralPath $Video).Path
 $root = [IO.Path]::GetFullPath($OutputDirectory)
 if (Test-Path -LiteralPath $root) { throw 'Use a new output directory; previous reports are never reused' }
 $inputs = @($inputVideo, [IO.Path]::ChangeExtension($inputVideo, '.json'), [IO.Path]::ChangeExtension($inputVideo, '.txt'))
-$identityFiles = @($inputs) + @(Get-ChildItem -LiteralPath (Split-Path $dll) -File -Recurse |
+$templateDirectory = Join-Path ([Environment]::GetFolderPath('UserProfile')) 'SekaiTools/Resource/videoProcess'
+if (-not (Test-Path -LiteralPath $templateDirectory -PathType Container)) { throw 'Recognition templates missing' }
+$identityFiles = @(Get-ChildItem -LiteralPath $templateDirectory -Recurse -File | Select-Object -ExpandProperty FullName) + @($inputs) + @(Get-ChildItem -LiteralPath (Split-Path $dll) -File -Recurse |
     Where-Object { $_.Extension -in '.dll', '.json' } | Select-Object -ExpandProperty FullName)
 function Fingerprint {
     @($identityFiles | Sort-Object | ForEach-Object { [ordered]@{ Path = $_; Hash = (Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash } }) | ConvertTo-Json -Depth 4
@@ -45,6 +48,10 @@ try {
         if (($report.ForcedChunkedCheckpoint -eq $true) -ne $ForcePacks.IsPresent) { throw 'Forced pack mode differs from request' }
         if ($report.ChunkedCheckpoint -ne $true) { throw 'Chunked checkpoint mode was not exercised' }
         if ($null -ne $frame -and ($report.CancelFrame -ne $frame -or $report.ResumeFrame -ne $frame)) { throw 'Exact cancellation/resume frame differs' }
+        if ($null -ne $frame -and $RequirePackedCancellation) {
+            $manifest = Get-Content -LiteralPath (Join-Path $resultDirectory 'canceled-manifest.json') -Raw | ConvertFrom-Json
+            if ($manifest.CheckpointStorage -ne 2 -or $manifest.Version -notlike 'chunks2:*') { throw 'Cancellation checkpoint did not use v2 storage' }
+        }
         $files = @('state.json', 'subtitle.ass' | ForEach-Object {
             $path = Join-Path $resultDirectory $_
             [ordered]@{ Name = $_; Length = (Get-Item -LiteralPath $path).Length; Hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash }
@@ -55,7 +62,7 @@ try {
         Write-Output "PASS $label"
     }
     if ((Fingerprint) -cne $identity) { throw 'Inputs or binaries changed during validation' }
-    [ordered]@{ Video = $inputVideo; Threads = $Threads; Buffer = $Buffer; CancelFrames = $CancelFrames; ForcePacks = $ForcePacks.IsPresent; AllEquivalent = $true; Runs = $reports } |
+    [ordered]@{ Video = $inputVideo; Threads = $Threads; Buffer = $Buffer; CancelFrames = $CancelFrames; ForcePacks = $ForcePacks.IsPresent; RequirePackedCancellation = $RequirePackedCancellation.IsPresent; AllEquivalent = $true; Runs = $reports } |
         ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $root 'verification.json') -Encoding utf8
 } finally {
     $env:SEKAI_BENCHMARK_CHUNKED = $priorChunked
