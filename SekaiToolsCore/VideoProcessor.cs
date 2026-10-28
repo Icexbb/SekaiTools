@@ -77,6 +77,7 @@ public class VideoProcessor : IDisposable
     private bool _frameSetJustCompleted;
     private int _nextProgressSaveFrame = ProgressSavePolicy.InitialInterval;
     private int _lastProgressSaveFrame;
+    private long _lastProgressSnapshotTimestamp;
     private volatile bool _isProcessing;
     private long _lastFpsCallbackTime;
 
@@ -265,7 +266,9 @@ public class VideoProcessor : IDisposable
         _saveKey = saveKey;
     }
 
-    public ProcessingState CaptureState()
+    public ProcessingState CaptureState() => CaptureState(false);
+
+    private ProcessingState CaptureState(bool checkpoint)
     {
         return new ProcessingState
         {
@@ -278,9 +281,9 @@ public class VideoProcessor : IDisposable
             ScriptFilePath = _scriptPath,
             TranslateFilePath = _translatePath,
             Timecodes = Creator?.FrameRate.ExportTimecodes().ToList() ?? [],
-            Dialog = DialogMatcher?.SaveState(),
+            Dialog = DialogMatcher?.SaveState(checkpoint),
             Banner = BannerMatcher?.SaveState(),
-            Marker = MarkerMatcher?.SaveState(),
+            Marker = MarkerMatcher?.SaveState(checkpoint),
             TemplateScales = Creator?.CachePool.CaptureScaleState()
         };
     }
@@ -382,6 +385,7 @@ public class VideoProcessor : IDisposable
         Creator?.CachePool.Metrics.Reset();
         if (Creator != null) Creator.CachePool.Metrics.Enabled = _config.PerformanceOptions.CollectDetailedMetrics;
         _lastProgressSaveFrame = 0;
+        _lastProgressSnapshotTimestamp = Stopwatch.GetTimestamp();
         _nextProgressSaveFrame = ProgressSavePolicy.InitialInterval;
         _frameSetJustCompleted = false;
 
@@ -594,6 +598,7 @@ public class VideoProcessor : IDisposable
                 if (ContentMatcher is { Finished: false })
                 {
                     ContentMatcher.Process(matchFrame);
+                    TrySaveProgress(frameIndex);
                     continue;
                 }
 
@@ -705,6 +710,7 @@ public class VideoProcessor : IDisposable
         }
 
         var finalState = CaptureState();
+        WaitForProgressSave(); // Drain old writes before deleting a completed checkpoint.
         if (_saveKey != null)
         {
             if (StopReason == ProcessStopReason.Completed)
@@ -736,13 +742,15 @@ public class VideoProcessor : IDisposable
         {
             if (_saveKey == null) return;
             var shouldSave = ProgressSavePolicy.ShouldSave(
-                frameIndex, _nextProgressSaveFrame, _lastProgressSaveFrame, _frameSetJustCompleted);
+                frameIndex, _nextProgressSaveFrame, _lastProgressSaveFrame, _frameSetJustCompleted,
+                Stopwatch.GetElapsedTime(_lastProgressSnapshotTimestamp));
             _frameSetJustCompleted = false;
             if (shouldSave)
             {
                 _lastProgressSaveFrame = frameIndex;
                 _nextProgressSaveFrame = ProgressSavePolicy.GetNextFrame(frameIndex);
-                var snapshot = CaptureState();
+                _lastProgressSnapshotTimestamp = Stopwatch.GetTimestamp();
+                var snapshot = CaptureState(true);
                 var key = _saveKey;
                 QueueProgressSave(key, snapshot);
             }

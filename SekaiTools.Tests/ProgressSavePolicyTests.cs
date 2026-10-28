@@ -6,6 +6,12 @@ namespace SekaiTools.Tests;
 public sealed class ProgressSavePolicyTests
 {
     [Fact]
+    public void WallClockDeadlineBoundsLongVideoSnapshotRequests()
+    {
+        Assert.False(ProgressSavePolicy.ShouldSave(120001, 240000, 120000, false, TimeSpan.FromSeconds(29)));
+        Assert.True(ProgressSavePolicy.ShouldSave(120001, 240000, 120000, false, TimeSpan.FromSeconds(30)));
+    }
+    [Fact]
     public void SaveIntervalGrowsWithProcessedFrames()
     {
         Assert.Equal(300, ProgressSavePolicy.GetNextFrame(0));

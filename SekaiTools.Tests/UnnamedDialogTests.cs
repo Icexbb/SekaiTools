@@ -264,6 +264,9 @@ public class UnnamedDialogTests
         Assert.True(matcher.Finished);
         Assert.Empty(matcher.SaveState().PendingTrackingFrames);
         Assert.Equal(lastReliable, matcher.Set[0].End().Index);
+        var checkpointFrames = matcher.SaveState(true).FrameSets[0].Frames;
+        Assert.Same(checkpointFrames, matcher.SaveState(true).FrameSets[0].Frames);
+        Assert.NotSame(checkpointFrames, matcher.SaveState().FrameSets[0].Frames);
     }
 
     [Fact]

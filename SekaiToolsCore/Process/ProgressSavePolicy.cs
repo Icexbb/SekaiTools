@@ -5,6 +5,7 @@ namespace SekaiToolsCore.Process;
 /// </summary>
 internal static class ProgressSavePolicy
 {
+    public static readonly TimeSpan MaximumSnapshotInterval = TimeSpan.FromSeconds(30);
     public const int InitialInterval = 300;
     public const int MinimumCompletionInterval = 30;
     public static int GetNextFrame(int currentFrame)
@@ -16,9 +17,9 @@ internal static class ProgressSavePolicy
             : currentFrame + interval;
     }
 
-    public static bool ShouldSave(int frameIndex, int nextFrame, int lastSavedFrame, bool frameSetJustCompleted)
+    public static bool ShouldSave(int frameIndex, int nextFrame, int lastSavedFrame, bool frameSetJustCompleted, TimeSpan elapsedSinceSnapshot = default)
     {
-        if (frameIndex >= nextFrame) return true;
+        if (elapsedSinceSnapshot >= MaximumSnapshotInterval || frameIndex >= nextFrame) return true;
         // 仅允许第一次完成事件提前落一个检查点；之后统一遵循增长中的计划，
         // 避免大量短事件把完整状态保存重新放大为 O(N²)。
         return frameSetJustCompleted && lastSavedFrame == 0 && frameIndex >= MinimumCompletionInterval;

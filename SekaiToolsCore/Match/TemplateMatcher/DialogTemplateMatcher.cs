@@ -28,6 +28,7 @@ public class DialogTemplateMatcher(
     private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
     private readonly AdaptiveSearchScheduler _searchScheduler = new();
     private Point _nameTagPosition;
+    private readonly CompletedFrameSnapshotCache<DialogBaseFrameSet, DialogFrameSetDto> _checkpointFrames = new();
     private MatchStatus _status;
     private MatchStatus _pendingResumeStatus = MatchStatus.DialogMatched3;
     private readonly DialogTrackingGrace _trackingGrace = new(videoInfo.Fps.Fps());
@@ -38,6 +39,7 @@ public class DialogTemplateMatcher(
     public void Dispose()
     {
         _searchScheduler.Dispose();
+        _checkpointFrames.Clear();
         _nameTemplates.Clear();
         _contentTemplates.Clear();
         _lookaheadEvidencePool.ResetAll();
@@ -538,8 +540,11 @@ public class DialogTemplateMatcher(
         return new MatchResult(point, result);
     }
 
-    public DialogMatcherStateDto SaveState()
+    public DialogMatcherStateDto SaveState() => SaveState(false);
+
+    internal DialogMatcherStateDto SaveState(bool checkpoint)
     {
+        if (!checkpoint) _checkpointFrames.Clear();
         var (cf, lfi, uft) = SaveFallbackState();
         return new DialogMatcherStateDto
         {
@@ -556,19 +561,20 @@ public class DialogTemplateMatcher(
                 ? null
                 : new PointDto(_nameTagPosition.X, _nameTagPosition.Y),
             Diagnostics = SaveDiagnostics(),
-            FrameSets = Set.Select(d => new DialogFrameSetDto
+            FrameSets = Set.Select(d => _checkpointFrames.Capture(d, d.Finished, checkpoint, d => new DialogFrameSetDto
             {
                 Finished = d.Finished,
                 UseSeparator = d.SeparatorEnabled,
                 SeparateFrame = d.Separate.SeparateFrame,
                 SeparatorContentIndex = d.Separate.SeparatorContentIndex,
                 Frames = d.Frames.Select(f => new FrameResultDto(f.Index, f.Point.X, f.Point.Y)).ToList()
-            }).ToList()
+            })).ToList()
         };
     }
 
     public void RestoreState(DialogMatcherStateDto state)
     {
+        _checkpointFrames.Clear();
         if (state.PendingResumeStatus is < 1 or > 3)
             throw new InvalidDataException("Invalid dialogue pending resume stage");
 

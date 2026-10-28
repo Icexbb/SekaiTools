@@ -28,6 +28,7 @@ public class MarkerTemplateMatcher(
     private readonly FiniteLookaheadTracker _lookaheadTracker = new();
     private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
     private readonly AdaptiveSearchScheduler _searchScheduler = new();
+    private readonly CompletedFrameSnapshotCache<MarkerBaseFrameSet, MarkerFrameSetDto> _checkpointFrames = new();
     private MatchStatus _status;
     internal bool IsTracking => _status == MatchStatus.Matched;
     private readonly TrackingLossWindow _trackingLoss = new(videoInfo.Fps.Fps());
@@ -35,6 +36,7 @@ public class MarkerTemplateMatcher(
     public void Dispose()
     {
         _searchScheduler.Dispose();
+        _checkpointFrames.Clear();
     }
 
     internal bool Probe(FrameMatchContext frame)
@@ -235,8 +237,11 @@ public class MarkerTemplateMatcher(
         }
     }
 
-    public MarkerMatcherStateDto SaveState()
+    public MarkerMatcherStateDto SaveState() => SaveState(false);
+
+    internal MarkerMatcherStateDto SaveState(bool checkpoint)
     {
+        if (!checkpoint) _checkpointFrames.Clear();
         var (cf, lfi, uft) = SaveFallbackState();
         return new MarkerMatcherStateDto
         {
@@ -249,16 +254,17 @@ public class MarkerTemplateMatcher(
             LastFailedIndex = lfi,
             UseFallbackThreshold = uft,
             Diagnostics = SaveDiagnostics(),
-            FrameSets = Set.Select(m => new MarkerFrameSetDto
+            FrameSets = Set.Select(m => _checkpointFrames.Capture(m, m.Finished, checkpoint, m => new MarkerFrameSetDto
             {
                 Finished = m.Finished,
                 Frames = m.Frames.Select(f => new FrameResultDto(f.Index, f.Point.X, f.Point.Y)).ToList()
-            }).ToList()
+            })).ToList()
         };
     }
 
     public void RestoreState(MarkerMatcherStateDto state)
     {
+        _checkpointFrames.Clear();
         _searchScheduler.RestoreState(state.SearchState);
         _lookaheadTracker.RestoreState(state.LookaheadState);
         _status = (MatchStatus)state.Status;
