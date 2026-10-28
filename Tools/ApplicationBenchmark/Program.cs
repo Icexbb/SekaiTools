@@ -63,8 +63,10 @@ internal static class Program
         var directory = Path.Combine(output, Path.GetFileName(video));
         Directory.CreateDirectory(directory);
         var chunked = Environment.GetEnvironmentVariable("SEKAI_BENCHMARK_CHUNKED") == "true";
+        var forcePacks = Environment.GetEnvironmentVariable("SEKAI_BENCHMARK_FORCE_PACKS") == "true";
+        if (forcePacks && !chunked) throw new ArgumentException("Forced packs require the incremental checkpoint sink");
         ScopedPersistence persistence = chunked
-            ? new ChunkedScopedPersistence(Path.Combine(directory, "persistence"))
+            ? new ChunkedScopedPersistence(Path.Combine(directory, "persistence"), forcePacks)
             : new ScopedPersistence(Path.Combine(directory, "persistence"));
         var config = new Config(video, Path.ChangeExtension(video, ".json"), Path.ChangeExtension(video, ".txt"),
             new StyleFontConfig(), new ExportStyleConfig(), new TypewriterSetting(),
@@ -156,6 +158,7 @@ internal static class Program
             {
                 Video = video,
                 ChunkedCheckpoint = chunked,
+                ForcedChunkedCheckpoint = forcePacks,
                 Threads = CvInvoke.NumThreads,
                 Buffer = buffer,
                 CancelFraction = cancelFraction,
@@ -215,18 +218,31 @@ internal class ScopedPersistence(string directory) : IProcessingStatePersistence
         Checkpoint ?? throw new InvalidOperationException("No checkpoint"))) ?? throw new InvalidDataException("Invalid checkpoint");
 }
 
-internal sealed class ChunkedScopedPersistence(string directory) : ScopedPersistence(directory), IIncrementalCheckpointPersistence
+internal sealed class ChunkedScopedPersistence(string directory, bool forcePacks = false) : ScopedPersistence(directory), IIncrementalCheckpointPersistence
 {
     // Use the production queue codec while keeping all files inside the benchmark output.
     private static readonly Type Store = typeof(SubtitleQueueProgressStore).Assembly.GetType(
         "SekaiToolsInfrastructure.Persistence.IncrementalProgressStore", throwOnError: true)!;
-    private static readonly Action<string, ProcessingState> SaveChunked = Store.GetMethod("Save")!
+    private static readonly Action<string, ProcessingState> SaveQueue = Store.GetMethod("Save")!
         .CreateDelegate<Action<string, ProcessingState>>();
     private static readonly Func<string, ProcessingState> LoadChunked = Store.GetMethod("Load")!
         .CreateDelegate<Func<string, ProcessingState>>();
     private static readonly Action<string> DeleteChunked = Store.GetMethod("Delete")!
         .CreateDelegate<Action<string>>();
-    protected override void WriteCheckpoint(string path, ProcessingState state) => SaveChunked(path, state);
-    public override ProcessingState LoadCheckpoint() => LoadChunked(Checkpoint ?? throw new InvalidOperationException("No checkpoint"));
+    private static readonly Action<string, ProcessingState>? SavePacked = Store.GetMethod("SaveChunked")?
+        .CreateDelegate<Action<string, ProcessingState>>();
+    protected override void WriteCheckpoint(string path, ProcessingState state) =>
+        (forcePacks ? SavePacked ?? throw new NotSupportedException("Forced pack storage is unavailable") : SaveQueue)(path, state);
+    public override ProcessingState LoadCheckpoint()
+    {
+        var path = Checkpoint ?? throw new InvalidOperationException("No checkpoint");
+        if (forcePacks)
+        {
+            using var document = JsonDocument.Parse(File.ReadAllBytes(path));
+            if (!document.RootElement.TryGetProperty("CheckpointStorage", out var storage) || !storage.TryGetInt32(out var version) || version != 2)
+                throw new InvalidDataException("Forced pack recovery did not use storage version 2");
+        }
+        return LoadChunked(path);
+    }
     public override void DeleteProgress(string key) => DeleteChunked(Path.Combine(DirectoryPath, $"{key}.json"));
 }

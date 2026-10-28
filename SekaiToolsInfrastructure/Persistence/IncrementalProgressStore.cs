@@ -9,11 +9,16 @@ using SekaiToolsCore.Process;
 
 namespace SekaiToolsInfrastructure.Persistence;
 
-/// <summary>Immutable completed events are written once; the manifest is committed last.</summary>
-internal static class IncrementalProgressStore
+/// <summary>Completed event payloads are immutable; dependencies precede the atomic manifest commit.</summary>
+internal static partial class IncrementalProgressStore
 {
-    private const string VersionPrefix = "chunks1:";
-    private sealed record ChunkIdentity(string Hash);
+    private const string VersionPrefix = "chunks2:";
+    private sealed record ChunkLocation(string Directory, string? Pack);
+    private sealed class ChunkIdentity(string hash)
+    {
+        public string Hash { get; } = hash;
+        public volatile ChunkLocation? Location;
+    }
     private static readonly ConditionalWeakTable<object, ChunkIdentity> Identities = new();
 
     internal const int InlineLimitBytes = 1024 * 1024;
@@ -46,9 +51,22 @@ internal static class IncrementalProgressStore
     public static void SaveChunked(string path, ProcessingState state)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-        var bytes = JsonSerializer.SerializeToUtf8Bytes(state, Options(path, state.ReusesCompletedFrames,
-            timecodeBlocks: state.CheckpointTimecodeBlocks));
-        WriteAtomic(path, bytes);
+        using var batch = new ChunkWriteBatch(path);
+        IReadOnlyList<int[]> blocks = state.CheckpointTimecodeBlocks ?? state.Timecodes.Chunk(4096).ToArray();
+        foreach (var block in blocks)
+        {
+            if (block.Length is < 1 or > 4096) throw new InvalidDataException("Invalid timecode block length");
+            batch.Add(block, state.ReusesCompletedFrames && state.CheckpointTimecodeBlocks != null);
+        }
+        if (state.Dialog != null)
+            foreach (var item in state.Dialog.FrameSets.Where(item => item.Finished)) batch.Add(item, state.ReusesCompletedFrames);
+        if (state.Marker != null)
+            foreach (var item in state.Marker.FrameSets.Where(item => item.Finished)) batch.Add(item, state.ReusesCompletedFrames);
+        if (state.Banner != null)
+            foreach (var item in state.Banner.FrameSets.Where(item => item.Finished)) batch.Add(item, state.ReusesCompletedFrames);
+        batch.CompletePreparation();
+        WriteJsonAtomic(path, writer => JsonSerializer.Serialize(writer, state,
+            Options(state.ReusesCompletedFrames, timecodeBlocks: blocks, batch: batch)));
     }
 
     private sealed class InlineLimitExceededException : Exception { }
@@ -117,13 +135,18 @@ internal static class IncrementalProgressStore
         using var document = JsonDocument.Parse(File.ReadAllBytes(path));
         if (document.RootElement.ValueKind != JsonValueKind.Object) throw new JsonException("Invalid checkpoint root");
         if (!document.RootElement.TryGetProperty("CheckpointStorage", out var format))
-            return document.Deserialize<ProcessingState>(Options(path, allowChunks: false)) ?? throw new InvalidDataException("Missing processing state");
-        if (format.ValueKind != JsonValueKind.Number || !format.TryGetInt32(out var version) || version != 1)
+        {
+            using var legacy = new ChunkReadSession(path, false);
+            return document.Deserialize<ProcessingState>(Options(allowChunks: false, readSession: legacy)) ?? throw new InvalidDataException("Missing processing state");
+        }
+        if (format.ValueKind != JsonValueKind.Number || !format.TryGetInt32(out var version) || version is not (1 or 2))
             throw new InvalidDataException("Unsupported checkpoint storage format");
-        var state = document.Deserialize<ProcessingState>(Options(path)) ?? throw new InvalidDataException("Missing processing state");
-        if (!state.Version.StartsWith(VersionPrefix, StringComparison.Ordinal))
+        using var session = new ChunkReadSession(path, version == 2);
+        var state = document.Deserialize<ProcessingState>(Options(readSession: session)) ?? throw new InvalidDataException("Missing processing state");
+        var prefix = version == 1 ? "chunks1:" : VersionPrefix;
+        if (!state.Version.StartsWith(prefix, StringComparison.Ordinal))
             throw new InvalidDataException("Missing chunked checkpoint version marker");
-        state.Version = state.Version[VersionPrefix.Length..];
+        state.Version = state.Version[prefix.Length..];
         return state;
     }
 
@@ -150,8 +173,8 @@ internal static class IncrementalProgressStore
         }
     }
 
-    private static JsonSerializerOptions Options(string path, bool reuseCompleted = false, bool allowChunks = true,
-        IReadOnlyList<int[]>? timecodeBlocks = null)
+    private static JsonSerializerOptions Options(bool reuseCompleted = false, bool allowChunks = true,
+        IReadOnlyList<int[]>? timecodeBlocks = null, ChunkWriteBatch? batch = null, ChunkReadSession? readSession = null)
     {
         var resolver = new DefaultJsonTypeInfoResolver();
         resolver.Modifiers.Add(info =>
@@ -161,21 +184,22 @@ internal static class IncrementalProgressStore
             info.Properties.Single(property => property.Name == nameof(ProcessingState.Version)).Get =
                 value => VersionPrefix + ((ProcessingState)value).Version;
             info.Properties.Single(property => property.Name == nameof(ProcessingState.Timecodes)).CustomConverter =
-                new TimecodeConverter(path, timecodeBlocks, allowChunks, reuseCompleted && timecodeBlocks != null);
+                new TimecodeConverter(timecodeBlocks, allowChunks, reuseCompleted && timecodeBlocks != null, batch, readSession);
             var storage = info.CreateJsonPropertyInfo(typeof(int), "CheckpointStorage");
-            storage.Get = _ => 1;
+            storage.Get = _ => 2;
             info.Properties.Add(storage);
         });
         var options = new JsonSerializerOptions { TypeInfoResolver = resolver };
-        options.Converters.Add(new EventConverter<DialogFrameSetDto>(path, item => item.Finished, reuseCompleted, allowChunks));
-        options.Converters.Add(new EventConverter<MarkerFrameSetDto>(path, item => item.Finished, reuseCompleted, allowChunks));
-        options.Converters.Add(new EventConverter<BannerFrameSetDto>(path, item => item.Finished, reuseCompleted, allowChunks));
+        options.Converters.Add(new EventConverter<DialogFrameSetDto>(item => item.Finished, reuseCompleted, allowChunks, batch, readSession));
+        options.Converters.Add(new EventConverter<MarkerFrameSetDto>(item => item.Finished, reuseCompleted, allowChunks, batch, readSession));
+        options.Converters.Add(new EventConverter<BannerFrameSetDto>(item => item.Finished, reuseCompleted, allowChunks, batch, readSession));
         return options;
     }
 
-    private sealed class TimecodeConverter(string path, IReadOnlyList<int[]>? frozenBlocks, bool allowChunks, bool reuseFrozen) : JsonConverter<List<int>>
+    private sealed class TimecodeConverter(IReadOnlyList<int[]>? frozenBlocks, bool allowChunks, bool reuseFrozen,
+        ChunkWriteBatch? batch, ChunkReadSession? readSession) : JsonConverter<List<int>>
     {
-        private readonly EventConverter<int[]> _blocks = new(path, _ => true, reuseFrozen, allowChunks);
+        private readonly EventConverter<int[]> _blocks = new(_ => true, reuseFrozen, allowChunks, batch, readSession);
 
         public override List<int> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
@@ -211,27 +235,31 @@ internal static class IncrementalProgressStore
         }
     }
 
-    private sealed class EventConverter<T>(string manifest, Func<T, bool> completed, bool reuseCompleted, bool allowChunks) : JsonConverter<T> where T : class
+    private sealed class EventConverter<T>(Func<T, bool> completed, bool reuseCompleted, bool allowChunks,
+        ChunkWriteBatch? batch, ChunkReadSession? readSession) : JsonConverter<T> where T : class
     {
-        private readonly string _directory = Path.GetFullPath(manifest) + ".chunks";
 
         public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             using var document = JsonDocument.ParseValue(ref reader);
             if (document.RootElement.ValueKind != JsonValueKind.Object) throw new JsonException("Invalid checkpoint event");
             if (!document.RootElement.TryGetProperty("$chunk", out var reference))
+            {
+                if (document.RootElement.TryGetProperty("$pack", out _)) throw new InvalidDataException("Pack reference without chunk identity");
                 return document.Deserialize<T>() ?? throw new InvalidDataException("Missing checkpoint event");
+            }
             if (!allowChunks || reference.ValueKind != JsonValueKind.String)
                 throw new InvalidDataException("Invalid checkpoint chunk reference");
             var hash = reference.GetString();
             if (!IsHash(hash)) throw new InvalidDataException("Invalid checkpoint chunk reference");
-            CheckDirectory(_directory);
-            var path = Path.Combine(_directory, hash + ".json");
-            if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
-                throw new InvalidDataException("Redirected checkpoint chunk");
-            var bytes = File.ReadAllBytes(path);
-            if (Convert.ToHexString(SHA256.HashData(bytes)) != hash)
-                throw new InvalidDataException("Checkpoint chunk checksum mismatch");
+            string? pack = null;
+            if (document.RootElement.TryGetProperty("$pack", out var packReference))
+            {
+                if (packReference.ValueKind != JsonValueKind.String || !IsHash(packReference.GetString()))
+                    throw new InvalidDataException("Invalid checkpoint pack reference");
+                pack = packReference.GetString();
+            }
+            var bytes = (readSession ?? throw new InvalidOperationException("Missing checkpoint reader")).Read(hash!, pack);
             var value = JsonSerializer.Deserialize<T>(bytes) ?? throw new InvalidDataException("Empty checkpoint chunk");
             if (!completed(value)) throw new InvalidDataException("Chunk is not a completed event");
             return value;
@@ -240,19 +268,11 @@ internal static class IncrementalProgressStore
         public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
         {
             if (!completed(value)) { JsonSerializer.Serialize(writer, value); return; }
-            byte[]? bytes = null;
-            ChunkIdentity CreateIdentity(object item)
-            {
-                bytes = JsonSerializer.SerializeToUtf8Bytes((T)item);
-                return new ChunkIdentity(Convert.ToHexString(SHA256.HashData(bytes)));
-            }
-            var identity = reuseCompleted ? Identities.GetValue(value, CreateIdentity) : CreateIdentity(value);
-            Directory.CreateDirectory(_directory);
-            CheckDirectory(_directory);
-            var path = Path.Combine(_directory, identity.Hash + ".json");
-            if (!File.Exists(path)) WriteAtomic(path, bytes ?? JsonSerializer.SerializeToUtf8Bytes(value));
+            var context = batch ?? throw new InvalidOperationException("Missing checkpoint writer");
+            var identity = context.Add(value, reuseCompleted);
             writer.WriteStartObject();
             writer.WriteString("$chunk", identity.Hash);
+            if (context.PackFor(identity.Hash) is { } pack) writer.WriteString("$pack", pack);
             writer.WriteEndObject();
         }
     }
@@ -263,6 +283,21 @@ internal static class IncrementalProgressStore
     {
         if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0)
             throw new InvalidDataException("Redirected checkpoint chunk directory");
+    }
+
+    private static void WriteJsonAtomic(string path, Action<Utf8JsonWriter> write)
+    {
+        var temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
+                using (var writer = new Utf8JsonWriter(stream)) write(writer);
+                stream.Flush(flushToDisk: true);
+            }
+            File.Move(temporary, path, true);
+        }
+        finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }
 
     private static void WriteAtomic(string path, byte[] bytes)

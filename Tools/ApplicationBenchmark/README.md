@@ -95,3 +95,17 @@ try {
 ```
 
 只有整组运行及结束身份核对通过后才生成 `summary.json`，中断时保留逐轮报告用于身份一致的续跑。模板资源也纳入身份核对；这些保证不能替代控制外部系统负载和温度。该比较仅隔离检查点模式，不代表全部识别算法改进的累计收益。
+
+## 强制 v2 包恢复验证
+
+`VerifyChunkedResume.ps1 -ForcePacks` 仅用于协议验证：绕过小状态全量回退，在取消后加载前要求磁盘文件确实为 `CheckpointStorage: 2`。报告的 `ForcedChunkedCheckpoint` 必须与请求一致，再执行完整检查点比对及新处理器恢复。连续与恢复结果仍需核对完整状态和 ASS。
+
+```powershell
+./Tools/ApplicationBenchmark/VerifyChunkedResume.ps1 `
+  -BenchmarkDll .codex-build/recognition-plan/checkpoint/ApplicationBenchmark.dll `
+  -Video E:/ProjectSekai/test/1963_areatalk_ev_street_16_003.mp4 `
+  -OutputDirectory .codex-build/recognition-plan/packed-v2-real-resume `
+  -CancelFrames 1029,2048,3000 -ForcePacks
+```
+
+该入口临时设置 `SEKAI_BENCHMARK_FORCE_PACKS=true`，需要增量接口模式，并在结束时恢复原环境变量。大于包目标的单个事件仍允许独立内容文件；强制的是 v2 存储路径，不是强迫所有载荷包装。它不是产品设置，不能用于默认策略性能结论。普通 `RunComparison.ps1` 拒绝该环境变量及带强制标记的报告，避免混入策略比较。

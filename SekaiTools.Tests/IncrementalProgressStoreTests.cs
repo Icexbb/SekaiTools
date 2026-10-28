@@ -162,7 +162,7 @@ public class IncrementalProgressStoreTests
             var loaded = IncrementalProgressStore.Load(path);
             Assert.Equal(JsonSerializer.Serialize(state), JsonSerializer.Serialize(loaded));
             using var manifest = JsonDocument.Parse(File.ReadAllText(path));
-            Assert.StartsWith("chunks1:", manifest.RootElement.GetProperty("Version").GetString());
+            Assert.StartsWith("chunks2:", manifest.RootElement.GetProperty("Version").GetString());
             Assert.Equal(done.Frames, loaded.Dialog!.FrameSets[0].Frames);
             Assert.Equal(active.Frames, loaded.Dialog.FrameSets[1].Frames);
             Assert.False(loaded.ReusesCompletedFrames);

@@ -10,6 +10,7 @@ param(
     [ValidateSet('legacy', 'chunked')][string]$CandidateCheckpointMode = 'legacy'
 )
 $ErrorActionPreference = 'Stop'
+if ($env:SEKAI_BENCHMARK_FORCE_PACKS -eq 'true') { throw 'Clear forced pack mode before policy comparison' }
 if ($env:SEKAI_BENCHMARK_CHUNKED -eq 'true') { throw 'Clear ambient chunked mode; select checkpoint modes explicitly with parameters' }
 if (-not [string]::IsNullOrEmpty($env:SEKAI_BENCHMARK_RESUME_STATE)) { throw 'Clear external resume state before continuous comparison' }
 if (-not [string]::IsNullOrEmpty($env:SEKAI_BENCHMARK_CANCEL_FRAME)) { throw 'Clear exact cancellation frame before continuous comparison' }
@@ -81,6 +82,7 @@ foreach ($video in $inputs) {
                 if ($LASTEXITCODE) { throw "Failed: $out/process.log" }
             }
             $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+            if ($report.ForcedChunkedCheckpoint -eq $true) { throw "Forced pack report cannot enter policy comparison: $reportPath" }
             if (($report.ChunkedCheckpoint -eq $true) -ne ($checkpointModes[$index] -eq 'chunked') -or
                 $report.Video -cne $video -or $report.Threads -ne $Threads -or $report.Buffer -ne $Buffer -or
                 $report.CancelFraction -ne 0 -or $null -ne $report.ResumeFrame -or $report.ElapsedSeconds -le 0 -or
