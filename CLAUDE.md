@@ -22,6 +22,12 @@ dotnet test SekaiTools.sln
 
 基于 .NET 10 的解决方案。所有项目通过 `Directory.Build.props` 全局启用可空引用类型。
 
+## 自动构建产物保留规则
+
+自动实验和验证输出统一放在 `.codex-build/`，优先复用任务输出目录，不要无限新建含完整原生运行库的副本。需要长期保留的实验在对应目录中放置 `.keep-build`，并在任务结束后及时解除不再需要的保护。
+
+使用 `pwsh -NoProfile -File Tools/CleanBuildArtifacts.ps1` 预览，增加 `-Apply` 执行。默认清理超过 7 天的白名单二进制；总占用超过 20 GiB 时优先清理更旧候选。最近 24 小时有文件更新的目录组、`.keep-build`、`native` 与 `native-dependencies-pinned` 受保护，容量上限不覆盖保护。报告、日志、素材、源码以及 `.codex-build` 之外的目录不自动删除。检测到活动构建或实验时跳过；无法读取进程时停止，不绕过检查。不要把 Git 忽略视为可以删除任意文件的依据。完整规则见 [构建产物清理](docs/build-artifact-cleanup.md)。
+
 ## 代码格式
 
 统一使用 .NET SDK 自带的 `dotnet format` 格式化 C# 代码，遵循根目录 `.editorconfig`（四个空格缩进），不要以 IDE 的个人格式设置覆盖仓库规范。
