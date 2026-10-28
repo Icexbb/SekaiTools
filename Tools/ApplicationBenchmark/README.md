@@ -126,3 +126,18 @@ try {
 ```
 
 2026-10-28 工具验证：短素材三轮交替的完整状态及 ASS 一致，两边每轮均四次全量保存，v2 次数为零；文件头检查累计中位数约 1.3–1.4 ms。独立负例夹具复用这些实际报告，只改变覆盖要求，确认脚本拒绝并且没有 `summary.json`，未额外运行视频。报告及负例记录保留在 `.codex-build/recognition-plan/format-coverage-smoke/` 和 `format-coverage-required-negative/`。它们是工具验证，不能作为 v2 性能收益证据。
+
+
+## 默认策略的实际 v2 取消点
+
+使用 `VerifyChunkedResume.ps1 -RequirePackedCancellation` 验证默认策略选择，勿加 `-ForcePacks`。每个取消点保留原始 `canceled-manifest.json`，要求其为 `CheckpointStorage: 2` 且版本前缀为 `chunks2:`；实际恢复仍从原检查点及原分块目录加载。小状态若回退为全量，脚本应拒绝，不能以增量接口启用代替格式证据。
+
+```powershell
+./Tools/ApplicationBenchmark/VerifyChunkedResume.ps1 `
+  -BenchmarkDll .codex-build/recognition-plan/checkpoint/ApplicationBenchmark.dll `
+  -Video E:/ProjectSekai/test/wl_3rd_group4_05.mp4 `
+  -OutputDirectory .codex-build/recognition-plan/long-default-v2-resume `
+  -CancelFrames 60000 -Threads 4 -Buffer 8 -RequirePackedCancellation
+```
+
+输出目录必须全新。脚本先运行连续基准，再逐个精确取消、加载磁盘状态并用新处理器恢复；比较最终完整状态和 ASS 的长度、SHA256，并在结束前重新校验输入三件套、模板及运行目录 DLL/JSON。`verification.json` 只在所有检查通过时生成。2026-10-28 长素材正例和小素材全量拒绝反例的结果见 [检查点存储验证](../../docs/checkpoint-storage.md)。该单次恢复实验不用于性能结论。
