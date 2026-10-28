@@ -19,8 +19,8 @@ public static class SubtitleRecoveryStore
         var states = queued.Concat(legacy.Take(1)).DistinctBy(entry => entry.SaveKey).ToArray();
         // Remove even older legacy records, otherwise the next scan would expose
         // the previous "latest" checkpoint as another recovery opportunity.
-        foreach (var entry in queued) File.Delete(Path.Combine(queueDirectory, entry.SaveKey + ".json"));
-        foreach (var entry in legacy) File.Delete(Path.Combine(legacyDirectory, entry.SaveKey + ".json"));
+        foreach (var entry in queued) IncrementalProgressStore.Delete(Path.Combine(queueDirectory, entry.SaveKey + ".json"));
+        foreach (var entry in legacy) IncrementalProgressStore.Delete(Path.Combine(legacyDirectory, entry.SaveKey + ".json"));
         return states;
     }
 }

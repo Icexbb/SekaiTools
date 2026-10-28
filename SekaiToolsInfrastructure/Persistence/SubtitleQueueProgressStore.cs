@@ -14,13 +14,13 @@ public static class SubtitleQueueProgressStore
     private static readonly string ProgressDirectory = Path.Combine(ResourceManager.DataBaseDir, "SubtitleQueueProgress");
     private static string GetPath(string key) => Path.Combine(ProgressDirectory, $"{key}.json");
 
-    public static void Save(string key, ProcessingState state) => ProgressStore.SaveToPath(GetPath(key), state);
+    public static void Save(string key, ProcessingState state) => IncrementalProgressStore.Save(GetPath(key), state);
     public static bool HasSavedState(string key) => File.Exists(GetPath(key));
 
     public static void Delete(string key)
     {
         var path = GetPath(key);
-        if (File.Exists(path)) File.Delete(path);
+        IncrementalProgressStore.Delete(path);
     }
 
     public static IReadOnlyList<(string SaveKey, ProcessingState State)> EnumerateProgressFiles() =>
@@ -34,7 +34,7 @@ public static class SubtitleQueueProgressStore
         {
             try
             {
-                var state = JsonSerializer.Deserialize<ProcessingState>(File.ReadAllText(path));
+                var state = IncrementalProgressStore.Load(path);
                 if (state != null && state.StopReason != ProcessStopReason.Completed)
                     entries.Add((Path.GetFileNameWithoutExtension(path), state));
             }
@@ -42,7 +42,7 @@ public static class SubtitleQueueProgressStore
             {
                 Logger.Log($"队列进度格式错误，已跳过: {path}, {exception.Message}", LogLevel.Warning);
             }
-            catch (IOException exception)
+            catch (Exception exception) when (exception is IOException or InvalidDataException or UnauthorizedAccessException)
             {
                 Logger.Log($"队列进度读取失败，已跳过: {path}, {exception.Message}", LogLevel.Warning);
             }

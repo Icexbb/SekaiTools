@@ -1,0 +1,121 @@
+using System.Text.Json;
+using SekaiToolsCore.Process;
+using SekaiToolsInfrastructure.Persistence;
+
+namespace SekaiTools.Tests;
+
+public class IncrementalProgressStoreTests
+{
+    [Fact]
+    public void CatalogLoadsChunksOnDemandAndOneTimeRecoveryRemovesOwnedBlocks()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "SekaiTools-chunks-" + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(root, "SubtitleQueueProgress", "task.json");
+        try
+        {
+            IncrementalProgressStore.Save(path, new ProcessingState
+            {
+                VideoFilePath = "video.mp4",
+                Banner = new() { FrameSets = [new() { Finished = true, Start = 2, End = 8 }] }
+            });
+            var entry = Assert.Single(HistoryCatalog.Read(root));
+            Assert.Equal("video.mp4", entry.Summary.VideoFilePath);
+            Assert.Equal(8, entry.LoadState().Banner!.FrameSets[0].End);
+            var recovered = Assert.Single(SubtitleRecoveryStore.TakeOnce(root));
+            Assert.Equal(2, recovered.State.Banner!.FrameSets[0].Start);
+            Assert.False(Directory.Exists(path + ".chunks"));
+            Assert.Empty(SubtitleRecoveryStore.TakeOnce(root));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void FailedManifestReplacementLeavesPreviousGenerationRecoverable()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "SekaiTools-chunks-" + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(root, "task.json");
+        try
+        {
+            IncrementalProgressStore.Save(path, new ProcessingState { FrameIndex = 10 });
+            using (var locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                var failure = Record.Exception(() => IncrementalProgressStore.Save(path, new ProcessingState
+                { FrameIndex = 20, Dialog = new() { FrameSets = [new() { Finished = true, Frames = [new(3, 4, 5)] }] } }));
+                Assert.True(failure is IOException or UnauthorizedAccessException);
+            }
+            Assert.Equal(10, IncrementalProgressStore.Load(path).FrameIndex);
+            Assert.Empty(Directory.GetFiles(root, "*.tmp"));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void CompletedChunksAreReusedWhileActiveFramesAndEditedFullSnapshotsStayCurrent()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "SekaiTools-chunks-" + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(root, "task.json");
+        try
+        {
+            var done = new DialogFrameSetDto
+            {
+                Finished = true,
+                Frames = Enumerable.Range(1, 1000).Select(i => new FrameResultDto(i, 10, 20)).ToList()
+            };
+            var active = new DialogFrameSetDto { Frames = [new(1001, 30, 40)] };
+            var state = new ProcessingState { ReusesCompletedFrames = true, Dialog = new() { FrameSets = [done, active] } };
+            IncrementalProgressStore.Save(path, state);
+            var chunk = Assert.Single(Directory.GetFiles(path + ".chunks"));
+            File.SetLastWriteTimeUtc(chunk, DateTime.UtcNow.AddDays(-1));
+            var stamp = File.GetLastWriteTimeUtc(chunk);
+            active.Frames.Add(new(1002, 31, 41));
+            IncrementalProgressStore.Save(path, state);
+            Assert.Equal(stamp, File.GetLastWriteTimeUtc(chunk));
+            Assert.True(new FileInfo(path).Length < JsonSerializer.SerializeToUtf8Bytes(state).Length / 10,
+                "Repeated manifest writes must exclude completed per-frame payloads");
+            var loaded = IncrementalProgressStore.Load(path);
+            Assert.Equal(JsonSerializer.Serialize(state), JsonSerializer.Serialize(loaded));
+            Assert.StartsWith("chunks1:", JsonSerializer.Deserialize<ProcessingState>(File.ReadAllText(path))!.Version);
+            Assert.Equal(done.Frames, loaded.Dialog!.FrameSets[0].Frames);
+            Assert.Equal(active.Frames, loaded.Dialog.FrameSets[1].Frames);
+            Assert.False(loaded.ReusesCompletedFrames);
+            // A full capture after manual editing must not use the immutable-checkpoint identity cache.
+            done.Frames.Add(new(1003, 50, 60));
+            var edited = new ProcessingState { Dialog = state.Dialog };
+            IncrementalProgressStore.Save(path, edited);
+            Assert.Equal(done.Frames, IncrementalProgressStore.Load(path).Dialog!.FrameSets[0].Frames);
+            IncrementalProgressStore.Delete(path);
+            Assert.False(File.Exists(path));
+            Assert.False(Directory.Exists(path + ".chunks"));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void LegacyFilesLoadAndUncommittedOrCorruptChunksCannotReplaceValidState()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "SekaiTools-chunks-" + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(root, "task.json");
+        try
+        {
+            ProgressStore.SaveToPath(path, new ProcessingState { FrameIndex = 12 });
+            Assert.Equal(12, IncrementalProgressStore.Load(path).FrameIndex);
+            IncrementalProgressStore.Save(path, new ProcessingState
+            {
+                FrameIndex = 20,
+                Marker = new() { FrameSets = [new() { Finished = true, Frames = [new(4, 10, 20)] }] }
+            });
+            // An interrupted future write leaves orphan/temp files, never a partially updated manifest.
+            File.WriteAllText(path + ".interrupted.tmp", "broken");
+            File.WriteAllText(Path.Combine(path + ".chunks", new string('A', 64) + ".json"), "orphan");
+            Assert.Equal(20, IncrementalProgressStore.Load(path).FrameIndex);
+            var referenced = Directory.GetFiles(path + ".chunks").Single(f => !f.EndsWith(new string('A', 64) + ".json"));
+            File.WriteAllText(referenced, "corrupted");
+            Assert.Throws<InvalidDataException>(() => IncrementalProgressStore.Load(path));
+            Assert.Empty(SubtitleQueueProgressStore.EnumerateProgressFiles(root));
+            var json = File.ReadAllText(path).Replace(Path.GetFileNameWithoutExtension(referenced), "../outside");
+            File.WriteAllText(path, json);
+            Assert.Throws<InvalidDataException>(() => IncrementalProgressStore.Load(path));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+}

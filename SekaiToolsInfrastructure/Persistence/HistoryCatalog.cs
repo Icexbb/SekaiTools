@@ -19,6 +19,7 @@ public sealed record HistoryCatalogEntry(string FilePath, string Timestamp, Hist
 {
     public ProcessingState LoadState()
     {
+        if (!IsHistory) return IncrementalProgressStore.Load(FilePath);
         using var stream = File.OpenRead(FilePath);
         return (IsHistory
             ? JsonSerializer.Deserialize<HistoryEntry>(stream)?.State

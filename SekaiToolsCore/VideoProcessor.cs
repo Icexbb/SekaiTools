@@ -272,6 +272,7 @@ public class VideoProcessor : IDisposable
     {
         return new ProcessingState
         {
+            ReusesCompletedFrames = checkpoint,
             Version = ProcessingStateCompatibility.CurrentVersion,
             Metadata = _stateMetadata,
             StopReason = StopReason,

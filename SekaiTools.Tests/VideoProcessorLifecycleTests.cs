@@ -14,6 +14,29 @@ namespace SekaiTools.Tests;
 public class VideoProcessorLifecycleTests
 {
     [Fact]
+    public async Task DiskChunkedCheckpointRestoresRealDecoderStateWithoutChangingResult()
+    {
+        using var fixture = new Fixture();
+        using var original = fixture.Create(new VideoProcessCallbacks { IsPreviewEnabled = () => false });
+        original.StartProcess();
+        await original.WaitForCompletionAsync().WaitAsync(TimeSpan.FromSeconds(10));
+        var expected = original.CaptureState();
+        var directory = Path.Combine(Path.GetTempPath(), "SekaiTools-disk-resume-" + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(directory, "checkpoint.json");
+        try
+        {
+            SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.Save(path, expected);
+            var loaded = SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.Load(path);
+            using var resumed = fixture.Create(new VideoProcessCallbacks { IsPreviewEnabled = () => false });
+            resumed.ApplyState(loaded);
+            resumed.StartProcess();
+            await resumed.WaitForCompletionAsync().WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(resumed.CaptureState()));
+        }
+        finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+    }
+
+    [Fact]
     public async Task FactorySessionSurvivesWorkerUntilProcessorDisposal()
     {
         using var fixture = new Fixture();
