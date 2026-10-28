@@ -19,7 +19,8 @@ internal static class IncrementalProgressStore
     public static void Save(string path, ProcessingState state)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-        var bytes = JsonSerializer.SerializeToUtf8Bytes(state, Options(path, state.ReusesCompletedFrames));
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(state, Options(path, state.ReusesCompletedFrames,
+            timecodeBlocks: state.CheckpointTimecodeBlocks));
         WriteAtomic(path, bytes);
     }
 
@@ -61,7 +62,8 @@ internal static class IncrementalProgressStore
         }
     }
 
-    private static JsonSerializerOptions Options(string path, bool reuseCompleted = false, bool allowChunks = true)
+    private static JsonSerializerOptions Options(string path, bool reuseCompleted = false, bool allowChunks = true,
+        IReadOnlyList<int[]>? timecodeBlocks = null)
     {
         var resolver = new DefaultJsonTypeInfoResolver();
         resolver.Modifiers.Add(info =>
@@ -70,6 +72,8 @@ internal static class IncrementalProgressStore
             // Older readers must reject this representation instead of treating chunk references as empty frames.
             info.Properties.Single(property => property.Name == nameof(ProcessingState.Version)).Get =
                 value => VersionPrefix + ((ProcessingState)value).Version;
+            info.Properties.Single(property => property.Name == nameof(ProcessingState.Timecodes)).CustomConverter =
+                new TimecodeConverter(path, timecodeBlocks, allowChunks, reuseCompleted && timecodeBlocks != null);
             var storage = info.CreateJsonPropertyInfo(typeof(int), "CheckpointStorage");
             storage.Get = _ => 1;
             info.Properties.Add(storage);
@@ -79,6 +83,44 @@ internal static class IncrementalProgressStore
         options.Converters.Add(new EventConverter<MarkerFrameSetDto>(path, item => item.Finished, reuseCompleted, allowChunks));
         options.Converters.Add(new EventConverter<BannerFrameSetDto>(path, item => item.Finished, reuseCompleted, allowChunks));
         return options;
+    }
+
+    private sealed class TimecodeConverter(string path, IReadOnlyList<int[]>? frozenBlocks, bool allowChunks, bool reuseFrozen) : JsonConverter<List<int>>
+    {
+        private readonly EventConverter<int[]> _blocks = new(path, _ => true, reuseFrozen, allowChunks);
+
+        public override List<int> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.StartArray)
+                return JsonSerializer.Deserialize<List<int>>(ref reader) ?? [];
+            using var document = JsonDocument.ParseValue(ref reader);
+            if (!allowChunks || document.RootElement.ValueKind != JsonValueKind.Object ||
+                !document.RootElement.TryGetProperty("$blocks", out var blocks) || blocks.ValueKind != JsonValueKind.Array)
+                throw new InvalidDataException("Invalid checkpoint timecode blocks");
+            var result = new List<int>();
+            foreach (var block in blocks.EnumerateArray())
+            {
+                var blockReader = new Utf8JsonReader(System.Text.Encoding.UTF8.GetBytes(block.GetRawText()));
+                blockReader.Read();
+                var values = _blocks.Read(ref blockReader, typeof(int[]), options);
+                if (values.Length is < 1 or > 4096) throw new InvalidDataException("Invalid timecode block length");
+                result.AddRange(values);
+            }
+            return result;
+        }
+
+        public override void Write(Utf8JsonWriter writer, List<int> value, JsonSerializerOptions options)
+        {
+            writer.WriteStartObject();
+            writer.WriteStartArray("$blocks");
+            foreach (var block in frozenBlocks ?? value.Chunk(4096))
+            {
+                if (block.Length is < 1 or > 4096) throw new InvalidDataException("Invalid timecode block length");
+                _blocks.Write(writer, block, options);
+            }
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        }
     }
 
     private sealed class EventConverter<T>(string manifest, Func<T, bool> completed, bool reuseCompleted, bool allowChunks) : JsonConverter<T> where T : class

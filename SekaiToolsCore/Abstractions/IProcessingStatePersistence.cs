@@ -13,3 +13,6 @@ public interface IProcessingStatePersistence
 
     void AddHistory(ProcessingState state);
 }
+
+/// <summary>Accepts immutable timecode blocks in processing-time checkpoint snapshots.</summary>
+public interface IIncrementalCheckpointPersistence : IProcessingStatePersistence { }

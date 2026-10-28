@@ -7,6 +7,29 @@ namespace SekaiTools.Tests;
 public class IncrementalProgressStoreTests
 {
     [Fact]
+    public void TimecodeBlocksReusePrefixAndRestoreFlatTimesIncludingVariableIntervals()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "SekaiTools-timecodes-" + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(root, "task.json");
+        try
+        {
+            var rate = new SekaiToolsCore.Process.Model.FrameRate(30);
+            rate.RestoreTimecodes(Enumerable.Range(0, 5000).Select(i => i * 40 + i / 10));
+            var blocks = rate.CaptureTimecodeBlocks();
+            IncrementalProgressStore.Save(path, new ProcessingState { ReusesCompletedFrames = true, CheckpointTimecodeBlocks = blocks });
+            var stamp = Directory.GetFiles(path + ".chunks").ToDictionary(p => p, File.GetLastWriteTimeUtc);
+            rate.RecordTimecode(5000, 200501);
+            IncrementalProgressStore.Save(path, new ProcessingState { ReusesCompletedFrames = true, CheckpointTimecodeBlocks = rate.CaptureTimecodeBlocks() });
+            Assert.Equal(rate.ExportTimecodes(), IncrementalProgressStore.Load(path).Timecodes);
+            Assert.True(stamp.Count(p => File.GetLastWriteTimeUtc(p.Key) == p.Value) == stamp.Count);
+            Assert.True(new FileInfo(path).Length < 2000);
+            IncrementalProgressStore.Delete(path);
+            Assert.False(Directory.Exists(path + ".chunks"));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
     public void CatalogLoadsChunksOnDemandAndOneTimeRecoveryRemovesOwnedBlocks()
     {
         var root = Path.Combine(Path.GetTempPath(), "SekaiTools-chunks-" + Guid.NewGuid().ToString("N"));
@@ -74,7 +97,8 @@ public class IncrementalProgressStoreTests
                 "Repeated manifest writes must exclude completed per-frame payloads");
             var loaded = IncrementalProgressStore.Load(path);
             Assert.Equal(JsonSerializer.Serialize(state), JsonSerializer.Serialize(loaded));
-            Assert.StartsWith("chunks1:", JsonSerializer.Deserialize<ProcessingState>(File.ReadAllText(path))!.Version);
+            using var manifest = JsonDocument.Parse(File.ReadAllText(path));
+            Assert.StartsWith("chunks1:", manifest.RootElement.GetProperty("Version").GetString());
             Assert.Equal(done.Frames, loaded.Dialog!.FrameSets[0].Frames);
             Assert.Equal(active.Frames, loaded.Dialog.FrameSets[1].Frames);
             Assert.False(loaded.ReusesCompletedFrames);

@@ -270,9 +270,12 @@ public class VideoProcessor : IDisposable
 
     private ProcessingState CaptureState(bool checkpoint)
     {
+        var blockedTimecodes = checkpoint && _persistence is IIncrementalCheckpointPersistence;
+        if (!checkpoint) Creator?.FrameRate.ReleaseCheckpointTimecodeBlocks();
         return new ProcessingState
         {
             ReusesCompletedFrames = checkpoint,
+            CheckpointTimecodeBlocks = blockedTimecodes ? Creator?.FrameRate.CaptureTimecodeBlocks() : null,
             Version = ProcessingStateCompatibility.CurrentVersion,
             Metadata = _stateMetadata,
             StopReason = StopReason,
@@ -281,7 +284,7 @@ public class VideoProcessor : IDisposable
             VideoFilePath = _videoPath,
             ScriptFilePath = _scriptPath,
             TranslateFilePath = _translatePath,
-            Timecodes = Creator?.FrameRate.ExportTimecodes().ToList() ?? [],
+            Timecodes = blockedTimecodes ? [] : Creator?.FrameRate.ExportTimecodes().ToList() ?? [],
             Dialog = DialogMatcher?.SaveState(checkpoint),
             Banner = BannerMatcher?.SaveState(),
             Marker = MarkerMatcher?.SaveState(checkpoint),

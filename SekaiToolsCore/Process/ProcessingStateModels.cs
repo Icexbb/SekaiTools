@@ -94,6 +94,8 @@ public class ProcessingState
 {
     [System.Text.Json.Serialization.JsonIgnore]
     public bool ReusesCompletedFrames { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    public IReadOnlyList<int[]>? CheckpointTimecodeBlocks { get; init; }
     public string Version { get; set; } = ProcessingStateCompatibility.CurrentVersion;
     public ProcessingStateMetadata? Metadata { get; set; }
     public ProcessStopReason StopReason { get; init; }

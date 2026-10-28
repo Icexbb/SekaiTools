@@ -52,7 +52,7 @@ public static class SubtitleQueueProgressStore
     }
 }
 
-public sealed class SubtitleQueueProcessingStatePersistence : IProcessingStatePersistence
+public sealed class SubtitleQueueProcessingStatePersistence : IIncrementalCheckpointPersistence
 {
     public static SubtitleQueueProcessingStatePersistence Instance { get; } = new();
     private SubtitleQueueProcessingStatePersistence() { }

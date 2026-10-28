@@ -17,7 +17,7 @@ public class VideoProcessorLifecycleTests
     public async Task DiskChunkedCheckpointRestoresRealDecoderStateWithoutChangingResult()
     {
         using var fixture = new Fixture();
-        using var original = fixture.Create(new VideoProcessCallbacks { IsPreviewEnabled = () => false });
+        using var original = fixture.Create(new VideoProcessCallbacks { IsPreviewEnabled = () => false }, persistence: new ChunkedSink());
         original.StartProcess();
         await original.WaitForCompletionAsync().WaitAsync(TimeSpan.FromSeconds(10));
         var expected = original.CaptureState();
@@ -25,7 +25,11 @@ public class VideoProcessorLifecycleTests
         var path = Path.Combine(directory, "checkpoint.json");
         try
         {
-            SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.Save(path, expected);
+            var checkpoint = (ProcessingState)typeof(VideoProcessor).GetMethod("CaptureState", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(original, [true])!;
+            Assert.Empty(checkpoint.Timecodes);
+            Assert.NotNull(checkpoint.CheckpointTimecodeBlocks);
+            SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.Save(path, checkpoint);
             var loaded = SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.Load(path);
             using var resumed = fixture.Create(new VideoProcessCallbacks { IsPreviewEnabled = () => false });
             resumed.ApplyState(loaded);
@@ -34,6 +38,13 @@ public class VideoProcessorLifecycleTests
             Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(resumed.CaptureState()));
         }
         finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+    }
+
+    private sealed class ChunkedSink : IIncrementalCheckpointPersistence
+    {
+        public void SaveProgress(string key, ProcessingState state) { }
+        public void DeleteProgress(string key) { }
+        public void AddHistory(ProcessingState state) { }
     }
 
     [Fact]
@@ -304,7 +315,8 @@ public class VideoProcessorLifecycleTests
             File.WriteAllText(ScriptPath, JsonSerializer.Serialize(new SekaiToolsBase.GameScript.GameScript { Snippets = [], TalkData = [], SpecialEffectData = [] }));
         }
         public VideoProcessor Create(VideoProcessCallbacks callbacks, IVideoCaptureFactory? factory = null,
-            RecognitionPerformanceOptions? options = null) => new(new Config(VideoPath, ScriptPath, "", performanceOptions: options), callbacks, this, this, factory);
+            RecognitionPerformanceOptions? options = null, IProcessingStatePersistence? persistence = null) =>
+            new(new Config(VideoPath, ScriptPath, "", performanceOptions: options), callbacks, this, persistence ?? this, factory);
         public string GetVideoProcessResourcePath(string fileName) => MenuPath;
         public void SaveProgress(string key, ProcessingState state) { }
         public void DeleteProgress(string key) { }

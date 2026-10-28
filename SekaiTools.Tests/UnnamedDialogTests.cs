@@ -232,8 +232,7 @@ public class UnnamedDialogTests
         context.Update(partial);
         cache.SetFrameIndex(5);
         matcher.Process(context, 5);
-        var checkpoint = System.Text.Json.JsonSerializer.Deserialize<SekaiToolsCore.Process.DialogMatcherStateDto>(
-            System.Text.Json.JsonSerializer.Serialize(matcher.SaveState()))!;
+        var checkpoint = DiskRoundtrip(matcher.SaveState());
         Assert.Equal(4, checkpoint.Status);
         Assert.Single(checkpoint.PendingTrackingFrames);
         Assert.Equal(count, matcher.Set[0].Frames.Count);
@@ -373,8 +372,7 @@ public class UnnamedDialogTests
         var count = matcher.Set[0].Frames.Count;
         Process(blank, 5);
         Assert.Equal(4, matcher.SaveState().Status);
-        var checkpoint = System.Text.Json.JsonSerializer.Deserialize<SekaiToolsCore.Process.DialogMatcherStateDto>(
-            System.Text.Json.JsonSerializer.Serialize(matcher.SaveState()))!;
+        var checkpoint = DiskRoundtrip(matcher.SaveState());
         using var restored = new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
         restored.RestoreState(checkpoint);
         Process(visible, 6);
@@ -519,8 +517,7 @@ public class UnnamedDialogTests
         context.Update(blank);
         cache.SetFrameIndex(stage + 1);
         matcher.Process(context, stage + 1);
-        var checkpoint = System.Text.Json.JsonSerializer.Deserialize<SekaiToolsCore.Process.DialogMatcherStateDto>(
-            System.Text.Json.JsonSerializer.Serialize(matcher.SaveState()))!;
+        var checkpoint = DiskRoundtrip(matcher.SaveState());
         Assert.Equal(4, checkpoint.Status);
         Assert.Equal(stage, checkpoint.PendingResumeStatus);
         using var restored = new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
@@ -541,6 +538,21 @@ public class UnnamedDialogTests
         }
         Assert.True(matcher.Finished);
         Assert.Equal(end, matcher.Set[0].End().Index);
+    }
+
+    private static SekaiToolsCore.Process.DialogMatcherStateDto DiskRoundtrip(SekaiToolsCore.Process.DialogMatcherStateDto state)
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "SekaiTools-matcher-disk-" + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(directory, "checkpoint.json");
+        try
+        {
+            SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.Save(path,
+                new SekaiToolsCore.Process.ProcessingState { Dialog = state });
+            var loaded = SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.Load(path).Dialog!;
+            Assert.Equal(System.Text.Json.JsonSerializer.Serialize(state), System.Text.Json.JsonSerializer.Serialize(loaded));
+            return loaded;
+        }
+        finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
     }
 
     private sealed class Fixture : ITemplateResourceProvider, IDisposable

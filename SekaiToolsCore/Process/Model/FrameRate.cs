@@ -49,6 +49,8 @@ public class FrameRate
     private readonly bool _drop;
     private readonly long _numerator;
     private readonly List<int> _timecodes = [];
+    private const int CheckpointBlockSize = 4096;
+    private readonly List<int[]> _checkpointBlocks = [];
     private readonly object _timecodesLock = new();
 
     public FrameRate(double fps)
@@ -117,6 +119,7 @@ public class FrameRate
             var value = (int)Math.Round(milliseconds);
             if (frameIndex == 0)
             {
+                if (_timecodes[0] != Math.Max(0, value)) _checkpointBlocks.Clear();
                 _timecodes[0] = Math.Max(0, value);
                 return true;
             }
@@ -126,6 +129,10 @@ public class FrameRate
 
             var minimum = _timecodes[frameIndex - 1] + 1;
             value = Math.Max(value, minimum);
+            if (frameIndex < _timecodes.Count && _timecodes[frameIndex] != value &&
+                frameIndex / CheckpointBlockSize < _checkpointBlocks.Count)
+                _checkpointBlocks.RemoveRange(frameIndex / CheckpointBlockSize,
+                    _checkpointBlocks.Count - frameIndex / CheckpointBlockSize);
             if (frameIndex == _timecodes.Count)
                 _timecodes.Add(value);
             else
@@ -142,6 +149,24 @@ public class FrameRate
         }
     }
 
+    internal IReadOnlyList<int[]> CaptureTimecodeBlocks()
+    {
+        lock (_timecodesLock)
+        {
+            while (_checkpointBlocks.Count < _timecodes.Count / CheckpointBlockSize)
+                _checkpointBlocks.Add(_timecodes.GetRange(_checkpointBlocks.Count * CheckpointBlockSize, CheckpointBlockSize).ToArray());
+            var blocks = _checkpointBlocks.ToList();
+            var tail = _timecodes.Count % CheckpointBlockSize;
+            if (tail > 0) blocks.Add(_timecodes.GetRange(_checkpointBlocks.Count * CheckpointBlockSize, tail).ToArray());
+            return blocks;
+        }
+    }
+
+    internal void ReleaseCheckpointTimecodeBlocks()
+    {
+        lock (_timecodesLock) _checkpointBlocks.Clear();
+    }
+
     public void RestoreTimecodes(IEnumerable<int> timecodes)
     {
         var restored = timecodes.ToList();
@@ -152,6 +177,7 @@ public class FrameRate
 
         lock (_timecodesLock)
         {
+            _checkpointBlocks.Clear();
             _timecodes.Clear();
             _timecodes.AddRange(restored);
         }
