@@ -45,6 +45,7 @@ public class DialogMatcherStateDto
     public LookaheadStateDto? LookaheadState { get; init; }
     public int Status { get; init; }
     public int ConsecutiveFailures { get; init; }
+    public int? LastFailureFrame { get; init; }
     public int LastFailedIndex { get; init; } = -1;
     public bool UseFallbackThreshold { get; init; }
     public PointDto? NameTagPosition { get; init; }
@@ -58,6 +59,7 @@ public class BannerMatcherStateDto
     public LookaheadStateDto? LookaheadState { get; init; }
     public int Status { get; init; }
     public int ConsecutiveFailures { get; init; }
+    public int? LastFailureFrame { get; init; }
     public int LastFailedIndex { get; init; } = -1;
     public bool UseFallbackThreshold { get; init; }
     public List<BannerFrameSetDto> FrameSets { get; init; } = [];
@@ -70,6 +72,7 @@ public class MarkerMatcherStateDto
     public LookaheadStateDto? LookaheadState { get; init; }
     public int Status { get; init; }
     public int ConsecutiveFailures { get; init; }
+    public int? LastFailureFrame { get; init; }
     public int LastFailedIndex { get; init; } = -1;
     public bool UseFallbackThreshold { get; init; }
     public List<MarkerFrameSetDto> FrameSets { get; init; } = [];

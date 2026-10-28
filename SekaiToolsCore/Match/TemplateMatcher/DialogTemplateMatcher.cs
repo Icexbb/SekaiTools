@@ -473,7 +473,7 @@ public class DialogTemplateMatcher(
                     cachePool.NextDialog();
                     continue;
                 case MatchStatus.DialogNotMatched or MatchStatus.NameTagNotMatched:
-                    if (TryEnterFallback()) continue;
+                    if (TryEnterFallback(frameIndex)) continue;
                     return IsStatusMatched(firstStatus.Value);
                 case MatchStatus.DialogPending:
                     // Do not export uncertain frames until full evidence returns.
@@ -535,6 +535,7 @@ public class DialogTemplateMatcher(
             PendingTrackingFrames = _trackingGrace.CaptureState(),
             Status = (int)_status,
             ConsecutiveFailures = cf,
+            LastFailureFrame = LastFailureFrame,
             LastFailedIndex = lfi,
             UseFallbackThreshold = uft,
             NameTagPosition = _nameTagPosition.IsEmpty
@@ -558,7 +559,7 @@ public class DialogTemplateMatcher(
         _lookaheadTracker.RestoreState(state.LookaheadState);
         _status = (MatchStatus)state.Status;
         _trackingGrace.RestoreState(state.PendingTrackingFrames);
-        RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold);
+        RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold, state.LastFailureFrame);
         _nameTagPosition = state.NameTagPosition is { } p
             ? new Point(p.X, p.Y)
             : Point.Empty;

@@ -202,7 +202,7 @@ public class MarkerTemplateMatcher(
                     _lookaheadTracker.Reset();
                     continue;
                 case MatchStatus.NotMatched:
-                    if (TryEnterFallback()) continue;
+                    if (TryEnterFallback(frameIndex)) continue;
                     return;
                 case MatchStatus.Matched:
                 default:
@@ -224,6 +224,7 @@ public class MarkerTemplateMatcher(
             LookaheadState = _lookaheadTracker.CaptureState(),
             Status = (int)_status,
             ConsecutiveFailures = cf,
+            LastFailureFrame = LastFailureFrame,
             LastFailedIndex = lfi,
             UseFallbackThreshold = uft,
             Diagnostics = SaveDiagnostics(),
@@ -240,7 +241,7 @@ public class MarkerTemplateMatcher(
         _searchScheduler.RestoreState(state.SearchState);
         _lookaheadTracker.RestoreState(state.LookaheadState);
         _status = (MatchStatus)state.Status;
-        RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold);
+        RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold, state.LastFailureFrame);
         RestoreDiagnostics(state.Diagnostics);
 
         for (var i = 0; i < state.FrameSets.Count && i < Set.Count; i++)

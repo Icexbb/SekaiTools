@@ -10,6 +10,7 @@ public abstract class MatcherStateMachine<T> where T : BaseFrameSet
     protected const double TrackingThresholdRatio = 0.94;
 
     private int _consecutiveFailures;
+    private int? _lastFailureFrame;
     private int _firstUnfinishedIndex;
     private int _lastFailedIndex = -1;
     private bool _useFallbackThreshold;
@@ -43,17 +44,20 @@ public abstract class MatcherStateMachine<T> where T : BaseFrameSet
         {
             _lastFailedIndex = index;
             _consecutiveFailures = 0;
+            _lastFailureFrame = null;
             _useFallbackThreshold = false;
         }
     }
 
-    protected bool TryEnterFallback()
+    protected bool TryEnterFallback(int frameIndex)
     {
-        _consecutiveFailures++;
+        _consecutiveFailures += _lastFailureFrame is { } previous ? Math.Max(0, frameIndex - previous) : 0;
+        _lastFailureFrame = frameIndex;
         if (_consecutiveFailures >= FallbackTriggerFrames && !_useFallbackThreshold)
         {
             _useFallbackThreshold = true;
             _consecutiveFailures = 0;
+            _lastFailureFrame = null;
             return true;
         }
 
@@ -64,6 +68,7 @@ public abstract class MatcherStateMachine<T> where T : BaseFrameSet
     protected void MarkSucceeded()
     {
         _consecutiveFailures = 0;
+        _lastFailureFrame = null;
         _useFallbackThreshold = false;
     }
 
@@ -71,6 +76,7 @@ public abstract class MatcherStateMachine<T> where T : BaseFrameSet
     {
         Set[index].Finished = true;
         _consecutiveFailures = 0;
+        _lastFailureFrame = null;
         _useFallbackThreshold = false;
     }
 
@@ -79,6 +85,7 @@ public abstract class MatcherStateMachine<T> where T : BaseFrameSet
         Set[index].Finished = true;
         Diagnostics.Add(new MatcherDiagnostic(typeof(T).Name, index, frameIndex, reason));
         _consecutiveFailures = 0;
+        _lastFailureFrame = null;
         _useFallbackThreshold = false;
     }
 
@@ -94,14 +101,17 @@ public abstract class MatcherStateMachine<T> where T : BaseFrameSet
         _firstUnfinishedIndex = 0;
     }
 
+    protected int? LastFailureFrame => _lastFailureFrame;
+
     protected (int consecutiveFailures, int lastFailedIndex, bool useFallbackThreshold) SaveFallbackState()
     {
         return (_consecutiveFailures, _lastFailedIndex, _useFallbackThreshold);
     }
 
-    protected void RestoreFallbackState(int consecutiveFailures, int lastFailedIndex, bool useFallbackThreshold)
+    protected void RestoreFallbackState(int consecutiveFailures, int lastFailedIndex, bool useFallbackThreshold, int? lastFailureFrame = null)
     {
         _consecutiveFailures = consecutiveFailures;
+        _lastFailureFrame = lastFailureFrame;
         _lastFailedIndex = lastFailedIndex;
         _useFallbackThreshold = useFallbackThreshold;
         _firstUnfinishedIndex = 0;

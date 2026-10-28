@@ -27,6 +27,7 @@ public class BannerTemplateMatcher(
     private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
     private readonly AdaptiveSearchScheduler _searchScheduler = new();
     private MatchStatus _status;
+    internal bool IsTracking => _status == MatchStatus.Matched;
 
     public void Dispose()
     {
@@ -194,7 +195,7 @@ public class BannerTemplateMatcher(
                     _lookaheadTracker.Reset();
                     continue;
                 case MatchStatus.NotMatched:
-                    if (TryEnterFallback()) continue;
+                    if (TryEnterFallback(frameIndex)) continue;
                     return;
                 case MatchStatus.Matched:
                 default:
@@ -215,6 +216,7 @@ public class BannerTemplateMatcher(
             LookaheadState = _lookaheadTracker.CaptureState(),
             Status = (int)_status,
             ConsecutiveFailures = cf,
+            LastFailureFrame = LastFailureFrame,
             LastFailedIndex = lfi,
             UseFallbackThreshold = uft,
             Diagnostics = SaveDiagnostics(),
@@ -232,7 +234,7 @@ public class BannerTemplateMatcher(
         _searchScheduler.RestoreState(state.SearchState);
         _lookaheadTracker.RestoreState(state.LookaheadState);
         _status = (MatchStatus)state.Status;
-        RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold);
+        RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold, state.LastFailureFrame);
         RestoreDiagnostics(state.Diagnostics);
 
         for (var i = 0; i < state.FrameSets.Count && i < Set.Count; i++)

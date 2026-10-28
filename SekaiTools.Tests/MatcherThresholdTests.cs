@@ -1,3 +1,5 @@
+using System.Text.Json;
+using SekaiToolsCore.Process;
 using SekaiToolsCore.Match.TemplateMatcher;
 using SekaiToolsCore.Process.FrameSet;
 
@@ -5,6 +7,22 @@ namespace SekaiTools.Tests;
 
 public class MatcherThresholdTests
 {
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void FallbackUsesElapsedFramesAndSurvivesRestore(int samplingInterval)
+    {
+        var matcher = new ThresholdMatcher();
+        for (var frame = 100; frame < 110; frame += samplingInterval)
+            Assert.False(matcher.Fail(frame));
+        var restored = new ThresholdMatcher();
+        restored.Load(JsonSerializer.Deserialize<DialogMatcherStateDto>(JsonSerializer.Serialize(matcher.Save()))!);
+        Assert.True(matcher.Fail(110));
+        Assert.True(restored.Fail(110));
+        Assert.False(matcher.Fail(110));
+        Assert.False(matcher.Fail(110));
+    }
+
     [Fact]
     public void EffectiveThreshold_UsesLowerExitThresholdWhileTracking()
     {
@@ -32,6 +50,20 @@ public class MatcherThresholdTests
     private sealed class ThresholdMatcher(List<TestFrameSet>? sets = null)
         : MatcherStateMachine<TestFrameSet>(sets ?? [], 10)
     {
+        public bool Fail(int frame) => TryEnterFallback(frame);
+        public DialogMatcherStateDto Save()
+        {
+            var (failures, target, fallback) = SaveFallbackState();
+            return new DialogMatcherStateDto
+            {
+                ConsecutiveFailures = failures,
+                LastFailedIndex = target,
+                UseFallbackThreshold = fallback,
+                LastFailureFrame = LastFailureFrame
+            };
+        }
+        public void Load(DialogMatcherStateDto state) =>
+            RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold, state.LastFailureFrame);
         public double Threshold(double value, bool tracking)
         {
             return EffectiveThreshold(value, tracking);
