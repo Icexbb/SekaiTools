@@ -4,8 +4,10 @@
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              Foreground="{DynamicResource TextFillColorPrimaryBrush}">
-    <DockPanel Margin="6,4">
-        <ui:Button DockPanel.Dock="Right" Content="条目操作" Padding="8,2" Click="OpenActions"
+    <StackPanel Margin="4,6,8,4" Width="76" VerticalAlignment="Top">
+        <TextBlock Text="{Binding SequenceNumber, StringFormat='#{0}'}" FontSize="24"
+                   HorizontalAlignment="Center" ToolTip="{Binding Label}" />
+        <ui:Button Content="条目操作" Padding="4,2" FontSize="12" HorizontalAlignment="Center" Click="OpenActions"
                    AutomationProperties.Name="{Binding Label}">
             <ui:Button.ContextMenu>
                 <ContextMenu>
@@ -17,12 +19,7 @@
                 </ContextMenu>
             </ui:Button.ContextMenu>
         </ui:Button>
-        <WrapPanel VerticalAlignment="Center">
-            <ui:SymbolIcon Symbol="Document24" FontSize="14" Margin="0,0,6,0" />
-            <TextBlock Text="{Binding Label}" Margin="0,0,12,0" />
-            <TextBlock Text="{Binding StateText}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-            <ui:Button Content="采用参考" Icon="{ui:SymbolIcon DocumentCheckmark24}" Tag="reference" Click="AdoptReference" Padding="8,2" Margin="8,0,0,0"
-                       Visibility="{c:Binding Body.ReferenceAvailable,FalseToVisibility=Collapsed}" />
-        </WrapPanel>
-    </DockPanel>
+        <ui:Button Content="采用参考" Icon="{ui:SymbolIcon DocumentCheckmark24}" Tag="reference" Click="AdoptReference" Padding="4,2" FontSize="12" Margin="0,4,0,0" HorizontalAlignment="Center"
+                   Visibility="{c:Binding Body.ReferenceAvailable,FalseToVisibility=Collapsed}" />
+    </StackPanel>
 </UserControl>
