@@ -62,6 +62,7 @@ public partial class TranslatePage : UserControl
         ViewModel.ContentChanged += (_, _) =>
         {
             if (_restoringDraft) return;
+            ViewModel.MarkDraftPending();
             _draftTimer.Stop();
             _draftTimer.Start();
         };
@@ -86,7 +87,9 @@ public partial class TranslatePage : UserControl
     {
         _draftTimer.Stop();
         if (_restoringDraft || !_draftChecked && !ViewModel.HasScript) return true;
-        if (_sessions.SaveDraft(ViewModel)) return true;
+        var saved = _sessions.SaveDraft(ViewModel);
+        ViewModel.MarkDraftResult(saved);
+        if (saved) return true;
         SnackbarService.Show("草稿保存失败", "无法写入本地恢复草稿，请保存翻译文件后再退出。", ControlAppearance.Danger,
             new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(5));
         return false;

@@ -45,14 +45,29 @@ public partial class TranslatePageModel : ViewModelBase
     public bool IsDirty
     {
         get => GetProperty(false);
-        private set => SetProperty(value);
+        private set { SetProperty(value); OnPropertyChanged(nameof(SaveStatus)); }
     }
+
+    public string DraftStatus
+    {
+        get => GetProperty(string.Empty);
+        private set { SetProperty(value); OnPropertyChanged(nameof(SaveStatus)); }
+    }
+
+    public string SaveStatus => !HasScript ? "请先载入剧本" : IsDirty
+        ? "有未保存修改 · " + DraftStatus
+        : HasTranslation ? "文件已保存 · " + System.IO.Path.GetFileName(TranslationPath)
+        : "尚未保存翻译文件";
+
+    public void MarkDraftPending() => DraftStatus = "等待更新恢复草稿";
+    public void MarkDraftResult(bool success) => DraftStatus = success ? "恢复草稿已更新（尚未写入翻译文件）" : "草稿更新失败，请保存文件";
 
     public void MarkSaved(EditValue[]? values = null, string? path = null)
     {
         _savedValues = values ?? ReadValues();
         if (path != null) TranslationPath = path;
         IsDirty = !ReadValues().SequenceEqual(_savedValues);
+        OnPropertyChanged(nameof(SaveStatus));
         ContentChanged?.Invoke(this, EventArgs.Empty);
     }
 

@@ -88,6 +88,7 @@ public partial class TranslatePageModel
     private void FinishEdit()
     {
         IsDirty = !_currentValues.SequenceEqual(_savedValues);
+        MarkDraftPending();
         NotifyHistory();
         ContentChanged?.Invoke(this, EventArgs.Empty);
     }
