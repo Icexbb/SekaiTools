@@ -93,8 +93,7 @@
             </ui:Card>
 
             <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}">
-                <Border Padding="12,10" Margin="0,0,0,10" CornerRadius="6"
-                        Background="{DynamicResource ControlFillColorSecondaryBrush}">
+                <ui:Card Padding="12,10" Margin="0,0,0,10" HorizontalContentAlignment="Stretch">
                     <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -159,7 +158,7 @@
                             </Grid>
                         </Border>
                     </StackPanel>
-                </Border>
+                </ui:Card>
                 <Border x:Name="ImportErrorPanel" Visibility="Collapsed" Padding="8" Margin="0,0,0,8"
                         BorderThickness="1" BorderBrush="{DynamicResource SystemFillColorCriticalBrush}">
                     <StackPanel>
