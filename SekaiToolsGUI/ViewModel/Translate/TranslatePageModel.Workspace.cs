@@ -36,6 +36,11 @@ public partial class TranslatePageModel
         get => GetProperty(0);
         set { SetProperty(value); RefreshVisibleEvents(); }
     }
+    public int TypeFilterIndex
+    {
+        get => GetProperty(0);
+        set { SetProperty(value); RefreshVisibleEvents(); }
+    }
     public LineModel[] VisibleEvents
     {
         get => GetProperty(Array.Empty<LineModel>());
@@ -57,7 +62,12 @@ public partial class TranslatePageModel
     public void RefreshVisibleEvents()
     {
         var query = SearchText.Trim();
-        var matches = Events.Where(line => FilterIndex switch
+        var matches = Events.Where(line => TypeFilterIndex switch
+        {
+            1 => line is LineDialogModel,
+            2 => line is LineEffectModel,
+            _ => true
+        }).Where(line => FilterIndex switch
         {
             1 => line.IsUntranslated,
             2 => line.HasWarning,
@@ -88,7 +98,7 @@ public partial class TranslatePageModel
         var candidates = Events.Where(line => warnings ? line.HasWarning : line.IsUntranslated).ToArray();
         var next = candidates.FirstOrDefault(line => line.SequenceNumber > (current?.SequenceNumber ?? 0)) ?? candidates.FirstOrDefault();
         if (next == null) return null;
-        if (!VisibleEvents.Contains(next)) { SearchText = string.Empty; FilterIndex = 0; }
+        if (!VisibleEvents.Contains(next)) { SearchText = string.Empty; FilterIndex = 0; TypeFilterIndex = 0; }
         RefreshVisibleEvents();
         return next;
     }
@@ -109,6 +119,7 @@ public partial class TranslatePageModel
         {
             SearchText = string.Empty;
             FilterIndex = 0;
+            TypeFilterIndex = 0;
             NavigationRequested?.Invoke(this, line);
             return;
         }

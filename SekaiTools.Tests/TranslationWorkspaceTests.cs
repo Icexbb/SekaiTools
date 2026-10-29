@@ -112,6 +112,38 @@ public class TranslationWorkspaceTests
     }
 
     [Fact]
+    public void TypeFilterCombinesWithStatusAndSearchWithoutChangingExport()
+    {
+        var model = new TranslatePageModel();
+        model.LoadScript(new GameScript
+        {
+            ScenarioId = "mixed",
+            TalkData = [new("角色", "教室对话", 0)],
+            SpecialEffectData = [new(8, "教室", "", 0, 0)],
+            Snippets = [new() { Action = 1 }, new() { Action = 6 }]
+        }, "mixed.json");
+        var exported = model.Export();
+        model.TypeFilterIndex = 1;
+        Assert.IsType<LineDialogModel>(Assert.Single(model.VisibleEvents));
+        model.TypeFilterIndex = 2;
+        var place = Assert.IsType<LineEffectModel>(Assert.Single(model.VisibleEvents));
+        model.FilterIndex = 1;
+        model.SearchText = "教室";
+        Assert.Single(model.VisibleEvents);
+        place.Content.Translated = "教室译文";
+        Assert.Empty(model.VisibleEvents);
+        model.Undo();
+        Assert.Single(model.VisibleEvents);
+        Assert.Equal(exported, model.Export());
+        model.Events[0].RequestAction("context");
+        Assert.Equal(0, model.TypeFilterIndex);
+        Assert.Equal(2, model.VisibleEvents.Length);
+        model.TypeFilterIndex = 2;
+        Assert.Same(model.Events[0], model.FindNext(place, false));
+        Assert.Equal(0, model.TypeFilterIndex);
+    }
+
+    [Fact]
     public void PreflightReflectsWholeDocumentAndSelectedFormat()
     {
         var model = CreateModel();

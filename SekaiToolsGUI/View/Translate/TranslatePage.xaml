@@ -98,19 +98,25 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="110" />
                                 <ColumnDefinition Width="130" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <ui:TextBox x:Name="SearchBox" Margin="0,0,10,0" PlaceholderText="搜索原文、译文、角色或编号"
                                         Icon="{ui:SymbolIcon Search24}" AutomationProperties.Name="搜索翻译条目"
                                         Text="{Binding SearchText,UpdateSourceTrigger=PropertyChanged}" />
-                            <ComboBox Grid.Column="1" SelectedIndex="{Binding FilterIndex}" AutomationProperties.Name="条目筛选">
+                            <ComboBox Grid.Column="1" Margin="0,0,10,0" SelectedIndex="{Binding TypeFilterIndex}" AutomationProperties.Name="条目类型">
+                                <ComboBoxItem Content="全部类型" />
+                                <ComboBoxItem Content="对话" />
+                                <ComboBoxItem Content="地点" />
+                            </ComboBox>
+                            <ComboBox Grid.Column="2" SelectedIndex="{Binding FilterIndex}" AutomationProperties.Name="条目筛选">
                                 <ComboBoxItem Content="全部条目" />
                                 <ComboBoxItem Content="仅看未译" />
                                 <ComboBoxItem Content="仅看有提示" />
                                 <ComboBoxItem Content="仅看闪回" />
                             </ComboBox>
-                            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                            <StackPanel Grid.Column="3" Orientation="Horizontal">
                                 <ui:Button Content="下一未译" Icon="{ui:SymbolIcon ArrowRight28}" Click="NextUntranslated_OnClick" Margin="10,0,0,0" ToolTip="下一未译 (Ctrl+Enter)" />
                                 <ui:Button Content="下一提示" Icon="{ui:SymbolIcon Warning28}" Click="NextWarning_OnClick" Margin="10,0,0,0" />
                             </StackPanel>

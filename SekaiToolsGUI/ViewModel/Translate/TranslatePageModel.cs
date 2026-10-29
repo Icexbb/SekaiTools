@@ -166,6 +166,7 @@ public partial class TranslatePageModel : ViewModelBase
             ResetHistory();
             SearchText = string.Empty;
             FilterIndex = 0;
+            TypeFilterIndex = 0;
             RefreshVisibleEvents();
             NotifyProgress();
             LastEditFeedback = string.Empty;
