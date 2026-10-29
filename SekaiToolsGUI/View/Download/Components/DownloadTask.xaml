@@ -8,24 +8,36 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:DownloadTask}"
              HorizontalAlignment="Stretch">
-    <ui:Card Name="Control" HorizontalAlignment="Stretch">
-        <Grid>
+    <ui:Card Name="Control" HorizontalAlignment="Stretch" Padding="12" Margin="0,0,0,8">
+        <Grid x:Name="TaskGrid">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Name="TaskNameTextBlock" TextWrapping="Wrap" />
-            <Grid Grid.Row="1" Margin="0,8,0,0">
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Name="TaskNameTextBlock" TextWrapping="Wrap" />
+            <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Name="SourceText" Margin="0,4,0,0" FontSize="12"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+            <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Name="ErrorText" Margin="0,8,0,0" TextWrapping="Wrap" Visibility="Collapsed"
+                       Foreground="{DynamicResource SystemFillColorCriticalBrush}" FontSize="12" />
+            <Grid x:Name="StatusGrid" Grid.Row="3" Grid.ColumnSpan="2" Margin="0,8,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <ui:SymbolIcon Grid.Column="0" Name="StatusIcon" Symbol="ArrowDownload24"
                                Margin="0,0,5,0" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Name="StatusText" Text="等待下载"
                            VerticalAlignment="Center" />
-                <Button Grid.Column="2" Name="RemoveButton" Content="移除"
+                <Button Grid.Column="2" Name="RetryButton" Margin="4,0" Padding="6" Visibility="Collapsed"
+                        ToolTip="重试此任务" AutomationProperties.Name="重试此下载任务" Click="RetryButton_OnClick">
+                    <ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" />
+                </Button>
+                <Button Grid.Column="3" Name="RemoveButton" Content="移除"
                         Padding="8,3" Click="RemoveButton_OnClick"
                         AutomationProperties.Name="从下载列表移除" />
             </Grid>

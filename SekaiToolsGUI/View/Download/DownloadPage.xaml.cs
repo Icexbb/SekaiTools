@@ -29,17 +29,27 @@ namespace SekaiToolsGUI.View.Download;
 public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 {
     private static Task? _sourceListInitializationTask;
+    private static readonly HashSet<DownloadPage> ActiveDownloads = [];
+    private CancellationTokenSource? _downloadCancellation;
+    private DownloadBatch _batch = new(Fetcher.Instance);
+    private Task? _runningBatch;
+    private string? _downloadDirectory;
+    private HashSet<Guid> _batchIds = [];
+    private bool IsDownloading => _downloadCancellation != null;
     private readonly Dictionary<int, UserControl> _storyTabs = new();
     private readonly Dictionary<int, Task> _storyInitializationTasks = new();
     private int _selectionVersion;
     private int _sourceVersion;
     private static readonly object StoryDataLock = new();
 
-    public DownloadPage()
+    public DownloadPage() : this(true) { }
+
+    internal DownloadPage(bool initializeCatalog)
     {
         InitializeComponent();
         DataContext = ViewModel;
-        BoxStoryType.SelectedIndex = 0;
+        SizeChanged += (_, _) => UpdateQueueLayout();
+        if (initializeCatalog) BoxStoryType.SelectedIndex = 0;
     }
 
     private static ISnackbarService SnackService =>
@@ -53,6 +63,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 
     public async void OnNavigatedTo()
     {
+        DirectoryText.Text = _downloadDirectory ?? SettingPageModel.Instance.DownloadDirectory;
         await Dispatcher.Yield(DispatcherPriority.Background);
         _sourceListInitializationTask ??= InitDownloadSourceAsync();
         await _sourceListInitializationTask;
@@ -70,8 +81,10 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
                 return false;
             }
 
-            var task = new DownloadTask(tag, url);
+            if (!TryGetDownloadDirectory(out var directory)) return false;
+            var task = new DownloadTask(tag, url, ViewModel.CurrentSource.SourceName, directory);
             task.RemoveRequested += DownloadTask_OnRemoveRequested;
+            task.RetryRequested += DownloadTask_OnRetryRequested;
             DownloadItemBox.Items.Add(task);
             UpdateTaskListState();
             return true;
@@ -80,8 +93,9 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 
     private void DownloadTask_OnRemoveRequested(object? sender, EventArgs e)
     {
-        if (sender is not DownloadTask task) return;
+        if (sender is not DownloadTask task || IsDownloading && _batchIds.Contains(task.Id)) return;
         task.RemoveRequested -= DownloadTask_OnRemoveRequested;
+        task.RetryRequested -= DownloadTask_OnRetryRequested;
         DownloadItemBox.Items.Remove(task);
         UpdateTaskListState();
     }
@@ -90,6 +104,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     {
         Dispatcher.Invoke(() =>
         {
+            if (!TryGetDownloadDirectory(out var directory)) return;
             var urls = DownloadItemBox.Items.OfType<DownloadTask>().Select(task => task.Url).ToHashSet();
             var added = 0;
             var skipped = 0;
@@ -100,8 +115,9 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
                     skipped++;
                     continue;
                 }
-                var task = new DownloadTask(tag, url);
+                var task = new DownloadTask(tag, url, ViewModel.CurrentSource.SourceName, directory);
                 task.RemoveRequested += DownloadTask_OnRemoveRequested;
+            task.RetryRequested += DownloadTask_OnRetryRequested;
                 DownloadItemBox.Items.Add(task);
                 added++;
             }
@@ -111,13 +127,78 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         });
     }
 
+    private bool TryGetDownloadDirectory(out string directory)
+    {
+        try { directory = GetDownloadDirectory(); return true; }
+        catch (Exception error)
+        {
+            directory = "";
+            QueueSnackService.Show("下载目录无效", error.Message, ControlAppearance.Danger,
+                new SymbolIcon(SymbolRegular.FolderOpen24), TimeSpan.FromSeconds(5));
+            return false;
+        }
+    }
+
+    private string GetDownloadDirectory() => _downloadDirectory ?? SettingPageModel.Instance.GetDownloadDirectory();
+
     private void UpdateTaskListState()
     {
         var tasks = DownloadItemBox.Items.OfType<DownloadTask>().ToArray();
-        TaskCountText.Text = $"下载列表 ({tasks.Length})";
+        TaskCountText.Text = $"下载列表（{tasks.Length}）";
         EmptyTaskPanel.Visibility = tasks.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
-        TaskClearButton.IsEnabled = tasks.Length > 0;
-        DownloadButton.IsEnabled = tasks.Any(task => !task.Downloaded);
+        TaskClearButton.IsEnabled = tasks.Length > 0 && !IsDownloading;
+        FilePolicyBox.IsEnabled = ChooseDirectoryButton.IsEnabled = !IsDownloading;
+        var waiting = tasks.Count(task => !task.Downloaded);
+        DownloadButton.IsEnabled = IsDownloading ? !_downloadCancellation!.IsCancellationRequested : waiting > 0;
+        DownloadActionText.Text = IsDownloading
+            ? _downloadCancellation!.IsCancellationRequested ? "正在停止…" : "停止下载"
+            : $"开始下载（{waiting}）";
+        DownloadActionIcon.Symbol = IsDownloading ? SymbolRegular.Dismiss24 : SymbolRegular.ArrowDownload24;
+        var failures = tasks.Count(task => task.Status == DownloadStatus.Failed);
+        RetryFailedButton.Visibility = failures > 0 ? Visibility.Visible : Visibility.Collapsed;
+        RetryFailedButton.IsEnabled = !IsDownloading;
+        RetryFailedText.Text = $"重试失败项（{failures}）";
+        DirectoryText.Text = _downloadDirectory ?? SettingPageModel.Instance.DownloadDirectory;
+        if (tasks.Length == 0 && !IsDownloading)
+        {
+            BatchProgress.Maximum = 1;
+            BatchProgress.Value = 0;
+            BatchStatusText.Text = "选择剧情后开始下载";
+        }
+        if (IsDownloading)
+        {
+            var batch = tasks.Where(task => _batchIds.Contains(task.Id)).ToArray();
+            var done = batch.Count(task => task.Status is DownloadStatus.Succeeded or DownloadStatus.Skipped or DownloadStatus.Failed);
+            BatchProgress.Maximum = Math.Max(1, batch.Length);
+            BatchProgress.Value = done;
+            BatchStatusText.Text = $"已处理 {done}/{batch.Length} · 失败 {batch.Count(task => task.Status == DownloadStatus.Failed)}";
+            var next = tasks.Count(task => !_batchIds.Contains(task.Id) && !task.Downloaded);
+            if (next > 0) BatchStatusText.Text += $" · 下一批 {next}";
+        }
+    }
+
+    private void UpdateQueueLayout()
+    {
+        if (QueueCard == null) return;
+        var compact = ActualWidth < 920;
+        Grid.SetRow(QueueCard, compact ? 2 : 0);
+        Grid.SetColumn(QueueCard, compact ? 0 : 1);
+        Grid.SetColumnSpan(QueueCard, compact ? 2 : 1);
+        Grid.SetRowSpan(QueueCard, compact ? 1 : 2);
+        QueueCard.Width = compact ? double.NaN : 320;
+        QueueCard.Height = compact ? Math.Min(320, ActualHeight * 0.5) : double.NaN;
+        QueueCard.Margin = compact ? new Thickness(0, 8, 0, 0) : new Thickness(12, 0, 0, 0);
+        Grid.SetColumnSpan(DirectoryGrid, compact ? 1 : 2);
+        Grid.SetRow(FilePolicyBox, compact ? 2 : 3);
+        Grid.SetColumn(FilePolicyBox, compact ? 1 : 0);
+        Grid.SetColumnSpan(FilePolicyBox, compact ? 1 : 2);
+        FilePolicyBox.Margin = compact ? new Thickness(8, 0, 0, 8) : new Thickness(0, 0, 0, 8);
+        Grid.SetRow(RetryFailedButton, compact ? 3 : 4);
+        Grid.SetColumnSpan(RetryFailedButton, compact ? 1 : 2);
+        RetryFailedButton.Margin = compact ? new Thickness(0, 0, 8, 0) : new Thickness(0, 0, 0, 8);
+        Grid.SetRow(MainActions, compact ? 3 : 5);
+        Grid.SetColumn(MainActions, compact ? 1 : 0);
+        Grid.SetColumnSpan(MainActions, compact ? 1 : 2);
     }
 
     private async void StoryTypeSelector_OnSelected(object sender, SelectionChangedEventArgs e)
@@ -229,111 +310,93 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 
     private async void DownloadButton_OnClick(object sender, RoutedEventArgs e)
     {
-        var button = (Button)sender;
-        await FuncDownload();
-        button.Content = "下载";
-        foreach (var item in DownloadItemBox.Items)
+        if (IsDownloading)
         {
-            if (item is not DownloadTask downloadItem) continue;
-            if (!downloadItem.Downloaded)
-                button.Content = "重试";
-        }
-
-        return;
-
-        async Task FuncDownload()
-        {
-            string downloadDirectory;
-            try { downloadDirectory = SettingPageModel.Instance.GetDownloadDirectory(); }
-            catch (Exception exception)
-            {
-                SnackService.Show("下载目录无效", exception.Message, ControlAppearance.Danger,
-                    new SymbolIcon(SymbolRegular.FolderOpen24), TimeSpan.FromSeconds(5));
-                return;
-            }
-            button.IsEnabled = false;
-            TaskClearButton.IsEnabled = false;
-            ContentCard.IsEnabled = false;
-            var tasks = DownloadItemBox.Items.OfType<DownloadTask>().ToArray();
-            foreach (var task in tasks) task.SetCanRemove(false);
-            var savePath = "";
-            var successCount = 0;
-            var failures = new List<string>();
-            try
-            {
-                foreach (var downloadItem in tasks)
-                {
-                    if (downloadItem.Downloaded) continue;
-                    downloadItem.ChangeStatus(0);
-                    try
-                    {
-                        downloadItem.SavePath = Path.Combine(downloadDirectory, Path.GetFileName(downloadItem.Url));
-                        await Fetcher.Instance.FetchToFile(downloadItem.Url, downloadItem.SavePath);
-                        downloadItem.ChangeStatus(1);
-                        successCount++;
-                        savePath = Path.GetDirectoryName(downloadItem.SavePath)!;
-                    }
-                    catch (Exception exception)
-                    {
-                        downloadItem.ChangeStatus(2);
-                        failures.Add(downloadItem.ScriptTag);
-                        Log.Logger.LogError(exception, "Download {Tag} from {Url} failed",
-                            downloadItem.ScriptTag, downloadItem.Url);
-                    }
-                }
-            }
-            finally
-            {
-                button.IsEnabled = true;
-                ContentCard.IsEnabled = true;
-                foreach (var task in tasks) task.SetCanRemove(true);
-                UpdateTaskListState();
-            }
-
-            ShowDownloadSummary(successCount, failures);
-            if (savePath.Length != 0)
-                ShowFile(savePath);
+            _downloadCancellation!.Cancel();
+            UpdateTaskListState();
             return;
-
-            void ShowDownloadSummary(int succeeded, IReadOnlyCollection<string> failed)
-            {
-                if (succeeded == 0 && failed.Count == 0)
-                {
-                    SnackService.Show("提示", "没有待下载的任务。", ControlAppearance.Info,
-                        new SymbolIcon(SymbolRegular.Info24), TimeSpan.FromSeconds(3));
-                    return;
-                }
-
-                if (failed.Count == 0)
-                {
-                    SnackService.Show("下载完成", $"已成功下载 {succeeded} 个文件。", ControlAppearance.Success,
-                        new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(4));
-                    return;
-                }
-
-                var failedPreview = string.Join("、", failed.Take(3));
-                if (failed.Count > 3) failedPreview += "等";
-                SnackService.Show("下载完成",
-                    $"成功 {succeeded} 个，失败 {failed.Count} 个：{failedPreview}。详情请查看运行日志。",
-                    ControlAppearance.Caution, new SymbolIcon(SymbolRegular.DocumentDismiss24),
-                    TimeSpan.FromSeconds(7));
-            }
-
-            void ShowFile(string path)
-            {
-                var psi = new ProcessStartInfo("Explorer.exe")
-                {
-                    Arguments = "/e," + path
-                };
-                Process.Start(psi);
-            }
         }
+        await StartBatchAsync(DownloadItemBox.Items.OfType<DownloadTask>().Where(task => !task.Downloaded).ToArray());
+    }
+
+    private async void DownloadTask_OnRetryRequested(object? sender, EventArgs e)
+    {
+        if (sender is DownloadTask task && !IsDownloading) await StartBatchAsync([task]);
+    }
+
+    private async void RetryFailed_OnClick(object sender, RoutedEventArgs e) =>
+        await StartBatchAsync(DownloadItemBox.Items.OfType<DownloadTask>().Where(task => task.Status == DownloadStatus.Failed).ToArray());
+
+    private async Task StartBatchAsync(DownloadTask[] tasks)
+    {
+        if (IsDownloading || tasks.Length == 0) return;
+        using var cancellation = new CancellationTokenSource();
+        _downloadCancellation = cancellation;
+        ActiveDownloads.Add(this);
+        _batchIds = tasks.Select(task => task.Id).ToHashSet();
+        foreach (var task in tasks) { task.ChangeStatus(DownloadStatus.Waiting); task.SetCanRemove(false); }
+        var policy = FilePolicyBox.SelectedIndex == 1 ? ExistingFilePolicy.Replace : ExistingFilePolicy.Skip;
+        UpdateTaskListState();
+        try
+        {
+            var byId = tasks.ToDictionary(task => task.Id);
+            var run = _batch.RunAsync(tasks.Select(task => task.Job).ToArray(), policy,
+                update => Dispatcher.Invoke(() =>
+                {
+                    byId[update.Job.Id].ChangeStatus(update.Status, update.Error);
+                    UpdateTaskListState();
+                }), cancellation.Token);
+            _runningBatch = run;
+            var result = await run;
+            BatchStatusText.Text = $"成功 {result.Succeeded} · 跳过 {result.Skipped} · 失败 {result.Failed} · 停止 {result.Stopped}";
+            if (Application.Current.MainWindow is MainWindow)
+                QueueSnackService.Show(cancellation.IsCancellationRequested ? "下载已停止" : "本批下载结束",
+                BatchStatusText.Text, result.Failed > 0 ? ControlAppearance.Caution : ControlAppearance.Info,
+                new SymbolIcon(SymbolRegular.ArrowDownload24), TimeSpan.FromSeconds(5));
+        }
+        catch (Exception error)
+        {
+            Log.Logger.LogError(error, "Download batch failed");
+            foreach (var task in tasks.Where(task => task.Status is DownloadStatus.Waiting or DownloadStatus.Downloading))
+                task.ChangeStatus(DownloadStatus.Failed, DownloadBatch.DescribeError(error));
+            BatchStatusText.Text = "本批下载未完成，请检查失败项后重试。";
+        }
+        finally
+        {
+            ActiveDownloads.Remove(this);
+            _runningBatch = null;
+            _downloadCancellation = null;
+            foreach (var task in tasks) task.SetCanRemove(true);
+            UpdateTaskListState();
+        }
+    }
+
+    public static async Task StopDownloadsAsync()
+    {
+        var pages = ActiveDownloads.ToArray();
+        foreach (var page in pages) page._downloadCancellation?.Cancel();
+        await Task.WhenAll(pages.Select(page => page._runningBatch ?? Task.CompletedTask));
+    }
+
+    private void ChooseDirectory_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (IsDownloading) return;
+        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "选择剧本下载目录", InitialDirectory = _downloadDirectory ?? Model.Setting.Default.DownloadDirectory };
+        if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
+        _downloadDirectory = dialog.FolderName;
+        foreach (var task in DownloadItemBox.Items.OfType<DownloadTask>().Where(task => !task.Downloaded))
+            task.SetDirectory(_downloadDirectory);
+        UpdateTaskListState();
     }
 
     private void ClearButton_OnClick(object sender, RoutedEventArgs e)
     {
+        if (IsDownloading) return;
         foreach (var task in DownloadItemBox.Items.OfType<DownloadTask>())
+        {
             task.RemoveRequested -= DownloadTask_OnRemoveRequested;
+            task.RetryRequested -= DownloadTask_OnRetryRequested;
+        }
         DownloadItemBox.Items.Clear();
         UpdateTaskListState();
     }
@@ -342,7 +405,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     {
         try
         {
-            var directory = SettingPageModel.Instance.GetDownloadDirectory();
+            var directory = GetDownloadDirectory();
             Directory.CreateDirectory(directory);
             Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true });
         }

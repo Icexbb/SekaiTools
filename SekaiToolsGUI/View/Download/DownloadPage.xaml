@@ -17,6 +17,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
@@ -55,7 +56,7 @@
                             ToolTip="清除所有数据源的列表缓存" Click="ButtonClearCache_OnClick">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="Delete24" Margin="0,0,6,0" />
-                            <TextBlock Text="清除缓存" />
+                            <TextBlock Text="清除列表缓存" />
                         </StackPanel>
                     </Button>
                     <Button x:Name="RefreshButton" Click="ButtonRefresh_OnClick">
@@ -89,9 +90,9 @@
             <TextBlock x:Name="LoadingMessage" Text="正在加载剧情列表…"
                        HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" />
         </Grid>
-        <ui:Card Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"
+        <ui:Card x:Name="QueueCard" Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"
                  VerticalContentAlignment="Stretch" Padding="0" Margin="10,0,0,0"
-                 VerticalAlignment="Stretch" Width="200">
+                 VerticalAlignment="Stretch" Width="320">
             <ui:Card.Content>
                 <Grid>
                     <Grid.RowDefinitions>
@@ -99,13 +100,13 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <Grid Grid.Row="0" Margin="5">
+                    <Grid Grid.Row="0" Margin="12">
                         <ui:TextBlock Name="TaskCountText"
                                       Text="下载列表 (0)"
                                       TextAlignment="Center" VerticalAlignment="Center" />
                     </Grid>
                     <Grid Grid.Row="1" VerticalAlignment="Stretch">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                        <ScrollViewer Margin="8,0" VerticalScrollBarVisibility="Auto"
                                       HorizontalScrollBarVisibility="Disabled">
                             <ItemsControl VerticalAlignment="Top"
                                           HorizontalAlignment="Stretch"
@@ -122,17 +123,46 @@
                                        HorizontalAlignment="Center" />
                         </StackPanel>
                     </Grid>
-                    <Grid Grid.Row="2" Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <ui:Button Grid.Column="0" Name="TaskClearButton" IsEnabled="False"
-                                   Click="ClearButton_OnClick"
-                                   HorizontalAlignment="Stretch" Margin="5" Content="清空" />
-                        <ui:Button Grid.Column="1" Name="DownloadButton" IsEnabled="False"
-                                   Click="DownloadButton_OnClick"
-                                   HorizontalAlignment="Stretch" Margin="5" Content="下载" />
+                    <Grid x:Name="QueueFooter" Grid.Row="2" Margin="12,8,12,12">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Name="BatchStatusText" Text="选择剧情后开始下载" FontSize="12" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" Name="BatchProgress" Height="4" Margin="0,8,0,12" Minimum="0" Maximum="1" Value="0"
+                                     AutomationProperties.Name="本批下载任务进度" />
+                        <Grid x:Name="DirectoryGrid" Grid.Row="2" Grid.ColumnSpan="2" Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <TextBlock Name="DirectoryText" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                       ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <Button Name="ChooseDirectoryButton" Grid.Column="1" Padding="6" Margin="8,0,0,0"
+                                    ToolTip="更改下载目录（应用于未完成任务）" AutomationProperties.Name="更改下载目录"
+                                    Click="ChooseDirectory_OnClick"><ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" /></Button>
+                        </Grid>
+                        <ComboBox Grid.Row="3" Grid.ColumnSpan="2" Name="FilePolicyBox" SelectedIndex="0" Margin="0,0,0,8" HorizontalAlignment="Stretch"
+                                  AutomationProperties.Name="同名文件处理方式">
+                            <ComboBoxItem Content="已有同名文件：跳过" />
+                            <ComboBoxItem Content="已有同名文件：替换" />
+                        </ComboBox>
+                        <Button Grid.Row="4" Grid.ColumnSpan="2" Name="RetryFailedButton" Visibility="Collapsed" Click="RetryFailed_OnClick" Margin="0,0,0,8" Padding="8">
+                            <StackPanel Orientation="Horizontal"><ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" Margin="0,0,6,0" />
+                                <TextBlock Name="RetryFailedText" Text="重试失败项" /></StackPanel>
+                        </Button>
+                        <Grid x:Name="MainActions" Grid.Row="5" Grid.ColumnSpan="2">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <ui:Button Grid.Column="0" Name="TaskClearButton" IsEnabled="False" Click="ClearButton_OnClick"
+                                       Margin="0,0,8,0" Padding="10" ToolTip="清空下载列表，不删除文件" AutomationProperties.Name="清空下载列表">
+                                <ui:SymbolIcon Symbol="Delete24" FontSize="18" />
+                            </ui:Button>
+                            <ui:Button Grid.Column="1" Name="DownloadButton" IsEnabled="False" Appearance="Primary"
+                                       Click="DownloadButton_OnClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="10">
+                                <StackPanel Orientation="Horizontal"><ui:SymbolIcon Name="DownloadActionIcon" Symbol="ArrowDownload24" FontSize="18" Margin="0,0,6,0" />
+                                    <TextBlock Name="DownloadActionText" Text="开始下载" /></StackPanel>
+                            </ui:Button>
+                        </Grid>
                     </Grid>
                 </Grid>
             </ui:Card.Content>

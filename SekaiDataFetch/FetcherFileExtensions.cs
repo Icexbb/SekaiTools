@@ -3,7 +3,7 @@ namespace SekaiDataFetch;
 public static class FetcherFileExtensions
 {
     public static async Task FetchToFile(this Fetcher fetcher, string url, string filePath,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, bool overwrite = true)
     {
         var content = await fetcher.Fetch(url, cancellationToken).ConfigureAwait(false);
         var destination = Path.GetFullPath(filePath);
@@ -13,7 +13,7 @@ public static class FetcherFileExtensions
         {
             await File.WriteAllTextAsync(temporary, content, cancellationToken).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
-            File.Move(temporary, destination, overwrite: true);
+            File.Move(temporary, destination, overwrite);
         }
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }

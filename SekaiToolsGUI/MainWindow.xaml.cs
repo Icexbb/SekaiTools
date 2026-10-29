@@ -148,6 +148,7 @@ public partial class MainWindow : FluentWindow
             SetTaskbarProgressState(TaskbarItemProgressState.Indeterminate, 0);
             await SuppressPage.DisposeSuppressorAsync();
             await SubtitlePage.DisposeTasksAsync();
+            await View.Download.DownloadPage.StopDownloadsAsync();
 
             // Let the current Closing event finish before requesting the
             // actual close. The second Closing event is allowed by the flag.
