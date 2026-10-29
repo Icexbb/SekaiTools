@@ -144,7 +144,8 @@
                         <ComboBoxItem Content="仅看有提示" />
                         <ComboBoxItem Content="仅看闪回" />
                     </ComboBox>
-                    <ui:Button Content="刷新筛选" Click="RefreshFilter_OnClick" Margin="0,0,8,0" />
+                    <ui:Button Content="刷新筛选" Click="RefreshFilter_OnClick" Margin="0,0,8,0"
+                               ToolTip="输入过程中保留当前条目，点击后按最新状态重新筛选。" />
                     <ui:Button Content="下一未译" Click="NextUntranslated_OnClick" Margin="0,0,8,0" />
                     <ui:Button Content="下一提示" Click="NextWarning_OnClick" />
                 </WrapPanel>

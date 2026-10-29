@@ -23,6 +23,13 @@ public partial class TranslatePageModel
     public string ProgressText => $"共 {Events.Length} 条 · 未译 {UntranslatedCount} · 留空 {ExplicitEmptyCount} · 有提示 {WarningCount}";
     public string VisibleCountText => $"显示 {VisibleEvents.Length} / {Events.Length} 条";
 
+    public string GetExportSummary(bool useV2) => ProgressText + "\n" +
+        (UntranslatedCount > 0 ? $"{UntranslatedCount} 条未译正文将沿用原文。\n" : string.Empty) +
+        (ExplicitEmptyCount > 0 ? useV2
+            ? $"{ExplicitEmptyCount} 条正文已标为留空，将导出为空白。\n"
+            : "旧 TXT 无法可靠保留显式空白；重新载入时可能沿用原文或缺少条目，建议使用 TXT v2。\n" : string.Empty) +
+        (WarningCount > 0 ? "校验提示供参考，可取消并使用“下一提示”逐项检查，也可继续保存未完成稿。" : "可以保存当前进度。");
+
     public void RefreshVisibleEvents()
     {
         var query = SearchText.Trim();

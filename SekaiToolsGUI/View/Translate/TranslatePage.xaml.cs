@@ -663,7 +663,7 @@ public partial class TranslatePage : UserControl
 
         var dialog = new SaveFileDialog(
             dialogService.GetDialogHostEx() ?? throw new InvalidOperationException(),
-            ViewModel.ScriptPath, ViewModel.TranslationPath);
+            ViewModel.ScriptPath, ViewModel.TranslationPath, ViewModel);
         var token = CancellationToken.None;
         var dialogResult = await dialogService.ShowAsync(dialog, token);
         if (dialogResult != ContentDialogResult.Primary) return false;

@@ -143,6 +143,29 @@ internal static class Program
         ApplicationCommands.Redo.Execute(null, editor);
         Pump();
         Check(line.Content.Translated == "界面编辑", "textbox redo command uses document history");
+        Check(Nodes(page).OfType<TextBlock>().Any(block => block.Text.Contains("有未保存修改")), "persistent save state is visible");
+        Check(Nodes(page).OfType<TextBlock>().Any(block => block.Text.Contains("句尾缺少结束标点")), "validation reason is visible without hover");
+        line.RequestAction("blank");
+        Pump();
+        Check(line.IsExplicitEmpty && page.ViewModel.ExplicitEmptyCount == 1, "explicit blank action updates progress");
+        var beforeFilter = page.ViewModel.Export();
+        page.ViewModel.FilterIndex = 1;
+        Pump();
+        Check(page.ViewModel.VisibleEvents.Length == 3, "untranslated filter excludes intentional blank");
+        Check(page.ViewModel.Export() == beforeFilter, "filter does not alter export");
+        page.ViewModel.SearchText = "not-present";
+        Pump();
+        Check(Nodes(page).OfType<TextBlock>().Any(block => block.IsVisible && block.Text.Contains("没有符合条件")), "empty search gives visible recovery guidance");
+        page.ViewModel.SearchText = string.Empty;
+        page.ViewModel.FilterIndex = 0;
+        Pump();
+        var saveDialog = new SekaiToolsGUI.View.Translate.Components.SaveFileDialog(new Wpf.Ui.Controls.ContentDialogHost(),
+            "probe.json", translation: page.ViewModel);
+        Check(((TextBlock)saveDialog.FindName("PreflightSummary")).Text.Contains("已标为留空"), "save dialog shows blank preflight");
+        ((ComboBox)saveDialog.FindName("FormatSelector")).SelectedIndex = 1;
+        Check(((TextBlock)saveDialog.FindName("PreflightSummary")).Text.Contains("旧 TXT 无法可靠保留"), "preflight follows selected format");
+        saveDialog.ViewModel.ApplyTranslationTag("校对");
+        Check(((TextBlock)saveDialog.FindName("TargetFileName")).Text == "【校对】probe.txt", "save dialog exposes complete tagged filename");
         foreach (var theme in new[] { ApplicationTheme.Dark, ApplicationTheme.Light })
         {
             ApplicationThemeManager.Apply(theme);

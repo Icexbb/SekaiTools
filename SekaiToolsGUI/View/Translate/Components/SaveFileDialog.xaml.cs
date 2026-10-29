@@ -1,13 +1,14 @@
 using System.IO;
 using System.Windows;
 using SekaiToolsGUI.ViewModel.Subtitle;
+using SekaiToolsGUI.ViewModel.Translate;
 using Wpf.Ui.Controls;
 
 namespace SekaiToolsGUI.View.Translate.Components;
 
 public partial class SaveFileDialog : ContentDialog
 {
-    public SaveFileDialog(ContentDialogHost contentPresenter, string scriptFile, string translationFile = "") : base(
+    public SaveFileDialog(ContentDialogHost contentPresenter, string scriptFile, string translationFile = "", TranslatePageModel? translation = null) : base(
         contentPresenter)
     {
         ScriptFile = scriptFile;
@@ -17,6 +18,22 @@ public partial class SaveFileDialog : ContentDialog
             ? Path.ChangeExtension(ScriptFile, ".txt")
             : TranslationFile;
         InitializeComponent();
+        _translation = translation;
+        UpdateSummary();
+        FormatSelector.SelectionChanged += (_, _) => UpdateSummary();
+        ViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(SaveFileDialogModel.FileName)) UpdatePath();
+        };
+        UpdatePath();
+    }
+
+    private readonly TranslatePageModel? _translation;
+    private void UpdateSummary() => PreflightSummary.Text = _translation?.GetExportSummary(UseV2) ?? string.Empty;
+    private void UpdatePath()
+    {
+        TargetFileName.Text = Path.GetFileName(ViewModel.FileName);
+        TargetDirectory.Text = Path.GetDirectoryName(ViewModel.FileName);
     }
 
     public SaveFileDialogModel ViewModel => (SaveFileDialogModel)DataContext;

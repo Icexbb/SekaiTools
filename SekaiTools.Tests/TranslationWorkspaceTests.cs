@@ -84,4 +84,18 @@ public class TranslationWorkspaceTests
         Assert.Contains("沿用原文", model.Events[1].StateText);
         Assert.Equal(0, model.UntranslatedCount);
     }
+
+    [Fact]
+    public void PreflightReflectsWholeDocumentAndSelectedFormat()
+    {
+        var model = CreateModel();
+        model.Events[0].RequestAction("blank");
+        model.SearchText = "找不到";
+        Assert.Contains("1 条未译正文将沿用原文", model.GetExportSummary(true));
+        Assert.Contains("1 条正文已标为留空", model.GetExportSummary(true));
+        Assert.Contains("旧 TXT 无法可靠保留", model.GetExportSummary(false));
+        Assert.Equal(2, model.Events.Length);
+        model.Events[1].RequestAction("original");
+        Assert.DoesNotContain("条未译正文将沿用原文", model.GetExportSummary(true));
+    }
 }
