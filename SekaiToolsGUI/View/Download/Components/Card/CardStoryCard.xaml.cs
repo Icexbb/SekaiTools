@@ -59,7 +59,7 @@ public partial class CardStoryCard
 
         TextBlockTitle.Text = $"# {CardStorySet.Card.Id}";
         TextBlockName.Text = $"{rarity} - {CardStorySet.Card.Prefix}";
-        var url = $"pack://application:,,,/Resource/Characters/chr_{cardStorySet.Card.CharacterId}.png";
+        var url = $"pack://application:,,,/SekaiToolsGUI;component/Resource/Characters/chr_{cardStorySet.Card.CharacterId}.png";
         IconImage.Source = new BitmapImage(new Uri(url));
 
         InitDownloadItems();
@@ -69,16 +69,16 @@ public partial class CardStoryCard
     {
         if (CardStorySet == null) return;
 
-        SourceList.Instance.SourceData = DownloadPageModel.Instance.CurrentSource;
+
 
         foreach (var panelItemsChild in PanelItems.Children.OfType<DownloadItem>().ToList())
             panelItemsChild.Recycle();
 
-        var itemFirst = DownloadItem.GetItem(() => SourceList.Instance.MemberStory(CardStorySet.FirstPart),
+        var itemFirst = DownloadItem.GetItem(() => new SourceList(DownloadPageModel.Instance.CurrentSource).MemberStory(CardStorySet.FirstPart),
             "前篇", "",
             $"CardStory|{CardStorySet.Card.Id}-{CardStorySet.Card.Prefix}|前篇"
         );
-        var itemSecond = DownloadItem.GetItem(() => SourceList.Instance.MemberStory(CardStorySet.SecondPart),
+        var itemSecond = DownloadItem.GetItem(() => new SourceList(DownloadPageModel.Instance.CurrentSource).MemberStory(CardStorySet.SecondPart),
             "后篇", "",
             $"CardStory|{CardStorySet.Card.Id}-{CardStorySet.Card.Prefix}|后篇"
         );

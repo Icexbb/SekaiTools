@@ -13,6 +13,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal">
@@ -24,6 +25,7 @@
                 <TextBlock x:Name="TextActivity" Margin="0,4,0,0" TextWrapping="Wrap" />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" Name="Icons" Margin="10,0" />
+            <local:DownloadChoice Grid.Column="2" x:Name="Choice" />
         </Grid>
 
     </ui:CardAction>

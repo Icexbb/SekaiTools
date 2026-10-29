@@ -1,3 +1,5 @@
+using SekaiDataFetch;
+using SekaiToolsGUI.ViewModel.Download;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -20,11 +22,14 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
     public async Task Refresh(IProgress<ListRefreshProgress>? progress = null)
     {
         SpecialStoryTypeSelector.IsEnabled = false;
-        ListSpecialStory.SetSource(GetSourceType());
-        ListSpecialStory.SetProxy(SettingPageModel.Instance.GetProxy());
-        await ListSpecialStory.Refresh(progress);
-        RefreshCombo();
-        SpecialStoryTypeSelector.IsEnabled = true;
+        try
+        {
+            ListSpecialStory.SetSource(GetSourceType());
+            ListSpecialStory.SetProxy(SettingPageModel.Instance.GetProxy());
+            await ListSpecialStory.Refresh(progress);
+            RefreshCombo();
+        }
+        finally { SpecialStoryTypeSelector.IsEnabled = true; }
     }
 
 
@@ -51,6 +56,7 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
     private void RefreshSelection()
     {
         ClearItems();
+        ResultsChanged?.Invoke(this, EventArgs.Empty);
         if (SpecialStoryTypeSelector.SelectedItem is not string selected ||
             !ListSpecialStory.Data.TryGetValue(selected, out var set)) return;
         StartTimeText.Text = FormatTime(set.SpecialStory.StartAt);
@@ -59,7 +65,7 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
 
         foreach (var episode in set.Episodes)
         {
-            var item = DownloadItem.GetItem(() => SourceList.Instance.SpecialStory(episode),
+            var item = DownloadItem.GetItem(() => new SourceList(DownloadPageModel.Instance.CurrentSource).SpecialStory(episode),
                 episode.Title,
                 episode.ScenarioId,
                 $"SpecialStory|{set.SpecialStory.AssetBundleName}-{set.SpecialStory.Title}|{episode.ScenarioId}-{episode.Title}"
@@ -67,6 +73,7 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
             item.Margin = new Thickness(0, 0, 0, 5);
             CardContents.Children.Add(item);
         }
+        ResultsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private static string FormatTime(long timestamp)

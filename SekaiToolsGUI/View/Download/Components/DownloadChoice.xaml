@@ -1,0 +1,7 @@
+<UserControl x:Class="SekaiToolsGUI.View.Download.Components.DownloadChoice"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <CheckBox x:Name="ChoiceBox" VerticalAlignment="Center" Margin="8,0,0,0" Padding="0" MinWidth="0" FontSize="12"
+              Click="Choice_OnClick" ToolTip="勾选后使用上方的“加入已选”；点击章节卡片可直接加入。"
+              Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+</UserControl>

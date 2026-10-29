@@ -1,3 +1,4 @@
+using SekaiDataFetch;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -166,6 +167,8 @@ partial class ActionStoryTab
     private void RefreshItems()
     {
         if (MinimumIdBox == null || MaximumIdBox == null || ResultText == null || AddFilteredButton == null) return;
+        if (AdvancedSummary != null) AdvancedSummary.Text = FilterMode != ActionStoryFilterMode.All || MinimumIdBox.Text.Length > 0 || MaximumIdBox.Text.Length > 0
+            ? "更多筛选（已启用）" : "更多筛选：活动、批次与编号";
         var validMinimum = TryReadId(MinimumIdBox.Text, out var minimum, out var minimumSpecial);
         var validMaximum = TryReadId(MaximumIdBox.Text, out var maximum, out var maximumSpecial);
         var valid = validMinimum && validMaximum;
@@ -178,6 +181,7 @@ partial class ActionStoryTab
                 ? "请输入正整数 TalkId（可带 S 前缀），范围两端须同类且起始编号不大于结束编号"
                 : "请输入正整数 ID，且起始 ID 不大于结束 ID";
             AddFilteredButton.IsEnabled = false;
+            ResultsChanged?.Invoke(this, EventArgs.Empty);
             return;
         }
 
@@ -185,12 +189,14 @@ partial class ActionStoryTab
             (CharacterComboBox.SelectedItem as CharacterComboBoxItem)?.Value ?? 0, minimum, maximum,
             FilterMode, (ValueBox?.SelectedItem as ActionFilterOption)?.Value, IdIndex,
             minimum.HasValue ? minimumSpecial : maximumSpecial);
-        var data = ActionStory.Data.Where(filter.Matches);
+        var data = ActionStory.Data.Where(filter.Matches)
+            .Where(story => StoryDownloadCandidates.Action(story, DownloadPageModel.Instance.CurrentSource).Matches(_query));
         ViewModel.EventStories = (_currentDirection == 1
             ? data.OrderBy(filter.GetSortKey).ThenBy(item => item.ActionSet.Id)
             : data.OrderByDescending(filter.GetSortKey).ThenByDescending(item => item.ActionSet.Id)).ToArray();
         ResultText.Text = $"符合条件：{ViewModel.EventStories.Length} 条 · 按 {IdIndex} 索引";
         AddFilteredButton.IsEnabled = ViewModel.EventStories.Length > 0;
+        ResultsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private ActionStoryIdIndex IdIndex => IdIndexBox?.SelectedIndex == 1
@@ -216,9 +222,8 @@ partial class ActionStoryTab
         DependencyObject? parent = this;
         while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
         if (parent is not DownloadPage page) return;
-        SourceList.Instance.SourceData = page.GetSourceType();
-        var sourceName = page.GetSourceType().SourceName;
-        page.AddTasks(ViewModel.EventStories.Select(story =>
-            ($"{sourceName}|ActionSet|{story.ActionSet.Id}-{story.ActionSet.ScriptId}", SourceList.Instance.ActionSet(story))));
+        var source = page.GetSourceType();
+        page.AddTasks(ViewModel.EventStories.Select(story => StoryDownloadCandidates.Action(story, source))
+            .Select(candidate => (candidate.Tag, candidate.Url)));
     }
 }

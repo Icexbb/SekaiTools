@@ -1,3 +1,5 @@
+using SekaiDataFetch;
+using SekaiToolsGUI.ViewModel.Download;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -43,12 +45,8 @@ public partial class UnitStoryTab : UserControl, IRefreshable
         if (CardContents == null) return;
 
         CardContents.Children.Clear();
-        if (ListUnitStory.Data.Count == 0 ||
-            UnitComboBox.SelectedItem is not ComboBoxItem { Tag: string selectedUnit } ||
-            !ListUnitStory.Data.TryGetValue(selectedUnit, out var unitStory))
-            return;
-
-        foreach (var chapter in unitStory.Chapters)
+        foreach (var chapter in SelectedChapters().Where(chapter => StoryDownloadCandidates.Unit(chapter,
+                     DownloadPageModel.Instance.CurrentSource).Any(candidate => candidate.Matches(_query))))
         {
             var chapterItem = new UnitStoryChapter(chapter)
             {
@@ -56,6 +54,7 @@ public partial class UnitStoryTab : UserControl, IRefreshable
             };
             CardContents.Children.Add(chapterItem);
         }
+        ResultsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void UnitStoryTab_OnLoaded(object sender, RoutedEventArgs e)

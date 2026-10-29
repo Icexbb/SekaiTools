@@ -81,11 +81,37 @@
                     </control:SelectorBar.Items>
                 </control:SelectorBar>
             </ui:Card>
+            <StackPanel x:Name="BrowserBar" IsEnabled="False" Margin="0,3,0,8">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <ui:TextBox x:Name="SearchBox" PlaceholderText="搜索当前列表：标题、ID、剧本名" TextChanged="Search_OnTextChanged"
+                                AutomationProperties.Name="搜索当前剧情列表" />
+                    <Button x:Name="ResetSearchButton" Grid.Column="1" Margin="8,0,0,0" Padding="10,6" ToolTip="清空关键词并重置当前分类筛选"
+                            Click="ResetSearch_OnClick" AutomationProperties.Name="重置搜索和筛选">
+                        <StackPanel Orientation="Horizontal"><ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" Margin="0,0,6,0" /><TextBlock Text="重置" /></StackPanel>
+                    </Button>
+                </Grid>
+                <WrapPanel Margin="0,8,0,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="BrowserResultText" Text="正在准备列表…" FontSize="12" VerticalAlignment="Center" Margin="0,0,16,0"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <CheckBox x:Name="SelectResultsBox" Content="选择当前结果" Click="SelectResults_OnClick" VerticalAlignment="Center" Margin="0,0,12,0" />
+                    <Button x:Name="AddSelectedButton" IsEnabled="False" Click="AddSelected_OnClick" Padding="8,4">
+                        <StackPanel Orientation="Horizontal"><ui:SymbolIcon Symbol="AddCircle24" FontSize="16" Margin="0,0,6,0" /><TextBlock x:Name="AddSelectedText" Text="加入已选" /></StackPanel>
+                    </Button>
+                </WrapPanel>
+            </StackPanel>
         </StackPanel>
         <ContentControl Grid.Column="0" Grid.Row="1"
                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                         HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                         Name="ContentCard" />
+        <StackPanel x:Name="BrowserEmptyPanel" Grid.Column="0" Grid.Row="1" Visibility="Collapsed"
+                    VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False" Margin="16">
+            <ui:SymbolIcon Symbol="Search24" FontSize="28" HorizontalAlignment="Center" Opacity="0.65" />
+            <TextBlock x:Name="BrowserEmptyText" Text="当前没有可下载结果" Margin="0,8,0,0" TextWrapping="Wrap" TextAlignment="Center" />
+            <TextBlock Text="可调整筛选、重置搜索，或刷新当前列表" Margin="0,4,0,0" FontSize="12" TextWrapping="Wrap" TextAlignment="Center"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+        </StackPanel>
         <Grid x:Name="LoadingPanel" Grid.Column="0" Grid.Row="1" Visibility="Collapsed">
             <TextBlock x:Name="LoadingMessage" Text="正在加载剧情列表…"
                        HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" />
@@ -100,12 +126,17 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <Grid Grid.Row="0" Margin="12">
+                    <Grid x:Name="QueueHeader" Grid.Row="0" Margin="12">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <ui:TextBlock Name="TaskCountText"
                                       Text="下载列表 (0)"
-                                      TextAlignment="Center" VerticalAlignment="Center" />
+                                      TextAlignment="Left" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <Button x:Name="QueueDetailsButton" Grid.Column="2" Visibility="Collapsed" Padding="8" Margin="8,0,0,0"
+                                Click="QueueDetails_OnClick" ToolTip="展开下载列表" AutomationProperties.Name="展开或收起下载列表">
+                            <ui:SymbolIcon x:Name="QueueDetailsIcon" Symbol="ChevronDown24" FontSize="16" />
+                        </Button>
                     </Grid>
-                    <Grid Grid.Row="1" VerticalAlignment="Stretch">
+                    <Grid x:Name="QueueBody" Grid.Row="1" VerticalAlignment="Stretch">
                         <ScrollViewer Margin="8,0" VerticalScrollBarVisibility="Auto"
                                       HorizontalScrollBarVisibility="Disabled">
                             <ItemsControl VerticalAlignment="Top"

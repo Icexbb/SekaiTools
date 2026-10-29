@@ -1,3 +1,5 @@
+using SekaiDataFetch;
+using SekaiToolsGUI.ViewModel.Download;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
@@ -36,6 +38,7 @@ public partial class EventStoryEvent
     {
         InitializeComponent();
         Margin = new Thickness(0, 0, 0, 5);
+        Loaded += (_, _) => ApplySearchPresentation();
     }
 
     private void RefreshControl()
@@ -54,6 +57,14 @@ public partial class EventStoryEvent
         InitDownloadItems();
     }
 
+    internal void ApplySearchPresentation()
+    {
+        var searching = !string.IsNullOrWhiteSpace(StoryBrowserState.GetQuery(this));
+        if (searching) ChaptersExpander.IsExpanded = true;
+        AddAllText.Text = searching ? "添加结果" : "添加全部";
+        AddAllButton.ToolTip = searching ? "将本活动匹配的章节加入下载列表" : "将本活动全部章节加入下载列表";
+    }
+
     private void AddAll_OnClick(object sender, RoutedEventArgs e)
     {
         e.Handled = true;
@@ -63,10 +74,9 @@ public partial class EventStoryEvent
             parent = VisualTreeHelper.GetParent(parent);
         if (parent is not DownloadPage page) return;
         var source = page.GetSourceType();
-        SourceList.Instance.SourceData = source;
-        page.AddTasks(story.EventStory.EventStoryEpisodes.Select(episode =>
-            ($"{source.SourceName}|EventStory|{story.Index}-{story.GameEvent.Name}|{episode.EpisodeNo}-{episode.Title}",
-                SourceList.Instance.EventStory(episode.ScenarioId, story.EventStory.AssetBundleName))));
+        var query = StoryBrowserState.GetQuery(this);
+        page.AddTasks(StoryDownloadCandidates.Event(story, source).Where(candidate => candidate.Matches(query))
+            .Select(candidate => (candidate.Tag, candidate.Url)));
     }
 
     private void RefreshBannerIcons()
@@ -86,7 +96,7 @@ public partial class EventStoryEvent
                 Height = 24,
                 Margin = new Thickness(0, 0, 5, 0),
                 Source = new BitmapImage(
-                    new Uri($"pack://application:,,,/Resource/Characters/chr_{characterId}.png"))
+                    new Uri($"pack://application:,,,/SekaiToolsGUI;component/Resource/Characters/chr_{characterId}.png"))
             });
     }
 
@@ -108,9 +118,10 @@ public partial class EventStoryEvent
             var episode = EventStorySet.EventStory.EventStoryEpisodes[i];
             var key = $"{storyIndex}-{episode.EpisodeNo}";
 
-            var downloadItem = DownloadItem.GetItem(() => SourceList.Instance.EventStory(episode.ScenarioId,
+            var downloadItem = DownloadItem.GetItem(() => new SourceList(DownloadPageModel.Instance.CurrentSource).EventStory(episode.ScenarioId,
                     EventStorySet.EventStory.AssetBundleName), episode.Title, key,
-                $"EventStory|{storyIndex}-{EventStorySet.GameEvent.Name}|{episode.EpisodeNo}-{episode.Title}");
+                $"EventStory|{storyIndex}-{EventStorySet.GameEvent.Name}|{episode.EpisodeNo}-{episode.Title}",
+                EventStorySet.EventStory.EventId.ToString());
 
             if (i % itemPreRow == 0)
                 PanelItems.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });

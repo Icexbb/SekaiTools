@@ -1,3 +1,4 @@
+using SekaiDataFetch;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -33,8 +34,8 @@ public partial class ActionStoryItem : UserControl
         {
             DependencyObject? parent = this;
             while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
-            SourceList.Instance.SourceData = DownloadPageModel.Instance.CurrentSource;
-            var url = SourceList.Instance.ActionSet(AreaStorySet);
+
+            var url = new SourceList(DownloadPageModel.Instance.CurrentSource).ActionSet(AreaStorySet);
             (parent as DownloadPage)?.AddTask(
                 DownloadPageModel.Instance.CurrentSource.SourceName + "|" +
                 $"ActionSet|{AreaStorySet.ActionSet.Id}-{AreaStorySet.ActionSet.ScriptId}", url);
@@ -45,6 +46,8 @@ public partial class ActionStoryItem : UserControl
     private void Initialize(AreaStorySet areaStorySet)
     {
         AreaStorySet = areaStorySet;
+        Choice.CandidateFactory = () => StoryDownloadCandidates.Action(AreaStorySet, DownloadPageModel.Instance.CurrentSource);
+        Choice.RefreshState();
         Icons.Children.Clear();
         var cIds = areaStorySet.CharacterIds.ToList();
         cIds.Sort();
@@ -61,7 +64,7 @@ public partial class ActionStoryItem : UserControl
             }
             else
             {
-                var url = $"pack://application:,,,/Resource/Characters/chr_{id}.png";
+                var url = $"pack://application:,,,/SekaiToolsGUI;component/Resource/Characters/chr_{id}.png";
                 var icon = new Image
                 {
                     Source = new BitmapImage(new Uri(url)),

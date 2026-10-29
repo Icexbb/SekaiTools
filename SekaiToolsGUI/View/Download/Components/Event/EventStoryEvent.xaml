@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d">
-    <ui:CardExpander VerticalContentAlignment="Center" HorizontalAlignment="Stretch"
+    <ui:CardExpander x:Name="ChaptersExpander" VerticalContentAlignment="Center" HorizontalAlignment="Stretch"
                      HorizontalContentAlignment="Stretch" ContentPadding="10,5">
         <ui:CardExpander.Header>
             <Grid Margin="0,0,0,5">
@@ -25,7 +25,7 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
                     <StackPanel Name="IconContainer" Orientation="Horizontal" VerticalAlignment="Center"
                                 Margin="10,0">
-                        <Image Height="24" Width="24" Source="pack://application:,,,/Resource/Characters/chr_1.png" />
+                        <Image Height="24" Width="24" Source="pack://application:,,,/SekaiToolsGUI;component/Resource/Characters/chr_1.png" />
                     </StackPanel>
 
                     <ui:Button x:Name="AddAllButton" IsEnabled="False"
@@ -34,7 +34,7 @@
                                Click="AddAll_OnClick">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="AddCircle24" Margin="0,0,6,0" />
-                            <TextBlock Text="添加全部" />
+                            <TextBlock x:Name="AddAllText" Text="添加全部" />
                         </StackPanel>
                     </ui:Button>
                 </StackPanel>

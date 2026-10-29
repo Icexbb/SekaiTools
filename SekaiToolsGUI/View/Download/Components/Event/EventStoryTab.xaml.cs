@@ -1,3 +1,4 @@
+using SekaiDataFetch;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -64,7 +65,7 @@ public partial class EventStoryTab : UserControl, IRefreshable
 
     private void EventStoryTab_OnLoaded(object sender, RoutedEventArgs e)
     {
-        BoxType.SelectedIndex = 0;
+        if (BoxType.SelectedIndex < 0) BoxType.SelectedIndex = 0;
         if (CharacterComboBox.SelectedIndex < 0) CharacterComboBox.SelectedIndex = 0;
         RefreshItems();
     }
@@ -78,11 +79,13 @@ public partial class EventStoryTab : UserControl, IRefreshable
 
     private void RefreshItems()
     {
-        if (ListEventStory.Data.Count == 0) return;
+        if (BoxType == null || CharacterComboBox == null) return;
 
         var data = ListEventStory.Data.Select(item => (EventStorySet)item.Clone()).ToList();
         data.Sort((x, y) => _currentDirection * x.EventStory.EventId.CompareTo(y.EventStory.EventId));
-        ViewModel.EventStories = data.Where(JudgeVisibility).ToArray();
+        ViewModel.EventStories = data.Where(JudgeVisibility)
+            .Where(story => StoryDownloadCandidates.Event(story, DownloadPageModel.Instance.CurrentSource).Any(candidate => candidate.Matches(_query))).ToArray();
+        ResultsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private bool JudgeVisibility(EventStorySet data)
