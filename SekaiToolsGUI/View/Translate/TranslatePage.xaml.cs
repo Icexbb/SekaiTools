@@ -774,8 +774,6 @@ public partial class TranslatePage : UserControl
         catch (Exception ex) { Logger.Log($"打开保存位置失败: {ex.Message}", LogLevel.Warning); }
     }
 
-    private void EditorOptionsButton_OnClick(object sender, RoutedEventArgs e) => EditorOptionsPopover.Open();
-
     private void SpecialCharButton_OnClick(object sender, RoutedEventArgs e)
     {
         SpecialCharPopover.Open();
