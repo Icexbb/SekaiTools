@@ -147,21 +147,15 @@
                       VirtualizingStackPanel.ScrollUnit="Pixel">
                 <ListView.Resources>
                     <DataTemplate DataType="{x:Type translate:LineDialogModel}">
-                        <DockPanel LastChildFill="True">
-                            <components:TranslateLineActions DockPanel.Dock="Left" />
-                            <StackPanel>
-                                <components:TranslateLineDialog
-                                    LineDialogModel="{Binding }" HorizontalAlignment="Stretch" />
-                                <components:TranslateLineSeparator
-                                    Visibility="{c:Binding EndLine,FalseToVisibility=Collapsed}" />
-                            </StackPanel>
-                        </DockPanel>
+                        <StackPanel>
+                            <components:TranslateLineDialog
+                                LineDialogModel="{Binding}" HorizontalAlignment="Stretch" />
+                            <components:TranslateLineSeparator
+                                Visibility="{c:Binding EndLine,FalseToVisibility=Collapsed}" />
+                        </StackPanel>
                     </DataTemplate>
                     <DataTemplate DataType="{x:Type translate:LineEffectModel}">
-                        <DockPanel LastChildFill="True">
-                            <components:TranslateLineActions DockPanel.Dock="Left" />
-                            <components:TranslateLineEffect LineEffectModel="{Binding}" HorizontalAlignment="Stretch" />
-                        </DockPanel>
+                        <components:TranslateLineEffect LineEffectModel="{Binding}" HorizontalAlignment="Stretch" />
                     </DataTemplate>
                 </ListView.Resources>
 

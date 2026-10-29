@@ -5,16 +5,19 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:c='clr-namespace:CalcBinding;assembly=CalcBinding'
+             xmlns:components="clr-namespace:SekaiToolsGUI.View.Translate.Components"
              xmlns:translate="clr-namespace:SekaiToolsGUI.ViewModel.Translate"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance translate:LineDialogModel, IsDesignTimeCreatable=False}"
              d:DesignWidth="800"
              HorizontalAlignment="Stretch">
     <Grid>
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="150" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <ui:Card Grid.Column="0" Margin="0" Padding="5,2" VerticalAlignment="Stretch">
+        <components:TranslateLineActions Grid.Column="0" />
+        <ui:Card Grid.Column="1" Margin="0" Padding="5,2" VerticalAlignment="Stretch">
             <Grid VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="30" />
@@ -75,7 +78,7 @@
                 </Grid>
             </Grid>
         </ui:Card>
-        <ui:Card Grid.Column="1" Margin="0" Padding="5,2" VerticalAlignment="Stretch">
+        <ui:Card Grid.Column="2" Margin="0" Padding="5,2" VerticalAlignment="Stretch">
             <Grid VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

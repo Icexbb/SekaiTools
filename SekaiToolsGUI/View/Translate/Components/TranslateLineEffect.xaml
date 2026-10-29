@@ -5,21 +5,24 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
+             xmlns:components="clr-namespace:SekaiToolsGUI.View.Translate.Components"
              xmlns:translate="clr-namespace:SekaiToolsGUI.ViewModel.Translate"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance translate:LineEffectModel, IsDesignTimeCreatable=False}"
              d:DesignWidth="800"
              HorizontalAlignment="Stretch">
     <Grid HorizontalAlignment="Stretch">
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="150" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <ui:Card Grid.Column="0" Margin="0" Padding="0">
+        <components:TranslateLineActions Grid.Column="0" />
+        <ui:Card Grid.Column="1" Margin="0" Padding="0" VerticalAlignment="Stretch">
             <ui:SymbolIcon Symbol="Location28" Margin="5"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center" />
         </ui:Card>
-        <ui:Card Grid.Column="1" Margin="0" Padding="0">
+        <ui:Card Grid.Column="2" Margin="0" Padding="0" VerticalAlignment="Stretch">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

@@ -4,22 +4,23 @@
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              Foreground="{DynamicResource TextFillColorPrimaryBrush}">
-    <StackPanel Margin="4,6,8,4" Width="76" VerticalAlignment="Top">
-        <TextBlock Text="{Binding SequenceNumber, StringFormat='#{0}'}" FontSize="24"
-                   HorizontalAlignment="Center" ToolTip="{Binding Label}" />
-        <ui:Button Content="条目操作" Padding="4,2" FontSize="12" HorizontalAlignment="Center" Click="OpenActions"
-                   AutomationProperties.Name="{Binding Label}">
-            <ui:Button.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="查看上下文（显示全部条目）" Tag="context" Click="ApplyAction" />
-                    <MenuItem Header="采用参考译文（仅此条正文）" Tag="reference" Click="ApplyAction" IsEnabled="{Binding Body.ReferenceAvailable}" />
-                    <MenuItem Header="标为未译（导出沿用原文）" Tag="untranslated" Click="ApplyAction" />
-                    <MenuItem Header="有意留空（导出空白）" Tag="blank" Click="ApplyAction" />
-                    <MenuItem Header="使用原文" Tag="original" Click="ApplyAction" />
-                </ContextMenu>
-            </ui:Button.ContextMenu>
-        </ui:Button>
-        <ui:Button Content="采用参考" Icon="{ui:SymbolIcon DocumentCheckmark24}" Tag="reference" Click="AdoptReference" Padding="4,2" FontSize="12" Margin="0,4,0,0" HorizontalAlignment="Center"
-                   Visibility="{c:Binding Body.ReferenceAvailable,FalseToVisibility=Collapsed}" />
-    </StackPanel>
+    <ui:Card VerticalAlignment="Stretch" Padding="3,5" >
+        <StackPanel Margin="2" Width="76" VerticalAlignment="Center"  HorizontalAlignment="Center">
+            <TextBlock Text="{Binding SequenceNumber, StringFormat='#{0}'}" FontSize="24"
+                       HorizontalAlignment="Center" ToolTip="{Binding Label}" />
+            <ui:Button Content="条目操作" Padding="4,2" FontSize="12" HorizontalAlignment="Center" Click="OpenActions"
+                       AutomationProperties.Name="{Binding Label}">
+                <ui:Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="查看上下文（显示全部条目）" Tag="context" Click="ApplyAction" />
+                        <MenuItem Header="采用参考译文（仅此条正文）" Tag="reference" Click="ApplyAction"
+                                  IsEnabled="{Binding Body.ReferenceAvailable}" />
+                        <MenuItem Header="标为未译（导出沿用原文）" Tag="untranslated" Click="ApplyAction" />
+                        <MenuItem Header="有意留空（导出空白）" Tag="blank" Click="ApplyAction" />
+                        <MenuItem Header="使用原文" Tag="original" Click="ApplyAction" />
+                    </ContextMenu>
+                </ui:Button.ContextMenu>
+            </ui:Button>
+        </StackPanel>
+    </ui:Card>
 </UserControl>
