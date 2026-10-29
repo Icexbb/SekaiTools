@@ -86,6 +86,32 @@ public class TranslationWorkspaceTests
     }
 
     [Fact]
+    public void EditingRefreshesFiltersAndSearchImmediatelyIncludingUndo()
+    {
+        var model = CreateModel();
+        var first = (LineDialogModel)model.Events[0];
+        model.FilterIndex = 1;
+        first.Content.Translated = "译文。";
+        Assert.Single(model.VisibleEvents);
+        Assert.DoesNotContain(first, model.VisibleEvents);
+        model.Undo();
+        Assert.Equal(2, model.VisibleEvents.Length);
+        model.Redo();
+        Assert.Single(model.VisibleEvents);
+        model.FilterIndex = 0;
+        model.SearchText = "新的译名";
+        Assert.Empty(model.VisibleEvents);
+        first.Character.Translated = "新的译名";
+        Assert.Equal(2, model.VisibleEvents.Length);
+        model.Undo();
+        Assert.Empty(model.VisibleEvents);
+        model.SearchText = "译文";
+        Assert.Single(model.VisibleEvents);
+        first.Content.Translated = "修改后。";
+        Assert.Empty(model.VisibleEvents);
+    }
+
+    [Fact]
     public void PreflightReflectsWholeDocumentAndSelectedFormat()
     {
         var model = CreateModel();

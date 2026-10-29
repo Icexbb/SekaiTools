@@ -95,6 +95,7 @@ public partial class TranslatePageModel
 
     private void NotifyProgress()
     {
+        RefreshVisibleEvents();
         OnPropertyChanged(nameof(UntranslatedCount));
         OnPropertyChanged(nameof(ExplicitEmptyCount));
         OnPropertyChanged(nameof(WarningCount));

@@ -158,7 +158,6 @@ public partial class TranslatePage : UserControl
 
     private void TranslatePanel_OnLostFocus(object sender, KeyboardFocusChangedEventArgs e) => ViewModel.EndTextEdit();
 
-    private void RefreshFilter_OnClick(object sender, RoutedEventArgs e) => ViewModel.RefreshVisibleEvents();
     private void NextUntranslated_OnClick(object sender, RoutedEventArgs e) => NavigateNext(false);
     private void NextWarning_OnClick(object sender, RoutedEventArgs e) => NavigateNext(true);
     private void NavigateNext(bool warnings)

@@ -111,8 +111,6 @@
                                 <ComboBoxItem Content="仅看闪回" />
                             </ComboBox>
                             <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                <ui:Button Icon="{ui:SymbolIcon ArrowSync24}" Click="RefreshFilter_OnClick" Margin="10,0,0,0"
-                                           AutomationProperties.Name="刷新筛选" ToolTip="刷新筛选：输入过程中保留当前条目，点击后按最新状态重新筛选。" />
                                 <ui:Button Content="下一未译" Icon="{ui:SymbolIcon ArrowRight28}" Click="NextUntranslated_OnClick" Margin="10,0,0,0" ToolTip="下一未译 (Ctrl+Enter)" />
                                 <ui:Button Content="下一提示" Icon="{ui:SymbolIcon Warning28}" Click="NextWarning_OnClick" Margin="10,0,0,0" />
                             </StackPanel>
