@@ -43,6 +43,7 @@
                     <TextBlock Grid.Row="0" Padding="0"
                                VerticalAlignment="Top" HorizontalAlignment="Center"
                                Text="{Binding Path= Character.Original}"
+                               TextWrapping="Wrap" MaxWidth="100"
                                ToolTipService.ToolTip="{Binding Path= Character.Original}"
                                ToolTipService.InitialShowDelay="0"
                                ToolTipService.BetweenShowDelay="0" />
@@ -92,13 +93,13 @@
                          MinLines="2"
                          Margin="0"
                          IsTabStop="False"
-                         TextWrapping="NoWrap"
+                         TextWrapping="Wrap"
                          VerticalAlignment="Stretch"
                          IsReadOnly="True"
                          IsReadOnlyCaretVisible="False"
                          Background="Transparent"
                          BorderBrush="Transparent"
-                         HorizontalScrollBarVisibility="Auto" AutomationProperties.Name="原文"
+                         HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="原文"
                          Text="{Binding Content.Original}" />
                     <Border x:Name="FlashbackBadge" Grid.Row="1" Padding="6,4" Margin="2,4,2,2" CornerRadius="4"
                             Background="{DynamicResource ControlFillColorSecondaryBrush}"
@@ -141,21 +142,26 @@
                     <StackPanel Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference', FalseToVisibility=Collapsed}">
                         <TextBlock Text="参考译文" Margin="4,2" FontSize="12"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="NoWrap"
-                                 HorizontalScrollBarVisibility="Auto" Background="Transparent" BorderBrush="Transparent"
+                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap"
+                                 HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
                                  AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
                     </StackPanel>
                     <TextBlock Text="我的译文" Margin="4,2" FontSize="12"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    <TextBox MinLines="2" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Auto"
+                    <TextBox MinLines="2" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
                              PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"
-                             AcceptsReturn="True" TextWrapping="NoWrap" AutomationProperties.Name="{Binding Label}"
+                             DataObject.Pasting="TextBox_OnPasting" GotKeyboardFocus="TextBox_OnGotKeyboardFocus" LostKeyboardFocus="TextBox_OnLostKeyboardFocus"
+                             ToolTip="显示自动折行不改变正文中的换行。Enter 插入正文换行；Ctrl+Enter 跳到下一未译。"
+                             AcceptsReturn="True" TextWrapping="Wrap" AutomationProperties.Name="{Binding Label}"
                              Text="{Binding Content.Translated,UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock Margin="4,2" TextWrapping="Wrap" FontSize="12"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                         <Run Text="最长行加权长度：" /><Run Text="{Binding MaxLineLength,Mode=OneWay}" />
                         <Run Text="；全文字符数：" /><Run Text="{Binding Content.Translated.Length,Mode=OneWay}" />
                     </TextBlock>
+                    <TextBlock Text="{Binding InputHint}" TextWrapping="Wrap" Margin="4,2"
+                               Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                               Visibility="{c:Binding 'InputHint.Length>0',FalseToVisibility=Collapsed}" />
                     <Border Margin="2,4" Padding="6" CornerRadius="4"
                             Background="{DynamicResource ControlFillColorSecondaryBrush}"
                             Visibility="{c:Binding 'Check.Length>0',FalseToVisibility=Collapsed}">

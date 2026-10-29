@@ -41,6 +41,8 @@ public partial class TranslatePage : UserControl
     private CancellationTokenSource? _flashbackLookup;
     private readonly FlashbackEventService _flashbackEvents = new();
     private LineModel? _activeLine;
+    private bool _isSaving;
+    private string? _acceptedPreflight;
 
     public TranslatePage() : this(new EditorSessionStore()) { }
 
@@ -49,6 +51,7 @@ public partial class TranslatePage : UserControl
         _sessions = sessions;
         InitializeComponent();
         DataContext = new TranslatePageModel();
+        ViewModel.NavigationRequested += (_, line) => NavigateToLine(line);
         ViewModel.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(TranslatePageModel.ScriptPath)
@@ -69,14 +72,21 @@ public partial class TranslatePage : UserControl
         };
         Loaded += async (_, _) => await OfferRestoreDraftAsync();
         PreviewKeyDown += OnHistoryKeyDown;
+        AddHandler(DataObject.PastingEvent, new DataObjectPastingEventHandler((_, _) =>
+        {
+            ViewModel.BreakEditGroup();
+            Dispatcher.InvokeAsync(ViewModel.BreakEditGroup, DispatcherPriority.Background);
+        }));
         AddHandler(CommandManager.PreviewCanExecuteEvent, new CanExecuteRoutedEventHandler((_, e) =>
         {
+            if (SearchBox.IsKeyboardFocusWithin) return;
             if (e.Command != ApplicationCommands.Undo && e.Command != ApplicationCommands.Redo) return;
             e.CanExecute = e.Command == ApplicationCommands.Undo ? ViewModel.CanUndo : ViewModel.CanRedo;
             e.Handled = true;
         }));
         AddHandler(CommandManager.PreviewExecutedEvent, new ExecutedRoutedEventHandler((_, e) =>
         {
+            if (SearchBox.IsKeyboardFocusWithin) return;
             if (e.Command != ApplicationCommands.Undo && e.Command != ApplicationCommands.Redo) return;
             if (e.Command == ApplicationCommands.Undo) ViewModel.Undo();
             else ViewModel.Redo();
@@ -96,11 +106,22 @@ public partial class TranslatePage : UserControl
         return false;
     }
 
-    private void OnHistoryKeyDown(object sender, KeyEventArgs e)
+    private async void OnHistoryKeyDown(object sender, KeyEventArgs e)
     {
         if ((Keyboard.Modifiers & ModifierKeys.Control) == 0 ||
             (Keyboard.Modifiers & ModifierKeys.Alt) != 0) return;
-        if (e.Key == Key.F)
+        if (SearchBox.IsKeyboardFocusWithin && e.Key is Key.Z or Key.Y) return;
+        if (e.Key == Key.S)
+        {
+            e.Handled = true;
+            await SaveAsync((Keyboard.Modifiers & ModifierKeys.Shift) != 0);
+        }
+        else if (e.Key == Key.Enter)
+        {
+            e.Handled = true;
+            NavigateNext(false);
+        }
+        else if (e.Key == Key.F)
         {
             SearchBox.Focus();
             SearchBox.SelectAll();
@@ -126,7 +147,16 @@ public partial class TranslatePage : UserControl
         if (e.OriginalSource is DependencyObject source &&
             ItemsControl.ContainerFromElement(TranslatePanel, source) is System.Windows.Controls.ListViewItem { DataContext: LineModel line })
             _activeLine = line;
+        if (_activeLine != null) ViewModel.ActiveSequenceNumber = _activeLine.SequenceNumber;
+        if (e.RoutedEvent == Keyboard.GotKeyboardFocusEvent && e.OriginalSource is System.Windows.Controls.TextBox box && !box.IsReadOnly)
+        {
+            var path = box.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.ParentBinding.Path?.Path;
+            if (_activeLine is { } active && path == "Content.Translated") ViewModel.BeginTextEdit(active.Body);
+            else if (_activeLine is LineDialogModel dialog && path == "Character.Translated") ViewModel.BeginTextEdit(dialog.Character);
+        }
     }
+
+    private void TranslatePanel_OnLostFocus(object sender, KeyboardFocusChangedEventArgs e) => ViewModel.EndTextEdit();
 
     private void RefreshFilter_OnClick(object sender, RoutedEventArgs e) => ViewModel.RefreshVisibleEvents();
     private void NextUntranslated_OnClick(object sender, RoutedEventArgs e) => NavigateNext(false);
@@ -140,7 +170,13 @@ public partial class TranslatePage : UserControl
                 new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
             return;
         }
+        NavigateToLine(next);
+    }
+
+    private void NavigateToLine(LineModel next)
+    {
         _activeLine = next;
+        ViewModel.ActiveSequenceNumber = next.SequenceNumber;
         TranslatePanel.ScrollIntoView(next);
         TranslatePanel.SelectedItem = next;
         Dispatcher.InvokeAsync(() =>
@@ -185,7 +221,9 @@ public partial class TranslatePage : UserControl
         try
         {
             draft.Script.OriginalEffectIndices = draft.OriginalEffectIndices;
-            ViewModel.RestoreDraft(draft.Script, draft.ScriptPath, draft.TranslationPath, draft.Values, draft.SavedValues);
+            ViewModel.RestoreDraft(draft.Script, draft.ScriptPath, draft.TranslationPath, draft.Values, draft.SavedValues, draft.UseV2,
+                draft.AutoFormat, draft.ActiveSequenceNumber);
+            if (ViewModel.ActiveSequenceNumber > 0) NavigateToLine(ViewModel.Events[ViewModel.ActiveSequenceNumber - 1]);
         }
         catch (Exception exception)
         {
@@ -657,72 +695,82 @@ public partial class TranslatePage : UserControl
         }
     }
 
-    public async Task<bool> SaveAsync()
+    public async Task<bool> SaveAsync(bool saveAs = false)
     {
-        if (ViewModel.IsEmpty)
-        {
-            SnackbarService.Show("错误", "请先载入剧本", ControlAppearance.Danger,
-                new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
-            return false;
-        }
-
-        var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
-
-        var dialog = new SaveFileDialog(
-            dialogService.GetDialogHostEx() ?? throw new InvalidOperationException(),
-            ViewModel.ScriptPath, ViewModel.TranslationPath, ViewModel);
-        var token = CancellationToken.None;
-        var dialogResult = await dialogService.ShowAsync(dialog, token);
-        if (dialogResult != ContentDialogResult.Primary) return false;
-        var fileName = dialog.ViewModel.FileName;
-
-
+        if (_isSaving || ViewModel.IsEmpty) return false;
+        _isSaving = true;
         try
         {
-            var content = ExportTranslation();
-            var savedValues = ViewModel.ReadValues();
-            if (!await ExportOverwriteConfirmation.ConfirmAsync(dialogService, dialog.ViewModel, token))
-                return false;
+            if (Keyboard.FocusedElement is FrameworkElement { DataContext: LineDialogModel focused }) focused.CompleteTextEdit();
+            return await SaveCoreAsync(saveAs);
+        }
+        finally
+        {
+            if (Keyboard.FocusedElement is System.Windows.Controls.TextBox { IsReadOnly: false, DataContext: LineDialogModel focused }) focused.DeferFormatting = true;
+            _isSaving = false;
+        }
+    }
 
-            await File.WriteAllTextAsync(fileName, content, token);
-            ViewModel.MarkSaved(savedValues, fileName);
+    private async Task<bool> SaveCoreAsync(bool saveAs)
+    {
+        var dialogService = ((MainWindow)Application.Current.MainWindow!).WindowContentDialogService;
+        SekaiToolsGUI.ViewModel.Subtitle.SaveFileDialogModel target;
+        var useV2 = ViewModel.ExportUsesV2;
+        var optionsShown = saveAs || !ViewModel.HasTranslation;
+        if (optionsShown)
+        {
+            var dialog = new SaveFileDialog(dialogService.GetDialogHostEx() ?? throw new InvalidOperationException(),
+                ViewModel.ScriptPath, ViewModel.TranslationPath, ViewModel);
+            if (await dialogService.ShowAsync(dialog, CancellationToken.None) != ContentDialogResult.Primary) return false;
+            target = dialog.ViewModel;
+            useV2 = dialog.UseV2;
+        }
+        else target = new SekaiToolsGUI.ViewModel.Subtitle.SaveFileDialogModel { FileName = ViewModel.TranslationPath };
+
+        var preflight = target.FileName + "\n" + useV2 + "\n" + ViewModel.GetExportSummary(useV2);
+        if (!optionsShown && preflight != _acceptedPreflight &&
+            (ViewModel.UntranslatedCount > 0 || ViewModel.ExplicitEmptyCount > 0 || ViewModel.WarningCount > 0))
+        {
+            var result = await dialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
+            {
+                Title = "保存当前翻译进度？",
+                Content = ViewModel.GetExportSummary(useV2) + "\n\n保存到：" + target.FileName,
+                PrimaryButtonText = "保存", CloseButtonText = "取消"
+            }, CancellationToken.None);
+            if (result != ContentDialogResult.Primary) return false;
+        }
+        try
+        {
+            var content = ViewModel.Export(useV2);
+            var values = ViewModel.ReadValues();
+            if (!await ExportOverwriteConfirmation.ConfirmAsync(dialogService, target, CancellationToken.None)) return false;
+            await File.WriteAllTextAsync(target.FileName, content);
+            ViewModel.ExportUsesV2 = useV2;
+            ViewModel.MarkSaved(values, target.FileName);
+            _acceptedPreflight = preflight;
             FlushDraft();
         }
         catch (Exception ex)
         {
             Logger.Log($"翻译保存失败: {ex.Message}", LogLevel.Error);
-            SnackbarService.Show("错误", $"保存失败: {ex.Message}", ControlAppearance.Danger,
+            SnackbarService.Show("保存失败", ex.Message, ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.Dismiss24), TimeSpan.FromSeconds(5));
             return false;
         }
+        SnackbarService.Show("保存成功", "翻译文件已保存，可点击“打开保存位置”查看。", ControlAppearance.Success,
+            new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
+        return true;
+    }
 
-        var snackService = (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
-        snackService.Show("成功", "翻译文件已保存", ControlAppearance.Success,
-            new SymbolIcon(SymbolRegular.DocumentCheckmark24), new TimeSpan(0, 0, 3));
+    private async void SaveAsButton_OnClick(object sender, RoutedEventArgs e) => await SaveAsync(true);
+    private void OpenSavedLocation_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (!ViewModel.HasTranslation) return;
         try
         {
-            ShowFile(fileName);
+            Process.Start(new ProcessStartInfo("explorer.exe") { Arguments = $"/select,\"{ViewModel.TranslationPath}\"" });
         }
-        catch (Exception ex)
-        {
-            Logger.Log($"打开保存位置失败: {ex.Message}", LogLevel.Warning);
-        }
-
-        return true;
-
-        void ShowFile(string path)
-        {
-            var psi = new ProcessStartInfo("Explorer.exe")
-            {
-                Arguments = "/e,/select," + path
-            };
-            Process.Start(psi);
-        }
-
-        string ExportTranslation()
-        {
-            return ViewModel.Export(dialog.UseV2);
-        }
+        catch (Exception ex) { Logger.Log($"打开保存位置失败: {ex.Message}", LogLevel.Warning); }
     }
 
     private void SpecialCharButton_OnClick(object sender, RoutedEventArgs e)

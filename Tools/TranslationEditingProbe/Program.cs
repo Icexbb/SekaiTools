@@ -67,13 +67,30 @@ internal static class Program
             Check(store.ResolveLastModule(modules) == typeof(TranslatePage), "settings do not overwrite last main module");
             store.SaveLastModule("unknown-page");
             Check(store.ResolveLastModule(modules) == modules[0], "invalid saved module falls back to first main module");
+            model.AutoFormat = false;
+            model.ExportUsesV2 = false;
+            model.ActiveSequenceNumber = 2;
             store.SaveDraft(model);
             var draft = new EditorSessionStore(directory).ReadDraft() ?? throw new Exception("draft missing");
             draft.Script.OriginalEffectIndices = draft.OriginalEffectIndices;
             var restored = new TranslatePageModel();
-            restored.RestoreDraft(draft.Script, draft.ScriptPath, draft.TranslationPath, draft.Values, draft.SavedValues);
+            restored.RestoreDraft(draft.Script, draft.ScriptPath, draft.TranslationPath, draft.Values, draft.SavedValues,
+                draft.UseV2, draft.AutoFormat, draft.ActiveSequenceNumber);
+            Check(!restored.ExportUsesV2 && !restored.AutoFormat && restored.ActiveSequenceNumber == 2,
+                "draft retains export format, formatting preference and reading position");
             Check(restored.IsDirty && restored.ReadValues().SequenceEqual(model.ReadValues()), "draft restores raw edits without source files");
             Check(restored.Export() == model.Export(), "v2 export and original effect indices survive recovery");
+            File.WriteAllText(Path.Combine(directory, "translation-draft.json"), System.Text.Json.JsonSerializer.Serialize(new
+            {
+                draft.Script,
+                draft.OriginalEffectIndices,
+                draft.ScriptPath,
+                draft.TranslationPath,
+                draft.Values,
+                draft.SavedValues
+            }));
+            var legacyDraft = store.ReadDraft()!;
+            Check(legacyDraft.UseV2 && legacyDraft.AutoFormat && legacyDraft.ActiveSequenceNumber == 0, "older drafts use compatible default options");
             restored.Events.OfType<LineDialogModel>().First().Content.Translated = "恢复后编辑";
             restored.Undo();
             Check(restored.ReadValues().SequenceEqual(model.ReadValues()), "restored draft supports new undo history");
@@ -166,6 +183,25 @@ internal static class Program
         Check(((TextBlock)saveDialog.FindName("PreflightSummary")).Text.Contains("旧 TXT 无法可靠保留"), "preflight follows selected format");
         saveDialog.ViewModel.ApplyTranslationTag("校对");
         Check(((TextBlock)saveDialog.FindName("TargetFileName")).Text == "【校对】probe.txt", "save dialog exposes complete tagged filename");
+        page.ViewModel.AutoFormat = true;
+        editor = Nodes(page).OfType<System.Windows.Controls.TextBox>().First(box => ReferenceEquals(box.DataContext, line) &&
+            box.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.ParentBinding.Path?.Path == "Content.Translated");
+        editor.Focus();
+        Pump();
+        Check(line.DeferFormatting, "focused editor defers formatting during input");
+        editor.Text = "欸,你好!";
+        Pump();
+        Check(line.Content.Translated == "欸,你好!", "focused input remains unmodified");
+        ((Wpf.Ui.Controls.TextBox)page.FindName("SearchBox")).Focus();
+        Pump();
+        Check(line.Content.Translated == "诶，你好！", "leaving editor applies formatting");
+        line.Content.Translated = "一\n二\n三";
+        Pump();
+        var paste = new DataObjectPastingEventArgs(new DataObject(DataFormats.UnicodeText, "\n四"), false, DataFormats.UnicodeText);
+        editor.Select(editor.Text.Length, 0);
+        editor.RaiseEvent(paste);
+        Pump();
+        Check(paste.CommandCancelled && line.InputHint.Contains("最多三行"), "multiline paste is rejected with visible guidance");
         foreach (var theme in new[] { ApplicationTheme.Dark, ApplicationTheme.Light })
         {
             ApplicationThemeManager.Apply(theme);

@@ -37,41 +37,25 @@ public partial class TranslateLineDialog : UserControl, INavigableView<LineDialo
 {
     private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (sender is TextBox textBox)
-        {
-            if (e.Key != Key.Enter) return;
-            var lineCount = textBox.LineCount;
-            if (lineCount >= 3) e.Handled = true; // 阻止回车键输入新行
-        }
-
-        if (sender is Wpf.Ui.Controls.TextBox uiTextBox)
-        {
-            if (e.Key != Key.Enter) return;
-            var lineCount = uiTextBox.LineCount;
-            if (lineCount >= 3) e.Handled = true; // 阻止回车键输入新行
-        }
+        if (sender is TextBox box && e.Key == Key.Enter &&
+            (Keyboard.Modifiers & ModifierKeys.Control) == 0)
+            e.Handled = !ViewModel.CanReplaceText(box.Text, box.SelectionStart, box.SelectionLength, "\n");
     }
 
     private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
     {
-        if (sender is TextBox textBox)
-        {
-            var newText = textBox.Text.Insert(textBox.CaretIndex, e.Text);
-            var newLineCount = newText.Split('\n').Length;
-
-            if (newLineCount > 3) e.Handled = true; // 阻止输入导致超过三行
-        }
-
-        if (sender is Wpf.Ui.Controls.TextBox uiTextBox)
-        {
-            var newText = uiTextBox.Text.Insert(uiTextBox.CaretIndex, e.Text);
-            var newLineCount = newText.Split('\n').Length;
-
-            if (newLineCount > 3) e.Handled = true; // 阻止输入导致超过三行
-        }
+        if (sender is TextBox box)
+            e.Handled = !ViewModel.CanReplaceText(box.Text, box.SelectionStart, box.SelectionLength, e.Text);
     }
 
-    private void NameEditBoxChanged(object sender, TextChangedEventArgs e)
+    private void TextBox_OnPasting(object sender, DataObjectPastingEventArgs e)
     {
+        if (sender is TextBox box && e.DataObject.GetData(DataFormats.UnicodeText) is string text &&
+            !ViewModel.CanReplaceText(box.Text, box.SelectionStart, box.SelectionLength, text)) e.CancelCommand();
     }
+
+    private void TextBox_OnGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => ViewModel.DeferFormatting = true;
+    private void TextBox_OnLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => ViewModel.CompleteTextEdit();
+
+    private void NameEditBoxChanged(object sender, TextChangedEventArgs e) { }
 }

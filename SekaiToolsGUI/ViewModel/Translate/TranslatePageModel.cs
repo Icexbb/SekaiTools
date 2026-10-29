@@ -41,6 +41,7 @@ public partial class TranslatePageModel : ViewModelBase
     public bool HasScript => !string.IsNullOrEmpty(ScriptPath);
     public bool HasTranslation => !string.IsNullOrEmpty(TranslationPath);
     public bool HasReferenceTranslation => !string.IsNullOrEmpty(ReferenceTranslationPath);
+    public bool ExportUsesV2 { get; set; } = true;
 
     public bool IsDirty
     {
@@ -64,6 +65,7 @@ public partial class TranslatePageModel : ViewModelBase
 
     public void MarkSaved(EditValue[]? values = null, string? path = null)
     {
+        BreakEditGroup();
         _savedValues = values ?? ReadValues();
         if (path != null) TranslationPath = path;
         IsDirty = !ReadValues().SequenceEqual(_savedValues);
@@ -78,6 +80,7 @@ public partial class TranslatePageModel : ViewModelBase
         _loadedScript = script;
         Story = story;
         ScriptPath = path;
+        ExportUsesV2 = true;
         MarkSaved();
     }
 
@@ -88,6 +91,7 @@ public partial class TranslatePageModel : ViewModelBase
         if (_referenceStory != null)
             ApplyReference(_referenceStory);
         TranslationPath = path;
+        ExportUsesV2 = translation.IsV2;
         MarkSaved();
     }
 
@@ -113,6 +117,7 @@ public partial class TranslatePageModel : ViewModelBase
         if (_referenceStory != null)
             ApplyReference(_referenceStory);
         TranslationPath = string.Empty;
+        ExportUsesV2 = true;
         MarkSaved();
     }
 
@@ -132,7 +137,7 @@ public partial class TranslatePageModel : ViewModelBase
                 {
                     case DialogStoryEvent dialogStoryEvent:
                         var lineDialogModel = new LineDialogModel(dialogStoryEvent,
-                            (uint)dialogStoryEvent.Index < (uint)flashbacks.Length ? flashbacks[dialogStoryEvent.Index] : null);
+                            (uint)dialogStoryEvent.Index < (uint)flashbacks.Length ? flashbacks[dialogStoryEvent.Index] : null, AutoFormat);
                         lineDialogModel.ApplyFlashbackOrigins(_flashbackOrigins);
                         lineDialogModel.CharacterTranslateChanged += OnLineDialogModelOnCharacterTranslateChanged;
                         lineDialogModel.ContentTranslateChanged += OnDialogContentChanged;
@@ -150,6 +155,7 @@ public partial class TranslatePageModel : ViewModelBase
                 events[i].SequenceNumber = i + 1;
                 events[i].ActionRequested += OnLineAction;
                 events[i].ShowReference = ShowReference;
+                if (events[i] is LineDialogModel dialog) dialog.AutoFormat = AutoFormat;
                 events[i].MatchingCount = events[i] is LineDialogModel d
                     ? events.OfType<LineDialogModel>().Count(other => other.Character.Original == d.Character.Original)
                     : events.OfType<LineEffectModel>().Count(other => other.Content.Original == events[i].Body.Original);
@@ -161,6 +167,7 @@ public partial class TranslatePageModel : ViewModelBase
             RefreshVisibleEvents();
             NotifyProgress();
             LastEditFeedback = string.Empty;
+            ActiveSequenceNumber = 0;
         }
     }
 

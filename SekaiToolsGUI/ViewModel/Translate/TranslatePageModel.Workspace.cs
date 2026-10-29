@@ -2,7 +2,14 @@ namespace SekaiToolsGUI.ViewModel.Translate;
 
 public partial class TranslatePageModel
 {
+    public event EventHandler<LineModel>? NavigationRequested;
+    public int ActiveSequenceNumber { get; set; }
     public string LastEditFeedback { get => GetProperty(string.Empty); private set => SetProperty(value); }
+    public bool AutoFormat
+    {
+        get => GetProperty(true);
+        set { SetProperty(value); foreach (var line in Events.OfType<LineDialogModel>()) line.AutoFormat = value; }
+    }
     public bool ShowReference
     {
         get => GetProperty(true);
@@ -86,7 +93,16 @@ public partial class TranslatePageModel
     private void OnLineAction(object? sender, string action)
     {
         if (sender is not LineModel line || !Events.Contains(line)) return;
+        if (action == "context")
+        {
+            SearchText = string.Empty;
+            FilterIndex = 0;
+            NavigationRequested?.Invoke(this, line);
+            return;
+        }
+        BreakEditGroup();
         _restoringHistory = true;
+        if (line is LineDialogModel dialog) dialog.RestoringText = true;
         try
         {
             switch (action)
@@ -100,7 +116,11 @@ public partial class TranslatePageModel
                     break;
             }
         }
-        finally { _restoringHistory = false; }
+        finally
+        {
+            if (line is LineDialogModel restored) restored.RestoringText = false;
+            _restoringHistory = false;
+        }
         line.NotifyContentState();
         RecordEdit();
     }

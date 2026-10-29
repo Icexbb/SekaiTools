@@ -11,8 +11,30 @@ namespace SekaiToolsGUI.ViewModel.Translate;
 public partial class LineDialogModel : LineModel
 {
     private bool _isFormatting;
-    public LineDialogModel(DialogStoryEvent dialogStoryEvent, SekaiToolsBase.Story.FlashbackInfo? flashback = null)
+    public bool AutoFormat { get; set; } = true;
+    public bool DeferFormatting { get; set; }
+    public bool RestoringText { get; set; }
+    public string InputHint { get => GetProperty(string.Empty); private set => SetProperty(value); }
+
+    public void CompleteTextEdit()
     {
+        DeferFormatting = false;
+        UpdateMetrics();
+    }
+
+    public bool CanReplaceText(string text, int start, int length, string replacement)
+    {
+        var candidate = text.Remove(start, length).Insert(start, replacement);
+        static int Lines(string value) => value.Replace("\r\n", "\n").Replace('\r', '\n').Count(c => c == '\n') + 1;
+        var previousLines = Lines(text);
+        var nextLines = Lines(candidate);
+        var allowed = nextLines <= 3 || nextLines <= previousLines;
+        InputHint = allowed ? string.Empty : "正文最多三行。请先删减换行，再输入或粘贴；自动折行不占正文行数。";
+        return allowed;
+    }
+    public LineDialogModel(DialogStoryEvent dialogStoryEvent, SekaiToolsBase.Story.FlashbackInfo? flashback = null, bool autoFormat = true)
+    {
+        AutoFormat = autoFormat;
         Flashback = flashback;
         EndLine = dialogStoryEvent.CloseWindow;
         Shake = dialogStoryEvent.Shake;
@@ -119,7 +141,8 @@ public partial class LineDialogModel : LineModel
 
     private void UpdateMetrics()
     {
-        var formatted = _isFormatting ? Content.Translated : FormatContent(Content.Translated);
+        var formatted = _isFormatting || RestoringText || DeferFormatting || !AutoFormat
+            ? Content.Translated : FormatContent(Content.Translated);
         if (formatted != Content.Translated)
         {
             _isFormatting = true;
@@ -135,6 +158,8 @@ public partial class LineDialogModel : LineModel
             ["maxLineLength"] = MaxLineLength.ToString(CultureInfo.InvariantCulture)
         });
         Check = TranslationRules.FormatResults(results);
+        if (Content.Translated.Count(c => c == '\n') >= 3)
+            Check = string.Join("\n", new[] { Check, "正文超过三行，请删减换行。" }.Where(text => text.Length > 0));
         TooLong = results.Any(result => result.Feedback.Tags.Contains("length"));
     }
 }

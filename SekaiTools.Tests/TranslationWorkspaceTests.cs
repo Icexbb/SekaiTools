@@ -141,4 +141,84 @@ public class TranslationWorkspaceTests
         Assert.Equal("地点一", first.Content.Translated);
         Assert.Empty(second.Content.Translated);
     }
+
+    [Fact]
+    public void ContinuousTypingGroupsButSaveAndPasteBoundariesRemainSeparate()
+    {
+        var model = CreateModel();
+        var body = model.Events[0].Body;
+        model.BeginTextEdit(body);
+        body.Translated = "一";
+        body.Translated = "一二";
+        model.BreakEditGroup(); // a paste is a distinct operation
+        body.Translated = "一二粘贴。";
+        model.Undo();
+        Assert.Equal("一二", body.Translated);
+        model.Undo();
+        Assert.Empty(body.Translated);
+        model.Redo();
+        model.MarkSaved();
+        body.Translated = "保存后的输入。";
+        model.Undo();
+        Assert.Equal("一二", body.Translated);
+        Assert.False(model.IsDirty);
+    }
+
+    [Fact]
+    public void DeferredFormattingAndUndoPreserveExactInput()
+    {
+        var model = CreateModel();
+        var line = (LineDialogModel)model.Events[0];
+        line.DeferFormatting = true;
+        line.Content.Translated = "欸,你好!";
+        Assert.Equal("欸,你好!", line.Content.Translated);
+        line.CompleteTextEdit();
+        Assert.Equal("诶，你好！", line.Content.Translated);
+        model.Undo();
+        Assert.Equal("欸,你好!", line.Content.Translated);
+        model.AutoFormat = false;
+        line.Content.Translated = "欸?";
+        line.CompleteTextEdit();
+        Assert.Equal("欸?", line.Content.Translated);
+    }
+
+    [Fact]
+    public void ThreeLineValidationAccountsForSelectionAndAllowsRepairingImportedText()
+    {
+        var line = (LineDialogModel)CreateModel().Events[0];
+        Assert.False(line.CanReplaceText("一\n二\n三", 5, 0, "\n四"));
+        Assert.Contains("最多三行", line.InputHint);
+        Assert.True(line.CanReplaceText("一\n二\n三", 0, 5, "替换\n正文"));
+        Assert.True(line.CanReplaceText("一\n二\n三\n四", 0, 1, "修正"));
+        Assert.False(line.CanReplaceText("一\n二\n三\n四", 7, 0, "\r\n五"));
+    }
+
+    [Fact]
+    public void RestoringDraftRetainsExportFormatAndRawText()
+    {
+        var model = CreateModel();
+        model.AutoFormat = false;
+        model.Events[0].Body.Translated = "欸,原样!";
+        var restored = new TranslatePageModel();
+        restored.RestoreDraft(model.DraftScript!, "script.json", "legacy.txt", model.ReadValues(), model.SavedValues, false, false, 2);
+        Assert.False(restored.ExportUsesV2);
+        Assert.False(restored.AutoFormat);
+        Assert.Equal(2, restored.ActiveSequenceNumber);
+        Assert.Equal("欸,原样!", restored.Events[0].Body.Translated);
+    }
+
+    [Fact]
+    public void ViewingContextClearsFilterWithoutChangingTranslation()
+    {
+        var model = CreateModel();
+        model.SearchText = "原文二";
+        var before = model.Export();
+        LineModel? requested = null;
+        model.NavigationRequested += (_, line) => requested = line;
+        model.Events[1].RequestAction("context");
+        Assert.Equal(2, model.VisibleEvents.Length);
+        Assert.Same(model.Events[1], requested);
+        Assert.Equal(before, model.Export());
+        Assert.False(model.CanUndo);
+    }
 }

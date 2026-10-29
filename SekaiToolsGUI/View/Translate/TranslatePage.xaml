@@ -9,7 +9,7 @@
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:control="clr-namespace:SekaiToolsGUI.Control"
              mc:Ignorable="d"
-             AllowDrop="True" Background="Transparent"
+             AllowDrop="True" Background="Transparent" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
              PreviewDragOver="Page_OnPreviewDragOver" PreviewDrop="Page_OnPreviewDrop"
              PreviewDragLeave="Page_OnPreviewDragLeave" Unloaded="Page_OnUnloaded"
              d:DesignHeight="960" d:DesignWidth="1280" d:Background="White"
@@ -58,7 +58,11 @@
                                 </ContextMenu>
                             </ui:Button.ContextMenu>
                         </ui:Button>
-                        <ui:Button x:Name="SaveButton" Content="保存" Click="SaveButton_OnClick" Appearance="Primary" IsEnabled="{c:Binding 'Events.Length!=0'}" Margin="0,0,8,8" />
+                        <ui:Button x:Name="SaveButton" Content="保存" Icon="{ui:SymbolIcon Save24}" Click="SaveButton_OnClick" Appearance="Primary" IsEnabled="{c:Binding 'Events.Length!=0'}" Margin="0,0,8,8" />
+                        <ui:Button Content="另存为…" Icon="{ui:SymbolIcon SaveCopy24}" Click="SaveAsButton_OnClick" ToolTip="另存为 (Ctrl+Shift+S)"
+                                   IsEnabled="{c:Binding 'Events.Length!=0'}" Margin="0,0,8,8" />
+                        <ui:Button Content="打开保存位置" Icon="{ui:SymbolIcon FolderOpen24}" Click="OpenSavedLocation_OnClick" Margin="0,0,8,8"
+                                   Visibility="{c:Binding HasTranslation,FalseToVisibility=Collapsed}" />
                     </WrapPanel>
                     <WrapPanel>
                         <TextBlock Text="剧本：" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
@@ -71,13 +75,13 @@
                 </StackPanel>
             </ui:Card>
 
-            <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="4,0,4,8">
-                <ui:SymbolIcon Symbol="Document24" Margin="0,0,8,0"
+            <DockPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="4,0,4,8">
+                <ui:SymbolIcon DockPanel.Dock="Left" Symbol="Document24" Margin="0,0,8,0"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 <TextBlock Text="{Binding SaveStatus}" TextWrapping="Wrap"
                            AutomationProperties.LiveSetting="Polite"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-            </StackPanel>
+            </DockPanel>
             <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}">
                 <WrapPanel Margin="0,0,0,8">
                     <ui:SymbolIcon Symbol="Search24" Margin="4,0,8,0" />
@@ -90,11 +94,13 @@
                         <ComboBoxItem Content="仅看有提示" />
                         <ComboBoxItem Content="仅看闪回" />
                     </ComboBox>
-                    <ui:Button Content="刷新筛选" Click="RefreshFilter_OnClick" Margin="0,0,8,0"
+                    <ui:Button Content="刷新筛选" Icon="{ui:SymbolIcon ArrowSync24}" Click="RefreshFilter_OnClick" Margin="0,0,8,0"
                                ToolTip="输入过程中保留当前条目，点击后按最新状态重新筛选。" />
-                    <ui:Button Content="下一未译" Click="NextUntranslated_OnClick" Margin="0,0,8,0" />
-                    <ui:Button Content="下一提示" Click="NextWarning_OnClick" Margin="0,0,8,0" />
+                    <ui:Button Content="下一未译" Icon="{ui:SymbolIcon ArrowRight28}" Click="NextUntranslated_OnClick" Margin="0,0,8,0" ToolTip="下一未译 (Ctrl+Enter)" />
+                    <ui:Button Content="下一提示" Icon="{ui:SymbolIcon Warning28}" Click="NextWarning_OnClick" Margin="0,0,8,0" />
                     <CheckBox Content="显示参考译文" IsChecked="{Binding ShowReference}" VerticalAlignment="Center" />
+                    <CheckBox Content="自动规范标点和用词" IsChecked="{Binding AutoFormat}" VerticalAlignment="Center" Margin="12,0,0,0"
+                              ToolTip="离开编辑框后规范标点和用词（如半角标点转全角、欸转诶）。关闭可保留输入写法。" />
                 </WrapPanel>
                 <WrapPanel Margin="4,0,4,8">
                     <TextBlock Text="{Binding ProgressText}" Margin="0,0,16,0" />
@@ -108,7 +114,7 @@
                         <TextBlock Text="文件未载入，当前编辑内容已保留" FontWeight="SemiBold" />
                         <TextBlock x:Name="ImportErrorText" TextWrapping="Wrap" Margin="0,4" />
                         <WrapPanel>
-                            <ui:Button Content="复制错误详情" Click="CopyImportError_OnClick" Margin="0,0,8,0" />
+                            <ui:Button Content="复制错误详情" Icon="{ui:SymbolIcon Copy24}" Click="CopyImportError_OnClick" Margin="0,0,8,0" />
                             <ui:Button Content="关闭提示" Click="DismissImportError_OnClick" />
                         </WrapPanel>
                     </StackPanel>
@@ -133,6 +139,7 @@
                       ScrollViewer.CanContentScroll="True"
                       Name="TranslatePanel"
                       PreviewMouseDown="TranslatePanel_OnActivity" GotKeyboardFocus="TranslatePanel_OnActivity"
+                      LostKeyboardFocus="TranslatePanel_OnLostFocus"
                       VirtualizingStackPanel.ScrollUnit="Pixel">
                 <ListView.Resources>
                     <DataTemplate DataType="{x:Type translate:LineDialogModel}">

@@ -12,6 +12,16 @@ public partial class TranslatePageModel
     private EditValue[] _currentValues = [];
     private EditValue[] _savedValues = [];
     private bool _restoringHistory;
+    private TranslateItemModel? _editingItem;
+    private bool _mergeTyping;
+    private long _lastTypingTime;
+    public void BeginTextEdit(TranslateItemModel item)
+    {
+        if (!ReferenceEquals(_editingItem, item)) BreakEditGroup();
+        _editingItem = item;
+    }
+    public void EndTextEdit() { BreakEditGroup(); _editingItem = null; }
+    public void BreakEditGroup() => _mergeTyping = false;
     public bool CanUndo => _undo.Count > 0;
     public bool CanRedo => _redo.Count > 0;
     public event EventHandler? ContentChanged;
@@ -27,6 +37,7 @@ public partial class TranslatePageModel
 
     private void ResetHistory()
     {
+        EndTextEdit();
         _undo.Clear();
         _redo.Clear();
         _currentValues = ReadValues();
@@ -42,8 +53,21 @@ public partial class TranslatePageModel
         var changes = next.Select((value, index) => new Change(index, _currentValues[index], value))
             .Where(change => change.Before != change.After).ToArray();
         if (changes.Length == 0) return;
-        _undo.Add(changes);
+        var now = Environment.TickCount64;
+        var groupRemains = true;
+        if (_editingItem != null && _mergeTyping && now - _lastTypingTime < 1500 && _undo.Count > 0)
+        {
+            var merged = _undo[^1].ToDictionary(change => change.Index);
+            foreach (var change in changes)
+                merged[change.Index] = merged.TryGetValue(change.Index, out var previous)
+                    ? new Change(change.Index, previous.Before, change.After) : change;
+            _undo[^1] = merged.Values.Where(change => change.Before != change.After).ToArray();
+            if (_undo[^1].Length == 0) { _undo.RemoveAt(_undo.Count - 1); groupRemains = false; }
+        }
+        else _undo.Add(changes);
         if (_undo.Count > 500) _undo.RemoveAt(0);
+        _mergeTyping = groupRemains && _editingItem != null && _undo.Count > 0;
+        _lastTypingTime = now;
         _redo.Clear();
         _currentValues = next;
         FinishEdit();
@@ -52,6 +76,7 @@ public partial class TranslatePageModel
 
     public void Undo()
     {
+        BreakEditGroup();
         if (!CanUndo) return;
         var changes = _undo[^1];
         _undo.RemoveAt(_undo.Count - 1);
@@ -63,6 +88,7 @@ public partial class TranslatePageModel
 
     public void Redo()
     {
+        BreakEditGroup();
         if (!CanRedo) return;
         var changes = _redo.Pop();
         ApplyChanges(changes, true);
@@ -75,6 +101,7 @@ public partial class TranslatePageModel
     {
         var items = EditableItems().ToArray();
         _restoringHistory = true;
+        foreach (var line in Events.OfType<LineDialogModel>()) line.RestoringText = true;
         try
         {
             foreach (var change in changes)
@@ -84,7 +111,11 @@ public partial class TranslatePageModel
                 items[change.Index].Translated = value.Text;
             }
         }
-        finally { _restoringHistory = false; }
+        finally
+        {
+            foreach (var line in Events.OfType<LineDialogModel>()) line.RestoringText = false;
+            _restoringHistory = false;
+        }
         _currentValues = ReadValues();
     }
 
@@ -105,16 +136,20 @@ public partial class TranslatePageModel
 
     public GameScript? DraftScript => _loadedScript;
 
-    public void RestoreDraft(GameScript script, string scriptPath, string translationPath, EditValue[] values, EditValue[] savedValues)
+    public void RestoreDraft(GameScript script, string scriptPath, string translationPath, EditValue[] values, EditValue[] savedValues, bool useV2 = true,
+        bool autoFormat = true, int activeSequenceNumber = 0)
     {
         var expectedCount = new SekaiToolsBase.Story.Story(script, new SekaiToolsBase.Story.Translation.TranslationData(null))
             .Events.Sum(item => item is SekaiToolsBase.Story.StoryEvent.DialogStoryEvent ? 2 : 1);
         if (values.Length != expectedCount || savedValues.Length != expectedCount)
             throw new InvalidDataException("翻译草稿条目数量与剧本不匹配。");
+        AutoFormat = autoFormat;
         LoadScript(script, scriptPath);
         var before = ReadValues();
         ApplyChanges(values.Select((value, index) => new Change(index, before[index], value)).ToArray(), true);
         TranslationPath = translationPath;
+        ExportUsesV2 = useV2;
+        ActiveSequenceNumber = Math.Clamp(activeSequenceNumber, 0, Events.Length);
         _savedValues = savedValues;
         ResetHistory();
         FinishEdit();
