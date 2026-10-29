@@ -76,29 +76,81 @@
             </ui:Card>
 
             <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}">
-                <WrapPanel Margin="0,0,0,8">
-                    <ui:SymbolIcon Symbol="Search24" Margin="4,0,8,0" />
-                    <ui:TextBox x:Name="SearchBox" Width="240" Margin="0,0,8,0" PlaceholderText="搜索原文、译文、角色或编号"
-                                AutomationProperties.Name="搜索翻译条目"
-                                Text="{Binding SearchText,UpdateSourceTrigger=PropertyChanged}" />
-                    <ComboBox Width="130" Margin="0,0,8,0" SelectedIndex="{Binding FilterIndex}" AutomationProperties.Name="条目筛选">
-                        <ComboBoxItem Content="全部条目" />
-                        <ComboBoxItem Content="仅看未译" />
-                        <ComboBoxItem Content="仅看有提示" />
-                        <ComboBoxItem Content="仅看闪回" />
-                    </ComboBox>
-                    <ui:Button Content="刷新筛选" Icon="{ui:SymbolIcon ArrowSync24}" Click="RefreshFilter_OnClick" Margin="0,0,8,0"
-                               ToolTip="输入过程中保留当前条目，点击后按最新状态重新筛选。" />
-                    <ui:Button Content="下一未译" Icon="{ui:SymbolIcon ArrowRight28}" Click="NextUntranslated_OnClick" Margin="0,0,8,0" ToolTip="下一未译 (Ctrl+Enter)" />
-                    <ui:Button Content="下一提示" Icon="{ui:SymbolIcon Warning28}" Click="NextWarning_OnClick" Margin="0,0,8,0" />
-                    <CheckBox Content="显示参考译文" IsChecked="{Binding ShowReference}" VerticalAlignment="Center" />
-                    <CheckBox Content="同步相同场景文字" IsChecked="{Binding SyncMatchingContent}" Margin="12,0,0,0" VerticalAlignment="Center"
-                              ToolTip="项目级开关：后续编辑会同步整个剧本中原文相同的场景文字；开启时不会立即覆盖现有译文。" />
-                    <CheckBox Content="同步相同说话人译名" IsChecked="{Binding SyncMatchingSpeakers}" Margin="12,0,0,0" VerticalAlignment="Center"
-                              ToolTip="项目级开关：后续修改说话人译名时，同步整个剧本中原名相同的说话人，不修改对话正文。" />
-                    <CheckBox Content="自动规范标点和用词" IsChecked="{Binding AutoFormat}" VerticalAlignment="Center" Margin="12,0,0,0"
-                              ToolTip="离开编辑框后规范标点和用词（如半角标点转全角、欸转诶）。关闭可保留输入写法。" />
-                </WrapPanel>
+                <Border Padding="12,10" Margin="0,0,0,10" CornerRadius="6"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="130" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:TextBox x:Name="SearchBox" Margin="0,0,10,0" PlaceholderText="搜索原文、译文、角色或编号"
+                                        Icon="{ui:SymbolIcon Search24}" AutomationProperties.Name="搜索翻译条目"
+                                        Text="{Binding SearchText,UpdateSourceTrigger=PropertyChanged}" />
+                            <ComboBox Grid.Column="1" SelectedIndex="{Binding FilterIndex}" AutomationProperties.Name="条目筛选">
+                                <ComboBoxItem Content="全部条目" />
+                                <ComboBoxItem Content="仅看未译" />
+                                <ComboBoxItem Content="仅看有提示" />
+                                <ComboBoxItem Content="仅看闪回" />
+                            </ComboBox>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                <ui:Button Icon="{ui:SymbolIcon ArrowSync24}" Click="RefreshFilter_OnClick" Margin="10,0,0,0"
+                                           AutomationProperties.Name="刷新筛选" ToolTip="刷新筛选：输入过程中保留当前条目，点击后按最新状态重新筛选。" />
+                                <ui:Button Content="下一未译" Icon="{ui:SymbolIcon ArrowRight28}" Click="NextUntranslated_OnClick" Margin="10,0,0,0" ToolTip="下一未译 (Ctrl+Enter)" />
+                                <ui:Button Content="下一提示" Icon="{ui:SymbolIcon Warning28}" Click="NextWarning_OnClick" Margin="10,0,0,0" />
+                            </StackPanel>
+                        </Grid>
+                        <Border Margin="0,10,0,0" Padding="0,10,0,0" BorderThickness="0,1,0,0"
+                                BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
+                            <DockPanel LastChildFill="True">
+                                <control:Popover x:Name="EditorOptionsPopover" DockPanel.Dock="Right" Padding="0" StaysOpen="False" Margin="12,0,0,0">
+                                    <control:Popover.Target>
+                                        <ToggleButton Padding="10,4" IsChecked="{Binding IsOpen, ElementName=EditorOptionsPopover, Mode=TwoWay}" AutomationProperties.Name="编辑选项">
+                                            <StackPanel Orientation="Horizontal">
+                                                <ui:SymbolIcon Symbol="Settings24" FontSize="16" Margin="0,0,6,0" />
+                                                <TextBlock Text="编辑选项" />
+                                            </StackPanel>
+                                        </ToggleButton>
+                                    </control:Popover.Target>
+                                    <control:Popover.Content>
+                                        <StackPanel Margin="16">
+                                            <CheckBox Content="显示参考译文" IsChecked="{Binding ShowReference}" VerticalAlignment="Center" Margin="0,0,0,0" />
+                                            <CheckBox Content="同步相同场景文字" IsChecked="{Binding SyncMatchingContent}" Margin="0,10,0,0" VerticalAlignment="Center"
+                                                      ToolTip="项目级开关：后续编辑会同步整个剧本中原文相同的场景文字；开启时不会立即覆盖现有译文。" />
+                                            <CheckBox Content="同步相同说话人译名" IsChecked="{Binding SyncMatchingSpeakers}" Margin="0,10,0,0" VerticalAlignment="Center"
+                                                      ToolTip="项目级开关：后续修改说话人译名时，同步整个剧本中原名相同的说话人，不修改对话正文。" />
+                                            <CheckBox Content="自动规范标点和用词" IsChecked="{Binding AutoFormat}" VerticalAlignment="Center" Margin="0,10,0,0"
+                                                      ToolTip="离开编辑框后规范标点和用词（如半角标点转全角、欸转诶）。关闭可保留输入写法。" />
+                                        </StackPanel>
+                                    </control:Popover.Content>
+                                </control:Popover>
+                                <WrapPanel VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Margin="0,3,20,3">
+                                        <TextBlock Text="显示" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,6,0" />
+                                        <TextBlock Text="{Binding VisibleEvents.Length}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,3,20,3">
+                                        <TextBlock Text="总条目" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,6,0" />
+                                        <TextBlock Text="{Binding Events.Length}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,3,20,3">
+                                        <TextBlock Text="未译" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,6,0" />
+                                        <TextBlock Text="{Binding UntranslatedCount}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,3,20,3">
+                                        <TextBlock Text="留空" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,6,0" />
+                                        <TextBlock Text="{Binding ExplicitEmptyCount}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,3,20,3">
+                                        <TextBlock Text="提示" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,6,0" />
+                                        <TextBlock Text="{Binding WarningCount}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </WrapPanel>
+                            </DockPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
                 <Border x:Name="ImportErrorPanel" Visibility="Collapsed" Padding="8" Margin="0,0,0,8"
                         BorderThickness="1" BorderBrush="{DynamicResource SystemFillColorCriticalBrush}">
                     <StackPanel>
