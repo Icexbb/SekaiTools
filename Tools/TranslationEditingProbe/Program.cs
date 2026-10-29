@@ -160,7 +160,16 @@ internal static class Program
         ApplicationCommands.Redo.Execute(null, editor);
         Pump();
         Check(line.Content.Translated == "界面编辑", "textbox redo command uses document history");
-        Check(Nodes(page).OfType<TextBlock>().Any(block => block.Text.Contains("有未保存修改")), "persistent save state is visible");
+        var options = (SekaiToolsGUI.Control.Popover)page.FindName("EditorOptionsPopover");
+        var optionsButton = (Wpf.Ui.Controls.Button)options.Target!;
+        optionsButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+        Pump();
+        Check(options.IsOpen, "editor options button opens popover");
+        var optionCheck = Nodes((DependencyObject)options.Content).OfType<CheckBox>().First();
+        optionCheck.IsChecked = false;
+        Pump();
+        Check(!page.ViewModel.ShowReference, "editor options binding updates project");
+        options.Close();
         Check(Nodes(page).OfType<TextBlock>().Any(block => block.Text.Contains("句尾缺少结束标点")), "validation reason is visible without hover");
         line.RequestAction("blank");
         Pump();

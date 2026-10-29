@@ -597,8 +597,8 @@ public partial class TranslatePage : UserControl
     private void UpdateLoadButtons()
     {
         UpdateButton(LoadScriptButton, ViewModel.ScriptPath, "载入剧本", "更换剧本");
-        UpdateButton(LoadTranslationButton, ViewModel.TranslationPath, "载入翻译文件", "更换翻译文件");
-        UpdateButton(ReferenceTranslationButton, ViewModel.ReferenceTranslationPath, "载入参考翻译文件", "更换参考翻译");
+        UpdateButton(LoadTranslationButton, ViewModel.TranslationPath, "载入译文", "更换译文");
+        UpdateButton(ReferenceTranslationButton, ViewModel.ReferenceTranslationPath, "载入参考", "更换参考");
         UpdateFilePath(TextBlockScriptFile, ViewModel.ScriptPath);
         UpdateFilePath(TextBlockTranslation, ViewModel.TranslationPath);
         UpdateFilePath(TextBlockTranslationReference, ViewModel.ReferenceTranslationPath);
@@ -615,7 +615,7 @@ public partial class TranslatePage : UserControl
     private static void UpdateFilePath(System.Windows.Controls.TextBlock textBlock, string path)
     {
         textBlock.ToolTip = string.IsNullOrEmpty(path) ? null : path;
-        textBlock.Text = CompactPath(path);
+        textBlock.Text = string.IsNullOrEmpty(path) ? string.Empty : CompactPath(Path.GetFileName(path));
 
         string CompactPath(string fullPath)
         {
@@ -735,7 +735,8 @@ public partial class TranslatePage : UserControl
             {
                 Title = "保存当前翻译进度？",
                 Content = ViewModel.GetExportSummary(useV2) + "\n\n保存到：" + target.FileName,
-                PrimaryButtonText = "保存", CloseButtonText = "取消"
+                PrimaryButtonText = "保存",
+                CloseButtonText = "取消"
             }, CancellationToken.None);
             if (result != ContentDialogResult.Primary) return false;
         }
@@ -772,6 +773,8 @@ public partial class TranslatePage : UserControl
         }
         catch (Exception ex) { Logger.Log($"打开保存位置失败: {ex.Message}", LogLevel.Warning); }
     }
+
+    private void EditorOptionsButton_OnClick(object sender, RoutedEventArgs e) => EditorOptionsPopover.Open();
 
     private void SpecialCharButton_OnClick(object sender, RoutedEventArgs e)
     {
