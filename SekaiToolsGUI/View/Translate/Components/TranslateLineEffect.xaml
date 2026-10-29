@@ -43,7 +43,6 @@
                         <TextBox IsReadOnly="True" IsTabStop="False" Text="{Binding Content.Reference}" TextWrapping="Wrap"
                                  Background="Transparent" BorderBrush="Transparent" AutomationProperties.Name="场景文字参考译文" />
                     </StackPanel>
-                    <TextBlock Text="我的译文" Margin="4,2" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     <ui:TextBox Padding="5,2" HorizontalAlignment="Stretch" AutomationProperties.Name="{Binding Label}"
                                 Text="{Binding Content.Translated,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>

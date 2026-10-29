@@ -149,8 +149,6 @@
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
                                  AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
                     </StackPanel>
-                    <TextBlock Text="我的译文" Margin="4,2" FontSize="12"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     <TextBox MinLines="2" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
                              PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"
                              DataObject.Pasting="TextBox_OnPasting" GotKeyboardFocus="TextBox_OnGotKeyboardFocus" LostKeyboardFocus="TextBox_OnLostKeyboardFocus"

@@ -75,13 +75,6 @@
                 </StackPanel>
             </ui:Card>
 
-            <DockPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="4,0,4,8">
-                <ui:SymbolIcon DockPanel.Dock="Left" Symbol="Document24" Margin="0,0,8,0"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                <TextBlock Text="{Binding SaveStatus}" TextWrapping="Wrap"
-                           AutomationProperties.LiveSetting="Polite"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-            </DockPanel>
             <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}">
                 <WrapPanel Margin="0,0,0,8">
                     <ui:SymbolIcon Symbol="Search24" Margin="4,0,8,0" />
@@ -106,12 +99,6 @@
                     <CheckBox Content="自动规范标点和用词" IsChecked="{Binding AutoFormat}" VerticalAlignment="Center" Margin="12,0,0,0"
                               ToolTip="离开编辑框后规范标点和用词（如半角标点转全角、欸转诶）。关闭可保留输入写法。" />
                 </WrapPanel>
-                <WrapPanel Margin="4,0,4,8">
-                    <TextBlock Text="{Binding ProgressText}" Margin="0,0,16,0" />
-                    <TextBlock Text="{Binding VisibleCountText}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                </WrapPanel>
-                <TextBlock Text="{Binding LastEditFeedback}" Margin="4,0,4,8" TextWrapping="Wrap"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 <Border x:Name="ImportErrorPanel" Visibility="Collapsed" Padding="8" Margin="0,0,0,8"
                         BorderThickness="1" BorderBrush="{DynamicResource SystemFillColorCriticalBrush}">
                     <StackPanel>
