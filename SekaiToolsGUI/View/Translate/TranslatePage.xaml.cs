@@ -40,6 +40,7 @@ public partial class TranslatePage : UserControl
     private string? _dragTranslationError;
     private CancellationTokenSource? _flashbackLookup;
     private readonly FlashbackEventService _flashbackEvents = new();
+    private LineModel? _activeLine;
 
     public TranslatePage() : this(new EditorSessionStore()) { }
 
@@ -99,7 +100,13 @@ public partial class TranslatePage : UserControl
     {
         if ((Keyboard.Modifiers & ModifierKeys.Control) == 0 ||
             (Keyboard.Modifiers & ModifierKeys.Alt) != 0) return;
-        if (e.Key == Key.Z && (Keyboard.Modifiers & ModifierKeys.Shift) == 0)
+        if (e.Key == Key.F)
+        {
+            SearchBox.Focus();
+            SearchBox.SelectAll();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Z && (Keyboard.Modifiers & ModifierKeys.Shift) == 0)
         {
             ViewModel.Undo();
             e.Handled = true;
@@ -113,6 +120,47 @@ public partial class TranslatePage : UserControl
 
     private void UndoButton_OnClick(object sender, RoutedEventArgs e) => ViewModel.Undo();
     private void RedoButton_OnClick(object sender, RoutedEventArgs e) => ViewModel.Redo();
+
+    private void TranslatePanel_OnActivity(object sender, RoutedEventArgs e)
+    {
+        if (e.OriginalSource is DependencyObject source &&
+            ItemsControl.ContainerFromElement(TranslatePanel, source) is System.Windows.Controls.ListViewItem { DataContext: LineModel line })
+            _activeLine = line;
+    }
+
+    private void RefreshFilter_OnClick(object sender, RoutedEventArgs e) => ViewModel.RefreshVisibleEvents();
+    private void NextUntranslated_OnClick(object sender, RoutedEventArgs e) => NavigateNext(false);
+    private void NextWarning_OnClick(object sender, RoutedEventArgs e) => NavigateNext(true);
+    private void NavigateNext(bool warnings)
+    {
+        var next = ViewModel.FindNext(_activeLine, warnings);
+        if (next == null)
+        {
+            SnackbarService.Show("已检查", warnings ? "没有需要处理的提示。" : "没有未译条目。", ControlAppearance.Info,
+                new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
+            return;
+        }
+        _activeLine = next;
+        TranslatePanel.ScrollIntoView(next);
+        TranslatePanel.SelectedItem = next;
+        Dispatcher.InvokeAsync(() =>
+        {
+            if (TranslatePanel.ItemContainerGenerator.ContainerFromItem(next) is not DependencyObject item) return;
+            FindEditor(item)?.Focus();
+        }, DispatcherPriority.Loaded);
+    }
+
+    private static System.Windows.Controls.TextBox? FindEditor(DependencyObject parent)
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is System.Windows.Controls.TextBox box &&
+                box.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.ParentBinding.Path?.Path == "Content.Translated") return box;
+            if (FindEditor(child) is { } editor) return editor;
+        }
+        return null;
+    }
 
     private async Task OfferRestoreDraftAsync()
     {

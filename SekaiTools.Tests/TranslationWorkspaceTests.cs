@@ -36,4 +36,52 @@ public class TranslationWorkspaceTests
         model.Redo();
         Assert.Contains("文件已保存", model.SaveStatus);
     }
+
+    [Fact]
+    public void BlankDispositionIsUndoableAndFiltersDoNotChangeExportOrder()
+    {
+        var model = CreateModel();
+        var line = model.Events[0];
+        var untranslated = model.Export();
+        Assert.Equal(2, model.UntranslatedCount);
+        line.RequestAction("blank");
+        Assert.Equal(1, model.UntranslatedCount);
+        Assert.Equal(1, model.ExplicitEmptyCount);
+        Assert.True(model.IsDirty);
+        Assert.True(line.IsExplicitEmpty);
+        Assert.Contains("有意留空", line.StateText);
+        model.FilterIndex = 1;
+        Assert.Single(model.VisibleEvents);
+        Assert.Same(model.Events[1], model.VisibleEvents[0]);
+        var exported = model.Export();
+        model.SearchText = "不存在";
+        Assert.Empty(model.VisibleEvents);
+        Assert.Equal(exported, model.Export());
+        Assert.Same(model.Events[1], model.FindNext(line, false));
+        model.Undo();
+        Assert.Equal(2, model.UntranslatedCount);
+        Assert.Equal(0, model.ExplicitEmptyCount);
+        Assert.Equal(untranslated, model.Export());
+        model.Redo();
+        Assert.True(line.IsExplicitEmpty);
+    }
+
+    [Fact]
+    public void SearchAndNavigationUseStableScriptNumbers()
+    {
+        var model = CreateModel();
+        model.SearchText = "原文二";
+        Assert.Single(model.VisibleEvents);
+        Assert.Equal(2, model.VisibleEvents[0].SequenceNumber);
+        ((LineDialogModel)model.Events[0]).Content.Translated = "测试";
+        model.FilterIndex = 2;
+        model.SearchText = "测试";
+        Assert.Single(model.VisibleEvents);
+        Assert.Same(model.Events[0], model.FindNext(model.Events[1], true));
+        model.FilterIndex = 0;
+        model.SearchText = string.Empty;
+        model.Events[1].RequestAction("original");
+        Assert.Contains("沿用原文", model.Events[1].StateText);
+        Assert.Equal(0, model.UntranslatedCount);
+    }
 }

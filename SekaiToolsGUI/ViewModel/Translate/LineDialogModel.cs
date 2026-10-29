@@ -97,9 +97,10 @@ public partial class LineDialogModel : LineModel
     private void OnContentPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         // 只有当 Translated 变化时才触发
-        if (e.PropertyName != nameof(TranslateItemModel.Translated)) return;
+        if (e.PropertyName is not (nameof(TranslateItemModel.Translated) or nameof(TranslateItemModel.PreserveEmpty))) return;
         // 更新父级的 Check, LineCount 等
         UpdateMetrics();
+        NotifyContentState();
         if (ContentTranslateChangedEnabled) ContentTranslateChanged?.Invoke(this, EventArgs.Empty);
     }
 

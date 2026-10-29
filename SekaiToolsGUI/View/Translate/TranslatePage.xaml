@@ -19,6 +19,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
@@ -131,7 +132,28 @@
                            AutomationProperties.LiveSetting="Polite"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
             </StackPanel>
-            <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="24"
+            <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}">
+                <WrapPanel Margin="0,0,0,8">
+                    <ui:SymbolIcon Symbol="Search24" Margin="4,0,8,0" />
+                    <ui:TextBox x:Name="SearchBox" Width="240" Margin="0,0,8,0" PlaceholderText="搜索原文、译文、角色或编号"
+                                AutomationProperties.Name="搜索翻译条目"
+                                Text="{Binding SearchText,UpdateSourceTrigger=PropertyChanged}" />
+                    <ComboBox Width="130" Margin="0,0,8,0" SelectedIndex="{Binding FilterIndex}" AutomationProperties.Name="条目筛选">
+                        <ComboBoxItem Content="全部条目" />
+                        <ComboBoxItem Content="仅看未译" />
+                        <ComboBoxItem Content="仅看有提示" />
+                        <ComboBoxItem Content="仅看闪回" />
+                    </ComboBox>
+                    <ui:Button Content="刷新筛选" Click="RefreshFilter_OnClick" Margin="0,0,8,0" />
+                    <ui:Button Content="下一未译" Click="NextUntranslated_OnClick" Margin="0,0,8,0" />
+                    <ui:Button Content="下一提示" Click="NextWarning_OnClick" />
+                </WrapPanel>
+                <WrapPanel Margin="4,0,4,8">
+                    <TextBlock Text="{Binding ProgressText}" Margin="0,0,16,0" />
+                    <TextBlock Text="{Binding VisibleCountText}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                </WrapPanel>
+            </StackPanel>
+            <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Margin="24"
                         VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False"
                         Visibility="{c:Binding !HasScript, FalseToVisibility=Collapsed}">
                 <ui:SymbolIcon Symbol="Document24" FontSize="40"
@@ -144,15 +166,17 @@
                            TextAlignment="Center" TextWrapping="Wrap" />
             </StackPanel>
 
-            <ListView Grid.Column="1" Grid.Row="2" ItemsSource="{c:Binding Events }"
+            <ListView Grid.Column="1" Grid.Row="3" ItemsSource="{Binding VisibleEvents}"
                       BorderBrush="Transparent"
                       Background="Transparent"
                       ScrollViewer.CanContentScroll="True"
                       Name="TranslatePanel"
+                      PreviewMouseDown="TranslatePanel_OnActivity" GotKeyboardFocus="TranslatePanel_OnActivity"
                       VirtualizingStackPanel.ScrollUnit="Pixel">
                 <ListView.Resources>
                     <DataTemplate DataType="{x:Type translate:LineDialogModel}">
                         <StackPanel>
+                            <components:TranslateLineActions />
                             <components:TranslateLineDialog
                                 LineDialogModel="{Binding }" HorizontalAlignment="Stretch" />
                             <components:TranslateLineSeparator
@@ -160,8 +184,10 @@
                         </StackPanel>
                     </DataTemplate>
                     <DataTemplate DataType="{x:Type translate:LineEffectModel}">
-                        <components:TranslateLineEffect
-                            LineEffectModel="{Binding }" HorizontalAlignment="Stretch" />
+                        <StackPanel>
+                            <components:TranslateLineActions />
+                            <components:TranslateLineEffect LineEffectModel="{Binding}" HorizontalAlignment="Stretch" />
+                        </StackPanel>
                     </DataTemplate>
                 </ListView.Resources>
 
@@ -185,6 +211,9 @@
                     </Style>
                 </ListView.ItemContainerStyle>
             </ListView>
+            <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="没有符合条件的条目，请更改搜索或筛选条件。"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" IsHitTestVisible="False"
+                       Visibility="{c:Binding 'HasScript and VisibleEvents.Length==0',FalseToVisibility=Collapsed}" />
         </Grid>
         <Grid x:Name="DropOverlay" Visibility="Collapsed" IsHitTestVisible="False"
               Background="#B0000000">

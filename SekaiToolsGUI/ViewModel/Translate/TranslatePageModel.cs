@@ -145,8 +145,17 @@ public partial class TranslatePageModel : ViewModelBase
                         break;
                 }
 
+            for (var i = 0; i < events.Count; i++)
+            {
+                events[i].SequenceNumber = i + 1;
+                events[i].ActionRequested += OnLineAction;
+            }
             Events = events.ToArray();
             ResetHistory();
+            SearchText = string.Empty;
+            FilterIndex = 0;
+            RefreshVisibleEvents();
+            NotifyProgress();
         }
     }
 
@@ -194,6 +203,8 @@ public partial class TranslatePageModel : ViewModelBase
     {
         // 取消对现有 Events 上的订阅，避免内存泄漏 / 重复回调
         foreach (var lineModel in Events)
+        {
+            lineModel.ActionRequested -= OnLineAction;
             switch (lineModel)
             {
                 case LineDialogModel lineDialogModel:
@@ -204,6 +215,7 @@ public partial class TranslatePageModel : ViewModelBase
                     lineEffectModel.ContentTranslateChanged -= OnLineEffectModelOnContentTranslateChanged;
                     break;
             }
+        }
     }
 
     private void OnLineDialogModelOnCharacterTranslateChanged(object? sender, EventArgs args)
