@@ -6,6 +6,7 @@ namespace SekaiToolsGUI.ViewModel.Translate;
 
 public class LineEffectModel : LineModel
 {
+    public bool SyncMatchingContent { get => GetProperty(true); set => SetProperty(value); }
     public LineEffectModel(BaseStoryEvent eBaseStoryEvent)
     {
         Content.Original = eBaseStoryEvent.BodyOriginal;

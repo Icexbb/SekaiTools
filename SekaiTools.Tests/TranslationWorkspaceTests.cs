@@ -98,4 +98,47 @@ public class TranslationWorkspaceTests
         model.Events[1].RequestAction("original");
         Assert.DoesNotContain("条未译正文将沿用原文", model.GetExportSummary(true));
     }
+
+    [Fact]
+    public void AdoptingReferenceChangesOnlyBodyAndKeepsExplicitEmptyUndoable()
+    {
+        var model = CreateModel();
+        var line = (LineDialogModel)model.Events[0];
+        line.Content.ReferenceAvailable = true;
+        line.Content.ReferencePreserveEmpty = true;
+        line.Content.Reference = string.Empty;
+        line.RequestAction("reference");
+        Assert.True(line.IsExplicitEmpty);
+        Assert.True(model.Events[1].IsUntranslated);
+        Assert.Equal("角色", line.Character.Translated);
+        model.Undo();
+        Assert.True(line.IsUntranslated);
+        model.ShowReference = false;
+        Assert.All(model.Events, item => Assert.False(item.ShowReference));
+    }
+
+    [Fact]
+    public void EffectSynchronizationCanBeRestrictedToCurrentEntry()
+    {
+        var model = new TranslatePageModel();
+        model.LoadScript(new GameScript
+        {
+            ScenarioId = "effects",
+            SpecialEffectData = [new(8, "教室", "", 0, 0), new(8, "教室", "", 0, 0)],
+            Snippets = [new() { Action = 6 }, new() { Action = 6 }]
+        }, "effects.json");
+        var first = (LineEffectModel)model.Events[0];
+        var second = (LineEffectModel)model.Events[1];
+        Assert.Equal(2, first.MatchingCount);
+        first.SyncMatchingContent = false;
+        first.Content.Translated = "地点一";
+        Assert.Empty(second.Content.Translated);
+        first.SyncMatchingContent = true;
+        first.Content.Translated = "地点二";
+        Assert.Equal("地点二", second.Content.Translated);
+        Assert.Contains("共 2 处", model.LastEditFeedback);
+        model.Undo();
+        Assert.Equal("地点一", first.Content.Translated);
+        Assert.Empty(second.Content.Translated);
+    }
 }

@@ -149,6 +149,10 @@ public partial class TranslatePageModel : ViewModelBase
             {
                 events[i].SequenceNumber = i + 1;
                 events[i].ActionRequested += OnLineAction;
+                events[i].ShowReference = ShowReference;
+                events[i].MatchingCount = events[i] is LineDialogModel d
+                    ? events.OfType<LineDialogModel>().Count(other => other.Character.Original == d.Character.Original)
+                    : events.OfType<LineEffectModel>().Count(other => other.Content.Original == events[i].Body.Original);
             }
             Events = events.ToArray();
             ResetHistory();
@@ -156,6 +160,7 @@ public partial class TranslatePageModel : ViewModelBase
             FilterIndex = 0;
             RefreshVisibleEvents();
             NotifyProgress();
+            LastEditFeedback = string.Empty;
         }
     }
 
@@ -236,6 +241,7 @@ public partial class TranslatePageModel : ViewModelBase
 
         changedLine.CharacterTranslateChangedEnabled = true; // 防止递归调用
         RecordEdit();
+        LastEditFeedback = $"已同步角色译名，共 {changedLine.MatchingCount} 处；可使用撤销恢复。";
     }
 
     private void OnLineEffectModelOnContentTranslateChanged(object? sender, EventArgs args)
@@ -245,6 +251,7 @@ public partial class TranslatePageModel : ViewModelBase
         changedLine.ContentTranslateChangedEnabled = false;
         foreach (var line in Events.OfType<LineEffectModel>())
         {
+            if (!changedLine.SyncMatchingContent) break;
             if (line.Content.Original != changedLine.Content.Original) continue;
             if (line == changedLine) continue;
             line.ContentTranslateChangedEnabled = false;
@@ -254,6 +261,9 @@ public partial class TranslatePageModel : ViewModelBase
 
         changedLine.ContentTranslateChangedEnabled = true;
         RecordEdit();
+        LastEditFeedback = changedLine.SyncMatchingContent
+            ? $"已同步相同场景文字，共 {changedLine.MatchingCount} 处；可使用撤销恢复。"
+            : "已修改当前场景文字；其他同文条目未改动。";
     }
 
     public void ApplyReference(Story story)
@@ -270,12 +280,16 @@ public partial class TranslatePageModel : ViewModelBase
                             || lineDialogModel.Content.Original != dialogStoryEvent.BodyOriginal) continue;
                         lineDialogModel.Character.Reference = dialogStoryEvent.CharacterTranslated;
                         lineDialogModel.Content.Reference = dialogStoryEvent.BodyTranslated;
+                        lineDialogModel.Content.ReferenceAvailable = true;
+                        lineDialogModel.Content.ReferencePreserveEmpty = dialogStoryEvent.HasExplicitTranslation;
                         break;
                     }
                 case LineEffectModel lineEffectModel:
                     {
                         if (lineEffectModel.Content.Original != ev.BodyOriginal) continue;
                         lineEffectModel.Content.Reference = ev.BodyTranslated;
+                        lineEffectModel.Content.ReferenceAvailable = true;
+                        lineEffectModel.Content.ReferencePreserveEmpty = ev.HasExplicitTranslation;
 
                         break;
                     }
@@ -288,6 +302,8 @@ public partial class TranslatePageModel : ViewModelBase
         _referenceStory = null;
         ReferenceTranslationPath = string.Empty;
         foreach (var line in Events)
+        {
+            line.Body.ReferenceAvailable = false;
             switch (line)
             {
                 case LineDialogModel lineDialogModel:
@@ -298,5 +314,6 @@ public partial class TranslatePageModel : ViewModelBase
                     lineEffectModel.Content.Reference = string.Empty;
                     break;
             }
+        }
     }
 }

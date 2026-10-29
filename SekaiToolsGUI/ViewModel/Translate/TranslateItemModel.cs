@@ -14,6 +14,13 @@ public class TranslateItemModel : ViewModelBase
         set => SetProperty(value);
     }
 
+    public bool ReferenceAvailable
+    {
+        get => GetProperty(false);
+        set => SetProperty(value);
+    }
+    public bool ReferencePreserveEmpty { get; set; }
+
     public string Translated
     {
         get => GetProperty(string.Empty);

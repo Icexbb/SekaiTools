@@ -68,6 +68,7 @@
                                 PlaceholderText="{Binding Path= Character.Original}"
                                 TextAlignment="Center"
                                 AutomationProperties.Name="角色名译名"
+                                ToolTip="{Binding SyncHint}"
                                 Text="{Binding Path= Character.Translated, UpdateSourceTrigger=PropertyChanged}"
                                 TextChanged="NameEditBoxChanged" />
                 </Grid>
@@ -137,7 +138,7 @@
                     </ui:SymbolIcon>
                 </Grid>
                 <StackPanel Grid.Column="2" VerticalAlignment="Stretch">
-                    <StackPanel Visibility="{c:Binding 'Content.Reference.Length>0', FalseToVisibility=Collapsed}">
+                    <StackPanel Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference', FalseToVisibility=Collapsed}">
                         <TextBlock Text="参考译文" Margin="4,2" FontSize="12"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="NoWrap"

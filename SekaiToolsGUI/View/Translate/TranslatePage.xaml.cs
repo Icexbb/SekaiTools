@@ -236,13 +236,6 @@ public partial class TranslatePage : UserControl
 
     private async void LoadFileButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.HasScript)
-        {
-            if (!await ConfirmReplaceCurrentContentAsync()) return;
-            ViewModel.Clear();
-            return;
-        }
-
         var openFileDialog = new OpenFileDialog
         {
             Filter = "剧本文件|*.json;*.asset"
@@ -316,13 +309,13 @@ public partial class TranslatePage : UserControl
                 if (!await ConfirmReplaceCurrentContentAsync()) return;
                 ViewModel.LoadTranslation(translation, path);
             }
+            ImportErrorPanel.Visibility = Visibility.Collapsed;
             SnackbarService.Show("成功", reference ? "参考翻译已载入" : "翻译已载入", ControlAppearance.Success,
                 new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
         }
         catch (Exception exception)
         {
-            SnackbarService.Show("错误", exception.Message, ControlAppearance.Danger,
-                new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
+            ShowImportError(exception.Message);
         }
         finally
         {
@@ -430,19 +423,13 @@ public partial class TranslatePage : UserControl
         if (!ViewModel.IsEmpty && !await ConfirmReplaceCurrentContentAsync()) return;
 
         ViewModel.LoadScript(script, path);
+        ImportErrorPanel.Visibility = Visibility.Collapsed;
         SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
             new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
     }
 
     private async void LoadTranslationButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.HasTranslation)
-        {
-            if (!await ConfirmReplaceCurrentContentAsync()) return;
-            ViewModel.ClearTranslation();
-            return;
-        }
-
         if (!ViewModel.HasScript)
         {
             SnackbarService.Show("错误", "请先载入剧本", ControlAppearance.Danger,
@@ -461,12 +448,14 @@ public partial class TranslatePage : UserControl
         try
         {
             var tData = new TranslationData(filePath);
+            if (tData.IsEmpty()) { ShowImportError("翻译文件没有可载入的条目。"); return; }
 
             if (ViewModel.IsTranslationApplicable(tData))
             {
                 if (!await ConfirmReplaceCurrentContentAsync()) return;
 
                 ViewModel.LoadTranslation(tData, filePath);
+                ImportErrorPanel.Visibility = Visibility.Collapsed;
                 Logger.Log($"翻译载入成功: 剧本={ViewModel.ScriptPath}, 翻译={filePath}, 对话={tData.Translations.Count}");
                 SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
                     new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
@@ -474,28 +463,18 @@ public partial class TranslatePage : UserControl
             else
             {
                 Logger.Log($"翻译不适用于剧本: 翻译={filePath}", LogLevel.Warning);
-                SnackbarService.Show("错误", "翻译数据不适用于此剧本", ControlAppearance.Danger,
-                    new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
+                ShowImportError(ViewModel.GetTranslationMismatchReason(tData) ?? "翻译数据不适用于此剧本");
             }
         }
         catch (Exception ex)
         {
             Logger.Log($"翻译载入失败: {ex.Message}", LogLevel.Error);
-            SnackbarService.Show("错误", $"载入失败: {ex.Message}", ControlAppearance.Danger,
-                new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(5));
+            ShowImportError($"载入失败: {ex.Message}");
         }
     }
 
     private void LoadReviewButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.HasReferenceTranslation)
-        {
-            ViewModel.ClearReference();
-            SnackbarService.Show("已清除", "参考翻译已清除", ControlAppearance.Info,
-                new SymbolIcon(SymbolRegular.Info24), TimeSpan.FromSeconds(2));
-            return;
-        }
-
         if (!ViewModel.HasScript)
         {
             SnackbarService.Show("错误", "请先载入剧本", ControlAppearance.Danger,
@@ -514,33 +493,61 @@ public partial class TranslatePage : UserControl
         try
         {
             var tData = new TranslationData(filePath);
+            if (tData.IsEmpty()) { ShowImportError("参考翻译文件没有可载入的条目。"); return; }
 
             if (ViewModel.IsTranslationApplicable(tData))
             {
                 ViewModel.LoadReferenceTranslation(tData, filePath);
+                ImportErrorPanel.Visibility = Visibility.Collapsed;
                 SnackbarService.Show("成功", "成功载入", ControlAppearance.Success,
                     new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
             }
             else
             {
-                SnackbarService.Show("错误", "翻译数据不适用于此剧本", ControlAppearance.Danger,
-                    new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(3));
+                ShowImportError(ViewModel.GetTranslationMismatchReason(tData) ?? "翻译数据不适用于此剧本");
             }
         }
         catch (Exception ex)
         {
             Logger.Log($"参考翻译载入失败: {ex.Message}", LogLevel.Error);
-            SnackbarService.Show("错误", $"载入失败: {ex.Message}", ControlAppearance.Danger,
-                new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(5));
+            ShowImportError($"载入失败: {ex.Message}");
         }
     }
 
 
     private async void ResetButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (!ViewModel.HasScript || !await ConfirmReplaceCurrentContentAsync()) return;
+        if (!ViewModel.HasScript || !await ConfirmReplaceCurrentContentAsync("清除整个翻译工作区？", $"将移除剧本、参考及全部 {ViewModel.Events.Length} 条编辑内容。")) return;
 
         ViewModel.Clear();
+    }
+
+    private void OpenClearMenu_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button { ContextMenu: { } menu } button)
+        {
+            menu.PlacementTarget = button;
+            menu.DataContext = ViewModel;
+            menu.IsOpen = true;
+        }
+    }
+
+    private async void ClearTranslation_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (await ConfirmReplaceCurrentContentAsync("清除当前译文？", $"将清除 {ViewModel.Events.Length} 条译文，保留剧本和参考翻译。"))
+            ViewModel.ClearTranslation();
+    }
+    private void ClearReference_OnClick(object sender, RoutedEventArgs e) => ViewModel.ClearReference();
+    private void ShowImportError(string detail)
+    {
+        ImportErrorText.Text = detail + "\n请确认文件属于当前剧本，并根据条目编号、数量或类型修正后重新载入。";
+        ImportErrorPanel.Visibility = Visibility.Visible;
+    }
+    private void DismissImportError_OnClick(object sender, RoutedEventArgs e) => ImportErrorPanel.Visibility = Visibility.Collapsed;
+    private void CopyImportError_OnClick(object sender, RoutedEventArgs e)
+    {
+        try { Clipboard.SetText(ImportErrorText.Text); }
+        catch (Exception exception) { Logger.Log($"复制导入错误失败: {exception.Message}", LogLevel.Warning); }
     }
 
     private void OpenDownloadPageButton_OnClick(object sender, RoutedEventArgs e)
@@ -551,9 +558,9 @@ public partial class TranslatePage : UserControl
 
     private void UpdateLoadButtons()
     {
-        UpdateButton(LoadScriptButton, ViewModel.ScriptPath, "载入剧本", "清除剧本");
-        UpdateButton(LoadTranslationButton, ViewModel.TranslationPath, "载入翻译文件", "清除翻译");
-        UpdateButton(ReferenceTranslationButton, ViewModel.ReferenceTranslationPath, "载入参考翻译文件", "清除参考翻译");
+        UpdateButton(LoadScriptButton, ViewModel.ScriptPath, "载入剧本", "更换剧本");
+        UpdateButton(LoadTranslationButton, ViewModel.TranslationPath, "载入翻译文件", "更换翻译文件");
+        UpdateButton(ReferenceTranslationButton, ViewModel.ReferenceTranslationPath, "载入参考翻译文件", "更换参考翻译");
         UpdateFilePath(TextBlockScriptFile, ViewModel.ScriptPath);
         UpdateFilePath(TextBlockTranslation, ViewModel.TranslationPath);
         UpdateFilePath(TextBlockTranslationReference, ViewModel.ReferenceTranslationPath);
@@ -562,7 +569,7 @@ public partial class TranslatePage : UserControl
         {
             var loaded = !string.IsNullOrEmpty(path);
             button.Content = loaded ? clearText : loadText;
-            button.Appearance = loaded ? ControlAppearance.Caution : ControlAppearance.Secondary;
+            button.Appearance = ControlAppearance.Secondary;
             button.ToolTip = loaded ? path : null;
         }
     }
@@ -605,16 +612,16 @@ public partial class TranslatePage : UserControl
         }
     }
 
-    private async Task<bool> ConfirmReplaceCurrentContentAsync()
+    private async Task<bool> ConfirmReplaceCurrentContentAsync(string title = "替换当前内容？", string? message = null)
     {
         if (ViewModel.IsDirty)
-            return await ConfirmUnsavedChangesAsync("替换当前内容？");
+            return await ConfirmUnsavedChangesAsync(title);
 
         var dialogService = ((MainWindow)Application.Current.MainWindow!).WindowContentDialogService;
         var result = await dialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
         {
-            Title = "替换当前内容？",
-            Content = "当前翻译内容将被清除，未保存的修改无法恢复。",
+            Title = title,
+            Content = message ?? $"将替换当前 {ViewModel.Events.Length} 条翻译内容。已保存的文件不会被删除。",
             PrimaryButtonText = "继续",
             CloseButtonText = "取消"
         }, CancellationToken.None);

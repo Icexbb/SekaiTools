@@ -4,11 +4,12 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:translate="clr-namespace:SekaiToolsGUI.ViewModel.Translate"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance translate:LineEffectModel, IsDesignTimeCreatable=False}"
              d:DesignWidth="800"
-             Height="32" HorizontalAlignment="Stretch">
-    <Grid Height="32" HorizontalAlignment="Stretch">
+             HorizontalAlignment="Stretch">
+    <Grid HorizontalAlignment="Stretch">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="150" />
             <ColumnDefinition Width="*" />
@@ -31,16 +32,20 @@
                            VerticalAlignment="Center"
                            HorizontalAlignment="Stretch"
                            TextAlignment="Center"
-                           Text="{Binding Path= Content.Original}" />
+                           TextWrapping="Wrap" Text="{Binding Path= Content.Original}" />
                 <ui:SymbolIcon Grid.Column="1" Symbol="ArrowRight28" Margin="5" />
-                <ui:TextBox Grid.Column="2"
-                            Padding="5,2"
-                            BorderBrush="Transparent"
-                            Background="Transparent"
-                            HorizontalContentAlignment="Stretch"
-                            HorizontalAlignment="Stretch"
-                            TextAlignment="Center"
-                            Text="{Binding Path= Content.Translated, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <StackPanel Grid.Column="2">
+                    <StackPanel Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
+                        <TextBlock Text="参考译文" Margin="4,2" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBox IsReadOnly="True" IsTabStop="False" Text="{Binding Content.Reference}" TextWrapping="Wrap"
+                                 Background="Transparent" BorderBrush="Transparent" AutomationProperties.Name="场景文字参考译文" />
+                    </StackPanel>
+                    <TextBlock Text="我的译文" Margin="4,2" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <ui:TextBox Padding="5,2" HorizontalAlignment="Stretch" AutomationProperties.Name="{Binding Label}"
+                                Text="{Binding Content.Translated,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                    <CheckBox IsChecked="{Binding SyncMatchingContent}" Margin="4" ToolTip="{Binding SyncHint}"
+                              Content="编辑时同步相同场景文字" />
+                </StackPanel>
             </Grid>
         </ui:Card>
     </Grid>

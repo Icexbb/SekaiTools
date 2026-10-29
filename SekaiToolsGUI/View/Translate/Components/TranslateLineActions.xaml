@@ -1,22 +1,26 @@
 <UserControl x:Class="SekaiToolsGUI.View.Translate.Components.TranslateLineActions"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
     <DockPanel Margin="6,4">
         <ui:Button DockPanel.Dock="Right" Content="条目操作" Padding="8,2" Click="OpenActions"
                    AutomationProperties.Name="{Binding Label}">
             <ui:Button.ContextMenu>
                 <ContextMenu>
+                    <MenuItem Header="采用参考译文（仅此条正文）" Tag="reference" Click="ApplyAction" IsEnabled="{Binding Body.ReferenceAvailable}" />
                     <MenuItem Header="标为未译（导出沿用原文）" Tag="untranslated" Click="ApplyAction" />
                     <MenuItem Header="有意留空（导出空白）" Tag="blank" Click="ApplyAction" />
                     <MenuItem Header="使用原文" Tag="original" Click="ApplyAction" />
                 </ContextMenu>
             </ui:Button.ContextMenu>
         </ui:Button>
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+        <WrapPanel VerticalAlignment="Center">
             <ui:SymbolIcon Symbol="Document24" FontSize="14" Margin="0,0,6,0" />
             <TextBlock Text="{Binding Label}" Margin="0,0,12,0" />
             <TextBlock Text="{Binding StateText}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-        </StackPanel>
+            <ui:Button Content="采用参考" Tag="reference" Click="AdoptReference" Padding="8,2" Margin="8,0,0,0"
+                       Visibility="{c:Binding Body.ReferenceAvailable,FalseToVisibility=Collapsed}" />
+        </WrapPanel>
     </DockPanel>
 </UserControl>

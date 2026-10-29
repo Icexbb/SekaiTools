@@ -22,4 +22,9 @@ public partial class TranslateLineActions : UserControl
     {
         if (sender is MenuItem { Tag: string action, DataContext: LineModel line }) line.RequestAction(action);
     }
+
+    private void AdoptReference(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is LineModel line) line.RequestAction("reference");
+    }
 }

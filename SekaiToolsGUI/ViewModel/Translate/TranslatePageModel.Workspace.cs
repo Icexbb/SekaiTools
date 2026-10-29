@@ -2,6 +2,12 @@ namespace SekaiToolsGUI.ViewModel.Translate;
 
 public partial class TranslatePageModel
 {
+    public string LastEditFeedback { get => GetProperty(string.Empty); private set => SetProperty(value); }
+    public bool ShowReference
+    {
+        get => GetProperty(true);
+        set { SetProperty(value); foreach (var line in Events) line.ShowReference = value; }
+    }
     public string SearchText
     {
         get => GetProperty(string.Empty);
@@ -88,6 +94,10 @@ public partial class TranslatePageModel
                 case "blank": line.Body.PreserveEmpty = true; line.Body.Translated = string.Empty; break;
                 case "untranslated": line.Body.PreserveEmpty = false; line.Body.Translated = string.Empty; break;
                 case "original": line.Body.PreserveEmpty = false; line.Body.Translated = line.Body.Original; break;
+                case "reference" when line.Body.ReferenceAvailable:
+                    line.Body.PreserveEmpty = line.Body.ReferencePreserveEmpty;
+                    line.Body.Translated = line.Body.Reference;
+                    break;
             }
         }
         finally { _restoringHistory = false; }

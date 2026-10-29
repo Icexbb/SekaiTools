@@ -47,6 +47,7 @@ public partial class TranslatePageModel
         _redo.Clear();
         _currentValues = next;
         FinishEdit();
+        LastEditFeedback = string.Empty;
     }
 
     public void Undo()
@@ -57,6 +58,7 @@ public partial class TranslatePageModel
         ApplyChanges(changes, false);
         _redo.Push(changes);
         FinishEdit();
+        LastEditFeedback = "已撤销上一步修改。";
     }
 
     public void Redo()
@@ -66,6 +68,7 @@ public partial class TranslatePageModel
         ApplyChanges(changes, true);
         _undo.Add(changes);
         FinishEdit();
+        LastEditFeedback = "已重做上一步修改。";
     }
 
     private void ApplyChanges(Change[] changes, bool forward)
