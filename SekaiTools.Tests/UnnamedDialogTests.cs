@@ -359,6 +359,70 @@ public class UnnamedDialogTests
             System.Text.Json.JsonSerializer.Serialize(restored.SaveState()));
     }
 
+    [Theory]
+    [InlineData("ABC", false)]
+    [InlineData("ABCDEFGHIJKLM", false)]
+    [InlineData("ABCDEFGHIJKLM", true)]
+    public void SharedPrefixTypewriterResetAcquiresEachGlyphAndRestoresDuringAcquisition(string prefix, bool unnamed)
+    {
+        using var fixture = new Fixture();
+        var speaker = unnamed ? "" : "A";
+        var oldBody = prefix + "WWWW";
+        var nextBody = prefix + "....";
+        var story = new Story(new SekaiToolsBase.GameScript.GameScript
+        {
+            TalkData = [new Talk(speaker, oldBody, 0), new Talk(speaker, nextBody, 0)],
+            Snippets = [new Snippet { Action = 1 }, new Snippet { Action = 1 }]
+        }, new TranslationData(null));
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        var cache = new TemplateMatchCachePool();
+        var restoredCache = new TemplateMatchCachePool();
+        using var matcher = new DialogTemplateMatcher(fixture.Info, story, manager, cache, fixture.Config);
+        using var restored = new DialogTemplateMatcher(fixture.Info, story, manager, restoredCache, fixture.Config);
+        using var context = new FrameMatchContext();
+        using var oldFrame = MakeFrame(oldBody);
+        context.Update(oldFrame);
+        for (var frame = 1; frame <= 12; frame++)
+        {
+            cache.SetFrameIndex(frame);
+            matcher.Process(context, frame);
+        }
+        var previousEnd = matcher.Set[0].End().Index;
+        var frameIndex = 12;
+        for (var length = 1; length <= nextBody.Length; length++)
+        {
+            using var glyphFrame = MakeFrame(nextBody[..length]);
+            context.Update(glyphFrame);
+            for (var repeat = 0; repeat < 6; repeat++)
+            {
+                frameIndex++;
+                cache.SetFrameIndex(frameIndex);
+                matcher.Process(context, frameIndex);
+                if (length > 2)
+                {
+                    restoredCache.SetFrameIndex(frameIndex);
+                    restored.Process(context, frameIndex);
+                }
+            }
+            if (length == 2) restored.RestoreState(DiskRoundtrip(matcher.SaveState()));
+            if (length >= 3)
+            {
+                Assert.True(matcher.Set[0].Finished);
+                Assert.NotEmpty(matcher.Set[1].Frames);
+                Assert.Equal(previousEnd, matcher.Set[0].End().Index);
+                // Process frame numbers are stored with FrameIndexOffset = -1.
+                Assert.Equal(12, matcher.Set[1].Start().Index);
+                Assert.True(matcher.Set[1].Start().Index > previousEnd);
+            }
+        }
+        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(matcher.SaveState()),
+            System.Text.Json.JsonSerializer.Serialize(restored.SaveState()));
+
+        Mat MakeFrame(string body) => unnamed
+            ? fixture.Frame(manager, body, new Point(160, 555))
+            : fixture.NamedFrame(manager, body, 0);
+    }
+
     [Fact]
     public void LookaheadRejectsLastVisibleSharedPrefixButCanSkipTrulyMissingDialogue()
     {

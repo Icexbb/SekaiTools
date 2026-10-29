@@ -64,6 +64,6 @@ Windows 字幕队列通过 `IncrementalProgressStore` 保存进度；模型与�
 
 最终完整状态 2913291 字节，SHA256 `954DBB584C53BFAB13AE2C8C0739A3CBBB933176999A1F65B2AB8FA597D8CF64`；ASS 217531 字节，SHA256 `DD2E85662C016C535DF5AE4EAC506E6F41EB0483631675E2629A9F68E9296FB8`。脚本长度与摘要检查以及额外逐字节对照均一致，运行前后输入、模板和工具 DLL/JSON 身份一致。证据保留于 `.codex-build/recognition-plan/long-default-v2-resume/` 的 `verification.json`、`byte-verification.json`、`identity.json` 和取消点原始清单。
 
-连续运行 437.30 秒，取消并恢复总计 430.83 秒；两种生命周期不同且各仅一次，这些数据只记录验证成本，不支持提速结论。本组补足默认策略实际 v2 的长素材恢复证据，尚不覆盖全部取消边界、真实窗口交互或真实瞬时同前缀切换正例。
+连续运行 437.30 秒，取消并恢复总计 430.83 秒；两种生命周期不同且各仅一次，这些数据只记录验证成本，不支持提速结论。本组补足默认策略实际 v2 的长素材恢复证据，尚不覆盖全部取消边界或真实窗口交互；正文逐字出现的边界验收见 [识别规则](recognition.md)，不要求瞬时整句替换正例。
 
 反例验证使用小素材 `1963_areatalk_ev_street_16_003` 在第 1029 帧取消：实际为全量清单，开启 `RequirePackedCancellation` 后脚本按预期报错且未生成成功验证报告，避免把增量接口启用误当作实际 v2 覆盖。证据位于 `.codex-build/recognition-plan/require-packed-cancel-negative/`。
