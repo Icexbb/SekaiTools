@@ -2,13 +2,19 @@ namespace SekaiDataFetch;
 
 public static class FetcherFileExtensions
 {
-    public static async Task FetchToFile(this Fetcher fetcher, string url, string filePath)
+    public static async Task FetchToFile(this Fetcher fetcher, string url, string filePath,
+        CancellationToken cancellationToken = default)
     {
-        var content = await fetcher.Fetch(url);
-        var directory = Path.GetDirectoryName(filePath);
-        if (!string.IsNullOrEmpty(directory))
-            Directory.CreateDirectory(directory);
-
-        await File.WriteAllTextAsync(filePath, content);
+        var content = await fetcher.Fetch(url, cancellationToken).ConfigureAwait(false);
+        var destination = Path.GetFullPath(filePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+        var temporary = destination + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            await File.WriteAllTextAsync(temporary, content, cancellationToken).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            File.Move(temporary, destination, overwrite: true);
+        }
+        finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }
 }
