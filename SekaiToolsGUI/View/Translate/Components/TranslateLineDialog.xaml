@@ -67,6 +67,7 @@
                                 PlaceholderEnabled="True"
                                 PlaceholderText="{Binding Path= Character.Original}"
                                 TextAlignment="Center"
+                                AutomationProperties.Name="角色名译名"
                                 Text="{Binding Path= Character.Translated, UpdateSourceTrigger=PropertyChanged}"
                                 TextChanged="NameEditBoxChanged" />
                 </Grid>
@@ -96,6 +97,7 @@
                          IsReadOnlyCaretVisible="False"
                          Background="Transparent"
                          BorderBrush="Transparent"
+                         HorizontalScrollBarVisibility="Auto" AutomationProperties.Name="原文"
                          Text="{Binding Content.Original}" />
                     <Border x:Name="FlashbackBadge" Grid.Row="1" Padding="6,4" Margin="2,4,2,2" CornerRadius="4"
                             Background="{DynamicResource ControlFillColorSecondaryBrush}"
@@ -120,7 +122,7 @@
                         <RowDefinition />
                     </Grid.RowDefinitions>
                     <ui:SymbolIcon Grid.Row="0" Grid.RowSpan="3" Symbol="ArrowRight28" Margin="5" />
-                    <ui:SymbolIcon Grid.Row="2" Foreground="Red"
+                    <ui:SymbolIcon Grid.Row="2" Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                                    Symbol="Warning28" ToolTip="{Binding Check}">
                         <ui:SymbolIcon.Style>
                             <Style TargetType="ui:SymbolIcon">
@@ -134,74 +136,37 @@
                         </ui:SymbolIcon.Style>
                     </ui:SymbolIcon>
                 </Grid>
-                <Grid Grid.Column="2" VerticalAlignment="Stretch">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <TextBox Grid.Row="0"
-                             VerticalAlignment="Stretch"
-                             KeyboardNavigation.TabNavigation="Continue"
-                             Margin="0"
-                             IsTabStop="False"
-                             TextWrapping="NoWrap"
-                             IsReadOnly="True"
-                             IsReadOnlyCaretVisible="False"
-                             Background="Transparent"
-                             BorderBrush="Transparent"
-                             Text="{Binding Content.Reference}"
-                             Visibility="{c:Binding 'Content.Reference.Length>0', FalseToVisibility=Collapsed}" />
-                    <Grid Grid.Row="1" VerticalAlignment="Stretch">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <TextBox Grid.Row="0" Grid.Column="0"
-                                 Grid.RowSpan="2" Grid.ColumnSpan="3"
-                                 VerticalAlignment="Stretch"
-                                 MinLines="2"
-                                 Background="Transparent"
-                                 BorderBrush="Transparent"
-                                 Width="{Binding ElementName=OriginalContentTextBox,Path=ActualWidth}"
-                                 PreviewKeyDown="TextBox_PreviewKeyDown"
-                                 PreviewTextInput="TextBox_PreviewTextInput"
-                                 AcceptsReturn="True" TextWrapping="NoWrap"
-                                 Text="{Binding Content.Translated,UpdateSourceTrigger=PropertyChanged}" />
-                        <ui:TextBlock Grid.Column="2" Grid.Row="1" Margin="0,0,10,4">
-                            <ui:TextBlock.Style>
-                                <Style TargetType="ui:TextBlock">
-                                    <Style.Triggers>
-                                        <DataTrigger
-                                            Binding="{Binding Content.Translated.Length,Mode=OneWay}" Value="0">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ui:TextBlock.Style>
-                            <Run>
-                                <Run.Style>
-                                    <Style TargetType="{x:Type Run}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding TooLong}" Value="True">
-                                                <Setter Property="Foreground" Value="Red" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Run.Style>
-                                <Run.Text>
-                                    <Binding Path="MaxLineLength" Mode="OneWay" />
-                                </Run.Text>
-                            </Run>
-                            <Run Text="/" />
-                            <Run Text="{Binding Content.Translated.Length,Mode=OneWay}" />
-                        </ui:TextBlock>
-                    </Grid>
-                </Grid>
+                <StackPanel Grid.Column="2" VerticalAlignment="Stretch">
+                    <StackPanel Visibility="{c:Binding 'Content.Reference.Length>0', FalseToVisibility=Collapsed}">
+                        <TextBlock Text="参考译文" Margin="4,2" FontSize="12"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="NoWrap"
+                                 HorizontalScrollBarVisibility="Auto" Background="Transparent" BorderBrush="Transparent"
+                                 AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
+                    </StackPanel>
+                    <TextBlock Text="我的译文" Margin="4,2" FontSize="12"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <TextBox MinLines="2" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Auto"
+                             PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"
+                             AcceptsReturn="True" TextWrapping="NoWrap" AutomationProperties.Name="{Binding Label}"
+                             Text="{Binding Content.Translated,UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Margin="4,2" TextWrapping="Wrap" FontSize="12"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                        <Run Text="最长行加权长度：" /><Run Text="{Binding MaxLineLength,Mode=OneWay}" />
+                        <Run Text="；全文字符数：" /><Run Text="{Binding Content.Translated.Length,Mode=OneWay}" />
+                    </TextBlock>
+                    <Border Margin="2,4" Padding="6" CornerRadius="4"
+                            Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                            Visibility="{c:Binding 'Check.Length>0',FalseToVisibility=Collapsed}">
+                        <DockPanel>
+                            <ui:SymbolIcon Symbol="Warning28" FontSize="16" Margin="0,0,6,0" VerticalAlignment="Top"
+                                           Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
+                            <TextBlock Text="{Binding Check}" TextWrapping="Wrap"
+                                       AutomationProperties.Name="校验提示"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
             </Grid>
         </ui:Card>
     </Grid>
