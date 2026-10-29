@@ -16,7 +16,7 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
-        if (args.Length is < 2 or > 3) throw new ArgumentException("DownloadUxProbe <GUI dll> <new output directory> [browser]");
+        if (args.Length is < 2 or > 3) throw new ArgumentException("DownloadUxProbe <GUI dll> <new output directory> [browser|interactive]");
         var guiPath = Path.GetFullPath(args[0]);
         var directory = Path.GetDirectoryName(guiPath)!;
         var output = Path.GetFullPath(args[1]);
@@ -41,8 +41,8 @@ internal static class Program
         var rows = new List<object>();
         if (args.Length == 3)
         {
-            if (args[2] != "browser") throw new ArgumentException("Unknown probe mode");
-            VerifyBrowsers(gui, data, wpf, app, output);
+            if (args[2] is not ("browser" or "interactive")) throw new ArgumentException("Unknown probe mode");
+            VerifyBrowsers(gui, data, wpf, app, output, args[2] == "interactive");
             return;
         }
         foreach (var theme in new[] { "Light", "Dark" })
@@ -135,7 +135,7 @@ internal static class Program
         Console.WriteLine("PASS light/dark, wide/compact, six queue states and primary action visibility");
     }
 
-    private static void VerifyBrowsers(Assembly gui, Assembly data, Assembly wpf, Application app, string output)
+    private static void VerifyBrowsers(Assembly gui, Assembly data, Assembly wpf, Application app, string output, bool interactive = false)
     {
         var domain = Assembly.LoadFrom(Path.Combine(Path.GetDirectoryName(gui.Location)!, "SekaiToolsBase.dll"));
         object Parse(string name, string json) => JsonSerializer.Deserialize(json, domain.GetType("SekaiToolsBase.DataList." + name, true)!)!;
@@ -170,7 +170,7 @@ internal static class Program
             actions.Add(item);
         }
         var rows = new List<object>();
-        foreach (var theme in new[] { "Light", "Dark" })
+        foreach (var theme in interactive ? new[] { "Light" } : new[] { "Light", "Dark" })
         {
             app.Resources.MergedDictionaries.Clear();
             var themes = (ResourceDictionary)Activator.CreateInstance(wpf.GetType("Wpf.Ui.Markup.ThemesDictionary", true)!)!;
@@ -184,7 +184,7 @@ internal static class Program
             var manager = wpf.GetType("Wpf.Ui.Appearance.ApplicationThemeManager", true)!;
             var apply = manager.GetMethods().First(method => method.Name == "Apply" && method.GetParameters().Length > 0 && method.GetParameters()[0].ParameterType.Name == "ApplicationTheme" && method.GetParameters().Skip(1).All(parameter => parameter.IsOptional));
             apply.Invoke(null, apply.GetParameters().Select((parameter, index) => index == 0 ? Enum.Parse(parameter.ParameterType, theme) : parameter.DefaultValue).ToArray());
-            foreach (var category in new[] { "Unit", "Event", "Special", "Card", "Action" })
+            foreach (var category in interactive ? new[] { "Event" } : new[] { "Unit", "Event", "Special", "Card", "Action" })
             {
                 var pageType = gui.GetType("SekaiToolsGUI.View.Download.DownloadPage", true)!;
                 var page = (FrameworkElement)pageType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, [typeof(bool)], null)!.Invoke([false]);
@@ -202,6 +202,16 @@ internal static class Program
                 tab.GetType().GetEvent("ResultsChanged")!.AddEventHandler(tab, hook);
                 ((ContentControl)page.FindName("ContentCard")).Content = tab;
                 var host = new Window { Content = page, Width = category == "Action" ? 960 : 1280, Height = 800, Left = -15000, Top = -15000, ShowActivated = false, ShowInTaskbar = false };
+                if (interactive)
+                {
+                    host.Title = "SekaiTools 下载体验验收（隔离数据）";
+                    host.Width = 1120;
+                    host.Height = 760;
+                    host.Left = 60;
+                    host.Top = 40;
+                    host.ShowActivated = true;
+                    host.ShowInTaskbar = true;
+                }
                 app.MainWindow = host;
                 host.SetResourceReference(Window.BackgroundProperty, "ApplicationBackgroundBrush");
                 host.Show();
@@ -213,6 +223,37 @@ internal static class Program
                 pageType.GetMethod("UpdateTaskListState", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(page, null);
                 Query("");
                 if (Count() != 2) throw new InvalidDataException(category + " initial file-level count differs: " + Count());
+                if (interactive)
+                {
+                    var initial = Path.Combine(output, "initial-downloads");
+                    var picked = Path.Combine(output, "picked-downloads");
+                    Directory.CreateDirectory(initial);
+                    Directory.CreateDirectory(picked);
+                    pageType.GetField("_downloadDirectory", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(page, initial);
+                    pageType.GetField("_batch", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(page, CreateFakeBatch(data));
+                    pageType.GetMethod("UpdateTaskListState", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(page, null);
+                    foreach (var name in new[] { "BoxSource", "BoxStoryType", "RefreshButton", "ClearCacheButton" })
+                        ((FrameworkElement)page.FindName(name)).IsEnabled = false;
+                    host.Closing += (_, _) =>
+                    {
+                        var dpi = VisualTreeHelper.GetDpi(host);
+                        File.WriteAllText(Path.Combine(output, "visible-window.json"), JsonSerializer.Serialize(new
+                        {
+                            dpi.DpiScaleX,
+                            dpi.DpiScaleY,
+                            Width = host.ActualWidth,
+                            Height = host.ActualHeight,
+                            Directory = ((TextBlock)page.FindName("DirectoryText")).Text,
+                            QueueCount = ((ItemsControl)page.FindName("DownloadItemBox")).Items.Count,
+                            Search = search.Text,
+                            Network = "Fake cancellable requests; no network or downloaded files"
+                        }, new JsonSerializerOptions { WriteIndented = true }));
+                        app.Shutdown();
+                    };
+                    Console.WriteLine("VISIBLE isolated download UI; initial=" + initial + "; pick=" + picked);
+                    app.Run();
+                    return;
+                }
                 if (category is "Event" or "Card" or "Unit")
                 {
                     var filterName = category == "Event" ? "BoxType" : category == "Card" ? "RarityComboBox" : "UnitComboBox";
@@ -289,6 +330,17 @@ internal static class Program
             foreach (var child in Nodes(VisualTreeHelper.GetChild(node, index))) yield return child;
     }
     private static void Click(System.Windows.Controls.Primitives.ButtonBase button) => button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+
+    private static object CreateFakeBatch(Assembly data)
+    {
+        var jobType = data.GetType("SekaiDataFetch.DownloadJob", true)!;
+        var policyType = data.GetType("SekaiDataFetch.ExistingFilePolicy", true)!;
+        var parameters = new[] { Expression.Parameter(jobType), Expression.Parameter(policyType), Expression.Parameter(typeof(CancellationToken)) };
+        var body = Expression.Call(typeof(Program).GetMethod(nameof(FakeDownload), BindingFlags.Static | BindingFlags.NonPublic)!,
+            Expression.Convert(parameters[0], typeof(object)), parameters[2]);
+        return data.GetType("SekaiDataFetch.DownloadBatch", true)!.GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)
+            .Single().Invoke([Expression.Lambda(body, parameters).Compile()]);
+    }
 
     private static readonly ConcurrentDictionary<string, int> Requests = new();
     private static bool _release;
