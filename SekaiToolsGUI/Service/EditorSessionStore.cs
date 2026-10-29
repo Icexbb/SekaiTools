@@ -16,7 +16,7 @@ public sealed class EditorSessionStore
 
     public sealed record Draft(GameScript Script, int[] OriginalEffectIndices, string ScriptPath,
         string TranslationPath, TranslatePageModel.EditValue[] Values, TranslatePageModel.EditValue[] SavedValues, bool UseV2 = true,
-        bool AutoFormat = true, int ActiveSequenceNumber = 0);
+        bool AutoFormat = true, int ActiveSequenceNumber = 0, bool SyncMatchingContent = true, bool SyncMatchingSpeakers = true);
 
     public string? ReadLastModule() => Read<string>("last-module.json");
     public void SaveLastModule(string module) => Write("last-module.json", module);
@@ -39,7 +39,7 @@ public sealed class EditorSessionStore
             return DeleteDraft();
         }
         return Write("translation-draft.json", new Draft(script, script.OriginalEffectIndices, model.ScriptPath,
-            model.TranslationPath, model.ReadValues(), model.SavedValues, model.ExportUsesV2, model.AutoFormat, model.ActiveSequenceNumber));
+            model.TranslationPath, model.ReadValues(), model.SavedValues, model.ExportUsesV2, model.AutoFormat, model.ActiveSequenceNumber, model.SyncMatchingContent, model.SyncMatchingSpeakers));
     }
 
     public bool DeleteDraft()

@@ -5,6 +5,17 @@ public partial class TranslatePageModel
     public event EventHandler<LineModel>? NavigationRequested;
     public int ActiveSequenceNumber { get; set; }
     public string LastEditFeedback { get => GetProperty(string.Empty); private set => SetProperty(value); }
+    // Project-wide editing options; toggling only affects subsequent edits.
+    public bool SyncMatchingContent
+    {
+        get => GetProperty(true);
+        set { BreakEditGroup(); SetProperty(value); ContentChanged?.Invoke(this, EventArgs.Empty); }
+    }
+    public bool SyncMatchingSpeakers
+    {
+        get => GetProperty(true);
+        set { BreakEditGroup(); SetProperty(value); ContentChanged?.Invoke(this, EventArgs.Empty); }
+    }
     public bool AutoFormat
     {
         get => GetProperty(true);
@@ -122,6 +133,7 @@ public partial class TranslatePageModel
             _restoringHistory = false;
         }
         line.NotifyContentState();
-        RecordEdit();
+        if (line is LineEffectModel effect) OnLineEffectModelOnContentTranslateChanged(effect, EventArgs.Empty);
+        else RecordEdit();
     }
 }

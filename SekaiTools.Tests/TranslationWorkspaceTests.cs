@@ -130,16 +130,53 @@ public class TranslationWorkspaceTests
         var first = (LineEffectModel)model.Events[0];
         var second = (LineEffectModel)model.Events[1];
         Assert.Equal(2, first.MatchingCount);
-        first.SyncMatchingContent = false;
+        model.SyncMatchingContent = false;
         first.Content.Translated = "地点一";
         Assert.Empty(second.Content.Translated);
-        first.SyncMatchingContent = true;
+        model.SyncMatchingContent = true;
         first.Content.Translated = "地点二";
         Assert.Equal("地点二", second.Content.Translated);
         Assert.Contains("共 2 处", model.LastEditFeedback);
         model.Undo();
         Assert.Equal("地点一", first.Content.Translated);
         Assert.Empty(second.Content.Translated);
+    }
+
+    [Fact]
+    public void ProjectSpeakerSwitchAppliesToHiddenRowsAndUndoIsAtomic()
+    {
+        var model = CreateModel();
+        var first = (LineDialogModel)model.Events[0];
+        var second = (LineDialogModel)model.Events[1];
+        model.SearchText = "原文一";
+        Assert.Single(model.VisibleEvents);
+        model.SyncMatchingSpeakers = false;
+        first.Character.Translated = "甲";
+        Assert.Equal("角色", second.Character.Translated);
+        model.SyncMatchingSpeakers = true;
+        Assert.Equal("角色", second.Character.Translated);
+        first.Character.Translated = "乙";
+        Assert.Equal("乙", second.Character.Translated);
+        Assert.Empty(second.Content.Translated);
+        model.Undo();
+        Assert.Equal("甲", first.Character.Translated);
+        Assert.Equal("角色", second.Character.Translated);
+        model.Redo();
+        Assert.Equal("乙", second.Character.Translated);
+    }
+
+    [Fact]
+    public void DraftRestoresProjectSynchronizationOptions()
+    {
+        var model = CreateModel();
+        var restored = new TranslatePageModel();
+        restored.RestoreDraft(model.DraftScript!, model.ScriptPath, "", model.ReadValues(), model.SavedValues,
+            syncMatchingContent: false, syncMatchingSpeakers: false);
+        Assert.False(restored.SyncMatchingContent);
+        Assert.False(restored.SyncMatchingSpeakers);
+        restored.LoadScript(model.DraftScript!, model.ScriptPath);
+        Assert.True(restored.SyncMatchingContent);
+        Assert.True(restored.SyncMatchingSpeakers);
     }
 
     [Fact]

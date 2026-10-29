@@ -137,7 +137,7 @@ public partial class TranslatePageModel
     public GameScript? DraftScript => _loadedScript;
 
     public void RestoreDraft(GameScript script, string scriptPath, string translationPath, EditValue[] values, EditValue[] savedValues, bool useV2 = true,
-        bool autoFormat = true, int activeSequenceNumber = 0)
+        bool autoFormat = true, int activeSequenceNumber = 0, bool syncMatchingContent = true, bool syncMatchingSpeakers = true)
     {
         var expectedCount = new SekaiToolsBase.Story.Story(script, new SekaiToolsBase.Story.Translation.TranslationData(null))
             .Events.Sum(item => item is SekaiToolsBase.Story.StoryEvent.DialogStoryEvent ? 2 : 1);
@@ -145,6 +145,8 @@ public partial class TranslatePageModel
             throw new InvalidDataException("翻译草稿条目数量与剧本不匹配。");
         AutoFormat = autoFormat;
         LoadScript(script, scriptPath);
+        SyncMatchingContent = syncMatchingContent;
+        SyncMatchingSpeakers = syncMatchingSpeakers;
         var before = ReadValues();
         ApplyChanges(values.Select((value, index) => new Change(index, before[index], value)).ToArray(), true);
         TranslationPath = translationPath;

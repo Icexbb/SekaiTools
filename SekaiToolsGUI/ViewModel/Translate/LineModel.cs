@@ -11,7 +11,7 @@ public abstract class LineModel : ViewModelBase
     public int SequenceNumber { get; set; }
     public string Label => $"第 {SequenceNumber} 条 · {(this is LineDialogModel ? "对话" : "场景文字")}";
     public int MatchingCount { get; set; } = 1;
-    public string SyncHint => this is LineDialogModel ? $"同名角色共 {MatchingCount} 处，修改译名会同步" : $"相同场景文字共 {MatchingCount} 处";
+    public string SyncHint => this is LineDialogModel ? $"同名角色共 {MatchingCount} 处，同步由项目开关控制" : $"相同场景文字共 {MatchingCount} 处";
     public bool ShowReference { get => GetProperty(true); set => SetProperty(value); }
     public bool IsUntranslated => string.IsNullOrWhiteSpace(Body.Translated) && !Body.PreserveEmpty;
     public bool IsExplicitEmpty => string.IsNullOrWhiteSpace(Body.Translated) && Body.PreserveEmpty;

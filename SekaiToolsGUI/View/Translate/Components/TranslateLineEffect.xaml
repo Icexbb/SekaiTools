@@ -43,8 +43,6 @@
                     <TextBlock Text="我的译文" Margin="4,2" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     <ui:TextBox Padding="5,2" HorizontalAlignment="Stretch" AutomationProperties.Name="{Binding Label}"
                                 Text="{Binding Content.Translated,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
-                    <CheckBox IsChecked="{Binding SyncMatchingContent}" Margin="4" ToolTip="{Binding SyncHint}"
-                              Content="编辑时同步相同场景文字" />
                 </StackPanel>
             </Grid>
         </ui:Card>

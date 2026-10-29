@@ -77,6 +77,8 @@ public partial class TranslatePageModel : ViewModelBase
     {
         var story = new Story(script, new TranslationData(null));
         Clear();
+        SyncMatchingContent = true;
+        SyncMatchingSpeakers = true;
         _loadedScript = script;
         Story = story;
         ScriptPath = path;
@@ -239,16 +241,20 @@ public partial class TranslatePageModel : ViewModelBase
         // 当角色名称翻译发生变化时，更新所有 LineDialogModel 的 Check
         foreach (var line in Events.OfType<LineDialogModel>())
         {
+            if (!SyncMatchingSpeakers) break;
             if (line.Character.Original != changedLine.Character.Original) continue;
             if (line == changedLine) continue;
             line.CharacterTranslateChangedEnabled = false;
+            line.Character.PreserveEmpty = changedLine.Character.PreserveEmpty;
             line.Character.Translated = changedLine.Character.Translated;
             line.CharacterTranslateChangedEnabled = true;
         }
 
         changedLine.CharacterTranslateChangedEnabled = true; // 防止递归调用
         RecordEdit();
-        LastEditFeedback = $"已同步角色译名，共 {changedLine.MatchingCount} 处；可使用撤销恢复。";
+        LastEditFeedback = SyncMatchingSpeakers
+            ? $"已同步角色译名，共 {changedLine.MatchingCount} 处；可使用撤销恢复。"
+            : "已修改当前说话人译名；其他同名条目未改动。";
     }
 
     private void OnLineEffectModelOnContentTranslateChanged(object? sender, EventArgs args)
@@ -258,17 +264,18 @@ public partial class TranslatePageModel : ViewModelBase
         changedLine.ContentTranslateChangedEnabled = false;
         foreach (var line in Events.OfType<LineEffectModel>())
         {
-            if (!changedLine.SyncMatchingContent) break;
+            if (!SyncMatchingContent) break;
             if (line.Content.Original != changedLine.Content.Original) continue;
             if (line == changedLine) continue;
             line.ContentTranslateChangedEnabled = false;
+            line.Content.PreserveEmpty = changedLine.Content.PreserveEmpty;
             line.Content.Translated = changedLine.Content.Translated;
             line.ContentTranslateChangedEnabled = true;
         }
 
         changedLine.ContentTranslateChangedEnabled = true;
         RecordEdit();
-        LastEditFeedback = changedLine.SyncMatchingContent
+        LastEditFeedback = SyncMatchingContent
             ? $"已同步相同场景文字，共 {changedLine.MatchingCount} 处；可使用撤销恢复。"
             : "已修改当前场景文字；其他同文条目未改动。";
     }
