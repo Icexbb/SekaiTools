@@ -223,6 +223,21 @@ internal static class Program
         window.Content = null;
         Pump();
         Check(store.ReadDraft() != null, "leaving page flushes unsaved draft");
+        var location = page.ViewModel.Events.OfType<LineEffectModel>().First();
+        location.ShowReference = true;
+        location.Content.ReferenceAvailable = true;
+        location.Content.Reference = "地点参考第一行\n地点参考第二行\n地点参考最后一行";
+        var locationView = new SekaiToolsGUI.View.Translate.Components.TranslateLineEffect { LineEffectModel = location };
+        window.Content = locationView;
+        Pump();
+        var referenceBox = Nodes(locationView).OfType<System.Windows.Controls.TextBox>().Single(box => box.IsReadOnly);
+        Check(referenceBox.IsVisible && referenceBox.ActualHeight > 60, "location reference expands for multiline text and watermark");
+        var lastCharacter = referenceBox.GetRectFromCharacterIndex(referenceBox.Text.Length - 1);
+        Check(!lastCharacter.IsEmpty && lastCharacter.Bottom <= referenceBox.ActualHeight - referenceBox.Padding.Bottom + 1,
+            "last line of location reference is not clipped");
+        location.ShowReference = false;
+        Pump();
+        Check(!referenceBox.IsVisible, "location reference follows visibility switch");
         var discard = typeof(TranslatePage).GetMethod("DiscardDraftOnClose", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
         Check((bool)discard.Invoke(page, null)!, "discard on exit removes recovery draft");
         Check(page.FlushDraft() && store.ReadDraft() == null, "close flush cannot recreate discarded draft");

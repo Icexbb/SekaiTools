@@ -10,7 +10,7 @@
              mc:Ignorable="d" d:DataContext="{d:DesignInstance translate:LineEffectModel, IsDesignTimeCreatable=False}"
              d:DesignWidth="800"
              HorizontalAlignment="Stretch">
-    <Grid HorizontalAlignment="Stretch">
+    <Grid MinHeight="75" HorizontalAlignment="Stretch">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="150" />
@@ -22,7 +22,7 @@
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center" />
         </ui:Card>
-        <ui:Card Grid.Column="2" Margin="0" Padding="0" VerticalAlignment="Stretch">
+        <ui:Card Grid.Column="2" Margin="0" Padding="2,0" VerticalAlignment="Stretch">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -37,18 +37,26 @@
                            TextAlignment="Center"
                            TextWrapping="Wrap" Text="{Binding Path= Content.Original}" />
                 <ui:SymbolIcon Grid.Column="1" Symbol="ArrowRight28" Margin="5" />
-                <StackPanel Grid.Column="2">
-                    <Grid Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
-                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="5,5,5,24"
-                                 HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
+                <Grid Grid.Column="2" VerticalAlignment="Stretch">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0"
+                          Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
+                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" MinLines="1" Padding="5,5,5,24"
+                                 HorizontalScrollBarVisibility="Disabled" Background="Transparent"
+                                 BorderBrush="Transparent"
                                  AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
                         <TextBlock Text="参考译文" Margin="6,0,6,4" FontSize="12" Opacity="0.6"
                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
-                    <ui:TextBox Padding="5,2" HorizontalAlignment="Stretch" AutomationProperties.Name="{Binding Label}"
+                    <ui:TextBox Grid.Row="1" Padding="5,2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                TextAlignment="Center"
+                                AutomationProperties.Name="{Binding Label}"
                                 Text="{Binding Content.Translated,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
-                </StackPanel>
+                </Grid>
             </Grid>
         </ui:Card>
     </Grid>
