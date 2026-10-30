@@ -32,6 +32,7 @@ public partial class TranslatePage : UserControl
     private readonly EditorSessionStore _sessions;
     private readonly DispatcherTimer _draftTimer = new() { Interval = TimeSpan.FromMilliseconds(600) };
     private bool _draftChecked;
+    private bool _discardDraftOnClose;
     private bool _restoringDraft;
     private bool _isLoadingScript;
     private string? _dragTranslationPath;
@@ -66,6 +67,7 @@ public partial class TranslatePage : UserControl
         ViewModel.ContentChanged += (_, _) =>
         {
             if (_restoringDraft) return;
+            _discardDraftOnClose = false;
             ViewModel.MarkDraftPending();
             _draftTimer.Stop();
             _draftTimer.Start();
@@ -97,6 +99,7 @@ public partial class TranslatePage : UserControl
     public bool FlushDraft()
     {
         _draftTimer.Stop();
+        if (_discardDraftOnClose) return _sessions.DeleteDraft();
         if (_restoringDraft || !_draftChecked && !ViewModel.HasScript) return true;
         var saved = _sessions.SaveDraft(ViewModel);
         ViewModel.MarkDraftResult(saved);
@@ -665,7 +668,53 @@ public partial class TranslatePage : UserControl
         return result == ContentDialogResult.Primary;
     }
 
-    public Task<bool> ConfirmCloseAsync() => ConfirmUnsavedChangesAsync("退出程序？", keepDraft: true);
+    public async Task<bool> ConfirmCloseAsync()
+    {
+        if (!ViewModel.IsDirty) return true;
+        var service = ((MainWindow)Application.Current.MainWindow!).WindowContentDialogService;
+        var dialog = new ContentDialog(service.GetDialogHostEx() ?? throw new InvalidOperationException())
+        {
+            Title = "退出程序？"
+        };
+        var content = new StackPanel { MinWidth = 440 };
+        content.Children.Add(new System.Windows.Controls.TextBlock
+        {
+            Text = "当前翻译有未保存的修改。",
+            Margin = new Thickness(0, 0, 0, 24)
+        });
+        var actions = new System.Windows.Controls.Primitives.UniformGrid { Columns = 4 };
+        var choice = "取消";
+        foreach (var label in new[] { "保存", "保留草稿", "不保存", "取消" })
+        {
+            var button = new Wpf.Ui.Controls.Button
+            {
+                Content = label,
+                Margin = new Thickness(0, 0, 8, 0),
+                Appearance = label == "保存" ? ControlAppearance.Primary : ControlAppearance.Secondary
+            };
+            if (label == "不保存") button.ToolTip = "放弃未保存修改并删除恢复草稿，已保存的文件不受影响。";
+            button.Click += (_, _) => { choice = label; dialog.Hide(); };
+            actions.Children.Add(button);
+        }
+        content.Children.Add(actions);
+        dialog.Content = content;
+        await service.ShowAsync(dialog, CancellationToken.None);
+        return choice switch
+        {
+            "保存" => await SaveAsync(),
+            "保留草稿" => FlushDraft(),
+            "不保存" => DiscardDraftOnClose(),
+            _ => false
+        };
+    }
+
+    private bool DiscardDraftOnClose()
+    {
+        _draftTimer.Stop();
+        if (!_sessions.DeleteDraft()) return false;
+        _discardDraftOnClose = true;
+        return true;
+    }
 
     private async Task<bool> ConfirmUnsavedChangesAsync(string title, bool keepDraft = false)
     {

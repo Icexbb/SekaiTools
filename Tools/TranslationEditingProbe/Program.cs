@@ -223,7 +223,11 @@ internal static class Program
         window.Content = null;
         Pump();
         Check(store.ReadDraft() != null, "leaving page flushes unsaved draft");
+        var discard = typeof(TranslatePage).GetMethod("DiscardDraftOnClose", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        Check((bool)discard.Invoke(page, null)!, "discard on exit removes recovery draft");
+        Check(page.FlushDraft() && store.ReadDraft() == null, "close flush cannot recreate discarded draft");
         window.Close();
+        Check(store.ReadDraft() == null, "unload cannot recreate discarded draft");
         app.Shutdown();
     }
 
