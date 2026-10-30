@@ -35,8 +35,9 @@
                        TextWrapping="Wrap" Margin="0,8,0,0"
                        Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                        TextAlignment="Center" HorizontalAlignment="Stretch" />
-            <CheckBox Grid.Row="2" Content="添加后自动开始执行任务" Name="CheckBoxAutoStart"
-                      HorizontalAlignment="Center" />
+            <StackPanel Grid.Row="2"><CheckBox x:Name="CheckBoxOverwrite" Content="允许覆盖已有文件（成功后替换）" Margin="0,8" HorizontalAlignment="Center" />
+            <CheckBox Content="立即开始此任务" Name="CheckBoxAutoStart"
+                      HorizontalAlignment="Center" /></StackPanel>
         </Grid>
     </ui:ContentDialog.Content>
 </ui:ContentDialog>

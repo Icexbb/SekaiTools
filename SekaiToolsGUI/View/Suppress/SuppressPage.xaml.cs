@@ -111,7 +111,25 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
         }
     }
 
-    private async void CreateTask_OnClick(object sender, RoutedEventArgs e)
+    private void StartQueue_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.AutoRunQueue = true;
+        StartNextQueuedJob();
+    }
+
+    private void PauseQueue_OnClick(object sender, RoutedEventArgs e) => ViewModel.AutoRunQueue = false;
+
+    private void QueueEnabled_OnChecked(object sender, RoutedEventArgs e) => StartNextQueuedJob();
+
+    private async void EditJob_OnRequested(object? sender, EventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: SuppressionJobModel job })
+            await ShowTaskDialogAsync(job);
+    }
+
+    private async void CreateTask_OnClick(object sender, RoutedEventArgs e) => await ShowTaskDialogAsync();
+
+    private async Task ShowTaskDialogAsync(SuppressionJobModel? original = null)
     {
         if (!ViewModel.ResourcesReady) return;
 
@@ -122,23 +140,26 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
             var dialog = new SuppressionTaskDialog(
                 dialogService.GetDialogHostEx() ?? throw new InvalidOperationException("内容对话框宿主不可用"),
                 !ViewModel.HasRunningJob);
+            if (original != null)
+            {
+                var options = original.Job.Options;
+                dialog.ViewModel.SourceVideo = options.SourceVideo;
+                dialog.ViewModel.SourceSubtitle = options.SourceSubtitle;
+                dialog.ViewModel.OutputPath = options.OutputPath;
+                dialog.ViewModel.QualityPreset = options.EncodingSettings.Quality;
+                dialog.ViewModel.SpeedPreset = options.EncodingSettings.Speed;
+                dialog.ViewModel.SuppressCrf = options.EncodingSettings.CustomCrf;
+                dialog.ViewModel.EncodingThreads = options.EncodingSettings.Threads;
+            }
+            dialog.ValidateSubmission = () => ViewModel.PendingJobs.Any(x => !ReferenceEquals(x, original) &&
+                string.Equals(System.IO.Path.GetFullPath(x.OutputPath), System.IO.Path.GetFullPath(dialog.ViewModel.OutputPath), StringComparison.OrdinalIgnoreCase)) ||
+                (ViewModel.RunningJob != null && string.Equals(System.IO.Path.GetFullPath(ViewModel.RunningJob.OutputPath), System.IO.Path.GetFullPath(dialog.ViewModel.OutputPath), StringComparison.OrdinalIgnoreCase))
+                ? "队列中已有任务使用此输出路径，请修改输出路径。" : "";
             var result = await dialogService.ShowAsync(dialog, CancellationToken.None);
             if (result != ContentDialogResult.Primary) return;
 
             var overwriteExisting = dialog.ViewModel.OutputExists;
-            if (overwriteExisting)
-            {
-                var overwriteResult = await dialogService.ShowSimpleDialogAsync(
-                    new SimpleContentDialogCreateOptions
-                    {
-                        Title = "覆盖已有输出文件？",
-                        Content = $"输出文件已存在：\n{dialog.ViewModel.OutputPath}\n\n继续执行将覆盖该文件。",
-                        PrimaryButtonText = "继续覆盖",
-                        CloseButtonText = "取消"
-                    }, CancellationToken.None);
-                if (overwriteResult != ContentDialogResult.Primary) return;
-            }
-
+            if (original != null) ViewModel.PendingJobs.Remove(original);
             EnqueueSuppression(dialog.ViewModel.ToOptions(overwriteExisting), dialog.AutoStart);
         }
         catch (Exception exc)

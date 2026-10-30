@@ -42,6 +42,7 @@ public partial class SuppressPage
         };
         ViewModel.AddPending(model);
         if (autoStart) StartJob(model);
+        else StartNextQueuedJob();
     }
 
     internal void StartJob(SuppressionJobModel model)

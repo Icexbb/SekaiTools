@@ -56,14 +56,17 @@
                     <TextBlock Grid.Row="0" Text="{Binding Progress.Status}" FontWeight="SemiBold"
                                HorizontalAlignment="Right" />
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <ui:Button Content="显示结果" Click="ShowFileButton_OnClick"
+                        <ui:Button Content="修改后重试" Icon="{ui:SymbolIcon Edit24}" Click="Edit_OnClick" Margin="0,0,8,0" />
+                    <ui:Button Content="显示结果" Click="ShowFileButton_OnClick"
                                    IsEnabled="{Binding IsCompleted}" />
-                        <ui:Button Content="移除" Click="RemoveButton_OnClick" Margin="10,0,0,0" />
-                        <ui:Button Content="显示日志" Click="ShowLogButton_OnClick" Margin="10,0,0,0" />
+                        
+                    <ui:Button Content="移除" Click="RemoveButton_OnClick" Margin="10,0,0,0" />
+                        
+                    <ui:Button Content="显示日志" Click="ShowLogButton_OnClick" Margin="10,0,0,0" />
                     </StackPanel>
                 </Grid>
             </Grid>
-            <StackPanel Name="StackPanelLog" Visibility="Visible">
+            <StackPanel Name="StackPanelLog" Visibility="Collapsed">
                 <Separator Margin="0,3,0,3" />
                 <TextBox Height="150" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True"
                          FontSize="12" TextWrapping="NoWrap"

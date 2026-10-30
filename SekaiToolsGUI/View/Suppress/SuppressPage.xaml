@@ -20,6 +20,7 @@
         </Grid.RowDefinitions>
         <ui:Card Padding="5" Grid.Row="0" Margin="0,5,0,8">
             <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -38,17 +39,19 @@
                                Visibility="{c:Binding 'ResourcePreparationError.Length!=0', FalseToVisibility=Collapsed}" />
                 </StackPanel>
                     <StackPanel Grid.Column="2" HorizontalAlignment="Right">
-                    <CheckBox Content="自动执行队列" Name="CheckBoxQueue"
+                    <CheckBox Content="连续执行后续任务" Checked="QueueEnabled_OnChecked" Name="CheckBoxQueue"
                               IsChecked="{Binding AutoRunQueue, Mode=TwoWay}" />
                 </StackPanel>
 
 
-                <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <ui:Button Content="创建任务" Click="CreateTask_OnClick"
+                <WrapPanel Grid.Row="1" Grid.ColumnSpan="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                    <ui:Button Content="开始队列" Icon="{ui:SymbolIcon Play24}" Click="StartQueue_OnClick" Margin="0,0,8,0" />
+                    <ui:Button Content="暂停后续" Icon="{ui:SymbolIcon Pause24}" Click="PauseQueue_OnClick" ToolTip="当前任务继续完成，后续任务等待手动开始" Margin="0,0,8,0" />
+                    <ui:Button Icon="{ui:SymbolIcon Add24}" Content="创建任务" Click="CreateTask_OnClick"
                                IsEnabled="{Binding ResourcesReady}" Appearance="Primary" />
                     <ui:Button Content="清除已结束任务" IsEnabled="{Binding CanClear}" Click="ClearButton_OnClick"
                                Margin="10,0,10,0" />
-                </StackPanel>
+                </WrapPanel>
 
 
             </Grid>
@@ -75,7 +78,7 @@
             <Grid Grid.Row="1" MinHeight="120" SizeChanged="QueueLayout_OnSizeChanged">
                 <TabControl x:Name="QueueTabs" Visibility="Collapsed">
                     <TabItem x:Name="PendingTab" Header="未执行的任务" />
-                    <TabItem x:Name="CompletedTab" Header="已完成的任务" />
+                    <TabItem x:Name="CompletedTab" Header="已结束的任务" />
                 </TabControl>
                 <Grid x:Name="QueueColumns">
                     <Grid.ColumnDefinitions>
@@ -100,7 +103,7 @@
                                               dd:DragDrop.ShowAlwaysDropTargetAdorner="True">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <components:SuppressionQueueJobItem StartRequested="StartJobItem_OnStartRequested" />
+                                            <components:SuppressionQueueJobItem StartRequested="StartJobItem_OnStartRequested" EditRequested="EditJob_OnRequested" />
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
@@ -113,12 +116,12 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0" Text="已完成的任务列表" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8" />
+                            <TextBlock Grid.Row="0" Text="已结束的任务列表" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8" />
                             <ui:PassiveScrollViewer Grid.Row="1" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
                                 <ItemsControl ItemsSource="{Binding CompletedJobs}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <components:SuppressionFinishJobItem RemoveRequested="RemoveFinishedJob_OnRemoveRequested" />
+                                            <components:SuppressionFinishJobItem RemoveRequested="RemoveFinishedJob_OnRemoveRequested" RetryRequested="EditJob_OnRequested" />
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>

@@ -6,6 +6,9 @@ namespace SekaiToolsGUI.View.Suppress.Components;
 
 public partial class SuppressionQueueJobItem : UserControl
 {
+    public event EventHandler? EditRequested;
+    private void Edit_OnClick(object sender, RoutedEventArgs e) => EditRequested?.Invoke(this, EventArgs.Empty);
+
     public event EventHandler? StartRequested;
 
     public SuppressionQueueJobItem()

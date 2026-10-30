@@ -65,8 +65,10 @@
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" Text="等待中" FontWeight="SemiBold" HorizontalAlignment="Right" />
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <ui:Button Content="编辑" Icon="{ui:SymbolIcon Edit24}" Click="Edit_OnClick" Margin="0,0,8,0" />
                     <ui:Button Content="开始执行" Click="StartExecuteButton_OnClick"
                                Visibility="{c:Binding CanStart, FalseToVisibility=Collapsed}" />
+                    <ui:Button Content="编辑" Icon="{ui:SymbolIcon Edit24}" Click="Edit_OnClick" Margin="0,0,8,0" />
                     <ui:Button Content="取消" Click="CancelJob_OnClick"
                                IsEnabled="{Binding CanCancel}" Margin="10,0,0,0" />
                 </StackPanel>

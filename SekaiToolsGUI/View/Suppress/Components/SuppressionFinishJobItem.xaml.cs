@@ -7,6 +7,9 @@ namespace SekaiToolsGUI.View.Suppress.Components;
 
 public partial class SuppressionFinishJobItem : UserControl
 {
+    public event EventHandler? RetryRequested;
+    private void Edit_OnClick(object sender, RoutedEventArgs e) => RetryRequested?.Invoke(this, EventArgs.Empty);
+
     public event EventHandler? RemoveRequested;
 
     public SuppressionFinishJobItem()
