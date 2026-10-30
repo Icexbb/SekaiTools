@@ -12,6 +12,8 @@ namespace SekaiToolsMedia;
 
 public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvider) : IDisposable
 {
+    private bool _isFinalizing;
+    private readonly Stopwatch _elapsed = new();
     private readonly object _runLock = new();
     private string _bitrate = "";
     private CancellationTokenSource? _cancellationTokenSource;
@@ -101,6 +103,8 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
 
     private async Task RunAsync(VideoSuppressionOptions options, CancellationToken cancellationToken)
     {
+        _isFinalizing = false;
+        _elapsed.Restart();
         _processedFrames = 0;
         _totalFrames = 0;
         _fps = 0;
@@ -158,6 +162,8 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
                 WaitForSuccessfulExitAsync(_vapourProcess, "VSPipe", cancellationToken),
                 WaitForSuccessfulExitAsync(_ffmpegProcess, "FFmpeg", cancellationToken)).ConfigureAwait(false);
 
+            _isFinalizing = true;
+            PublishProgress();
             outputTransaction.Commit();
             _processedFrames = _totalFrames;
             _status = $"{_status}\n压制完成";
@@ -184,6 +190,7 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
         {
             StopProcess(_vapourProcess);
             StopProcess(_ffmpegProcess);
+            _elapsed.Stop();
             PublishProgress();
             _vapourProcess?.Dispose();
             _ffmpegProcess?.Dispose();
@@ -381,7 +388,7 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
     {
         ProgressChanged?.Invoke(new VideoSuppressionProgress(
             _processedFrames, _totalFrames, _fps, State, _status,
-            _bitrate, _speed, _outputSize, _outputTime));
+            _bitrate, _speed, _outputSize, _outputTime, _elapsed.Elapsed.TotalSeconds, _isFinalizing));
     }
 
     private static void StopProcess(Process? process)

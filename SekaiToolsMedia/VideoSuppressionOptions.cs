@@ -56,18 +56,28 @@ public sealed record VideoSuppressionProgress(
     string Bitrate = "",
     string Speed = "",
     string OutputSize = "",
-    string OutputTime = "")
+    string OutputTime = "",
+    double ElapsedSeconds = 0,
+    bool IsFinalizing = false)
 {
     public string Status => State switch
     {
         VideoSuppressionState.Idle => "等待中",
-        VideoSuppressionState.Preparing or VideoSuppressionState.Running => "正在处理",
+        VideoSuppressionState.Preparing => "正在分析媒体",
+        VideoSuppressionState.Running => IsFinalizing ? "正在完成输出" : "正在编码",
         VideoSuppressionState.Cancelling => "正在取消",
         VideoSuppressionState.Completed => "已完成",
         VideoSuppressionState.Cancelled => "已取消",
         VideoSuppressionState.Failed => "失败",
         _ => State.ToString()
     };
+
+    public string ElapsedDisplay => $"已用 {TimeSpan.FromSeconds(Math.Max(0, ElapsedSeconds)):hh\\:mm\\:ss}";
+    public string RemainingDisplay => State != VideoSuppressionState.Running || IsFinalizing ? "" :
+        ElapsedSeconds < 5 || ProcessedFrames < 30 || FramesPerSecond <= 0 || TotalFrames <= 0
+        ? "剩余时间估算中…"
+        : $"预计剩余 {TimeSpan.FromSeconds(Math.Clamp((TotalFrames - ProcessedFrames) / FramesPerSecond, 0, 31536000)):hh\\:mm\\:ss}";
+    public string OutputDisplay => string.IsNullOrWhiteSpace(OutputSize) ? "输出大小待统计" : $"已输出 {OutputSize} · {Speed}";
 
     public bool Running => State is VideoSuppressionState.Preparing
         or VideoSuppressionState.Running

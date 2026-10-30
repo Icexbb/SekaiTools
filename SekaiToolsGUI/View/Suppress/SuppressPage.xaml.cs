@@ -155,12 +155,16 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
                 string.Equals(System.IO.Path.GetFullPath(x.OutputPath), System.IO.Path.GetFullPath(dialog.ViewModel.OutputPath), StringComparison.OrdinalIgnoreCase)) ||
                 (ViewModel.RunningJob != null && string.Equals(System.IO.Path.GetFullPath(ViewModel.RunningJob.OutputPath), System.IO.Path.GetFullPath(dialog.ViewModel.OutputPath), StringComparison.OrdinalIgnoreCase))
                 ? "队列中已有任务使用此输出路径，请修改输出路径。" : "";
-            var result = await dialogService.ShowAsync(dialog, CancellationToken.None);
+            ContentDialogResult result;
+            try { result = await dialogService.ShowAsync(dialog, CancellationToken.None); }
+            finally { dialog.ViewModel.StopAnalysis(); }
             if (result != ContentDialogResult.Primary) return;
 
             var overwriteExisting = dialog.ViewModel.OutputExists;
             if (original != null) ViewModel.PendingJobs.Remove(original);
-            EnqueueSuppression(dialog.ViewModel.ToOptions(overwriteExisting), dialog.AutoStart);
+            var submission = dialog.ViewModel.ToOptions(overwriteExisting);
+            EnqueueSuppression(submission, dialog.AutoStart);
+            SekaiToolsGUI.Service.SuppressionPreferences.Save(submission.EncodingSettings);
         }
         catch (Exception exc)
         {

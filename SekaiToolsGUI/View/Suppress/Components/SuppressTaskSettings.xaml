@@ -1,121 +1,110 @@
-<UserControl x:Class="SekaiToolsGUI.View.Suppress.Components.SuppressTaskSettings"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
-             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             xmlns:media="clr-namespace:SekaiToolsMedia;assembly=SekaiToolsMedia"
-             xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
-             mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance suppress:SuppressTaskSettingsModel, IsDesignTimeCreatable=True}">
-        <StackPanel>
-            <TextBlock Text="文件与输出" FontWeight="SemiBold" Margin="0,0,0,8" />
-            <ui:CardControl Height="70" Margin="0,0,0,5" Icon="{ui:SymbolIcon Video24}">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="Body" Text="视频文件" />
-                        <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="{Binding SourceVideo}" ToolTip="{Binding SourceVideo}"
-                                      TextTrimming="CharacterEllipsis"
-                                      Visibility="{c:Binding 'SourceVideo.Length!=0', FalseToVisibility=Collapsed}" />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <ui:Button HorizontalAlignment="Right" Content="浏览" Click="VideoFileBrowser_OnClick" />
-            </ui:CardControl>
-            <ui:CardControl Height="70" Margin="0,0,0,5" Icon="{ui:SymbolIcon Subtitles24}"
-                            Visibility="{c:Binding 'SourceVideo.Length!=0', FalseToVisibility=Collapsed}">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="Body" Text="字幕文件（可选）" />
-                        <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="{Binding SourceSubtitle}" ToolTip="{Binding SourceSubtitle}"
-                                      TextTrimming="CharacterEllipsis"
-                                      Visibility="{c:Binding 'SourceSubtitle.Length!=0', FalseToVisibility=Collapsed}" />
-                        <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="未选择时仅转码"
-                                      Visibility="{c:Binding 'SourceSubtitle.Length==0', FalseToVisibility=Collapsed}" />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <ui:Button Margin="0,0,8,0" Content="清除"
-                               Visibility="{c:Binding 'SourceSubtitle.Length!=0', FalseToVisibility=Collapsed}"
-                               Click="ClearSubtitle_OnClick" />
-                    <ui:Button Content="浏览" Click="ScriptFileBrowser_OnClick" />
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding" xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml" xmlns:media="clr-namespace:SekaiToolsMedia;assembly=SekaiToolsMedia" xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress" x:Class="SekaiToolsGUI.View.Suppress.Components.SuppressTaskSettings" AllowDrop="True" PreviewDragOver="Files_OnDragOver" Drop="Files_OnDrop" mc:Ignorable="d" d:DataContext="{d:DesignInstance suppress:SuppressTaskSettingsModel, IsDesignTimeCreatable=True}">
+    <StackPanel>
+        <Border Padding="12" Margin="0,0,0,12" CornerRadius="8" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+            <StackPanel>
+                <TextBlock Text="拖入一个视频，可同时拖入一份 ASS 字幕" FontWeight="SemiBold"/>
+                <TextBlock Text="{Binding MediaDescription}" TextWrapping="Wrap" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                <TextBlock Text="{Binding SubtitleNotice}" TextWrapping="Wrap" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+            </StackPanel>
+        </Border>
+        <TextBlock Text="文件与输出" FontWeight="SemiBold" Margin="0,0,0,8"/>
+        <ui:CardControl MinHeight="70" Margin="0,0,0,5" Icon="{ui:SymbolIcon Video24}">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="Body" Text="视频文件"/>
+                    <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" Text="{Binding SourceVideo}" ToolTip="{Binding SourceVideo}" TextTrimming="CharacterEllipsis" Visibility="{c:Binding 'SourceVideo.Length!=0', FalseToVisibility=Collapsed}"/>
                 </StackPanel>
-            </ui:CardControl>
-            <ui:CardControl Height="70" Margin="0,0,0,8" Icon="{ui:SymbolIcon StreamOutput20}"
-                            Visibility="{c:Binding 'SourceVideo.Length!=0', FalseToVisibility=Collapsed}">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="Body" Text="输出路径" />
-                        <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="{Binding OutputPath}" ToolTip="{Binding OutputPath}"
-                                      TextTrimming="CharacterEllipsis"
-                                      Visibility="{c:Binding 'OutputPath.Length!=0', FalseToVisibility=Collapsed}" />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <ui:Button HorizontalAlignment="Right" Content="浏览" Click="SaveFileBrowser_OnClick" />
-            </ui:CardControl>
-            <TextBlock Text="编码设置" FontWeight="SemiBold" Margin="0,8,0,8" />
-            <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon TabInPrivate24}">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="Body" Text="画质" />
-                        <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="画质越高，输出文件通常越大" />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <ComboBox Width="190" SelectedValue="{Binding QualityPreset, Mode=TwoWay}" SelectedValuePath="Tag">
-                    <ComboBoxItem Content="高质量（CRF 18）" Tag="{x:Static media:VideoQualityPreset.HighQuality}" />
-                    <ComboBoxItem Content="均衡（CRF 21）" Tag="{x:Static media:VideoQualityPreset.Balanced}" />
-                    <ComboBoxItem Content="小体积（CRF 25）" Tag="{x:Static media:VideoQualityPreset.Compact}" />
-                    <ComboBoxItem Content="自定义" Tag="{x:Static media:VideoQualityPreset.Custom}" />
-                </ComboBox>
-            </ui:CardControl>
-            <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon AppsAddIn24}">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="Body" Text="编码速度" />
-                        <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="速度越慢，相同画质下压缩率通常越高" />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <ComboBox Width="190" SelectedValue="{Binding SpeedPreset, Mode=TwoWay}" SelectedValuePath="Tag">
-                    <ComboBoxItem Content="快速" Tag="{x:Static media:VideoEncodingSpeedPreset.Fast}" />
-                    <ComboBoxItem Content="均衡" Tag="{x:Static media:VideoEncodingSpeedPreset.Balanced}" />
-                    <ComboBoxItem Content="慢速高压缩率" Tag="{x:Static media:VideoEncodingSpeedPreset.Slow}" />
-                </ComboBox>
-            </ui:CardControl>
-            <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Settings24}"
-                            Visibility="{c:Binding 'UseCustomCrf', FalseToVisibility=Collapsed}">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="Body" Text="自定义 CRF" />
-                        <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="数值越低画质越高，常用范围为 16–28" />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Width="24" Text="{Binding SuppressCrf}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                    <Slider Width="150" Minimum="0" Maximum="51" TickFrequency="1" IsSnapToTickEnabled="True"
-                            Value="{Binding SuppressCrf, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            </ui:CardControl.Header>
+            <ui:Button HorizontalAlignment="Right" Content="浏览" Click="VideoFileBrowser_OnClick"/>
+        </ui:CardControl>
+        <ui:CardControl MinHeight="70" Margin="0,0,0,5" Icon="{ui:SymbolIcon Subtitles24}" Visibility="{c:Binding 'SourceVideo.Length!=0', FalseToVisibility=Collapsed}">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="Body" Text="烧录字幕（可选，不可关闭）"/>
+                    <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" Text="{Binding SourceSubtitle}" ToolTip="{Binding SourceSubtitle}" TextTrimming="CharacterEllipsis" Visibility="{c:Binding 'SourceSubtitle.Length!=0', FalseToVisibility=Collapsed}"/>
+                    <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" Text="未选择时仅转码" Visibility="{c:Binding 'SourceSubtitle.Length==0', FalseToVisibility=Collapsed}"/>
                 </StackPanel>
-            </ui:CardControl>
-            <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Settings24}">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock FontTypography="Body" Text="编码线程数" />
-                        <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
-                                      Text="0 为自动；高分辨率自动提高并行度" />
+            </ui:CardControl.Header>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:Button Margin="0,0,8,0" Content="清除" Visibility="{c:Binding 'SourceSubtitle.Length!=0', FalseToVisibility=Collapsed}" Click="ClearSubtitle_OnClick"/>
+                <ui:Button Content="浏览" Click="ScriptFileBrowser_OnClick"/>
+            </StackPanel>
+        </ui:CardControl>
+        <ui:CardControl MinHeight="70" Margin="0,0,0,8" Icon="{ui:SymbolIcon StreamOutput20}" Visibility="{c:Binding 'SourceVideo.Length!=0', FalseToVisibility=Collapsed}">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="Body" Text="输出路径"/>
+                    <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" Text="{Binding OutputPath}" ToolTip="{Binding OutputPath}" TextTrimming="CharacterEllipsis" Visibility="{c:Binding 'OutputPath.Length!=0', FalseToVisibility=Collapsed}"/>
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:Button HorizontalAlignment="Right" Content="浏览" Click="SaveFileBrowser_OnClick"/>
+        </ui:CardControl>
+        <TextBlock Text="编码设置" FontWeight="SemiBold" Margin="0,8,0,8"/>
+        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon TabInPrivate24}">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="Body" Text="画质"/>
+                    <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" Text="画质越高，输出文件通常越大"/>
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ComboBox Width="190" SelectedValue="{Binding QualityPreset, Mode=TwoWay}" SelectedValuePath="Tag">
+                <ComboBoxItem Content="高质量（CRF 18）" Tag="{x:Static media:VideoQualityPreset.HighQuality}"/>
+                <ComboBoxItem Content="均衡（CRF 21）" Tag="{x:Static media:VideoQualityPreset.Balanced}"/>
+                <ComboBoxItem Content="小体积（CRF 25）" Tag="{x:Static media:VideoQualityPreset.Compact}"/>
+                <ComboBoxItem Content="自定义" Tag="{x:Static media:VideoQualityPreset.Custom}"/>
+            </ComboBox>
+        </ui:CardControl>
+        <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon AppsAddIn24}">
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <ui:TextBlock FontTypography="Body" Text="编码速度"/>
+                    <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" Text="速度越慢，相同画质下压缩率通常越高"/>
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ComboBox Width="190" SelectedValue="{Binding SpeedPreset, Mode=TwoWay}" SelectedValuePath="Tag">
+                <ComboBoxItem Content="快速" Tag="{x:Static media:VideoEncodingSpeedPreset.Fast}"/>
+                <ComboBoxItem Content="均衡" Tag="{x:Static media:VideoEncodingSpeedPreset.Balanced}"/>
+                <ComboBoxItem Content="慢速高压缩率" Tag="{x:Static media:VideoEncodingSpeedPreset.Slow}"/>
+            </ComboBox>
+        </ui:CardControl>
+        <Expander IsExpanded="{Binding UseCustomCrf, Mode=OneWay}" Margin="0,8,0,12">
+            <Expander.Header>
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon Symbol="Settings24" Margin="0,0,8,0"/>
+                    <TextBlock Text="高级设置 · 自定义 CRF 与编码线程" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Expander.Header>
+            <StackPanel Margin="0,12,0,0">
+                <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Settings24}" Visibility="{c:Binding 'UseCustomCrf', FalseToVisibility=Collapsed}">
+                    <ui:CardControl.Header>
+                        <StackPanel>
+                            <ui:TextBlock FontTypography="Body" Text="自定义 CRF"/>
+                            <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" Text="数值越低画质越高，常用范围为 16–28"/>
+                        </StackPanel>
+                    </ui:CardControl.Header>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Width="24" Text="{Binding SuppressCrf}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <Slider Width="150" Minimum="0" Maximum="51" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding SuppressCrf, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
-                </ui:CardControl.Header>
-                <ui:NumberBox Width="120" Minimum="0" Maximum="128" SmallChange="1"
-                              Value="{Binding EncodingThreads, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                              ToolTip="可调整线程数比较压制速度。更多线程会增加内存占用，速度也受字幕渲染影响。" />
-            </ui:CardControl>
-            <TextBlock Text="{Binding ConfigError}" TextWrapping="Wrap" Margin="4,0,4,4"
-                       Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}" TextAlignment="Center"
-                       Visibility="{c:Binding 'ConfigError.Length!=0', FalseToVisibility=Collapsed}" />
-        </StackPanel>
+                </ui:CardControl>
+                <ui:CardControl Margin="0,0,0,8" Icon="{ui:SymbolIcon Settings24}">
+                    <ui:CardControl.Header>
+                        <StackPanel>
+                            <ui:TextBlock FontTypography="Body" Text="编码线程数"/>
+                            <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" Text="0 为自动；高分辨率自动提高并行度"/>
+                        </StackPanel>
+                    </ui:CardControl.Header>
+                    <ui:NumberBox Width="120" Minimum="0" Maximum="128" SmallChange="1" Value="{Binding EncodingThreads, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="可调整线程数比较压制速度。更多线程会增加内存占用，速度也受字幕渲染影响。"/>
+                </ui:CardControl>
+            </StackPanel>
+        </Expander>
+        <ui:Card Padding="12" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock Text="任务摘要" FontWeight="SemiBold"/>
+                <TextBlock Text="{Binding TaskSummary}" TextWrapping="Wrap" Margin="0,8,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                <TextBlock Text="{Binding OutputPath}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+            </StackPanel>
+        </ui:Card>
+        <TextBlock Text="{Binding ConfigError}" TextWrapping="Wrap" Margin="4,0,4,4" Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}" TextAlignment="Center" Visibility="{c:Binding 'ConfigError.Length!=0', FalseToVisibility=Collapsed}"/>
+    </StackPanel>
 </UserControl>

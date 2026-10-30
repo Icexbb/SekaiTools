@@ -4,6 +4,8 @@ public class SuppressPageModel : ViewModelBase
 {
     public SuppressPageModel()
     {
+        FilteredCompletedJobs = new System.Windows.Data.ListCollectionView(CompletedJobs);
+        FilteredCompletedJobs.Filter = value => value is SuppressionJobModel job && (CompletedFilter == 0 || job.Progress.State == (CompletedFilter == 1 ? SekaiToolsMedia.VideoSuppressionState.Completed : CompletedFilter == 2 ? SekaiToolsMedia.VideoSuppressionState.Failed : SekaiToolsMedia.VideoSuppressionState.Cancelled));
         PendingJobs.CollectionChanged += JobsChanged;
         CompletedJobs.CollectionChanged += JobsChanged;
     }
@@ -38,6 +40,13 @@ public class SuppressPageModel : ViewModelBase
     {
         foreach (var job in PendingJobs)
             job.CanStart = !HasRunningJob && job.Progress.State == SekaiToolsMedia.VideoSuppressionState.Idle;
+    }
+
+    public System.Windows.Data.ListCollectionView FilteredCompletedJobs { get; }
+    public int CompletedFilter
+    {
+        get => GetProperty(0);
+        set { SetProperty(value); FilteredCompletedJobs.Refresh(); }
     }
 
     public bool CanClear => CompletedJobs.Count > 0;

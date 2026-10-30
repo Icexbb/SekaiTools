@@ -1,65 +1,69 @@
-<UserControl x:Class="SekaiToolsGUI.View.Suppress.Components.SuppressionExecutingJobItem"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
-             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
-             mc:Ignorable="d" d:DesignWidth="600"
-             d:DataContext="{d:DesignInstance suppress:SuppressionJobModel, IsDesignTimeCreatable=True}">
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:layout="clr-namespace:SekaiToolsGUI.Control" xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml" xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress" x:Class="SekaiToolsGUI.View.Suppress.Components.SuppressionExecutingJobItem" mc:Ignorable="d" d:DesignWidth="600" d:DataContext="{d:DesignInstance suppress:SuppressionJobModel, IsDesignTimeCreatable=True}">
+    <UserControl.Resources>
+        <Style x:Key="CompactDetails" TargetType="TextBlock">
+            <Style.Triggers>
+                <Trigger Property="layout:AdaptiveLayout.IsShort" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="CompactLog" TargetType="Expander" BasedOn="{StaticResource {x:Type Expander}}">
+            <Style.Triggers>
+                <Trigger Property="layout:AdaptiveLayout.IsShort" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
     <ui:Card Padding="0" BorderBrush="Transparent" Background="Transparent">
         <StackPanel>
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel>
-                    <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
-                               ToolTip="{Binding SourceVideo}" />
-                    <TextBlock Text="{Binding OutputPath}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"
-                               ToolTip="{Binding OutputPath}"
-                               Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
-                    <TextBlock Text="{Binding EncodingDescription}" Margin="0,3,0,0"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding SourceVideo}"/>
+                    <TextBlock Text="{Binding OutputPath}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" ToolTip="{Binding OutputPath}" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Style="{StaticResource CompactDetails}" Text="{Binding EncodingDescription}" Margin="0,3,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,3,0,0">
-                        <TextBlock Text="{Binding Progress.Fraction, StringFormat={}{0:P1}}" Margin="0,0,12,0" />
-                        <TextBlock Text="{Binding Progress.FramesPerSecond, StringFormat={}{0:F1} FPS}" />
+                        <TextBlock Text="{Binding Progress.Fraction, StringFormat={}{0:P1}}" Margin="0,0,12,0"/>
+                        <TextBlock Text="{Binding Progress.FramesPerSecond, StringFormat={}{0:F1} FPS}"/>
                     </StackPanel>
                 </StackPanel>
                 <Grid Grid.Column="1" Margin="10,0,0,0">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="{Binding Progress.Status}" FontWeight="SemiBold"
-                               HorizontalAlignment="Right" />
+                    <TextBlock Grid.Row="0" Text="{Binding Progress.Status}" FontWeight="SemiBold" HorizontalAlignment="Right"/>
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <ui:Button Content="取消" Click="CancelJob_OnClick"
-                                   IsEnabled="{Binding CanCancel}" />
+                        <ui:Button Content="取消" Click="CancelJob_OnClick" IsEnabled="{Binding CanCancel}"/>
                     </StackPanel>
                 </Grid>
             </Grid>
             <StackPanel>
-                <ProgressBar Value="{Binding Progress.Fraction, Mode=OneWay}" Maximum="1"
-                             IsIndeterminate="{Binding IsPreparing, Mode=OneWay}" Height="6" Margin="0,6" />
-                <TextBox x:Name="LogTextBox" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True"
-                         FontFamily="Consolas" FontSize="12" TextWrapping="NoWrap"
-                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                         Loaded="LogTextBox_OnLoaded" TextChanged="LogTextBox_OnTextChanged">
-                    <TextBox.Style>
-                        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                            <Setter Property="Height" Value="150" />
-                            <Style.Triggers>
-                                <Trigger Property="layout:AdaptiveLayout.IsShort" Value="True">
-                                    <Setter Property="Height" Value="70" />
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBox.Style>
-                </TextBox>
+                <WrapPanel Margin="0,8,0,4">
+                    <TextBlock Text="{Binding Progress.ElapsedDisplay}" Margin="0,0,16,4"/>
+                    <TextBlock Text="{Binding Progress.RemainingDisplay}" Margin="0,0,16,4"/>
+                    <TextBlock Text="{Binding Progress.OutputDisplay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                </WrapPanel>
+                <ProgressBar Value="{Binding Progress.Fraction, Mode=OneWay}" Maximum="1" IsIndeterminate="{Binding IsPreparing, Mode=OneWay}" Height="6" Margin="0,6"/>
+                <Expander Style="{StaticResource CompactLog}" Header="执行日志" Margin="0,8,0,0">
+                    <TextBox x:Name="LogTextBox" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas" FontSize="12" TextWrapping="NoWrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Loaded="LogTextBox_OnLoaded" TextChanged="LogTextBox_OnTextChanged">
+                        <TextBox.Style>
+                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                <Setter Property="Height" Value="150"/>
+                                <Style.Triggers>
+                                    <Trigger Property="layout:AdaptiveLayout.IsShort" Value="True">
+                                        <Setter Property="Height" Value="70"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
+                </Expander>
             </StackPanel>
         </StackPanel>
     </ui:Card>

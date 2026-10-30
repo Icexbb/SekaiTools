@@ -116,9 +116,10 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0" Text="已结束的任务列表" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8" />
+                            <DockPanel Grid.Row="0" Margin="0,0,0,12"><TextBlock Text="已结束" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0" />
+                            <ComboBox SelectedIndex="{Binding CompletedFilter, Mode=TwoWay}" HorizontalAlignment="Right" MinWidth="150" AutomationProperties.Name="结束任务状态筛选"><ComboBoxItem Content="全部状态" /><ComboBoxItem Content="成功" /><ComboBoxItem Content="失败" /><ComboBoxItem Content="已取消" /></ComboBox></DockPanel>
                             <ui:PassiveScrollViewer Grid.Row="1" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
-                                <ItemsControl ItemsSource="{Binding CompletedJobs}">
+                                <ItemsControl ItemsSource="{Binding FilteredCompletedJobs}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <components:SuppressionFinishJobItem RemoveRequested="RemoveFinishedJob_OnRemoveRequested" RetryRequested="EditJob_OnRequested" />
