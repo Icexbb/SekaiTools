@@ -38,11 +38,14 @@
                            TextWrapping="Wrap" Text="{Binding Path= Content.Original}" />
                 <ui:SymbolIcon Grid.Column="1" Symbol="ArrowRight28" Margin="5" />
                 <StackPanel Grid.Column="2">
-                    <StackPanel Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
-                        <TextBlock Text="参考译文" Margin="4,2" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        <TextBox IsReadOnly="True" IsTabStop="False" Text="{Binding Content.Reference}" TextWrapping="Wrap"
-                                 Background="Transparent" BorderBrush="Transparent" AutomationProperties.Name="场景文字参考译文" />
-                    </StackPanel>
+                    <Grid Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
+                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="5,24,5,5"
+                                 HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
+                                 AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
+                        <TextBlock Text="参考译文" Margin="6,4,6,0" FontSize="12" Opacity="0.6"
+                                   HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    </Grid>
                     <ui:TextBox Padding="5,2" HorizontalAlignment="Stretch" AutomationProperties.Name="{Binding Label}"
                                 Text="{Binding Content.Translated,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>

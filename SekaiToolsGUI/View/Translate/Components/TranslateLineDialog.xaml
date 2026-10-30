@@ -142,13 +142,14 @@
                     </ui:SymbolIcon>
                 </Grid>
                 <StackPanel Grid.Column="2" VerticalAlignment="Stretch">
-                    <StackPanel Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference', FalseToVisibility=Collapsed}">
-                        <TextBlock Text="参考译文" Margin="4,2" FontSize="12"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap"
+                    <Grid Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
+                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="5,24,5,5"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
                                  AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
-                    </StackPanel>
+                        <TextBlock Text="参考译文" Margin="6,4,6,0" FontSize="12" Opacity="0.6"
+                                   HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    </Grid>
                     <TextBox MinLines="2" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
                              PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"
                              DataObject.Pasting="TextBox_OnPasting" GotKeyboardFocus="TextBox_OnGotKeyboardFocus" LostKeyboardFocus="TextBox_OnLostKeyboardFocus"
