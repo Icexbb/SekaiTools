@@ -67,7 +67,7 @@ public class ScenarioVoiceTests
             cancelled.Cancel();
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => ScenarioVoice.LoadAsync(fetcher,
                 ScenarioVoice.Locate("https://assets.example/", "cancel", "voice"), directory, cancelled.Token));
-            Assert.Empty(Directory.GetFiles(directory, "*.tmp"));
+            Assert.Empty(Directory.GetFiles(directory, "*.tmp", SearchOption.AllDirectories));
         }
         finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
     }

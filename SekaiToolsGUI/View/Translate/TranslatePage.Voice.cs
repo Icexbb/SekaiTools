@@ -35,6 +35,7 @@ public partial class TranslatePage
     private LineDialogModel? _voiceLine;
     private CancellationTokenSource? _voiceRequest;
     private string? _voicePath;
+    private IDisposable? _voiceCacheProtection;
 
     private void StopVoice() => StopVoiceWithReason("停止或取消");
 
@@ -53,6 +54,13 @@ public partial class TranslatePage
         _voiceRequest = null;
         _voicePlayer?.Close();
         _voicePlayer = null;
+        _voiceCacheProtection?.Dispose();
+        _voiceCacheProtection = null;
+        if (_voicePath is { } stoppedPath)
+        {
+            var cacheDirectory = Directory.GetParent(Path.GetDirectoryName(stoppedPath)!)!.FullName;
+            VoiceCache.Trim(cacheDirectory, VoiceCache.AutomaticLimit(cacheDirectory));
+        }
         _voicePath = null;
         if (_voiceLine != null)
         {
@@ -90,6 +98,7 @@ public partial class TranslatePage
             if (request.IsCancellationRequested || !ReferenceEquals(_voiceRequest, request)) return;
             VoiceLogger.LogInformation("语音资源已就绪：第 {Sequence} 条，语音 {VoiceId}，本地文件 {Path}",
                 line.SequenceNumber, line.OriginalVoice?.VoiceId, path);
+            _voiceCacheProtection = VoiceCache.Protect(path);
             _voicePath = path;
             var player = new MediaPlayer();
             _voicePlayer = player;
