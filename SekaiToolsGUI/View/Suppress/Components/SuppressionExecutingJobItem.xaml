@@ -7,13 +7,6 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-        <Style x:Key="CompactLog" TargetType="Expander" BasedOn="{StaticResource {x:Type Expander}}">
-            <Style.Triggers>
-                <Trigger Property="layout:AdaptiveLayout.IsShort" Value="True">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
     </UserControl.Resources>
     <ui:Card Padding="0" BorderBrush="Transparent" Background="Transparent">
         <StackPanel>
@@ -39,7 +32,8 @@
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0" Text="{Binding Progress.Status}" FontWeight="SemiBold" HorizontalAlignment="Right"/>
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <ui:Button Content="取消" Click="CancelJob_OnClick" IsEnabled="{Binding CanCancel}"/>
+                        <ui:Button Content="查看日志" Icon="{ui:SymbolIcon Document24}" Click="ShowLog_OnClick" Margin="0,0,8,0" />
+                        <ui:Button Content="取消当前任务" Click="CancelJob_OnClick" IsEnabled="{Binding CanCancel}"/>
                     </StackPanel>
                 </Grid>
             </Grid>
@@ -50,20 +44,7 @@
                     <TextBlock Text="{Binding Progress.OutputDisplay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                 </WrapPanel>
                 <ProgressBar Value="{Binding Progress.Fraction, Mode=OneWay}" Maximum="1" IsIndeterminate="{Binding IsPreparing, Mode=OneWay}" Height="6" Margin="0,6"/>
-                <Expander Style="{StaticResource CompactLog}" Header="执行日志" Margin="0,8,0,0">
-                    <TextBox x:Name="LogTextBox" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas" FontSize="12" TextWrapping="NoWrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Loaded="LogTextBox_OnLoaded" TextChanged="LogTextBox_OnTextChanged">
-                        <TextBox.Style>
-                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                                <Setter Property="Height" Value="150"/>
-                                <Style.Triggers>
-                                    <Trigger Property="layout:AdaptiveLayout.IsShort" Value="True">
-                                        <Setter Property="Height" Value="70"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBox.Style>
-                    </TextBox>
-                </Expander>
+
             </StackPanel>
         </StackPanel>
     </ui:Card>

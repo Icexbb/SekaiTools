@@ -16,19 +16,13 @@ public partial class SuppressionExecutingJobItem : UserControl
         if (DataContext is SuppressionJobModel job) job.Cancel();
     }
 
-    private void LogTextBox_OnLoaded(object sender, RoutedEventArgs e)
+    private void ShowLog_OnClick(object sender, RoutedEventArgs e)
     {
-        ScrollLogToEnd();
-    }
-
-    private void LogTextBox_OnTextChanged(object sender, TextChangedEventArgs e)
-    {
-        ScrollLogToEnd();
-    }
-
-    private void ScrollLogToEnd()
-    {
-        LogTextBox.CaretIndex = LogTextBox.Text.Length;
-        LogTextBox.ScrollToEnd();
+        var owner = Window.GetWindow(this);
+        var text = new TextBox { IsReadOnly = true, FontFamily = new System.Windows.Media.FontFamily("Consolas"), TextWrapping = TextWrapping.NoWrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, Margin = new Thickness(12) };
+        text.SetBinding(TextBox.TextProperty, new System.Windows.Data.Binding("Progress.Log") { Mode = System.Windows.Data.BindingMode.OneWay });
+        var dialog = new Window { Title = "压制执行日志", Owner = owner, DataContext = DataContext, Content = text, Width = Math.Min(900, owner?.ActualWidth ?? 900), Height = Math.Min(550, owner?.ActualHeight ?? 550), WindowStartupLocation = WindowStartupLocation.CenterOwner };
+        dialog.SetResourceReference(Window.BackgroundProperty, "ApplicationBackgroundBrush");
+        dialog.ShowDialog();
     }
 }

@@ -14,18 +14,17 @@
                     <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding SourceVideo}"/>
                     <TextBlock Text="{Binding OutputPath}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" ToolTip="{Binding OutputPath}" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"/>
                     <TextBlock Text="{Binding EncodingDescription}" Margin="0,3,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,3,0,0">
-                        <TextBlock Text="{Binding Progress.Fraction, StringFormat={}{0:P1}}" Margin="0,0,12,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding Progress.FramesPerSecond, StringFormat={}{0:F1} FPS}" Margin="0,0,12,0" VerticalAlignment="Center"/>
-                    </StackPanel>
+                    <TextBlock Text="{Binding Progress.ElapsedDisplay}" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="{Binding FailureSummary}" TextWrapping="Wrap" Margin="0,4,0,0" Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
                 </StackPanel>
-                <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="0,12,0,0">
+<StackPanel Grid.Column="1" VerticalAlignment="Top" Margin="12,0,0,0" Orientation="Horizontal"><ui:SymbolIcon Symbol="{Binding StatusIcon}" Margin="0,0,8,0"/><TextBlock Text="{Binding Progress.Status}" FontWeight="SemiBold" VerticalAlignment="Center"/></StackPanel>
+                <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="0,4,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="{Binding Progress.Status}" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+
                     <WrapPanel Grid.Row="2" HorizontalAlignment="Left" Margin="0,8,0,0">
                         <ui:Button Content="修改后重试" Icon="{ui:SymbolIcon Edit24}" Click="Edit_OnClick" Margin="0,0,8,0"/>
                         <ui:Button Content="在文件夹中显示" Icon="{ui:SymbolIcon FolderOpen24}" Click="ShowFileButton_OnClick" IsEnabled="{Binding IsCompleted}"/>

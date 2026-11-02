@@ -119,7 +119,6 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 
     private void PauseQueue_OnClick(object sender, RoutedEventArgs e) => ViewModel.AutoRunQueue = false;
 
-    private void QueueEnabled_OnChecked(object sender, RoutedEventArgs e) => StartNextQueuedJob();
 
     private async void EditJob_OnRequested(object? sender, EventArgs e)
     {
@@ -140,9 +139,11 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
                                 ?? throw new InvalidOperationException("内容对话框服务不可用");
             var dialog = new SuppressionTaskDialog(
                 dialogService.GetDialogHostEx() ?? throw new InvalidOperationException("内容对话框宿主不可用"),
-                !ViewModel.HasRunningJob);
+                ViewModel.AutoRunQueue);
             if (original != null)
             {
+                dialog.Title = ViewModel.PendingJobs.Contains(original) ? "编辑压制任务" : "重新执行压制任务";
+                dialog.PrimaryButtonText = ViewModel.PendingJobs.Contains(original) ? "保存修改" : "加入队列";
                 var options = original.Job.Options;
                 dialog.ViewModel.SourceVideo = options.SourceVideo;
                 dialog.ViewModel.SourceSubtitle = options.SourceSubtitle;
@@ -159,7 +160,7 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
             dialog.CommitSubmission = () =>
             {
                 var submission = dialog.ViewModel.ToOptions(dialog.OverwriteAuthorized);
-                EnqueueSuppression(submission, dialog.AutoStart, original);
+                EnqueueSuppression(submission, original);
                 SekaiToolsGUI.Service.SuppressionPreferences.Save(submission.EncodingSettings);
                 return "";
             };

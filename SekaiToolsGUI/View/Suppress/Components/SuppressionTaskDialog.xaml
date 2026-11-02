@@ -15,7 +15,7 @@
                   d:DataContext="{d:DesignInstance suppress:SuppressTaskSettingsModel, IsDesignTimeCreatable=True}"
                   IsPrimaryButtonEnabled="{Binding CanSubmit}"
                   Title="创建压制任务" DefaultButton="Primary"
-                  PrimaryButtonText="创建任务" CloseButtonText="取消" MinWidth="680">
+                  PrimaryButtonText="加入队列" CloseButtonText="取消" MinWidth="680">
     <ui:ContentDialog.Resources>
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"
                TargetType="{x:Type components:SuppressionTaskDialog}" />
@@ -36,8 +36,7 @@
                        Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                        TextAlignment="Center" HorizontalAlignment="Stretch" />
             <StackPanel Grid.Row="2"><CheckBox x:Name="CheckBoxOverwrite" Content="允许覆盖已有文件（成功后替换）" Margin="0,8" HorizontalAlignment="Center" />
-            <CheckBox Content="立即开始此任务" Name="CheckBoxAutoStart"
-                      HorizontalAlignment="Center" /></StackPanel>
+            <TextBlock x:Name="QueueHint" TextWrapping="Wrap" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" /></StackPanel>
         </Grid>
     </ui:ContentDialog.Content>
 </ui:ContentDialog>

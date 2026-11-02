@@ -105,6 +105,7 @@
                 <TextBlock Text="{Binding OutputPath}" TextWrapping="Wrap" Margin="0,4,0,0"/>
             </StackPanel>
         </ui:Card>
+        <ui:Button Content="重试视频分析" Icon="{ui:SymbolIcon ArrowClockwise24}" Click="RetryAnalysis_OnClick" Margin="0,0,0,8" Visibility="{c:Binding 'AnalysisError.Length!=0', FalseToVisibility=Collapsed}" />
         <TextBlock Text="{Binding ConfigError}" TextWrapping="Wrap" Margin="4,0,4,4" Foreground="{ui:ThemeResource SystemFillColorCriticalBrush}" TextAlignment="Center" Visibility="{c:Binding 'ConfigError.Length!=0', FalseToVisibility=Collapsed}"/>
     </StackPanel>
 </UserControl>

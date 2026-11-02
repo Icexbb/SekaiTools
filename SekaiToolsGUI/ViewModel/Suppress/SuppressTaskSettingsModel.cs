@@ -8,6 +8,8 @@ namespace SekaiToolsGUI.ViewModel.Suppress;
 public sealed class SuppressTaskSettingsModel : ViewModelBase
 {
     private int _analysisVersion;
+    private static readonly BoundedMediaAnalysis MediaAnalysis = new();
+    private CancellationTokenSource? _analysisCancellation;
     public SuppressTaskSettingsModel()
     {
         var settings = SekaiToolsGUI.Service.SuppressionPreferences.Load();
@@ -22,28 +24,42 @@ public sealed class SuppressTaskSettingsModel : ViewModelBase
     public string AnalysisError { get => GetProperty(""); private set { SetProperty(value); } }
     public string SubtitleNotice { get => GetProperty(""); set { SetProperty(value); } }
     public string TaskSummary => $"{(string.IsNullOrWhiteSpace(SourceSubtitle) ? "仅转码" : "烧录字幕（不可关闭）")} · MP4 / H.264 · CRF {new X264EncodingSettings(QualityPreset, SpeedPreset, SuppressCrf).Crf} · {new X264EncodingSettings(QualityPreset, SpeedPreset).FfmpegPreset}\n音轨：兼容时保留，否则转为 AAC；开始时自动检测。";
-    public void StopAnalysis() => _analysisVersion++;
+    public void StopAnalysis()
+    {
+        _analysisVersion++;
+        _analysisCancellation?.Cancel();
+        _analysisCancellation?.Dispose();
+        _analysisCancellation = null;
+    }
+    public void RetryAnalysis()
+    {
+        StopAnalysis();
+        _ = AnalyzeAsync(SourceVideo, _analysisVersion);
+    }
 
     private async Task AnalyzeAsync(string path, int version)
     {
+        _analysisCancellation = new CancellationTokenSource();
+        var cancellationToken = _analysisCancellation.Token;
         IsAnalyzing = true;
         AnalysisError = "";
         MediaDescription = "正在分析视频信息…";
         UpdateConfigStatus();
         try
         {
-            var info = await Task.Run(() =>
+            var info = await MediaAnalysis.RunAsync(() =>
             {
                 using var capture = new VideoCapture(path);
                 if (!capture.IsOpened) throw new InvalidDataException("无法读取此视频，请检查文件是否完整或选择其他视频");
                 return (Frames: (int)capture.Get(CapProp.FrameCount), Width: (int)capture.Get(CapProp.FrameWidth),
                     Height: (int)capture.Get(CapProp.FrameHeight), Fps: capture.Get(CapProp.Fps));
-            });
+            }, TimeSpan.FromSeconds(20), cancellationToken);
             if (version != _analysisVersion) return;
             if (info.Frames <= 0 || info.Height <= 0) throw new InvalidDataException("未读取到有效的视频信息");
             SourceFrameCount = info.Frames;
             SourceHeight = info.Height;
-            var duration = info.Fps > 0 ? TimeSpan.FromSeconds(info.Frames / info.Fps).ToString(@"hh\:mm\:ss") : "时长未知";
+            var time = info.Fps > 0 && double.IsFinite(info.Fps) ? TimeSpan.FromSeconds(info.Frames / info.Fps) : TimeSpan.Zero;
+            var duration = time > TimeSpan.Zero ? $"{(int)time.TotalHours:00}:{time.Minutes:00}:{time.Seconds:00}" : "时长未知";
             MediaDescription = $"{info.Width} × {info.Height} · {info.Fps:0.##} FPS · {duration}";
         }
         catch (Exception ex)
@@ -70,7 +86,8 @@ public sealed class SuppressTaskSettingsModel : ViewModelBase
             SubtitleNotice = "";
             var guess = Path.ChangeExtension(value, ".ass");
             if (File.Exists(guess)) { SourceSubtitle = guess; SubtitleNotice = "已自动匹配同名 ASS 字幕，请确认是否使用"; }
-            var version = ++_analysisVersion;
+            StopAnalysis();
+            var version = _analysisVersion;
             _ = AnalyzeAsync(value, version);
 
             OutputPath = Path.Join(Path.GetDirectoryName(value),

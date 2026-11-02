@@ -39,6 +39,8 @@ public partial class SuppressTaskSettings
         if (subtitle != null) { ViewModel.SourceSubtitle = subtitle; ViewModel.SubtitleNotice = "已使用拖入的 ASS 字幕"; }
     }
 
+    private void RetryAnalysis_OnClick(object sender, RoutedEventArgs e) => ViewModel.RetryAnalysis();
+
     private static string? SelectFile(string filter)
     {
         var dialog = new OpenFileDialog { Filter = filter };

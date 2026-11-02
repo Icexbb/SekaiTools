@@ -7,20 +7,19 @@ namespace SekaiToolsGUI.View.Suppress.Components;
 public partial class SuppressionTaskDialog : ContentDialog
 {
     public SuppressionTaskDialog(ContentDialogHost contentPresenter,
-        bool showAutoStart) : base(contentPresenter)
+        bool queueRunning) : base(contentPresenter)
     {
         ViewModel = new SuppressTaskSettingsModel();
         DataContext = ViewModel;
         InitializeComponent();
         TaskSettings.DataContext = ViewModel;
-        CheckBoxAutoStart.Visibility = showAutoStart ? Visibility.Visible : Visibility.Collapsed;
+        QueueHint.Text = queueRunning ? "加入后按队列顺序执行。" : "加入后等待；点击主面板的“开始队列”执行。";
     }
 
     public SuppressTaskSettingsModel ViewModel { get; }
     public Func<string>? ValidateSubmission { get; set; }
     public bool OverwriteAuthorized => CheckBoxOverwrite.IsChecked == true;
     public Func<string>? CommitSubmission { get; set; }
-    public bool AutoStart => CheckBoxAutoStart.IsChecked == true;
 
     protected override void OnButtonClick(ContentDialogButton button)
     {

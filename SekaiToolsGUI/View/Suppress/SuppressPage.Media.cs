@@ -16,7 +16,7 @@ public partial class SuppressPage
         await suppressor.SuppressAsync(options, token);
     });
 
-    private void EnqueueSuppression(VideoSuppressionOptions options, bool autoStart, SuppressionJobModel? original = null)
+    private void EnqueueSuppression(VideoSuppressionOptions options, SuppressionJobModel? original = null)
     {
         var job = new VideoSuppressionJob(options);
         var model = new SuppressionJobModel(job);
@@ -33,8 +33,7 @@ public partial class SuppressPage
             });
         };
         ViewModel.CommitPending(model, original);
-        if (autoStart) StartJob(model);
-        else StartNextQueuedJob();
+        StartNextQueuedJob();
     }
 
     internal void StartJob(SuppressionJobModel model)

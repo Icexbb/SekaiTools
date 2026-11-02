@@ -5,6 +5,13 @@ namespace SekaiTools.Tests;
 public class SuppressionProgressPresentationTests
 {
     [Fact]
+    public void DurationsDoNotWrapAfterTwentyFourHours()
+    {
+        var progress = new VideoSuppressionProgress(100, 1000, 1, VideoSuppressionState.Running, "", ElapsedSeconds: 90061);
+        Assert.Equal("已用 25:01:01", progress.ElapsedDisplay);
+    }
+
+    [Fact]
     public void EstimateWaitsForEnoughSamplesAndKnownFrameCount()
     {
         var progress = new VideoSuppressionProgress(20, 1000, 10, VideoSuppressionState.Running, "", ElapsedSeconds: 2);

@@ -9,6 +9,14 @@ public sealed class SuppressionJobModel(VideoSuppressionJob job) : ViewModelBase
     public string OutputPath => Job.Options.OutputPath;
     public string FileName => System.IO.Path.GetFileName(SourceVideo);
     public string EncodingDescription => $"{(string.IsNullOrWhiteSpace(Job.Options.SourceSubtitle) ? "仅转码" : "烧录字幕（不可关闭）")} · CRF {Job.Options.EncodingSettings.Crf} · {Job.Options.EncodingSettings.FfmpegPreset}";
+    public Wpf.Ui.Controls.SymbolRegular StatusIcon => Progress.State switch
+    {
+        VideoSuppressionState.Completed => Wpf.Ui.Controls.SymbolRegular.Checkmark24,
+        VideoSuppressionState.Failed => Wpf.Ui.Controls.SymbolRegular.ErrorCircle24,
+        _ => Wpf.Ui.Controls.SymbolRegular.Dismiss24
+    };
+    public string FailureSummary => Progress.State == VideoSuppressionState.Failed
+        ? Progress.Log.Split('\n').LastOrDefault(line => line.Contains("压制失败"))?.Trim() ?? "任务失败，请查看日志。" : "";
     public bool IsFinished => Progress.State is VideoSuppressionState.Completed or VideoSuppressionState.Cancelled or VideoSuppressionState.Failed;
     public bool IsPreparing => Progress.State == VideoSuppressionState.Preparing;
     public bool IsEditing
@@ -33,6 +41,8 @@ public sealed class SuppressionJobModel(VideoSuppressionJob job) : ViewModelBase
             OnPropertyChanged(nameof(IsCompleted));
             OnPropertyChanged(nameof(IsFinished));
             OnPropertyChanged(nameof(IsPreparing));
+            OnPropertyChanged(nameof(StatusIcon));
+            OnPropertyChanged(nameof(FailureSummary));
         }
     }
     public bool CanCancel => Progress.State is VideoSuppressionState.Idle or VideoSuppressionState.Preparing or VideoSuppressionState.Running;

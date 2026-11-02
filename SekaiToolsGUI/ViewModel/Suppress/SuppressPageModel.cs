@@ -73,10 +73,12 @@ public class SuppressPageModel : ViewModelBase
         }
     }
 
+    public string QueueStatus => AutoRunQueue ? "队列运行中 · 按顺序执行" : "队列已暂停 · 新任务仅加入等待";
+
     public bool AutoRunQueue
     {
         get => GetProperty(false);
-        set => SetProperty(value);
+        set { SetProperty(value); OnPropertyChanged(nameof(QueueStatus)); }
     }
 
     public bool BeginEdit(SuppressionJobModel job)

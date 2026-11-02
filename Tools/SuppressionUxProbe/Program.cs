@@ -13,6 +13,31 @@ internal static class Program
         var constructor = type.GetConstructors().OrderByDescending(x => x.GetParameters().Length).First();
         return constructor.Invoke(constructor.GetParameters().Select((p, i) => i < supplied.Length ? supplied[i] : p.DefaultValue).ToArray());
     }
+    private static FrameworkElement? FindExecuting(DependencyObject parent)
+    {
+        if (parent is FrameworkElement element && element.GetType().Name == "SuppressionExecutingJobItem") return element;
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        { var found = FindExecuting(VisualTreeHelper.GetChild(parent, i)); if (found != null) return found; }
+        return null;
+    }
+    private static void CheckLogWindow(FrameworkElement page)
+    {
+        var executing = FindExecuting(page) ?? throw new Exception("Missing executing panel");
+        Exception? failure = null;
+        Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+        {
+            var log = Application.Current.Windows.Cast<Window>().Single(window => window.Title == "压制执行日志");
+            try
+            {
+                if (log.Content is not TextBox text || !text.IsReadOnly || string.IsNullOrWhiteSpace(text.Text)) throw new Exception("Log window binding failed");
+            }
+            catch (Exception ex) { failure = ex; }
+            finally { log.Close(); }
+        });
+        executing.GetType().GetMethod("ShowLog_OnClick", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(executing, [executing, new RoutedEventArgs()]);
+        if (failure != null) throw failure;
+        Console.WriteLine("Log window opened, read-only log binding verified, closed.");
+    }
     [STAThread]
     private static void Main(string[] args)
     {
@@ -101,6 +126,7 @@ internal static class Program
                     var image = new RenderTargetBitmap((int)content.ActualWidth, (int)content.ActualHeight, 96, 96, PixelFormats.Pbgra32); image.Render(background);
                     var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
                     using (var stream = File.Create(Path.Combine(args[1], $"{theme}-{name}-{size.Width}.png"))) encoder.Save(stream);
+                    if (name == "SuppressPage") CheckLogWindow(view);
                     host.Close();
                 }
         }
