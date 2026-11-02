@@ -1,4 +1,7 @@
 using System.IO;
+using System.Net;
+using System.Net.Http;
+using Wpf.Ui.Controls;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 using System.Windows;
@@ -142,6 +145,12 @@ public partial class TranslatePage
                     line.SequenceNumber, line.VoiceScenarioId, line.OriginalVoice?.VoiceId);
             StopVoiceWithReason("加载失败");
             line.VoiceState = "语音加载失败，点击重试：" + ex.Message;
+            if (ex is HttpRequestException { StatusCode: HttpStatusCode.NotFound })
+            {
+                line.VoiceState = "语音文件不存在（404），可点击重试";
+                SnackbarService.Show("语音播放失败", $"第 {line.SequenceNumber} 条的语音文件不存在（404）：{line.OriginalVoice?.VoiceId}。",
+                    ControlAppearance.Danger, new SymbolIcon(SymbolRegular.CloudDismiss24), TimeSpan.FromSeconds(6));
+            }
         }
     }
 }
