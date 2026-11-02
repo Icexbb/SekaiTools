@@ -173,6 +173,28 @@ internal static class Program
         var undo = Nodes(page).OfType<Wpf.Ui.Controls.Button>().Single(button => Equals(button.ToolTip, "撤销 (Ctrl+Z)"));
         var redo = Nodes(page).OfType<Wpf.Ui.Controls.Button>().Single(button => Equals(button.ToolTip, "重做 (Ctrl+Y / Ctrl+Shift+Z)"));
         Check(!undo.IsEnabled && !redo.IsEnabled, "history buttons initially disabled");
+        var playbackGate = typeof(TranslatePage).GetMethod("SetVoicePlaybackActive", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        playbackGate.Invoke(page, [true]);
+        Pump();
+        Check(page.ViewModel.Events.All(row => !row.VoicePlaybackAvailable) &&
+            Nodes(page).OfType<Wpf.Ui.Controls.Button>().Where(button =>
+                System.Windows.Automation.AutomationProperties.GetName(button) == "原始角色语音预览").All(button => !button.IsEnabled),
+            "playback disables every row voice button");
+        typeof(TranslatePage).GetMethod("StopVoice", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(page, null);
+        Pump();
+        Check(page.ViewModel.Events.All(row => row.VoicePlaybackAvailable), "stopping playback restores every row voice button");
+        voiceB.VoiceProgress = 0.5;
+        Pump();
+        var progressBorder = Nodes(actions).OfType<SekaiToolsGUI.View.Translate.Components.VoiceProgressBorder>().Single();
+        Check(progressBorder.Progress == 0.5 && !progressBorder.IsHitTestVisible, "button perimeter binds playback progress without intercepting clicks");
+        var border = new SekaiToolsGUI.View.Translate.Components.VoiceProgressBorder { Width = 34, Height = 34, Progress = 0.5 };
+        border.Measure(new Size(34, 34));
+        border.Arrange(new Rect(0, 0, 34, 34));
+        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(34, 34, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(border);
+        var pixels = new byte[34 * 34 * 4];
+        bitmap.CopyPixels(pixels, 34 * 4, 0);
+        Check(pixels.Any(value => value != 0), "playback perimeter renders visible progress");
         var line = page.ViewModel.Events.OfType<LineDialogModel>().First();
         var initial = line.Content.Translated;
         line.Content.Translated = "界面编辑";

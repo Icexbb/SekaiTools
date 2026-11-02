@@ -2,13 +2,16 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
+             xmlns:components="clr-namespace:SekaiToolsGUI.View.Translate.Components"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              Foreground="{DynamicResource TextFillColorPrimaryBrush}">
     <ui:Card VerticalAlignment="Stretch" Padding="3,5" >
         <StackPanel Margin="2" Width="76" VerticalAlignment="Center"  HorizontalAlignment="Center">
             <TextBlock Text="{Binding SequenceNumber, StringFormat='#{0}'}" FontSize="24"
                        HorizontalAlignment="Center" ToolTip="{Binding Label}" />
-            <ui:Button Padding="5" Margin="0,3,0,0" HorizontalAlignment="Center"
+            <Grid Margin="0,3,0,0" HorizontalAlignment="Center"
+                  Visibility="{c:Binding HasVoice,FalseToVisibility=Collapsed}">
+            <ui:Button Padding="5" Width="34" Height="34" IsEnabled="{Binding VoicePlaybackAvailable}"
                        Click="PlayVoice" Visibility="{c:Binding HasVoice,FalseToVisibility=Collapsed}" ToolTip="{Binding VoiceState}"
                        ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="原始角色语音预览">
                 <ui:SymbolIcon>
@@ -23,6 +26,9 @@
                     </ui:SymbolIcon.Style>
                 </ui:SymbolIcon>
             </ui:Button>
+            <components:VoiceProgressBorder Progress="{Binding VoiceProgress}" IsHitTestVisible="False"
+                                            Stroke="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+            </Grid>
             <TextBlock Text="加载中…" FontSize="10" HorizontalAlignment="Center"
                        Visibility="{c:Binding VoiceLoading,FalseToVisibility=Collapsed}" />
             <ui:Button Content="条目操作" Padding="4,2" FontSize="12" HorizontalAlignment="Center" Click="OpenActions"

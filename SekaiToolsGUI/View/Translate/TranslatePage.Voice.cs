@@ -10,6 +10,23 @@ namespace SekaiToolsGUI.View.Translate;
 
 public partial class TranslatePage
 {
+    private readonly System.Windows.Threading.DispatcherTimer _voiceProgressTimer = new()
+    { Interval = TimeSpan.FromMilliseconds(50) };
+    private bool _voicePlaybackActive;
+
+    private void SetVoicePlaybackActive(bool active)
+    {
+        _voicePlaybackActive = active;
+        foreach (var row in ViewModel.Events) row.VoicePlaybackAvailable = !active;
+    }
+
+    private void UpdateVoiceProgress(object? sender, EventArgs e)
+    {
+        if (_voicePlayer == null || _voiceLine == null || !_voicePlayer.NaturalDuration.HasTimeSpan) return;
+        var duration = _voicePlayer.NaturalDuration.TimeSpan.TotalSeconds;
+        _voiceLine.VoiceProgress = duration > 0 ? Math.Clamp(_voicePlayer.Position.TotalSeconds / duration, 0, 1) : 0;
+    }
+
     private MediaPlayer? _voicePlayer;
     private LineDialogModel? _voiceLine;
     private CancellationTokenSource? _voiceRequest;
@@ -17,6 +34,9 @@ public partial class TranslatePage
 
     private void StopVoice()
     {
+        _voiceProgressTimer.Stop();
+        _voiceProgressTimer.Tick -= UpdateVoiceProgress;
+        SetVoicePlaybackActive(false);
         _voiceRequest?.Cancel();
         _voiceRequest?.Dispose();
         _voiceRequest = null;
@@ -25,6 +45,7 @@ public partial class TranslatePage
         _voicePath = null;
         if (_voiceLine != null)
         {
+            _voiceLine.VoiceProgress = 0;
             _voiceLine.VoiceLoading = _voiceLine.VoicePlaying = false;
             _voiceLine.VoiceState = "播放原始语音";
         }
@@ -35,14 +56,7 @@ public partial class TranslatePage
     {
         if (e.OriginalSource is not LineDialogModel { HasVoice: true } line) return;
         e.Handled = true;
-        if (ReferenceEquals(line, _voiceLine) && _voicePlayer != null && !line.VoiceLoading)
-        {
-            if (line.VoicePlaying) _voicePlayer.Pause();
-            else _voicePlayer.Play();
-            line.VoicePlaying = !line.VoicePlaying;
-            line.VoiceState = line.VoicePlaying ? "暂停原始语音" : "继续播放原始语音";
-            return;
-        }
+        if (_voicePlaybackActive) return;
         if (ReferenceEquals(line, _voiceLine) && line.VoiceLoading) { StopVoice(); return; }
         StopVoice();
         _voiceLine = line;
@@ -67,7 +81,10 @@ public partial class TranslatePage
                 if (!ReferenceEquals(player, _voicePlayer)) return;
                 line.VoiceLoading = false;
                 line.VoicePlaying = true;
-                line.VoiceState = "暂停原始语音";
+                line.VoiceState = "正在播放原始语音";
+                SetVoicePlaybackActive(true);
+                _voiceProgressTimer.Tick += UpdateVoiceProgress;
+                _voiceProgressTimer.Start();
                 player.Play();
             };
             player.MediaEnded += (_, _) => { if (ReferenceEquals(player, _voicePlayer)) StopVoice(); };

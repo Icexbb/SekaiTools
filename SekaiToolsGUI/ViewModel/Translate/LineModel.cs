@@ -11,6 +11,8 @@ public abstract class LineModel : ViewModelBase
     public virtual bool HasVoice => false;
     public string VoiceState { get => GetProperty("此条目无原始语音"); set => SetProperty(value); }
     public bool VoiceLoading { get => GetProperty(false); set => SetProperty(value); }
+    public bool VoicePlaybackAvailable { get => GetProperty(true); set => SetProperty(value); }
+    public double VoiceProgress { get => GetProperty(0d); set => SetProperty(value); }
     public bool VoicePlaying { get => GetProperty(false); set => SetProperty(value); }
     public int SequenceNumber { get; set; }
     public string Label => $"第 {SequenceNumber} 条 · {(this is LineDialogModel ? "对话" : "场景文字")}";
