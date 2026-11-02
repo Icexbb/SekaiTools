@@ -62,6 +62,12 @@ public partial class TranslatePage : UserControl
             if (e.PropertyName == nameof(TranslatePageModel.ScriptPath))
                 UpdateFlashbackOrigins();
         };
+        AddHandler(Components.TranslateLineActions.VoiceRequestedEvent, new RoutedEventHandler(OnVoiceRequested));
+        Unloaded += (_, _) => StopVoice();
+        ViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(TranslatePageModel.Story) or nameof(TranslatePageModel.Events)) StopVoice();
+        };
         UpdateLoadButtons();
         _draftTimer.Tick += (_, _) => FlushDraft();
         ViewModel.ContentChanged += (_, _) =>

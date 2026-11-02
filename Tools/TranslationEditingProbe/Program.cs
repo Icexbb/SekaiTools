@@ -121,6 +121,36 @@ internal static class Program
         var app = new Application();
         app.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary());
         app.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
+        var voiceA = new LineDialogModel(SekaiToolsBase.Story.StoryEvent.DialogStoryEvent.FromData(script.TalkData[0]))
+        {
+            VoiceScenarioId = "probe",
+            OriginalVoice = new Voice(1, "voice_a"),
+            VoicePlaying = true
+        };
+        var voiceB = new LineDialogModel(SekaiToolsBase.Story.StoryEvent.DialogStoryEvent.FromData(script.TalkData[1]))
+        {
+            VoiceScenarioId = "probe",
+            OriginalVoice = new Voice(1, "voice_b")
+        };
+        var actions = new SekaiToolsGUI.View.Translate.Components.TranslateLineActions { DataContext = voiceA };
+        actions.Measure(new Size(100, 150));
+        actions.Arrange(new Rect(0, 0, 100, 150));
+        Pump();
+        var voiceButton = Nodes(actions).OfType<Wpf.Ui.Controls.Button>().Single(button =>
+            System.Windows.Automation.AutomationProperties.GetName(button) == "原始角色语音预览");
+        Check(voiceButton.IsEnabled && ((Wpf.Ui.Controls.SymbolIcon)voiceButton.Content).Symbol == Wpf.Ui.Controls.SymbolRegular.Pause24,
+            "voice button reflects playing model");
+        LineDialogModel? requested = null;
+        actions.AddHandler(SekaiToolsGUI.View.Translate.Components.TranslateLineActions.VoiceRequestedEvent,
+            new RoutedEventHandler((_, e) => requested = e.OriginalSource as LineDialogModel));
+        actions.DataContext = voiceB;
+        Pump();
+        voiceButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+        Check(ReferenceEquals(requested, voiceB) && ((Wpf.Ui.Controls.SymbolIcon)voiceButton.Content).Symbol == Wpf.Ui.Controls.SymbolRegular.Play24,
+            "recycled voice control targets current row and resets icon");
+        actions.DataContext = new LineDialogModel(SekaiToolsBase.Story.StoryEvent.DialogStoryEvent.FromData(script.TalkData[0]));
+        Pump();
+        Check(!voiceButton.IsEnabled, "voice button disables after recycling to row without voice");
         var constructor = typeof(TranslatePage).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic,
             null, [typeof(EditorSessionStore)], null)!;
         var page = (TranslatePage)constructor.Invoke([store]);

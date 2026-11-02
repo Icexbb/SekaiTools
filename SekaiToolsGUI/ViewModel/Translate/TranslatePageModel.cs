@@ -140,6 +140,10 @@ public partial class TranslatePageModel : ViewModelBase
                     case DialogStoryEvent dialogStoryEvent:
                         var lineDialogModel = new LineDialogModel(dialogStoryEvent,
                             (uint)dialogStoryEvent.Index < (uint)flashbacks.Length ? flashbacks[dialogStoryEvent.Index] : null, AutoFormat);
+                        lineDialogModel.VoiceScenarioId = _loadedScript?.ScenarioId ?? "";
+                        if (_loadedScript != null && (uint)dialogStoryEvent.Index < (uint)_loadedScript.TalkData.Length)
+                            lineDialogModel.OriginalVoice = (_loadedScript.TalkData[dialogStoryEvent.Index].Voices ?? []).Cast<Voice?>().FirstOrDefault();
+                        if (lineDialogModel.HasVoice) lineDialogModel.VoiceState = "播放原始语音";
                         lineDialogModel.ApplyFlashbackOrigins(_flashbackOrigins);
                         lineDialogModel.CharacterTranslateChanged += OnLineDialogModelOnCharacterTranslateChanged;
                         lineDialogModel.ContentTranslateChanged += OnDialogContentChanged;

@@ -8,6 +8,15 @@ public partial class TranslateLineActions : UserControl
 {
     public TranslateLineActions() => InitializeComponent();
 
+    public static readonly RoutedEvent VoiceRequestedEvent = EventManager.RegisterRoutedEvent(
+        "VoiceRequested", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(TranslateLineActions));
+
+    private void PlayVoice(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is LineDialogModel { HasVoice: true } line)
+            RaiseEvent(new RoutedEventArgs(VoiceRequestedEvent, line));
+    }
+
     private void OpenActions(object sender, RoutedEventArgs e)
     {
         if (sender is Button { ContextMenu: { } menu } button)

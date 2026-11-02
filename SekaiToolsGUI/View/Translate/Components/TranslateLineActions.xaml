@@ -8,6 +8,23 @@
         <StackPanel Margin="2" Width="76" VerticalAlignment="Center"  HorizontalAlignment="Center">
             <TextBlock Text="{Binding SequenceNumber, StringFormat='#{0}'}" FontSize="24"
                        HorizontalAlignment="Center" ToolTip="{Binding Label}" />
+            <ui:Button Padding="5" Margin="0,3,0,0" HorizontalAlignment="Center"
+                       Click="PlayVoice" IsEnabled="{Binding HasVoice}" ToolTip="{Binding VoiceState}"
+                       ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="原始角色语音预览">
+                <ui:SymbolIcon>
+                    <ui:SymbolIcon.Style>
+                        <Style TargetType="ui:SymbolIcon">
+                            <Setter Property="Symbol" Value="Play24" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding VoicePlaying}" Value="True"><Setter Property="Symbol" Value="Pause24" /></DataTrigger>
+                                <DataTrigger Binding="{Binding VoiceLoading}" Value="True"><Setter Property="Symbol" Value="ArrowClockwise24" /></DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:SymbolIcon.Style>
+                </ui:SymbolIcon>
+            </ui:Button>
+            <TextBlock Text="加载中…" FontSize="10" HorizontalAlignment="Center"
+                       Visibility="{c:Binding VoiceLoading,FalseToVisibility=Collapsed}" />
             <ui:Button Content="条目操作" Padding="4,2" FontSize="12" HorizontalAlignment="Center" Click="OpenActions"
                        AutomationProperties.Name="{Binding Label}">
                 <ui:Button.ContextMenu>

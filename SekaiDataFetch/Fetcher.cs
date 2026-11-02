@@ -112,6 +112,18 @@ public class Fetcher : IDisposable
         public bool Retired { get; set; }
     }
 
+    public async Task<byte[]> FetchBytesAsync(string url, CancellationToken cancellationToken = default)
+    {
+        var entry = AcquireClient();
+        try
+        {
+            using var response = await entry.Client.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally { Release(entry); }
+    }
+
     public async Task<string> FetchOnceAsync(string url, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

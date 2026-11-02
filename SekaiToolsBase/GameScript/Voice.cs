@@ -10,6 +10,7 @@ public struct Voice()
 
     public int Character2DId { get; set; } = 0;
     public string VoiceId { get; set; } = "";
+    public double Volume { get; set; } = 1;
 
     public int GetCharacterId()
     {

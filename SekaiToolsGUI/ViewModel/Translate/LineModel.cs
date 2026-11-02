@@ -8,6 +8,10 @@ public abstract class LineModel : ViewModelBase
         LineEffectModel effect => effect.Content,
         _ => throw new InvalidOperationException("未知翻译条目")
     };
+    public virtual bool HasVoice => false;
+    public string VoiceState { get => GetProperty("此条目无原始语音"); set => SetProperty(value); }
+    public bool VoiceLoading { get => GetProperty(false); set => SetProperty(value); }
+    public bool VoicePlaying { get => GetProperty(false); set => SetProperty(value); }
     public int SequenceNumber { get; set; }
     public string Label => $"第 {SequenceNumber} 条 · {(this is LineDialogModel ? "对话" : "场景文字")}";
     public int MatchingCount { get; set; } = 1;
