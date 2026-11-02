@@ -60,8 +60,8 @@ public partial class LineDialogModel : LineModel
 
     public string VoiceScenarioId { get; set; } = "";
     public SekaiToolsBase.GameScript.Voice? OriginalVoice { get; set; }
-    public override bool HasVoice => !string.IsNullOrWhiteSpace(VoiceScenarioId) &&
-        !string.IsNullOrWhiteSpace(OriginalVoice?.VoiceId);
+    public override bool HasVoice => !string.IsNullOrWhiteSpace(OriginalVoice?.VoiceId) &&
+        (!string.IsNullOrWhiteSpace(VoiceScenarioId) || OriginalVoice.Value.VoiceId.StartsWith("partvoice_", StringComparison.Ordinal));
     public bool Shake { get; }
     public SekaiToolsBase.Story.FlashbackInfo? Flashback { get; }
     public bool IsFlashback => Flashback?.IsFlashback == true;

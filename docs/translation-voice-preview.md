@@ -7,3 +7,5 @@
 缓存位于本机 LocalAppData/SekaiTools/VoiceCache，按完整资源 URL 的 SHA-256 隔离数据源和剧本，下载完整后原子替换。媒体解码失败后移除缓存以允许重新下载。播放状态属于行模型；页面维护单一播放器，取消请求并检查请求身份及播放器身份，过期回调不触发播放。
 
 验证：530 项单元测试通过，包括资源路径、二进制缓存、剧本缓存隔离及取消清理；TranslationEditingProbe 验证播放图标、控件复用后点击当前行、无语音隐藏及复用后恢复显示，播放期间全部按钮禁用和停止后恢复、边框进度绑定与绘制，以及既有翻译编辑回归。GUI 构建通过，保留已有 NU1701 警告。真实远程语音和设备输出尚未人工试听。
+
+`partvoice_` 短语音使用 `sound/scenario/part_voice/{角色文件夹}/{VoiceId}.mp3`，不依赖剧本目录。角色 021–026 对应 miku、rin、len、luka、meiko、kaito，默认使用 piapro。MIKU 的 band、idol、street、wonder、night 后缀分别定位 light_sound、idol、street、theme_park、school_refusal 文件夹；文件名保持原样。未知角色或分组报告错误。
