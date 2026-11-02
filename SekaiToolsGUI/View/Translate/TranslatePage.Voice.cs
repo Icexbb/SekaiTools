@@ -83,6 +83,8 @@ public partial class TranslatePage
             Fetcher.Instance.SetProxy(SettingPageModel.Instance.GetProxy());
             var uri = ScenarioVoice.Locate(DownloadPageModel.Instance.CurrentSource.StorageBaseUrl,
                 line.VoiceScenarioId, line.OriginalVoice!.Value.VoiceId);
+            VoiceLogger.LogInformation("语音资源地址：第 {Sequence} 条，剧本 {ScenarioId}，语音 {VoiceId}，URL {AudioUrl}",
+                line.SequenceNumber, line.VoiceScenarioId, line.OriginalVoice.Value.VoiceId, uri.AbsoluteUri);
             var path = await ScenarioVoice.LoadAsync(Fetcher.Instance, uri,
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SekaiTools", "VoiceCache"), request.Token);
             if (request.IsCancellationRequested || !ReferenceEquals(_voiceRequest, request)) return;
