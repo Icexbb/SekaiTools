@@ -7,11 +7,18 @@ namespace SekaiTools.Tests;
 public class ScenarioVoiceTests
 {
     [Theory]
-    [InlineData("https://storage.sekai.best/sekai-jp-assets/", "story_rip")]
+    [InlineData("https://storage.sekai.best/sekai-jp-assets/", "story")]
     [InlineData("https://assets.example/jp-assets/", "story")]
-    public void UsesSourceSpecificScenarioFolder(string root, string folder)
+    public void UsesScenarioFolderWithoutRipSuffix(string root, string folder)
     {
         Assert.EndsWith("sound/scenario/voice/" + folder + "/voice_01.mp3", ScenarioVoice.Locate(root, "story", "voice_01").AbsoluteUri);
+    }
+
+    [Fact]
+    public void PreservesOriginalVoiceIdInReportedScenario()
+    {
+        var uri = ScenarioVoice.Locate("https://storage.sekai.best/sekai-jp-assets/", "event_199_05", "voice_ev_night_25_05_06_140");
+        Assert.Equal("/sekai-jp-assets/sound/scenario/voice/event_199_05/voice_ev_night_25_05_06_140.mp3", uri.AbsolutePath);
     }
 
     [Fact]

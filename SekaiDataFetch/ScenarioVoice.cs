@@ -10,8 +10,7 @@ public static class ScenarioVoice
         if (string.IsNullOrWhiteSpace(scenarioId) || string.IsNullOrWhiteSpace(voiceId))
             throw new ArgumentException("剧本或语音标识为空");
         var root = new Uri(storageBaseUrl.TrimEnd('/') + "/");
-        var folder = scenarioId + (root.Host.Equals("storage.sekai.best", StringComparison.OrdinalIgnoreCase) ? "_rip" : "");
-        return new Uri(root, "sound/scenario/voice/" + Uri.EscapeDataString(folder) + "/" + Uri.EscapeDataString(voiceId) + ".mp3");
+        return new Uri(root, "sound/scenario/voice/" + Uri.EscapeDataString(scenarioId) + "/" + Uri.EscapeDataString(voiceId) + ".mp3");
     }
 
     public static async Task<string> LoadAsync(Fetcher fetcher, Uri uri, string cacheDirectory, CancellationToken token)
