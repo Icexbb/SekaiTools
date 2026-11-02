@@ -28,6 +28,7 @@ internal static class Program
         var wpf = Assembly.LoadFrom(Path.Combine(folder, "Wpf.Ui.dll"));
         var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+        if (args.Length > 2 && args[2] == "p1") { P1Checks.Run(gui, args[1]); app.Shutdown(); return; }
         foreach (var theme in new[] { "Light", "Dark" })
         {
             app.Resources.MergedDictionaries.Clear();

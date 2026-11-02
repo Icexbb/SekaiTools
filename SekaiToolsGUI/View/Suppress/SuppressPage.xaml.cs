@@ -132,6 +132,7 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     private async Task ShowTaskDialogAsync(SuppressionJobModel? original = null)
     {
         if (!ViewModel.ResourcesReady) return;
+        if (original != null && !ViewModel.BeginEdit(original)) return;
 
         try
         {
@@ -155,16 +156,16 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
                 string.Equals(System.IO.Path.GetFullPath(x.OutputPath), System.IO.Path.GetFullPath(dialog.ViewModel.OutputPath), StringComparison.OrdinalIgnoreCase)) ||
                 (ViewModel.RunningJob != null && string.Equals(System.IO.Path.GetFullPath(ViewModel.RunningJob.OutputPath), System.IO.Path.GetFullPath(dialog.ViewModel.OutputPath), StringComparison.OrdinalIgnoreCase))
                 ? "队列中已有任务使用此输出路径，请修改输出路径。" : "";
-            ContentDialogResult result;
-            try { result = await dialogService.ShowAsync(dialog, CancellationToken.None); }
+            dialog.CommitSubmission = () =>
+            {
+                var submission = dialog.ViewModel.ToOptions(dialog.OverwriteAuthorized);
+                EnqueueSuppression(submission, dialog.AutoStart, original);
+                SekaiToolsGUI.Service.SuppressionPreferences.Save(submission.EncodingSettings);
+                return "";
+            };
+            try { await dialogService.ShowAsync(dialog, CancellationToken.None); }
             finally { dialog.ViewModel.StopAnalysis(); }
-            if (result != ContentDialogResult.Primary) return;
 
-            var overwriteExisting = dialog.ViewModel.OutputExists;
-            if (original != null) ViewModel.PendingJobs.Remove(original);
-            var submission = dialog.ViewModel.ToOptions(overwriteExisting);
-            EnqueueSuppression(submission, dialog.AutoStart);
-            SekaiToolsGUI.Service.SuppressionPreferences.Save(submission.EncodingSettings);
         }
         catch (Exception exc)
         {
@@ -172,6 +173,11 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
             SnackService.Show("创建任务失败", exc.Message, ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.VideoClipOff24), TimeSpan.FromSeconds(6));
             if (Debugger.IsAttached) throw;
+        }
+        finally
+        {
+            if (original != null) ViewModel.EndEdit(original);
+            StartNextQueuedJob();
         }
     }
 

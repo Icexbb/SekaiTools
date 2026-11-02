@@ -11,6 +11,12 @@ public sealed class SuppressionJobModel(VideoSuppressionJob job) : ViewModelBase
     public string EncodingDescription => $"{(string.IsNullOrWhiteSpace(Job.Options.SourceSubtitle) ? "仅转码" : "烧录字幕（不可关闭）")} · CRF {Job.Options.EncodingSettings.Crf} · {Job.Options.EncodingSettings.FfmpegPreset}";
     public bool IsFinished => Progress.State is VideoSuppressionState.Completed or VideoSuppressionState.Cancelled or VideoSuppressionState.Failed;
     public bool IsPreparing => Progress.State == VideoSuppressionState.Preparing;
+    public bool IsEditing
+    {
+        get => GetProperty(false);
+        internal set { SetProperty(value); OnPropertyChanged(nameof(WaitingStatus)); }
+    }
+    public string WaitingStatus => IsEditing ? "正在编辑" : "等待中";
     public bool CanStart
     {
         get => GetProperty(false);

@@ -16,16 +16,8 @@ public partial class SuppressPage
         await suppressor.SuppressAsync(options, token);
     });
 
-    private void EnqueueSuppression(VideoSuppressionOptions options, bool autoStart)
+    private void EnqueueSuppression(VideoSuppressionOptions options, bool autoStart, SuppressionJobModel? original = null)
     {
-        options.Validate();
-        var output = System.IO.Path.GetFullPath(options.OutputPath);
-        if (ViewModel.PendingJobs.Any(x =>
-                string.Equals(System.IO.Path.GetFullPath(x.OutputPath), output, StringComparison.OrdinalIgnoreCase)) ||
-            (ViewModel.RunningJob != null &&
-             string.Equals(System.IO.Path.GetFullPath(ViewModel.RunningJob.OutputPath), output, StringComparison.OrdinalIgnoreCase)))
-            throw new InvalidOperationException("队列中已有任务使用此输出路径，请选择其他路径。");
-
         var job = new VideoSuppressionJob(options);
         var model = new SuppressionJobModel(job);
         job.ProgressChanged += progress =>
@@ -40,7 +32,7 @@ public partial class SuppressPage
                 if (wasRunning && model.IsFinished) StartNextQueuedJob();
             });
         };
-        ViewModel.AddPending(model);
+        ViewModel.CommitPending(model, original);
         if (autoStart) StartJob(model);
         else StartNextQueuedJob();
     }
@@ -67,7 +59,7 @@ public partial class SuppressPage
     {
         if (!ViewModel.AutoRunQueue || ViewModel.HasRunningJob) return;
         var next = ViewModel.PendingJobs.FirstOrDefault();
-        if (next != null) StartJob(next);
+        if (next != null && !next.IsEditing) StartJob(next);
     }
 
     private static void ApplyTaskbarProgress(VideoSuppressionProgress progress)

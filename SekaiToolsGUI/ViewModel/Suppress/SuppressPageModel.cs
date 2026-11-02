@@ -39,7 +39,7 @@ public class SuppressPageModel : ViewModelBase
     private void RefreshStartStates()
     {
         foreach (var job in PendingJobs)
-            job.CanStart = !HasRunningJob && job.Progress.State == SekaiToolsMedia.VideoSuppressionState.Idle;
+            job.CanStart = !job.IsEditing && !HasRunningJob && job.Progress.State == SekaiToolsMedia.VideoSuppressionState.Idle;
     }
 
     public System.Windows.Data.ListCollectionView FilteredCompletedJobs { get; }
@@ -79,11 +79,47 @@ public class SuppressPageModel : ViewModelBase
         set => SetProperty(value);
     }
 
+    public bool BeginEdit(SuppressionJobModel job)
+    {
+        if (job.IsEditing || ReferenceEquals(RunningJob, job)) return false;
+        if (!PendingJobs.Contains(job) && !CompletedJobs.Contains(job)) return false;
+        job.IsEditing = true;
+        RefreshStartStates();
+        return true;
+    }
+
+    public void EndEdit(SuppressionJobModel job)
+    {
+        job.IsEditing = false;
+        RefreshStartStates();
+    }
+
+    public void CommitPending(SuppressionJobModel replacement, SuppressionJobModel? original = null)
+    {
+        replacement.Job.Options.Validate();
+        var output = System.IO.Path.GetFullPath(replacement.OutputPath);
+        if (PendingJobs.Any(x => !ReferenceEquals(x, original) && string.Equals(System.IO.Path.GetFullPath(x.OutputPath), output, StringComparison.OrdinalIgnoreCase)) ||
+            (RunningJob != null && string.Equals(System.IO.Path.GetFullPath(RunningJob.OutputPath), output, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("队列中已有任务使用此输出路径，请选择其他路径。");
+        if (original != null)
+        {
+            if (!original.IsEditing || ReferenceEquals(RunningJob, original)) throw new InvalidOperationException("任务状态已改变，请重新打开编辑窗口。");
+            var index = PendingJobs.IndexOf(original);
+            if (index >= 0)
+            {
+                PendingJobs[index] = replacement;
+                return;
+            }
+            if (!CompletedJobs.Contains(original)) throw new InvalidOperationException("原任务已移除，请重新创建任务。");
+        }
+        PendingJobs.Add(replacement);
+    }
+
     public void AddPending(SuppressionJobModel job) => PendingJobs.Add(job);
 
     public bool TryStart(SuppressionJobModel job)
     {
-        if (HasRunningJob || job.Progress.State != SekaiToolsMedia.VideoSuppressionState.Idle || !PendingJobs.Remove(job))
+        if (job.IsEditing || HasRunningJob || job.Progress.State != SekaiToolsMedia.VideoSuppressionState.Idle || !PendingJobs.Remove(job))
             return false;
 
         RunningJob = job;

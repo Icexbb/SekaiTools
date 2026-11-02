@@ -18,6 +18,8 @@ public partial class SuppressionTaskDialog : ContentDialog
 
     public SuppressTaskSettingsModel ViewModel { get; }
     public Func<string>? ValidateSubmission { get; set; }
+    public bool OverwriteAuthorized => CheckBoxOverwrite.IsChecked == true;
+    public Func<string>? CommitSubmission { get; set; }
     public bool AutoStart => CheckBoxAutoStart.IsChecked == true;
 
     protected override void OnButtonClick(ContentDialogButton button)
@@ -27,11 +29,14 @@ public partial class SuppressionTaskDialog : ContentDialog
         {
             ViewModel.SubmissionError = ValidateSubmission?.Invoke() ?? "";
             if (ViewModel.SubmissionError.Length > 0) return;
-            if (ViewModel.OutputExists && CheckBoxOverwrite.IsChecked != true)
+            if (ViewModel.OutputExists && !OverwriteAuthorized)
             {
                 ViewModel.SubmissionError = "输出文件已存在，请修改路径或允许覆盖。";
                 return;
             }
+            try { ViewModel.SubmissionError = CommitSubmission?.Invoke() ?? ""; }
+            catch (Exception ex) { ViewModel.SubmissionError = ex.Message; }
+            if (ViewModel.SubmissionError.Length > 0) return;
         }
         base.OnButtonClick(button);
     }
