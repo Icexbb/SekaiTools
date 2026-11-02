@@ -150,7 +150,10 @@ internal static class Program
             "recycled voice control targets current row and resets icon");
         actions.DataContext = new LineDialogModel(SekaiToolsBase.Story.StoryEvent.DialogStoryEvent.FromData(script.TalkData[0]));
         Pump();
-        Check(!voiceButton.IsEnabled, "voice button disables after recycling to row without voice");
+        Check(voiceButton.Visibility == Visibility.Collapsed, "voice button hides after recycling to row without voice");
+        actions.DataContext = voiceB;
+        Pump();
+        Check(voiceButton.Visibility == Visibility.Visible, "voice button returns after recycling to row with voice");
         var constructor = typeof(TranslatePage).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic,
             null, [typeof(EditorSessionStore)], null)!;
         var page = (TranslatePage)constructor.Invoke([store]);

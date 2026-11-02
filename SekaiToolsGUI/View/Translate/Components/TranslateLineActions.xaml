@@ -9,7 +9,7 @@
             <TextBlock Text="{Binding SequenceNumber, StringFormat='#{0}'}" FontSize="24"
                        HorizontalAlignment="Center" ToolTip="{Binding Label}" />
             <ui:Button Padding="5" Margin="0,3,0,0" HorizontalAlignment="Center"
-                       Click="PlayVoice" IsEnabled="{Binding HasVoice}" ToolTip="{Binding VoiceState}"
+                       Click="PlayVoice" Visibility="{c:Binding HasVoice,FalseToVisibility=Collapsed}" ToolTip="{Binding VoiceState}"
                        ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="原始角色语音预览">
                 <ui:SymbolIcon>
                     <ui:SymbolIcon.Style>
