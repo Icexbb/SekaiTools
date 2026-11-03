@@ -338,6 +338,10 @@ internal static class Program
             Pump();
             Check(model.ListTextScale == 1.1 && Math.Abs(RoleWidth() - roleWidth * 1.1) < 1,
                 "zoom button changes script font and role column width");
+            var indicator = (Border)page.FindName("ZoomIndicator");
+            var indicatorText = (TextBlock)page.FindName("ZoomIndicatorText");
+            Check(indicator.Visibility == Visibility.Visible && !indicator.IsHitTestVisible &&
+                indicatorText.Text == $"{1.1:P0}", "zoom percentage appears without intercepting input");
             model.ListTextScale = 2;
             Pump();
             Check(!increase.IsEnabled && Math.Abs(RoleWidth() - roleWidth * 2) < 1,
@@ -359,13 +363,24 @@ internal static class Program
                 "reference-diff", $"zoom-{theme}.png"))) encoder.Save(stream);
             model.ListTextScale = -10;
             Pump();
-            Check(model.ListTextScale == 0.75 && !decrease.IsEnabled, "minimum zoom is bounded and disables decrease");
+            Check(model.ListTextScale == 1 && !decrease.IsEnabled, "minimum zoom is bounded and disables decrease");
             model.ListTextScale = 1;
         }
         Pump();
         Check(model.IsDirty == dirty && model.CanUndo == undo &&
             lines.SequenceEqual(model.Events.Select(line => line.Body.Translated)),
             "zoom preserves document and undo state");
+        typeof(TranslatePage).GetMethod("ChangeListZoom", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(page, [-1]);
+        Check(model.ListTextScale == 1 && ((TextBlock)page.FindName("ZoomIndicatorText")).Text == $"{1.0:P0}",
+            "lower-bound wheel feedback shows 100 percent");
+        var frame = new DispatcherFrame();
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1400) };
+        timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; };
+        timer.Start();
+        Dispatcher.PushFrame(frame);
+        Check(((Border)page.FindName("ZoomIndicator")).Visibility == Visibility.Collapsed,
+            "zoom indicator dismisses automatically after inactivity");
         var wheel = new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, 120)
         { RoutedEvent = Mouse.PreviewMouseWheelEvent };
         list.RaiseEvent(wheel);

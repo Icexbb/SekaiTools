@@ -23,7 +23,7 @@ public partial class TranslatePageModel : ViewModelBase
         get => GetProperty(1.0);
         set
         {
-            SetProperty(double.IsFinite(value) ? Math.Clamp(Math.Round(value, 2), 0.75, 2.0) : 1.0);
+            SetProperty(double.IsFinite(value) ? Math.Clamp(Math.Round(value, 2), 1.0, 2.0) : 1.0);
             OnPropertyChanged(nameof(ListTextFontSize));
             OnPropertyChanged(nameof(ListRoleWidth));
         }

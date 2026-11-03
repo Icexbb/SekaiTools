@@ -58,7 +58,7 @@
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0">
                                 <ui:Button x:Name="DecreaseTextSizeButton" Icon="{ui:SymbolIcon Subtract24}"
                                            Margin="0,0,8,8" Click="DecreaseTextSize_OnClick"
-                                           IsEnabled="{c:Binding 'ListTextScale>0.75'}"
+                                           IsEnabled="{c:Binding 'ListTextScale>1'}"
                                            ToolTip="缩小列表文本 (Ctrl+滚轮)" AutomationProperties.Name="缩小列表文本" />
                                 <ui:Button x:Name="IncreaseTextSizeButton" Icon="{ui:SymbolIcon Add24}"
                                            Margin="0,0,8,8" Click="IncreaseTextSize_OnClick"
@@ -344,5 +344,14 @@
                 </StackPanel>
             </Border>
         </Grid>
+        <Border x:Name="ZoomIndicator" Visibility="Collapsed" IsHitTestVisible="False"
+                HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,24"
+                Padding="18,10" CornerRadius="8" BorderThickness="1"
+                Background="{DynamicResource ApplicationBackgroundBrush}"
+                BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
+            <TextBlock x:Name="ZoomIndicatorText" FontSize="16" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                       AutomationProperties.Name="当前列表缩放比例" />
+        </Border>
     </Grid>
 </UserControl>

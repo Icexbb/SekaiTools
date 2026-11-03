@@ -36,6 +36,7 @@ namespace SekaiToolsGUI.View.Translate;
 
 public partial class TranslatePage : UserControl
 {
+    private readonly DispatcherTimer _zoomIndicatorTimer = new() { Interval = TimeSpan.FromMilliseconds(1200) };
     private readonly DispatcherTimer _draftTimer = new() { Interval = TimeSpan.FromMilliseconds(600) };
     private readonly FlashbackEventService _flashbackEvents = new();
     private readonly EditorSessionStore _sessions;
@@ -61,6 +62,7 @@ public partial class TranslatePage : UserControl
         _sessions = sessions;
         InitializeComponent();
         DataContext = new TranslatePageModel();
+        _zoomIndicatorTimer.Tick += (_, _) => HideZoomIndicator();
         ViewModel.NavigationRequested += (_, line) => NavigateToLine(line);
         ViewModel.PropertyChanged += (_, e) =>
         {
@@ -174,14 +176,29 @@ public partial class TranslatePage : UserControl
         }
     }
 
-    private void DecreaseTextSize_OnClick(object sender, RoutedEventArgs e) => ViewModel.ChangeListTextScale(-1);
+    private void DecreaseTextSize_OnClick(object sender, RoutedEventArgs e) => ChangeListZoom(-1);
 
-    private void IncreaseTextSize_OnClick(object sender, RoutedEventArgs e) => ViewModel.ChangeListTextScale(1);
+    private void IncreaseTextSize_OnClick(object sender, RoutedEventArgs e) => ChangeListZoom(1);
+
+    private void ChangeListZoom(int steps)
+    {
+        ViewModel.ChangeListTextScale(steps);
+        ZoomIndicatorText.Text = $"{ViewModel.ListTextScale:P0}";
+        ZoomIndicator.Visibility = Visibility.Visible;
+        _zoomIndicatorTimer.Stop();
+        _zoomIndicatorTimer.Start();
+    }
+
+    private void HideZoomIndicator()
+    {
+        _zoomIndicatorTimer.Stop();
+        ZoomIndicator.Visibility = Visibility.Collapsed;
+    }
 
     private void TranslatePanel_OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
         if (Keyboard.Modifiers != ModifierKeys.Control || e.Delta == 0) return;
-        ViewModel.ChangeListTextScale(Math.Sign(e.Delta));
+        ChangeListZoom(Math.Sign(e.Delta));
         e.Handled = true;
     }
 
@@ -453,6 +470,7 @@ public partial class TranslatePage : UserControl
 
     private void Page_OnUnloaded(object sender, RoutedEventArgs e)
     {
+        HideZoomIndicator();
         ResetDragState();
         FlushDraft();
     }
