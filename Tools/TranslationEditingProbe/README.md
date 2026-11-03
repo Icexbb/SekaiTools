@@ -17,3 +17,5 @@ dotnet run --project Tools/TranslationEditingProbe/TranslationEditingProbe.cspro
 退出确认验证检查正文仅含提示、底栏只有保存/不保存/取消、默认取消，并通过 UI Automation 实际触发三个原生按钮，核对返回值；生成深浅主题退出弹窗截图到同一验证目录。
 
 载入基准验证覆盖真实 LoadTranslation 路径、无参考时修改标记、两色重叠、隐藏/移除参考后保留蓝色标记、保存不重置快照、磁盘草稿恢复和改回载入文本。生成 `loaded-Dark.png`、`loaded-Light.png`。
+
+Tab 导航验证覆盖正文跳下一条正文、名称跳下一条正文、场景文字、筛选后的顺序、末条不循环和搜索框保持原有行为。

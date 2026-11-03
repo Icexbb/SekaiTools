@@ -132,6 +132,17 @@ public partial class TranslatePage : UserControl
 
     private async void OnHistoryKeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.Tab && Keyboard.Modifiers == ModifierKeys.None &&
+            e.OriginalSource is TextBox { IsReadOnly: false, DataContext: LineModel current } box &&
+            box.GetBindingExpression(TextBox.TextProperty)?.ParentBinding.Path?.Path is
+                "Content.Translated" or "Character.Translated")
+        {
+            e.Handled = true;
+            var next = ViewModel.VisibleEvents.FirstOrDefault(line => line.SequenceNumber > current.SequenceNumber);
+            if (next != null) NavigateToLine(next);
+            return;
+        }
+
         if ((Keyboard.Modifiers & ModifierKeys.Control) == 0 ||
             (Keyboard.Modifiers & ModifierKeys.Alt) != 0) return;
         if (SearchBox.IsKeyboardFocusWithin && e.Key is Key.Z or Key.Y) return;

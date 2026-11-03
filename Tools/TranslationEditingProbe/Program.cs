@@ -171,6 +171,7 @@ internal static class Program
         };
         window.Show();
         Pump();
+        CheckTabNavigation(page);
         var undo = Nodes(page).OfType<Wpf.Ui.Controls.Button>().Single(button => Equals(button.ToolTip, "撤销 (Ctrl+Z)"));
         var redo = Nodes(page).OfType<Wpf.Ui.Controls.Button>().Single(button => Equals(button.ToolTip, "重做 (Ctrl+Y / Ctrl+Shift+Z)"));
         Check(!undo.IsEnabled && !redo.IsEnabled, "history buttons initially disabled");
@@ -303,6 +304,56 @@ internal static class Program
         window.Close();
         Check(store.ReadDraft() == null, "unload cannot recreate discarded draft");
         app.Shutdown();
+    }
+
+    private static void CheckTabNavigation(TranslatePage page)
+    {
+        var lines = page.ViewModel.Events;
+        var first = Editor(lines[0]);
+        var second = Editor(lines[1]);
+        first.Focus();
+        Check(Tab(first).Handled, "body Tab is handled by row navigation");
+        Pump();
+        Check(ReferenceEquals(Keyboard.FocusedElement, second), "body Tab skips row actions and names to next body");
+        var name = Nodes(page).OfType<System.Windows.Controls.TextBox>().Single(box => ReferenceEquals(box.DataContext, lines[0]) &&
+            box.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.ParentBinding.Path?.Path == "Character.Translated");
+        name.Focus();
+        Tab(name);
+        Pump();
+        Check(ReferenceEquals(Keyboard.FocusedElement, second), "name Tab goes to next row body rather than current row body");
+        Tab(second);
+        Pump();
+        Check(ReferenceEquals(Keyboard.FocusedElement, Editor(lines[2])), "Tab includes next visible scene text body");
+        var last = Editor(lines[^1]);
+        last.Focus();
+        Check(Tab(last).Handled, "last body consumes Tab");
+        Pump();
+        Check(ReferenceEquals(Keyboard.FocusedElement, last), "last body retains focus without wrapping to toolbar");
+        page.ViewModel.SearchText = "地点";
+        Pump();
+        var effect = Editor(lines[2]);
+        effect.Focus();
+        Tab(effect);
+        Pump();
+        Check(ReferenceEquals(Keyboard.FocusedElement, Editor(lines[3])), "Tab follows filtered visible body order");
+        page.ViewModel.SearchText = string.Empty;
+        Pump();
+        var search = (Wpf.Ui.Controls.TextBox)page.FindName("SearchBox");
+        search.Focus();
+        Check(!Tab(search).Handled, "search field retains normal Tab handling");
+        first = Editor(lines[0]);
+        first.Focus();
+        Pump();
+
+        System.Windows.Controls.TextBox Editor(LineModel line) => Nodes(page).OfType<System.Windows.Controls.TextBox>().Single(box => ReferenceEquals(box.DataContext, line) &&
+            box.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.ParentBinding.Path?.Path == "Content.Translated");
+        static KeyEventArgs Tab(System.Windows.Controls.TextBox box)
+        {
+            var key = new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(box)!, Environment.TickCount, Key.Tab)
+            { RoutedEvent = Keyboard.PreviewKeyDownEvent };
+            box.RaiseEvent(key);
+            return key;
+        }
     }
 
     private static void CheckLoadedDifferences(Window window, GameScript script)
