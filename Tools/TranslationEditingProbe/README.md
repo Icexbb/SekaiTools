@@ -19,3 +19,5 @@ dotnet run --project Tools/TranslationEditingProbe/TranslationEditingProbe.cspro
 载入基准验证覆盖真实 LoadTranslation 路径、无参考时修改标记、两色重叠、隐藏/移除参考后保留蓝色标记、保存不重置快照、磁盘草稿恢复和改回载入文本。生成 `loaded-Dark.png`、`loaded-Light.png`。
 
 Tab 导航验证覆盖正文跳下一条正文、名称跳下一条正文、场景文字、筛选后的顺序、末条不循环和搜索框保持原有行为。
+
+地点参考译文验证其可见正文最多一行、首行按输入框居中、长文本与显式多行不撑高控件，以及完整文本的悬停提示。

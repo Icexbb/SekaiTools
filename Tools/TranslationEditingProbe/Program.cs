@@ -288,10 +288,17 @@ internal static class Program
         window.Content = locationView;
         Pump();
         var referenceBox = Nodes(locationView).OfType<System.Windows.Controls.TextBox>().Single(box => box.IsReadOnly);
-        Check(referenceBox.IsVisible && referenceBox.ActualHeight > 60, "location reference expands for multiline text and watermark");
-        var lastCharacter = referenceBox.GetRectFromCharacterIndex(referenceBox.Text.Length - 1);
-        Check(!lastCharacter.IsEmpty && lastCharacter.Bottom <= referenceBox.ActualHeight - referenceBox.Padding.Bottom + 1,
-            "last line of location reference is not clipped");
+        Check(referenceBox.IsVisible && referenceBox.ActualHeight < 60, "location reference stays within one text line plus watermark");
+        var firstCharacter = referenceBox.GetRectFromCharacterIndex(0);
+        var endOfFirstLine = referenceBox.GetRectFromCharacterIndex(location.Content.Reference.IndexOf('\n') - 1, true);
+        Check(!firstCharacter.IsEmpty && !endOfFirstLine.IsEmpty &&
+            Math.Abs((firstCharacter.Left + endOfFirstLine.Right) / 2 - referenceBox.ActualWidth / 2) < 2,
+            "location reference first line is centered like input text");
+        var referenceHeight = referenceBox.ActualHeight;
+        location.Content.Reference = new string('长', 1000) + "\n第二行\n第三行";
+        Pump();
+        Check(Math.Abs(referenceBox.ActualHeight - referenceHeight) < 1 &&
+            Equals(referenceBox.ToolTip, location.Content.Reference), "long multiline location reference does not grow and full text remains in tooltip");
         location.ShowReference = false;
         Pump();
         Check(!referenceBox.IsVisible, "location reference follows visibility switch");
