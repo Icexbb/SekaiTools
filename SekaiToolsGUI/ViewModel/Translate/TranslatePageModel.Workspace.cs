@@ -43,6 +43,26 @@ public partial class TranslatePageModel
         }
     }
 
+    public bool HighlightReferenceDifferences
+    {
+        get => GetProperty(true);
+        set
+        {
+            SetProperty(value);
+            foreach (var line in Events) line.HighlightReferenceDifferences = value;
+        }
+    }
+
+    public bool HighlightModifiedDifferences
+    {
+        get => GetProperty(true);
+        set
+        {
+            SetProperty(value);
+            foreach (var line in Events) line.HighlightModifiedDifferences = value;
+        }
+    }
+
     public bool ShowReference
     {
         get => GetProperty(true);

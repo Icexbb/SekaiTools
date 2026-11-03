@@ -219,7 +219,10 @@ internal static class Program
         Pump();
         Check(line.Content.Translated == "界面编辑", "textbox redo command uses document history");
         var options = (WrapPanel)page.FindName("EditorOptionsPanel");
-        Check(options.IsVisible && options.Children.Count == 4, "four editor options are directly visible");
+        Check(options.IsVisible && options.Children.Count == 6, "six editor options are directly visible");
+        foreach (var label in new[] { "高亮参考文本差异", "高亮修改差异" })
+            Check(options.Children.OfType<CheckBox>().Single(box => Equals(box.Content, label)).IsChecked == true,
+                $"highlight option defaults checked: {label}");
         var optionCheck = options.Children.OfType<CheckBox>().First();
         optionCheck.IsChecked = false;
         Pump();
@@ -622,6 +625,20 @@ internal static class Program
             using var stream = File.Create(Path.GetFullPath($".codex-build/reference-diff/loaded-{theme}.png"));
             encoder.Save(stream);
         }
+        Check(model.HighlightReferenceDifferences && model.HighlightModifiedDifferences,
+            "both difference highlight options default on");
+        model.HighlightModifiedDifferences = false;
+        Pump();
+        Check(LoadedRects(editor) == 0 && LoadedRects(loadedBox) == 0 && loadedBox.IsVisible && Adorner(editor) != null,
+            "disabling modification highlights preserves source text and reference highlights");
+        model.HighlightReferenceDifferences = false;
+        Pump();
+        Check(Adorner(editor) == null && model.Events.All(item => !item.HighlightReferenceDifferences && !item.HighlightModifiedDifferences),
+            "both highlight options propagate independently to all rows");
+        model.HighlightModifiedDifferences = true;
+        model.HighlightReferenceDifferences = true;
+        Pump();
+        Check(LoadedRects(editor) > 0 && LoadedRects(loadedBox) > 0, "re-enabling highlights restores boxes");
         line.ShowReference = false;
         model.ClearReference();
         Pump();

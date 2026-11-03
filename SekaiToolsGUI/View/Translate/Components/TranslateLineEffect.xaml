@@ -52,7 +52,7 @@
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent"
                                  BorderBrush="Transparent"
                                  behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Translated}"
-                                 behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference'}"
+                                 behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference and HighlightReferenceDifferences'}"
                                  ToolTip="{Binding Content.Reference}"
                                  AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
                         <TextBlock Text="参考译文" FontSize="10" Opacity="0.5" Margin="4,0,6,0"
@@ -64,7 +64,7 @@
                                  TextAlignment="Center" VerticalScrollBarVisibility="Hidden" Padding="10,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
                                  behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.Translated}"
-                                 behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{Binding Content.HasLoadedChanges}"
+                                 behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{c:Binding 'Content.HasLoadedChanges and HighlightModifiedDifferences'}"
                                  ToolTip="{Binding Content.LoadedText}"
                                  AutomationProperties.Name="载入时译文" Text="{Binding Content.LoadedText}" />
                         <TextBlock Text="载入时译文" FontSize="10" Opacity="0.5" Margin="4,0,6,0"
@@ -76,8 +76,9 @@
                                 AutomationProperties.Name="{Binding Label}"
                                 ToolTip="蓝色框：载入后修改；黄色框：参考差异。"
                                 behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.LoadedText}"
+                                behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{Binding HighlightModifiedDifferences}"
                                 behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Reference}"
-                                behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference'}"
+                                behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference and HighlightReferenceDifferences'}"
                                 Text="{Binding Content.Translated,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
                 </Grid>
             </Grid>

@@ -75,6 +75,7 @@
                                 TextAlignment="Center"
                                 AutomationProperties.Name="角色名译名"
                                 behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Character.LoadedText}"
+                                behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{Binding HighlightModifiedDifferences}"
                                 ToolTip="{Binding SyncHint}"
                                 Text="{Binding Path= Character.Translated, UpdateSourceTrigger=PropertyChanged}"
                                 TextChanged="NameEditBoxChanged" />
@@ -160,7 +161,7 @@
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent"
                                  BorderBrush="Transparent"
                                  behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Translated}"
-                                 behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference'}"
+                                 behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference and HighlightReferenceDifferences'}"
                                  ToolTip="{Binding Content.Reference}"
                                  AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
                         <TextBlock Text="参考译文" FontSize="10" Opacity="0.5" Margin="4,0,6,0"
@@ -171,7 +172,7 @@
                         <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="10,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
                                  behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.Translated}"
-                                 behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{Binding Content.HasLoadedChanges}"
+                                 behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{c:Binding 'Content.HasLoadedChanges and HighlightModifiedDifferences'}"
                                  ToolTip="{Binding Content.LoadedText}"
                                  AutomationProperties.Name="载入时译文" Text="{Binding Content.LoadedText}" />
                         <TextBlock Text="载入时译文" FontSize="10" Opacity="0.5" Margin="4,0,6,0"
@@ -186,8 +187,9 @@
                              ToolTip="蓝色框表示相对载入译文的修改；黄色框表示参考差异。显示自动折行不改变正文中的换行。Enter 插入正文换行；Ctrl+Enter 跳到下一未译。"
                              AcceptsReturn="True" TextWrapping="Wrap" AutomationProperties.Name="{Binding Label}"
                              behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.LoadedText}"
+                                behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{Binding HighlightModifiedDifferences}"
                              behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Reference}"
-                             behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference'}"
+                             behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference and HighlightReferenceDifferences'}"
                              Text="{Binding Content.Translated,UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock Grid.Row="3" Margin="4,2" TextWrapping="Wrap" FontSize="12"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}">

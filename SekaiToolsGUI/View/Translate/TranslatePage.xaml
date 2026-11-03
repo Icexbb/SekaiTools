@@ -218,6 +218,10 @@
                                            VerticalAlignment="Center">
                                     <CheckBox Content="显示参考译文" IsChecked="{Binding ShowReference}"
                                               VerticalAlignment="Center" MinHeight="32" Margin="16,0,0,0" />
+                                    <CheckBox Content="高亮参考文本差异" IsChecked="{Binding HighlightReferenceDifferences}"
+                                              VerticalAlignment="Center" MinHeight="32" Margin="16,0,0,0" />
+                                    <CheckBox Content="高亮修改差异" IsChecked="{Binding HighlightModifiedDifferences}"
+                                              VerticalAlignment="Center" MinHeight="32" Margin="16,0,0,0" />
                                     <CheckBox Content="同步相同场景文字" IsChecked="{Binding SyncMatchingContent}"
                                               Margin="16,0,0,0" VerticalAlignment="Center" MinHeight="32"
                                               ToolTip="项目级开关：后续编辑会同步整个剧本中原文相同的场景文字；开启时不会立即覆盖现有译文。" />

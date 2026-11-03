@@ -139,6 +139,8 @@ public partial class TranslatePageModel : ViewModelBase
                 events[i].SequenceNumber = i + 1;
                 events[i].ActionRequested += OnLineAction;
                 events[i].ShowReference = ShowReference;
+                events[i].HighlightReferenceDifferences = HighlightReferenceDifferences;
+                events[i].HighlightModifiedDifferences = HighlightModifiedDifferences;
                 if (events[i] is LineDialogModel dialog) dialog.AutoFormat = AutoFormat;
                 events[i].MatchingCount = events[i] is LineDialogModel d
                     ? events.OfType<LineDialogModel>().Count(other => other.Character.Original == d.Character.Original)

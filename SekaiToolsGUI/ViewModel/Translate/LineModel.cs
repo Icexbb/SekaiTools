@@ -48,6 +48,18 @@ public abstract class LineModel : ViewModelBase
     public string SyncHint =>
         this is LineDialogModel ? $"同名角色共 {MatchingCount} 处，同步由项目开关控制" : $"相同场景文字共 {MatchingCount} 处";
 
+    public bool HighlightReferenceDifferences
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
+    public bool HighlightModifiedDifferences
+    {
+        get => GetProperty(true);
+        set => SetProperty(value);
+    }
+
     public bool ShowReference
     {
         get => GetProperty(true);
