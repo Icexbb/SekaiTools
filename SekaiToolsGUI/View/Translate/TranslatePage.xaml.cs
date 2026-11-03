@@ -4,7 +4,6 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -766,44 +765,25 @@ public partial class TranslatePage : UserControl
     {
         if (!ViewModel.IsDirty) return true;
         var service = ((MainWindow)Application.Current.MainWindow!).WindowContentDialogService;
-        var dialog = new ContentDialog(service.GetDialogHostEx() ?? throw new InvalidOperationException())
+        var result = await service.ShowAsync(CreateCloseDialog(), CancellationToken.None);
+        return result switch
         {
-            Title = "退出程序？"
-        };
-        var content = new StackPanel { MinWidth = 440 };
-        content.Children.Add(new TextBlock
-        {
-            Text = "当前翻译有未保存的修改。",
-            Margin = new Thickness(0, 0, 0, 24)
-        });
-        var actions = new UniformGrid { Columns = 4 };
-        var choice = "取消";
-        foreach (var label in new[] { "保存", "保留草稿", "不保存", "取消" })
-        {
-            var button = new Wpf.Ui.Controls.Button
-            {
-                Content = label,
-                Margin = new Thickness(0, 0, 8, 0),
-                Appearance = label == "保存" ? ControlAppearance.Primary : ControlAppearance.Secondary
-            };
-            if (label == "不保存") button.ToolTip = "放弃未保存修改并删除恢复草稿，已保存的文件不受影响。";
-            button.Click += (_, _) =>
-            {
-                choice = label;
-                dialog.Hide();
-            };
-            actions.Children.Add(button);
-        }
-
-        content.Children.Add(actions);
-        dialog.Content = content;
-        await service.ShowAsync(dialog, CancellationToken.None);
-        return choice switch
-        {
-            "保存" => await SaveAsync(),
-            "保留草稿" => FlushDraft(),
-            "不保存" => DiscardDraftOnClose(),
+            ContentDialogResult.Primary => await SaveAsync(),
+            ContentDialogResult.Secondary => DiscardDraftOnClose(),
             _ => false
+        };
+    }
+
+    private static ContentDialog CreateCloseDialog()
+    {
+        return new ContentDialog
+        {
+            Title = "退出程序？",
+            Content = "当前翻译有未保存的修改。是否保存后退出？",
+            PrimaryButtonText = "保存",
+            SecondaryButtonText = "不保存",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Close
         };
     }
 
@@ -930,7 +910,7 @@ public partial class TranslatePage : UserControl
         try
         {
             Process.Start(new ProcessStartInfo("explorer.exe")
-                { Arguments = $"/select,\"{ViewModel.TranslationPath}\"" });
+            { Arguments = $"/select,\"{ViewModel.TranslationPath}\"" });
         }
         catch (Exception ex)
         {

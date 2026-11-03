@@ -297,9 +297,57 @@ internal static class Program
         Check((bool)discard.Invoke(page, null)!, "discard on exit removes recovery draft");
         Check(page.FlushDraft() && store.ReadDraft() == null, "close flush cannot recreate discarded draft");
         CheckReferenceDifferences(window, script);
+        CheckCloseDialog(window);
         window.Close();
         Check(store.ReadDraft() == null, "unload cannot recreate discarded draft");
         app.Shutdown();
+    }
+
+    private static void CheckCloseDialog(Window window)
+    {
+        var factory = typeof(TranslatePage).GetMethod("CreateCloseDialog", BindingFlags.Static | BindingFlags.NonPublic)!;
+        var previousContext = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
+        var output = Path.GetFullPath(".codex-build/reference-diff");
+        var host = new Wpf.Ui.Controls.ContentDialogHost();
+        window.Content = host;
+        foreach (var theme in new[] { ApplicationTheme.Dark, ApplicationTheme.Light })
+        {
+            ApplicationThemeManager.Apply(theme);
+            foreach (var choice in new[] { "保存", "不保存", "取消" })
+            {
+                var dialog = (Wpf.Ui.Controls.ContentDialog)factory.Invoke(null, null)!;
+                dialog.DialogHostEx = host;
+                var result = dialog.ShowAsync(CancellationToken.None);
+                Pump();
+                var buttons = Nodes(dialog).OfType<Wpf.Ui.Controls.Button>().Where(button => button.IsVisible).ToArray();
+                Check(buttons.Select(button => button.Content?.ToString()).Order().SequenceEqual(new[] { "不保存", "保存", "取消" }.Order()), $"only three native footer buttons {theme}");
+                Check(dialog.Content is string && dialog.DefaultButton == Wpf.Ui.Controls.ContentDialogButton.Close, "close confirmation uses message-only body and cancel default");
+                Check(buttons.All(button => button.TransformToAncestor(dialog).Transform(new Point()).Y > dialog.ActualHeight / 2), "all close actions are in dialog footer");
+                if (choice == "取消")
+                {
+                    var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)window.ActualWidth, (int)window.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+                    bitmap.Render(window);
+                    var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                    encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+                    using var stream = File.Create(Path.Combine(output, $"close-dialog-{theme}.png"));
+                    encoder.Save(stream);
+                }
+                var selected = buttons.Single(button => Equals(button.Content, choice));
+                var peer = new System.Windows.Automation.Peers.ButtonAutomationPeer(selected);
+                ((System.Windows.Automation.Provider.IInvokeProvider)peer.GetPattern(System.Windows.Automation.Peers.PatternInterface.Invoke)!).Invoke();
+                var frame = new DispatcherFrame();
+                var deadline = DateTime.UtcNow.AddSeconds(2);
+                var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(10) };
+                timer.Tick += (_, _) => { if (result.IsCompleted || DateTime.UtcNow >= deadline) frame.Continue = false; };
+                timer.Start();
+                Dispatcher.PushFrame(frame);
+                timer.Stop();
+                var expected = choice == "保存" ? Wpf.Ui.Controls.ContentDialogResult.Primary : choice == "不保存" ? Wpf.Ui.Controls.ContentDialogResult.Secondary : Wpf.Ui.Controls.ContentDialogResult.None;
+                Check(result.IsCompletedSuccessfully && result.Result == expected, $"footer {choice} returns correct result {theme}: {result.Status}/{(result.IsCompletedSuccessfully ? result.Result.ToString() : "pending")}");
+            }
+        }
+        SynchronizationContext.SetSynchronizationContext(previousContext);
     }
 
     private static void CheckReferenceDifferences(Window window, GameScript script)

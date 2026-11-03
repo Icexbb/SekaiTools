@@ -13,3 +13,5 @@ dotnet run --project Tools/TranslationEditingProbe/TranslationEditingProbe.cspro
 运行通过不等同于原生确认弹窗、真实键盘输入法和实际系统 DPI 的人工验收。
 
 参考差异验证覆盖实际载入参考后两侧高亮、相同文本无高亮、地点参考、选择和输入命中、采用参考与撤销、显示开关、条目复用、空白参考的增删标记，以及折行和滚动后的几何位置。生成明暗主题 × 960/1280 宽度的四张截图到 `.codex-build/reference-diff/`，不读取或修改用户的会话与翻译文件。差异算法的中文、Unicode 文本元素、增删、换行与大文本上限回归位于 `SekaiTools.Tests/TextDifferenceTests.cs`。
+
+退出确认验证检查正文仅含提示、底栏只有保存/不保存/取消、默认取消，并通过 UI Automation 实际触发三个原生按钮，核对返回值；生成深浅主题退出弹窗截图到同一验证目录。
