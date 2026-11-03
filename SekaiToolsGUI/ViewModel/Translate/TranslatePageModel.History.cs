@@ -24,6 +24,22 @@ public partial class TranslatePageModel
 
     public EditValue[] SavedValues => _savedValues.ToArray();
 
+    public bool HasLoadedTranslation => EditableItems().Any(item => item.LoadedText != null);
+
+    public string[]? LoadedTranslationValues => HasLoadedTranslation
+        ? EditableItems().Select(item => item.LoadedText ?? string.Empty).ToArray()
+        : null;
+
+    private void SetLoadedTranslation(string[]? values)
+    {
+        var items = EditableItems().ToArray();
+        if (values != null && values.Length != items.Length)
+            throw new InvalidDataException("载入译文基准条目数量与剧本不匹配。");
+        for (var index = 0; index < items.Length; index++) items[index].LoadedText = values?[index];
+        OnPropertyChanged(nameof(HasLoadedTranslation));
+    }
+
+
     public void BeginTextEdit(TranslateItemModel item)
     {
         if (!ReferenceEquals(_editingItem, item)) BreakEditGroup();
@@ -173,11 +189,12 @@ public partial class TranslatePageModel
     public void RestoreDraft(GameScript script, string scriptPath, string translationPath, EditValue[] values,
         EditValue[] savedValues, bool useV2 = true,
         bool autoFormat = true, int activeSequenceNumber = 0, bool syncMatchingContent = true,
-        bool syncMatchingSpeakers = true)
+        bool syncMatchingSpeakers = true, string[]? loadedTranslationValues = null)
     {
         var expectedCount = new Story(script, new TranslationData(null))
             .Events.Sum(item => item is DialogStoryEvent ? 2 : 1);
-        if (values.Length != expectedCount || savedValues.Length != expectedCount)
+        if (values.Length != expectedCount || savedValues.Length != expectedCount ||
+            (loadedTranslationValues is { Length: > 0 } && loadedTranslationValues.Length != expectedCount))
             throw new InvalidDataException("翻译草稿条目数量与剧本不匹配。");
         AutoFormat = autoFormat;
         LoadScript(script, scriptPath);
@@ -189,6 +206,8 @@ public partial class TranslatePageModel
         ExportUsesV2 = useV2;
         ActiveSequenceNumber = Math.Clamp(activeSequenceNumber, 0, Events.Length);
         _savedValues = savedValues;
+        SetLoadedTranslation(loadedTranslationValues is { Length: 0 } ? null : loadedTranslationValues ??
+            (string.IsNullOrEmpty(translationPath) ? null : savedValues.Select(value => value.Text).ToArray()));
         ResetHistory();
         FinishEdit();
     }

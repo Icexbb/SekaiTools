@@ -73,6 +73,7 @@
                                 PlaceholderText="{Binding Path= Character.Original}"
                                 TextAlignment="Center"
                                 AutomationProperties.Name="角色名译名"
+                                behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Character.LoadedText}"
                                 ToolTip="{Binding SyncHint}"
                                 Text="{Binding Path= Character.Translated, UpdateSourceTrigger=PropertyChanged}"
                                 TextChanged="NameEditBoxChanged" />
@@ -161,8 +162,9 @@
                              PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"
                              DataObject.Pasting="TextBox_OnPasting" GotKeyboardFocus="TextBox_OnGotKeyboardFocus"
                              LostKeyboardFocus="TextBox_OnLostKeyboardFocus"
-                             ToolTip="显示自动折行不改变正文中的换行。Enter 插入正文换行；Ctrl+Enter 跳到下一未译。"
+                             ToolTip="蓝色底线表示相对载入译文的修改；黄色框表示参考差异。显示自动折行不改变正文中的换行。Enter 插入正文换行；Ctrl+Enter 跳到下一未译。"
                              AcceptsReturn="True" TextWrapping="Wrap" AutomationProperties.Name="{Binding Label}"
+                             behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.LoadedText}"
                              behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Reference}"
                              behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference'}"
                              Text="{Binding Content.Translated,UpdateSourceTrigger=PropertyChanged}" />

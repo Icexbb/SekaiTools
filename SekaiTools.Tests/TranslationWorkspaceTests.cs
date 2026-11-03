@@ -18,6 +18,78 @@ public class TranslationWorkspaceTests
     }
 
     [Fact]
+    public void DraftWithoutLoadedFileDoesNotInventLoadTimeBaseline()
+    {
+        var model = CreateModel();
+        ((LineDialogModel)model.Events[0]).Content.Translated = "新建译文。";
+        model.MarkSaved(path: "new.txt");
+        var restored = new TranslatePageModel();
+        restored.RestoreDraft(model.DraftScript!, model.ScriptPath, model.TranslationPath,
+            model.ReadValues(), model.SavedValues, loadedTranslationValues: []);
+        Assert.False(restored.HasLoadedTranslation);
+        Assert.Null(restored.LoadedTranslationValues);
+    }
+
+    [Fact]
+    public void LoadedTranslationBaselineSurvivesSavingAndReferenceChangesButResetsOnReload()
+    {
+        var model = CreateModel();
+        Assert.False(model.HasLoadedTranslation);
+        var translation = new SekaiToolsBase.Story.Translation.TranslationData(null);
+        translation.Translations.AddRange([
+            new SekaiToolsBase.Story.Translation.DialogTranslate("角色", "载入文本。"),
+            new SekaiToolsBase.Story.Translation.DialogTranslate("角色", "第二句。")]);
+        model.LoadTranslation(translation, "loaded.txt");
+        var line = (LineDialogModel)model.Events[0];
+        Assert.Equal("载入文本。", line.Content.LoadedText);
+        var baseline = model.LoadedTranslationValues!;
+        line.Content.Translated = "修改文本。";
+        model.MarkSaved();
+        Assert.Equal(baseline, model.LoadedTranslationValues);
+        Assert.False(model.IsDirty);
+        model.LoadReferenceTranslation(translation, "reference.txt");
+        model.ClearReference();
+        Assert.Equal(baseline, model.LoadedTranslationValues);
+        model.Undo();
+        Assert.Equal(line.Content.LoadedText, line.Content.Translated);
+        model.Redo();
+        Assert.Equal(baseline, model.LoadedTranslationValues);
+        translation.Translations[0] = new SekaiToolsBase.Story.Translation.DialogTranslate("新角色", "重新载入。");
+        model.LoadTranslation(translation, "replacement.txt");
+        Assert.Equal("重新载入。", ((LineDialogModel)model.Events[0]).Content.LoadedText);
+        Assert.Equal("新角色", ((LineDialogModel)model.Events[0]).Character.LoadedText);
+        model.ClearTranslation();
+        Assert.False(model.HasLoadedTranslation);
+        Assert.Null(((LineDialogModel)model.Events[0]).Content.LoadedText);
+    }
+
+    [Fact]
+    public void DraftRestoreKeepsOriginalLoadedBaselineIndependentlyOfLastSave()
+    {
+        var model = CreateModel();
+        var translation = new SekaiToolsBase.Story.Translation.TranslationData(null);
+        translation.Translations.AddRange([
+            new SekaiToolsBase.Story.Translation.DialogTranslate("角色", "载入文本。"),
+            new SekaiToolsBase.Story.Translation.DialogTranslate("角色", "第二句。")]);
+        model.LoadTranslation(translation, "loaded.txt");
+        var line = (LineDialogModel)model.Events[0];
+        line.Content.Translated = "第一次修改。";
+        model.MarkSaved();
+        line.Content.Translated = "第二次修改。";
+        var restored = new TranslatePageModel();
+        restored.RestoreDraft(model.DraftScript!, model.ScriptPath, model.TranslationPath,
+            model.ReadValues(), model.SavedValues, loadedTranslationValues: model.LoadedTranslationValues);
+        Assert.Equal("载入文本。", ((LineDialogModel)restored.Events[0]).Content.LoadedText);
+        Assert.Equal("第二次修改。", ((LineDialogModel)restored.Events[0]).Content.Translated);
+        Assert.True(restored.IsDirty);
+        var legacy = new TranslatePageModel();
+        legacy.RestoreDraft(model.DraftScript!, model.ScriptPath, model.TranslationPath, model.ReadValues(), model.SavedValues);
+        Assert.Equal("第一次修改。", ((LineDialogModel)legacy.Events[0]).Content.LoadedText);
+        Assert.Throws<System.IO.InvalidDataException>(() => restored.RestoreDraft(model.DraftScript!, model.ScriptPath,
+            model.TranslationPath, model.ReadValues(), model.SavedValues, loadedTranslationValues: ["bad"]));
+    }
+
+    [Fact]
     public void DraftStatusDoesNotClaimThatFileWasSaved()
     {
         var model = CreateModel();

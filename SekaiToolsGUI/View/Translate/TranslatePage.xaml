@@ -222,6 +222,9 @@
                                 </WrapPanel>
                             </Grid>
                         </Border>
+                        <TextBlock Text="黄框：参考差异 · 蓝色底线：载入后修改" Margin="4,2,4,0" FontSize="11"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="{c:Binding 'HasReferenceTranslation or HasLoadedTranslation',FalseToVisibility=Collapsed}" />
                     </StackPanel>
                 </ui:Card>
                 <Border x:Name="ImportErrorPanel" Visibility="Collapsed" Padding="8" Margin="0,0,0,8"

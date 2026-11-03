@@ -14,6 +14,11 @@ public static class TextDifferenceHighlight
         "Comparison", typeof(string), typeof(TextDifferenceHighlight), new PropertyMetadata(null, Changed));
     public static readonly DependencyProperty IsEnabledProperty = DependencyProperty.RegisterAttached(
         "IsEnabled", typeof(bool), typeof(TextDifferenceHighlight), new PropertyMetadata(false, Changed));
+    public static readonly DependencyProperty LoadedComparisonProperty = DependencyProperty.RegisterAttached(
+        "LoadedComparison", typeof(string), typeof(TextDifferenceHighlight), new PropertyMetadata(null, Changed));
+    public static string? GetLoadedComparison(DependencyObject target) => (string?)target.GetValue(LoadedComparisonProperty);
+    public static void SetLoadedComparison(DependencyObject target, string? value) => target.SetValue(LoadedComparisonProperty, value);
+
     private static readonly DependencyProperty StateProperty = DependencyProperty.RegisterAttached(
         "State", typeof(HighlightState), typeof(TextDifferenceHighlight));
 
@@ -39,6 +44,7 @@ public static class TextDifferenceHighlight
         private DifferenceAdorner? _adorner;
         private AdornerLayer? _layer;
         private IReadOnlyList<TextDifferenceRange> _ranges = [];
+        private IReadOnlyList<TextDifferenceRange> _loadedRanges = [];
         private bool _queued;
 
         public HighlightState(TextBox box)
@@ -58,7 +64,9 @@ public static class TextDifferenceHighlight
             _ranges = GetIsEnabled(_box) && comparison != null
                 ? TextDifference.Compare(_box.Text, comparison).Current
                 : [];
-            if (_ranges.Count == 0)
+            var loaded = GetLoadedComparison(_box);
+            _loadedRanges = loaded != null ? TextDifference.Compare(_box.Text, loaded).Current : [];
+            if (_ranges.Count == 0 && _loadedRanges.Count == 0)
             {
                 Remove();
                 return;
@@ -68,7 +76,7 @@ public static class TextDifferenceHighlight
             _box.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
             {
                 _queued = false;
-                if (!_box.IsLoaded || _ranges.Count == 0) return;
+                if (!_box.IsLoaded || (_ranges.Count == 0 && _loadedRanges.Count == 0)) return;
                 if (_adorner == null)
                 {
                     _layer = AdornerLayer.GetAdornerLayer(_box);
@@ -77,6 +85,7 @@ public static class TextDifferenceHighlight
                     _layer.Add(_adorner);
                 }
                 _adorner.Ranges = _ranges;
+                _adorner.LoadedRanges = _loadedRanges;
                 _adorner.UpdateGeometry();
             }));
         }
@@ -94,13 +103,20 @@ public static class TextDifferenceHighlight
         private static readonly DependencyProperty HighlightBrushProperty = DependencyProperty.Register(
             "HighlightBrush", typeof(Brush), typeof(DifferenceAdorner),
             new FrameworkPropertyMetadata(Brushes.DarkOrange, FrameworkPropertyMetadataOptions.AffectsRender));
+        private static readonly DependencyProperty LoadedBrushProperty = DependencyProperty.Register(
+            "LoadedBrush", typeof(Brush), typeof(DifferenceAdorner),
+            new FrameworkPropertyMetadata(Brushes.DodgerBlue, FrameworkPropertyMetadataOptions.AffectsRender));
         private readonly TextBox _box;
+        private List<Rect> _loadedRectangles = [];
+        public IReadOnlyList<TextDifferenceRange> LoadedRanges { get; set; } = [];
         private List<Rect> _rectangles = [];
         public IReadOnlyList<TextDifferenceRange> Ranges { get; set; } = [];
 
         public DifferenceAdorner(TextBox box) : base(box)
         {
             _box = box;
+            if (SystemParameters.HighContrast)
+                SetResourceReference(LoadedBrushProperty, SystemColors.HighlightBrushKey);
             IsHitTestVisible = false;
             SetResourceReference(HighlightBrushProperty, SystemParameters.HighContrast
                 ? SystemColors.HighlightBrushKey
@@ -109,9 +125,19 @@ public static class TextDifferenceHighlight
 
         public void UpdateGeometry()
         {
+            var reference = BuildRectangles(Ranges);
+            var loaded = BuildRectangles(LoadedRanges);
+            if (_rectangles.SequenceEqual(reference) && _loadedRectangles.SequenceEqual(loaded)) return;
+            _rectangles = reference;
+            _loadedRectangles = loaded;
+            InvalidateVisual();
+        }
+
+        private List<Rect> BuildRectangles(IReadOnlyList<TextDifferenceRange> ranges)
+        {
             var box = _box;
             var rectangles = new List<Rect>();
-            foreach (var range in Ranges)
+            foreach (var range in ranges)
             {
                 if (range.Length == 0)
                 {
@@ -141,9 +167,7 @@ public static class TextDifferenceHighlight
                     else rectangles.Add(rectangle);
                 }
             }
-            if (_rectangles.SequenceEqual(rectangles)) return;
-            _rectangles = rectangles;
-            InvalidateVisual();
+            return rectangles;
         }
 
         protected override void OnRender(DrawingContext drawingContext)
@@ -154,6 +178,10 @@ public static class TextDifferenceHighlight
             drawingContext.PushClip(new RectangleGeometry(new Rect(_box.RenderSize)));
             foreach (var rectangle in _rectangles)
                 drawingContext.DrawRoundedRectangle(fill, new Pen(brush, 1), rectangle, 2, 2);
+            var loadedBrush = (Brush)GetValue(LoadedBrushProperty);
+            foreach (var rectangle in _loadedRectangles)
+                drawingContext.DrawRoundedRectangle(loadedBrush, null,
+                    new Rect(rectangle.X, rectangle.Bottom - 3, Math.Max(3, rectangle.Width), 3), 1, 1);
             drawingContext.Pop();
         }
     }

@@ -131,6 +131,7 @@ public partial class TranslatePageModel : ViewModelBase
             }
 
             Events = events.ToArray();
+            OnPropertyChanged(nameof(HasLoadedTranslation));
             ResetHistory();
             SearchText = string.Empty;
             FilterIndex = 0;
@@ -205,6 +206,7 @@ public partial class TranslatePageModel : ViewModelBase
             ApplyReference(_referenceStory);
         TranslationPath = path;
         ExportUsesV2 = translation.IsV2;
+        SetLoadedTranslation(ReadValues().Select(value => value.Text).ToArray());
         MarkSaved();
     }
 

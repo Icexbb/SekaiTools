@@ -75,7 +75,8 @@ internal static class Program
             draft.Script.OriginalEffectIndices = draft.OriginalEffectIndices;
             var restored = new TranslatePageModel();
             restored.RestoreDraft(draft.Script, draft.ScriptPath, draft.TranslationPath, draft.Values, draft.SavedValues,
-                draft.UseV2, draft.AutoFormat, draft.ActiveSequenceNumber);
+                draft.UseV2, draft.AutoFormat, draft.ActiveSequenceNumber,
+                draft.SyncMatchingContent, draft.SyncMatchingSpeakers, draft.LoadedTranslationValues);
             Check(!restored.ExportUsesV2 && !restored.AutoFormat && restored.ActiveSequenceNumber == 2,
                 "draft retains export format, formatting preference and reading position");
             Check(restored.IsDirty && restored.ReadValues().SequenceEqual(model.ReadValues()), "draft restores raw edits without source files");
@@ -297,10 +298,88 @@ internal static class Program
         Check((bool)discard.Invoke(page, null)!, "discard on exit removes recovery draft");
         Check(page.FlushDraft() && store.ReadDraft() == null, "close flush cannot recreate discarded draft");
         CheckReferenceDifferences(window, script);
+        CheckLoadedDifferences(window, script);
         CheckCloseDialog(window);
         window.Close();
         Check(store.ReadDraft() == null, "unload cannot recreate discarded draft");
         app.Shutdown();
+    }
+
+    private static void CheckLoadedDifferences(Window window, GameScript script)
+    {
+        var model = new TranslatePageModel { AutoFormat = false };
+        model.LoadScript(script, "loaded-probe.json");
+        var data = new SekaiToolsBase.Story.Translation.TranslationData(null);
+        data.Translations.AddRange([
+            new SekaiToolsBase.Story.Translation.DialogTranslate("角色", "今天一起休息吧！"),
+            new SekaiToolsBase.Story.Translation.DialogTranslate("角色", "第二句相同。"),
+            new SekaiToolsBase.Story.Translation.EffectTranslate("学校屋顶"),
+            new SekaiToolsBase.Story.Translation.EffectTranslate("学校屋顶")]);
+        model.LoadTranslation(data, "loaded-probe.txt");
+        var line = (LineDialogModel)model.Events[0];
+        var effect = model.Events.OfType<LineEffectModel>().First();
+        var view = new SekaiToolsGUI.View.Translate.Components.TranslateLineDialog { LineDialogModel = line };
+        var effectView = new SekaiToolsGUI.View.Translate.Components.TranslateLineEffect { LineEffectModel = effect };
+        var panel = new StackPanel { Margin = new Thickness(16) };
+        var title = new TextBlock { Text = "黄色框：参考差异 · 蓝色底线：相对载入译文的修改", Margin = new Thickness(4, 12, 4, 20) };
+        title.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
+        panel.Children.Add(title);
+        panel.Children.Add(view);
+        panel.Children.Add(effectView);
+        var background = new Border { Child = panel };
+        background.SetResourceReference(Border.BackgroundProperty, "ApplicationBackgroundBrush");
+        window.Content = background;
+        Pump();
+        var editor = Nodes(view).OfType<System.Windows.Controls.TextBox>().Single(box => box.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.ParentBinding.Path?.Path == "Content.Translated");
+        Check(LoadedRects(editor) == 0, "newly loaded translation has no modification highlights");
+        line.Content.Translated = "今天一起练习吧！";
+        effect.Content.Translated = "学校天台";
+        Pump();
+        Check(LoadedRects(editor) > 0, "editing loaded translation highlights without any reference");
+        data.Translations[0] = new SekaiToolsBase.Story.Translation.DialogTranslate("角色", "今天一起散步吧！");
+        data.Translations[2] = new SekaiToolsBase.Story.Translation.EffectTranslate("学校礼堂");
+        data.Translations[3] = new SekaiToolsBase.Story.Translation.EffectTranslate("学校礼堂");
+        model.LoadReferenceTranslation(data, "reference.txt");
+        Pump();
+        foreach (var theme in new[] { ApplicationTheme.Dark, ApplicationTheme.Light })
+        {
+            ApplicationThemeManager.Apply(theme);
+            Pump();
+            var adorner = Adorner(editor)!;
+            var type = adorner.GetType();
+            var referenceBrush = (Brush)adorner.GetValue((DependencyProperty)type.GetField("HighlightBrushProperty", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!);
+            var loadedBrush = (Brush)adorner.GetValue((DependencyProperty)type.GetField("LoadedBrushProperty", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!);
+            Check(referenceBrush.ToString() != loadedBrush.ToString() && LoadedRects(editor) > 0, $"loaded and reference differences have distinct colors {theme}");
+            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)window.ActualWidth, (int)window.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+            bitmap.Render(window);
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+            using var stream = File.Create(Path.GetFullPath($".codex-build/reference-diff/loaded-{theme}.png"));
+            encoder.Save(stream);
+        }
+        line.ShowReference = false;
+        model.ClearReference();
+        Pump();
+        Check(LoadedRects(editor) > 0, "loaded differences survive hiding and removing reference");
+        model.MarkSaved();
+        Check(line.Content.LoadedText == "今天一起休息吧！", "saving does not replace load-time baseline");
+        line.Content.Translated += "继续修改";
+        var sessions = new EditorSessionStore(Path.GetFullPath(".codex-build/reference-diff/loaded-draft"));
+        Check(sessions.SaveDraft(model), "draft persists load-time baseline");
+        var draft = sessions.ReadDraft()!;
+        var restored = new TranslatePageModel();
+        restored.RestoreDraft(draft.Script, draft.ScriptPath, draft.TranslationPath, draft.Values, draft.SavedValues,
+            loadedTranslationValues: draft.LoadedTranslationValues);
+        Check(((LineDialogModel)restored.Events[0]).Content.LoadedText == "今天一起休息吧！", "disk draft restores original loaded text after an intermediate save");
+        line.Content.Translated = line.Content.LoadedText!;
+        Pump();
+        Check(LoadedRects(editor) == 0, "restoring loaded text clears modification highlight");
+        sessions.DeleteDraft();
+
+        static System.Windows.Documents.Adorner? Adorner(System.Windows.Controls.TextBox box) =>
+            System.Windows.Documents.AdornerLayer.GetAdornerLayer(box)?.GetAdorners(box)?.SingleOrDefault(item => item.GetType().Name == "DifferenceAdorner");
+        static int LoadedRects(System.Windows.Controls.TextBox box) => Adorner(box) is { } adorner
+            ? ((IEnumerable<Rect>)adorner.GetType().GetField("_loadedRectangles", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(adorner)!).Count() : 0;
     }
 
     private static void CheckCloseDialog(Window window)

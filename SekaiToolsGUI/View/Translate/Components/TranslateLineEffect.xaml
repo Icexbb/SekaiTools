@@ -60,6 +60,8 @@
                     <ui:TextBox Grid.Row="1" Padding="5,2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                 TextAlignment="Center"
                                 AutomationProperties.Name="{Binding Label}"
+                                ToolTip="蓝色底线：载入后修改；黄色框：参考差异。"
+                                behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.LoadedText}"
                                 behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Reference}"
                                 behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference'}"
                                 Text="{Binding Content.Translated,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />

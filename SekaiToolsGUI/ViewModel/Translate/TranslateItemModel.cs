@@ -2,6 +2,12 @@ namespace SekaiToolsGUI.ViewModel.Translate;
 
 public class TranslateItemModel : ViewModelBase
 {
+    public string? LoadedText
+    {
+        get => GetProperty<string?>(null);
+        set => SetProperty(value);
+    }
+
     public string Original
     {
         get => GetProperty(string.Empty);

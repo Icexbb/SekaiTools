@@ -49,7 +49,7 @@ public sealed class EditorSessionStore
         if (!model.IsDirty || model.DraftScript is not { } script) return DeleteDraft();
         return Write("translation-draft.json", new Draft(script, script.OriginalEffectIndices, model.ScriptPath,
             model.TranslationPath, model.ReadValues(), model.SavedValues, model.ExportUsesV2, model.AutoFormat,
-            model.ActiveSequenceNumber, model.SyncMatchingContent, model.SyncMatchingSpeakers));
+            model.ActiveSequenceNumber, model.SyncMatchingContent, model.SyncMatchingSpeakers, model.LoadedTranslationValues ?? []));
     }
 
     public bool DeleteDraft()
@@ -114,5 +114,6 @@ public sealed class EditorSessionStore
         bool AutoFormat = true,
         int ActiveSequenceNumber = 0,
         bool SyncMatchingContent = true,
-        bool SyncMatchingSpeakers = true);
+        bool SyncMatchingSpeakers = true,
+        string[]? LoadedTranslationValues = null);
 }

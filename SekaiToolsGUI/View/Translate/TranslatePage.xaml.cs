@@ -278,7 +278,7 @@ public partial class TranslatePage : UserControl
             draft.Script.OriginalEffectIndices = draft.OriginalEffectIndices;
             ViewModel.RestoreDraft(draft.Script, draft.ScriptPath, draft.TranslationPath, draft.Values,
                 draft.SavedValues, draft.UseV2,
-                draft.AutoFormat, draft.ActiveSequenceNumber, draft.SyncMatchingContent, draft.SyncMatchingSpeakers);
+                draft.AutoFormat, draft.ActiveSequenceNumber, draft.SyncMatchingContent, draft.SyncMatchingSpeakers, draft.LoadedTranslationValues);
             if (ViewModel.ActiveSequenceNumber > 0)
                 NavigateToLine(ViewModel.Events[ViewModel.ActiveSequenceNumber - 1]);
         }
