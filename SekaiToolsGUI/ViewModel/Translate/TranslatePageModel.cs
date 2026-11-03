@@ -18,6 +18,22 @@ public partial class TranslatePageModel : ViewModelBase
         .SelectMany(line => line.Flashback!.Sources.Where(source => source != line.Flashback.MainSource)).Distinct()
         .ToArray();
 
+    public double ListTextScale
+    {
+        get => GetProperty(1.0);
+        set
+        {
+            SetProperty(double.IsFinite(value) ? Math.Clamp(Math.Round(value, 2), 0.75, 2.0) : 1.0);
+            OnPropertyChanged(nameof(ListTextFontSize));
+            OnPropertyChanged(nameof(ListRoleWidth));
+        }
+    }
+
+    public double ListTextFontSize => 14 * ListTextScale;
+    public double ListRoleWidth => 150 * ListTextScale;
+
+    public void ChangeListTextScale(int steps) => ListTextScale += steps * 0.1;
+
     public string ScriptPath
     {
         get => GetProperty(string.Empty);

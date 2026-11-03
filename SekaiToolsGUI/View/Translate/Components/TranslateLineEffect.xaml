@@ -14,7 +14,7 @@
     <Grid MinHeight="75" HorizontalAlignment="Stretch">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="{Binding DataContext.ListRoleWidth, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=150}" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <components:TranslateLineActions Grid.Column="0" />
@@ -30,7 +30,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0"
+                <TextBlock FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" Grid.Column="0"
                            Padding="10,2"
                            Background="Transparent"
                            VerticalAlignment="Center"
@@ -46,7 +46,7 @@
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0"
                           Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
-                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="NoWrap" MinLines="1" MaxLines="1"
+                        <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" IsReadOnly="True" IsTabStop="False" TextWrapping="NoWrap" MinLines="1" MaxLines="1"
                                  TextAlignment="Center" VerticalScrollBarVisibility="Hidden"
                                  Padding="10,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent"
@@ -60,7 +60,7 @@
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
                     <Grid Grid.Row="1" Visibility="{c:Binding Content.HasLoadedChanges,FalseToVisibility=Collapsed}">
-                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="NoWrap" MinLines="1" MaxLines="1"
+                        <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" IsReadOnly="True" IsTabStop="False" TextWrapping="NoWrap" MinLines="1" MaxLines="1"
                                  TextAlignment="Center" VerticalScrollBarVisibility="Hidden" Padding="10,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
                                  behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.Translated}"
@@ -71,7 +71,7 @@
                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
-                    <ui:TextBox Grid.Row="2" Padding="10,2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                    <ui:TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" Grid.Row="2" Padding="10,2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                 TextAlignment="Center"
                                 AutomationProperties.Name="{Binding Label}"
                                 ToolTip="蓝色框：载入后修改；黄色框：参考差异。"

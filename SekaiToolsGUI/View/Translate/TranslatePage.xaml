@@ -56,6 +56,14 @@
                             Padding="0,10,0,0" Margin="0,2,0,0">
                         <DockPanel LastChildFill="True">
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0">
+                                <ui:Button x:Name="DecreaseTextSizeButton" Icon="{ui:SymbolIcon Subtract24}"
+                                           Margin="0,0,8,8" Click="DecreaseTextSize_OnClick"
+                                           IsEnabled="{c:Binding 'ListTextScale>0.75'}"
+                                           ToolTip="缩小列表文本 (Ctrl+滚轮)" AutomationProperties.Name="缩小列表文本" />
+                                <ui:Button x:Name="IncreaseTextSizeButton" Icon="{ui:SymbolIcon Add24}"
+                                           Margin="0,0,8,8" Click="IncreaseTextSize_OnClick"
+                                           IsEnabled="{c:Binding 'ListTextScale&lt;2'}"
+                                           ToolTip="放大列表文本 (Ctrl+滚轮)" AutomationProperties.Name="放大列表文本" />
                                 <control:Popover x:Name="SpecialCharPopover" Padding="0" StaysOpen="False"
                                                  Margin="0,0,8,8"
                                                  Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}">
@@ -258,6 +266,8 @@
                       Background="Transparent"
                       ScrollViewer.CanContentScroll="True"
                       Name="TranslatePanel"
+                      PreviewMouseWheel="TranslatePanel_OnPreviewMouseWheel"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                       PreviewMouseDown="TranslatePanel_OnActivity" GotKeyboardFocus="TranslatePanel_OnActivity"
                       LostKeyboardFocus="TranslatePanel_OnLostFocus"
                       VirtualizingStackPanel.ScrollUnit="Pixel">

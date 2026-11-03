@@ -174,6 +174,17 @@ public partial class TranslatePage : UserControl
         }
     }
 
+    private void DecreaseTextSize_OnClick(object sender, RoutedEventArgs e) => ViewModel.ChangeListTextScale(-1);
+
+    private void IncreaseTextSize_OnClick(object sender, RoutedEventArgs e) => ViewModel.ChangeListTextScale(1);
+
+    private void TranslatePanel_OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (Keyboard.Modifiers != ModifierKeys.Control || e.Delta == 0) return;
+        ViewModel.ChangeListTextScale(Math.Sign(e.Delta));
+        e.Handled = true;
+    }
+
     private void UndoButton_OnClick(object sender, RoutedEventArgs e)
     {
         ViewModel.Undo();

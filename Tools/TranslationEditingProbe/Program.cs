@@ -171,6 +171,7 @@ internal static class Program
         };
         window.Show();
         Pump();
+        CheckListZoom(window, page);
         CheckTabNavigation(page);
         var undo = Nodes(page).OfType<Wpf.Ui.Controls.Button>().Single(button => Equals(button.ToolTip, "撤销 (Ctrl+Z)"));
         var redo = Nodes(page).OfType<Wpf.Ui.Controls.Button>().Single(button => Equals(button.ToolTip, "重做 (Ctrl+Y / Ctrl+Shift+Z)"));
@@ -312,6 +313,63 @@ internal static class Program
         window.Close();
         Check(store.ReadDraft() == null, "unload cannot recreate discarded draft");
         app.Shutdown();
+    }
+
+    private static void CheckListZoom(Window window, TranslatePage page)
+    {
+        var model = page.ViewModel;
+        var lines = model.Events.Select(line => line.Body.Translated).ToArray();
+        var dirty = model.IsDirty;
+        var undo = model.CanUndo;
+        var list = (System.Windows.Controls.ListView)page.FindName("TranslatePanel");
+        var increase = (Wpf.Ui.Controls.Button)page.FindName("IncreaseTextSizeButton");
+        var decrease = (Wpf.Ui.Controls.Button)page.FindName("DecreaseTextSizeButton");
+        var dialog = Nodes(list).OfType<SekaiToolsGUI.View.Translate.Components.TranslateLineDialog>().First();
+        var grid = (Grid)dialog.Content;
+        double RoleWidth() => grid.TransformToAncestor(page).TransformBounds(
+            new Rect(grid.ColumnDefinitions[0].ActualWidth, 0, grid.ColumnDefinitions[1].ActualWidth, 1)).Width;
+        model.ListTextScale = 1;
+        Pump();
+        var roleWidth = RoleWidth();
+        foreach (var theme in new[] { ApplicationTheme.Light, ApplicationTheme.Dark })
+        {
+            ApplicationThemeManager.Apply(theme);
+            increase.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+            Pump();
+            Check(model.ListTextScale == 1.1 && Math.Abs(RoleWidth() - roleWidth * 1.1) < 1,
+                "zoom button changes script font and role column width");
+            model.ListTextScale = 2;
+            Pump();
+            Check(!increase.IsEnabled && Math.Abs(RoleWidth() - roleWidth * 2) < 1,
+                "maximum zoom doubles role column and disables increase button");
+            var scriptBoxes = Nodes(list).OfType<System.Windows.Controls.TextBox>().ToArray();
+            Check(scriptBoxes.Length > 0 && scriptBoxes.All(box => box.FontSize == 28),
+                "all script text boxes share zoom");
+            Check(Nodes(dialog).OfType<TextBlock>().Any(text => text.FontSize == 12 &&
+                text.Inlines.OfType<System.Windows.Documents.Run>().Any(run => run.Text.Contains("最长行"))),
+                "length hint retains original font size");
+            Check(Nodes(dialog).OfType<TextBlock>().Where(text => text.Text is "参考译文" or "载入时译文")
+                .All(text => text.FontSize == 10), "source watermarks retain original font size");
+            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)window.ActualWidth,
+                (int)window.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+            bitmap.Render(window);
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+            using (var stream = File.Create(Path.Combine(Directory.GetCurrentDirectory(), ".codex-build",
+                "reference-diff", $"zoom-{theme}.png"))) encoder.Save(stream);
+            model.ListTextScale = -10;
+            Pump();
+            Check(model.ListTextScale == 0.75 && !decrease.IsEnabled, "minimum zoom is bounded and disables decrease");
+            model.ListTextScale = 1;
+        }
+        Pump();
+        Check(model.IsDirty == dirty && model.CanUndo == undo &&
+            lines.SequenceEqual(model.Events.Select(line => line.Body.Translated)),
+            "zoom preserves document and undo state");
+        var wheel = new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, 120)
+        { RoutedEvent = Mouse.PreviewMouseWheelEvent };
+        list.RaiseEvent(wheel);
+        Check(model.ListTextScale == 1 && !wheel.Handled, "ordinary wheel retains scrolling behavior");
     }
 
     private static void CheckTabNavigation(TranslatePage page)

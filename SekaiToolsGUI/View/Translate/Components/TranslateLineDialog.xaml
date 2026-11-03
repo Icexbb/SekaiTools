@@ -15,7 +15,7 @@
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="{Binding DataContext.ListRoleWidth, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=150}" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <components:TranslateLineActions Grid.Column="0" />
@@ -24,7 +24,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="30" />
                     <ColumnDefinition Width="10" />
-                    <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Center"
                             VerticalAlignment="Center">
@@ -45,10 +45,10 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Padding="0"
+                    <TextBlock FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" Grid.Row="0" Padding="0"
                                VerticalAlignment="Top" HorizontalAlignment="Center"
                                Text="{Binding Path= Character.Original}"
-                               TextWrapping="Wrap" MaxWidth="100"
+                               TextWrapping="Wrap"
                                ToolTipService.ToolTip="{Binding Path= Character.Original}"
                                ToolTipService.InitialShowDelay="0"
                                ToolTipService.BetweenShowDelay="0" />
@@ -60,7 +60,7 @@
                         </Grid.RowDefinitions>
                         <ui:SymbolIcon Grid.Row="1" Symbol="ArrowDown28" />
                     </Grid>
-                    <ui:TextBox Grid.Row="2"
+                    <ui:TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" Grid.Row="2"
                                 Padding="0"
                                 KeyboardNavigation.TabNavigation="Continue"
                                 BorderBrush="Transparent"
@@ -94,7 +94,7 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <TextBox Grid.Row="0" Name="OriginalContentTextBox"
+                    <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" Grid.Row="0" Name="OriginalContentTextBox"
                              KeyboardNavigation.TabNavigation="Continue"
                              MinLines="2"
                              Margin="0"
@@ -148,7 +148,7 @@
                 <StackPanel Grid.Column="2" VerticalAlignment="Stretch">
                     <Grid
                         Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
-                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="10,2"
+                        <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="10,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent"
                                  BorderBrush="Transparent"
                                  behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Translated}"
@@ -160,7 +160,7 @@
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
                     <Grid Visibility="{c:Binding Content.HasLoadedChanges,FalseToVisibility=Collapsed}">
-                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="10,2"
+                        <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="10,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
                                  behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.Translated}"
                                  behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{Binding Content.HasLoadedChanges}"
@@ -170,7 +170,7 @@
                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
-                    <TextBox behaviors:NewlineMarker.Style="{Binding TranslationNewlineMarker, Source={x:Static settings:SettingPageModel.Instance}}"
+                    <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" behaviors:NewlineMarker.Style="{Binding TranslationNewlineMarker, Source={x:Static settings:SettingPageModel.Instance}}"
                              MinLines="2" Padding="10,2" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
                              PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"
                              DataObject.Pasting="TextBox_OnPasting" GotKeyboardFocus="TextBox_OnGotKeyboardFocus"
