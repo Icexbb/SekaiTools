@@ -1,3 +1,4 @@
+using System.IO;
 using SekaiToolsBase.GameScript;
 using SekaiToolsBase.Story;
 using SekaiToolsBase.Story.StoryEvent;
@@ -338,24 +339,24 @@ public partial class TranslatePageModel : ViewModelBase
             switch (line)
             {
                 case LineDialogModel lineDialogModel when ev is DialogStoryEvent dialogStoryEvent:
-                {
-                    if (lineDialogModel.Character.Original != dialogStoryEvent.CharacterOriginal
-                        || lineDialogModel.Content.Original != dialogStoryEvent.BodyOriginal) continue;
-                    lineDialogModel.Character.Reference = dialogStoryEvent.CharacterTranslated;
-                    lineDialogModel.Content.Reference = dialogStoryEvent.BodyTranslated;
-                    lineDialogModel.Content.ReferenceAvailable = true;
-                    lineDialogModel.Content.ReferencePreserveEmpty = dialogStoryEvent.HasExplicitTranslation;
-                    break;
-                }
+                    {
+                        if (lineDialogModel.Character.Original != dialogStoryEvent.CharacterOriginal
+                            || lineDialogModel.Content.Original != dialogStoryEvent.BodyOriginal) continue;
+                        lineDialogModel.Character.Reference = dialogStoryEvent.CharacterTranslated;
+                        lineDialogModel.Content.Reference = dialogStoryEvent.BodyTranslated;
+                        lineDialogModel.Content.ReferenceAvailable = true;
+                        lineDialogModel.Content.ReferencePreserveEmpty = dialogStoryEvent.HasExplicitTranslation;
+                        break;
+                    }
                 case LineEffectModel lineEffectModel:
-                {
-                    if (lineEffectModel.Content.Original != ev.BodyOriginal) continue;
-                    lineEffectModel.Content.Reference = ev.BodyTranslated;
-                    lineEffectModel.Content.ReferenceAvailable = true;
-                    lineEffectModel.Content.ReferencePreserveEmpty = ev.HasExplicitTranslation;
+                    {
+                        if (lineEffectModel.Content.Original != ev.BodyOriginal) continue;
+                        lineEffectModel.Content.Reference = ev.BodyTranslated;
+                        lineEffectModel.Content.ReferenceAvailable = true;
+                        lineEffectModel.Content.ReferencePreserveEmpty = ev.HasExplicitTranslation;
 
-                    break;
-                }
+                        break;
+                    }
             }
         }
     }

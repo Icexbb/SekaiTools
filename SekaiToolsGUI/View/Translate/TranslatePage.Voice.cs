@@ -19,7 +19,7 @@ public partial class TranslatePage
     private static readonly ILogger VoiceLogger = Logger.CreateLogger("TranslationVoicePreview");
 
     private readonly DispatcherTimer _voiceProgressTimer = new()
-        { Interval = TimeSpan.FromMilliseconds(50) };
+    { Interval = TimeSpan.FromMilliseconds(50) };
 
     private IDisposable? _voiceCacheProtection;
     private LineDialogModel? _voiceLine;
@@ -85,6 +85,7 @@ public partial class TranslatePage
     private async void OnVoiceRequested(object sender, RoutedEventArgs e)
     {
         if (e.OriginalSource is not LineDialogModel { HasVoice: true } line) return;
+        if (line.OriginalVoice is not { } originalVoice) return;
         e.Handled = true;
         if (_voicePlaybackActive) return;
         if (ReferenceEquals(line, _voiceLine) && line.VoiceLoading)
@@ -106,9 +107,9 @@ public partial class TranslatePage
         {
             Fetcher.Instance.SetProxy(SettingPageModel.Instance.GetProxy());
             var uri = ScenarioVoice.Locate(DownloadPageModel.Instance.CurrentSource.StorageBaseUrl,
-                line.VoiceScenarioId, line.OriginalVoice!.Value.VoiceId);
+                line.VoiceScenarioId, originalVoice.VoiceId);
             VoiceLogger.LogInformation("语音资源地址：第 {Sequence} 条，剧本 {ScenarioId}，语音 {VoiceId}，URL {AudioUrl}",
-                line.SequenceNumber, line.VoiceScenarioId, line.OriginalVoice.Value.VoiceId, uri.AbsoluteUri);
+                line.SequenceNumber, line.VoiceScenarioId, originalVoice.VoiceId, uri.AbsoluteUri);
             var path = await ScenarioVoice.LoadAsync(Fetcher.Instance, uri,
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SekaiTools",
                     "VoiceCache"), request.Token);
@@ -119,8 +120,8 @@ public partial class TranslatePage
             _voicePath = path;
             var player = new MediaPlayer();
             _voicePlayer = player;
-            player.Volume = double.IsFinite(line.OriginalVoice.Value.Volume)
-                ? Math.Clamp(line.OriginalVoice.Value.Volume, 0, 1)
+            player.Volume = double.IsFinite(originalVoice.Volume)
+                ? Math.Clamp(originalVoice.Volume, 0, 1)
                 : 1;
             player.MediaOpened += (_, _) =>
             {

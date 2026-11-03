@@ -1,3 +1,4 @@
+using System.IO;
 using SekaiToolsBase.GameScript;
 using SekaiToolsBase.Story;
 using SekaiToolsBase.Story.StoryEvent;
