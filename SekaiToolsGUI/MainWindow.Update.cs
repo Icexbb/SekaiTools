@@ -8,6 +8,9 @@ using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 using SekaiToolsGUI.ViewModel.Setting;
 using Updater;
+using Wpf.Ui;
+using Wpf.Ui.Controls;
+using Wpf.Ui.Extensions;
 
 namespace SekaiToolsGUI;
 
@@ -57,7 +60,8 @@ public partial class MainWindow
                 UpdateButton.Content = $"正在下载更新… {value:P0}";
                 UpdateButton.Visibility = Visibility.Visible;
             });
-            var version = await UpdatePackage.PrepareAsync(install, stage, handler, cancellationToken, progress);
+            var version = await UpdatePackage.PrepareAsync(install, stage, handler, cancellationToken, progress,
+                ConfirmUpdateDownloadAsync);
             cancellationToken.ThrowIfCancellationRequested();
             if (version is null) return;
             _updateStage = stage;
@@ -77,6 +81,19 @@ public partial class MainWindow
         {
             if (_updateStage is null) DeleteUpdateStage(stage);
         }
+    }
+
+    private async Task<bool> ConfirmUpdateDownloadAsync(Version version, CancellationToken cancellationToken)
+    {
+        if (_closeInProgress) return false;
+        var result = await WindowContentDialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
+        {
+            Title = $"发现新版本 {version}",
+            Content = "是否现在下载更新？下载期间可以继续使用，准备完成后可选择何时重启。",
+            PrimaryButtonText = "下载更新",
+            CloseButtonText = "暂不更新"
+        }, cancellationToken);
+        return result == ContentDialogResult.Primary;
     }
 
     private void RestartForUpdate_Click(object sender, RoutedEventArgs e)

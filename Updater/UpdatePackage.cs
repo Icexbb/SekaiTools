@@ -11,7 +11,8 @@ namespace Updater;
 internal static class UpdatePackage
 {
     internal static async Task<string?> PrepareAsync(string installDirectory, string stage, HttpMessageHandler handler,
-        CancellationToken cancellationToken = default, IProgress<double>? progress = null)
+        CancellationToken cancellationToken = default, IProgress<double>? progress = null,
+        Func<Version, CancellationToken, Task<bool>>? confirmDownload = null)
     {
         using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(30) };
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("SekaiTools", "1.0"));
@@ -24,6 +25,9 @@ internal static class UpdatePackage
         var main = Path.Combine(installDirectory, UpdatePaths.MainExecutable);
         var local = FileVersionInfo.GetVersionInfo(main).FileVersion;
         if (Version.TryParse(local, out var installed) && installed >= version) return null;
+        cancellationToken.ThrowIfCancellationRequested();
+        if (confirmDownload is not null && !await confirmDownload(version, cancellationToken)) return null;
+        cancellationToken.ThrowIfCancellationRequested();
 
         var url = endpoints.ReleaseDownloadBaseUrl + $"{Uri.EscapeDataString(tag)}/SekaiTools-{version}.7z";
         var checksum = await client.GetStringAsync(url + ".sha256", cancellationToken);
