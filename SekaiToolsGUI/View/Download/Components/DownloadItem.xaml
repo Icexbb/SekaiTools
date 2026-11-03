@@ -8,7 +8,7 @@
              mc:Ignorable="d" Margin="0"
              d:DataContext="{d:DesignInstance local:DownloadItem}"
              HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-             VerticalContentAlignment="Stretch">
+             VerticalContentAlignment="Stretch" Height="64">
     <ui:CardAction HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
                    VerticalAlignment="Stretch" VerticalContentAlignment="Center"
                    Click="ButtonBase_OnClick" Padding="10">
@@ -21,6 +21,8 @@
             <ui:InfoBadge Name="IndexInfoBadge" Severity="Attention" Margin="0,0,5,0" Value="1"
                           VerticalAlignment="Center" />
             <ui:TextBlock Grid.Column="1" Name="TitleTextBlock" VerticalAlignment="Center" TextWrapping="Wrap"
+                          MaxHeight="40" LineHeight="20" LineStackingStrategy="BlockLineHeight"
+                          TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
                           Text="Download Item Title" />
             <local:DownloadChoice Grid.Column="2" x:Name="Choice" />
         </Grid>
