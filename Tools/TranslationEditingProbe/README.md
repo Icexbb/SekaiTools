@@ -37,3 +37,5 @@ dotnet run --project Tools/TranslationEditingProbe/TranslationEditingProbe.cspro
 覆盖 CRLF 三行粘贴拒绝、选区替换为两行、提交时超行校验，以及字体选择和快速调整内容在窄窗口中的测量约束。
 
 弹窗尺寸检查还覆盖各用途分类的真实表面宽高、窗口缩小后的边界、放大后的恢复及关闭完成。规则见 `docs/dialog-sizing.md`。
+
+字幕任务素材预检覆盖剧本与翻译通过、未选择视频时禁止提交、文件被修改后显示数量不匹配、切换路径立即撤销旧批准及最新检查结果覆盖过期结果。领域层的旧 TXT/TXT v2、剧本损坏、空文件与磁盘变更用例位于 `SubtitleMaterialValidationTests`。

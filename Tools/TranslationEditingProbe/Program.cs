@@ -18,7 +18,7 @@ internal static class Program
     {
         if (args.Contains("--dialogs"))
         {
-            var app = new Application();
+            var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
             app.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary());
             app.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
             CheckDialogInput();
@@ -125,6 +125,73 @@ internal static class Program
         Console.WriteLine("PASS translation editing, linked undo, save baseline, branching, draft recovery, module persistence");
     }
 
+    private static void CheckSubtitleMaterials()
+    {
+        SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+        var directory = Path.GetFullPath(".codex-build/dialog-review/material-probe");
+        Directory.CreateDirectory(directory);
+        var scriptPath = Path.Combine(directory, "script.json");
+        var translationPath = Path.Combine(directory, "translation.txt");
+        var videoPath = Path.Combine(directory, "video.mp4");
+        File.WriteAllText(scriptPath, System.Text.Json.JsonSerializer.Serialize(new GameScript
+        {
+            ScenarioId = "material-probe",
+            TalkData = [new("角色", "原文", 0)],
+            Snippets = [new() { Action = 1 }]
+        }));
+        File.WriteAllText(translationPath, "角色：译文");
+        File.WriteAllText(videoPath, "probe");
+        var host = new Wpf.Ui.Controls.ContentDialogHost();
+        var dialog = new SekaiToolsGUI.View.Subtitle.Components.SubtitleTaskDialog(host);
+        var bar = (Wpf.Ui.Controls.InfoBar)dialog.FindName("MaterialValidation");
+        var validate = dialog.GetType().GetMethod("ValidateFilesAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        Task<bool> Validate()
+        {
+            var task = (Task<bool>)validate.Invoke(dialog, null)!;
+            var timeout = System.Diagnostics.Stopwatch.StartNew();
+            while (!task.IsCompleted && timeout.Elapsed < TimeSpan.FromSeconds(5))
+            {
+                Pump();
+                Thread.Sleep(10);
+            }
+            Check(task.IsCompleted, "material validation finishes asynchronously");
+            return task;
+        }
+        dialog.ViewModel.ScriptFilePath = scriptPath;
+        dialog.ViewModel.TranslateFilePath = translationPath;
+        Check(Validate().GetAwaiter().GetResult(), "matching script and translation pass dialog validation");
+        Check(bar.Severity == Wpf.Ui.Controls.InfoBarSeverity.Success && !dialog.IsPrimaryButtonEnabled,
+            "successful material check is visible and still requires video");
+        dialog.ViewModel.VideoFilePath = videoPath;
+        Check(dialog.IsPrimaryButtonEnabled, "matching materials enable queue submission");
+        File.WriteAllText(translationPath, "横幅");
+        Check(!Validate().GetAwaiter().GetResult() && !dialog.IsPrimaryButtonEnabled && bar.Message.Contains("对话数量不匹配"),
+            "changed translation disables submit and explains mismatch");
+        dialog.ViewModel.TranslateFilePath = Path.Combine(directory, "missing.txt");
+        Check(!dialog.IsPrimaryButtonEnabled, "new file selection immediately clears previous approval");
+        dialog.ViewModel.TranslateFilePath = translationPath;
+        File.WriteAllText(translationPath, "角色：修正");
+        Check(Validate().GetAwaiter().GetResult() && bar.Severity == Wpf.Ui.Controls.InfoBarSeverity.Success,
+            "latest selection replaces stale validation results");
+        var window = new Window { Width = 1280, Height = 960, Content = host, ShowInTaskbar = false };
+        window.Show();
+        var shown = dialog.ShowAsync();
+        Pump();
+        Check(Validate().GetAwaiter().GetResult(), "shown subtitle dialog validates selected materials");
+        dialog.GetType().GetMethod("OnButtonClick", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(dialog, [Wpf.Ui.Controls.ContentDialogButton.Primary]);
+        var closingTimeout = System.Diagnostics.Stopwatch.StartNew();
+        while (!shown.IsCompleted && closingTimeout.Elapsed < TimeSpan.FromSeconds(5))
+        {
+            Pump();
+            Thread.Sleep(10);
+        }
+        Check(shown.IsCompleted && shown.GetAwaiter().GetResult() == Wpf.Ui.Controls.ContentDialogResult.Primary,
+            "validated materials submit and close the real dialog");
+        window.Close();
+        Directory.Delete(directory, true);
+    }
+
     private static void CheckDialogSizing()
     {
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
@@ -221,6 +288,7 @@ internal static class Program
         var editContent = (FrameworkElement)dialog.Content;
         editContent.Measure(new Size(340, 200));
         Check(editContent.DesiredSize.Width <= 340, "quick edit content has no overflowing minimum width");
+        CheckSubtitleMaterials();
         CheckDialogSizing();
         Console.WriteLine("PASS dialog paste, selection replacement, submit validation and narrow content layout");
     }
