@@ -147,26 +147,21 @@
                 <StackPanel Grid.Column="2" VerticalAlignment="Stretch">
                     <Grid
                         Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
-                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="5,5,5,24"
+                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="5,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent"
                                  BorderBrush="Transparent"
                                  behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Translated}"
                                  behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference'}"
-                                 ToolTip="框内为与当前译文不同的文字；竖线表示此处有增删。"
+                                 ToolTip="{Binding Content.Reference}"
                                  AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
-                        <TextBlock Text="参考译文" Margin="6,0,6,4" FontSize="12" Opacity="0.6"
-                                   HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
                     <Grid Visibility="{c:Binding Content.HasLoadedChanges,FalseToVisibility=Collapsed}">
-                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="5,5,5,24"
+                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="5,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
                                  behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.Translated}"
                                  behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{Binding Content.HasLoadedChanges}"
+                                 ToolTip="{Binding Content.LoadedText}"
                                  AutomationProperties.Name="载入时译文" Text="{Binding Content.LoadedText}" />
-                        <TextBlock Text="载入时译文" Margin="6,0,6,4" FontSize="12" Opacity="0.6"
-                                   HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
                     <TextBox MinLines="2" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
                              PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"

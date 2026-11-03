@@ -288,7 +288,7 @@ internal static class Program
         window.Content = locationView;
         Pump();
         var referenceBox = Nodes(locationView).OfType<System.Windows.Controls.TextBox>().Single(box => System.Windows.Automation.AutomationProperties.GetName(box) == "参考译文");
-        Check(referenceBox.IsVisible && referenceBox.ActualHeight < 60, "location reference stays within one text line plus watermark");
+        Check(referenceBox.IsVisible && referenceBox.ActualHeight < 32, "location reference uses only one text line of height");
         var firstCharacter = referenceBox.GetRectFromCharacterIndex(0);
         var endOfFirstLine = referenceBox.GetRectFromCharacterIndex(location.Content.Reference.IndexOf('\n') - 1, true);
         Check(!firstCharacter.IsEmpty && !endOfFirstLine.IsEmpty &&
@@ -399,6 +399,15 @@ internal static class Program
         Check(LoadedRects(editor) > 0, "editing loaded translation highlights without any reference");
         Check(loadedBox.IsVisible && loadedBox.Text == "今天一起休息吧！" && LoadedRects(loadedBox) > 0,
             "changed row shows original loaded text above editor with blue differences");
+        Check(loadedBox.ActualHeight < 32, "single-line load-time text has no extra label row");
+        var compactHeight = loadedBox.ActualHeight;
+        line.Content.LoadedText = "第一行\n第二行\n第三行";
+        Pump();
+        Check(loadedBox.ActualHeight > compactHeight * 2 && loadedBox.ActualHeight < compactHeight + loadedBox.FontSize * 4,
+            "load-time comparison grows automatically with actual text lines");
+        line.Content.LoadedText = "今天一起休息吧！";
+        Pump();
+        Check(Math.Abs(loadedBox.ActualHeight - compactHeight) < 1, "comparison height shrinks back with single-line text");
         Check(loadedBox.TransformToAncestor(view).Transform(new Point()).Y < editor.TransformToAncestor(view).Transform(new Point()).Y,
             "load-time text is positioned above current editor");
         var loadedEffectBox = Nodes(effectView).OfType<System.Windows.Controls.TextBox>().Single(box =>
