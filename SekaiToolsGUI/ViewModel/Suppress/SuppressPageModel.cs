@@ -68,17 +68,33 @@ public class SuppressPageModel : ViewModelBase
             SetProperty(value);
             if (value != null) value.PropertyChanged += JobChanged;
             OnPropertyChanged(nameof(HasRunningJob));
+            OnPropertyChanged(nameof(RunningJobs));
             RefreshStartStates();
             RefreshSummary();
         }
     }
 
-    public string QueueStatus => AutoRunQueue ? "队列运行中 · 按顺序执行" : "队列已暂停 · 新任务仅加入等待";
-
-    public bool AutoRunQueue
+    public SuppressionJobModel? SelectedJob
     {
-        get => GetProperty(false);
-        set { SetProperty(value); OnPropertyChanged(nameof(QueueStatus)); }
+        get => GetProperty<SuppressionJobModel?>();
+        set
+        {
+            if (SelectedJob is { } previous) previous.IsSelected = false;
+            SetProperty(value);
+            if (value != null) value.IsSelected = true;
+            OnPropertyChanged(nameof(HasSelection));
+        }
+    }
+    public bool HasSelection => SelectedJob != null;
+    public IEnumerable<SuppressionJobModel> RunningJobs => RunningJob == null ? [] : [RunningJob];
+
+    public void RemoveJob(SuppressionJobModel job)
+    {
+        if (ReferenceEquals(RunningJob, job) || job.IsEditing) return;
+        PendingJobs.Remove(job);
+        CompletedJobs.Remove(job);
+        job.Job.Cancel();
+        if (ReferenceEquals(SelectedJob, job)) SelectedJob = RunningJob ?? PendingJobs.FirstOrDefault() ?? CompletedJobs.LastOrDefault();
     }
 
     public bool BeginEdit(SuppressionJobModel job)
@@ -110,6 +126,7 @@ public class SuppressPageModel : ViewModelBase
             if (index >= 0)
             {
                 PendingJobs[index] = replacement;
+                if (ReferenceEquals(SelectedJob, original)) SelectedJob = replacement;
                 return;
             }
             if (!CompletedJobs.Contains(original)) throw new InvalidOperationException("原任务已移除，请重新创建任务。");
@@ -125,6 +142,7 @@ public class SuppressPageModel : ViewModelBase
             return false;
 
         RunningJob = job;
+        job.Progress = job.Progress with { State = SekaiToolsMedia.VideoSuppressionState.Preparing };
         return true;
     }
 
@@ -143,7 +161,12 @@ public class SuppressPageModel : ViewModelBase
         RefreshSummary();
     }
 
-    public void ClearCompleted() => CompletedJobs.Clear();
+    public void ClearCompleted()
+    {
+        var clearSelection = SelectedJob != null && CompletedJobs.Contains(SelectedJob);
+        CompletedJobs.Clear();
+        if (clearSelection) SelectedJob = RunningJob ?? PendingJobs.FirstOrDefault();
+    }
 
     public bool IsPreparingResources
     {

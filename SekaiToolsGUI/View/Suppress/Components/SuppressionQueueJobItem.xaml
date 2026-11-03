@@ -24,7 +24,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Grid Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Stretch" dd:DragDrop.IsDragSource="True" dd:DragDrop.UseDefaultDragAdorner="True" dd:DragDrop.DragAdornerTemplate="{StaticResource SuppressionQueueDragPreviewTemplate}" dd:DragDrop.UseVisualSourceItemSizeForDragAdorner="True" dd:DragDrop.DragMouseAnchorPoint="0.05,0.5" Cursor="SizeNS" ToolTip="拖动调整队列顺序">
+            <Grid Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Stretch" dd:DragDrop.IsDragSource="False" dd:DragDrop.UseDefaultDragAdorner="True" dd:DragDrop.DragAdornerTemplate="{StaticResource SuppressionQueueDragPreviewTemplate}" dd:DragDrop.UseVisualSourceItemSizeForDragAdorner="True" dd:DragDrop.DragMouseAnchorPoint="0.05,0.5" Cursor="SizeNS" ToolTip="拖动调整队列顺序">
                 <ui:SymbolIcon Symbol="LineHorizontal320" Name="IconDragSort" VerticalAlignment="Center"/>
             </Grid>
             <StackPanel Grid.Column="1">
@@ -41,7 +41,7 @@
                 <TextBlock Grid.Row="0" Text="{Binding WaitingStatus}" FontWeight="SemiBold" HorizontalAlignment="Right"/>
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
                     <ui:Button Content="编辑" Icon="{ui:SymbolIcon Edit24}" Click="Edit_OnClick" Margin="0,0,8,0"/>
-                    <ui:Button Content="开始执行" Click="StartExecuteButton_OnClick" Visibility="{c:Binding CanStart, FalseToVisibility=Collapsed}"/>
+
                     <ui:Button Content="取消" Click="CancelJob_OnClick" IsEnabled="{Binding CanCancel}" Margin="10,0,0,0"/>
                 </StackPanel>
             </Grid>

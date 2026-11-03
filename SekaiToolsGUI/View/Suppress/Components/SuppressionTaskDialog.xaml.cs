@@ -6,14 +6,13 @@ namespace SekaiToolsGUI.View.Suppress.Components;
 
 public partial class SuppressionTaskDialog : ContentDialog
 {
-    public SuppressionTaskDialog(ContentDialogHost contentPresenter,
-        bool queueRunning) : base(contentPresenter)
+    public SuppressionTaskDialog(ContentDialogHost contentPresenter) : base(contentPresenter)
     {
         ViewModel = new SuppressTaskSettingsModel();
         DataContext = ViewModel;
         InitializeComponent();
         TaskSettings.DataContext = ViewModel;
-        QueueHint.Text = queueRunning ? "加入后按队列顺序执行。" : "加入后等待；点击主面板的“开始队列”执行。";
+        QueueHint.Text = "添加后自动按顺序压制；取消当前任务后继续下一项。";
     }
 
     public SuppressTaskSettingsModel ViewModel { get; }

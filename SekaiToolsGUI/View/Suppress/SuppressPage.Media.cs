@@ -8,6 +8,7 @@ namespace SekaiToolsGUI.View.Suppress;
 
 public partial class SuppressPage
 {
+    private static bool _shuttingDown;
     private static readonly VideoSuppressionQueue Queue = new(async (options, report, token) =>
     {
         using var powerRequest = SystemPowerRequest.Acquire("SekaiTools 正在压制视频");
@@ -33,6 +34,7 @@ public partial class SuppressPage
             });
         };
         ViewModel.CommitPending(model, original);
+        ViewModel.SelectedJob = model;
         StartNextQueuedJob();
     }
 
@@ -42,7 +44,7 @@ public partial class SuppressPage
 
         try
         {
-            Queue.Enqueue(model.Job);
+            _queue.Enqueue(model.Job);
         }
         catch (Exception ex)
         {
@@ -56,7 +58,7 @@ public partial class SuppressPage
 
     private void StartNextQueuedJob()
     {
-        if (!ViewModel.AutoRunQueue || ViewModel.HasRunningJob) return;
+        if (_shuttingDown || ViewModel.HasRunningJob) return;
         var next = ViewModel.PendingJobs.FirstOrDefault();
         if (next != null && !next.IsEditing) StartJob(next);
     }
@@ -95,6 +97,7 @@ public partial class SuppressPage
 
     internal static Task DisposeSuppressorAsync()
     {
+        _shuttingDown = true;
         return Queue.DisposeAsync(TimeSpan.FromSeconds(8));
     }
 }

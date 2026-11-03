@@ -54,6 +54,7 @@ internal static class Program
         var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
         if (args.Length > 2 && args[2] == "p1") { P1Checks.Run(gui, args[1]); app.Shutdown(); return; }
+        if (args.Length > 2 && args[2] == "always") { AlwaysQueueChecks.Run(gui, args[1]); app.Shutdown(); return; }
         foreach (var theme in new[] { "Light", "Dark" })
         {
             app.Resources.MergedDictionaries.Clear();
@@ -108,7 +109,7 @@ internal static class Program
                         modelType.GetProperty("CompletedFilter")!.SetValue(model, 2);
                         if (((System.Windows.Data.ListCollectionView)modelType.GetProperty("FilteredCompletedJobs")!.GetValue(model)!).Count != 1) throw new Exception("Failed filter incorrect");
                         modelType.GetProperty("CompletedFilter")!.SetValue(model, 0);
-                        if (size.Width == 800) ((System.Windows.Controls.Primitives.Selector)view.FindName("QueueTabs")).SelectedIndex = 1;
+                        modelType.GetProperty("SelectedJob")!.SetValue(model, running);
                     }
                     FrameworkElement content = name.Contains("Settings") ? new ScrollViewer { Content = view, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } : view;
                     var host = new Window { Width = size.Width, Height = size.Height, Content = content, Left = -15000, Top = -15000, ShowActivated = false, ShowInTaskbar = false };
@@ -126,11 +127,26 @@ internal static class Program
                     var image = new RenderTargetBitmap((int)content.ActualWidth, (int)content.ActualHeight, 96, 96, PixelFormats.Pbgra32); image.Render(background);
                     var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
                     using (var stream = File.Create(Path.Combine(args[1], $"{theme}-{name}-{size.Width}.png"))) encoder.Save(stream);
-                    if (name == "SuppressPage") CheckLogWindow(view);
+                    if (name == "SuppressPage")
+                    {
+                        CheckLogWindow(view);
+                        var pageModel = view.DataContext;
+                        var pendingItems = (System.Collections.IList)pageModel.GetType().GetProperty("PendingJobs")!.GetValue(pageModel)!;
+                        var finishedItems = (System.Collections.IList)pageModel.GetType().GetProperty("CompletedJobs")!.GetValue(pageModel)!;
+                        foreach (var selection in new[] { ("Pending", pendingItems[0]), ("Completed", finishedItems[0]), ("Failed", finishedItems[1]) })
+                        {
+                            pageModel.GetType().GetProperty("SelectedJob")!.SetValue(pageModel, selection.Item2);
+                            var detailFrame = new DispatcherFrame(); Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () => detailFrame.Continue = false); Dispatcher.PushFrame(detailFrame);
+                            background.UpdateLayout();
+                            var details = new RenderTargetBitmap((int)content.ActualWidth, (int)content.ActualHeight, 96, 96, PixelFormats.Pbgra32); details.Render(background);
+                            var detailEncoder = new PngBitmapEncoder(); detailEncoder.Frames.Add(BitmapFrame.Create(details));
+                            using var detailStream = File.Create(Path.Combine(args[1], $"{theme}-SuppressPage-{size.Width}-{selection.Item1}.png")); detailEncoder.Save(detailStream);
+                        }
+                    }
                     host.Close();
                 }
         }
-        Console.WriteLine("Rendered 8 panel captures (light/dark, wide/short). No encoding or user settings writes.");
+        Console.WriteLine("Rendered 20 panel captures (light/dark, wide/short). No encoding or user settings writes.");
         app.Shutdown();
     }
 }

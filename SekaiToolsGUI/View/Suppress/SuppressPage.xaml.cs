@@ -21,9 +21,13 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 {
     private bool _preparingResources;
 
-    public SuppressPage()
+    private readonly SekaiToolsMedia.VideoSuppressionQueue _queue;
+    public SuppressPage() : this(SuppressPageModel.Instance, Queue) { }
+
+    internal SuppressPage(SuppressPageModel model, SekaiToolsMedia.VideoSuppressionQueue queue)
     {
-        DataContext = SuppressPageModel.Instance;
+        _queue = queue;
+        DataContext = model;
         InitializeComponent();
         GongDragDrop.SetDropHandler(PendingJobsList, new PendingJobsDropHandler(ViewModel.PendingJobs));
 
@@ -33,33 +37,6 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
         ((MainWindow)Application.Current.MainWindow!).WindowSnackbarService;
 
     public SuppressPageModel ViewModel => (SuppressPageModel)DataContext;
-
-    private void QueueLayout_OnSizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        if (QueueTabs == null) return;
-        var narrow = e.NewSize.Width < 1100;
-        if (narrow == (QueueTabs.Visibility == Visibility.Visible)) return;
-        // Move the existing controls instead of duplicating queue state or drag/drop handlers.
-        if (narrow)
-        {
-            QueueColumns.Children.Remove(PendingCard);
-            QueueColumns.Children.Remove(CompletedCard);
-            PendingTab.Content = PendingCard;
-            CompletedTab.Content = CompletedCard;
-            PendingCard.Margin = CompletedCard.Margin = new Thickness(0);
-        }
-        else
-        {
-            PendingTab.Content = null;
-            CompletedTab.Content = null;
-            QueueColumns.Children.Add(PendingCard);
-            QueueColumns.Children.Add(CompletedCard);
-            PendingCard.Margin = new Thickness(0, 0, 5, 0);
-            CompletedCard.Margin = new Thickness(5, 0, 0, 0);
-        }
-        QueueTabs.Visibility = narrow ? Visibility.Visible : Visibility.Collapsed;
-        QueueColumns.Visibility = narrow ? Visibility.Collapsed : Visibility.Visible;
-    }
 
     public async void OnNavigatedTo()
     {
@@ -111,14 +88,18 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
         }
     }
 
-    private void StartQueue_OnClick(object sender, RoutedEventArgs e)
+    private void EditSelected_OnClick(object sender, RoutedEventArgs e) => EditJob_OnRequested(sender, EventArgs.Empty);
+    private void RemoveSelected_OnClick(object sender, RoutedEventArgs e) => TaskItem_OnRemoveRequested(sender, EventArgs.Empty);
+
+    private void TaskItem_OnSelected(object? sender, EventArgs e)
     {
-        ViewModel.AutoRunQueue = true;
+        if (sender is FrameworkElement { DataContext: SuppressionJobModel job }) ViewModel.SelectedJob = job;
+    }
+    private void TaskItem_OnRemoveRequested(object? sender, EventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: SuppressionJobModel job }) ViewModel.RemoveJob(job);
         StartNextQueuedJob();
     }
-
-    private void PauseQueue_OnClick(object sender, RoutedEventArgs e) => ViewModel.AutoRunQueue = false;
-
 
     private async void EditJob_OnRequested(object? sender, EventArgs e)
     {
@@ -138,12 +119,11 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
             var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService
                                 ?? throw new InvalidOperationException("内容对话框服务不可用");
             var dialog = new SuppressionTaskDialog(
-                dialogService.GetDialogHostEx() ?? throw new InvalidOperationException("内容对话框宿主不可用"),
-                ViewModel.AutoRunQueue);
+                dialogService.GetDialogHostEx() ?? throw new InvalidOperationException("内容对话框宿主不可用"));
             if (original != null)
             {
                 dialog.Title = ViewModel.PendingJobs.Contains(original) ? "编辑压制任务" : "重新执行压制任务";
-                dialog.PrimaryButtonText = ViewModel.PendingJobs.Contains(original) ? "保存修改" : "加入队列";
+                dialog.PrimaryButtonText = ViewModel.PendingJobs.Contains(original) ? "保存修改" : "添加任务";
                 var options = original.Job.Options;
                 dialog.ViewModel.SourceVideo = options.SourceVideo;
                 dialog.ViewModel.SourceSubtitle = options.SourceSubtitle;
@@ -197,7 +177,7 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
     private void RemoveFinishedJob_OnRemoveRequested(object? sender, EventArgs e)
     {
         if (sender is SuppressionFinishJobItem { DataContext: SuppressionJobModel job })
-            ViewModel.CompletedJobs.Remove(job);
+            ViewModel.RemoveJob(job);
     }
 
     private sealed class PendingJobsDropHandler : IDropTarget

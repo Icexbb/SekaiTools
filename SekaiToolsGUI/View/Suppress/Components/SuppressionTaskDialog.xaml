@@ -15,7 +15,7 @@
                   d:DataContext="{d:DesignInstance suppress:SuppressTaskSettingsModel, IsDesignTimeCreatable=True}"
                   IsPrimaryButtonEnabled="{Binding CanSubmit}"
                   Title="创建压制任务" DefaultButton="Primary"
-                  PrimaryButtonText="加入队列" CloseButtonText="取消" MinWidth="680">
+                  PrimaryButtonText="添加任务" CloseButtonText="取消" MinWidth="680">
     <ui:ContentDialog.Resources>
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"
                TargetType="{x:Type components:SuppressionTaskDialog}" />

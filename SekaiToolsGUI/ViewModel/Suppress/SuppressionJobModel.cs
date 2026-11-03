@@ -6,6 +6,7 @@ public sealed class SuppressionJobModel(VideoSuppressionJob job) : ViewModelBase
 {
     public VideoSuppressionJob Job { get; } = job;
     public string SourceVideo => Job.Options.SourceVideo;
+    public string SubtitleDescription => string.IsNullOrWhiteSpace(Job.Options.SourceSubtitle) ? "未选择字幕，仅转码" : Job.Options.SourceSubtitle;
     public string OutputPath => Job.Options.OutputPath;
     public string FileName => System.IO.Path.GetFileName(SourceVideo);
     public string EncodingDescription => $"{(string.IsNullOrWhiteSpace(Job.Options.SourceSubtitle) ? "仅转码" : "烧录字幕（不可关闭）")} · CRF {Job.Options.EncodingSettings.Crf} · {Job.Options.EncodingSettings.FfmpegPreset}";
@@ -22,8 +23,14 @@ public sealed class SuppressionJobModel(VideoSuppressionJob job) : ViewModelBase
     public bool IsEditing
     {
         get => GetProperty(false);
-        internal set { SetProperty(value); OnPropertyChanged(nameof(WaitingStatus)); }
+        internal set { SetProperty(value); OnPropertyChanged(nameof(WaitingStatus)); OnPropertyChanged(nameof(ListStatus)); OnPropertyChanged(nameof(CanReorder)); }
     }
+    public bool IsFailed => Progress.State == VideoSuppressionState.Failed;
+    public bool IsSelected { get => GetProperty(false); set => SetProperty(value); }
+    public bool CanReorder => Progress.State == VideoSuppressionState.Idle && !IsEditing;
+    public bool IsActive => Progress.Running;
+    public bool IsWaiting => Progress.State == VideoSuppressionState.Idle;
+    public string ListStatus => IsEditing ? "正在编辑" : Progress.Status;
     public string WaitingStatus => IsEditing ? "正在编辑" : "等待中";
     public bool CanStart
     {
@@ -41,6 +48,11 @@ public sealed class SuppressionJobModel(VideoSuppressionJob job) : ViewModelBase
             OnPropertyChanged(nameof(IsCompleted));
             OnPropertyChanged(nameof(IsFinished));
             OnPropertyChanged(nameof(IsPreparing));
+            OnPropertyChanged(nameof(IsFailed));
+            OnPropertyChanged(nameof(IsActive));
+            OnPropertyChanged(nameof(IsWaiting));
+            OnPropertyChanged(nameof(ListStatus));
+            OnPropertyChanged(nameof(CanReorder));
             OnPropertyChanged(nameof(StatusIcon));
             OnPropertyChanged(nameof(FailureSummary));
         }
