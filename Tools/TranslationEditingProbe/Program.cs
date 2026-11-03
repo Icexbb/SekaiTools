@@ -287,7 +287,7 @@ internal static class Program
         var locationView = new SekaiToolsGUI.View.Translate.Components.TranslateLineEffect { LineEffectModel = location };
         window.Content = locationView;
         Pump();
-        var referenceBox = Nodes(locationView).OfType<System.Windows.Controls.TextBox>().Single(box => box.IsReadOnly);
+        var referenceBox = Nodes(locationView).OfType<System.Windows.Controls.TextBox>().Single(box => System.Windows.Automation.AutomationProperties.GetName(box) == "参考译文");
         Check(referenceBox.IsVisible && referenceBox.ActualHeight < 60, "location reference stays within one text line plus watermark");
         var firstCharacter = referenceBox.GetRectFromCharacterIndex(0);
         var endOfFirstLine = referenceBox.GetRectFromCharacterIndex(location.Content.Reference.IndexOf('\n') - 1, true);
@@ -379,7 +379,7 @@ internal static class Program
         var view = new SekaiToolsGUI.View.Translate.Components.TranslateLineDialog { LineDialogModel = line };
         var effectView = new SekaiToolsGUI.View.Translate.Components.TranslateLineEffect { LineEffectModel = effect };
         var panel = new StackPanel { Margin = new Thickness(16) };
-        var title = new TextBlock { Text = "黄色框：参考差异 · 蓝色底线：相对载入译文的修改", Margin = new Thickness(4, 12, 4, 20) };
+        var title = new TextBlock { Text = "黄色框：参考差异 · 蓝色框：相对载入译文的修改", Margin = new Thickness(4, 12, 4, 20) };
         title.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
         panel.Children.Add(title);
         panel.Children.Add(view);
@@ -390,10 +390,21 @@ internal static class Program
         Pump();
         var editor = Nodes(view).OfType<System.Windows.Controls.TextBox>().Single(box => box.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.ParentBinding.Path?.Path == "Content.Translated");
         Check(LoadedRects(editor) == 0, "newly loaded translation has no modification highlights");
+        var loadedBox = Nodes(view).OfType<System.Windows.Controls.TextBox>().Single(box =>
+            System.Windows.Automation.AutomationProperties.GetName(box) == "载入时译文");
+        Check(!loadedBox.IsVisible, "unchanged row hides load-time comparison");
         line.Content.Translated = "今天一起练习吧！";
         effect.Content.Translated = "学校天台";
         Pump();
         Check(LoadedRects(editor) > 0, "editing loaded translation highlights without any reference");
+        Check(loadedBox.IsVisible && loadedBox.Text == "今天一起休息吧！" && LoadedRects(loadedBox) > 0,
+            "changed row shows original loaded text above editor with blue differences");
+        Check(loadedBox.TransformToAncestor(view).Transform(new Point()).Y < editor.TransformToAncestor(view).Transform(new Point()).Y,
+            "load-time text is positioned above current editor");
+        var loadedEffectBox = Nodes(effectView).OfType<System.Windows.Controls.TextBox>().Single(box =>
+            System.Windows.Automation.AutomationProperties.GetName(box) == "载入时译文");
+        Check(loadedEffectBox.IsVisible && loadedEffectBox.Text == "学校屋顶" && loadedEffectBox.MaxLines == 1 &&
+            loadedEffectBox.TextAlignment == TextAlignment.Center, "location load-time comparison remains one centered line");
         data.Translations[0] = new SekaiToolsBase.Story.Translation.DialogTranslate("角色", "今天一起散步吧！");
         data.Translations[2] = new SekaiToolsBase.Story.Translation.EffectTranslate("学校礼堂");
         data.Translations[3] = new SekaiToolsBase.Story.Translation.EffectTranslate("学校礼堂");
@@ -432,6 +443,7 @@ internal static class Program
         line.Content.Translated = line.Content.LoadedText!;
         Pump();
         Check(LoadedRects(editor) == 0, "restoring loaded text clears modification highlight");
+        Check(!loadedBox.IsVisible, "restoring loaded text hides load-time comparison");
         sessions.DeleteDraft();
 
         static System.Windows.Documents.Adorner? Adorner(System.Windows.Controls.TextBox box) =>

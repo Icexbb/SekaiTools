@@ -158,11 +158,21 @@
                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
+                    <Grid Visibility="{c:Binding Content.HasLoadedChanges,FalseToVisibility=Collapsed}">
+                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="5,5,5,24"
+                                 HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
+                                 behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.Translated}"
+                                 behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{Binding Content.HasLoadedChanges}"
+                                 AutomationProperties.Name="载入时译文" Text="{Binding Content.LoadedText}" />
+                        <TextBlock Text="载入时译文" Margin="6,0,6,4" FontSize="12" Opacity="0.6"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    </Grid>
                     <TextBox MinLines="2" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
                              PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"
                              DataObject.Pasting="TextBox_OnPasting" GotKeyboardFocus="TextBox_OnGotKeyboardFocus"
                              LostKeyboardFocus="TextBox_OnLostKeyboardFocus"
-                             ToolTip="蓝色底线表示相对载入译文的修改；黄色框表示参考差异。显示自动折行不改变正文中的换行。Enter 插入正文换行；Ctrl+Enter 跳到下一未译。"
+                             ToolTip="蓝色框表示相对载入译文的修改；黄色框表示参考差异。显示自动折行不改变正文中的换行。Enter 插入正文换行；Ctrl+Enter 跳到下一未译。"
                              AcceptsReturn="True" TextWrapping="Wrap" AutomationProperties.Name="{Binding Label}"
                              behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.LoadedText}"
                              behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Reference}"

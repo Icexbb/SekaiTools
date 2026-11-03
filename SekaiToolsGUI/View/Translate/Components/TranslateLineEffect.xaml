@@ -42,6 +42,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0"
                           Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
@@ -58,10 +59,22 @@
                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
-                    <ui:TextBox Grid.Row="1" Padding="5,2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                    <Grid Grid.Row="1" Visibility="{c:Binding Content.HasLoadedChanges,FalseToVisibility=Collapsed}">
+                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="NoWrap" MinLines="1" MaxLines="1"
+                                 TextAlignment="Center" VerticalScrollBarVisibility="Hidden" Padding="5,5,5,24"
+                                 HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
+                                 behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.Translated}"
+                                 behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{Binding Content.HasLoadedChanges}"
+                                 ToolTip="{Binding Content.LoadedText}"
+                                 AutomationProperties.Name="载入时译文" Text="{Binding Content.LoadedText}" />
+                        <TextBlock Text="载入时译文" Margin="6,0,6,4" FontSize="12" Opacity="0.6"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    </Grid>
+                    <ui:TextBox Grid.Row="2" Padding="5,2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                 TextAlignment="Center"
                                 AutomationProperties.Name="{Binding Label}"
-                                ToolTip="蓝色底线：载入后修改；黄色框：参考差异。"
+                                ToolTip="蓝色框：载入后修改；黄色框：参考差异。"
                                 behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.LoadedText}"
                                 behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Reference}"
                                 behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference'}"

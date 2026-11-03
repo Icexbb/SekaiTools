@@ -17,6 +17,21 @@ public class TranslationWorkspaceTests
         return model;
     }
 
+    [Theory]
+    [InlineData(null, "新译文", false)]
+    [InlineData("", "新增", true)]
+    [InlineData("删除", "", true)]
+    [InlineData("相同", "相同", false)]
+    [InlineData("一\r\n二", "一\n二", false)]
+    [InlineData("最初文本", "修改文本", true)]
+    public void LoadTimeComparisonAppearsOnlyForActualLoadedTextChanges(string? loaded, string current, bool expected)
+    {
+        var item = new TranslateItemModel { LoadedText = loaded, Translated = current };
+        Assert.Equal(expected, item.HasLoadedChanges);
+        item.Translated = loaded ?? string.Empty;
+        Assert.False(item.HasLoadedChanges);
+    }
+
     [Fact]
     public void DraftWithoutLoadedFileDoesNotInventLoadTimeBaseline()
     {

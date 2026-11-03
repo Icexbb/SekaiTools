@@ -1,3 +1,5 @@
+using SekaiToolsBase.Story.Translation;
+
 namespace SekaiToolsGUI.ViewModel.Translate;
 
 public class TranslateItemModel : ViewModelBase
@@ -5,8 +7,15 @@ public class TranslateItemModel : ViewModelBase
     public string? LoadedText
     {
         get => GetProperty<string?>(null);
-        set => SetProperty(value);
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(HasLoadedChanges));
+        }
     }
+
+    public bool HasLoadedChanges => LoadedText is { } loaded &&
+                                    TextDifference.Compare(Translated, loaded).Current.Count > 0;
 
     public string Original
     {
@@ -31,7 +40,11 @@ public class TranslateItemModel : ViewModelBase
     public string Translated
     {
         get => GetProperty(string.Empty);
-        set => SetProperty(value);
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(HasLoadedChanges));
+        }
     }
 
     public bool PreserveEmpty

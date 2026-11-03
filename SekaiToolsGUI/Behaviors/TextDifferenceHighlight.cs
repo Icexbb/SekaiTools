@@ -18,6 +18,10 @@ public static class TextDifferenceHighlight
         "LoadedComparison", typeof(string), typeof(TextDifferenceHighlight), new PropertyMetadata(null, Changed));
     public static string? GetLoadedComparison(DependencyObject target) => (string?)target.GetValue(LoadedComparisonProperty);
     public static void SetLoadedComparison(DependencyObject target, string? value) => target.SetValue(LoadedComparisonProperty, value);
+    public static readonly DependencyProperty IsLoadedComparisonEnabledProperty = DependencyProperty.RegisterAttached(
+        "IsLoadedComparisonEnabled", typeof(bool), typeof(TextDifferenceHighlight), new PropertyMetadata(true, Changed));
+    public static bool GetIsLoadedComparisonEnabled(DependencyObject target) => (bool)target.GetValue(IsLoadedComparisonEnabledProperty);
+    public static void SetIsLoadedComparisonEnabled(DependencyObject target, bool value) => target.SetValue(IsLoadedComparisonEnabledProperty, value);
 
     private static readonly DependencyProperty StateProperty = DependencyProperty.RegisterAttached(
         "State", typeof(HighlightState), typeof(TextDifferenceHighlight));
@@ -65,7 +69,8 @@ public static class TextDifferenceHighlight
                 ? TextDifference.Compare(_box.Text, comparison).Current
                 : [];
             var loaded = GetLoadedComparison(_box);
-            _loadedRanges = loaded != null ? TextDifference.Compare(_box.Text, loaded).Current : [];
+            _loadedRanges = GetIsLoadedComparisonEnabled(_box) && loaded != null
+                ? TextDifference.Compare(_box.Text, loaded).Current : [];
             if (_ranges.Count == 0 && _loadedRanges.Count == 0)
             {
                 Remove();
@@ -179,9 +184,16 @@ public static class TextDifferenceHighlight
             foreach (var rectangle in _rectangles)
                 drawingContext.DrawRoundedRectangle(fill, new Pen(brush, 1), rectangle, 2, 2);
             var loadedBrush = (Brush)GetValue(LoadedBrushProperty);
+            var loadedFill = loadedBrush.CloneCurrentValue();
+            loadedFill.Opacity = 0.12;
             foreach (var rectangle in _loadedRectangles)
-                drawingContext.DrawRoundedRectangle(loadedBrush, null,
-                    new Rect(rectangle.X, rectangle.Bottom - 3, Math.Max(3, rectangle.Width), 3), 1, 1);
+            {
+                var frame = rectangle;
+                // Keep both outlines visible when reference and load-time edits overlap.
+                if (frame.Width > 6 && frame.Height > 6 && _rectangles.Any(item => item.IntersectsWith(frame)))
+                    frame.Inflate(-2, -2);
+                drawingContext.DrawRoundedRectangle(loadedFill, new Pen(loadedBrush, 1), frame, 2, 2);
+            }
             drawingContext.Pop();
         }
     }
