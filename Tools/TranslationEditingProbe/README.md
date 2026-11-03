@@ -35,3 +35,5 @@ dotnet run --project Tools/TranslationEditingProbe/TranslationEditingProbe.cspro
 ```
 
 覆盖 CRLF 三行粘贴拒绝、选区替换为两行、提交时超行校验，以及字体选择和快速调整内容在窄窗口中的测量约束。
+
+弹窗尺寸检查还覆盖各用途分类的真实表面宽高、窗口缩小后的边界、放大后的恢复及关闭完成。规则见 `docs/dialog-sizing.md`。

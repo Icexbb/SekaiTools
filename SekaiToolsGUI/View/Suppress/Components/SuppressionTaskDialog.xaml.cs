@@ -31,6 +31,10 @@ public partial class SuppressionTaskDialog : ContentDialog
             Owner = Window.GetWindow(this),
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Title = "覆盖已有输出文件？",
+            Width = 480,
+            Height = 280,
+            SizeToContent = SizeToContent.Manual,
+            ResizeMode = ResizeMode.NoResize,
             Content = $"输出文件已存在：\n{outputPath}\n\n仅在压制成功后替换已有文件。是否继续？",
             PrimaryButtonText = "继续覆盖",
             CloseButtonText = "返回修改"

@@ -49,6 +49,7 @@ public partial class MainWindow : FluentWindow
 
     internal MainWindow(bool checkUpdates)
     {
+        Control.AdaptiveLayout.InitializeDialogSizing();
         _useCheckUpdate = checkUpdates;
         InitializeComponent();
         WindowWorkArea.Attach(this);

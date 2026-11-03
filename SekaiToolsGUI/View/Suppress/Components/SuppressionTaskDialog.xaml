@@ -5,7 +5,7 @@
                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                   xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                   xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
-                  layout:AdaptiveLayout.FitDialog="True"
+                  layout:AdaptiveLayout.DialogPurpose="Workspace"
                   xmlns:components="clr-namespace:SekaiToolsGUI.View.Suppress.Components"
                   xmlns:suppress="clr-namespace:SekaiToolsGUI.ViewModel.Suppress"
                   xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
@@ -15,7 +15,7 @@
                   d:DataContext="{d:DesignInstance suppress:SuppressTaskSettingsModel, IsDesignTimeCreatable=True}"
                   IsPrimaryButtonEnabled="{Binding CanSubmit}"
                   Title="创建压制任务" DefaultButton="Primary"
-                  PrimaryButtonText="添加任务" CloseButtonText="取消" MinWidth="680">
+                  PrimaryButtonText="添加任务" CloseButtonText="取消">
     <ui:ContentDialog.Resources>
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"
                TargetType="{x:Type components:SuppressionTaskDialog}" />

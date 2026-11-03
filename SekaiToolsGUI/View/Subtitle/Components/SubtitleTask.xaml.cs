@@ -804,6 +804,12 @@ public partial class SubtitleTask
                             var uiMessageBox = new MessageBox
                             {
                                 Title = "视频处理出错",
+                                Owner = Window.GetWindow(this),
+                                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                                Width = 480,
+                                Height = 280,
+                                SizeToContent = SizeToContent.Manual,
+                                ResizeMode = ResizeMode.NoResize,
                                 Content = e.Message + "\n" + e.StackTrace
                             };
 

@@ -125,6 +125,72 @@ internal static class Program
         Console.WriteLine("PASS translation editing, linked undo, save baseline, branching, draft recovery, module persistence");
     }
 
+    private static void CheckDialogSizing()
+    {
+        SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+        SekaiToolsGUI.Control.AdaptiveLayout.InitializeDialogSizing();
+        var host = new Wpf.Ui.Controls.ContentDialogHost();
+        var window = new Window { Width = 1100, Height = 850, Content = host, ShowInTaskbar = false };
+        window.Show();
+        Pump();
+        foreach (var purpose in Enum.GetValues<SekaiToolsGUI.Control.DialogPurpose>())
+        {
+            var dialog = new Wpf.Ui.Controls.ContentDialog(host)
+            {
+                Title = "尺寸验证",
+                Content = new TextBlock { Text = string.Concat(Enumerable.Repeat("需要滚动查看的长正文。", 200)), TextWrapping = TextWrapping.Wrap },
+                CloseButtonText = "关闭"
+            };
+            SekaiToolsGUI.Control.AdaptiveLayout.SetDialogPurpose(dialog, purpose);
+            var shown = dialog.ShowAsync();
+            Pump();
+            var expected = purpose switch
+            {
+                SekaiToolsGUI.Control.DialogPurpose.Workspace => new Size(host.ActualWidth * .7, host.ActualHeight * .7),
+                SekaiToolsGUI.Control.DialogPurpose.CompactEditor => new Size(560, 360),
+                SekaiToolsGUI.Control.DialogPurpose.TranslationExport => new Size(600, 480),
+                _ => new Size(480, 280)
+            };
+            window.UpdateLayout();
+            Pump();
+            Check(Nodes(dialog).OfType<FrameworkElement>().Any(element =>
+                    Math.Abs(element.ActualWidth - expected.Width) < 1 && Math.Abs(element.ActualHeight - expected.Height) < 1),
+                $"{purpose} renders a surface at requested size");
+            window.Width = 420;
+            window.Height = 350;
+            Pump();
+            window.UpdateLayout();
+            var root = (Grid)dialog.Template.FindName("DialogRootGrid", dialog);
+            var surface = root.Children.OfType<Border>().First();
+            Check(surface.ActualWidth <= host.ActualWidth - 80 + 1 && surface.ActualHeight <= host.ActualHeight - 80 + 1,
+                $"{purpose} fits reduced viewport");
+            var close = Nodes(dialog).OfType<Wpf.Ui.Controls.Button>().Single(button => button.Name == "CloseButton");
+            var position = close.TranslatePoint(new Point(), surface);
+            Check(position.Y >= 0 && position.Y + close.ActualHeight <= surface.ActualHeight + 1,
+                $"{purpose} keeps action button inside surface with long content");
+            window.Width = 1000;
+            window.Height = 760;
+            Pump();
+            window.UpdateLayout();
+            Check(Math.Abs(surface.ActualWidth - (purpose == SekaiToolsGUI.Control.DialogPurpose.Workspace ? host.ActualWidth * .7 : expected.Width)) < 1,
+                $"{purpose} restores width after viewport expands");
+            dialog.Hide();
+            Pump();
+            var timeout = System.Diagnostics.Stopwatch.StartNew();
+            while (!shown.IsCompleted && timeout.Elapsed < TimeSpan.FromSeconds(5))
+            {
+                Pump();
+                Thread.Sleep(10);
+            }
+            Check(shown.IsCompleted, "dialog closes without leaving pending work");
+            shown.GetAwaiter().GetResult();
+            window.Width = 1100;
+            window.Height = 850;
+            Pump();
+        }
+        window.Close();
+    }
+
     private static void CheckDialogInput()
     {
         var data = SekaiToolsBase.Story.StoryEvent.DialogStoryEvent.FromData(new GameScript { TalkData = [new("角色", "原文", 0)] }.TalkData[0]);
@@ -155,6 +221,7 @@ internal static class Program
         var editContent = (FrameworkElement)dialog.Content;
         editContent.Measure(new Size(340, 200));
         Check(editContent.DesiredSize.Width <= 340, "quick edit content has no overflowing minimum width");
+        CheckDialogSizing();
         Console.WriteLine("PASS dialog paste, selection replacement, submit validation and narrow content layout");
     }
 

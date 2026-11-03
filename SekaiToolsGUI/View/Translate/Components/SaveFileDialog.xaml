@@ -6,7 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
-    layout:AdaptiveLayout.FitDialog="True"
+    layout:AdaptiveLayout.DialogPurpose="TranslationExport"
     xmlns:components="clr-namespace:SekaiToolsGUI.View.Translate.Components"
     xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
     mc:Ignorable="d"
@@ -15,7 +15,6 @@
     d:DataContext="{d:DesignInstance subtitle:SaveFileDialogModel, IsDesignTimeCreatable=True}"
     IsPrimaryButtonEnabled="True" IsSecondaryButtonEnabled="True"
     Title="保存选项" DefaultButton="Primary"
-    DialogWidth="500" Width="500"
     PrimaryButtonText="保存" SecondaryButtonText="浏览" CloseButtonText="取消">
     <ui:ContentDialog.Resources>
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"

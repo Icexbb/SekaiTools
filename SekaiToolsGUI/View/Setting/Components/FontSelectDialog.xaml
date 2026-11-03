@@ -4,12 +4,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
-    layout:AdaptiveLayout.FitDialog="True"
+    layout:AdaptiveLayout.DialogPurpose="Workspace"
     xmlns:components="clr-namespace:SekaiToolsGUI.View.Setting.Components"
     ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
     ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     Loaded="FontSelectDialog_OnLoaded"
-    Title="字体选择" DialogWidth="560"
+    Title="字体选择"
     IsPrimaryButtonEnabled="False" DefaultButton="Primary" PrimaryButtonText="确认" CloseButtonText="取消">
     <ui:ContentDialog.Resources>
         <!-- ReSharper disable once Xaml.StaticResourceNotResolved -->

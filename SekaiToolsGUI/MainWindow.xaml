@@ -38,7 +38,7 @@
                 <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
             </ui:NavigationView.ContentOverlay>
         </ui:NavigationView>
-        <ui:ContentDialogHost x:Name="RootContentDialog" Grid.Row="0" />
+        <ui:ContentDialogHost x:Name="RootContentDialog" Grid.Row="0" Margin="0,42,0,0" />
         <ui:TitleBar Name="TitleBar" Grid.Row="0" Title="Sekai Tools">
             <ui:TitleBar.Icon>
                 <ui:ImageIcon Source="pack://application:,,,/Resource/icon.png" />

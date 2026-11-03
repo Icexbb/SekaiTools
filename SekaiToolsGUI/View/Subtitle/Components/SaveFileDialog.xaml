@@ -7,7 +7,7 @@
     xmlns:local="clr-namespace:SekaiToolsGUI.View.Subtitle.Components"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
-    layout:AdaptiveLayout.FitDialog="True"
+    layout:AdaptiveLayout.DialogPurpose="Workspace"
     xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
     xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
     mc:Ignorable="d"
@@ -16,8 +16,7 @@
     d:DataContext="{d:DesignInstance subtitle:SaveFileDialogModel, IsDesignTimeCreatable=True}"
     IsPrimaryButtonEnabled="True"
     Title="保存选项" DefaultButton="Primary"
-    PrimaryButtonText="保存" CloseButtonText="取消"
-    MinWidth="600">
+    PrimaryButtonText="保存" CloseButtonText="取消">
     <ui:ContentDialog.Resources>
         <!-- ReSharper disable once Xaml.StaticResourceNotResolved -->
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"

@@ -6,13 +6,12 @@
                   xmlns:local="clr-namespace:SekaiToolsGUI.View.Subtitle.Components"
                   xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                   xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
-                  layout:AdaptiveLayout.FitDialog="True"
+                  layout:AdaptiveLayout.DialogPurpose="CompactEditor"
                   xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
                   mc:Ignorable="d"
                   ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
                   ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                  d:DataContext="{d:DesignInstance subtitle:QuickEditDialogModel, IsDesignTimeCreatable=True}"
-                  DialogWidth="580" IsPrimaryButtonEnabled="True" DefaultButton="Primary" PrimaryButtonText="确认" CloseButtonText="取消">
+                  d:DataContext="{d:DesignInstance subtitle:QuickEditDialogModel, IsDesignTimeCreatable=True}" IsPrimaryButtonEnabled="True" DefaultButton="Primary" PrimaryButtonText="确认" CloseButtonText="取消">
     <ui:ContentDialog.Resources>
         <!-- ReSharper disable once Xaml.StaticResourceNotResolved -->
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"

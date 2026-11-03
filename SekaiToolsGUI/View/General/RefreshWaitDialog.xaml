@@ -5,7 +5,7 @@
                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                   xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                   xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
-                  layout:AdaptiveLayout.FitDialog="True"
+                  layout:AdaptiveLayout.DialogPurpose="Progress"
                   xmlns:general="clr-namespace:SekaiToolsGUI.View.General"
                   xmlns:vmg="clr-namespace:SekaiToolsGUI.ViewModel.General"
                   mc:Ignorable="d"
@@ -18,7 +18,7 @@
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"
                TargetType="{x:Type general:RefreshWaitDialog}" />
     </ui:ContentDialog.Resources>
-    <StackPanel MinWidth="320" MaxWidth="480">
+    <StackPanel >
         <TextBlock Margin="0,0,0,12" Text="{Binding Message}" TextWrapping="Wrap" />
         <ui:ProgressRing IsIndeterminate="True">
             <ui:ProgressRing.Style>
