@@ -12,7 +12,7 @@ public sealed class SuppressionJobModel(VideoSuppressionJob job) : ViewModelBase
     public string SubtitleDescription => string.IsNullOrWhiteSpace(Job.Options.SourceSubtitle) ? "未选择字幕，仅转码" : Job.Options.SourceSubtitle;
     public string OutputPath => Job.Options.OutputPath;
     public string FileName => System.IO.Path.GetFileName(SourceVideo);
-    public string EncodingDescription => $"{(string.IsNullOrWhiteSpace(Job.Options.SourceSubtitle) ? "仅转码" : "烧录字幕（不可关闭）")} · CRF {Job.Options.EncodingSettings.Crf} · {Job.Options.EncodingSettings.FfmpegPreset}";
+    public string EncodingDescription => $"{(string.IsNullOrWhiteSpace(Job.Options.SourceSubtitle) ? "仅转码" : "烧录字幕")} · CRF {Job.Options.EncodingSettings.Crf} · {Job.Options.EncodingSettings.FfmpegPreset}";
     public Wpf.Ui.Controls.SymbolRegular StatusIcon => Progress.State switch
     {
         VideoSuppressionState.Completed => Wpf.Ui.Controls.SymbolRegular.Checkmark24,

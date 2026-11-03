@@ -23,7 +23,7 @@ public sealed class SuppressTaskSettingsModel : ViewModelBase
     public string MediaDescription { get => GetProperty("请选择视频，或将视频与 ASS 字幕拖入此处"); private set { SetProperty(value); } }
     public string AnalysisError { get => GetProperty(""); private set { SetProperty(value); } }
     public string SubtitleNotice { get => GetProperty(""); set { SetProperty(value); } }
-    public string TaskSummary => $"{(string.IsNullOrWhiteSpace(SourceSubtitle) ? "仅转码" : "烧录字幕（不可关闭）")} · MP4 / H.264 · CRF {new X264EncodingSettings(QualityPreset, SpeedPreset, SuppressCrf).Crf} · {new X264EncodingSettings(QualityPreset, SpeedPreset).FfmpegPreset}\n音轨：兼容时保留，否则转为 AAC；开始时自动检测。";
+    public string TaskSummary => $"{(string.IsNullOrWhiteSpace(SourceSubtitle) ? "仅转码" : "烧录字幕")} · MP4 / H.264 · CRF {new X264EncodingSettings(QualityPreset, SpeedPreset, SuppressCrf).Crf} · {new X264EncodingSettings(QualityPreset, SpeedPreset).FfmpegPreset}\n音轨：兼容时保留，否则转为 AAC；开始时自动检测。";
     public void StopAnalysis()
     {
         _analysisVersion++;

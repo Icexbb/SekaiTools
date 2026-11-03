@@ -20,7 +20,7 @@
         <ui:CardControl MinHeight="70" Margin="0,0,0,5" Icon="{ui:SymbolIcon Subtitles24}" Visibility="{c:Binding 'SourceVideo.Length!=0', FalseToVisibility=Collapsed}">
             <ui:CardControl.Header>
                 <StackPanel>
-                    <ui:TextBlock FontTypography="Body" Text="烧录字幕（可选，不可关闭）"/>
+                    <ui:TextBlock FontTypography="Body" Text="字幕文件（可选）"/>
                     <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" Text="{Binding SourceSubtitle}" ToolTip="{Binding SourceSubtitle}" TextTrimming="CharacterEllipsis" Visibility="{c:Binding 'SourceSubtitle.Length!=0', FalseToVisibility=Collapsed}"/>
                     <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" Text="未选择时仅转码" Visibility="{c:Binding 'SourceSubtitle.Length==0', FalseToVisibility=Collapsed}"/>
                 </StackPanel>
