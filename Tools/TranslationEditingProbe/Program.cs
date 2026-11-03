@@ -399,6 +399,8 @@ internal static class Program
         Check(LoadedRects(editor) > 0, "editing loaded translation highlights without any reference");
         Check(loadedBox.IsVisible && loadedBox.Text == "今天一起休息吧！" && LoadedRects(loadedBox) > 0,
             "changed row shows original loaded text above editor with blue differences");
+        Check(loadedBox.Padding == editor.Padding && loadedBox.Margin == editor.Margin,
+            "load-time text and editor have identical text insets");
         Check(loadedBox.ActualHeight < 32, "single-line load-time text has no extra label row");
         var compactHeight = loadedBox.ActualHeight;
         line.Content.LoadedText = "第一行\n第二行\n第三行";
@@ -428,6 +430,22 @@ internal static class Program
             var referenceBrush = (Brush)adorner.GetValue((DependencyProperty)type.GetField("HighlightBrushProperty", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!);
             var loadedBrush = (Brush)adorner.GetValue((DependencyProperty)type.GetField("LoadedBrushProperty", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!);
             Check(referenceBrush.ToString() != loadedBrush.ToString() && LoadedRects(editor) > 0, $"loaded and reference differences have distinct colors {theme}");
+            var referenceBox = Nodes(view).OfType<System.Windows.Controls.TextBox>().Single(box =>
+                System.Windows.Automation.AutomationProperties.GetName(box) == "参考译文");
+            Check(referenceBox.Padding == editor.Padding && referenceBox.Margin == editor.Margin &&
+                Math.Abs(referenceBox.GetRectFromCharacterIndex(0).Left - editor.GetRectFromCharacterIndex(0).Left) < 1,
+                $"reference and editor text align {theme}");
+            foreach (var row in new FrameworkElement[] { view, effectView })
+                foreach (var label in new[] { "参考译文", "载入时译文" })
+                {
+                    var mark = Nodes(row).OfType<TextBlock>().Single(block => block.Text == label);
+                    Check(mark.IsVisible && !mark.IsHitTestVisible && mark.ActualHeight > 0,
+                        $"source watermark visible without intercepting input {label} {theme}");
+                    var parent = (FrameworkElement)VisualTreeHelper.GetParent(mark);
+                    var bounds = mark.TransformToAncestor(parent).TransformBounds(new Rect(mark.RenderSize));
+                    Check(bounds.Bottom <= parent.ActualHeight + 1 && bounds.Right <= parent.ActualWidth + 1,
+                        $"source watermark stays within compact row {label} {theme}");
+                }
             var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)window.ActualWidth, (int)window.ActualHeight, 96, 96, PixelFormats.Pbgra32);
             bitmap.Render(window);
             var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();

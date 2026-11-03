@@ -18,7 +18,7 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <components:TranslateLineActions Grid.Column="0" />
-        <ui:Card Grid.Column="1" Margin="0" Padding="5,2" VerticalAlignment="Stretch">
+        <ui:Card Grid.Column="1" Margin="0" Padding="10,2" VerticalAlignment="Stretch">
             <Grid VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="30" />
@@ -80,7 +80,7 @@
                 </Grid>
             </Grid>
         </ui:Card>
-        <ui:Card Grid.Column="2" Margin="0" Padding="5,2" VerticalAlignment="Stretch">
+        <ui:Card Grid.Column="2" Margin="0" Padding="10,2" VerticalAlignment="Stretch">
             <Grid VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -147,23 +147,29 @@
                 <StackPanel Grid.Column="2" VerticalAlignment="Stretch">
                     <Grid
                         Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
-                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="5,2"
+                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="10,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent"
                                  BorderBrush="Transparent"
                                  behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Translated}"
                                  behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference'}"
                                  ToolTip="{Binding Content.Reference}"
                                  AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
+                        <TextBlock Text="参考译文" FontSize="10" Opacity="0.5" Margin="4,0,6,0"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
                     <Grid Visibility="{c:Binding Content.HasLoadedChanges,FalseToVisibility=Collapsed}">
-                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="5,2"
+                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="10,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
                                  behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.Translated}"
                                  behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{Binding Content.HasLoadedChanges}"
                                  ToolTip="{Binding Content.LoadedText}"
                                  AutomationProperties.Name="载入时译文" Text="{Binding Content.LoadedText}" />
+                        <TextBlock Text="载入时译文" FontSize="10" Opacity="0.5" Margin="4,0,6,0"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
-                    <TextBox MinLines="2" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
+                    <TextBox MinLines="2" Padding="10,2" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
                              PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"
                              DataObject.Pasting="TextBox_OnPasting" GotKeyboardFocus="TextBox_OnGotKeyboardFocus"
                              LostKeyboardFocus="TextBox_OnLostKeyboardFocus"

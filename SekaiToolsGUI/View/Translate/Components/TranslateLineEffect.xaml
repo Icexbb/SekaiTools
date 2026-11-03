@@ -31,7 +31,7 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0"
-                           Padding="5,2"
+                           Padding="10,2"
                            Background="Transparent"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Stretch"
@@ -48,24 +48,30 @@
                           Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
                         <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="NoWrap" MinLines="1" MaxLines="1"
                                  TextAlignment="Center" VerticalScrollBarVisibility="Hidden"
-                                 Padding="5,2"
+                                 Padding="10,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent"
                                  BorderBrush="Transparent"
                                  behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Translated}"
                                  behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference'}"
                                  ToolTip="{Binding Content.Reference}"
                                  AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
+                        <TextBlock Text="参考译文" FontSize="10" Opacity="0.5" Margin="4,0,6,0"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
                     <Grid Grid.Row="1" Visibility="{c:Binding Content.HasLoadedChanges,FalseToVisibility=Collapsed}">
                         <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="NoWrap" MinLines="1" MaxLines="1"
-                                 TextAlignment="Center" VerticalScrollBarVisibility="Hidden" Padding="5,2"
+                                 TextAlignment="Center" VerticalScrollBarVisibility="Hidden" Padding="10,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
                                  behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.Translated}"
                                  behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{Binding Content.HasLoadedChanges}"
                                  ToolTip="{Binding Content.LoadedText}"
                                  AutomationProperties.Name="载入时译文" Text="{Binding Content.LoadedText}" />
+                        <TextBlock Text="载入时译文" FontSize="10" Opacity="0.5" Margin="4,0,6,0"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
-                    <ui:TextBox Grid.Row="2" Padding="5,2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                    <ui:TextBox Grid.Row="2" Padding="10,2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                 TextAlignment="Center"
                                 AutomationProperties.Name="{Binding Label}"
                                 ToolTip="蓝色框：载入后修改；黄色框：参考差异。"
