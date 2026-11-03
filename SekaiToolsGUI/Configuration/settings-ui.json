@@ -14,9 +14,9 @@
           "↵"
         ]
       }
-    ]
+    ],
+    "category": "翻译"
   },
-
   {
     "title": "主题",
     "icon": "Color24",
@@ -32,7 +32,8 @@
           "高对比度"
         ]
       }
-    ]
+    ],
+    "category": "通用"
   },
   {
     "title": "代理",
@@ -62,7 +63,8 @@
         "maximum": 65536.0,
         "visibilityProperty": "ProxyChangeable"
       }
-    ]
+    ],
+    "category": "通用"
   },
   {
     "title": "下载文件存储目录",
@@ -74,7 +76,8 @@
         "property": "DownloadDirectory",
         "width": 320
       }
-    ]
+    ],
+    "category": "下载"
   },
   {
     "title": "打字机设置",
@@ -97,7 +100,8 @@
         "smallChange": 1.0,
         "largeChange": 10.0
       }
-    ]
+    ],
+    "category": "轴机"
   },
   {
     "title": "字体自定义",
@@ -137,10 +141,12 @@
           }
         ]
       }
-    ]
+    ],
+    "category": "轴机"
   },
   {
-    "custom": "subtitle-export"
+    "custom": "subtitle-export",
+    "category": "轴机"
   },
   {
     "title": "视频识别性能",
@@ -157,7 +163,8 @@
           "高性能"
         ]
       }
-    ]
+    ],
+    "category": "轴机"
   },
   {
     "title": "高性能缓存预算（MiB）",
@@ -173,7 +180,8 @@
         "smallChange": 128.0,
         "largeChange": 512.0
       }
-    ]
+    ],
+    "category": "轴机"
   },
   {
     "title": "语句预览播放方式",
@@ -190,7 +198,8 @@
           "WPF 内嵌播放"
         ]
       }
-    ]
+    ],
+    "category": "通用"
   },
   {
     "title": "实验性功能",
@@ -259,9 +268,11 @@
         ],
         "statusProperty": "PeriodicColorAvailabilityReason"
       }
-    ]
+    ],
+    "category": "轴机"
   },
   {
-    "custom": "about"
+    "custom": "about",
+    "category": "通用"
   }
 ]

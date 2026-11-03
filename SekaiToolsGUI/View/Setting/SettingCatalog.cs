@@ -11,6 +11,7 @@ namespace SekaiToolsGUI.View.Setting;
 
 public sealed class SettingSection
 {
+    public string Category { get; init; } = "通用";
     public string Title { get; init; } = "";
     public string Description { get; init; } = "";
     public string Icon { get; init; } = "Settings24";
@@ -42,6 +43,8 @@ public sealed class SettingField
 
 public static class SettingCatalog
 {
+    public static IReadOnlyList<string> Categories { get; } = ["通用", "轴机", "下载", "翻译", "压制"];
+
     public static SettingSection[] Load()
     {
         var path = Path.Combine(AppContext.BaseDirectory, "Configuration", "settings-ui.json");
@@ -77,6 +80,8 @@ public static class SettingCatalog
     {
         if (section == null || section.Fields == null || section.Children == null)
             throw new InvalidDataException("设置卡片及其字段列表不能为 null");
+        if (!Categories.Contains(section.Category))
+            throw new InvalidDataException($"未知设置模块：{section.Category}");
         if (section.Custom is { } custom)
         {
             if (custom is not ("logs" or "about" or "subtitle-export") || !customs.Add(custom) ||

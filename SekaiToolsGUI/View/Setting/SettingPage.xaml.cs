@@ -33,15 +33,50 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
         };
         SettingsItems.Children.Clear();
         var builder = new SettingViewBuilder(OpenFontDialog, key => specialSections[key]);
-        foreach (var section in SettingCatalog.Load())
-            SettingsItems.Children.Add(section.Custom == null && section.Properties.Contains("ExportLine1")
-                ? new ExportOptionsControl
+        var sections = SettingCatalog.Load();
+        foreach (var category in SettingCatalog.Categories)
+        {
+            var content = new StackPanel();
+            foreach (var section in sections.Where(section => section.Category == category && section.Custom != "logs"))
+                content.Children.Add(section.Custom == null && section.Properties.Contains("ExportLine1")
+                    ? new ExportOptionsControl
+                    {
+                        ShowResetButtons = true,
+                        Description = section.Description,
+                        IsExpanded = section.IsExpanded
+                    }
+                    : builder.Build(section));
+            if (content.Children.Count == 0)
+            {
+                var empty = new System.Windows.Controls.TextBlock
                 {
-                    ShowResetButtons = true,
-                    Description = section.Description,
-                    IsExpanded = section.IsExpanded
-                }
-                : builder.Build(section));
+                    Text = category == "压制" ? "压制参数在视频压制页面的任务中设置。" : "此模块暂无全局设置。",
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(8)
+                };
+                empty.SetResourceReference(ForegroundProperty, "TextFillColorSecondaryBrush");
+                content.Children.Add(empty);
+            }
+            var icon = category switch
+            {
+                "轴机" => SymbolRegular.Subtitles24,
+                "下载" => SymbolRegular.ArrowDownload24,
+                "翻译" => SymbolRegular.Translate24,
+                "压制" => SymbolRegular.AnimalTurtle24,
+                _ => SymbolRegular.Settings24
+            };
+            var group = new CardExpander
+            {
+                Header = category,
+                Icon = new SymbolIcon(icon),
+                Content = content,
+                IsExpanded = true,
+                Margin = new Thickness(0, 0, 0, 12),
+                ContentPadding = new Thickness(8)
+            };
+            System.Windows.Automation.AutomationProperties.SetName(group, $"{category}设置");
+            SettingsItems.Children.Add(group);
+        }
     }
 
     private static ISnackbarService SnackService =>
@@ -69,7 +104,7 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
         var result = await dialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
         {
             Title = "恢复默认设置？",
-            Content = "主题、代理、字体和字幕输出设置都将恢复为默认值。",
+            Content = "所有模块的全局设置都将恢复为默认值。",
             PrimaryButtonText = "恢复默认",
             CloseButtonText = "取消"
         }, CancellationToken.None);

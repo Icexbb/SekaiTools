@@ -29,10 +29,15 @@ internal static class Program
         var page = (SettingPage)pageConstructor.Invoke([model]);
         var window = new Window { Content = page, Width = 1100, Height = 850, Left = -15000, Top = -15000, ShowActivated = false, ShowInTaskbar = false };
         window.Show(); Pump();
+        var groups = ((StackPanel)page.FindName("SettingsItems")).Children.OfType<CardExpander>().ToArray();
+        Require(groups.Select(group => group.Header?.ToString()).SequenceEqual(SettingCatalog.Categories),
+            "Settings modules are missing or out of order");
+        Require(Nodes(groups[3]).OfType<ComboBox>().Any(), "Translation module lacks newline marker editor");
+        Require(Nodes(groups[2]).OfType<Wpf.Ui.Controls.TextBox>().Any(), "Download module lacks directory editor");
         foreach (var expander in Nodes(page).OfType<CardExpander>()) expander.IsExpanded = true;
         Pump();
         var buttons = Nodes(page).OfType<SettingResetButton>().ToArray();
-        Require(buttons.Length == 21, $"Expected 21 reset buttons, got {buttons.Length}");
+        Require(buttons.Length == 23, $"Expected 23 reset buttons, got {buttons.Length}");
         foreach (var button in buttons)
         {
             Require(button.Visibility == Visibility.Collapsed, "Default unexpectedly modified: " + button.Properties);
@@ -67,6 +72,9 @@ internal static class Program
         Pump();
         Require(((SymbolIcon)undo.Content).Foreground == app.FindResource("AccentTextFillColorPrimaryBrush"), "Undo does not follow light accent resource");
         VerifyRuntimeLogWindow(window, output);
+        foreach (var group in groups) group.IsExpanded = Equals(group.Header, "翻译");
+        window.Width = 900;
+        Pump();
         var animationFrame = new DispatcherFrame();
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
         timer.Tick += (_, _) => { timer.Stop(); animationFrame.Continue = false; };
@@ -172,6 +180,7 @@ internal static class Program
         foreach (var invalid in new[]
         {
             custom.Replace("PreviewPlaybackBackend", "MissingProperty"),
+            custom.Replace("\"title\":\"配置生成的分组\"", "\"category\":\"未知模块\",\"title\":\"配置生成的分组\""),
             custom.Replace("\"kind\":\"choice\"", "\"kind\":\"unknown\""),
             custom.Replace("\"icon\":\"Settings24\"", "\"icon\":\"MissingIcon\""),
             custom.Replace("\"maximum\":4096", "\"maximum\":1024")
