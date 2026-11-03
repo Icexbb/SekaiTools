@@ -1,4 +1,5 @@
 using System.Windows;
+using System.IO;
 using SekaiToolsGUI.ViewModel.Suppress;
 using Wpf.Ui.Controls;
 
@@ -17,25 +18,60 @@ public partial class SuppressionTaskDialog : ContentDialog
 
     public SuppressTaskSettingsModel ViewModel { get; }
     public Func<string>? ValidateSubmission { get; set; }
-    public bool OverwriteAuthorized => CheckBoxOverwrite.IsChecked == true;
+    public bool OverwriteAuthorized { get; private set; }
     public Func<string>? CommitSubmission { get; set; }
+    internal Func<string, Task<bool>>? ConfirmOverwrite { get; set; }
+    private bool _submitting;
 
-    protected override void OnButtonClick(ContentDialogButton button)
+    private async Task<bool> ShowOverwriteConfirmationAsync(string outputPath)
     {
-        if (button == ContentDialogButton.Primary && !ViewModel.CanSubmit) return;
-        if (button == ContentDialogButton.Primary)
+        var confirmation = new Wpf.Ui.Controls.MessageBox
+        {
+            Owner = Window.GetWindow(this),
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Title = "覆盖已有输出文件？",
+            Content = $"输出文件已存在：\n{outputPath}\n\n仅在压制成功后替换已有文件。是否继续？",
+            PrimaryButtonText = "继续覆盖",
+            CloseButtonText = "返回修改"
+        };
+        return await confirmation.ShowDialogAsync() == Wpf.Ui.Controls.MessageBoxResult.Primary;
+    }
+
+    internal async Task<bool> TrySubmitAsync()
+    {
+        if (_submitting || !ViewModel.CanSubmit) return false;
+        _submitting = true;
+        IsEnabled = false;
+        OverwriteAuthorized = false;
+        try
         {
             ViewModel.SubmissionError = ValidateSubmission?.Invoke() ?? "";
-            if (ViewModel.SubmissionError.Length > 0) return;
-            if (ViewModel.OutputExists && !OverwriteAuthorized)
+            if (ViewModel.SubmissionError.Length > 0) return false;
+            var outputPath = Path.GetFullPath(ViewModel.OutputPath);
+            if (ViewModel.OutputExists)
             {
-                ViewModel.SubmissionError = "输出文件已存在，请修改路径或允许覆盖。";
-                return;
+                if (!await (ConfirmOverwrite?.Invoke(outputPath) ?? ShowOverwriteConfirmationAsync(outputPath))) return false;
+                if (!string.Equals(outputPath, Path.GetFullPath(ViewModel.OutputPath), StringComparison.OrdinalIgnoreCase))
+                {
+                    ViewModel.SubmissionError = "输出路径已改变，请重新提交确认。";
+                    return false;
+                }
+                OverwriteAuthorized = true;
             }
-            try { ViewModel.SubmissionError = CommitSubmission?.Invoke() ?? ""; }
-            catch (Exception ex) { ViewModel.SubmissionError = ex.Message; }
-            if (ViewModel.SubmissionError.Length > 0) return;
+            if (!ViewModel.CanSubmit) { ViewModel.SubmissionError = ViewModel.ConfigError; return false; }
+            ViewModel.SubmissionError = ValidateSubmission?.Invoke() ?? "";
+            if (ViewModel.SubmissionError.Length > 0) return false;
+            ViewModel.SubmissionError = CommitSubmission?.Invoke() ?? "";
+            return ViewModel.SubmissionError.Length == 0;
         }
+        catch (Exception ex) { ViewModel.SubmissionError = ex.Message; return false; }
+        finally { IsEnabled = true; _submitting = false; }
+    }
+
+    protected override async void OnButtonClick(ContentDialogButton button)
+    {
+        if (_submitting) return;
+        if (button == ContentDialogButton.Primary && !await TrySubmitAsync()) return;
         base.OnButtonClick(button);
     }
 }

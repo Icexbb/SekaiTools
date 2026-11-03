@@ -35,7 +35,7 @@
                        TextWrapping="Wrap" Margin="0,8,0,0"
                        Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                        TextAlignment="Center" HorizontalAlignment="Stretch" />
-            <StackPanel Grid.Row="2"><CheckBox x:Name="CheckBoxOverwrite" Content="允许覆盖已有文件（成功后替换）" Margin="0,8" HorizontalAlignment="Center" />
+            <StackPanel Grid.Row="2">
             <TextBlock x:Name="QueueHint" TextWrapping="Wrap" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" /></StackPanel>
         </Grid>
     </ui:ContentDialog.Content>

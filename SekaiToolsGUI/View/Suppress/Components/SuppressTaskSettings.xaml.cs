@@ -66,6 +66,7 @@ public partial class SuppressTaskSettings
         var dialog = new SaveFileDialog
         {
             Filter = "Mp4 文件|*.mp4",
+            OverwritePrompt = false, // Only select a path here; confirmation belongs to task submission.
             DefaultDirectory = Path.GetDirectoryName(ViewModel.SourceVideo),
             DefaultExt = ".mp4",
             FileName = Path.ChangeExtension("[STVS]" + Path.GetFileName(ViewModel.SourceVideo), ".mp4")

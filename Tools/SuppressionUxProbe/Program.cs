@@ -50,6 +50,7 @@ internal static class Program
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
         if (args.Length > 2 && args[2] == "p1") { P1Checks.Run(gui, args[1]); app.Shutdown(); return; }
         if (args.Length > 2 && args[2] == "always") { AlwaysQueueChecks.Run(gui, args[1]); app.Shutdown(); return; }
+        if (args.Length > 2 && args[2] == "overwrite") { OverwriteChecks.Run(gui, wpf, app, args[1]); app.Shutdown(); return; }
         foreach (var theme in new[] { "Light", "Dark" })
         {
             app.Resources.MergedDictionaries.Clear();
