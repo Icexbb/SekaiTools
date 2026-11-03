@@ -11,3 +11,5 @@ dotnet run --project Tools/TranslationEditingProbe/TranslationEditingProbe.cspro
 还覆盖保存状态常驻显示、无需悬停的校验说明、未译筛选与导出隔离、无搜索结果提示、保存预检随格式变化、完整文件名标签、聚焦时暂缓规范化、失焦后规范化及超行粘贴说明。草稿兼容性检查包括文件格式、规范化开关、活动条目及旧草稿默认值。纯模型层的撤销分组、参考采用和同步范围等回归位于 `SekaiTools.Tests/TranslationWorkspaceTests.cs`。
 
 运行通过不等同于原生确认弹窗、真实键盘输入法和实际系统 DPI 的人工验收。
+
+参考差异验证覆盖实际载入参考后两侧高亮、相同文本无高亮、地点参考、选择和输入命中、采用参考与撤销、显示开关、条目复用、空白参考的增删标记，以及折行和滚动后的几何位置。生成明暗主题 × 960/1280 宽度的四张截图到 `.codex-build/reference-diff/`，不读取或修改用户的会话与翻译文件。差异算法的中文、Unicode 文本元素、增删、换行与大文本上限回归位于 `SekaiTools.Tests/TextDifferenceTests.cs`。

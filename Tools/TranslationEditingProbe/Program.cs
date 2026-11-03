@@ -296,9 +296,114 @@ internal static class Program
         var discard = typeof(TranslatePage).GetMethod("DiscardDraftOnClose", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
         Check((bool)discard.Invoke(page, null)!, "discard on exit removes recovery draft");
         Check(page.FlushDraft() && store.ReadDraft() == null, "close flush cannot recreate discarded draft");
+        CheckReferenceDifferences(window, script);
         window.Close();
         Check(store.ReadDraft() == null, "unload cannot recreate discarded draft");
         app.Shutdown();
+    }
+
+    private static void CheckReferenceDifferences(Window window, GameScript script)
+    {
+        var model = new TranslatePageModel { AutoFormat = false };
+        model.LoadScript(script, "reference-diff-probe.json");
+        var line = model.Events.OfType<LineDialogModel>().First();
+        var other = model.Events.OfType<LineDialogModel>().Last();
+        var effect = model.Events.OfType<LineEffectModel>().First();
+        const string current = "今天一起练习吧！\n我们明天见，再把这份心意传递给大家。";
+        const string reference = "今天一起休息吧！\n我们明天见，再把这份心意传递给大家。";
+        line.Content.Translated = current;
+        other.Content.Translated = "这一句完全相同。";
+        effect.Content.Translated = "学校屋顶";
+        var data = new SekaiToolsBase.Story.Translation.TranslationData(null);
+        data.Translations.AddRange([
+            new SekaiToolsBase.Story.Translation.DialogTranslate("角色", reference),
+            new SekaiToolsBase.Story.Translation.DialogTranslate("角色", "这一句完全相同。"),
+            new SekaiToolsBase.Story.Translation.EffectTranslate("学校天台"),
+            new SekaiToolsBase.Story.Translation.EffectTranslate("学校天台")]);
+        model.LoadReferenceTranslation(data, "reference-probe.txt");
+        var dialogView = new SekaiToolsGUI.View.Translate.Components.TranslateLineDialog { LineDialogModel = line };
+        var sameView = new SekaiToolsGUI.View.Translate.Components.TranslateLineDialog { LineDialogModel = other };
+        var effectView = new SekaiToolsGUI.View.Translate.Components.TranslateLineEffect { LineEffectModel = effect };
+        var panel = new StackPanel { Margin = new Thickness(16) };
+        var heading = new TextBlock { Text = "参考译文差异 · 细框标出不同文字", FontSize = 20, Margin = new Thickness(4, 8, 4, 20) };
+        heading.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorPrimaryBrush");
+        panel.Children.Add(heading);
+        panel.Children.Add(dialogView);
+        panel.Children.Add(sameView);
+        panel.Children.Add(effectView);
+        var background = new Border { Child = panel };
+        background.SetResourceReference(Border.BackgroundProperty, "ApplicationBackgroundBrush");
+        window.Content = background;
+        window.Height = 650;
+        Pump();
+        var boxes = Nodes(dialogView).OfType<System.Windows.Controls.TextBox>().ToArray();
+        var referenceBox = boxes.Single(box => System.Windows.Automation.AutomationProperties.GetName(box) == "参考译文");
+        var editor = boxes.Single(box => box.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.ParentBinding.Path?.Path == "Content.Translated");
+        Check(Highlight(referenceBox) != null && Highlight(editor) != null, "reference load highlights both text sides");
+        Check(!Nodes(sameView).OfType<System.Windows.Controls.TextBox>().Any(box => Highlight(box) != null), "identical row has no highlight");
+        Check(Nodes(effectView).OfType<System.Windows.Controls.TextBox>().Count(box => Highlight(box) != null) == 2, "location text highlights both sides");
+        editor.Select(1, 3);
+        Pump();
+        Check(editor.SelectionLength == 3 && Highlight(editor)!.IsHitTestVisible == false, "difference overlay preserves selection and input hit testing");
+        editor.Select(0, 0);
+        var output = Path.GetFullPath(".codex-build/reference-diff");
+        Directory.CreateDirectory(output);
+        foreach (var theme in new[] { ApplicationTheme.Dark, ApplicationTheme.Light })
+        {
+            ApplicationThemeManager.Apply(theme);
+            foreach (var width in new[] { 1280d, 960d })
+            {
+                window.Width = width;
+                Pump();
+                var adorners = new[] { Highlight(referenceBox)!, Highlight(editor)! };
+                Check(adorners.All(adorner => ((IEnumerable<Rect>)adorner.GetType().GetField("_rectangles", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(adorner)!).Any(rect => rect.Width > 0 && rect.Height > 0)), $"visible difference geometry {theme} {width}");
+                var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)window.ActualWidth, (int)window.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+                bitmap.Render(window);
+                var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+                using var stream = File.Create(Path.Combine(output, $"reference-{theme}-{width}.png"));
+                encoder.Save(stream);
+            }
+        }
+        line.RequestAction("reference");
+        Pump();
+        Check(line.Content.Translated == reference && Highlight(referenceBox) == null && Highlight(editor) == null, "adopting reference clears equal-text highlights");
+        model.Undo();
+        Pump();
+        Check(line.Content.Translated == current && Highlight(referenceBox) != null && Highlight(editor) != null, "undo restores difference highlights");
+        line.ShowReference = false;
+        Pump();
+        Check(Highlight(editor) == null, "hiding reference also hides current-text highlight");
+        line.ShowReference = true;
+        Pump();
+        Check(Highlight(editor) != null, "showing reference restores current-text highlight");
+        dialogView.LineDialogModel = other;
+        Pump();
+        Check(!Nodes(dialogView).OfType<System.Windows.Controls.TextBox>().Any(box => Highlight(box) != null), "recycling row clears obsolete highlights");
+        dialogView.LineDialogModel = line;
+        Pump();
+        line.Content.Reference = new string('参', 90) + "参考";
+        line.Content.Translated = new string('参', 90) + "当前";
+        Pump();
+        Check(referenceBox.LineCount > 1 && editor.LineCount > 1, "difference text wraps into multiple visual lines");
+        var wrapped = (IEnumerable<Rect>)Highlight(referenceBox)!.GetType().GetField("_rectangles", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(Highlight(referenceBox))!;
+        Check(wrapped.Any(rect => rect.Y > referenceBox.FontSize) && wrapped.All(rect => rect.Bottom <= referenceBox.ActualHeight - referenceBox.Padding.Bottom + 1), "wrapped differences follow final visual line without clipping");
+        editor.MaxHeight = 45;
+        editor.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+        Pump();
+        editor.ScrollToEnd();
+        Pump();
+        var scrolled = (IEnumerable<Rect>)Highlight(editor)!.GetType().GetField("_rectangles", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(Highlight(editor))!;
+        Check(scrolled.Any(rect => rect.Y >= 0 && rect.Y < editor.ActualHeight), "difference geometry follows editor scrolling");
+        line.Content.Reference = "";
+        Pump();
+        Check(Highlight(referenceBox) != null, "empty reference retains insertion boundary marker");
+        model.ClearReference();
+        Pump();
+        Check(!Nodes(panel).OfType<System.Windows.Controls.TextBox>().Any(box => Highlight(box) != null), "removing reference clears all difference overlays");
+
+        static System.Windows.Documents.Adorner? Highlight(System.Windows.Controls.TextBox box) =>
+            System.Windows.Documents.AdornerLayer.GetAdornerLayer(box)?.GetAdorners(box)?.SingleOrDefault(adorner => adorner.GetType().Name == "DifferenceAdorner");
     }
 
     private static IEnumerable<DependencyObject> Nodes(DependencyObject node)

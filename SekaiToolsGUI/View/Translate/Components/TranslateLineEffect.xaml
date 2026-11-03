@@ -7,6 +7,7 @@
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:components="clr-namespace:SekaiToolsGUI.View.Translate.Components"
              xmlns:translate="clr-namespace:SekaiToolsGUI.ViewModel.Translate"
+             xmlns:behaviors="clr-namespace:SekaiToolsGUI.Behaviors"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance translate:LineEffectModel, IsDesignTimeCreatable=False}"
              d:DesignWidth="800"
              HorizontalAlignment="Stretch">
@@ -48,6 +49,9 @@
                                  Padding="5,5,5,24"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent"
                                  BorderBrush="Transparent"
+                                 behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Translated}"
+                                    behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference'}"
+                                 ToolTip="框内为与当前译文不同的文字；竖线表示此处有增删。"
                                  AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
                         <TextBlock Text="参考译文" Margin="6,0,6,4" FontSize="12" Opacity="0.6"
                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
@@ -56,6 +60,8 @@
                     <ui:TextBox Grid.Row="1" Padding="5,2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                 TextAlignment="Center"
                                 AutomationProperties.Name="{Binding Label}"
+                                behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Reference}"
+                                behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference'}"
                                 Text="{Binding Content.Translated,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
                 </Grid>
             </Grid>
