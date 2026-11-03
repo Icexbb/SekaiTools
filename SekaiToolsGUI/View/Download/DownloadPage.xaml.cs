@@ -577,7 +577,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     {
         if (IsDownloading) return;
         var dialog = new OpenFolderDialog
-            { Title = "选择剧本下载目录", InitialDirectory = _downloadDirectory ?? Model.Setting.Default.DownloadDirectory };
+        { Title = "选择剧本下载目录", InitialDirectory = _downloadDirectory ?? Model.Setting.Default.DownloadDirectory };
         if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
         _downloadDirectory = dialog.FolderName;
         foreach (var task in DownloadItemBox.Items.OfType<DownloadTask>().Where(task => !task.Downloaded))
@@ -709,7 +709,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         BoxSource.IsEnabled = false;
         BoxStoryType.IsEnabled = false;
         ClearCacheButton.IsEnabled = false;
-        _ = dialogService.ShowAsync(dialog, source.Token);
+        var dialogTask = dialogService.ShowAsync(dialog, source.Token);
         try
         {
             var progress = new Progress<ListRefreshProgress>(dialog.UpdateProgress);
@@ -725,10 +725,21 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         finally
         {
             await source.CancelAsync();
-            ClearCacheButton.IsEnabled = true;
-            BoxSource.IsEnabled = true;
-            BoxStoryType.IsEnabled = true;
-            button.IsEnabled = true;
+            try
+            {
+                await dialogTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // 刷新完成或失败后关闭等待弹窗。
+            }
+            finally
+            {
+                ClearCacheButton.IsEnabled = true;
+                BoxSource.IsEnabled = true;
+                BoxStoryType.IsEnabled = true;
+                button.IsEnabled = true;
+            }
         }
     }
 }

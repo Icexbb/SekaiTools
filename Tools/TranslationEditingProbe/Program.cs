@@ -14,8 +14,16 @@ using Wpf.Ui.Appearance;
 internal static class Program
 {
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
+        if (args.Contains("--dialogs"))
+        {
+            var app = new Application();
+            app.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary());
+            app.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
+            CheckDialogInput();
+            return;
+        }
         var script = new GameScript
         {
             ScenarioId = "editing-probe",
@@ -117,11 +125,45 @@ internal static class Program
         Console.WriteLine("PASS translation editing, linked undo, save baseline, branching, draft recovery, module persistence");
     }
 
+    private static void CheckDialogInput()
+    {
+        var data = SekaiToolsBase.Story.StoryEvent.DialogStoryEvent.FromData(new GameScript { TalkData = [new("角色", "原文", 0)] }.TalkData[0]);
+        var dialog = (SekaiToolsGUI.View.Subtitle.Components.QuickEditDialog)Activator.CreateInstance(
+            typeof(SekaiToolsGUI.View.Subtitle.Components.QuickEditDialog), BindingFlags.Instance | BindingFlags.NonPublic,
+            null, [data], null)!;
+        var box = (TextBox)dialog.FindName("TextBoxTranslated");
+        var paste = dialog.GetType().GetMethod("OnPasting", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        box.Text = "第一行\n第二行";
+        box.Select(box.Text.Length, 0);
+        var rejected = new DataObjectPastingEventArgs(new DataObject(DataFormats.UnicodeText, "\r\n第三行"), false, DataFormats.UnicodeText);
+        paste.Invoke(dialog, [box, rejected]);
+        Check(rejected.CommandCancelled, "quick edit rejects pasted third line with CRLF");
+        box.SelectAll();
+        var accepted = new DataObjectPastingEventArgs(new DataObject(DataFormats.UnicodeText, "替换一\r\n替换二"), false, DataFormats.UnicodeText);
+        paste.Invoke(dialog, [box, accepted]);
+        Check(!accepted.CommandCancelled, "quick edit permits two-line replacement of selection");
+        box.Text = "一\n二\n三";
+        var submit = dialog.GetType().GetMethod("OnButtonClick", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        submit.Invoke(dialog, [Wpf.Ui.Controls.ContentDialogButton.Primary]);
+        Check(box.Text.Contains("三"), "invalid quick edit submission stays available for correction");
+        var font = new SekaiToolsGUI.View.Setting.Components.FontSelectDialog("Arial");
+        var fontContent = (FrameworkElement)font.Content;
+        fontContent.MaxHeight = 200;
+        fontContent.Measure(new Size(340, 200));
+        Check(fontContent.DesiredSize.Width <= 340 && fontContent.DesiredSize.Height <= 200,
+            "font content fits narrow and short viewport");
+        var editContent = (FrameworkElement)dialog.Content;
+        editContent.Measure(new Size(340, 200));
+        Check(editContent.DesiredSize.Width <= 340, "quick edit content has no overflowing minimum width");
+        Console.WriteLine("PASS dialog paste, selection replacement, submit validation and narrow content layout");
+    }
+
     private static void CheckUi(EditorSessionStore store, GameScript script)
     {
         var app = new Application();
         app.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary());
         app.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
+        CheckDialogInput();
         var voiceA = new LineDialogModel(SekaiToolsBase.Story.StoryEvent.DialogStoryEvent.FromData(script.TalkData[0]))
         {
             VoiceScenarioId = "probe",

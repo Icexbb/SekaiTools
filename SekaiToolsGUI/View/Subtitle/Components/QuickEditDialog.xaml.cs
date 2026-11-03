@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Input;
 using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsCore.Process.FrameSet;
@@ -25,6 +26,28 @@ public partial class QuickEditDialog : ContentDialog
     {
         DataContext = new QuickEditDialogModel(storyEvent);
         InitializeComponent();
+        DataObject.AddPastingHandler(TextBoxTranslated, OnPasting);
+    }
+
+    private static bool HasTooManyLines(string text) => text.ReplaceLineEndings("\n").Split('\n').Length > 2;
+
+    private void OnPasting(object sender, DataObjectPastingEventArgs e)
+    {
+        if (!e.DataObject.GetDataPresent(DataFormats.UnicodeText)) return;
+        var pasted = e.DataObject.GetData(DataFormats.UnicodeText) as string ?? "";
+        var box = TextBoxTranslated;
+        var text = box.Text.Remove(box.SelectionStart, box.SelectionLength).Insert(box.SelectionStart, pasted);
+        if (HasTooManyLines(text)) e.CancelCommand();
+    }
+
+    protected override void OnButtonClick(ContentDialogButton button)
+    {
+        if (button == ContentDialogButton.Primary && HasTooManyLines(TextBoxTranslated.Text))
+        {
+            TextBoxTranslated.Focus();
+            return;
+        }
+        base.OnButtonClick(button);
     }
 
     public QuickEditDialogModel ViewModel => (QuickEditDialogModel)DataContext;
@@ -33,16 +56,16 @@ public partial class QuickEditDialog : ContentDialog
     {
         if (sender is not TextBox textBox) return;
         if (e.Key != Key.Enter) return;
-        var lineCount = textBox.LineCount;
-        if (lineCount >= 2) e.Handled = true;
+        var text = textBox.Text.Remove(textBox.SelectionStart, textBox.SelectionLength)
+            .Insert(textBox.SelectionStart, "\n");
+        if (HasTooManyLines(text)) e.Handled = true;
     }
 
     private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
     {
         if (sender is not TextBox textBox) return;
-        var newText = textBox.Text.Insert(textBox.CaretIndex, e.Text);
-        var newLineCount = newText.Split('\n').Length;
-
-        if (newLineCount > 2) e.Handled = true;
+        var newText = textBox.Text.Remove(textBox.SelectionStart, textBox.SelectionLength)
+            .Insert(textBox.SelectionStart, e.Text);
+        if (HasTooManyLines(newText)) e.Handled = true;
     }
 }

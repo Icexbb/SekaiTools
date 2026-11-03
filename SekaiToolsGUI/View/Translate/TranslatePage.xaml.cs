@@ -375,7 +375,7 @@ public partial class TranslatePage : UserControl
             Filter = "剧本文件|*.json;*.asset"
         };
 
-        if (openFileDialog.ShowDialog() != true) return;
+        if (openFileDialog.ShowDialog(Window.GetWindow(this)) != true) return;
 
         await LoadScriptFileAsync(openFileDialog.FileName);
     }
@@ -589,7 +589,7 @@ public partial class TranslatePage : UserControl
             Filter = "Text files (*.txt)|*.txt"
         };
 
-        if (openFileDialog.ShowDialog() != true) return;
+        if (openFileDialog.ShowDialog(Window.GetWindow(this)) != true) return;
         var filePath = openFileDialog.FileName;
 
         try
@@ -638,7 +638,7 @@ public partial class TranslatePage : UserControl
             Filter = "Text files (*.txt)|*.txt"
         };
 
-        if (openFileDialog.ShowDialog() != true) return;
+        if (openFileDialog.ShowDialog(Window.GetWindow(this)) != true) return;
         var filePath = openFileDialog.FileName;
 
         try

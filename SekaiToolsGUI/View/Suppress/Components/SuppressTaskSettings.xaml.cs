@@ -56,10 +56,10 @@ public partial class SuppressTaskSettings
         ViewModel.RetryAnalysis();
     }
 
-    private static string? SelectFile(string filter)
+    private string? SelectFile(string filter)
     {
         var dialog = new OpenFileDialog { Filter = filter };
-        return dialog.ShowDialog() == true ? dialog.FileName : null;
+        return dialog.ShowDialog(Window.GetWindow(this)) == true ? dialog.FileName : null;
     }
 
     private void VideoFileBrowser_OnClick(object sender, RoutedEventArgs e)
@@ -94,6 +94,6 @@ public partial class SuppressTaskSettings
             DefaultExt = ".mp4",
             FileName = Path.ChangeExtension("[STVS]" + Path.GetFileName(ViewModel.SourceVideo), ".mp4")
         };
-        if (dialog.ShowDialog() == true) ViewModel.OutputPath = dialog.FileName;
+        if (dialog.ShowDialog(Window.GetWindow(this)) == true) ViewModel.OutputPath = dialog.FileName;
     }
 }

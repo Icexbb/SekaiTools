@@ -85,6 +85,7 @@ public static class AdaptiveLayout
         FrameworkElement viewport = FindHost(dialog) is { } host ? host : window;
         var minimumWidth = dialog.MinWidth;
         var minimumHeight = dialog.MinHeight;
+        var contentMaximumHeight = (dialog.Content as FrameworkElement)?.MaxHeight ?? double.PositiveInfinity;
 
         void Fit()
         {
@@ -95,7 +96,7 @@ public static class AdaptiveLayout
             dialog.DialogMaxWidth = width;
             dialog.DialogMaxHeight = height;
             if (dialog.Content is FrameworkElement content && (content is ScrollViewer || content is Grid))
-                content.MaxHeight = Math.Max(1, height - 240); // Reserve title, template padding and action buttons.
+                content.MaxHeight = Math.Min(contentMaximumHeight, Math.Max(1, height - 240)); // Reserve title, template padding and action buttons.
         }
 
         // WPF-UI already scrolls plain content; bound existing viewers and grids only.

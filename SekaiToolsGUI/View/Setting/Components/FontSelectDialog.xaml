@@ -9,7 +9,7 @@
     ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
     ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     Loaded="FontSelectDialog_OnLoaded"
-    Title="字体选择"
+    Title="字体选择" DialogWidth="560"
     IsPrimaryButtonEnabled="False" DefaultButton="Primary" PrimaryButtonText="确认" CloseButtonText="取消">
     <ui:ContentDialog.Resources>
         <!-- ReSharper disable once Xaml.StaticResourceNotResolved -->
@@ -17,7 +17,7 @@
                TargetType="{x:Type components:FontSelectDialog}" />
     </ui:ContentDialog.Resources>
     <ui:ContentDialog.Content>
-        <Grid MinWidth="480" Height="580">
+        <Grid Height="580">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -89,7 +89,7 @@
                         <DataTemplate>
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="270" />
+                                    <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"

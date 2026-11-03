@@ -12,7 +12,7 @@
                   ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
                   ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                   d:DataContext="{d:DesignInstance subtitle:QuickEditDialogModel, IsDesignTimeCreatable=True}"
-                  IsPrimaryButtonEnabled="True" DefaultButton="Primary" PrimaryButtonText="确认" CloseButtonText="取消">
+                  DialogWidth="580" IsPrimaryButtonEnabled="True" DefaultButton="Primary" PrimaryButtonText="确认" CloseButtonText="取消">
     <ui:ContentDialog.Resources>
         <!-- ReSharper disable once Xaml.StaticResourceNotResolved -->
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}"
@@ -25,7 +25,7 @@
         <StackPanel>
             <TextBlock Name="TextBlockOriginal" Margin="10"
                        Text="{Binding ContentOriginal}" TextWrapping="Wrap" />
-            <TextBox MaxLines="3" Height="55" Name="TextBoxTranslated" TextWrapping="NoWrap" MinWidth="500"
+            <TextBox MaxLines="3" Height="55" Name="TextBoxTranslated" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Auto"
                      PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"
                      AcceptsReturn="True"
                      Text="{Binding Path=ContentTranslated, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />

@@ -51,7 +51,7 @@ public partial class SaveFileDialog : ContentDialog
         };
         var existingFileConfirmed = false;
         openFileDialog.FileOk += (_, _) => existingFileConfirmed = File.Exists(openFileDialog.FileName);
-        if (openFileDialog.ShowDialog() == true)
+        if (openFileDialog.ShowDialog(Window.GetWindow(this)) == true)
             ViewModel.SetSelectedPath(openFileDialog.FileName, existingFileConfirmed);
     }
 
