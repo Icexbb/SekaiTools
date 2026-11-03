@@ -5,32 +5,32 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 using SekaiToolsBase;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace SekaiToolsMedia;
 
 public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvider) : IDisposable
 {
-    private bool _isFinalizing;
-    private volatile bool _drainingLogs;
     private readonly Stopwatch _elapsed = new();
+    private readonly StringBuilder _fullLog = new();
+    private readonly object _logLock = new();
+    private readonly object _publishLock = new();
     private readonly object _runLock = new();
     private string _bitrate = "";
     private CancellationTokenSource? _cancellationTokenSource;
+    private volatile bool _drainingLogs;
+    private string _ffmpegCommand = "";
     private Process? _ffmpegProcess;
     private double _fps;
+    private bool _isFinalizing;
+    private string _latestProgressLine = "";
     private string _outputSize = "";
     private string _outputTime = "";
     private int _processedFrames;
     private Task? _runTask;
     private string _speed = "";
     private VideoSuppressionState _state = VideoSuppressionState.Idle;
-    private readonly object _publishLock = new();
-    private readonly object _logLock = new();
-    private readonly StringBuilder _fullLog = new();
-    private string _ffmpegCommand = "";
-    private string _latestProgressLine = "";
     private int _totalFrames;
     private Process? _vapourProcess;
 
@@ -118,7 +118,11 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
         _speed = "";
         _outputSize = "";
         _outputTime = "";
-        lock (_logLock) _fullLog.Clear();
+        lock (_logLock)
+        {
+            _fullLog.Clear();
+        }
+
         _ffmpegCommand = "";
         _latestProgressLine = "";
         AppendLog("正在分析媒体信息…");
@@ -135,7 +139,11 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
             outputTransaction = new VideoOutputTransaction(options.OutputPath, options.OverwriteExisting);
             var ffmpegPath = resourceProvider.GetVapourSynthResourcePath("ffmpeg.exe");
             var audioPlan = await FfmpegAudioInspector
-                .InspectAsync(ffmpegPath, options.SourceVideo, cancellationToken, line => { AppendLog("[媒体检测] " + line); PublishProgress(); })
+                .InspectAsync(ffmpegPath, options.SourceVideo, cancellationToken, line =>
+                {
+                    AppendLog("[媒体检测] " + line);
+                    PublishProgress();
+                })
                 .ConfigureAwait(false);
             var audioDescription = audioPlan.StreamCount switch
             {
@@ -214,9 +222,16 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
             foreach (var reader in new[] { vapourLogTask, ffmpegLogTask })
             {
                 if (reader == null) continue;
-                try { await reader.ConfigureAwait(false); }
-                catch (Exception ex) { AppendLog($"日志读取异常：{ex.Message}"); }
+                try
+                {
+                    await reader.ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    AppendLog($"日志读取异常：{ex.Message}");
+                }
             }
+
             _elapsed.Stop();
             PublishProgress();
             _vapourProcess?.Dispose();
@@ -359,20 +374,30 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
             var slashes = 0;
             foreach (var character in value)
             {
-                if (character == '\\') { slashes++; continue; }
+                if (character == '\\')
+                {
+                    slashes++;
+                    continue;
+                }
+
                 result.Append('\\', character == '"' ? slashes * 2 + 1 : slashes);
                 result.Append(character);
                 slashes = 0;
             }
+
             result.Append('\\', slashes * 2);
             return result.Append('"').ToString();
         }
+
         return string.Join(" ", new[] { startInfo.FileName }.Concat(startInfo.ArgumentList).Select(Quote));
     }
 
     private void AppendLog(string line)
     {
-        lock (_logLock) _fullLog.AppendLine(line);
+        lock (_logLock)
+        {
+            _fullLog.AppendLine(line);
+        }
     }
 
     private async Task ReadProcessLogAsync(Process process, string source)
@@ -400,7 +425,10 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
                 _outputTime = progress.OutputTime;
                 _latestProgressLine = $"[FFmpeg 进度] {log}";
             }
-            else _fullLog.AppendLine($"[FFmpeg] {log}");
+            else
+            {
+                _fullLog.AppendLine($"[FFmpeg] {log}");
+            }
         }
     }
 
@@ -440,8 +468,13 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
             var state = State;
             VideoSuppressionProgress progress;
             lock (_logLock)
-                progress = new(_processedFrames, _totalFrames, _fps, state, _fullLog.ToString() + _latestProgressLine,
-                    _bitrate, _speed, _outputSize, _outputTime, _elapsed.Elapsed.TotalSeconds, _isFinalizing, _ffmpegCommand);
+            {
+                progress = new VideoSuppressionProgress(_processedFrames, _totalFrames, _fps, state,
+                    _fullLog + _latestProgressLine,
+                    _bitrate, _speed, _outputSize, _outputTime, _elapsed.Elapsed.TotalSeconds, _isFinalizing,
+                    _ffmpegCommand);
+            }
+
             ProgressChanged?.Invoke(progress);
         }
     }

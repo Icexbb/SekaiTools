@@ -35,7 +35,8 @@
                     <ComboBox Name="BoxSource" ItemsSource="{Binding SourceData, NotifyOnTargetUpdated=True}"
                               TargetUpdated="SourceSelector_OnTargetUpdated"
                               AutomationProperties.Name="数据源" MinWidth="120"
-                              SelectedIndex="{Binding CurrentSourceIndex, Mode=OneWay}" SelectionChanged="SourceSelector_OnSelected">
+                              SelectedIndex="{Binding CurrentSourceIndex, Mode=OneWay}"
+                              SelectionChanged="SourceSelector_OnSelected">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding SourceName }" />
@@ -83,20 +84,32 @@
             </ui:Card>
             <StackPanel x:Name="BrowserBar" IsEnabled="False" Margin="0,3,0,8">
                 <Grid>
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                    <ui:TextBox x:Name="SearchBox" PlaceholderText="搜索当前列表：标题、ID、剧本名" TextChanged="Search_OnTextChanged"
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBox x:Name="SearchBox" PlaceholderText="搜索当前列表：标题、ID、剧本名"
+                                TextChanged="Search_OnTextChanged"
                                 AutomationProperties.Name="搜索当前剧情列表" />
-                    <Button x:Name="ResetSearchButton" Grid.Column="1" Margin="8,0,0,0" Padding="10,6" ToolTip="清空关键词并重置当前分类筛选"
+                    <Button x:Name="ResetSearchButton" Grid.Column="1" Margin="8,0,0,0" Padding="10,6"
+                            ToolTip="清空关键词并重置当前分类筛选"
                             Click="ResetSearch_OnClick" AutomationProperties.Name="重置搜索和筛选">
-                        <StackPanel Orientation="Horizontal"><ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" Margin="0,0,6,0" /><TextBlock Text="重置" /></StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" Margin="0,0,6,0" />
+                            <TextBlock Text="重置" />
+                        </StackPanel>
                     </Button>
                 </Grid>
                 <WrapPanel Margin="0,8,0,0" VerticalAlignment="Center">
-                    <TextBlock x:Name="BrowserResultText" Text="正在准备列表…" FontSize="12" VerticalAlignment="Center" Margin="0,0,16,0"
+                    <TextBlock x:Name="BrowserResultText" Text="正在准备列表…" FontSize="12" VerticalAlignment="Center"
+                               Margin="0,0,16,0"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    <CheckBox x:Name="SelectResultsBox" Content="选择当前结果" Click="SelectResults_OnClick" VerticalAlignment="Center" Margin="0,0,12,0" />
+                    <CheckBox x:Name="SelectResultsBox" Content="选择当前结果" Click="SelectResults_OnClick"
+                              VerticalAlignment="Center" Margin="0,0,12,0" />
                     <Button x:Name="AddSelectedButton" IsEnabled="False" Click="AddSelected_OnClick" Padding="8,4">
-                        <StackPanel Orientation="Horizontal"><ui:SymbolIcon Symbol="AddCircle24" FontSize="16" Margin="0,0,6,0" /><TextBlock x:Name="AddSelectedText" Text="加入已选" /></StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="AddCircle24" FontSize="16" Margin="0,0,6,0" />
+                            <TextBlock x:Name="AddSelectedText" Text="加入已选" />
+                        </StackPanel>
                     </Button>
                 </WrapPanel>
             </StackPanel>
@@ -108,8 +121,10 @@
         <StackPanel x:Name="BrowserEmptyPanel" Grid.Column="0" Grid.Row="1" Visibility="Collapsed"
                     VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False" Margin="16">
             <ui:SymbolIcon Symbol="Search24" FontSize="28" HorizontalAlignment="Center" Opacity="0.65" />
-            <TextBlock x:Name="BrowserEmptyText" Text="当前没有可下载结果" Margin="0,8,0,0" TextWrapping="Wrap" TextAlignment="Center" />
-            <TextBlock Text="可调整筛选、重置搜索，或刷新当前列表" Margin="0,4,0,0" FontSize="12" TextWrapping="Wrap" TextAlignment="Center"
+            <TextBlock x:Name="BrowserEmptyText" Text="当前没有可下载结果" Margin="0,8,0,0" TextWrapping="Wrap"
+                       TextAlignment="Center" />
+            <TextBlock Text="可调整筛选、重置搜索，或刷新当前列表" Margin="0,4,0,0" FontSize="12" TextWrapping="Wrap"
+                       TextAlignment="Center"
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
         </StackPanel>
         <Grid x:Name="LoadingPanel" Grid.Column="0" Grid.Row="1" Visibility="Collapsed">
@@ -127,11 +142,15 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Grid x:Name="QueueHeader" Grid.Row="0" Margin="12">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <ui:TextBlock Name="TaskCountText"
                                       Text="下载列表 (0)"
                                       TextAlignment="Left" VerticalAlignment="Center" TextWrapping="Wrap" />
-                        <Button x:Name="QueueDetailsButton" Grid.Column="2" Visibility="Collapsed" Padding="8" Margin="8,0,0,0"
+                        <Button x:Name="QueueDetailsButton" Grid.Column="2" Visibility="Collapsed" Padding="8"
+                                Margin="8,0,0,0"
                                 Click="QueueDetails_OnClick" ToolTip="展开下载列表" AutomationProperties.Name="展开或收起下载列表">
                             <ui:SymbolIcon x:Name="QueueDetailsIcon" Symbol="ChevronDown24" FontSize="16" />
                         </Button>
@@ -155,43 +174,66 @@
                         </StackPanel>
                     </Grid>
                     <Grid x:Name="QueueFooter" Grid.Row="2" Margin="12,8,12,12">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Name="BatchStatusText" Text="选择剧情后开始下载" FontSize="12" TextWrapping="Wrap"
+                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Name="BatchStatusText" Text="选择剧情后开始下载"
+                                   FontSize="12" TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" Name="BatchProgress" Height="4" Margin="0,8,0,12" Minimum="0" Maximum="1" Value="0"
+                        <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" Name="BatchProgress" Height="4" Margin="0,8,0,12"
+                                     Minimum="0" Maximum="1" Value="0"
                                      AutomationProperties.Name="本批下载任务进度" />
                         <Grid x:Name="DirectoryGrid" Grid.Row="2" Grid.ColumnSpan="2" Margin="0,0,0,8">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                            <TextBlock Name="DirectoryText" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Name="DirectoryText" FontSize="12" TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center"
                                        ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                             <Button Name="ChooseDirectoryButton" Grid.Column="1" Padding="6" Margin="8,0,0,0"
                                     ToolTip="更改下载目录（应用于未完成任务）" AutomationProperties.Name="更改下载目录"
-                                    Click="ChooseDirectory_OnClick"><ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" /></Button>
+                                    Click="ChooseDirectory_OnClick">
+                                <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" />
+                            </Button>
                         </Grid>
-                        <ComboBox Grid.Row="3" Grid.ColumnSpan="2" Name="FilePolicyBox" SelectedIndex="0" Margin="0,0,0,8" HorizontalAlignment="Stretch"
+                        <ComboBox Grid.Row="3" Grid.ColumnSpan="2" Name="FilePolicyBox" SelectedIndex="0"
+                                  Margin="0,0,0,8" HorizontalAlignment="Stretch"
                                   AutomationProperties.Name="同名文件处理方式">
                             <ComboBoxItem Content="已有同名文件：跳过" />
                             <ComboBoxItem Content="已有同名文件：替换" />
                         </ComboBox>
-                        <Button Grid.Row="4" Grid.ColumnSpan="2" Name="RetryFailedButton" Visibility="Collapsed" Click="RetryFailed_OnClick" Margin="0,0,0,8" Padding="8">
-                            <StackPanel Orientation="Horizontal"><ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" Margin="0,0,6,0" />
-                                <TextBlock Name="RetryFailedText" Text="重试失败项" /></StackPanel>
+                        <Button Grid.Row="4" Grid.ColumnSpan="2" Name="RetryFailedButton" Visibility="Collapsed"
+                                Click="RetryFailed_OnClick" Margin="0,0,0,8" Padding="8">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" Margin="0,0,6,0" />
+                                <TextBlock Name="RetryFailedText" Text="重试失败项" />
+                            </StackPanel>
                         </Button>
                         <Grid x:Name="MainActions" Grid.Row="5" Grid.ColumnSpan="2">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                            <ui:Button Grid.Column="0" Name="TaskClearButton" IsEnabled="False" Click="ClearButton_OnClick"
-                                       Margin="0,0,8,0" Padding="10" ToolTip="清空下载列表，不删除文件" AutomationProperties.Name="清空下载列表">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ui:Button Grid.Column="0" Name="TaskClearButton" IsEnabled="False"
+                                       Click="ClearButton_OnClick"
+                                       Margin="0,0,8,0" Padding="10" ToolTip="清空下载列表，不删除文件"
+                                       AutomationProperties.Name="清空下载列表">
                                 <ui:SymbolIcon Symbol="Delete24" FontSize="18" />
                             </ui:Button>
                             <ui:Button Grid.Column="1" Name="DownloadButton" IsEnabled="False" Appearance="Primary"
-                                       Click="DownloadButton_OnClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="10">
-                                <StackPanel Orientation="Horizontal"><ui:SymbolIcon Name="DownloadActionIcon" Symbol="ArrowDownload24" FontSize="18" Margin="0,0,6,0" />
-                                    <TextBlock Name="DownloadActionText" Text="开始下载" /></StackPanel>
+                                       Click="DownloadButton_OnClick" HorizontalAlignment="Stretch"
+                                       HorizontalContentAlignment="Center" Padding="10">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Name="DownloadActionIcon" Symbol="ArrowDownload24" FontSize="18"
+                                                   Margin="0,0,6,0" />
+                                    <TextBlock Name="DownloadActionText" Text="开始下载" />
+                                </StackPanel>
                             </ui:Button>
                         </Grid>
                     </Grid>

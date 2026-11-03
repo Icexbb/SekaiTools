@@ -61,6 +61,7 @@ public class VideoProcessor : IDisposable
     private const int ExceptionThreshold = 10;
     private const int MaxReadRetries = 2;
     private const long CallbackThrottleMs = 200;
+    private readonly IVideoCaptureSession? _captureSession;
     private readonly Config _config;
     private readonly ProcessingPerformanceMetrics _performanceMetrics = new();
     private readonly IProcessingStatePersistence _persistence;
@@ -69,24 +70,23 @@ public class VideoProcessor : IDisposable
     private readonly ProcessingStateMetadata _stateMetadata;
     private readonly string _translatePath;
     private readonly string _videoPath;
-    private readonly IVideoCaptureSession? _captureSession;
     private int _consecutiveExceptionCount;
     private bool _disposed;
-    private int _processedFrameIndex;
-    private int _resumePreviousFrameIndex = -1;
     private bool _frameSetJustCompleted;
-    private int _nextProgressSaveFrame = ProgressSavePolicy.InitialInterval;
-    private int _lastProgressSaveFrame;
-    private long _lastProgressSnapshotTimestamp;
     private volatile bool _isProcessing;
     private long _lastFpsCallbackTime;
 
     // 回调节流
     private long _lastProgressCallbackTime;
+    private int _lastProgressSaveFrame;
+    private long _lastProgressSnapshotTimestamp;
+    private int _nextProgressSaveFrame = ProgressSavePolicy.InitialInterval;
 
     // 预览图像有界队列（长度 1，只保留最新帧）
     private Channel<(Mat Image, int FrameIndex)>? _previewChannel;
     private Task? _previewConsumerTask;
+    private int _processedFrameIndex;
+    private int _resumePreviousFrameIndex = -1;
 
     // 进度保存
     private string? _saveKey;
@@ -122,7 +122,7 @@ public class VideoProcessor : IDisposable
             {
                 var interval = Math.Max(1, (int)Math.Round(Creator.VideoInfo.Fps.Fps() / 5d));
                 _captureSession = captureFactory.Open(config.VideoFilePath, interval)
-                    ?? throw new InvalidOperationException("捕获器工厂未返回会话");
+                                  ?? throw new InvalidOperationException("捕获器工厂未返回会话");
                 if (string.IsNullOrWhiteSpace(_captureSession.Identity))
                     throw new InvalidOperationException("替代捕获器缺少运行身份");
                 if (_captureSession.HasMixedFrameChannels && config.PerformanceOptions.PrepareGrayFrames)
@@ -130,14 +130,20 @@ public class VideoProcessor : IDisposable
                 Capture = _captureSession.Capture;
                 if (!Capture.IsOpened) throw new InvalidOperationException("替代捕获器未打开视频");
             }
-            else Capture = new VideoCapture(config.VideoFilePath);
+            else
+            {
+                Capture = new VideoCapture(config.VideoFilePath);
+            }
+
             DialogMatcher = Creator.DialogMatcher();
             ContentMatcher = Creator.ContentMatcher();
             BannerMatcher = Creator.BannerMatcher();
             MarkerMatcher = Creator.MarkerMatcher();
             _stateMetadata = ProcessingStateMetadata.Create(config,
-                VideoStateMetadata.From(Creator.VideoInfo)) with
-            { CaptureIdentity = _captureSession?.Identity };
+                    VideoStateMetadata.From(Creator.VideoInfo)) with
+                {
+                    CaptureIdentity = _captureSession?.Identity
+                };
         }
         catch
         {
@@ -175,8 +181,10 @@ public class VideoProcessor : IDisposable
     );
 
     public ProcessingPerformanceSnapshot Performance => _performanceMetrics.Snapshot();
+
     public TemplateMatchingSnapshot? MatchingPerformance => _config.PerformanceOptions.CollectDetailedMetrics
-        ? Creator?.CachePool.Metrics.Snapshot() : null;
+        ? Creator?.CachePool.Metrics.Snapshot()
+        : null;
 
     public VideoInfo VideoInfo => Creator?.VideoInfo ?? throw new ObjectDisposedException(nameof(VideoProcessor));
 
@@ -266,7 +274,10 @@ public class VideoProcessor : IDisposable
         _saveKey = saveKey;
     }
 
-    public ProcessingState CaptureState() => CaptureState(false);
+    public ProcessingState CaptureState()
+    {
+        return CaptureState(false);
+    }
 
     private ProcessingState CaptureState(bool checkpoint)
     {
@@ -321,10 +332,11 @@ public class VideoProcessor : IDisposable
             MarkerMatcher?.RestoreState(state.Marker);
 
         _resumePreviousFrameIndex = state.FrameIndex > 0 &&
-            (state.Dialog?.SearchState?.PreviousSkippedFrameIndex == state.FrameIndex ||
-             state.Banner?.SearchState?.PreviousSkippedFrameIndex == state.FrameIndex ||
-             state.Marker?.SearchState?.PreviousSkippedFrameIndex == state.FrameIndex)
-            ? state.FrameIndex : -1;
+                                    (state.Dialog?.SearchState?.PreviousSkippedFrameIndex == state.FrameIndex ||
+                                     state.Banner?.SearchState?.PreviousSkippedFrameIndex == state.FrameIndex ||
+                                     state.Marker?.SearchState?.PreviousSkippedFrameIndex == state.FrameIndex)
+            ? state.FrameIndex
+            : -1;
         _lastProgressSaveFrame = state.FrameIndex;
         _processedFrameIndex = state.FrameIndex;
         _nextProgressSaveFrame = ProgressSavePolicy.GetNextFrame(state.FrameIndex);
@@ -504,14 +516,18 @@ public class VideoProcessor : IDisposable
             previousMatchFrame = matchFrameB;
             previousMatchFrameIndex = _resumePreviousFrameIndex;
         }
+
         _resumePreviousFrameIndex = -1;
         var capacity = _config.PerformanceOptions.GetFrameCapacity(
             (int)capture.Get(CapProp.FrameWidth), (int)capture.Get(CapProp.FrameHeight),
             BufferedVideoReader.AvailableMemoryBytes());
-        using var reader = new BufferedVideoReader(capture, capacity, token, _config.PerformanceOptions.PrepareGrayFrames);
+        using var reader =
+            new BufferedVideoReader(capture, capacity, token, _config.PerformanceOptions.PrepareGrayFrames);
         using var preloader = capacity > 0 && _config.PerformanceOptions.Mode != RecognitionPerformanceMode.MemorySaving
-            ? Creator.CreatePreloader(token) : null;
-        preloader?.Request(DialogMatcher.LastNotProcessedIndex(), BannerMatcher.LastNotProcessedIndex(), MarkerMatcher.LastNotProcessedIndex());
+            ? Creator.CreatePreloader(token)
+            : null;
+        preloader?.Request(DialogMatcher.LastNotProcessedIndex(), BannerMatcher.LastNotProcessedIndex(),
+            MarkerMatcher.LastNotProcessedIndex());
         Logger.Log($"识别性能模式: {_config.PerformanceOptions.Mode}, 帧缓冲容量={capacity}");
 
         var avgDuration = 0d;
@@ -625,7 +641,7 @@ public class VideoProcessor : IDisposable
 
                 var independentProbeDue = IndependentEventProbe.IsDue(frameIndex, VideoInfo.Fps.Fps());
                 if (BannerMatcher is { Finished: false } && (matchBannerNow || BannerMatcher.IsTracking ||
-                    (independentProbeDue && BannerMatcher.Probe(matchFrame))))
+                                                             (independentProbeDue && BannerMatcher.Probe(matchFrame))))
                 {
                     var bannerIndex = BannerMatcher.LastNotProcessedIndex();
                     BannerMatcher.Process(matchFrame, frameIndex, backcheckFrame, backcheckFrameIndex);
@@ -637,7 +653,7 @@ public class VideoProcessor : IDisposable
                 }
 
                 if (MarkerMatcher is { Finished: false } && (MarkerMatcher.IsTracking || MatchMarkerNow() ||
-                    (independentProbeDue && MarkerMatcher.Probe(matchFrame))))
+                                                             (independentProbeDue && MarkerMatcher.Probe(matchFrame))))
                 {
                     var markerIndex = MarkerMatcher.LastNotProcessedIndex();
                     MarkerMatcher.Process(matchFrame, frameIndex, backcheckFrame, backcheckFrameIndex);
@@ -655,7 +671,8 @@ public class VideoProcessor : IDisposable
                 _consecutiveExceptionCount = 0;
 
                 // 定期保存进度
-                preloader?.Request(DialogMatcher.LastNotProcessedIndex(), BannerMatcher.LastNotProcessedIndex(), MarkerMatcher.LastNotProcessedIndex());
+                preloader?.Request(DialogMatcher.LastNotProcessedIndex(), BannerMatcher.LastNotProcessedIndex(),
+                    MarkerMatcher.LastNotProcessedIndex());
                 TrySaveProgress(frameIndex);
             }
             catch (OperationCanceledException)
@@ -722,6 +739,7 @@ public class VideoProcessor : IDisposable
             else
                 QueueProgressSave(_saveKey, finalState);
         }
+
         WaitForProgressSave();
 
         capture.Dispose();
@@ -819,7 +837,10 @@ public class VideoProcessor : IDisposable
         }
     }
 
-    private void QueueProgressSave(string saveKey, ProcessingState state) => _progressWriter.Enqueue(saveKey, state);
+    private void QueueProgressSave(string saveKey, ProcessingState state)
+    {
+        _progressWriter.Enqueue(saveKey, state);
+    }
 
     private void WaitForProgressSave()
     {
@@ -900,7 +921,8 @@ public class VideoProcessor : IDisposable
             previewFrame.Dispose();
     }
 
-    private async Task StartPreviewConsumer(Channel<(Mat Image, int FrameIndex)> previewChannel, CancellationToken token)
+    private async Task StartPreviewConsumer(Channel<(Mat Image, int FrameIndex)> previewChannel,
+        CancellationToken token)
     {
         try
         {

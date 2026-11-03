@@ -8,11 +8,11 @@ internal sealed class TemplateScaleCalibration
     private const double UnlockConfidence = 0.50;
     private const int UnlockFailureCount = 30;
     private static readonly double[] InitialScales = [1.00, 0.96, 1.04];
-    internal static IReadOnlyList<double> RecoveryScales => InitialScales;
-    private double? _lockedScale;
     private readonly double[] _lockedScales = new double[1];
+    private double? _lockedScale;
 
     private int _lowConfidenceCount;
+    internal static IReadOnlyList<double> RecoveryScales => InitialScales;
 
     public IReadOnlyList<double> CandidateScales => _lockedScale.HasValue ? _lockedScales : InitialScales;
 
@@ -59,13 +59,16 @@ internal sealed class TemplateScaleCalibration
         _lowConfidenceCount = 0;
     }
 
-    internal TemplateScaleStateDto CaptureState(int usage) => new(usage, _lockedScale, _lowConfidenceCount);
+    internal TemplateScaleStateDto CaptureState(int usage)
+    {
+        return new TemplateScaleStateDto(usage, _lockedScale, _lowConfidenceCount);
+    }
 
     internal static void ValidateState(TemplateScaleStateDto state)
     {
-        if (state.Scale is { } scale && !InitialScales.Contains(scale)
+        if ((state.Scale is { } scale && !InitialScales.Contains(scale))
             || state.LowConfidenceCount is < 0 or >= UnlockFailureCount
-            || state.Scale == null && state.LowConfidenceCount != 0)
+            || (state.Scale == null && state.LowConfidenceCount != 0))
             throw new InvalidDataException("Invalid template scale checkpoint");
     }
 

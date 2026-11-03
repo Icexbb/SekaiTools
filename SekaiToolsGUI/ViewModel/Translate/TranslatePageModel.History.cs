@@ -1,39 +1,61 @@
-using System.IO;
 using SekaiToolsBase.GameScript;
+using SekaiToolsBase.Story;
+using SekaiToolsBase.Story.StoryEvent;
+using SekaiToolsBase.Story.Translation;
 
 namespace SekaiToolsGUI.ViewModel.Translate;
 
 public partial class TranslatePageModel
 {
-    public sealed record EditValue(string Text, bool PreserveEmpty);
-    private sealed record Change(int Index, EditValue Before, EditValue After);
-    private readonly List<Change[]> _undo = [];
     private readonly Stack<Change[]> _redo = [];
+    private readonly List<Change[]> _undo = [];
     private EditValue[] _currentValues = [];
-    private EditValue[] _savedValues = [];
-    private bool _restoringHistory;
     private TranslateItemModel? _editingItem;
-    private bool _mergeTyping;
     private long _lastTypingTime;
+    private bool _mergeTyping;
+    private bool _restoringHistory;
+    private EditValue[] _savedValues = [];
+
+    public bool CanUndo => _undo.Count > 0;
+    public bool CanRedo => _redo.Count > 0;
+
+    public GameScript? DraftScript => _loadedScript;
+
+    public EditValue[] SavedValues => _savedValues.ToArray();
+
     public void BeginTextEdit(TranslateItemModel item)
     {
         if (!ReferenceEquals(_editingItem, item)) BreakEditGroup();
         _editingItem = item;
     }
-    public void EndTextEdit() { BreakEditGroup(); _editingItem = null; }
-    public void BreakEditGroup() => _mergeTyping = false;
-    public bool CanUndo => _undo.Count > 0;
-    public bool CanRedo => _redo.Count > 0;
+
+    public void EndTextEdit()
+    {
+        BreakEditGroup();
+        _editingItem = null;
+    }
+
+    public void BreakEditGroup()
+    {
+        _mergeTyping = false;
+    }
+
     public event EventHandler? ContentChanged;
 
-    private IEnumerable<TranslateItemModel> EditableItems() => Events.SelectMany(line => line switch
+    private IEnumerable<TranslateItemModel> EditableItems()
     {
-        LineDialogModel dialog => new[] { dialog.Character, dialog.Content },
-        LineEffectModel effect => new[] { effect.Content },
-        _ => Array.Empty<TranslateItemModel>()
-    });
+        return Events.SelectMany(line => line switch
+        {
+            LineDialogModel dialog => new[] { dialog.Character, dialog.Content },
+            LineEffectModel effect => new[] { effect.Content },
+            _ => Array.Empty<TranslateItemModel>()
+        });
+    }
 
-    public EditValue[] ReadValues() => EditableItems().Select(item => new EditValue(item.Translated, item.PreserveEmpty)).ToArray();
+    public EditValue[] ReadValues()
+    {
+        return EditableItems().Select(item => new EditValue(item.Translated, item.PreserveEmpty)).ToArray();
+    }
 
     private void ResetHistory()
     {
@@ -44,7 +66,10 @@ public partial class TranslatePageModel
         NotifyHistory();
     }
 
-    private void OnDialogContentChanged(object? sender, EventArgs e) => RecordEdit();
+    private void OnDialogContentChanged(object? sender, EventArgs e)
+    {
+        RecordEdit();
+    }
 
     private void RecordEdit()
     {
@@ -60,11 +85,20 @@ public partial class TranslatePageModel
             var merged = _undo[^1].ToDictionary(change => change.Index);
             foreach (var change in changes)
                 merged[change.Index] = merged.TryGetValue(change.Index, out var previous)
-                    ? new Change(change.Index, previous.Before, change.After) : change;
+                    ? new Change(change.Index, previous.Before, change.After)
+                    : change;
             _undo[^1] = merged.Values.Where(change => change.Before != change.After).ToArray();
-            if (_undo[^1].Length == 0) { _undo.RemoveAt(_undo.Count - 1); groupRemains = false; }
+            if (_undo[^1].Length == 0)
+            {
+                _undo.RemoveAt(_undo.Count - 1);
+                groupRemains = false;
+            }
         }
-        else _undo.Add(changes);
+        else
+        {
+            _undo.Add(changes);
+        }
+
         if (_undo.Count > 500) _undo.RemoveAt(0);
         _mergeTyping = groupRemains && _editingItem != null && _undo.Count > 0;
         _lastTypingTime = now;
@@ -116,6 +150,7 @@ public partial class TranslatePageModel
             foreach (var line in Events.OfType<LineDialogModel>()) line.RestoringText = false;
             _restoringHistory = false;
         }
+
         _currentValues = ReadValues();
     }
 
@@ -134,13 +169,13 @@ public partial class TranslatePageModel
         OnPropertyChanged(nameof(CanRedo));
     }
 
-    public GameScript? DraftScript => _loadedScript;
-
-    public void RestoreDraft(GameScript script, string scriptPath, string translationPath, EditValue[] values, EditValue[] savedValues, bool useV2 = true,
-        bool autoFormat = true, int activeSequenceNumber = 0, bool syncMatchingContent = true, bool syncMatchingSpeakers = true)
+    public void RestoreDraft(GameScript script, string scriptPath, string translationPath, EditValue[] values,
+        EditValue[] savedValues, bool useV2 = true,
+        bool autoFormat = true, int activeSequenceNumber = 0, bool syncMatchingContent = true,
+        bool syncMatchingSpeakers = true)
     {
-        var expectedCount = new SekaiToolsBase.Story.Story(script, new SekaiToolsBase.Story.Translation.TranslationData(null))
-            .Events.Sum(item => item is SekaiToolsBase.Story.StoryEvent.DialogStoryEvent ? 2 : 1);
+        var expectedCount = new Story(script, new TranslationData(null))
+            .Events.Sum(item => item is DialogStoryEvent ? 2 : 1);
         if (values.Length != expectedCount || savedValues.Length != expectedCount)
             throw new InvalidDataException("翻译草稿条目数量与剧本不匹配。");
         AutoFormat = autoFormat;
@@ -157,5 +192,7 @@ public partial class TranslatePageModel
         FinishEdit();
     }
 
-    public EditValue[] SavedValues => _savedValues.ToArray();
+    public sealed record EditValue(string Text, bool PreserveEmpty);
+
+    private sealed record Change(int Index, EditValue Before, EditValue After);
 }

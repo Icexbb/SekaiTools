@@ -18,7 +18,8 @@ public class DialogStoryEvent(
     public readonly bool Shake = shake;
     public string CharacterTranslated = "";
 
-    public string FinalCharacter => HasExplicitTranslation || CharacterTranslated.Length > 0 && CharacterTranslated != CharacterOriginal
+    public string FinalCharacter => HasExplicitTranslation ||
+                                    (CharacterTranslated.Length > 0 && CharacterTranslated != CharacterOriginal)
         ? CharacterTranslated
         : CharacterOriginal;
 

@@ -24,17 +24,20 @@ public class DialogTemplateMatcher(
 ), IDisposable
 {
     private const int MaxLookaheadTargets = 3;
+    private readonly CompletedFrameSnapshotCache<DialogBaseFrameSet, DialogFrameSetDto> _checkpointFrames = new();
+
+    private readonly Dictionary<string, (GaMat First, GaMat Second, GaMat Third)> _contentTemplates =
+        new(StringComparer.Ordinal);
+
+    private readonly TemplateMatchCachePool _lookaheadEvidencePool = new() { Metrics = cachePool.Metrics };
     private readonly FiniteLookaheadTracker _lookaheadTracker = new();
     private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
-    private readonly AdaptiveSearchScheduler _searchScheduler = new();
-    private Point _nameTagPosition;
-    private readonly CompletedFrameSnapshotCache<DialogBaseFrameSet, DialogFrameSetDto> _checkpointFrames = new();
-    private MatchStatus _status;
-    private MatchStatus _pendingResumeStatus = MatchStatus.DialogMatched3;
-    private readonly DialogTrackingGrace _trackingGrace = new(videoInfo.Fps.Fps());
     private readonly Dictionary<string, GaMat> _nameTemplates = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, (GaMat First, GaMat Second, GaMat Third)> _contentTemplates = new(StringComparer.Ordinal);
-    private readonly TemplateMatchCachePool _lookaheadEvidencePool = new() { Metrics = cachePool.Metrics };
+    private readonly AdaptiveSearchScheduler _searchScheduler = new();
+    private readonly DialogTrackingGrace _trackingGrace = new(videoInfo.Fps.Fps());
+    private Point _nameTagPosition;
+    private MatchStatus _pendingResumeStatus = MatchStatus.DialogMatched3;
+    private MatchStatus _status;
 
     public void Dispose()
     {
@@ -119,7 +122,6 @@ public class DialogTemplateMatcher(
                     Width = (int)(0.781 * videoInfo.Resolution.Width)
                 };
         }
-
     }
 
     internal static string TrimTemplateContent(string origin, int maxLen = 3)
@@ -132,6 +134,7 @@ public class DialogTemplateMatcher(
             len += char.IsAscii(c) ? 0.5 : 1;
             if (len >= maxLen) break;
         }
+
         if (trimmed.Contains('・')) trimmed = trimmed[..trimmed.IndexOf('・')];
         return trimmed;
     }
@@ -152,44 +155,44 @@ public class DialogTemplateMatcher(
         switch (lastStatus)
         {
             case MatchStatus.DialogNotMatched:
-                {
-                    matchRes = LocalMatch(frame, template1, matchingThreshold,
-                        TemplateMatchCachePool.MatchUsage.DialogContent1);
-                    return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogNotMatched;
-                }
+            {
+                matchRes = LocalMatch(frame, template1, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent1);
+                return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogNotMatched;
+            }
             case MatchStatus.DialogMatched1:
-                {
-                    matchRes = LocalMatch(frame, template2, matchingThreshold,
-                        TemplateMatchCachePool.MatchUsage.DialogContent2);
-                    if (matchRes) return MatchStatus.DialogMatched2;
-                    matchRes = LocalMatch(frame, template1, matchingThreshold,
-                        TemplateMatchCachePool.MatchUsage.DialogContent1);
-                    return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogDropped;
-                }
+            {
+                matchRes = LocalMatch(frame, template2, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent2);
+                if (matchRes) return MatchStatus.DialogMatched2;
+                matchRes = LocalMatch(frame, template1, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent1);
+                return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogDropped;
+            }
             case MatchStatus.DialogMatched2:
-                {
-                    matchRes = LocalMatch(frame, template3, matchingThreshold,
-                        TemplateMatchCachePool.MatchUsage.DialogContent3);
-                    if (matchRes) return MatchStatus.DialogMatched3;
-                    matchRes = LocalMatch(frame, template2, matchingThreshold,
-                        TemplateMatchCachePool.MatchUsage.DialogContent2);
-                    return matchRes ? MatchStatus.DialogMatched2 : MatchStatus.DialogDropped;
-                }
+            {
+                matchRes = LocalMatch(frame, template3, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent3);
+                if (matchRes) return MatchStatus.DialogMatched3;
+                matchRes = LocalMatch(frame, template2, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent2);
+                return matchRes ? MatchStatus.DialogMatched2 : MatchStatus.DialogDropped;
+            }
             case MatchStatus.DialogMatched3:
             case MatchStatus.DialogPending:
-                {
-                    matchRes = LocalMatch(frame, template3, matchingThreshold,
-                        TemplateMatchCachePool.MatchUsage.DialogContent3);
-                    if (matchRes) return MatchStatus.DialogMatched3;
-                    // Only a fresh name match plus a two-glyph match may bridge a
-                    // short loss of the three-glyph template. Never lower thresholds.
-                    if (!string.IsNullOrWhiteSpace(dialogBase.Data.CharacterOriginal) &&
-                        !DialogMatchNameTag(frame, dialogBase, frameIndex).IsEmpty &&
-                        LocalMatch(frame, template2, matchingThreshold,
-                            TemplateMatchCachePool.MatchUsage.DialogContent2))
-                        return MatchStatus.DialogPending;
-                    return MatchStatus.DialogDropped;
-                }
+            {
+                matchRes = LocalMatch(frame, template3, matchingThreshold,
+                    TemplateMatchCachePool.MatchUsage.DialogContent3);
+                if (matchRes) return MatchStatus.DialogMatched3;
+                // Only a fresh name match plus a two-glyph match may bridge a
+                // short loss of the three-glyph template. Never lower thresholds.
+                if (!string.IsNullOrWhiteSpace(dialogBase.Data.CharacterOriginal) &&
+                    !DialogMatchNameTag(frame, dialogBase, frameIndex).IsEmpty &&
+                    LocalMatch(frame, template2, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent2))
+                    return MatchStatus.DialogPending;
+                return MatchStatus.DialogDropped;
+            }
             case MatchStatus.NameTagNotMatched:
             case MatchStatus.DialogDropped:
             default:
@@ -214,7 +217,8 @@ public class DialogTemplateMatcher(
                 return false;
 
             var effectiveThreshold = EffectiveThreshold(threshold, IsStatusMatched(lastStatus));
-            var result = TemplateMatcher.MatchContent(src, dialogStartPosition, tmp, cachePool, usage, effectiveThreshold,
+            var result = TemplateMatcher.MatchContent(src, dialogStartPosition, tmp, cachePool, usage,
+                effectiveThreshold,
                 allowScaleRecovery: IsStatusMatched(lastStatus));
 
             if (frameIndex != -1)
@@ -224,7 +228,6 @@ public class DialogTemplateMatcher(
 
             return result.IsMatch(effectiveThreshold);
         }
-
     }
 
     internal (GaMat First, GaMat Second, GaMat Third) GetContentTemplates(string content)
@@ -243,7 +246,8 @@ public class DialogTemplateMatcher(
 
     // Lookahead must identify a different line, rather than another instance of
     // the same speaker's opening parenthesis or shared punctuation prefix.
-    internal static string LookaheadContentPrefix(DialogStoryEvent candidate, IEnumerable<DialogStoryEvent> earlier, int maxLength = 12)
+    internal static string LookaheadContentPrefix(DialogStoryEvent candidate, IEnumerable<DialogStoryEvent> earlier,
+        int maxLength = 12)
     {
         var content = FirstLine(candidate.BodyOriginal);
         if (content.Length == 0) return string.Empty;
@@ -260,6 +264,7 @@ public class DialogTemplateMatcher(
             if (shared == content.Length || shared >= maxLength) return string.Empty;
             length = Math.Max(length, Math.Min(maxLength, Math.Min(content.Length, shared + 3)));
         }
+
         return content[..length];
 
         static string FirstLine(string body)
@@ -277,7 +282,8 @@ public class DialogTemplateMatcher(
             Set.Skip(Math.Max(0, currentIndex - 1)).Take(candidateIndex - Math.Max(0, currentIndex - 1))
                 .Select(dialog => dialog.Data));
         var threshold = Math.Max(0.85, candidate.Data.Shake
-            ? config.MatchingThreshold.DialogContentSpecial : config.MatchingThreshold.DialogContentNormal);
+            ? config.MatchingThreshold.DialogContentSpecial
+            : config.MatchingThreshold.DialogContentNormal);
         return HasContentEvidence(frame, prefix, point, candidate.IsJitter, frameIndex, threshold) == true;
     }
 
@@ -307,23 +313,33 @@ public class DialogTemplateMatcher(
             return false;
         var current = Set[index].Data;
         var next = Set[index + 1].Data;
-        if (Set[index + 1].Finished || TrimTemplateContent(current.CharacterOriginal) != TrimTemplateContent(next.CharacterOriginal) ||
-            current.BodyOriginal.Length < 3 || next.BodyOriginal.Length < 3 || current.BodyOriginal[..3] != next.BodyOriginal[..3])
+        if (Set[index + 1].Finished ||
+            TrimTemplateContent(current.CharacterOriginal) != TrimTemplateContent(next.CharacterOriginal) ||
+            current.BodyOriginal.Length < 3 || next.BodyOriginal.Length < 3 ||
+            current.BodyOriginal[..3] != next.BodyOriginal[..3])
             return false;
         var nextPrefix = LookaheadContentPrefix(next, [current], 48);
         var currentPrefix = LookaheadContentPrefix(current, [next], 48);
         if (nextPrefix.Length == 0 || currentPrefix.Length == 0) return false;
         using var measurement = cachePool.Metrics.Enter(TemplateMatchingState.Lookahead);
-        var nextThreshold = Math.Max(0.90, next.Shake ? config.MatchingThreshold.DialogContentSpecial : config.MatchingThreshold.DialogContentNormal);
-        var currentThreshold = Math.Max(0.85, current.Shake ? config.MatchingThreshold.DialogContentSpecial : config.MatchingThreshold.DialogContentNormal);
-        return HasContentEvidence(frame, nextPrefix, point, Set[index + 1].IsJitter, frameIndex, nextThreshold) == true &&
-            HasContentEvidence(frame, currentPrefix, point, Set[index].IsJitter, frameIndex, currentThreshold) == false;
+        var nextThreshold = Math.Max(0.90,
+            next.Shake ? config.MatchingThreshold.DialogContentSpecial : config.MatchingThreshold.DialogContentNormal);
+        var currentThreshold = Math.Max(0.85,
+            current.Shake
+                ? config.MatchingThreshold.DialogContentSpecial
+                : config.MatchingThreshold.DialogContentNormal);
+        return HasContentEvidence(frame, nextPrefix, point, Set[index + 1].IsJitter, frameIndex, nextThreshold) ==
+               true &&
+               HasContentEvidence(frame, currentPrefix, point, Set[index].IsJitter, frameIndex, currentThreshold) ==
+               false;
     }
 
     // Frame sets retain a name-tag-equivalent anchor so tracking, checkpoints and
     // subtitle layout use the same coordinate convention for both dialogue kinds.
-    internal static Point ContentToDialogAnchor(Point contentPosition, int fontSize) =>
-        new(contentPosition.X + (int)(0.5f * fontSize), contentPosition.Y - fontSize);
+    internal static Point ContentToDialogAnchor(Point contentPosition, int fontSize)
+    {
+        return new Point(contentPosition.X + (int)(0.5f * fontSize), contentPosition.Y - fontSize);
+    }
 
     private Point DialogMatchUnnamed(FrameMatchContext frame, DialogBaseFrameSet dialog)
     {
@@ -341,6 +357,7 @@ public class DialogTemplateMatcher(
             var anchor = dialog.End().Point;
             region = new Rectangle(anchor.X - font, anchor.Y, font * 6, font * 4);
         }
+
         region.Limit(new Rectangle(Point.Empty, frame.Size));
         var templates = GetContentTemplates(content);
         var candidates = new[] { templates.Third, templates.Second, templates.First };
@@ -350,13 +367,16 @@ public class DialogTemplateMatcher(
             // A single glyph has no name-tag evidence: never relax its acquisition
             // threshold through the generic fallback used for named dialogue.
             var threshold = Math.Max(template == templates.First ? 0.90 : 0.85,
-                dialog.Data.Shake ? config.MatchingThreshold.DialogContentSpecial : config.MatchingThreshold.DialogContentNormal);
+                dialog.Data.Shake
+                    ? config.MatchingThreshold.DialogContentSpecial
+                    : config.MatchingThreshold.DialogContentNormal);
             var result = TemplateMatcher.Match(frame, region, template, cachePool);
             if (!result.IsMatch(threshold)) continue;
             var point = ContentToDialogAnchor(new Point(region.X + result.MaxLoc.X, region.Y + result.MaxLoc.Y), font);
             if (_nameTagPosition.IsEmpty) _nameTagPosition = point;
             return point;
         }
+
         return Point.Empty;
     }
 
@@ -413,9 +433,10 @@ public class DialogTemplateMatcher(
             if (_status == MatchStatus.DialogMatched3 && matchResult.Status == MatchStatus.DialogMatched3 &&
                 ConfirmsSharedPrefixTransition(frame, dIndex, matchResult.Point, frameIndex))
             {
-                Logger.Log($"共享前缀区分文本确认相邻对话切换: {dIndex} -> {dIndex + 1}, 帧={frameIndex}", ExtLogLevel.Information);
+                Logger.Log($"共享前缀区分文本确认相邻对话切换: {dIndex} -> {dIndex + 1}, 帧={frameIndex}");
                 matchResult = new MatchResult(matchResult.Point, MatchStatus.DialogDropped);
             }
+
             var currentMatchPoint = matchResult.Point;
             var matchedFrameIndex = frameIndex;
             FrameMatchContext? backcheckFrame = null;
@@ -436,7 +457,8 @@ public class DialogTemplateMatcher(
                 _searchScheduler.CompleteSample(frameIndex);
 
             if (!IsStatusMatched(matchResult.Status) && matchResult.Status != MatchStatus.DialogDropped &&
-                _lookaheadTracker.ShouldProbe(dIndex, frameIndex, _lookaheadTriggerFrames, VisualChangeEvidence.Sample(frame, EvidenceRegion.Dialog)))
+                _lookaheadTracker.ShouldProbe(dIndex, frameIndex, _lookaheadTriggerFrames,
+                    VisualChangeEvidence.Sample(frame, EvidenceRegion.Dialog)))
             {
                 using var measurement = cachePool.Metrics.Enter(TemplateMatchingState.Lookahead);
                 var originalStatus = _status;
@@ -450,7 +472,8 @@ public class DialogTemplateMatcher(
                     _nameTagPosition = Point.Empty;
                     var candidateResult = MatchForDialog(frame, Set[candidateIndex], frameIndex);
                     if (!IsStatusMatched(candidateResult.Status) ||
-                        !ConfirmLookaheadTarget(frame, dIndex, candidateIndex, candidateResult.Point, frameIndex)) continue;
+                        !ConfirmLookaheadTarget(frame, dIndex, candidateIndex, candidateResult.Point, frameIndex))
+                        continue;
 
                     foundIndex = candidateIndex;
                     matchResult = candidateResult;
@@ -462,7 +485,8 @@ public class DialogTemplateMatcher(
                         _nameTagPosition = Point.Empty;
                         var previousResult = MatchForDialog(backcheckFrame, Set[candidateIndex], backcheckFrameIndex);
                         if (IsStatusMatched(previousResult.Status) &&
-                            ConfirmLookaheadTarget(backcheckFrame, dIndex, candidateIndex, previousResult.Point, backcheckFrameIndex))
+                            ConfirmLookaheadTarget(backcheckFrame, dIndex, candidateIndex, previousResult.Point,
+                                backcheckFrameIndex))
                         {
                             matchResult = previousResult;
                             matchedFrameIndex = backcheckFrameIndex;
@@ -492,7 +516,8 @@ public class DialogTemplateMatcher(
             }
 
             if (matchResult.Status == MatchStatus.DialogPending &&
-                !(matchResult.Point.IsEmpty ? _trackingGrace.HoldUnlocated(frameIndex)
+                !(matchResult.Point.IsEmpty
+                    ? _trackingGrace.HoldUnlocated(frameIndex)
                     : _trackingGrace.Hold(frameIndex, matchResult.Point)))
                 matchResult = new MatchResult(matchResult.Point, MatchStatus.DialogDropped);
 
@@ -539,11 +564,16 @@ public class DialogTemplateMatcher(
 
     private MatchResult MatchForDialog(FrameMatchContext frame, DialogBaseFrameSet dialogBase, int frameIndex)
     {
-        using var measurement = cachePool.Metrics.Enter(cachePool.Metrics.CurrentState == TemplateMatchingState.Lookahead
-            ? TemplateMatchingState.Lookahead
-            : IsUsingFallback || _status == MatchStatus.DialogPending ? TemplateMatchingState.Recovering
-            : _status == MatchStatus.DialogMatched3 ? TemplateMatchingState.Tracking
-            : IsStatusMatched(_status) ? TemplateMatchingState.Acquiring : TemplateMatchingState.Searching);
+        using var measurement = cachePool.Metrics.Enter(
+            cachePool.Metrics.CurrentState == TemplateMatchingState.Lookahead
+                ? TemplateMatchingState.Lookahead
+                : IsUsingFallback || _status == MatchStatus.DialogPending
+                    ? TemplateMatchingState.Recovering
+                    : _status == MatchStatus.DialogMatched3
+                        ? TemplateMatchingState.Tracking
+                        : IsStatusMatched(_status)
+                            ? TemplateMatchingState.Acquiring
+                            : TemplateMatchingState.Searching);
         var lastStatus = _status == MatchStatus.DialogPending ? _pendingResumeStatus : _status;
         if (lastStatus is MatchStatus.DialogDropped && dialogBase.IsEmpty())
             lastStatus = MatchStatus.DialogNotMatched;
@@ -567,12 +597,16 @@ public class DialogTemplateMatcher(
         }
 
         var result = DialogMatchContent(frame, dialogBase, point, lastStatus, frameIndex);
-        if (result == MatchStatus.DialogDropped && lastStatus is MatchStatus.DialogMatched1 or MatchStatus.DialogMatched2)
+        if (result == MatchStatus.DialogDropped &&
+            lastStatus is MatchStatus.DialogMatched1 or MatchStatus.DialogMatched2)
             return new MatchResult(Point.Empty, MatchStatus.DialogPending);
         return new MatchResult(point, result);
     }
 
-    public DialogMatcherStateDto SaveState() => SaveState(false);
+    public DialogMatcherStateDto SaveState()
+    {
+        return SaveState(false);
+    }
 
     internal DialogMatcherStateDto SaveState(bool checkpoint)
     {
@@ -584,7 +618,8 @@ public class DialogTemplateMatcher(
             LookaheadState = _lookaheadTracker.CaptureState(),
             PendingTrackingFrames = _trackingGrace.CaptureState(),
             Status = (int)_status,
-            PendingResumeStatus = (int)(_status == MatchStatus.DialogPending ? _pendingResumeStatus : MatchStatus.DialogMatched3),
+            PendingResumeStatus =
+                (int)(_status == MatchStatus.DialogPending ? _pendingResumeStatus : MatchStatus.DialogMatched3),
             ConsecutiveFailures = cf,
             LastFailureFrame = LastFailureFrame,
             LastFailedIndex = lfi,
@@ -615,7 +650,8 @@ public class DialogTemplateMatcher(
         _status = (MatchStatus)state.Status;
         _pendingResumeStatus = (MatchStatus)state.PendingResumeStatus;
         _trackingGrace.RestoreState(state.PendingTrackingFrames);
-        RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold, state.LastFailureFrame);
+        RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold,
+            state.LastFailureFrame);
         _nameTagPosition = state.NameTagPosition is { } p
             ? new Point(p.X, p.Y)
             : Point.Empty;

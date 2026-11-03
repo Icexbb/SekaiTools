@@ -11,18 +11,41 @@ public static class AdaptiveLayout
 {
     public static readonly DependencyProperty MonitorSizeProperty = DependencyProperty.RegisterAttached(
         "MonitorSize", typeof(bool), typeof(AdaptiveLayout), new PropertyMetadata(false, OnMonitorSizeChanged));
-    public static void SetMonitorSize(DependencyObject element, bool value) => element.SetValue(MonitorSizeProperty, value);
-    public static bool GetMonitorSize(DependencyObject element) => (bool)element.GetValue(MonitorSizeProperty);
 
     private static readonly DependencyPropertyKey IsNarrowPropertyKey = DependencyProperty.RegisterAttachedReadOnly(
-        "IsNarrow", typeof(bool), typeof(AdaptiveLayout), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.Inherits));
+        "IsNarrow", typeof(bool), typeof(AdaptiveLayout),
+        new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.Inherits));
+
     public static readonly DependencyProperty IsNarrowProperty = IsNarrowPropertyKey.DependencyProperty;
-    public static bool GetIsNarrow(DependencyObject element) => (bool)element.GetValue(IsNarrowProperty);
 
     private static readonly DependencyPropertyKey IsShortPropertyKey = DependencyProperty.RegisterAttachedReadOnly(
-        "IsShort", typeof(bool), typeof(AdaptiveLayout), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.Inherits));
+        "IsShort", typeof(bool), typeof(AdaptiveLayout),
+        new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.Inherits));
+
     public static readonly DependencyProperty IsShortProperty = IsShortPropertyKey.DependencyProperty;
-    public static bool GetIsShort(DependencyObject element) => (bool)element.GetValue(IsShortProperty);
+
+    public static readonly DependencyProperty FitDialogProperty = DependencyProperty.RegisterAttached(
+        "FitDialog", typeof(bool), typeof(AdaptiveLayout), new PropertyMetadata(false, OnFitDialogChanged));
+
+    public static void SetMonitorSize(DependencyObject element, bool value)
+    {
+        element.SetValue(MonitorSizeProperty, value);
+    }
+
+    public static bool GetMonitorSize(DependencyObject element)
+    {
+        return (bool)element.GetValue(MonitorSizeProperty);
+    }
+
+    public static bool GetIsNarrow(DependencyObject element)
+    {
+        return (bool)element.GetValue(IsNarrowProperty);
+    }
+
+    public static bool GetIsShort(DependencyObject element)
+    {
+        return (bool)element.GetValue(IsShortProperty);
+    }
 
     private static void OnMonitorSizeChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
@@ -38,10 +61,15 @@ public static class AdaptiveLayout
         element.SetValue(IsShortPropertyKey, element.ActualHeight < 700);
     }
 
-    public static readonly DependencyProperty FitDialogProperty = DependencyProperty.RegisterAttached(
-        "FitDialog", typeof(bool), typeof(AdaptiveLayout), new PropertyMetadata(false, OnFitDialogChanged));
-    public static void SetFitDialog(DependencyObject element, bool value) => element.SetValue(FitDialogProperty, value);
-    public static bool GetFitDialog(DependencyObject element) => (bool)element.GetValue(FitDialogProperty);
+    public static void SetFitDialog(DependencyObject element, bool value)
+    {
+        element.SetValue(FitDialogProperty, value);
+    }
+
+    public static bool GetFitDialog(DependencyObject element)
+    {
+        return (bool)element.GetValue(FitDialogProperty);
+    }
 
     private static void OnFitDialogChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
@@ -57,6 +85,7 @@ public static class AdaptiveLayout
         FrameworkElement viewport = FindHost(dialog) is { } host ? host : window;
         var minimumWidth = dialog.MinWidth;
         var minimumHeight = dialog.MinHeight;
+
         void Fit()
         {
             var width = Math.Max(1, viewport.ActualWidth - 32);
@@ -68,6 +97,7 @@ public static class AdaptiveLayout
             if (dialog.Content is FrameworkElement content && (content is ScrollViewer || content is Grid))
                 content.MaxHeight = Math.Max(1, height - 240); // Reserve title, template padding and action buttons.
         }
+
         // WPF-UI already scrolls plain content; bound existing viewers and grids only.
         Fit();
         SizeChangedEventHandler resized = (_, _) => Fit();
@@ -83,8 +113,11 @@ public static class AdaptiveLayout
 
     private static ContentDialogHost? FindHost(DependencyObject element)
     {
-        for (var parent = VisualTreeHelper.GetParent(element); parent != null; parent = VisualTreeHelper.GetParent(parent))
-            if (parent is ContentDialogHost host) return host;
+        for (var parent = VisualTreeHelper.GetParent(element);
+             parent != null;
+             parent = VisualTreeHelper.GetParent(parent))
+            if (parent is ContentDialogHost host)
+                return host;
         return null;
     }
 }

@@ -1,6 +1,9 @@
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Windows;
+using Microsoft.Extensions.Logging;
+using SekaiToolsBase;
 using SekaiToolsGUI.ViewModel.Setting;
 using Wpf.Ui.Controls;
 
@@ -17,6 +20,7 @@ public sealed class SettingSection
     public bool IsExpanded { get; init; }
     public SettingField[] Fields { get; init; } = [];
     public SettingSection[] Children { get; init; } = [];
+
     public IEnumerable<string> Properties => Fields.Select(editor => editor.Property)
         .Concat(Children.SelectMany(child => child.Properties)).Distinct();
 }
@@ -42,13 +46,16 @@ public static class SettingCatalog
     {
         var path = Path.Combine(AppContext.BaseDirectory, "Configuration", "settings-ui.json");
         if (File.Exists(path))
-        {
-            try { return Parse(File.ReadAllText(path)); }
-            catch (Exception exception) when (exception is JsonException or InvalidDataException or IOException or UnauthorizedAccessException)
+            try
             {
-                SekaiToolsBase.Logger.Log($"设置界面配置加载失败，使用内置配置：{exception.Message}", Microsoft.Extensions.Logging.LogLevel.Warning);
+                return Parse(File.ReadAllText(path));
             }
-        }
+            catch (Exception exception) when (exception is JsonException or InvalidDataException or IOException
+                                                  or UnauthorizedAccessException)
+            {
+                Logger.Log($"设置界面配置加载失败，使用内置配置：{exception.Message}", LogLevel.Warning);
+            }
+
         using var source = typeof(SettingCatalog).Assembly.GetManifestResourceStream("SekaiToolsGUI.settings-ui.json")!;
         return Parse(new StreamReader(source).ReadToEnd());
     }
@@ -72,12 +79,15 @@ public static class SettingCatalog
             throw new InvalidDataException("设置卡片及其字段列表不能为 null");
         if (section.Custom is { } custom)
         {
-            if (custom is not ("logs" or "about" or "subtitle-export") || !customs.Add(custom) || section.Fields.Length > 0 || section.Children.Length > 0)
+            if (custom is not ("logs" or "about" or "subtitle-export") || !customs.Add(custom) ||
+                section.Fields.Length > 0 || section.Children.Length > 0)
                 throw new InvalidDataException($"无效的自定义设置区域：{custom}");
             return;
         }
+
         if (string.IsNullOrWhiteSpace(section.Title) || !Enum.TryParse<SymbolRegular>(section.Icon, out _)
-            || section.Columns < 0 || (section.Fields.Length == 0) == (section.Children.Length == 0))
+                                                     || section.Columns < 0 || section.Fields.Length == 0 ==
+                                                     (section.Children.Length == 0))
             throw new InvalidDataException($"设置卡片配置错误：{section.Title}");
         CheckBinding(section.StatusProperty, typeof(string));
         foreach (var field in section.Fields)
@@ -91,21 +101,26 @@ public static class SettingCatalog
                 _ => throw new InvalidDataException($"未知设置控件类型：{field.Kind}")
             };
             CheckBinding(field.Property, expected, true);
-            if (typeof(Model.Setting).GetProperty(field.Property)?.PropertyType != expected || !properties.Add(field.Property))
+            if (typeof(Model.Setting).GetProperty(field.Property)?.PropertyType != expected ||
+                !properties.Add(field.Property))
                 throw new InvalidDataException($"设置项缺少默认值或重复：{field.Property}");
-            CheckBinding(field.VisibilityProperty, typeof(System.Windows.Visibility));
+            CheckBinding(field.VisibilityProperty, typeof(Visibility));
             CheckBinding(field.EnabledProperty, typeof(bool));
-            if (field.Kind == "choice" && field.Options.Length == 0 || field.Minimum > field.Maximum
-                || !double.IsNaN(field.Width) && (!double.IsFinite(field.Width) || field.Width <= 0))
+            if ((field.Kind == "choice" && field.Options.Length == 0) || field.Minimum > field.Maximum
+                                                                      || (!double.IsNaN(field.Width) &&
+                                                                          (!double.IsFinite(field.Width) ||
+                                                                           field.Width <= 0)))
                 throw new InvalidDataException($"设置控件参数错误：{field.Property}");
             if (expected == typeof(int))
             {
-                var defaultValue = (int)typeof(Model.Setting).GetProperty(field.Property)!.GetValue(Model.Setting.Default)!;
-                if (field.Kind == "choice" && (defaultValue < 0 || defaultValue >= field.Options.Length)
-                    || field.Kind == "number" && (defaultValue < field.Minimum || defaultValue > field.Maximum))
+                var defaultValue =
+                    (int)typeof(Model.Setting).GetProperty(field.Property)!.GetValue(Model.Setting.Default)!;
+                if ((field.Kind == "choice" && (defaultValue < 0 || defaultValue >= field.Options.Length))
+                    || (field.Kind == "number" && (defaultValue < field.Minimum || defaultValue > field.Maximum)))
                     throw new InvalidDataException($"设置控件范围未包含默认值：{field.Property}");
             }
         }
+
         foreach (var child in section.Children) Validate(child, properties, customs);
     }
 
@@ -113,7 +128,7 @@ public static class SettingCatalog
     {
         if (name == null) return;
         var property = typeof(SettingPageModel).GetProperty(name);
-        if (property?.PropertyType != type || writable && !property.CanWrite)
+        if (property?.PropertyType != type || (writable && !property.CanWrite))
             throw new InvalidDataException($"设置绑定属性错误：{name}");
     }
 }

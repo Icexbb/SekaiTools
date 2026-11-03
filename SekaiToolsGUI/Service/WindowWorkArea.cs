@@ -8,9 +8,9 @@ namespace SekaiToolsGUI.Service;
 /// <summary>Keeps windows within their current monitor's usable area, in WPF units.</summary>
 internal sealed class WindowWorkArea
 {
-    private readonly Window _window;
-    private readonly double _minWidth;
     private readonly double _minHeight;
+    private readonly double _minWidth;
+    private readonly Window _window;
     private nint _monitor;
     private bool _pending;
 
@@ -33,7 +33,10 @@ internal sealed class WindowWorkArea
         window.StateChanged += (_, _) => QueueFit();
     }
 
-    public static void Attach(Window window) => _ = new WindowWorkArea(window);
+    public static void Attach(Window window)
+    {
+        _ = new WindowWorkArea(window);
+    }
 
     private nint WindowProc(nint hwnd, int message, nint wParam, nint lParam, ref bool handled)
     {
@@ -82,19 +85,32 @@ internal sealed class WindowWorkArea
                 ? owner.Top + (owner.ActualHeight - _window.Height) / 2
                 : area.Top + (area.Height - _window.Height) / 2;
         }
+
         _window.Left = Math.Clamp(left, area.Left, area.Right - _window.Width);
         _window.Top = Math.Clamp(top, area.Top, area.Bottom - _window.Height);
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    private struct NativeRect { public int Left, Top, Right, Bottom; }
-    [StructLayout(LayoutKind.Sequential)]
-    private struct MonitorInfo { public int Size; public NativeRect Monitor, Work; public uint Flags; }
     [DllImport("user32.dll")]
     private static extern nint MonitorFromWindow(nint hwnd, uint flags);
+
     [DllImport("user32.dll", EntryPoint = "GetMonitorInfoW")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetMonitorInfo(nint monitor, ref MonitorInfo info);
+
     [DllImport("user32.dll")]
     private static extern uint GetDpiForWindow(nint hwnd);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeRect
+    {
+        public int Left, Top, Right, Bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MonitorInfo
+    {
+        public int Size;
+        public NativeRect Monitor, Work;
+        public uint Flags;
+    }
 }

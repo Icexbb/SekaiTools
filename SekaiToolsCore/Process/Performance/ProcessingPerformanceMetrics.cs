@@ -37,14 +37,17 @@ public sealed record ProcessingPerformanceSnapshot(
 public sealed class ProcessingPerformanceMetrics
 {
     private long _decodeTicks;
+    private long _elapsedTicks;
     private long _frameCount;
     private long _matchTicks;
     private long _preprocessTicks;
-    private long _elapsedTicks;
-    private long _readWaitTicks;
     private long _previewTicks;
+    private long _readWaitTicks;
 
-    internal void RecordElapsed(TimeSpan elapsed) => Interlocked.Exchange(ref _elapsedTicks, elapsed.Ticks);
+    internal void RecordElapsed(TimeSpan elapsed)
+    {
+        Interlocked.Exchange(ref _elapsedTicks, elapsed.Ticks);
+    }
 
     internal void Record(ProcessingStage stage, TimeSpan elapsed)
     {

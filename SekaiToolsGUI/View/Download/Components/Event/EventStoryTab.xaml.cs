@@ -1,8 +1,8 @@
-using SekaiDataFetch;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
+using SekaiDataFetch;
 using SekaiDataFetch.Item;
 using SekaiDataFetch.List;
 using SekaiDataFetch.Source;
@@ -84,7 +84,8 @@ public partial class EventStoryTab : UserControl, IRefreshable
         var data = ListEventStory.Data.Select(item => (EventStorySet)item.Clone()).ToList();
         data.Sort((x, y) => _currentDirection * x.EventStory.EventId.CompareTo(y.EventStory.EventId));
         ViewModel.EventStories = data.Where(JudgeVisibility)
-            .Where(story => StoryDownloadCandidates.Event(story, DownloadPageModel.Instance.CurrentSource).Any(candidate => candidate.Matches(_query))).ToArray();
+            .Where(story => StoryDownloadCandidates.Event(story, DownloadPageModel.Instance.CurrentSource)
+                .Any(candidate => candidate.Matches(_query))).ToArray();
         ResultsChanged?.Invoke(this, EventArgs.Empty);
     }
 

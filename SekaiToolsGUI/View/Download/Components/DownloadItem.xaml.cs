@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using SekaiDataFetch.Source;
+using System.Windows.Threading;
 using SekaiDataFetch;
 using SekaiToolsGUI.ViewModel.Download;
 
@@ -16,8 +16,10 @@ public partial class DownloadItem : UserControl
 
     private string TaskName { get; set; } = "";
     private string SearchMetadata { get; set; } = "";
+
     internal DownloadCandidate Candidate => new(DownloadPageModel.Instance.CurrentSource.SourceName + "|" + TaskName,
         Url(), SearchMetadata + " " + TitleString + " " + IndexString);
+
     internal void ApplyVisibility()
     {
         if (string.IsNullOrEmpty(TaskName)) return;
@@ -41,6 +43,9 @@ public partial class DownloadItem : UserControl
 
 public partial class DownloadItem
 {
+    private static readonly DependencyProperty MaximumColumnsProperty = DependencyProperty.RegisterAttached(
+        "MaximumColumns", typeof(int), typeof(DownloadItem), new PropertyMetadata(0));
+
     private DownloadItem(Func<string> url, string title, string index, string taskName, string searchMetadata)
     {
         InitializeComponent();
@@ -48,7 +53,11 @@ public partial class DownloadItem
         TaskName = taskName;
         SearchMetadata = searchMetadata;
         Choice.CandidateFactory = () => Candidate;
-        Loaded += (_, _) => { ApplyVisibility(); ReflowParent(); };
+        Loaded += (_, _) =>
+        {
+            ApplyVisibility();
+            ReflowParent();
+        };
         IsVisibleChanged += (_, _) => ReflowParent();
         Initialize(url, title, index);
     }
@@ -68,12 +77,9 @@ public partial class DownloadItem
         ApplyVisibility();
     }
 
-    private static readonly DependencyProperty MaximumColumnsProperty = DependencyProperty.RegisterAttached(
-        "MaximumColumns", typeof(int), typeof(DownloadItem), new PropertyMetadata(0));
-
     private void ReflowParent()
     {
-        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new System.Action(() =>
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new System.Action(() =>
         {
             if (Parent is not Grid grid || grid.ColumnDefinitions.Count == 0) return;
             if ((int)grid.GetValue(MaximumColumnsProperty) == 0)
@@ -81,6 +87,7 @@ public partial class DownloadItem
                 grid.SetValue(MaximumColumnsProperty, grid.ColumnDefinitions.Count);
                 grid.SizeChanged += (_, _) => ReflowGrid(grid);
             }
+
             ReflowGrid(grid);
         }));
     }
@@ -93,15 +100,20 @@ public partial class DownloadItem
         if (grid.ColumnDefinitions.Count != columns)
         {
             grid.ColumnDefinitions.Clear();
-            for (var index = 0; index < columns; index++) grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            for (var index = 0; index < columns; index++)
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         }
-        var visible = grid.Children.OfType<DownloadItem>().Where(item => item.Visibility == Visibility.Visible).ToArray();
+
+        var visible = grid.Children.OfType<DownloadItem>().Where(item => item.Visibility == Visibility.Visible)
+            .ToArray();
         var rows = (visible.Length + columns - 1) / columns;
         if (grid.RowDefinitions.Count != rows)
         {
             grid.RowDefinitions.Clear();
-            for (var index = 0; index < rows; index++) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            for (var index = 0; index < rows; index++)
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         }
+
         for (var index = 0; index < visible.Length; index++)
         {
             Grid.SetRow(visible[index], index / columns);
@@ -116,7 +128,8 @@ public partial class DownloadItem
         if (Parent is Panel parent) parent.Children.Remove(this);
     }
 
-    public static DownloadItem GetItem(Func<string> url, string title, string index, string taskName, string searchMetadata = "")
+    public static DownloadItem GetItem(Func<string> url, string title, string index, string taskName,
+        string searchMetadata = "")
     {
         if (RecycleContainer.Count <= 0) return new DownloadItem(url, title, index, taskName, searchMetadata);
         var item = RecycleContainer[0];

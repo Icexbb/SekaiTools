@@ -10,7 +10,9 @@
              HorizontalAlignment="Stretch">
     <ui:Card Name="Control" HorizontalAlignment="Stretch" Padding="12" Margin="0,0,0,8">
         <Grid x:Name="TaskGrid">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -20,7 +22,8 @@
             <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Name="TaskNameTextBlock" TextWrapping="Wrap" />
             <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Name="SourceText" Margin="0,4,0,0" FontSize="12"
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
-            <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Name="ErrorText" Margin="0,8,0,0" TextWrapping="Wrap" Visibility="Collapsed"
+            <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Name="ErrorText" Margin="0,8,0,0" TextWrapping="Wrap"
+                       Visibility="Collapsed"
                        Foreground="{DynamicResource SystemFillColorCriticalBrush}" FontSize="12" />
             <Grid x:Name="StatusGrid" Grid.Row="3" Grid.ColumnSpan="2" Margin="0,8,0,0">
                 <Grid.ColumnDefinitions>

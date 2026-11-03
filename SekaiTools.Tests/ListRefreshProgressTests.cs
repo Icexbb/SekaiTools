@@ -8,7 +8,7 @@ public class ListRefreshProgressTests
     public void ProgressCountsOnlyDownloadedFiles()
     {
         var progress = new ListRefreshProgress(ListRefreshStage.Downloading,
-            [new("cards.json", true), new("cardEpisodes.json", false)]);
+            [new ListRefreshFileProgress("cards.json", true), new ListRefreshFileProgress("cardEpisodes.json", false)]);
 
         Assert.Equal(1, progress.CompletedFiles);
         Assert.Equal(50, progress.Percentage);
@@ -27,7 +27,10 @@ public class ListRefreshProgressTests
     public void UnavailableOptionalFilesFinishWithoutBeingCountedAsDownloaded()
     {
         var progress = new ListRefreshProgress(ListRefreshStage.Saving,
-            [new("actionSets.json", true), new("releaseConditions.json", false, true)]);
+        [
+            new ListRefreshFileProgress("actionSets.json", true),
+            new ListRefreshFileProgress("releaseConditions.json", false, true)
+        ]);
         Assert.Equal(1, progress.CompletedFiles);
         Assert.Equal(1, progress.UnavailableFiles);
         Assert.Equal(100, progress.Percentage);

@@ -27,19 +27,56 @@ using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
 using MessageBox = Wpf.Ui.Controls.MessageBox;
-using SaveFileDialog = SekaiToolsGUI.View.Subtitle.Components.SaveFileDialog;
 
 namespace SekaiToolsGUI.View.Subtitle.Components;
 
 public partial class SubtitleTask : UserControl
 {
-    private bool _isResetting;
-    private readonly DispatcherBatchQueue _resultQueue;
-    private bool _previewEnabled;
-    private bool _disposed;
     private readonly IProcessingStatePersistence _persistence;
+    private readonly DispatcherBatchQueue _resultQueue;
     private readonly SettingPageModel _settings;
+    private bool _disposed;
+    private bool _isResetting;
+    private bool _previewEnabled;
+
+    public SubtitleTask() : this(new SubtitlePageModel())
+    {
+    }
+
+    public SubtitleTask(SubtitlePageModel state) : this(state, SubtitleQueueProcessingStatePersistence.Instance)
+    {
+    }
+
+    internal SubtitleTask(SubtitlePageModel state, IProcessingStatePersistence persistence) : this(state, persistence,
+        SettingPageModel.Instance)
+    {
+    }
+
+    internal SubtitleTask(SubtitlePageModel state, IProcessingStatePersistence persistence, SettingPageModel settings)
+    {
+        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _persistence = persistence ?? throw new ArgumentNullException(nameof(persistence));
+        DataContext = state;
+        InitializeComponent();
+        ProcessView.EventTimelineEditor.ViewModel.PropertyChanged += PlaybackModel_OnPropertyChanged;
+        _previewEnabled = ViewModel.ShowPreview;
+        ViewModel.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(SubtitlePageModel.ShowPreview))
+                Volatile.Write(ref _previewEnabled, ViewModel.ShowPreview);
+        };
+        _resultQueue = new DispatcherBatchQueue(Dispatcher, () => ProcessView.EventTimelineEditor.DeferRendering());
+        SubscribeFpsChange();
+        SubscribeProgressChange();
+    }
+
     internal Func<bool>? CanDeleteSavedProgress { get; set; }
+
+
+    private static ISnackbarService SnackService =>
+        (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
+
+    public SubtitlePageModel ViewModel => (SubtitlePageModel)DataContext;
     public event EventHandler? RemoveRequested;
 
     internal async Task RunAsync(ProcessingState? savedState)
@@ -58,10 +95,17 @@ public partial class SubtitleTask : UserControl
             if (VideoProcessor != null) await VideoProcessor.WaitForCompletionAsync();
             await _resultQueue.FlushAsync();
         }
-        finally { ReleaseSubtitlePowerRequest(); }
+        finally
+        {
+            ReleaseSubtitlePowerRequest();
+        }
     }
 
-    internal void RequestStop() => VideoProcessor?.StopProcess();
+    internal void RequestStop()
+    {
+        VideoProcessor?.StopProcess();
+    }
+
     internal async Task DisposeAsync()
     {
         if (_disposed) return;
@@ -84,40 +128,6 @@ public partial class SubtitleTask : UserControl
     {
         ProcessView?.UpdateViewport(e.NewSize.Height);
     }
-
-    public SubtitleTask() : this(new SubtitlePageModel()) { }
-
-    public SubtitleTask(SubtitlePageModel state) : this(state, SubtitleQueueProcessingStatePersistence.Instance)
-    {
-    }
-
-    internal SubtitleTask(SubtitlePageModel state, IProcessingStatePersistence persistence) : this(state, persistence, SettingPageModel.Instance)
-    {
-    }
-
-    internal SubtitleTask(SubtitlePageModel state, IProcessingStatePersistence persistence, SettingPageModel settings)
-    {
-        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-        _persistence = persistence ?? throw new ArgumentNullException(nameof(persistence));
-        DataContext = state;
-        InitializeComponent();
-        ProcessView.EventTimelineEditor.ViewModel.PropertyChanged += PlaybackModel_OnPropertyChanged;
-        _previewEnabled = ViewModel.ShowPreview;
-        ViewModel.PropertyChanged += (_, args) =>
-        {
-            if (args.PropertyName == nameof(SubtitlePageModel.ShowPreview))
-                Volatile.Write(ref _previewEnabled, ViewModel.ShowPreview);
-        };
-        _resultQueue = new DispatcherBatchQueue(Dispatcher, () => ProcessView.EventTimelineEditor.DeferRendering());
-        SubscribeFpsChange();
-        SubscribeProgressChange();
-    }
-
-
-    private static ISnackbarService SnackService =>
-        (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
-
-    public SubtitlePageModel ViewModel => (SubtitlePageModel)DataContext;
 
     internal async Task LoadHistoryStateAsync(ProcessingState state)
     {
@@ -286,7 +296,8 @@ public partial class SubtitleTask : UserControl
     {
         _resultQueue.Enqueue(() =>
         {
-            var needScroll = Math.Abs(ProcessView.LineViewer.ScrollableHeight - ProcessView.LineViewer.VerticalOffset) < 1;
+            var needScroll = Math.Abs(ProcessView.LineViewer.ScrollableHeight - ProcessView.LineViewer.VerticalOffset) <
+                             1;
             var line = new DialogLine(set)
             {
                 Margin = new Thickness(5, 5, 10, 5)
@@ -311,6 +322,7 @@ public partial class SubtitleTask : UserControl
                     part == 2 ? line.ViewModel.Set.Separate.SeparateFrame : null,
                     part == 1 ? line.ViewModel.Set.Separate.SeparateFrame : null);
             }
+
             line.PreviewRequested += async (_, _) => await PreviewAsync(0);
             line.PreviewFirstRequested += async (_, _) => await PreviewAsync(1);
             line.PreviewLastRequested += async (_, _) => await PreviewAsync(2);
@@ -326,7 +338,8 @@ public partial class SubtitleTask : UserControl
     {
         _resultQueue.Enqueue(() =>
         {
-            var needScroll = Math.Abs(ProcessView.LineViewer.ScrollableHeight - ProcessView.LineViewer.VerticalOffset) < 1;
+            var needScroll = Math.Abs(ProcessView.LineViewer.ScrollableHeight - ProcessView.LineViewer.VerticalOffset) <
+                             1;
 
             var line = new BannerLine(set)
             {
@@ -360,7 +373,8 @@ public partial class SubtitleTask : UserControl
     {
         _resultQueue.Enqueue(() =>
         {
-            var needScroll = Math.Abs(ProcessView.LineViewer.ScrollableHeight - ProcessView.LineViewer.VerticalOffset) < 1;
+            var needScroll = Math.Abs(ProcessView.LineViewer.ScrollableHeight - ProcessView.LineViewer.VerticalOffset) <
+                             1;
 
             var line = new MarkerLine(set)
             {
@@ -507,7 +521,6 @@ public partial class SubtitleTask : UserControl
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 5));
         }
     }
-
 }
 
 public partial class SubtitleTask
@@ -621,23 +634,32 @@ public partial class SubtitleTask
         return JsonSerializer.Deserialize<MatchingThreshold>(json);
     }
 
-    private static bool UsePeriodicCapture(ProcessingState? savedState, SettingPageModel settings) => savedState != null
-        ? savedState.Metadata?.CaptureIdentity != null
-        : settings.RecognitionPeriodicColor;
+    private static bool UsePeriodicCapture(ProcessingState? savedState, SettingPageModel settings)
+    {
+        return savedState != null
+            ? savedState.Metadata?.CaptureIdentity != null
+            : settings.RecognitionPeriodicColor;
+    }
 
-    private static RecognitionPerformanceOptions GetRecognitionOptions(ProcessingState? savedState) =>
-        GetRecognitionOptionsForSettings(savedState, SettingPageModel.Instance);
+    private static RecognitionPerformanceOptions GetRecognitionOptions(ProcessingState? savedState)
+    {
+        return GetRecognitionOptionsForSettings(savedState, SettingPageModel.Instance);
+    }
 
-    private static RecognitionPerformanceOptions GetRecognitionOptionsForSettings(ProcessingState? savedState, SettingPageModel settings)
+    private static RecognitionPerformanceOptions GetRecognitionOptionsForSettings(ProcessingState? savedState,
+        SettingPageModel settings)
     {
         var options = settings.GetRecognitionPerformanceOptions();
         return UsePeriodicCapture(savedState, settings) ? options with { PrepareGrayFrames = false } : options;
     }
 
-    private static IVideoCaptureFactory? GetCaptureFactory(ProcessingState? savedState) =>
-        GetCaptureFactoryForSettings(savedState, SettingPageModel.Instance);
+    private static IVideoCaptureFactory? GetCaptureFactory(ProcessingState? savedState)
+    {
+        return GetCaptureFactoryForSettings(savedState, SettingPageModel.Instance);
+    }
 
-    private static IVideoCaptureFactory? GetCaptureFactoryForSettings(ProcessingState? savedState, SettingPageModel settings)
+    private static IVideoCaptureFactory? GetCaptureFactoryForSettings(ProcessingState? savedState,
+        SettingPageModel settings)
     {
         if (!UsePeriodicCapture(savedState, settings)) return null;
         if (savedState?.Metadata?.CaptureIdentity is { } identity &&
@@ -765,7 +787,8 @@ public partial class SubtitleTask
                             if (ViewModel.ShowPreview && VideoProcessor != null)
                             {
                                 ViewModel.FramePreviewImage = frame.ToBitmapSource();
-                                ProcessView.EventTimelineEditor.UpdateRecognitionPreviewInfo(frameIndex, VideoProcessor.VideoInfo, ViewModel.IsRunning);
+                                ProcessView.EventTimelineEditor.UpdateRecognitionPreviewInfo(frameIndex,
+                                    VideoProcessor.VideoInfo, ViewModel.IsRunning);
                             }
                         });
                     },
@@ -880,5 +903,4 @@ public partial class SubtitleTask
                 });
             });
     }
-
 }

@@ -19,8 +19,12 @@ public class SuppressionOutputAuthorizationTests
                 Assert.Throws<IOException>(() => transaction.Commit());
                 Assert.Equal("external output", File.ReadAllText(target));
             }
+
             Assert.Single(Directory.GetFiles(directory));
         }
-        finally { Directory.Delete(directory, true); }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
     }
 }

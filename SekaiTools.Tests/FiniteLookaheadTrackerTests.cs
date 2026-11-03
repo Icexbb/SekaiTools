@@ -1,4 +1,6 @@
+using System.Text.Json;
 using SekaiToolsCore.Match.TemplateMatcher;
+using SekaiToolsCore.Process;
 
 namespace SekaiTools.Tests;
 
@@ -19,8 +21,8 @@ public class FiniteLookaheadTrackerTests
         Assert.True(tracker.ShouldProbe(0, 360, 90, before));
         tracker.Postpone(360);
         Assert.False(tracker.ShouldProbe(0, 361, 90, after));
-        var saved = System.Text.Json.JsonSerializer.Deserialize<SekaiToolsCore.Process.LookaheadStateDto>(
-            System.Text.Json.JsonSerializer.Serialize(tracker.CaptureState()))!;
+        var saved = JsonSerializer.Deserialize<LookaheadStateDto>(
+            JsonSerializer.Serialize(tracker.CaptureState()))!;
         var restored = new FiniteLookaheadTracker();
         restored.RestoreState(saved);
         Assert.False(restored.ShouldProbe(0, 374, 90, after));

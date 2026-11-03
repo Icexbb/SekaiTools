@@ -13,8 +13,11 @@ public partial class SettingPageModel
         return (current, defaults);
     }
 
-    public bool ArePropertiesModified(IEnumerable<string> names) => names.Select(ResolveResetProperty)
-        .Any(pair => !Equals(pair.Current.GetValue(this), pair.Default.GetValue(Model.Setting.Default)));
+    public bool ArePropertiesModified(IEnumerable<string> names)
+    {
+        return names.Select(ResolveResetProperty)
+            .Any(pair => !Equals(pair.Current.GetValue(this), pair.Default.GetValue(Model.Setting.Default)));
+    }
 
     public void ResetProperties(IEnumerable<string> names)
     {
@@ -26,7 +29,11 @@ public partial class SettingPageModel
             foreach (var pair in properties)
                 pair.Current.SetValue(this, pair.Default.GetValue(Model.Setting.Default));
         }
-        finally { _suspendSaving = wasSuspended; }
+        finally
+        {
+            _suspendSaving = wasSuspended;
+        }
+
         if (!wasSuspended) SaveSetting();
     }
 }

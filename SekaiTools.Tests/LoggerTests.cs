@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 
@@ -31,7 +32,7 @@ public class LoggerTests
     public void ConcurrentCategoryAccessUsesSameLogger()
     {
         var category = Guid.NewGuid().ToString();
-        var instances = new System.Collections.Concurrent.ConcurrentBag<ILogger>();
+        var instances = new ConcurrentBag<ILogger>();
         Parallel.For(0, 100, _ => instances.Add(Logger.CreateLogger(category)));
         var expected = Logger.CreateLogger(category);
         Assert.All(instances, logger => Assert.Same(expected, logger));

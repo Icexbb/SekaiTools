@@ -1,6 +1,6 @@
 using System.Text.Json;
-using SekaiToolsCore.Process;
 using SekaiToolsCore.Match.TemplateMatcher;
+using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.FrameSet;
 
 namespace SekaiTools.Tests;
@@ -50,7 +50,11 @@ public class MatcherThresholdTests
     private sealed class ThresholdMatcher(List<TestFrameSet>? sets = null)
         : MatcherStateMachine<TestFrameSet>(sets ?? [], 10)
     {
-        public bool Fail(int frame) => TryEnterFallback(frame);
+        public bool Fail(int frame)
+        {
+            return TryEnterFallback(frame);
+        }
+
         public DialogMatcherStateDto Save()
         {
             var (failures, target, fallback) = SaveFallbackState();
@@ -62,8 +66,13 @@ public class MatcherThresholdTests
                 LastFailureFrame = LastFailureFrame
             };
         }
-        public void Load(DialogMatcherStateDto state) =>
-            RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold, state.LastFailureFrame);
+
+        public void Load(DialogMatcherStateDto state)
+        {
+            RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold,
+                state.LastFailureFrame);
+        }
+
         public double Threshold(double value, bool tracking)
         {
             return EffectiveThreshold(value, tracking);

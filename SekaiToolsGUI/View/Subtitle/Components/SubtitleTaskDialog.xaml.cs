@@ -18,14 +18,13 @@ public partial class SubtitleTaskDialog : ContentDialog
     protected override void OnButtonClick(ContentDialogButton button)
     {
         if (button == ContentDialogButton.Primary)
-        {
             if (!ViewModel.CanStart || !File.Exists(ViewModel.VideoFilePath) ||
                 !File.Exists(ViewModel.ScriptFilePath) || !File.Exists(ViewModel.TranslateFilePath))
             {
                 ValidationError.Text = "请选择存在的视频、剧本和翻译文件";
                 return;
             }
-        }
+
         base.OnButtonClick(button);
     }
 }

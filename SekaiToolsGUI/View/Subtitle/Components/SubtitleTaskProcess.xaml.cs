@@ -8,12 +8,24 @@ namespace SekaiToolsGUI.View.Subtitle.Components;
 
 public partial class SubtitleTaskProcess : UserControl
 {
-    private bool _shortLayout;
     private const double MinimumPreviewHeight = 240;
     private double _requestedPreviewHeight = MinimumPreviewHeight;
+    private bool _shortLayout;
+
+    public SubtitleTaskProcess()
+    {
+        InitializeComponent();
+        EventTimelineEditor.InlineVideoPreview = frame =>
+        {
+            ViewModel.ShowPreview = true;
+            ViewModel.FramePreviewImage = frame;
+        };
+    }
 
     private double MaximumPreviewHeight => Math.Max(MinimumPreviewHeight, Math.Min(ActualHeight,
         (ActualWidth - 350 - 5 + 12) / 2));
+
+    private SubtitlePageModel ViewModel => (SubtitlePageModel)DataContext;
 
     private void UpdatePreviewSize()
     {
@@ -28,13 +40,25 @@ public partial class SubtitleTaskProcess : UserControl
 
     private void ChangePreviewHeight(double delta)
     {
-        _requestedPreviewHeight = Math.Clamp(FramePreviewCard.Height + delta, MinimumPreviewHeight, MaximumPreviewHeight);
+        _requestedPreviewHeight =
+            Math.Clamp(FramePreviewCard.Height + delta, MinimumPreviewHeight, MaximumPreviewHeight);
         UpdatePreviewSize();
     }
 
-    private void SubtitleTaskProcess_OnSizeChanged(object sender, SizeChangedEventArgs e) => UpdatePreviewSize();
-    private void PreviewZoomOutButton_OnClick(object sender, RoutedEventArgs e) => ChangePreviewHeight(-50);
-    private void PreviewZoomInButton_OnClick(object sender, RoutedEventArgs e) => ChangePreviewHeight(50);
+    private void SubtitleTaskProcess_OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdatePreviewSize();
+    }
+
+    private void PreviewZoomOutButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ChangePreviewHeight(-50);
+    }
+
+    private void PreviewZoomInButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ChangePreviewHeight(50);
+    }
 
     private void FramePreviewCard_OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
@@ -42,29 +66,29 @@ public partial class SubtitleTaskProcess : UserControl
         e.Handled = true;
     }
 
-    public SubtitleTaskProcess()
-    {
-        InitializeComponent();
-        EventTimelineEditor.InlineVideoPreview = frame =>
-        {
-            ViewModel.ShowPreview = true;
-            ViewModel.FramePreviewImage = frame;
-        };
-    }
-
     public event RoutedEventHandler? StopRequested;
     public event RoutedEventHandler? OutputRequested;
     public event RoutedEventHandler? ResetRequested;
 
-    private SubtitlePageModel ViewModel => (SubtitlePageModel)DataContext;
+    private void StopPreviewButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        EventTimelineEditor.StopEventPreview();
+    }
 
-    private void StopPreviewButton_OnClick(object sender, RoutedEventArgs e) => EventTimelineEditor.StopEventPreview();
+    private void StopButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        StopRequested?.Invoke(sender, e);
+    }
 
-    private void StopButton_OnClick(object sender, RoutedEventArgs e) => StopRequested?.Invoke(sender, e);
+    private void OutputButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        OutputRequested?.Invoke(sender, e);
+    }
 
-    private void OutputButton_OnClick(object sender, RoutedEventArgs e) => OutputRequested?.Invoke(sender, e);
-
-    private void ResetButton_OnClick(object sender, RoutedEventArgs e) => ResetRequested?.Invoke(sender, e);
+    private void ResetButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ResetRequested?.Invoke(sender, e);
+    }
 
     internal void UpdateViewport(double height)
     {
@@ -194,10 +218,12 @@ public partial class SubtitleTaskProcess : UserControl
         if (GeneralFunctionSwitch.EventTimeline && EventTimelineEditor.Undo())
             e.Handled = true;
     }
+
     private void Control_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         ViewModel.ShowPreview = false;
     }
+
     private void ShowPreviewButton_OnClick(object sender, RoutedEventArgs e)
     {
         ViewModel.ShowPreview = true;

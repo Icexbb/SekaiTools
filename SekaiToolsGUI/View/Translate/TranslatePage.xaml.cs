@@ -1,51 +1,61 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
+using SekaiDataFetch;
+using SekaiDataFetch.Source;
 using SekaiToolsBase;
 using SekaiToolsBase.GameScript;
 using SekaiToolsBase.Story;
 using SekaiToolsBase.Story.Translation;
+using SekaiToolsConfiguration;
 using SekaiToolsGUI.Service;
 using SekaiToolsGUI.View.Download;
-using SekaiToolsGUI.ViewModel.Translate;
-using SekaiDataFetch;
-using SekaiDataFetch.Source;
-using SekaiToolsConfiguration;
+using SekaiToolsGUI.View.Translate.Components;
 using SekaiToolsGUI.ViewModel.Download;
 using SekaiToolsGUI.ViewModel.Setting;
+using SekaiToolsGUI.ViewModel.Subtitle;
+using SekaiToolsGUI.ViewModel.Translate;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
+using Button = System.Windows.Controls.Button;
+using ListViewItem = System.Windows.Controls.ListViewItem;
 using SaveFileDialog = SekaiToolsGUI.View.Translate.Components.SaveFileDialog;
+using TextBlock = System.Windows.Controls.TextBlock;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace SekaiToolsGUI.View.Translate;
 
 public partial class TranslatePage : UserControl
 {
-    private readonly EditorSessionStore _sessions;
     private readonly DispatcherTimer _draftTimer = new() { Interval = TimeSpan.FromMilliseconds(600) };
-    private bool _draftChecked;
+    private readonly FlashbackEventService _flashbackEvents = new();
+    private readonly EditorSessionStore _sessions;
+    private string? _acceptedPreflight;
+    private LineModel? _activeLine;
     private bool _discardDraftOnClose;
-    private bool _restoringDraft;
-    private bool _isLoadingScript;
-    private string? _dragTranslationPath;
+    private bool _draftChecked;
     private Story? _dragStory;
     private TranslationData? _dragTranslation;
     private string? _dragTranslationError;
+    private string? _dragTranslationPath;
     private CancellationTokenSource? _flashbackLookup;
-    private readonly FlashbackEventService _flashbackEvents = new();
-    private LineModel? _activeLine;
+    private bool _isLoadingScript;
     private bool _isSaving;
-    private string? _acceptedPreflight;
+    private bool _restoringDraft;
 
-    public TranslatePage() : this(new EditorSessionStore()) { }
+    public TranslatePage() : this(new EditorSessionStore())
+    {
+    }
 
     internal TranslatePage(EditorSessionStore sessions)
     {
@@ -62,7 +72,7 @@ public partial class TranslatePage : UserControl
             if (e.PropertyName == nameof(TranslatePageModel.ScriptPath))
                 UpdateFlashbackOrigins();
         };
-        AddHandler(Components.TranslateLineActions.VoiceRequestedEvent, new RoutedEventHandler(OnVoiceRequested));
+        AddHandler(TranslateLineActions.VoiceRequestedEvent, new RoutedEventHandler(OnVoiceRequested));
         Unloaded += (_, _) => StopVoice();
         ViewModel.PropertyChanged += (_, e) =>
         {
@@ -102,11 +112,17 @@ public partial class TranslatePage : UserControl
         }));
     }
 
+    public TranslatePageModel ViewModel => (TranslatePageModel)DataContext;
+
+
+    private static ISnackbarService SnackbarService =>
+        ((MainWindow)Application.Current.MainWindow!).WindowSnackbarService;
+
     public bool FlushDraft()
     {
         _draftTimer.Stop();
         if (_discardDraftOnClose) return _sessions.DeleteDraft();
-        if (_restoringDraft || !_draftChecked && !ViewModel.HasScript) return true;
+        if (_restoringDraft || (!_draftChecked && !ViewModel.HasScript)) return true;
         var saved = _sessions.SaveDraft(ViewModel);
         ViewModel.MarkDraftResult(saved);
         if (saved) return true;
@@ -141,34 +157,53 @@ public partial class TranslatePage : UserControl
             ViewModel.Undo();
             e.Handled = true;
         }
-        else if (e.Key == Key.Y || e.Key == Key.Z && (Keyboard.Modifiers & ModifierKeys.Shift) != 0)
+        else if (e.Key == Key.Y || (e.Key == Key.Z && (Keyboard.Modifiers & ModifierKeys.Shift) != 0))
         {
             ViewModel.Redo();
             e.Handled = true;
         }
     }
 
-    private void UndoButton_OnClick(object sender, RoutedEventArgs e) => ViewModel.Undo();
-    private void RedoButton_OnClick(object sender, RoutedEventArgs e) => ViewModel.Redo();
+    private void UndoButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.Undo();
+    }
+
+    private void RedoButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.Redo();
+    }
 
     private void TranslatePanel_OnActivity(object sender, RoutedEventArgs e)
     {
         if (e.OriginalSource is DependencyObject source &&
-            ItemsControl.ContainerFromElement(TranslatePanel, source) is System.Windows.Controls.ListViewItem { DataContext: LineModel line })
+            ItemsControl.ContainerFromElement(TranslatePanel, source) is ListViewItem { DataContext: LineModel line })
             _activeLine = line;
         if (_activeLine != null) ViewModel.ActiveSequenceNumber = _activeLine.SequenceNumber;
-        if (e.RoutedEvent == Keyboard.GotKeyboardFocusEvent && e.OriginalSource is System.Windows.Controls.TextBox box && !box.IsReadOnly)
+        if (e.RoutedEvent == Keyboard.GotKeyboardFocusEvent && e.OriginalSource is TextBox box && !box.IsReadOnly)
         {
-            var path = box.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.ParentBinding.Path?.Path;
+            var path = box.GetBindingExpression(TextBox.TextProperty)?.ParentBinding.Path?.Path;
             if (_activeLine is { } active && path == "Content.Translated") ViewModel.BeginTextEdit(active.Body);
-            else if (_activeLine is LineDialogModel dialog && path == "Character.Translated") ViewModel.BeginTextEdit(dialog.Character);
+            else if (_activeLine is LineDialogModel dialog && path == "Character.Translated")
+                ViewModel.BeginTextEdit(dialog.Character);
         }
     }
 
-    private void TranslatePanel_OnLostFocus(object sender, KeyboardFocusChangedEventArgs e) => ViewModel.EndTextEdit();
+    private void TranslatePanel_OnLostFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        ViewModel.EndTextEdit();
+    }
 
-    private void NextUntranslated_OnClick(object sender, RoutedEventArgs e) => NavigateNext(false);
-    private void NextWarning_OnClick(object sender, RoutedEventArgs e) => NavigateNext(true);
+    private void NextUntranslated_OnClick(object sender, RoutedEventArgs e)
+    {
+        NavigateNext(false);
+    }
+
+    private void NextWarning_OnClick(object sender, RoutedEventArgs e)
+    {
+        NavigateNext(true);
+    }
+
     private void NavigateNext(bool warnings)
     {
         var next = ViewModel.FindNext(_activeLine, warnings);
@@ -178,6 +213,7 @@ public partial class TranslatePage : UserControl
                 new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
             return;
         }
+
         NavigateToLine(next);
     }
 
@@ -194,15 +230,17 @@ public partial class TranslatePage : UserControl
         }, DispatcherPriority.Loaded);
     }
 
-    private static System.Windows.Controls.TextBox? FindEditor(DependencyObject parent)
+    private static TextBox? FindEditor(DependencyObject parent)
     {
         for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
         {
             var child = VisualTreeHelper.GetChild(parent, i);
-            if (child is System.Windows.Controls.TextBox box &&
-                box.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.ParentBinding.Path?.Path == "Content.Translated") return box;
+            if (child is TextBox box &&
+                box.GetBindingExpression(TextBox.TextProperty)?.ParentBinding.Path?.Path ==
+                "Content.Translated") return box;
             if (FindEditor(child) is { } editor) return editor;
         }
+
         return null;
     }
 
@@ -223,15 +261,27 @@ public partial class TranslatePage : UserControl
                 SecondaryButtonText = "丢弃草稿",
                 CloseButtonText = "稍后"
             }, CancellationToken.None);
-        if (result == ContentDialogResult.Secondary) { _sessions.DeleteDraft(); return; }
-        if (result != ContentDialogResult.Primary) { _draftChecked = false; return; }
+        if (result == ContentDialogResult.Secondary)
+        {
+            _sessions.DeleteDraft();
+            return;
+        }
+
+        if (result != ContentDialogResult.Primary)
+        {
+            _draftChecked = false;
+            return;
+        }
+
         _restoringDraft = true;
         try
         {
             draft.Script.OriginalEffectIndices = draft.OriginalEffectIndices;
-            ViewModel.RestoreDraft(draft.Script, draft.ScriptPath, draft.TranslationPath, draft.Values, draft.SavedValues, draft.UseV2,
+            ViewModel.RestoreDraft(draft.Script, draft.ScriptPath, draft.TranslationPath, draft.Values,
+                draft.SavedValues, draft.UseV2,
                 draft.AutoFormat, draft.ActiveSequenceNumber, draft.SyncMatchingContent, draft.SyncMatchingSpeakers);
-            if (ViewModel.ActiveSequenceNumber > 0) NavigateToLine(ViewModel.Events[ViewModel.ActiveSequenceNumber - 1]);
+            if (ViewModel.ActiveSequenceNumber > 0)
+                NavigateToLine(ViewModel.Events[ViewModel.ActiveSequenceNumber - 1]);
         }
         catch (Exception exception)
         {
@@ -239,10 +289,11 @@ public partial class TranslatePage : UserControl
             SnackbarService.Show("恢复失败", exception.Message, ControlAppearance.Danger,
                 new SymbolIcon(SymbolRegular.DocumentDismiss24), TimeSpan.FromSeconds(5));
         }
-        finally { _restoringDraft = false; }
+        finally
+        {
+            _restoringDraft = false;
+        }
     }
-
-    public TranslatePageModel ViewModel => (TranslatePageModel)DataContext;
 
     private async void UpdateFlashbackOrigins()
     {
@@ -259,13 +310,16 @@ public partial class TranslatePage : UserControl
             var origins = await Task.Run(() => _flashbackEvents.ResolveAsync(sources, downloadSources, lookup.Token,
                 async token =>
                 {
-                    var json = await Fetcher.Instance.FetchOnceAsync(NetworkEndpoints.Current.Resources.SourceListUrl, token);
-                    return System.Text.Json.JsonSerializer.Deserialize<SourceData[]>(json)
-                        ?? throw new InvalidDataException("数据源列表为空");
+                    var json = await Fetcher.Instance.FetchOnceAsync(NetworkEndpoints.Current.Resources.SourceListUrl,
+                        token);
+                    return JsonSerializer.Deserialize<SourceData[]>(json)
+                           ?? throw new InvalidDataException("数据源列表为空");
                 }), lookup.Token);
             if (!lookup.IsCancellationRequested) ViewModel.ApplyFlashbackOrigins(origins);
         }
-        catch (OperationCanceledException) when (lookup.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (lookup.IsCancellationRequested)
+        {
+        }
         catch (Exception exception)
         {
             Logger.Log($"闪回活动来源解析失败: {exception.Message}", LogLevel.Warning);
@@ -275,10 +329,6 @@ public partial class TranslatePage : UserControl
             if (ReferenceEquals(_flashbackLookup, lookup)) _flashbackLookup = null;
         }
     }
-
-
-    private static ISnackbarService SnackbarService =>
-        ((MainWindow)Application.Current.MainWindow!).WindowSnackbarService;
 
     private async void LoadFileButton_OnClick(object sender, RoutedEventArgs e)
     {
@@ -304,7 +354,8 @@ public partial class TranslatePage : UserControl
             ? DragDropEffects.Copy
             : DragDropEffects.None;
         e.Handled = true;
-        var showError = !script && path != null && Path.GetExtension(path).Equals(".txt", StringComparison.OrdinalIgnoreCase);
+        var showError = !script && path != null &&
+                        Path.GetExtension(path).Equals(".txt", StringComparison.OrdinalIgnoreCase);
         DropOverlay.Visibility = allowed || showError ? Visibility.Visible : Visibility.Collapsed;
         DropErrorRegion.Visibility = !allowed && showError ? Visibility.Visible : Visibility.Collapsed;
         ReferenceDropRegion.Visibility = allowed ? Visibility.Visible : Visibility.Collapsed;
@@ -316,8 +367,10 @@ public partial class TranslatePage : UserControl
         Grid.SetRowSpan(ReferenceDropRegion, script ? 2 : 1);
         TranslationDropRegion.Visibility = script ? Visibility.Collapsed : Visibility.Visible;
         var upper = e.GetPosition(this).Y < ActualHeight / 2;
-        ReferenceDropRegion.Background = script || upper ? new SolidColorBrush(Color.FromArgb(160, 0, 100, 180)) : Brushes.Transparent;
-        TranslationDropRegion.Background = !upper ? new SolidColorBrush(Color.FromArgb(160, 0, 100, 180)) : Brushes.Transparent;
+        ReferenceDropRegion.Background =
+            script || upper ? new SolidColorBrush(Color.FromArgb(160, 0, 100, 180)) : Brushes.Transparent;
+        TranslationDropRegion.Background =
+            !upper ? new SolidColorBrush(Color.FromArgb(160, 0, 100, 180)) : Brushes.Transparent;
     }
 
     private async void Page_OnPreviewDrop(object sender, DragEventArgs e)
@@ -349,12 +402,15 @@ public partial class TranslatePage : UserControl
         try
         {
             if (reference)
+            {
                 ViewModel.LoadReferenceTranslation(translation, path);
+            }
             else
             {
                 if (!await ConfirmReplaceCurrentContentAsync()) return;
                 ViewModel.LoadTranslation(translation, path);
             }
+
             ImportErrorPanel.Visibility = Visibility.Collapsed;
             SnackbarService.Show("成功", reference ? "参考翻译已载入" : "翻译已载入", ControlAppearance.Success,
                 new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
@@ -398,6 +454,7 @@ public partial class TranslatePage : UserControl
             _dragTranslationError = "请先载入剧本文件，再拖入翻译文件。";
             return null;
         }
+
         if (_dragTranslationPath == path && ReferenceEquals(_dragStory, ViewModel.Story)) return _dragTranslation;
         _dragTranslationPath = path;
         _dragStory = ViewModel.Story;
@@ -416,6 +473,7 @@ public partial class TranslatePage : UserControl
         {
             _dragTranslationError = $"翻译文件读取或解析失败：{exception.Message}";
         }
+
         return _dragTranslation;
     }
 
@@ -427,9 +485,12 @@ public partial class TranslatePage : UserControl
         return File.Exists(path) ? path : null;
     }
 
-    private static bool IsScriptPath(string? path) => path != null &&
-        (Path.GetExtension(path).Equals(".json", StringComparison.OrdinalIgnoreCase)
-         || Path.GetExtension(path).Equals(".asset", StringComparison.OrdinalIgnoreCase));
+    private static bool IsScriptPath(string? path)
+    {
+        return path != null &&
+               (Path.GetExtension(path).Equals(".json", StringComparison.OrdinalIgnoreCase)
+                || Path.GetExtension(path).Equals(".asset", StringComparison.OrdinalIgnoreCase));
+    }
 
     private async Task LoadScriptFileAsync(string path)
     {
@@ -466,6 +527,7 @@ public partial class TranslatePage : UserControl
             await OfferRestoreDraftAsync();
             if (!_draftChecked) return;
         }
+
         if (!ViewModel.IsEmpty && !await ConfirmReplaceCurrentContentAsync()) return;
 
         ViewModel.LoadScript(script, path);
@@ -494,7 +556,11 @@ public partial class TranslatePage : UserControl
         try
         {
             var tData = new TranslationData(filePath);
-            if (tData.IsEmpty()) { ShowImportError("翻译文件没有可载入的条目。"); return; }
+            if (tData.IsEmpty())
+            {
+                ShowImportError("翻译文件没有可载入的条目。");
+                return;
+            }
 
             if (ViewModel.IsTranslationApplicable(tData))
             {
@@ -539,7 +605,11 @@ public partial class TranslatePage : UserControl
         try
         {
             var tData = new TranslationData(filePath);
-            if (tData.IsEmpty()) { ShowImportError("参考翻译文件没有可载入的条目。"); return; }
+            if (tData.IsEmpty())
+            {
+                ShowImportError("参考翻译文件没有可载入的条目。");
+                return;
+            }
 
             if (ViewModel.IsTranslationApplicable(tData))
             {
@@ -563,14 +633,16 @@ public partial class TranslatePage : UserControl
 
     private async void ResetButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (!ViewModel.HasScript || !await ConfirmReplaceCurrentContentAsync("清除整个翻译工作区？", $"将移除剧本、参考及全部 {ViewModel.Events.Length} 条编辑内容。")) return;
+        if (!ViewModel.HasScript ||
+            !await ConfirmReplaceCurrentContentAsync("清除整个翻译工作区？", $"将移除剧本、参考及全部 {ViewModel.Events.Length} 条编辑内容。"))
+            return;
 
         ViewModel.Clear();
     }
 
     private void OpenClearMenu_OnClick(object sender, RoutedEventArgs e)
     {
-        if (sender is System.Windows.Controls.Button { ContextMenu: { } menu } button)
+        if (sender is Button { ContextMenu: { } menu } button)
         {
             menu.PlacementTarget = button;
             menu.DataContext = ViewModel;
@@ -583,17 +655,33 @@ public partial class TranslatePage : UserControl
         if (await ConfirmReplaceCurrentContentAsync("清除当前译文？", $"将清除 {ViewModel.Events.Length} 条译文，保留剧本和参考翻译。"))
             ViewModel.ClearTranslation();
     }
-    private void ClearReference_OnClick(object sender, RoutedEventArgs e) => ViewModel.ClearReference();
+
+    private void ClearReference_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ClearReference();
+    }
+
     private void ShowImportError(string detail)
     {
         ImportErrorText.Text = detail + "\n请确认文件属于当前剧本，并根据条目编号、数量或类型修正后重新载入。";
         ImportErrorPanel.Visibility = Visibility.Visible;
     }
-    private void DismissImportError_OnClick(object sender, RoutedEventArgs e) => ImportErrorPanel.Visibility = Visibility.Collapsed;
+
+    private void DismissImportError_OnClick(object sender, RoutedEventArgs e)
+    {
+        ImportErrorPanel.Visibility = Visibility.Collapsed;
+    }
+
     private void CopyImportError_OnClick(object sender, RoutedEventArgs e)
     {
-        try { Clipboard.SetText(ImportErrorText.Text); }
-        catch (Exception exception) { Logger.Log($"复制导入错误失败: {exception.Message}", LogLevel.Warning); }
+        try
+        {
+            Clipboard.SetText(ImportErrorText.Text);
+        }
+        catch (Exception exception)
+        {
+            Logger.Log($"复制导入错误失败: {exception.Message}", LogLevel.Warning);
+        }
     }
 
     private void OpenDownloadPageButton_OnClick(object sender, RoutedEventArgs e)
@@ -620,7 +708,7 @@ public partial class TranslatePage : UserControl
         }
     }
 
-    private static void UpdateFilePath(System.Windows.Controls.TextBlock textBlock, string path)
+    private static void UpdateFilePath(TextBlock textBlock, string path)
     {
         textBlock.ToolTip = string.IsNullOrEmpty(path) ? null : path;
         textBlock.Text = string.IsNullOrEmpty(path) ? string.Empty : CompactPath(Path.GetFileName(path));
@@ -683,12 +771,12 @@ public partial class TranslatePage : UserControl
             Title = "退出程序？"
         };
         var content = new StackPanel { MinWidth = 440 };
-        content.Children.Add(new System.Windows.Controls.TextBlock
+        content.Children.Add(new TextBlock
         {
             Text = "当前翻译有未保存的修改。",
             Margin = new Thickness(0, 0, 0, 24)
         });
-        var actions = new System.Windows.Controls.Primitives.UniformGrid { Columns = 4 };
+        var actions = new UniformGrid { Columns = 4 };
         var choice = "取消";
         foreach (var label in new[] { "保存", "保留草稿", "不保存", "取消" })
         {
@@ -699,9 +787,14 @@ public partial class TranslatePage : UserControl
                 Appearance = label == "保存" ? ControlAppearance.Primary : ControlAppearance.Secondary
             };
             if (label == "不保存") button.ToolTip = "放弃未保存修改并删除恢复草稿，已保存的文件不受影响。";
-            button.Click += (_, _) => { choice = label; dialog.Hide(); };
+            button.Click += (_, _) =>
+            {
+                choice = label;
+                dialog.Hide();
+            };
             actions.Children.Add(button);
         }
+
         content.Children.Add(actions);
         dialog.Content = content;
         await service.ShowAsync(dialog, CancellationToken.None);
@@ -755,12 +848,14 @@ public partial class TranslatePage : UserControl
         _isSaving = true;
         try
         {
-            if (Keyboard.FocusedElement is FrameworkElement { DataContext: LineDialogModel focused }) focused.CompleteTextEdit();
+            if (Keyboard.FocusedElement is FrameworkElement { DataContext: LineDialogModel focused })
+                focused.CompleteTextEdit();
             return await SaveCoreAsync(saveAs);
         }
         finally
         {
-            if (Keyboard.FocusedElement is System.Windows.Controls.TextBox { IsReadOnly: false, DataContext: LineDialogModel focused }) focused.DeferFormatting = true;
+            if (Keyboard.FocusedElement is TextBox { IsReadOnly: false, DataContext: LineDialogModel focused })
+                focused.DeferFormatting = true;
             _isSaving = false;
         }
     }
@@ -768,18 +863,22 @@ public partial class TranslatePage : UserControl
     private async Task<bool> SaveCoreAsync(bool saveAs)
     {
         var dialogService = ((MainWindow)Application.Current.MainWindow!).WindowContentDialogService;
-        SekaiToolsGUI.ViewModel.Subtitle.SaveFileDialogModel target;
+        SaveFileDialogModel target;
         var useV2 = ViewModel.ExportUsesV2;
         var optionsShown = saveAs || !ViewModel.HasTranslation;
         if (optionsShown)
         {
             var dialog = new SaveFileDialog(dialogService.GetDialogHostEx() ?? throw new InvalidOperationException(),
                 ViewModel.ScriptPath, ViewModel.TranslationPath, ViewModel);
-            if (await dialogService.ShowAsync(dialog, CancellationToken.None) != ContentDialogResult.Primary) return false;
+            if (await dialogService.ShowAsync(dialog, CancellationToken.None) != ContentDialogResult.Primary)
+                return false;
             target = dialog.ViewModel;
             useV2 = dialog.UseV2;
         }
-        else target = new SekaiToolsGUI.ViewModel.Subtitle.SaveFileDialogModel { FileName = ViewModel.TranslationPath };
+        else
+        {
+            target = new SaveFileDialogModel { FileName = ViewModel.TranslationPath };
+        }
 
         var preflight = target.FileName + "\n" + useV2 + "\n" + ViewModel.GetExportSummary(useV2);
         if (!optionsShown && preflight != _acceptedPreflight &&
@@ -794,11 +893,13 @@ public partial class TranslatePage : UserControl
             }, CancellationToken.None);
             if (result != ContentDialogResult.Primary) return false;
         }
+
         try
         {
             var content = ViewModel.Export(useV2);
             var values = ViewModel.ReadValues();
-            if (!await ExportOverwriteConfirmation.ConfirmAsync(dialogService, target, CancellationToken.None)) return false;
+            if (!await ExportOverwriteConfirmation.ConfirmAsync(dialogService, target, CancellationToken.None))
+                return false;
             await File.WriteAllTextAsync(target.FileName, content);
             ViewModel.ExportUsesV2 = useV2;
             ViewModel.MarkSaved(values, target.FileName);
@@ -812,20 +913,29 @@ public partial class TranslatePage : UserControl
                 new SymbolIcon(SymbolRegular.Dismiss24), TimeSpan.FromSeconds(5));
             return false;
         }
+
         SnackbarService.Show("保存成功", "翻译文件已保存，可点击“打开保存位置”查看。", ControlAppearance.Success,
             new SymbolIcon(SymbolRegular.DocumentCheckmark24), TimeSpan.FromSeconds(3));
         return true;
     }
 
-    private async void SaveAsButton_OnClick(object sender, RoutedEventArgs e) => await SaveAsync(true);
+    private async void SaveAsButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        await SaveAsync(true);
+    }
+
     private void OpenSavedLocation_OnClick(object sender, RoutedEventArgs e)
     {
         if (!ViewModel.HasTranslation) return;
         try
         {
-            Process.Start(new ProcessStartInfo("explorer.exe") { Arguments = $"/select,\"{ViewModel.TranslationPath}\"" });
+            Process.Start(new ProcessStartInfo("explorer.exe")
+                { Arguments = $"/select,\"{ViewModel.TranslationPath}\"" });
         }
-        catch (Exception ex) { Logger.Log($"打开保存位置失败: {ex.Message}", LogLevel.Warning); }
+        catch (Exception ex)
+        {
+            Logger.Log($"打开保存位置失败: {ex.Message}", LogLevel.Warning);
+        }
     }
 
     private void SpecialCharButton_OnClick(object sender, RoutedEventArgs e)

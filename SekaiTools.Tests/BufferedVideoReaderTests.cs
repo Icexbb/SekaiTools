@@ -40,10 +40,15 @@ public class BufferedVideoReaderTests
                 Assert.Equal(0d, CvInvoke.Norm(gray, actual.PreparedGray!, NormType.L1));
                 frames.Add(actual.Image);
             }
+
             using var end = buffered.Read();
             Assert.False(end.Succeeded);
         }
-        finally { buffered.Dispose(); }
+        finally
+        {
+            buffered.Dispose();
+        }
+
         Assert.All(frames, frame => Assert.Equal(IntPtr.Zero, frame.Ptr));
     }
 
@@ -76,7 +81,11 @@ public class BufferedVideoReaderTests
         using var capture = new VideoCapture(video.Path);
         using var stop = new CancellationTokenSource();
         var reader = new BufferedVideoReader(capture, 2, stop.Token);
-        using (var frame = reader.Read()) Assert.True(frame.Succeeded);
+        using (var frame = reader.Read())
+        {
+            Assert.True(frame.Succeeded);
+        }
+
         await Task.Delay(100);
         stop.Cancel();
         Assert.ThrowsAny<OperationCanceledException>(() => reader.Read());
@@ -136,10 +145,10 @@ public class BufferedVideoReaderTests
 
     private sealed class VideoFixture : IDisposable
     {
-        public string Path { get; } = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"SekaiTools-reader-{Guid.NewGuid():N}.avi");
         public VideoFixture()
         {
-            using var writer = new VideoWriter(Path, VideoWriter.Fourcc('M', 'J', 'P', 'G'), 30, new Size(160, 90), true);
+            using var writer =
+                new VideoWriter(Path, VideoWriter.Fourcc('M', 'J', 'P', 'G'), 30, new Size(160, 90), true);
             Assert.True(writer.IsOpened);
             using var image = new Mat(90, 160, DepthType.Cv8U, 3);
             for (var i = 0; i < 8; i++)
@@ -149,6 +158,13 @@ public class BufferedVideoReaderTests
                 writer.Write(image);
             }
         }
-        public void Dispose() => File.Delete(Path);
+
+        public string Path { get; } =
+            System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"SekaiTools-reader-{Guid.NewGuid():N}.avi");
+
+        public void Dispose()
+        {
+            File.Delete(Path);
+        }
     }
 }

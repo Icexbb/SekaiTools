@@ -17,10 +17,16 @@ public class FlashbackTests
     [InlineData("areatalk_ev_band_02_004_006", null)]
     [InlineData("", null)]
     [InlineData(null, null)]
-    public void 语音来源解析(string? voice, string? expected) => Assert.Equal(expected, FlashbackAnalyzer.GetSource(voice));
+    public void 语音来源解析(string? voice, string? expected)
+    {
+        Assert.Equal(expected, FlashbackAnalyzer.GetSource(voice));
+    }
 
-    private static Talk Line(params string[] voices) => new("角色", "台词", 0,
-        voices.Select(voice => new Voice(0, voice)).ToArray());
+    private static Talk Line(params string[] voices)
+    {
+        return new Talk("角色", "台词", 0,
+            voices.Select(voice => new Voice(0, voice)).ToArray());
+    }
 
     [Fact]
     public void 来源按行去重且忽略通用未知和无语音()
@@ -29,7 +35,8 @@ public class FlashbackTests
             Line("voice_ev_old_01_01_01", "voice_ev_old_01_02_02", "voice_ev_old_01_03_03"),
             Line("voice_ev_current_02_01_01"), Line("voice_ev_current_02_02_01"),
             Line("partvoice_28_021_band"), Line("unknown"), Line(),
-            Line("voice_ev_current_02_03_01", "voice_ev_old_01_04_01")]);
+            Line("voice_ev_current_02_03_01", "voice_ev_old_01_04_01")
+        ]);
         Assert.True(result[0]!.IsFlashback);
         Assert.Equal("ev_current_02", result[0]!.MainSource);
         Assert.All(result[1..6], item => Assert.False(item!.IsFlashback));
@@ -44,8 +51,11 @@ public class FlashbackTests
         var script = new Script
         {
             ScenarioId = "test",
-            TalkData = [Line("voice_ev_current_01_01_01"), Line("voice_ev_old_01_01_01"), Line("voice_ev_current_01_02_01")],
-            Snippets = [new() { Action = 1 }, new() { Action = 1 }, new() { Action = 1 }]
+            TalkData =
+            [
+                Line("voice_ev_current_01_01_01"), Line("voice_ev_old_01_01_01"), Line("voice_ev_current_01_02_01")
+            ],
+            Snippets = [new Snippet { Action = 1 }, new Snippet { Action = 1 }, new Snippet { Action = 1 }]
         };
         var model = new TranslatePageModel();
         model.LoadScript(script, "test.json");
@@ -62,7 +72,7 @@ public class FlashbackTests
         Assert.Equal(originalExport, model.Export());
         Assert.Contains("第 135 期", ((LineDialogModel)model.Events[1]).FlashbackLabel);
         Assert.False(model.IsDirty);
-        model.LoadScript(new Script { TalkData = [Line()], Snippets = [new() { Action = 1 }] }, "next.json");
+        model.LoadScript(new Script { TalkData = [Line()], Snippets = [new Snippet { Action = 1 }] }, "next.json");
         Assert.False(((LineDialogModel)model.Events[0]).IsFlashback);
         model.Clear();
         Assert.Empty(model.Events);

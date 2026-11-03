@@ -1,14 +1,18 @@
 using System.Drawing;
+using System.Text.Json;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using SekaiToolsBase.GameScript;
 using SekaiToolsBase.Story;
+using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsBase.Story.Translation;
 using SekaiToolsCore;
 using SekaiToolsCore.Abstractions;
 using SekaiToolsCore.Match.TemplateMatcher;
+using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
+using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
 using SkiaSharp;
 
@@ -25,15 +29,16 @@ public class UnnamedDialogTests
     [InlineData(true, "Translated", false, true, true)]
     [InlineData(false, "Translated", true, false, false)]
     [InlineData(true, "Translated", true, false, false)]
-    public void SpeakerOutputCategoriesAreIndependent(bool shake, string translated, bool same, bool different, bool expected)
+    public void SpeakerOutputCategoriesAreIndependent(bool shake, string translated, bool same, bool different,
+        bool expected)
     {
         using var fixture = new Fixture();
         using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
-        var data = new SekaiToolsBase.Story.StoryEvent.DialogStoryEvent(0, "Hello", 0, "Speaker", false, shake);
+        var data = new DialogStoryEvent(0, "Hello", 0, "Speaker", false, shake);
         data.SetTranslation(translated, "Hello");
-        var set = new SekaiToolsCore.Process.FrameSet.DialogBaseFrameSet(data, fixture.Info.Fps);
-        set.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(0, fixture.Info.Fps, new Point(150, 500)));
-        set.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(1, fixture.Info.Fps, new Point(152, 502)));
+        var set = new DialogBaseFrameSet(data, fixture.Info.Fps);
+        set.Frames.Add(new DialogFrameResult(0, fixture.Info.Fps, new Point(150, 500)));
+        set.Frames.Add(new DialogFrameResult(1, fixture.Info.Fps, new Point(152, 502)));
         var options = new ExportStyleConfig { ExportUnchangedCharacter = same, ExportCharacter = different };
         var result = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([set], [], [],
             new SubtitleExportInfo("test", "1", "done", "", "", ""), options);
@@ -51,22 +56,25 @@ public class UnnamedDialogTests
         using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
         var unnamed = CreateSet("", "Music", shake, 0, new Point(174, 551));
         unnamed.Data.SetTranslation("Supplement", "Music");
-        unnamed.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(1, fixture.Info.Fps, new Point(180, 555)));
+        unnamed.Frames.Add(new DialogFrameResult(1, fixture.Info.Fps, new Point(180, 555)));
         var shakingNamed = CreateSet("Speaker", "Shaking", true, 10, new Point(170, 520));
         var stableNamed = CreateSet("Speaker", "Stable", false, 20, new Point(150, 500));
         var info = new SubtitleExportInfo("test", "1", "done", "", "", "");
-        var baseline = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([stableNamed], [], [], info, new ExportStyleConfig());
-        var actual = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([unnamed, shakingNamed, stableNamed], [], [], info, new ExportStyleConfig());
+        var baseline =
+            new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([stableNamed], [], [], info,
+                new ExportStyleConfig());
+        var actual = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([unnamed, shakingNamed, stableNamed],
+            [], [], info, new ExportStyleConfig());
         Assert.Equal(baseline.ToString().Split('\n').Where(line => line.StartsWith("Style: Line")),
             actual.ToString().Split('\n').Where(line => line.StartsWith("Style: Line")));
         Assert.Contains(@"{\pos(160,500)}Supplement", actual.Events.ToString());
         if (shake) Assert.Contains(@"{\pos(166,504)}Supplement", actual.Events.ToString());
 
-        SekaiToolsCore.Process.FrameSet.DialogBaseFrameSet CreateSet(string name, string body, bool jitter, int frame, Point point)
+        DialogBaseFrameSet CreateSet(string name, string body, bool jitter, int frame, Point point)
         {
-            var data = new SekaiToolsBase.Story.StoryEvent.DialogStoryEvent(frame, body, 0, name, false, jitter);
-            var set = new SekaiToolsCore.Process.FrameSet.DialogBaseFrameSet(data, fixture.Info.Fps);
-            set.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(frame, fixture.Info.Fps, point));
+            var data = new DialogStoryEvent(frame, body, 0, name, false, jitter);
+            var set = new DialogBaseFrameSet(data, fixture.Info.Fps);
+            set.Frames.Add(new DialogFrameResult(frame, fixture.Info.Fps, point));
             return set;
         }
     }
@@ -79,23 +87,28 @@ public class UnnamedDialogTests
     {
         using var fixture = new Fixture();
         using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
-        var unnamedData = new SekaiToolsBase.Story.StoryEvent.DialogStoryEvent(0, "Music", 0, "", false, false);
+        var unnamedData = new DialogStoryEvent(0, "Music", 0, "", false, false);
         unnamedData.SetTranslation(translatedName, "Music");
-        var namedData = new SekaiToolsBase.Story.StoryEvent.DialogStoryEvent(1, "Hello", 0, "Speaker", false, shake);
-        var unnamed = new SekaiToolsCore.Process.FrameSet.DialogBaseFrameSet(unnamedData, fixture.Info.Fps);
-        var named = new SekaiToolsCore.Process.FrameSet.DialogBaseFrameSet(namedData, fixture.Info.Fps);
-        unnamed.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(0, fixture.Info.Fps, new Point(174, 551)));
-        named.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(10, fixture.Info.Fps, new Point(150, 500)));
-        named.Frames.Add(new SekaiToolsCore.Process.FrameSet.DialogFrameResult(11, fixture.Info.Fps, new Point(152, 502)));
+        var namedData = new DialogStoryEvent(1, "Hello", 0, "Speaker", false, shake);
+        var unnamed = new DialogBaseFrameSet(unnamedData, fixture.Info.Fps);
+        var named = new DialogBaseFrameSet(namedData, fixture.Info.Fps);
+        unnamed.Frames.Add(new DialogFrameResult(0, fixture.Info.Fps, new Point(174, 551)));
+        named.Frames.Add(new DialogFrameResult(10, fixture.Info.Fps, new Point(150, 500)));
+        named.Frames.Add(new DialogFrameResult(11, fixture.Info.Fps, new Point(152, 502)));
         var info = new SubtitleExportInfo("test", "1", "done", "", "", "");
-        var baseline = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([named], [], [], info, new ExportStyleConfig());
-        var actual = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([unnamed, named], [], [], info, new ExportStyleConfig());
+        var baseline =
+            new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([named], [], [], info,
+                new ExportStyleConfig());
+        var actual =
+            new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([unnamed, named], [], [], info,
+                new ExportStyleConfig());
 
         var expectedStyles = baseline.ToString().Split('\n').Where(line => line.StartsWith("Style: Line"));
         var actualStyles = actual.ToString().Split('\n').Where(line => line.StartsWith("Style: Line"));
         Assert.Equal(expectedStyles, actualStyles);
         // 命名台词的正文位置与单独导出时相同，覆盖抖动逐帧定位标签。
-        var namedLines = baseline.Events.ToString().Split('\n').Where(line => line.StartsWith("Dialogue:") && line.Contains(",Line1,"));
+        var namedLines = baseline.Events.ToString().Split('\n')
+            .Where(line => line.StartsWith("Dialogue:") && line.Contains(",Line1,"));
         foreach (var line in namedLines) Assert.Contains(line, actual.Events.ToString());
     }
 
@@ -107,7 +120,7 @@ public class UnnamedDialogTests
     public void UnnamedFirstDialogueTracksDropsAndResumes(bool shake, string body)
     {
         using var fixture = new Fixture();
-        var script = new SekaiToolsBase.GameScript.GameScript
+        var script = new GameScript
         {
             TalkData = [new Talk("", body, 0) { Shake = shake }],
             Snippets = [new Snippet { Action = 1 }]
@@ -120,7 +133,7 @@ public class UnnamedDialogTests
         using var context = new FrameMatchContext();
         context.Update(image);
         cache.SetFrameIndex(0);
-        Assert.True(matcher.Process(context, 0), System.Text.Json.JsonSerializer.Serialize(matcher.SaveState()));
+        Assert.True(matcher.Process(context, 0), JsonSerializer.Serialize(matcher.SaveState()));
         Assert.False(matcher.Set[0].IsEmpty());
         var anchor = matcher.Set[0].Start().Point;
         Assert.InRange(anchor.X, 170, 180);
@@ -131,7 +144,9 @@ public class UnnamedDialogTests
             using var moved = fixture.Frame(manager, body[..Math.Min(3, body.Length)], new Point(162, 582));
             context.Update(moved);
         }
-        using var resumed = new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
+
+        using var resumed =
+            new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
         resumed.RestoreState(checkpoint);
         Assert.True(resumed.Process(context, 1));
         Assert.True(matcher.Process(context, 1));
@@ -149,10 +164,12 @@ public class UnnamedDialogTests
             cache.SetFrameIndex(frame);
             matcher.Process(context, frame);
         }
+
         Assert.True(matcher.Set[0].Finished);
         Assert.Equal(reliableEnd, matcher.Set[0].End().Index);
         var maker = new SubtitleMaker(fixture.Info, manager, fixture.Config);
-        var result = maker.Make(matcher.Set, [], [], new SubtitleExportInfo("test", "1", "done", "", "", ""), new ExportStyleConfig());
+        var result = maker.Make(matcher.Set, [], [], new SubtitleExportInfo("test", "1", "done", "", "", ""),
+            new ExportStyleConfig());
         Assert.Contains(body.Contains('\n') ? ",Line2," : ",Line1,", result.Events.ToString());
         Assert.DoesNotContain(",Character,", result.Events.ToString());
     }
@@ -161,7 +178,7 @@ public class UnnamedDialogTests
     public void ConsecutiveUnnamedDialoguesAdvanceWithoutSkipping()
     {
         using var fixture = new Fixture();
-        var story = new Story(new SekaiToolsBase.GameScript.GameScript
+        var story = new Story(new GameScript
         {
             TalkData = [new Talk("", "Hello", 0), new Talk("", "World", 0)],
             Snippets = [new Snippet { Action = 1 }, new Snippet { Action = 1 }]
@@ -174,12 +191,18 @@ public class UnnamedDialogTests
         using var context = new FrameMatchContext();
         for (var i = 0; i < 3; i++)
         {
-            context.Update(first); cache.SetFrameIndex(i); matcher.Process(context, i);
+            context.Update(first);
+            cache.SetFrameIndex(i);
+            matcher.Process(context, i);
         }
+
         for (var i = 3; i < 7; i++)
         {
-            context.Update(second); cache.SetFrameIndex(i); matcher.Process(context, i);
+            context.Update(second);
+            cache.SetFrameIndex(i);
+            matcher.Process(context, i);
         }
+
         Assert.True(matcher.Set[0].Finished);
         Assert.NotEmpty(matcher.Set[1].Frames);
         Assert.Empty(matcher.Diagnostics);
@@ -189,10 +212,12 @@ public class UnnamedDialogTests
     public void TextOutsideDialogueAreaDoesNotAcquireUnnamedDialogue()
     {
         using var fixture = new Fixture();
-        var story = new Story(new SekaiToolsBase.GameScript.GameScript
-        { TalkData = [new Talk("", "Hello", 0)], Snippets = [new Snippet { Action = 1 }] }, new TranslationData(null));
+        var story = new Story(new GameScript
+                { TalkData = [new Talk("", "Hello", 0)], Snippets = [new Snippet { Action = 1 }] },
+            new TranslationData(null));
         using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
-        using var matcher = new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
+        using var matcher =
+            new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
         using var image = fixture.Frame(manager, "Hel", new Point(160, 100));
         using var context = new FrameMatchContext();
         context.Update(image);
@@ -207,7 +232,7 @@ public class UnnamedDialogTests
     public void NamedTrackingRecoversShortLossAndRestoresPendingCheckpoint(bool shake, bool missingName)
     {
         using var fixture = new Fixture();
-        var script = new SekaiToolsBase.GameScript.GameScript
+        var script = new GameScript
         {
             TalkData = [new Talk("A", "WXYZ", 0) { Shake = shake }],
             Snippets = [new Snippet { Action = 1 }]
@@ -227,6 +252,7 @@ public class UnnamedDialogTests
             cache.SetFrameIndex(frame);
             matcher.Process(context, frame);
         }
+
         Assert.Equal(3, matcher.SaveState().Status);
         var count = matcher.Set[0].Frames.Count;
         context.Update(partial);
@@ -236,7 +262,8 @@ public class UnnamedDialogTests
         Assert.Equal(4, checkpoint.Status);
         Assert.Single(checkpoint.PendingTrackingFrames);
         Assert.Equal(count, matcher.Set[0].Frames.Count);
-        using var resumed = new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
+        using var resumed =
+            new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
         resumed.RestoreState(checkpoint);
         context.Update(full);
         cache.SetFrameIndex(6);
@@ -244,7 +271,8 @@ public class UnnamedDialogTests
         resumed.Process(context, 6);
         Assert.Equal(3, matcher.SaveState().Status);
         Assert.Equal(count + (missingName ? 1 : 2), matcher.Set[0].Frames.Count);
-        Assert.Equal(matcher.Set[0].Frames.Select(f => (f.Index, f.Point)), resumed.Set[0].Frames.Select(f => (f.Index, f.Point)));
+        Assert.Equal(matcher.Set[0].Frames.Select(f => (f.Index, f.Point)),
+            resumed.Set[0].Frames.Select(f => (f.Index, f.Point)));
         using var blank = new Mat(720, 1280, DepthType.Cv8U, 3);
         blank.SetTo(new MCvScalar(0));
         context.Update(partial);
@@ -260,6 +288,7 @@ public class UnnamedDialogTests
             cache.SetFrameIndex(9);
             matcher.Process(context, 9);
         }
+
         Assert.True(matcher.Finished);
         Assert.Empty(matcher.SaveState().PendingTrackingFrames);
         Assert.Equal(lastReliable, matcher.Set[0].End().Index);
@@ -272,7 +301,7 @@ public class UnnamedDialogTests
     public void SameSpeakerAndPrefixDoNotKeepPreviousDialogueAliveIndefinitely()
     {
         using var fixture = new Fixture();
-        var story = new Story(new SekaiToolsBase.GameScript.GameScript
+        var story = new Story(new GameScript
         {
             TalkData = [new Talk("A", "iiW", 0), new Talk("A", "ii.", 0)],
             Snippets = [new Snippet { Action = 1 }, new Snippet { Action = 1 }]
@@ -289,6 +318,7 @@ public class UnnamedDialogTests
             cache.SetFrameIndex(frame);
             matcher.Process(context, frame);
         }
+
         Assert.Equal(3, matcher.SaveState().Status);
         context.Update(next);
         for (var frame = 5; frame <= 10; frame++)
@@ -296,6 +326,7 @@ public class UnnamedDialogTests
             cache.SetFrameIndex(frame);
             matcher.Process(context, frame);
         }
+
         Assert.True(matcher.Set[0].Finished);
         Assert.Equal(3, matcher.Set[0].End().Index);
         Assert.NotEmpty(matcher.Set[1].Frames);
@@ -314,7 +345,7 @@ public class UnnamedDialogTests
         var speaker = unnamed ? "" : "A";
         var oldBody = prefix + "WWWW";
         var nextBody = prefix + "....";
-        var story = new Story(new SekaiToolsBase.GameScript.GameScript
+        var story = new Story(new GameScript
         {
             TalkData = [new Talk(speaker, oldBody, 0), new Talk(speaker, nextBody, 0)],
             Snippets = [new Snippet { Action = 1 }, new Snippet { Action = 1 }]
@@ -322,8 +353,12 @@ public class UnnamedDialogTests
         using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
         var cache = new TemplateMatchCachePool();
         using var matcher = new DialogTemplateMatcher(fixture.Info, story, manager, cache, fixture.Config);
-        using var oldFrame = unnamed ? fixture.Frame(manager, oldBody, new Point(160, 555)) : fixture.NamedFrame(manager, oldBody, 0);
-        using var newFrame = unnamed ? fixture.Frame(manager, nextBody, new Point(160, 555)) : fixture.NamedFrame(manager, nextBody, 0);
+        using var oldFrame = unnamed
+            ? fixture.Frame(manager, oldBody, new Point(160, 555))
+            : fixture.NamedFrame(manager, oldBody, 0);
+        using var newFrame = unnamed
+            ? fixture.Frame(manager, nextBody, new Point(160, 555))
+            : fixture.NamedFrame(manager, nextBody, 0);
         using var context = new FrameMatchContext();
         context.Update(oldFrame);
         for (var index = 1; index <= 12; index++)
@@ -331,11 +366,15 @@ public class UnnamedDialogTests
             cache.SetFrameIndex(index);
             matcher.Process(context, index);
         }
+
         Assert.False(matcher.Set[0].Finished);
         Assert.Empty(matcher.Set[1].Frames);
-        using var restored = new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
+        using var restored =
+            new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
         restored.RestoreState(DiskRoundtrip(matcher.SaveState()));
-        using var partial = unnamed ? fixture.Frame(manager, prefix, new Point(160, 555)) : fixture.NamedFrame(manager, prefix, 0);
+        using var partial = unnamed
+            ? fixture.Frame(manager, prefix, new Point(160, 555))
+            : fixture.NamedFrame(manager, prefix, 0);
         context.Update(partial);
         for (var index = 13; index <= 18; index++)
         {
@@ -343,6 +382,7 @@ public class UnnamedDialogTests
             matcher.Process(context, index);
             restored.Process(context, index);
         }
+
         Assert.False(matcher.Set[0].Finished);
         Assert.Empty(matcher.Set[1].Frames);
         context.Update(newFrame);
@@ -352,11 +392,12 @@ public class UnnamedDialogTests
             matcher.Process(context, index);
             restored.Process(context, index);
         }
+
         Assert.True(matcher.Set[0].Finished);
         Assert.NotEmpty(matcher.Set[1].Frames);
         Assert.True(matcher.Set[0].End().Index < matcher.Set[1].Start().Index);
-        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(matcher.SaveState()),
-            System.Text.Json.JsonSerializer.Serialize(restored.SaveState()));
+        Assert.Equal(JsonSerializer.Serialize(matcher.SaveState()),
+            JsonSerializer.Serialize(restored.SaveState()));
     }
 
     [Theory]
@@ -369,7 +410,7 @@ public class UnnamedDialogTests
         var speaker = unnamed ? "" : "A";
         var oldBody = prefix + "WWWW";
         var nextBody = prefix + "....";
-        var story = new Story(new SekaiToolsBase.GameScript.GameScript
+        var story = new Story(new GameScript
         {
             TalkData = [new Talk(speaker, oldBody, 0), new Talk(speaker, nextBody, 0)],
             Snippets = [new Snippet { Action = 1 }, new Snippet { Action = 1 }]
@@ -387,6 +428,7 @@ public class UnnamedDialogTests
             cache.SetFrameIndex(frame);
             matcher.Process(context, frame);
         }
+
         var previousEnd = matcher.Set[0].End().Index;
         var frameIndex = 12;
         for (var length = 1; length <= nextBody.Length; length++)
@@ -404,6 +446,7 @@ public class UnnamedDialogTests
                     restored.Process(context, frameIndex);
                 }
             }
+
             if (length == 2) restored.RestoreState(DiskRoundtrip(matcher.SaveState()));
             if (length >= 3)
             {
@@ -415,19 +458,23 @@ public class UnnamedDialogTests
                 Assert.True(matcher.Set[1].Start().Index > previousEnd);
             }
         }
-        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(matcher.SaveState()),
-            System.Text.Json.JsonSerializer.Serialize(restored.SaveState()));
 
-        Mat MakeFrame(string body) => unnamed
-            ? fixture.Frame(manager, body, new Point(160, 555))
-            : fixture.NamedFrame(manager, body, 0);
+        Assert.Equal(JsonSerializer.Serialize(matcher.SaveState()),
+            JsonSerializer.Serialize(restored.SaveState()));
+
+        Mat MakeFrame(string body)
+        {
+            return unnamed
+                ? fixture.Frame(manager, body, new Point(160, 555))
+                : fixture.NamedFrame(manager, body, 0);
+        }
     }
 
     [Fact]
     public void LookaheadRejectsLastVisibleSharedPrefixButCanSkipTrulyMissingDialogue()
     {
         using var fixture = new Fixture();
-        var story = new Story(new SekaiToolsBase.GameScript.GameScript
+        var story = new Story(new GameScript
         {
             TalkData = [new Talk("A", "(...Old", 0), new Talk("A", "Missing", 0), new Talk("A", "(...New", 0)],
             Snippets = [new Snippet { Action = 1 }, new Snippet { Action = 1 }, new Snippet { Action = 1 }]
@@ -447,6 +494,7 @@ public class UnnamedDialogTests
             cache.SetFrameIndex(index);
             matcher.Process(context, index);
         }
+
         Assert.False(matcher.Set[1].Finished);
         Assert.Empty(matcher.Set[2].Frames);
         Assert.Empty(matcher.Diagnostics);
@@ -457,6 +505,7 @@ public class UnnamedDialogTests
             cache.SetFrameIndex(index);
             matcher.Process(context, index);
         }
+
         Assert.True(matcher.Set[1].Finished);
         Assert.NotEmpty(matcher.Set[2].Frames);
         Assert.All(matcher.Set[2].Frames, frame => Assert.True(frame.Index >= 120));
@@ -468,7 +517,7 @@ public class UnnamedDialogTests
     public void StableUnnamedDialogueRecoversMissingAnchorWithoutInventingFrames()
     {
         using var fixture = new Fixture();
-        var story = new Story(new SekaiToolsBase.GameScript.GameScript
+        var story = new Story(new GameScript
         {
             TalkData = [new Talk("", "Hello", 0)],
             Snippets = [new Snippet { Action = 1 }]
@@ -480,24 +529,28 @@ public class UnnamedDialogTests
         using var blank = new Mat(720, 1280, DepthType.Cv8U, 3);
         blank.SetTo(new MCvScalar(0));
         using var context = new FrameMatchContext();
+
         void Process(Mat frame, int index)
         {
             context.Update(frame);
             cache.SetFrameIndex(index);
             matcher.Process(context, index);
         }
+
         for (var index = 1; index <= 4; index++) Process(visible, index);
         Assert.Equal(3, matcher.SaveState().Status);
         var count = matcher.Set[0].Frames.Count;
         Process(blank, 5);
         Assert.Equal(4, matcher.SaveState().Status);
         var checkpoint = DiskRoundtrip(matcher.SaveState());
-        using var restored = new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
+        using var restored =
+            new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
         restored.RestoreState(checkpoint);
         Process(visible, 6);
         restored.Process(context, 6);
         Assert.Equal(count + 1, matcher.Set[0].Frames.Count);
-        Assert.Equal(matcher.Set[0].Frames.Select(f => (f.Index, f.Point)), restored.Set[0].Frames.Select(f => (f.Index, f.Point)));
+        Assert.Equal(matcher.Set[0].Frames.Select(f => (f.Index, f.Point)),
+            restored.Set[0].Frames.Select(f => (f.Index, f.Point)));
         var end = matcher.Set[0].End().Index;
         Process(blank, 7);
         Process(blank, 8);
@@ -510,12 +563,20 @@ public class UnnamedDialogTests
     public void BannerCheckpointReusesOnlyCompletedSnapshotsAndInvalidatesOnPublicCaptureAndRestore()
     {
         using var fixture = new Fixture();
-        var story = new Story(new SekaiToolsBase.GameScript.GameScript(), new TranslationData(null));
+        var story = new Story(new GameScript(), new TranslationData(null));
         using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
-        using var banner = new BannerTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
-        banner.Set.Add(new(new("Title", 0), fixture.Info.Fps));
-        banner.Set.Add(new(new("Active", 1), fixture.Info.Fps));
-        banner.RestoreState(new() { FrameSets = [new() { Finished = true, Start = 1, End = 4 }, new() { Start = 8, End = 9 }] });
+        using var banner =
+            new BannerTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
+        banner.Set.Add(new BannerBaseFrameSet(new BannerStoryEvent("Title", 0), fixture.Info.Fps));
+        banner.Set.Add(new BannerBaseFrameSet(new BannerStoryEvent("Active", 1), fixture.Info.Fps));
+        banner.RestoreState(new BannerMatcherStateDto
+        {
+            FrameSets =
+            [
+                new BannerFrameSetDto { Finished = true, Start = 1, End = 4 },
+                new BannerFrameSetDto { Start = 8, End = 9 }
+            ]
+        });
         var first = banner.SaveState(true);
         banner.Set[1].SetFrameRange(8, 10);
         var next = banner.SaveState(true);
@@ -541,14 +602,18 @@ public class UnnamedDialogTests
     public void BannerAndMarkerConfirmDisappearanceWithoutExtendingLastReliableFrame()
     {
         using var fixture = new Fixture();
-        var story = new Story(new SekaiToolsBase.GameScript.GameScript(), new TranslationData(null));
+        var story = new Story(new GameScript(), new TranslationData(null));
         using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
-        using var banner = new BannerTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
-        using var marker = new MarkerTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
-        banner.Set.Add(new(new("Title", 0), fixture.Info.Fps));
-        marker.Set.Add(new(new("Place", 0), fixture.Info.Fps));
-        banner.RestoreState(new() { Status = 1, FrameSets = [new() { Start = 1, End = 4 }] });
-        marker.RestoreState(new() { Status = 2, FrameSets = [new() { Frames = [new(4, 10, 20)] }] });
+        using var banner =
+            new BannerTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
+        using var marker =
+            new MarkerTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
+        banner.Set.Add(new BannerBaseFrameSet(new BannerStoryEvent("Title", 0), fixture.Info.Fps));
+        marker.Set.Add(new MarkerBaseFrameSet(new MarkerStoryEvent("Place", 0), fixture.Info.Fps));
+        banner.RestoreState(new BannerMatcherStateDto
+            { Status = 1, FrameSets = [new BannerFrameSetDto { Start = 1, End = 4 }] });
+        marker.RestoreState(new MarkerMatcherStateDto
+            { Status = 2, FrameSets = [new MarkerFrameSetDto { Frames = [new FrameResultDto(4, 10, 20)] }] });
         using var blank = new Mat(720, 1280, DepthType.Cv8U, 3);
         blank.SetTo(new MCvScalar(0));
         using var context = new FrameMatchContext();
@@ -559,10 +624,10 @@ public class UnnamedDialogTests
         Assert.False(marker.Finished);
         Assert.Equal(5, banner.SaveState().PendingLossFrame);
         Assert.Equal(5, marker.SaveState().PendingLossFrame);
-        banner.RestoreState(System.Text.Json.JsonSerializer.Deserialize<SekaiToolsCore.Process.BannerMatcherStateDto>(
-            System.Text.Json.JsonSerializer.Serialize(banner.SaveState()))!);
-        marker.RestoreState(System.Text.Json.JsonSerializer.Deserialize<SekaiToolsCore.Process.MarkerMatcherStateDto>(
-            System.Text.Json.JsonSerializer.Serialize(marker.SaveState()))!);
+        banner.RestoreState(JsonSerializer.Deserialize<BannerMatcherStateDto>(
+            JsonSerializer.Serialize(banner.SaveState()))!);
+        marker.RestoreState(JsonSerializer.Deserialize<MarkerMatcherStateDto>(
+            JsonSerializer.Serialize(marker.SaveState()))!);
         banner.Process(context, 7);
         marker.Process(context, 7);
         Assert.True(banner.Finished);
@@ -577,22 +642,29 @@ public class UnnamedDialogTests
         Assert.True(IndependentEventProbe.IsDue(15, 30));
         Assert.False(IndependentEventProbe.IsDue(16, 30));
         using var fixture = new Fixture();
-        var story = new Story(new SekaiToolsBase.GameScript.GameScript(), new TranslationData(null));
+        var story = new Story(new GameScript(), new TranslationData(null));
         using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
         var bannerCache = new TemplateMatchCachePool();
         var markerCache = new TemplateMatchCachePool();
         using var banner = new BannerTemplateMatcher(fixture.Info, story, manager, bannerCache, fixture.Config);
         using var marker = new MarkerTemplateMatcher(fixture.Info, story, manager, markerCache, fixture.Config);
-        banner.Set.Add(new(new("Title", 0), fixture.Info.Fps));
-        marker.Set.Add(new(new("Place", 0), fixture.Info.Fps));
+        banner.Set.Add(new BannerBaseFrameSet(new BannerStoryEvent("Title", 0), fixture.Info.Fps));
+        marker.Set.Add(new MarkerBaseFrameSet(new MarkerStoryEvent("Place", 0), fixture.Info.Fps));
         using var image = new Mat(720, 1280, DepthType.Cv8U, 1);
         image.SetTo(new MCvScalar(12));
         var title = manager.GetMatchTemplate(TemplateUsage.BannerContent, "Title").GetScaledLayer(1, 1).Gray;
         var place = manager.GetMarkerMatchTemplate("Place").GetScaledLayer(1, 1).Gray;
-        using (var roi = new Mat(image, new Rectangle((1280 - title.Width) / 2, (720 - title.Height) / 2, title.Width, title.Height)))
+        using (var roi = new Mat(image,
+                   new Rectangle((1280 - title.Width) / 2, (720 - title.Height) / 2, title.Width, title.Height)))
+        {
             title.CopyTo(roi);
+        }
+
         using (var roi = new Mat(image, new Rectangle(10, 10, place.Width, place.Height)))
+        {
             place.CopyTo(roi);
+        }
+
         using var context = new FrameMatchContext();
         context.Update(image);
         Assert.True(banner.Probe(context));
@@ -617,14 +689,21 @@ public class UnnamedDialogTests
         Assert.True(marker.IsTracking);
         Assert.Equal(31, banner.SaveState().PendingLossFrame);
         Assert.Equal(31, marker.SaveState().PendingLossFrame);
-        banner.RestoreState(System.Text.Json.JsonSerializer.Deserialize<SekaiToolsCore.Process.BannerMatcherStateDto>(
-            System.Text.Json.JsonSerializer.Serialize(banner.SaveState()))!);
-        marker.RestoreState(System.Text.Json.JsonSerializer.Deserialize<SekaiToolsCore.Process.MarkerMatcherStateDto>(
-            System.Text.Json.JsonSerializer.Serialize(marker.SaveState()))!);
-        using (var roi = new Mat(image, new Rectangle((1280 - title.Width) / 2, (720 - title.Height) / 2, title.Width, title.Height)))
+        banner.RestoreState(JsonSerializer.Deserialize<BannerMatcherStateDto>(
+            JsonSerializer.Serialize(banner.SaveState()))!);
+        marker.RestoreState(JsonSerializer.Deserialize<MarkerMatcherStateDto>(
+            JsonSerializer.Serialize(marker.SaveState()))!);
+        using (var roi = new Mat(image,
+                   new Rectangle((1280 - title.Width) / 2, (720 - title.Height) / 2, title.Width, title.Height)))
+        {
             title.CopyTo(roi);
+        }
+
         using (var roi = new Mat(image, new Rectangle(10, 10, place.Width, place.Height)))
+        {
             place.CopyTo(roi);
+        }
+
         context.Update(image);
         bannerCache.SetFrameIndex(32);
         markerCache.SetFrameIndex(32);
@@ -635,7 +714,6 @@ public class UnnamedDialogTests
         Assert.Equal(32, banner.Set[0].End().Index);
         Assert.Equal(31, marker.Set[0].End().Index);
         Assert.DoesNotContain(marker.Set[0].Frames, f => f.Index == 30);
-
     }
 
     [Theory]
@@ -644,7 +722,7 @@ public class UnnamedDialogTests
     public void AcquisitionLossRestoresOriginalStageInsteadOfRequiringThreeGlyphs(int stage)
     {
         using var fixture = new Fixture();
-        var story = new Story(new SekaiToolsBase.GameScript.GameScript
+        var story = new Story(new GameScript
         {
             TalkData = [new Talk("A", "WXYZ", 0) { Shake = true }],
             Snippets = [new Snippet { Action = 1 }]
@@ -662,6 +740,7 @@ public class UnnamedDialogTests
             cache.SetFrameIndex(index);
             matcher.Process(context, index);
         }
+
         Assert.Equal(stage, matcher.SaveState().Status);
         var count = matcher.Set[0].Frames.Count;
         context.Update(blank);
@@ -670,7 +749,8 @@ public class UnnamedDialogTests
         var checkpoint = DiskRoundtrip(matcher.SaveState());
         Assert.Equal(4, checkpoint.Status);
         Assert.Equal(stage, checkpoint.PendingResumeStatus);
-        using var restored = new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
+        using var restored =
+            new DialogTemplateMatcher(fixture.Info, story, manager, new TemplateMatchCachePool(), fixture.Config);
         restored.RestoreState(checkpoint);
         context.Update(partial);
         cache.SetFrameIndex(stage + 2);
@@ -678,7 +758,8 @@ public class UnnamedDialogTests
         restored.Process(context, stage + 2);
         Assert.Equal(stage, matcher.SaveState().Status);
         Assert.Equal(count + 1, matcher.Set[0].Frames.Count);
-        Assert.Equal(matcher.Set[0].Frames.Select(f => (f.Index, f.Point)), restored.Set[0].Frames.Select(f => (f.Index, f.Point)));
+        Assert.Equal(matcher.Set[0].Frames.Select(f => (f.Index, f.Point)),
+            restored.Set[0].Frames.Select(f => (f.Index, f.Point)));
         var end = matcher.Set[0].End().Index;
         context.Update(blank);
         for (var index = stage + 3; index <= stage + 5; index++)
@@ -686,47 +767,67 @@ public class UnnamedDialogTests
             cache.SetFrameIndex(index);
             matcher.Process(context, index);
         }
+
         Assert.True(matcher.Finished);
         Assert.Equal(end, matcher.Set[0].End().Index);
     }
 
-    private static SekaiToolsCore.Process.DialogMatcherStateDto DiskRoundtrip(SekaiToolsCore.Process.DialogMatcherStateDto state)
+    private static DialogMatcherStateDto DiskRoundtrip(DialogMatcherStateDto state)
     {
         var directory = Path.Combine(Path.GetTempPath(), "SekaiTools-matcher-disk-" + Guid.NewGuid().ToString("N"));
         var path = Path.Combine(directory, "checkpoint.json");
         try
         {
-            SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.Save(path,
-                new SekaiToolsCore.Process.ProcessingState { Dialog = state });
-            var loaded = SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.Load(path).Dialog!;
-            Assert.Equal(System.Text.Json.JsonSerializer.Serialize(state), System.Text.Json.JsonSerializer.Serialize(loaded));
+            IncrementalProgressStore.Save(path,
+                new ProcessingState { Dialog = state });
+            var loaded = IncrementalProgressStore.Load(path).Dialog!;
+            Assert.Equal(JsonSerializer.Serialize(state), JsonSerializer.Serialize(loaded));
             return loaded;
         }
-        finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+        finally
+        {
+            if (Directory.Exists(directory)) Directory.Delete(directory, true);
+        }
     }
 
     private sealed class Fixture : ITemplateResourceProvider, IDisposable
     {
-        private readonly string _video = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".avi");
         private readonly string _font = Path.GetTempFileName();
-        public VideoInfo Info { get; }
-        public Config Config { get; }
+        private readonly string _video = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".avi");
+
         public Fixture()
         {
             using var stream = SKTypeface.Default.OpenStream();
             var bytes = new byte[stream.Length];
             stream.Read(bytes, bytes.Length);
             File.WriteAllBytes(_font, bytes);
-            using (var writer = new VideoWriter(_video, VideoWriter.Fourcc('M', 'J', 'P', 'G'), 30, new Size(1280, 720), true))
+            using (var writer = new VideoWriter(_video, VideoWriter.Fourcc('M', 'J', 'P', 'G'), 30, new Size(1280, 720),
+                       true))
             using (var frame = new Mat(720, 1280, DepthType.Cv8U, 3))
             {
                 Assert.True(writer.IsOpened);
                 frame.SetTo(new MCvScalar(0));
                 writer.Write(frame);
             }
+
             Info = new VideoInfo(_video);
             Config = new Config(_video, _font, "");
         }
+
+        public VideoInfo Info { get; }
+        public Config Config { get; }
+
+        public void Dispose()
+        {
+            File.Delete(_video);
+            File.Delete(_font);
+        }
+
+        public string GetVideoProcessResourcePath(string fileName)
+        {
+            return _font;
+        }
+
         public Mat Frame(TemplateManager manager, string text, Point position)
         {
             var frame = new Mat(720, 1280, DepthType.Cv8U, 3);
@@ -740,6 +841,7 @@ public class UnnamedDialogTests
             bgr.CopyTo(roi);
             return frame;
         }
+
         public Mat NamedFrame(TemplateManager manager, string body, int shift)
         {
             var frame = Frame(manager, body, new Point(160 + shift, 555 + shift));
@@ -752,7 +854,5 @@ public class UnnamedDialogTests
             bgr.CopyTo(roi);
             return frame;
         }
-        public string GetVideoProcessResourcePath(string fileName) => _font;
-        public void Dispose() { File.Delete(_video); File.Delete(_font); }
     }
 }

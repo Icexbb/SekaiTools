@@ -78,7 +78,7 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
-                        <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                        <TextBlock VerticalAlignment="Center"
                                    FontFamily="Consolas"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                             <TextBlock.Text>
@@ -90,14 +90,16 @@
                             </TextBlock.Text>
                         </TextBlock>
 
-                        <ui:Button Name="LineEditBtn" FontSize="12" Margin="5,0,0,0" Padding="6,4" Click="LineEditBtn_OnClick"
+                        <ui:Button Name="LineEditBtn" FontSize="12" Margin="5,0,0,0" Padding="6,4"
+                                   Click="LineEditBtn_OnClick"
                                    IsEnabled="{Binding DataContext.CanEditLine, RelativeSource={RelativeSource AncestorType={x:Type components:SubtitleTask}}, FallbackValue=False}">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="Edit24" Margin="0,0,4,0" />
                                 <TextBlock Text="编辑" />
                             </StackPanel>
                         </ui:Button>
-                        <ui:Button Name="LinePreviewBtn" FontSize="12" Margin="5,0,0,0" Padding="6,4" Click="LinePreviewBtn_OnClick"
+                        <ui:Button Name="LinePreviewBtn" FontSize="12" Margin="5,0,0,0" Padding="6,4"
+                                   Click="LinePreviewBtn_OnClick"
                                    IsEnabled="{Binding DataContext.CanStartLinePreview, RelativeSource={RelativeSource AncestorType={x:Type components:SubtitleTask}}, FallbackValue=False}"
                                    Visibility="{Binding DataContext.CanPreviewLine, RelativeSource={RelativeSource AncestorType={x:Type components:SubtitleTask}}, Converter={StaticResource PreviewVisibilityConverter}, FallbackValue=Collapsed}">
                             <StackPanel Orientation="Horizontal">
@@ -202,7 +204,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <ui:Button  Grid.Column="0" Padding="4" FontSize="12" Name="PreviewFirstButton"
+                            <ui:Button Grid.Column="0" Padding="4" FontSize="12" Name="PreviewFirstButton"
                                        Click="PreviewFirstButton_OnClick" ToolTip="预览前半段"
                                        IsEnabled="{Binding IsEnabled, ElementName=LinePreviewBtn}"
                                        Visibility="{Binding Visibility, ElementName=LinePreviewBtn}">
@@ -232,9 +234,9 @@
 
                         <!-- 警告信息 -->
                         <TextBlock Margin="5" HorizontalAlignment="Stretch" Foreground="OrangeRed"
-                           Text="{Binding PromptWarning,Mode=OneWay}"
-                           TextWrapping="Wrap" TextAlignment="Center"
-                           Visibility="{c:Binding RelativeSource={RelativeSource Self},
+                                   Text="{Binding PromptWarning,Mode=OneWay}"
+                                   TextWrapping="Wrap" TextAlignment="Center"
+                                   Visibility="{c:Binding RelativeSource={RelativeSource Self},
                                Path='Text.Length!=0',FalseToVisibility=Collapsed}" />
                     </StackPanel>
                 </Expander>

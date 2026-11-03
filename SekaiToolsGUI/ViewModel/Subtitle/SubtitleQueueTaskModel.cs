@@ -1,15 +1,11 @@
 using System.ComponentModel;
-using SekaiToolsCore;
 using SekaiToolsCore.Process;
 using SekaiToolsGUI.View.Subtitle.Components;
-using SekaiToolsInfrastructure.Persistence;
 
 namespace SekaiToolsGUI.ViewModel.Subtitle;
 
 public sealed class SubtitleQueueTaskModel : ViewModelBase
 {
-    private SubtitleTask? _control;
-
     public SubtitleQueueTaskModel(SubtitlePageModel state, bool isHistory = false, ProcessingState? savedState = null)
     {
         State = state;
@@ -22,14 +18,22 @@ public sealed class SubtitleQueueTaskModel : ViewModelBase
     public SubtitlePageModel State { get; }
     public bool IsHistory { get; }
     public ProcessingState? SavedState { get; }
-    public SubtitleTask Control => _control ??= SavedState != null && !IsHistory
+
+    public SubtitleTask Control => CreatedControl ??= SavedState != null && !IsHistory
         ? new SubtitleTask(State, new RecoveredTaskPersistence(SubtitleQueueProcessingStatePersistence.Instance))
         : new SubtitleTask(State);
-    internal SubtitleTask? CreatedControl => _control;
+
+    internal SubtitleTask? CreatedControl { get; private set; }
+
     public string VideoName => State.VideoFileName;
     public string Status => IsHistory ? $"历史 · {State.RunningStatus}" : State.RunningStatus;
     public bool CanReorder => !IsHistory && State.HasNotStarted;
-    public bool IsSelected { get => GetProperty(false); set => SetProperty(value); }
+
+    public bool IsSelected
+    {
+        get => GetProperty(false);
+        set => SetProperty(value);
+    }
 
     private void StateChanged(object? sender, PropertyChangedEventArgs args)
     {
@@ -38,5 +42,8 @@ public sealed class SubtitleQueueTaskModel : ViewModelBase
         if (args.PropertyName == nameof(SubtitlePageModel.HasNotStarted)) OnPropertyChanged(nameof(CanReorder));
     }
 
-    internal void Detach() => State.PropertyChanged -= StateChanged;
+    internal void Detach()
+    {
+        State.PropertyChanged -= StateChanged;
+    }
 }

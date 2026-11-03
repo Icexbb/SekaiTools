@@ -10,6 +10,7 @@ public partial class DownloadTask : UserControl
 {
     private bool _canEdit = true;
     private bool? _horizontalLayout;
+
     public DownloadTask(string scriptTag, string url, string sourceName = "", string? directory = null)
     {
         InitializeComponent();
@@ -21,6 +22,7 @@ public partial class DownloadTask : UserControl
         SourceText.Text = sourceName;
         SizeChanged += (_, _) => UpdateLayoutMode();
     }
+
     public Guid Id { get; } = Guid.NewGuid();
     public string ScriptTag { get; }
     public string Url { get; }
@@ -28,9 +30,10 @@ public partial class DownloadTask : UserControl
     public string SavePath { get; private set; } = "";
     public DownloadStatus Status { get; private set; }
     public bool Downloaded => Status is DownloadStatus.Succeeded or DownloadStatus.Skipped;
+    public DownloadJob Job => new(Id, ScriptTag, Url, SavePath, SourceName);
     public event EventHandler? RemoveRequested;
     public event EventHandler? RetryRequested;
-    public DownloadJob Job => new(Id, ScriptTag, Url, SavePath, SourceName);
+
     private void UpdateLayoutMode()
     {
         var horizontal = ActualWidth > 460;
@@ -51,14 +54,24 @@ public partial class DownloadTask : UserControl
         SavePath = Path.Combine(directory, Path.GetFileName(new Uri(Url).LocalPath));
         ToolTip = $"{ScriptTag}\n来源：{SourceName}\n保存到：{SavePath}";
     }
+
     public void SetCanRemove(bool canRemove)
     {
         _canEdit = canRemove;
         RemoveButton.IsEnabled = canRemove;
         RetryButton.IsEnabled = canRemove;
     }
-    private void RemoveButton_OnClick(object sender, RoutedEventArgs e) => RemoveRequested?.Invoke(this, EventArgs.Empty);
-    private void RetryButton_OnClick(object sender, RoutedEventArgs e) => RetryRequested?.Invoke(this, EventArgs.Empty);
+
+    private void RemoveButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        RemoveRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RetryButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        RetryRequested?.Invoke(this, EventArgs.Empty);
+    }
+
     public void ChangeStatus(DownloadStatus status, string? error = null)
     {
         Status = status;
@@ -82,7 +95,9 @@ public partial class DownloadTask : UserControl
         StatusText.SetResourceReference(ForegroundProperty, brush);
         ErrorText.Text = error ?? "";
         ErrorText.Visibility = string.IsNullOrEmpty(error) ? Visibility.Collapsed : Visibility.Visible;
-        RetryButton.Visibility = status is DownloadStatus.Failed or DownloadStatus.Stopped ? Visibility.Visible : Visibility.Collapsed;
+        RetryButton.Visibility = status is DownloadStatus.Failed or DownloadStatus.Stopped
+            ? Visibility.Visible
+            : Visibility.Collapsed;
         RetryButton.IsEnabled = _canEdit;
     }
 }

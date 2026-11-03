@@ -4,6 +4,7 @@ namespace SekaiToolsCore.Process;
 internal sealed class CompletedFrameSnapshotCache<TFrame, TSnapshot> where TFrame : class
 {
     private readonly Dictionary<TFrame, TSnapshot> _completed = new(ReferenceEqualityComparer.Instance);
+
     public TSnapshot Capture(TFrame frame, bool finished, bool checkpoint, Func<TFrame, TSnapshot> create)
     {
         if (!checkpoint || !finished) return create(frame);
@@ -12,5 +13,9 @@ internal sealed class CompletedFrameSnapshotCache<TFrame, TSnapshot> where TFram
         _completed.Add(frame, snapshot);
         return snapshot;
     }
-    public void Clear() => _completed.Clear();
+
+    public void Clear()
+    {
+        _completed.Clear();
+    }
 }

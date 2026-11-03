@@ -61,7 +61,11 @@ public sealed class SubtitleTaskQueueTests
     {
         var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var started = new List<string>();
-        var queue = new SequentialTaskQueue<string>(async task => { started.Add(task); await gate.Task; });
+        var queue = new SequentialTaskQueue<string>(async task =>
+        {
+            started.Add(task);
+            await gate.Task;
+        });
         queue.PendingTasks.Add("current");
         queue.PendingTasks.Add("pending");
         var running = queue.RunAsync();
@@ -79,7 +83,11 @@ public sealed class SubtitleTaskQueueTests
     public async Task IdleQueueCanStartAgainAfterNewTasksAreAdded()
     {
         var started = new List<string>();
-        var queue = new SequentialTaskQueue<string>(task => { started.Add(task); return Task.CompletedTask; });
+        var queue = new SequentialTaskQueue<string>(task =>
+        {
+            started.Add(task);
+            return Task.CompletedTask;
+        });
         queue.PendingTasks.Add("first");
         await queue.RunAsync();
         queue.PendingTasks.Add("next");

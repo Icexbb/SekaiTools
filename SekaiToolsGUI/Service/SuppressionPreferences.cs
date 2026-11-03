@@ -1,23 +1,31 @@
 using System.IO;
 using System.Text.Json;
+using SekaiToolsBase;
 using SekaiToolsMedia;
 
 namespace SekaiToolsGUI.Service;
 
 internal static class SuppressionPreferences
 {
-    private static string FilePath => Path.Combine(SekaiToolsInfrastructure.Resources.ResourceManager.DataBaseDir, "suppression-preferences.json");
+    private static string FilePath => Path.Combine(ResourceManager.DataBaseDir, "suppression-preferences.json");
+
     internal static X264EncodingSettings Load()
     {
         try
         {
-            if (!File.Exists(FilePath)) return new();
-            var value = JsonSerializer.Deserialize<X264EncodingSettings>(File.ReadAllText(FilePath)) ?? new();
+            if (!File.Exists(FilePath)) return new X264EncodingSettings();
+            var value = JsonSerializer.Deserialize<X264EncodingSettings>(File.ReadAllText(FilePath)) ??
+                        new X264EncodingSettings();
             value.Validate();
             return value;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or ArgumentException) { return new(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException
+                                       or ArgumentException)
+        {
+            return new X264EncodingSettings();
+        }
     }
+
     internal static void Save(X264EncodingSettings settings)
     {
         try
@@ -28,6 +36,8 @@ internal static class SuppressionPreferences
             File.Move(temporary, FilePath, true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        { SekaiToolsBase.Logger.Log($"保存压制偏好失败：{ex.Message}"); }
+        {
+            Logger.Log($"保存压制偏好失败：{ex.Message}");
+        }
     }
 }

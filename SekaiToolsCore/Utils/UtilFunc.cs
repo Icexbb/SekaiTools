@@ -2,7 +2,6 @@ using System.Drawing;
 using System.Numerics;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using Emgu.CV.Structure;
 using SkiaSharp;
 
 namespace SekaiToolsCore.Utils;
@@ -105,8 +104,10 @@ public static class UtilFunc
                     var finite = Vector.LessThanOrEqual(Vector.Abs(values), limit);
                     Vector.ConditionalSelect(finite, values, Vector<float>.Zero).CopyTo(scores.Slice(column));
                 }
+
             for (; column < scores.Length; column++)
-                if (!float.IsFinite(scores[column])) scores[column] = 0;
+                if (!float.IsFinite(scores[column]))
+                    scores[column] = 0;
         }
     }
 

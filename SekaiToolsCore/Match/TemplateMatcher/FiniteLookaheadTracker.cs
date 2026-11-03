@@ -4,12 +4,12 @@ namespace SekaiToolsCore.Match.TemplateMatcher;
 
 internal sealed class FiniteLookaheadTracker
 {
-    private int _firstFailureFrame = -1;
-    private int _targetIndex = -1;
-    private int _failedProbes;
-    private int _lastProbeFrame = -1;
-    private byte[]? _evidence;
     private bool _changePending;
+    private byte[]? _evidence;
+    private int _failedProbes;
+    private int _firstFailureFrame = -1;
+    private int _lastProbeFrame = -1;
+    private int _targetIndex = -1;
 
     public bool ShouldProbe(int targetIndex, int frameIndex, int triggerFrames, byte[]? evidence = null)
     {
@@ -30,13 +30,15 @@ internal sealed class FiniteLookaheadTracker
                 _failedProbes = 0;
                 _evidence = evidence;
             }
+
             _evidence ??= evidence;
         }
+
         if (_lastProbeFrame == frameIndex) return false;
         var elapsed = (long)frameIndex - _firstFailureFrame;
         var interval = (long)triggerFrames * (1 << Math.Clamp(_failedProbes - 1, 0, 2));
         var due = _firstFailureFrame >= 0 && (elapsed >= interval ||
-            (_changePending && elapsed >= Math.Max(2, triggerFrames / 6)));
+                                              (_changePending && elapsed >= Math.Max(2, triggerFrames / 6)));
         if (due) _lastProbeFrame = frameIndex;
         return due;
     }
@@ -48,13 +50,16 @@ internal sealed class FiniteLookaheadTracker
         _changePending = false;
     }
 
-    public LookaheadStateDto CaptureState() => new(_firstFailureFrame, _targetIndex)
+    public LookaheadStateDto CaptureState()
     {
-        FailedProbes = _failedProbes,
-        LastProbeFrame = _lastProbeFrame,
-        Evidence = _evidence?.ToArray(),
-        ChangePending = _changePending
-    };
+        return new LookaheadStateDto(_firstFailureFrame, _targetIndex)
+        {
+            FailedProbes = _failedProbes,
+            LastProbeFrame = _lastProbeFrame,
+            Evidence = _evidence?.ToArray(),
+            ChangePending = _changePending
+        };
+    }
 
     public void RestoreState(LookaheadStateDto? state)
     {

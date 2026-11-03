@@ -7,6 +7,8 @@ namespace SekaiToolsGUI.View.Suppress.Components;
 
 public partial class SuppressionTaskDialog : ContentDialog
 {
+    private bool _submitting;
+
     public SuppressionTaskDialog(ContentDialogHost contentPresenter) : base(contentPresenter)
     {
         ViewModel = new SuppressTaskSettingsModel();
@@ -21,7 +23,6 @@ public partial class SuppressionTaskDialog : ContentDialog
     public bool OverwriteAuthorized { get; private set; }
     public Func<string>? CommitSubmission { get; set; }
     internal Func<string, Task<bool>>? ConfirmOverwrite { get; set; }
-    private bool _submitting;
 
     private async Task<bool> ShowOverwriteConfirmationAsync(string outputPath)
     {
@@ -50,22 +51,39 @@ public partial class SuppressionTaskDialog : ContentDialog
             var outputPath = Path.GetFullPath(ViewModel.OutputPath);
             if (ViewModel.OutputExists)
             {
-                if (!await (ConfirmOverwrite?.Invoke(outputPath) ?? ShowOverwriteConfirmationAsync(outputPath))) return false;
-                if (!string.Equals(outputPath, Path.GetFullPath(ViewModel.OutputPath), StringComparison.OrdinalIgnoreCase))
+                if (!await (ConfirmOverwrite?.Invoke(outputPath) ?? ShowOverwriteConfirmationAsync(outputPath)))
+                    return false;
+                if (!string.Equals(outputPath, Path.GetFullPath(ViewModel.OutputPath),
+                        StringComparison.OrdinalIgnoreCase))
                 {
                     ViewModel.SubmissionError = "输出路径已改变，请重新提交确认。";
                     return false;
                 }
+
                 OverwriteAuthorized = true;
             }
-            if (!ViewModel.CanSubmit) { ViewModel.SubmissionError = ViewModel.ConfigError; return false; }
+
+            if (!ViewModel.CanSubmit)
+            {
+                ViewModel.SubmissionError = ViewModel.ConfigError;
+                return false;
+            }
+
             ViewModel.SubmissionError = ValidateSubmission?.Invoke() ?? "";
             if (ViewModel.SubmissionError.Length > 0) return false;
             ViewModel.SubmissionError = CommitSubmission?.Invoke() ?? "";
             return ViewModel.SubmissionError.Length == 0;
         }
-        catch (Exception ex) { ViewModel.SubmissionError = ex.Message; return false; }
-        finally { IsEnabled = true; _submitting = false; }
+        catch (Exception ex)
+        {
+            ViewModel.SubmissionError = ex.Message;
+            return false;
+        }
+        finally
+        {
+            IsEnabled = true;
+            _submitting = false;
+        }
     }
 
     protected override async void OnButtonClick(ContentDialogButton button)

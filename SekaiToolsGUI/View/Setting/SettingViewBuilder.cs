@@ -1,17 +1,25 @@
+using System.IO;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using Microsoft.Win32;
 using SekaiToolsGUI.View.Setting.Components;
 using Wpf.Ui.Controls;
+using Button = Wpf.Ui.Controls.Button;
 using TextBlock = System.Windows.Controls.TextBlock;
+using TextBox = Wpf.Ui.Controls.TextBox;
 
 namespace SekaiToolsGUI.View.Setting;
 
 /// <summary>Generic editor construction; setting-specific choices live in settings-ui.json.</summary>
-public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Func<string, FrameworkElement> customContent)
+public sealed class SettingViewBuilder(
+    Func<string, Task<string>> selectFont,
+    Func<string, FrameworkElement> customContent)
 {
     public bool ShowResetButtons { get; init; } = true;
+
     public FrameworkElement Build(SettingSection section, bool nested = false)
     {
         // Older external catalogs may still contain the former inline log section.
@@ -33,18 +41,23 @@ public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Fu
                 Margin = new Thickness(0, 0, 0, nested ? 0 : 8)
             };
         }
+
         var editors = new Grid { HorizontalAlignment = HorizontalAlignment.Right };
         var columns = section.Columns > 0 ? section.Columns : section.Fields.Length;
-        for (var i = 0; i < columns; i++) editors.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        for (var i = 0; i < columns; i++)
+            editors.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         for (var i = 0; i < section.Fields.Length; i++)
         {
             if (i % columns == 0) editors.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var editor = Editor(section.Fields[i], section.Title);
             editor.Margin = new Thickness(i % columns == 0 ? 0 : 5, i < columns ? 0 : 5, 0, 0);
-            Grid.SetColumn(editor, i % columns); Grid.SetRow(editor, i / columns);
+            Grid.SetColumn(editor, i % columns);
+            Grid.SetRow(editor, i / columns);
             editors.Children.Add(editor);
         }
-        return new CardControl { Header = header, Icon = icon, Content = editors, Margin = new Thickness(0, 0, 0, nested ? 0 : 8) };
+
+        return new CardControl
+            { Header = header, Icon = icon, Content = editors, Margin = new Thickness(0, 0, 0, nested ? 0 : 8) };
     }
 
     private StackPanel Header(SettingSection section)
@@ -54,21 +67,26 @@ public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Fu
         if (ShowResetButtons)
         {
             var reset = new SettingResetButton { Properties = string.Join(',', section.Properties) };
-            System.Windows.Automation.AutomationProperties.SetName(reset, $"还原{section.Title}默认设置");
+            AutomationProperties.SetName(reset, $"还原{section.Title}默认设置");
             heading.Children.Add(reset);
         }
-        var panel = new StackPanel(); panel.Children.Add(heading);
+
+        var panel = new StackPanel();
+        panel.Children.Add(heading);
         if (!string.IsNullOrEmpty(section.Description)) panel.Children.Add(Description(section.Description));
         if (section.StatusProperty is { } status)
         {
-            var text = Description(""); text.Margin = new Thickness(0, 4, 0, 0);
+            var text = Description("");
+            text.Margin = new Thickness(0, 4, 0, 0);
             text.SetBinding(TextBlock.TextProperty, new Binding(status));
             var style = new Style(typeof(TextBlock));
             var trigger = new DataTrigger { Binding = new Binding(status), Value = "" };
             trigger.Setters.Add(new Setter(UIElement.VisibilityProperty, Visibility.Collapsed));
-            style.Triggers.Add(trigger); text.Style = style;
+            style.Triggers.Add(trigger);
+            text.Style = style;
             panel.Children.Add(text);
         }
+
         return panel;
     }
 
@@ -87,7 +105,8 @@ public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Fu
             case "choice":
                 var combo = new ComboBox();
                 foreach (var option in field.Options) combo.Items.Add(new ComboBoxItem { Content = option });
-                combo.SetBinding(Selector.SelectedIndexProperty, Value(field.Property)); editor = combo;
+                combo.SetBinding(Selector.SelectedIndexProperty, Value(field.Property));
+                editor = combo;
                 break;
             case "number":
                 var number = new NumberBox
@@ -105,7 +124,7 @@ public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Fu
             case "text":
             case "font":
             case "directory":
-                var text = new Wpf.Ui.Controls.TextBox
+                var text = new TextBox
                 {
                     AcceptsReturn = false,
                     AcceptsTab = false,
@@ -117,43 +136,62 @@ public sealed class SettingViewBuilder(Func<string, Task<string>> selectFont, Fu
                 editor = text;
                 if (field.Kind is "font" or "directory")
                 {
-                    var choose = new Wpf.Ui.Controls.Button { Content = "选择", Margin = new Thickness(5, 0, 0, 0) };
+                    var choose = new Button { Content = "选择", Margin = new Thickness(5, 0, 0, 0) };
                     choose.Click += async (_, args) =>
                     {
                         args.Handled = true;
                         string selected;
                         if (field.Kind == "directory")
                         {
-                            var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "选择下载文件存储目录" };
-                            if (System.IO.Directory.Exists(text.Text)) dialog.InitialDirectory = text.Text;
+                            var dialog = new OpenFolderDialog { Title = "选择下载文件存储目录" };
+                            if (Directory.Exists(text.Text)) dialog.InitialDirectory = text.Text;
                             selected = dialog.ShowDialog(Window.GetWindow(text)) == true ? dialog.FolderName : "";
                         }
-                        else selected = await selectFont(text.Text);
-                        if (!string.IsNullOrEmpty(selected)) text.SetCurrentValue(System.Windows.Controls.TextBox.TextProperty, selected);
+                        else
+                        {
+                            selected = await selectFont(text.Text);
+                        }
+
+                        if (!string.IsNullOrEmpty(selected))
+                            text.SetCurrentValue(System.Windows.Controls.TextBox.TextProperty, selected);
                     };
                     var fonts = new StackPanel { Orientation = Orientation.Horizontal };
-                    fonts.Children.Add(text); fonts.Children.Add(choose); editor = fonts;
+                    fonts.Children.Add(text);
+                    fonts.Children.Add(choose);
+                    editor = fonts;
                 }
+
                 break;
             case "toggle":
                 var toggle = new ToggleSwitch { VerticalAlignment = VerticalAlignment.Center };
                 toggle.SetBinding(ToggleButton.IsCheckedProperty, Value(field.Property));
                 var labeled = new StackPanel { Orientation = Orientation.Horizontal };
-                labeled.Children.Add(new TextBlock { Text = field.Label, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 5, 0) });
-                labeled.Children.Add(toggle); editor = labeled;
+                labeled.Children.Add(new TextBlock
+                {
+                    Text = field.Label, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 5, 0)
+                });
+                labeled.Children.Add(toggle);
+                editor = labeled;
                 break;
             case "check":
                 var check = new CheckBox { Content = field.Label, VerticalAlignment = VerticalAlignment.Center };
-                check.SetBinding(ToggleButton.IsCheckedProperty, Value(field.Property)); editor = check;
+                check.SetBinding(ToggleButton.IsCheckedProperty, Value(field.Property));
+                editor = check;
                 break;
             default: throw new InvalidOperationException($"未知设置控件：{field.Kind}");
         }
+
         if (field.Kind is not ("font" or "directory")) editor.Width = field.Width;
-        if (field.VisibilityProperty is { } visibility) editor.SetBinding(UIElement.VisibilityProperty, new Binding(visibility));
+        if (field.VisibilityProperty is { } visibility)
+            editor.SetBinding(UIElement.VisibilityProperty, new Binding(visibility));
         if (field.EnabledProperty is { } enabled) editor.SetBinding(UIElement.IsEnabledProperty, new Binding(enabled));
-        System.Windows.Automation.AutomationProperties.SetName(editor, string.IsNullOrEmpty(field.Label) ? title : $"{title}：{field.Label}");
+        AutomationProperties.SetName(editor, string.IsNullOrEmpty(field.Label) ? title : $"{title}：{field.Label}");
         return editor;
     }
 
-    private static Binding Value(string property) => new(property) { Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged };
+    private static Binding Value(string property)
+    {
+        return new Binding(property)
+            { Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged };
+    }
 }

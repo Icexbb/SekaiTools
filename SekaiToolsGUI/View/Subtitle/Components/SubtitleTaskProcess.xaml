@@ -8,7 +8,6 @@
              xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
              xmlns:components="clr-namespace:SekaiToolsGUI.View.Subtitle.Components"
-             xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
              mc:Ignorable="d"
              d:DesignWidth="800"
              SizeChanged="SubtitleTaskProcess_OnSizeChanged"

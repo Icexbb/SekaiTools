@@ -1,9 +1,9 @@
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using SekaiToolsCore.Process;
-using SekaiToolsInfrastructure.Persistence;
 
 namespace SekaiTools.Tests;
 
@@ -18,7 +18,8 @@ public class IncrementalProgressPackTests
             Finished = true,
             Frames = Enumerable.Range(0, 60000).Select(i => new FrameResultDto(i, 1234, 2345)).ToList()
         };
-        var state = new ProcessingState { ReusesCompletedFrames = true, Dialog = new() { FrameSets = [done] } };
+        var state = new ProcessingState
+            { ReusesCompletedFrames = true, Dialog = new DialogMatcherStateDto { FrameSets = [done] } };
         var expected = JsonSerializer.SerializeToUtf8Bytes(done);
         IncrementalProgressStore.SaveChunked(fixture.Manifest, state);
         var file = Assert.Single(Directory.GetFiles(fixture.Chunks));
@@ -26,26 +27,29 @@ public class IncrementalProgressPackTests
         Assert.Equal(expected, File.ReadAllBytes(file));
         var root = JsonNode.Parse(File.ReadAllBytes(fixture.Manifest))!;
         Assert.Null(root["Dialog"]!["FrameSets"]![0]!["$pack"]);
-        Assert.Equal(JsonSerializer.Serialize(state), JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
+        Assert.Equal(JsonSerializer.Serialize(state),
+            JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
     }
 
     [Fact]
     public void LargeActiveTrajectoryStaysInlineAndRestoresWithPackedCompletedEvents()
     {
         using var fixture = new Fixture();
-        var active = new DialogFrameSetDto { Frames = Enumerable.Range(0, 40000).Select(i => new FrameResultDto(i, 1234, 2345)).ToList() };
+        var active = new DialogFrameSetDto
+            { Frames = Enumerable.Range(0, 40000).Select(i => new FrameResultDto(i, 1234, 2345)).ToList() };
         var state = new ProcessingState
         {
-            Dialog = new()
+            Dialog = new DialogMatcherStateDto
             {
                 FrameSets =
-            [new() { Finished = true, Frames = [new(0, 1, 2)] }, active]
+                    [new DialogFrameSetDto { Finished = true, Frames = [new FrameResultDto(0, 1, 2)] }, active]
             }
         };
         IncrementalProgressStore.Save(fixture.Manifest, state);
         Assert.True(new FileInfo(fixture.Manifest).Length > IncrementalProgressStore.InlineLimitBytes);
         Assert.Single(Directory.GetFiles(fixture.Chunks));
-        Assert.Equal(JsonSerializer.Serialize(state), JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
+        Assert.Equal(JsonSerializer.Serialize(state),
+            JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
     }
 
     [Fact]
@@ -55,7 +59,7 @@ public class IncrementalProgressPackTests
         IncrementalProgressStore.SaveChunked(fixture.Manifest, new ProcessingState { FrameIndex = 10 });
         var prior = File.ReadAllBytes(fixture.Manifest);
         var write = typeof(IncrementalProgressStore).GetMethod("WriteJsonAtomic",
-            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!
+                BindingFlags.Static | BindingFlags.NonPublic)!
             .CreateDelegate<Action<string, Action<Utf8JsonWriter>>>();
         Assert.Throws<InvalidOperationException>(() => write(fixture.Manifest, writer =>
         {
@@ -77,11 +81,21 @@ public class IncrementalProgressPackTests
         var state = new ProcessingState
         {
             ReusesCompletedFrames = reuseCompleted,
-            Dialog = new()
+            Dialog = new DialogMatcherStateDto
             {
                 FrameSets =
-            [new() { Finished = true, Frames = Enumerable.Range(0, 15000).Select(i => new FrameResultDto(i, 1234, 2345)).ToList() }, new() { Finished = true,
-                Frames = Enumerable.Range(0, 24000).Select(i => new FrameResultDto(i, 4321, 5432)).ToList() }]
+                [
+                    new DialogFrameSetDto
+                    {
+                        Finished = true,
+                        Frames = Enumerable.Range(0, 15000).Select(i => new FrameResultDto(i, 1234, 2345)).ToList()
+                    },
+                    new DialogFrameSetDto
+                    {
+                        Finished = true,
+                        Frames = Enumerable.Range(0, 24000).Select(i => new FrameResultDto(i, 4321, 5432)).ToList()
+                    }
+                ]
             }
         };
         IncrementalProgressStore.SaveChunked(fixture.Manifest, state);
@@ -94,7 +108,8 @@ public class IncrementalProgressPackTests
         File.WriteAllText(fixture.Manifest, root.ToJsonString());
         Assert.Throws<InvalidDataException>(() => IncrementalProgressStore.Load(fixture.Manifest));
         IncrementalProgressStore.SaveChunked(fixture.Manifest, state);
-        Assert.Equal(JsonSerializer.Serialize(state), JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
+        Assert.Equal(JsonSerializer.Serialize(state),
+            JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
         root = JsonNode.Parse(File.ReadAllBytes(fixture.Manifest))!;
         Assert.Equal(correct, root["Dialog"]!["FrameSets"]![0]!["$pack"]!.GetValue<string>());
     }
@@ -103,8 +118,9 @@ public class IncrementalProgressPackTests
     public void VersionOneChunksLoadAndRemainReusableInVersionTwo()
     {
         using var fixture = new Fixture();
-        var done = new DialogFrameSetDto { Finished = true, Frames = [new(2, 10, 20)] };
-        var state = new ProcessingState { Timecodes = [0, 40], Dialog = new() { FrameSets = [done] } };
+        var done = new DialogFrameSetDto { Finished = true, Frames = [new FrameResultDto(2, 10, 20)] };
+        var state = new ProcessingState
+            { Timecodes = [0, 40], Dialog = new DialogMatcherStateDto { FrameSets = [done] } };
         Directory.CreateDirectory(fixture.Chunks);
         var payload = JsonSerializer.SerializeToUtf8Bytes(done);
         var hash = Hash(payload);
@@ -117,13 +133,15 @@ public class IncrementalProgressPackTests
         root["CheckpointStorage"] = 1;
         root["Dialog"]!["FrameSets"]![0] = new JsonObject { ["$chunk"] = hash };
         File.WriteAllText(fixture.Manifest, root.ToJsonString());
-        Assert.Equal(JsonSerializer.Serialize(state), JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
+        Assert.Equal(JsonSerializer.Serialize(state),
+            JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
         IncrementalProgressStore.SaveChunked(fixture.Manifest, state);
         Assert.Equal(stamp, File.GetLastWriteTimeUtc(chunk));
         root = JsonNode.Parse(File.ReadAllBytes(fixture.Manifest))!.AsObject();
         Assert.Equal(2, root["CheckpointStorage"]!.GetValue<int>());
         Assert.Null(root["Dialog"]!["FrameSets"]![0]!["$pack"]);
-        Assert.Equal(JsonSerializer.Serialize(state), JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
+        Assert.Equal(JsonSerializer.Serialize(state),
+            JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
         IncrementalProgressStore.Delete(fixture.Manifest);
         Assert.False(Directory.Exists(fixture.Chunks));
     }
@@ -133,12 +151,12 @@ public class IncrementalProgressPackTests
     {
         using var fixture = new Fixture();
         var completed = Enumerable.Range(0, 8).Select(i => new DialogFrameSetDto
-        { Finished = true, Frames = [new(i, 10, 20)] }).ToList();
+            { Finished = true, Frames = [new FrameResultDto(i, 10, 20)] }).ToList();
         var state = new ProcessingState
         {
             ReusesCompletedFrames = true,
             Timecodes = Enumerable.Range(0, 9000).ToList(),
-            Dialog = new() { FrameSets = completed }
+            Dialog = new DialogMatcherStateDto { FrameSets = completed }
         };
         IncrementalProgressStore.SaveChunked(fixture.Manifest, state);
         var pack = Assert.Single(Directory.GetFiles(fixture.Chunks));
@@ -146,25 +164,35 @@ public class IncrementalProgressPackTests
         var stamp = File.GetLastWriteTimeUtc(pack);
         IncrementalProgressStore.SaveChunked(fixture.Manifest, state);
         Assert.Equal(stamp, File.GetLastWriteTimeUtc(pack));
-        Assert.Equal(JsonSerializer.Serialize(state), JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
+        Assert.Equal(JsonSerializer.Serialize(state),
+            JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
         var prior = File.ReadAllBytes(fixture.Manifest);
         var next = new ProcessingState
         {
             FrameIndex = 1,
             ReusesCompletedFrames = true,
             Timecodes = state.Timecodes,
-            Dialog = new() { FrameSets = [.. completed, new() { Finished = true, Frames = [new(9999, 11, 21)] }] }
+            Dialog = new DialogMatcherStateDto
+            {
+                FrameSets =
+                [
+                    .. completed, new DialogFrameSetDto { Finished = true, Frames = [new FrameResultDto(9999, 11, 21)] }
+                ]
+            }
         };
         using (var locked = new FileStream(fixture.Manifest, FileMode.Open, FileAccess.Read, FileShare.Read))
         {
             var error = Record.Exception(() => IncrementalProgressStore.SaveChunked(fixture.Manifest, next));
             Assert.True(error is IOException or UnauthorizedAccessException);
         }
+
         Assert.Equal(prior, File.ReadAllBytes(fixture.Manifest));
         Assert.Equal(stamp, File.GetLastWriteTimeUtc(pack));
-        Assert.Equal(JsonSerializer.Serialize(state), JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
+        Assert.Equal(JsonSerializer.Serialize(state),
+            JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
         IncrementalProgressStore.SaveChunked(fixture.Manifest, next);
-        Assert.Equal(JsonSerializer.Serialize(next), JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
+        Assert.Equal(JsonSerializer.Serialize(next),
+            JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
         Assert.Equal(2, Directory.GetFiles(fixture.Chunks).Length);
         IncrementalProgressStore.Delete(fixture.Manifest);
         Assert.False(Directory.Exists(fixture.Chunks));
@@ -177,7 +205,8 @@ public class IncrementalProgressPackTests
         var state = new ProcessingState
         {
             ReusesCompletedFrames = true,
-            Marker = new() { FrameSets = [new() { Finished = true, Frames = [new(2, 3, 4)] }] }
+            Marker = new MarkerMatcherStateDto
+                { FrameSets = [new MarkerFrameSetDto { Finished = true, Frames = [new FrameResultDto(2, 3, 4)] }] }
         };
         IncrementalProgressStore.SaveChunked(fixture.Manifest, state);
         var pack = Assert.Single(Directory.GetFiles(fixture.Chunks));
@@ -185,14 +214,19 @@ public class IncrementalProgressPackTests
         Assert.ThrowsAny<IOException>(() => IncrementalProgressStore.Load(fixture.Manifest));
         IncrementalProgressStore.SaveChunked(fixture.Manifest, state);
         Assert.True(File.Exists(pack));
-        Assert.Equal(JsonSerializer.Serialize(state), JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
+        Assert.Equal(JsonSerializer.Serialize(state),
+            JsonSerializer.Serialize(IncrementalProgressStore.Load(fixture.Manifest)));
     }
 
     [Fact]
     public void PackAndPayloadChecksumsMissingMembersAndVersionedReferencesAreValidated()
     {
         using var fixture = new Fixture();
-        var state = new ProcessingState { Dialog = new() { FrameSets = [new() { Finished = true, Frames = [new(2, 3, 4)] }] } };
+        var state = new ProcessingState
+        {
+            Dialog = new DialogMatcherStateDto
+                { FrameSets = [new DialogFrameSetDto { Finished = true, Frames = [new FrameResultDto(2, 3, 4)] }] }
+        };
         IncrementalProgressStore.SaveChunked(fixture.Manifest, state);
         var root = JsonNode.Parse(File.ReadAllBytes(fixture.Manifest))!.AsObject();
         var reference = root["Dialog"]!["FrameSets"]![0]!.AsObject();
@@ -204,11 +238,13 @@ public class IncrementalProgressPackTests
         var forgedHash = Hash(forged);
         File.WriteAllBytes(Path.Combine(fixture.Chunks, forgedHash + ".json"), forged);
         reference["$pack"] = forgedHash;
+
         void Reject()
         {
             File.WriteAllText(fixture.Manifest, root.ToJsonString());
             Assert.Throws<InvalidDataException>(() => IncrementalProgressStore.Load(fixture.Manifest));
         }
+
         Reject(); // Valid outer checksum cannot hide a changed inner payload.
         reference["$chunk"] = new string('A', 64);
         Reject(); // Missing member in an otherwise readable pack.
@@ -231,13 +267,15 @@ public class IncrementalProgressPackTests
         using var fixture = new Fixture();
         IncrementalProgressStore.SaveChunked(fixture.Manifest, new ProcessingState { FrameIndex = 10 });
         var prior = File.ReadAllBytes(fixture.Manifest);
-        var done = new DialogFrameSetDto { Finished = true, Frames = [new(2, 3, 4)] };
+        var done = new DialogFrameSetDto { Finished = true, Frames = [new FrameResultDto(2, 3, 4)] };
         var payload = JsonSerializer.SerializeToUtf8Bytes(done);
-        var packed = Encoding.UTF8.GetBytes("{\"$chunks\":{\"" + Hash(payload) + "\":" + Encoding.UTF8.GetString(payload) + "}}");
+        var packed =
+            Encoding.UTF8.GetBytes("{\"$chunks\":{\"" + Hash(payload) + "\":" + Encoding.UTF8.GetString(payload) +
+                                   "}}");
         var collision = Path.Combine(fixture.Chunks, Hash(packed) + ".json");
         Directory.CreateDirectory(collision);
         var error = Record.Exception(() => IncrementalProgressStore.SaveChunked(fixture.Manifest,
-            new ProcessingState { FrameIndex = 20, Dialog = new() { FrameSets = [done] } }));
+            new ProcessingState { FrameIndex = 20, Dialog = new DialogMatcherStateDto { FrameSets = [done] } }));
         Assert.True(error is IOException or UnauthorizedAccessException);
         Assert.Equal(prior, File.ReadAllBytes(fixture.Manifest));
         Assert.Equal(10, IncrementalProgressStore.Load(fixture.Manifest).FrameIndex);
@@ -246,14 +284,27 @@ public class IncrementalProgressPackTests
         Assert.True(Directory.Exists(collision));
     }
 
-    private static string Hash(byte[] bytes) => Convert.ToHexString(SHA256.HashData(bytes));
+    private static string Hash(byte[] bytes)
+    {
+        return Convert.ToHexString(SHA256.HashData(bytes));
+    }
 
     private sealed class Fixture : IDisposable
     {
-        private readonly string _root = Path.Combine(Path.GetTempPath(), "SekaiTools-packs-" + Guid.NewGuid().ToString("N"));
+        private readonly string _root =
+            Path.Combine(Path.GetTempPath(), "SekaiTools-packs-" + Guid.NewGuid().ToString("N"));
+
+        public Fixture()
+        {
+            Directory.CreateDirectory(_root);
+        }
+
         public string Manifest => Path.Combine(_root, "task.json");
         public string Chunks => Manifest + ".chunks";
-        public Fixture() => Directory.CreateDirectory(_root);
-        public void Dispose() { if (Directory.Exists(_root)) Directory.Delete(_root, true); }
+
+        public void Dispose()
+        {
+            if (Directory.Exists(_root)) Directory.Delete(_root, true);
+        }
     }
 }

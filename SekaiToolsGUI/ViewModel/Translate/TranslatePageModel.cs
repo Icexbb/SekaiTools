@@ -1,41 +1,50 @@
+using SekaiToolsBase.GameScript;
 using SekaiToolsBase.Story;
 using SekaiToolsBase.Story.StoryEvent;
-using SekaiToolsBase.GameScript;
 using SekaiToolsBase.Story.Translation;
 
 namespace SekaiToolsGUI.ViewModel.Translate;
 
 public partial class TranslatePageModel : ViewModelBase
 {
+    private IReadOnlyDictionary<string, FlashbackEventOrigin> _flashbackOrigins =
+        new Dictionary<string, FlashbackEventOrigin>();
+
     private GameScript? _loadedScript;
     private Story? _referenceStory;
-    private IReadOnlyDictionary<string, FlashbackEventOrigin> _flashbackOrigins = new Dictionary<string, FlashbackEventOrigin>();
 
     public string[] FlashbackSources => Events.OfType<LineDialogModel>().Where(line => line.IsFlashback)
-        .SelectMany(line => line.Flashback!.Sources.Where(source => source != line.Flashback.MainSource)).Distinct().ToArray();
-
-    public void ApplyFlashbackOrigins(IReadOnlyDictionary<string, FlashbackEventOrigin> origins)
-    {
-        _flashbackOrigins = origins;
-        foreach (var line in Events.OfType<LineDialogModel>()) line.ApplyFlashbackOrigins(origins);
-    }
+        .SelectMany(line => line.Flashback!.Sources.Where(source => source != line.Flashback.MainSource)).Distinct()
+        .ToArray();
 
     public string ScriptPath
     {
         get => GetProperty(string.Empty);
-        private set { SetProperty(value); OnPropertyChanged(nameof(HasScript)); }
+        private set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(HasScript));
+        }
     }
 
     public string TranslationPath
     {
         get => GetProperty(string.Empty);
-        private set { SetProperty(value); OnPropertyChanged(nameof(HasTranslation)); }
+        private set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(HasTranslation));
+        }
     }
 
     public string ReferenceTranslationPath
     {
         get => GetProperty(string.Empty);
-        private set { SetProperty(value); OnPropertyChanged(nameof(HasReferenceTranslation)); }
+        private set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(HasReferenceTranslation));
+        }
     }
 
     public bool HasScript => !string.IsNullOrEmpty(ScriptPath);
@@ -46,22 +55,123 @@ public partial class TranslatePageModel : ViewModelBase
     public bool IsDirty
     {
         get => GetProperty(false);
-        private set { SetProperty(value); OnPropertyChanged(nameof(SaveStatus)); }
+        private set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(SaveStatus));
+        }
     }
 
     public string DraftStatus
     {
         get => GetProperty(string.Empty);
-        private set { SetProperty(value); OnPropertyChanged(nameof(SaveStatus)); }
+        private set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(SaveStatus));
+        }
     }
 
-    public string SaveStatus => !HasScript ? "请先载入剧本" : IsDirty
-        ? "有未保存修改 · " + DraftStatus
-        : HasTranslation ? "文件已保存 · " + System.IO.Path.GetFileName(TranslationPath)
-        : "尚未保存翻译文件";
+    public string SaveStatus => !HasScript
+        ? "请先载入剧本"
+        : IsDirty
+            ? "有未保存修改 · " + DraftStatus
+            : HasTranslation
+                ? "文件已保存 · " + Path.GetFileName(TranslationPath)
+                : "尚未保存翻译文件";
 
-    public void MarkDraftPending() => DraftStatus = "等待更新恢复草稿";
-    public void MarkDraftResult(bool success) => DraftStatus = success ? "恢复草稿已更新（尚未写入翻译文件）" : "草稿更新失败，请保存文件";
+    public bool IsEmpty => Story.Events.Length == 0;
+
+    public Story Story
+    {
+        get => GetProperty(Story.Empty());
+        set
+        {
+            ClearEventRegisters();
+            SetProperty(value);
+            var flashbacks = FlashbackAnalyzer.Analyze(_loadedScript?.TalkData ?? []);
+            var events = new List<LineModel>();
+            foreach (var baseStoryEvent in value.Events)
+                switch (baseStoryEvent)
+                {
+                    case DialogStoryEvent dialogStoryEvent:
+                        var lineDialogModel = new LineDialogModel(dialogStoryEvent,
+                            (uint)dialogStoryEvent.Index < (uint)flashbacks.Length
+                                ? flashbacks[dialogStoryEvent.Index]
+                                : null, AutoFormat);
+                        lineDialogModel.VoiceScenarioId = _loadedScript?.ScenarioId ?? "";
+                        if (_loadedScript != null && (uint)dialogStoryEvent.Index < (uint)_loadedScript.TalkData.Length)
+                            lineDialogModel.OriginalVoice =
+                                (_loadedScript.TalkData[dialogStoryEvent.Index].Voices ?? []).Cast<Voice?>()
+                                .FirstOrDefault();
+                        if (lineDialogModel.HasVoice) lineDialogModel.VoiceState = "播放原始语音";
+                        lineDialogModel.ApplyFlashbackOrigins(_flashbackOrigins);
+                        lineDialogModel.CharacterTranslateChanged += OnLineDialogModelOnCharacterTranslateChanged;
+                        lineDialogModel.ContentTranslateChanged += OnDialogContentChanged;
+                        events.Add(lineDialogModel);
+                        break;
+                    default:
+                        var lineEffectModel = new LineEffectModel(baseStoryEvent);
+                        lineEffectModel.ContentTranslateChanged += OnLineEffectModelOnContentTranslateChanged;
+                        events.Add(lineEffectModel);
+                        break;
+                }
+
+            for (var i = 0; i < events.Count; i++)
+            {
+                events[i].SequenceNumber = i + 1;
+                events[i].ActionRequested += OnLineAction;
+                events[i].ShowReference = ShowReference;
+                if (events[i] is LineDialogModel dialog) dialog.AutoFormat = AutoFormat;
+                events[i].MatchingCount = events[i] is LineDialogModel d
+                    ? events.OfType<LineDialogModel>().Count(other => other.Character.Original == d.Character.Original)
+                    : events.OfType<LineEffectModel>()
+                        .Count(other => other.Content.Original == events[i].Body.Original);
+            }
+
+            Events = events.ToArray();
+            ResetHistory();
+            SearchText = string.Empty;
+            FilterIndex = 0;
+            TypeFilterIndex = 0;
+            RefreshVisibleEvents();
+            NotifyProgress();
+            LastEditFeedback = string.Empty;
+            ActiveSequenceNumber = 0;
+        }
+    }
+
+    public LineModel[] Events
+    {
+        get => GetProperty(Array.Empty<LineModel>());
+        set => SetProperty(value);
+    }
+
+    public string Result
+    {
+        get
+        {
+            var result = Events.Select(lineModel => lineModel.Result).ToList();
+
+            return string.Join("\n", result);
+        }
+    }
+
+    public void ApplyFlashbackOrigins(IReadOnlyDictionary<string, FlashbackEventOrigin> origins)
+    {
+        _flashbackOrigins = origins;
+        foreach (var line in Events.OfType<LineDialogModel>()) line.ApplyFlashbackOrigins(origins);
+    }
+
+    public void MarkDraftPending()
+    {
+        DraftStatus = "等待更新恢复草稿";
+    }
+
+    public void MarkDraftResult(bool success)
+    {
+        DraftStatus = success ? "恢复草稿已更新（尚未写入翻译文件）" : "草稿更新失败，请保存文件";
+    }
 
     public void MarkSaved(EditValue[]? values = null, string? path = null)
     {
@@ -106,11 +216,15 @@ public partial class TranslatePageModel : ViewModelBase
         ReferenceTranslationPath = path;
     }
 
-    public bool IsTranslationApplicable(TranslationData translation) =>
-        _loadedScript != null && translation.IsApplicable(_loadedScript);
+    public bool IsTranslationApplicable(TranslationData translation)
+    {
+        return _loadedScript != null && translation.IsApplicable(_loadedScript);
+    }
 
-    public string? GetTranslationMismatchReason(TranslationData translation) =>
-        _loadedScript == null ? "请先载入剧本文件。" : translation.GetMismatchReason(_loadedScript);
+    public string? GetTranslationMismatchReason(TranslationData translation)
+    {
+        return _loadedScript == null ? "请先载入剧本文件。" : translation.GetMismatchReason(_loadedScript);
+    }
 
     public void ClearTranslation()
     {
@@ -123,83 +237,13 @@ public partial class TranslatePageModel : ViewModelBase
         MarkSaved();
     }
 
-    public bool IsEmpty => Story.Events.Length == 0;
-
-    public Story Story
-    {
-        get => GetProperty(Story.Empty());
-        set
-        {
-            ClearEventRegisters();
-            SetProperty(value);
-            var flashbacks = FlashbackAnalyzer.Analyze(_loadedScript?.TalkData ?? []);
-            var events = new List<LineModel>();
-            foreach (var baseStoryEvent in value.Events)
-                switch (baseStoryEvent)
-                {
-                    case DialogStoryEvent dialogStoryEvent:
-                        var lineDialogModel = new LineDialogModel(dialogStoryEvent,
-                            (uint)dialogStoryEvent.Index < (uint)flashbacks.Length ? flashbacks[dialogStoryEvent.Index] : null, AutoFormat);
-                        lineDialogModel.VoiceScenarioId = _loadedScript?.ScenarioId ?? "";
-                        if (_loadedScript != null && (uint)dialogStoryEvent.Index < (uint)_loadedScript.TalkData.Length)
-                            lineDialogModel.OriginalVoice = (_loadedScript.TalkData[dialogStoryEvent.Index].Voices ?? []).Cast<Voice?>().FirstOrDefault();
-                        if (lineDialogModel.HasVoice) lineDialogModel.VoiceState = "播放原始语音";
-                        lineDialogModel.ApplyFlashbackOrigins(_flashbackOrigins);
-                        lineDialogModel.CharacterTranslateChanged += OnLineDialogModelOnCharacterTranslateChanged;
-                        lineDialogModel.ContentTranslateChanged += OnDialogContentChanged;
-                        events.Add(lineDialogModel);
-                        break;
-                    default:
-                        var lineEffectModel = new LineEffectModel(baseStoryEvent);
-                        lineEffectModel.ContentTranslateChanged += OnLineEffectModelOnContentTranslateChanged;
-                        events.Add(lineEffectModel);
-                        break;
-                }
-
-            for (var i = 0; i < events.Count; i++)
-            {
-                events[i].SequenceNumber = i + 1;
-                events[i].ActionRequested += OnLineAction;
-                events[i].ShowReference = ShowReference;
-                if (events[i] is LineDialogModel dialog) dialog.AutoFormat = AutoFormat;
-                events[i].MatchingCount = events[i] is LineDialogModel d
-                    ? events.OfType<LineDialogModel>().Count(other => other.Character.Original == d.Character.Original)
-                    : events.OfType<LineEffectModel>().Count(other => other.Content.Original == events[i].Body.Original);
-            }
-            Events = events.ToArray();
-            ResetHistory();
-            SearchText = string.Empty;
-            FilterIndex = 0;
-            TypeFilterIndex = 0;
-            RefreshVisibleEvents();
-            NotifyProgress();
-            LastEditFeedback = string.Empty;
-            ActiveSequenceNumber = 0;
-        }
-    }
-
-    public LineModel[] Events
-    {
-        get => GetProperty(Array.Empty<LineModel>());
-        set => SetProperty(value);
-    }
-
-    public string Result
-    {
-        get
-        {
-            var result = Events.Select(lineModel => lineModel.Result).ToList();
-
-            return string.Join("\n", result);
-        }
-    }
-
     public string Export(bool useV2 = true)
     {
         if (!useV2) return Result;
         var values = Events.Select(line => line switch
         {
-            LineDialogModel dialog => (Translation)new DialogTranslate(dialog.Character.Result, dialog.Content.Result.Trim()),
+            LineDialogModel dialog => (Translation)new DialogTranslate(dialog.Character.Result,
+                dialog.Content.Result.Trim()),
             LineEffectModel effect => new EffectTranslate(effect.Content.Result),
             _ => throw new InvalidOperationException("未知翻译条目")
         }).ToArray();
@@ -294,24 +338,24 @@ public partial class TranslatePageModel : ViewModelBase
             switch (line)
             {
                 case LineDialogModel lineDialogModel when ev is DialogStoryEvent dialogStoryEvent:
-                    {
-                        if (lineDialogModel.Character.Original != dialogStoryEvent.CharacterOriginal
-                            || lineDialogModel.Content.Original != dialogStoryEvent.BodyOriginal) continue;
-                        lineDialogModel.Character.Reference = dialogStoryEvent.CharacterTranslated;
-                        lineDialogModel.Content.Reference = dialogStoryEvent.BodyTranslated;
-                        lineDialogModel.Content.ReferenceAvailable = true;
-                        lineDialogModel.Content.ReferencePreserveEmpty = dialogStoryEvent.HasExplicitTranslation;
-                        break;
-                    }
+                {
+                    if (lineDialogModel.Character.Original != dialogStoryEvent.CharacterOriginal
+                        || lineDialogModel.Content.Original != dialogStoryEvent.BodyOriginal) continue;
+                    lineDialogModel.Character.Reference = dialogStoryEvent.CharacterTranslated;
+                    lineDialogModel.Content.Reference = dialogStoryEvent.BodyTranslated;
+                    lineDialogModel.Content.ReferenceAvailable = true;
+                    lineDialogModel.Content.ReferencePreserveEmpty = dialogStoryEvent.HasExplicitTranslation;
+                    break;
+                }
                 case LineEffectModel lineEffectModel:
-                    {
-                        if (lineEffectModel.Content.Original != ev.BodyOriginal) continue;
-                        lineEffectModel.Content.Reference = ev.BodyTranslated;
-                        lineEffectModel.Content.ReferenceAvailable = true;
-                        lineEffectModel.Content.ReferencePreserveEmpty = ev.HasExplicitTranslation;
+                {
+                    if (lineEffectModel.Content.Original != ev.BodyOriginal) continue;
+                    lineEffectModel.Content.Reference = ev.BodyTranslated;
+                    lineEffectModel.Content.ReferenceAvailable = true;
+                    lineEffectModel.Content.ReferencePreserveEmpty = ev.HasExplicitTranslation;
 
-                        break;
-                    }
+                    break;
+                }
             }
         }
     }

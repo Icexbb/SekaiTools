@@ -1,15 +1,16 @@
 using System.IO;
 using System.Net;
 using System.Net.Http;
-using Wpf.Ui.Controls;
-using Microsoft.Extensions.Logging;
-using SekaiToolsBase;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Threading;
+using Microsoft.Extensions.Logging;
 using SekaiDataFetch;
-using SekaiToolsGUI.ViewModel.Translate;
+using SekaiToolsBase;
 using SekaiToolsGUI.ViewModel.Download;
 using SekaiToolsGUI.ViewModel.Setting;
+using SekaiToolsGUI.ViewModel.Translate;
+using Wpf.Ui.Controls;
 
 namespace SekaiToolsGUI.View.Translate;
 
@@ -17,9 +18,16 @@ public partial class TranslatePage
 {
     private static readonly ILogger VoiceLogger = Logger.CreateLogger("TranslationVoicePreview");
 
-    private readonly System.Windows.Threading.DispatcherTimer _voiceProgressTimer = new()
-    { Interval = TimeSpan.FromMilliseconds(50) };
+    private readonly DispatcherTimer _voiceProgressTimer = new()
+        { Interval = TimeSpan.FromMilliseconds(50) };
+
+    private IDisposable? _voiceCacheProtection;
+    private LineDialogModel? _voiceLine;
+    private string? _voicePath;
     private bool _voicePlaybackActive;
+
+    private MediaPlayer? _voicePlayer;
+    private CancellationTokenSource? _voiceRequest;
 
     private void SetVoicePlaybackActive(bool active)
     {
@@ -34,18 +42,16 @@ public partial class TranslatePage
         _voiceLine.VoiceProgress = duration > 0 ? Math.Clamp(_voicePlayer.Position.TotalSeconds / duration, 0, 1) : 0;
     }
 
-    private MediaPlayer? _voicePlayer;
-    private LineDialogModel? _voiceLine;
-    private CancellationTokenSource? _voiceRequest;
-    private string? _voicePath;
-    private IDisposable? _voiceCacheProtection;
-
-    private void StopVoice() => StopVoiceWithReason("停止或取消");
+    private void StopVoice()
+    {
+        StopVoiceWithReason("停止或取消");
+    }
 
     private void StopVoiceWithReason(string reason)
     {
         if (_voiceLine is { } current)
-            VoiceLogger.LogInformation("语音预览{Reason}：第 {Sequence} 条，剧本 {ScenarioId}，语音 {VoiceId}，位置 {PositionSeconds:F2} 秒",
+            VoiceLogger.LogInformation(
+                "语音预览{Reason}：第 {Sequence} 条，剧本 {ScenarioId}，语音 {VoiceId}，位置 {PositionSeconds:F2} 秒",
                 reason, current.SequenceNumber, current.VoiceScenarioId, current.OriginalVoice?.VoiceId,
                 _voicePlayer?.Position.TotalSeconds ?? 0);
 
@@ -64,6 +70,7 @@ public partial class TranslatePage
             var cacheDirectory = Directory.GetParent(Path.GetDirectoryName(stoppedPath)!)!.FullName;
             VoiceCache.Trim(cacheDirectory, VoiceCache.AutomaticLimit(cacheDirectory));
         }
+
         _voicePath = null;
         if (_voiceLine != null)
         {
@@ -71,6 +78,7 @@ public partial class TranslatePage
             _voiceLine.VoiceLoading = _voiceLine.VoicePlaying = false;
             _voiceLine.VoiceState = "播放原始语音";
         }
+
         _voiceLine = null;
     }
 
@@ -79,7 +87,12 @@ public partial class TranslatePage
         if (e.OriginalSource is not LineDialogModel { HasVoice: true } line) return;
         e.Handled = true;
         if (_voicePlaybackActive) return;
-        if (ReferenceEquals(line, _voiceLine) && line.VoiceLoading) { StopVoice(); return; }
+        if (ReferenceEquals(line, _voiceLine) && line.VoiceLoading)
+        {
+            StopVoice();
+            return;
+        }
+
         StopVoice();
         _voiceLine = line;
         var request = new CancellationTokenSource(TimeSpan.FromSeconds(30));
@@ -97,7 +110,8 @@ public partial class TranslatePage
             VoiceLogger.LogInformation("语音资源地址：第 {Sequence} 条，剧本 {ScenarioId}，语音 {VoiceId}，URL {AudioUrl}",
                 line.SequenceNumber, line.VoiceScenarioId, line.OriginalVoice.Value.VoiceId, uri.AbsoluteUri);
             var path = await ScenarioVoice.LoadAsync(Fetcher.Instance, uri,
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SekaiTools", "VoiceCache"), request.Token);
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SekaiTools",
+                    "VoiceCache"), request.Token);
             if (request.IsCancellationRequested || !ReferenceEquals(_voiceRequest, request)) return;
             VoiceLogger.LogInformation("语音资源已就绪：第 {Sequence} 条，语音 {VoiceId}，本地文件 {Path}",
                 line.SequenceNumber, line.OriginalVoice?.VoiceId, path);
@@ -105,7 +119,9 @@ public partial class TranslatePage
             _voicePath = path;
             var player = new MediaPlayer();
             _voicePlayer = player;
-            player.Volume = double.IsFinite(line.OriginalVoice.Value.Volume) ? Math.Clamp(line.OriginalVoice.Value.Volume, 0, 1) : 1;
+            player.Volume = double.IsFinite(line.OriginalVoice.Value.Volume)
+                ? Math.Clamp(line.OriginalVoice.Value.Volume, 0, 1)
+                : 1;
             player.MediaOpened += (_, _) =>
             {
                 if (!ReferenceEquals(player, _voicePlayer)) return;
@@ -116,11 +132,16 @@ public partial class TranslatePage
                 _voiceProgressTimer.Tick += UpdateVoiceProgress;
                 _voiceProgressTimer.Start();
                 player.Play();
-                VoiceLogger.LogInformation("开始播放语音预览：第 {Sequence} 条，剧本 {ScenarioId}，语音 {VoiceId}，时长 {DurationSeconds:F2} 秒，音量 {Volume}",
+                VoiceLogger.LogInformation(
+                    "开始播放语音预览：第 {Sequence} 条，剧本 {ScenarioId}，语音 {VoiceId}，时长 {DurationSeconds:F2} 秒，音量 {Volume}",
                     line.SequenceNumber, line.VoiceScenarioId, line.OriginalVoice?.VoiceId,
-                    player.NaturalDuration.HasTimeSpan ? player.NaturalDuration.TimeSpan.TotalSeconds : 0, player.Volume);
+                    player.NaturalDuration.HasTimeSpan ? player.NaturalDuration.TimeSpan.TotalSeconds : 0,
+                    player.Volume);
             };
-            player.MediaEnded += (_, _) => { if (ReferenceEquals(player, _voicePlayer)) StopVoiceWithReason("播放完成"); };
+            player.MediaEnded += (_, _) =>
+            {
+                if (ReferenceEquals(player, _voicePlayer)) StopVoiceWithReason("播放完成");
+            };
             player.MediaFailed += (_, args) =>
             {
                 if (!ReferenceEquals(player, _voicePlayer)) return;
@@ -128,8 +149,15 @@ public partial class TranslatePage
                     line.SequenceNumber, line.VoiceScenarioId, line.OriginalVoice?.VoiceId);
                 var failedPath = _voicePath;
                 StopVoiceWithReason("播放失败");
-                try { if (failedPath != null) File.Delete(failedPath); }
-                catch (IOException ex) { VoiceLogger.LogWarning(ex, "清理无法播放的语音缓存失败：{Path}", failedPath); }
+                try
+                {
+                    if (failedPath != null) File.Delete(failedPath);
+                }
+                catch (IOException ex)
+                {
+                    VoiceLogger.LogWarning(ex, "清理无法播放的语音缓存失败：{Path}", failedPath);
+                }
+
                 line.VoiceState = "语音加载失败，点击重试：" + args.ErrorException.Message;
             };
             player.Open(new Uri(path));

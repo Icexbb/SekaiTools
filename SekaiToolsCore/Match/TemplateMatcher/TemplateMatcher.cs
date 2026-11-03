@@ -1,13 +1,13 @@
-using System.Drawing;
 using System.Diagnostics;
+using System.Drawing;
 using System.Runtime.CompilerServices;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using SekaiToolsCore.Process.Model;
-using SekaiToolsCore.Utils;
 using SekaiToolsCore.Process.Performance;
+using SekaiToolsCore.Utils;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
@@ -23,16 +23,22 @@ public static class TemplateMatcher
         TemplateMatchCachePool.MatchUsage usage = TemplateMatchCachePool.MatchUsage.Misc,
         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
         [CallerMemberName] string memberName = "")
-        => MatchCore(frame, region, tmp, cachePool, usage, matchingType, memberName, null);
+    {
+        return MatchCore(frame, region, tmp, cachePool, usage, matchingType, memberName, null);
+    }
 
     internal static TemplateMatchResult MatchContent(FrameMatchContext frame, Rectangle region, GaMat template,
         TemplateMatchCachePool pool, TemplateMatchCachePool.MatchUsage usage, double threshold,
-        [CallerMemberName] string memberName = "", bool allowScaleRecovery = false) =>
-        MatchCore(frame, region, template, pool, usage, TemplateMatchingType.CcoeffNormed, memberName, threshold, allowScaleRecovery);
+        [CallerMemberName] string memberName = "", bool allowScaleRecovery = false)
+    {
+        return MatchCore(frame, region, template, pool, usage, TemplateMatchingType.CcoeffNormed, memberName, threshold,
+            allowScaleRecovery);
+    }
 
     private static TemplateMatchResult MatchCore(FrameMatchContext frame, Rectangle region, GaMat tmp,
         TemplateMatchCachePool cachePool, TemplateMatchCachePool.MatchUsage usage,
-        TemplateMatchingType matchingType, string memberName, double? acceptanceThreshold, bool allowScaleRecovery = false)
+        TemplateMatchingType matchingType, string memberName, double? acceptanceThreshold,
+        bool allowScaleRecovery = false)
     {
         var metrics = cachePool.Metrics.Enabled ? cachePool.Metrics : null;
         using var measurement = metrics?.Enter(metrics.CurrentState, usage) ?? default;
@@ -58,7 +64,8 @@ public static class TemplateMatcher
                 size.Width + 16, size.Height + 16));
             if (probe != region && probe.Width >= size.Width && probe.Height >= size.Height)
             {
-                var candidate = MatchNoCache(frame, probe, tmp, scales[0], matchingType, memberName, acceptanceThreshold);
+                var candidate = MatchNoCache(frame, probe, tmp, scales[0], matchingType, memberName,
+                    acceptanceThreshold);
                 // This path is used only for a presence decision, never for name-tag position tracking.
                 // Weak/absent evidence falls through to the unchanged complete search.
                 if (candidate.IsMatch(Math.Max(0.85, threshold + 0.02)))
@@ -67,12 +74,14 @@ public static class TemplateMatcher
                     candidate.MaxLoc += offset;
                     candidate.MinLoc += offset;
                     cachePool.ObserveScale(usage, candidate.Scale, candidate.MaxVal);
-                    cachePool.RegisterResult(usage, frame.Gray, region, tmp, matchingType, candidate, acceptanceThreshold);
+                    cachePool.RegisterResult(usage, frame.Gray, region, tmp, matchingType, candidate,
+                        acceptanceThreshold);
                     metrics?.RecordRequest(usage, false, started);
                     return candidate;
                 }
             }
         }
+
         for (var index = 0; index < scales.Count; index++)
         {
             var scale = scales[index];
@@ -95,6 +104,7 @@ public static class TemplateMatcher
                 var candidate = MatchNoCache(frame, region, tmp, scale, matchingType, memberName, acceptanceThreshold);
                 if (candidate.MaxVal > recovered.MaxVal) recovered = candidate;
             }
+
             if (cachePool.TryRecoverScale(usage, recovered.Scale, recovered.MaxVal, recoveryThreshold))
                 res = recovered;
         }
@@ -114,12 +124,13 @@ public static class TemplateMatcher
         var templateLayer = tmp.GetScaledLayer(scale, 1);
         if (templateLayer.Size.Width > region.Width || templateLayer.Size.Height > region.Height)
             return new TemplateMatchResult(double.NegativeInfinity, double.PositiveInfinity,
-                Point.Empty, Point.Empty)
-            { Scale = scale };
+                    Point.Empty, Point.Empty)
+                { Scale = scale };
 
         if (templateLayer.Size.Width / SearchDownscaleDivisor >= MinTemplateDimAfterScale
             && templateLayer.Size.Height / SearchDownscaleDivisor >= MinTemplateDimAfterScale)
-            return MatchNoCacheScaled(frame, region, tmp, templateLayer, scale, matchingType, memberName, acceptanceThreshold);
+            return MatchNoCacheScaled(frame, region, tmp, templateLayer, scale, matchingType, memberName,
+                acceptanceThreshold);
 
         using var image = frame.CreateGrayRoi(region);
         return MatchNoCacheFull(frame, image, templateLayer, scale, matchingType, memberName);
@@ -180,13 +191,15 @@ public static class TemplateMatcher
         // Only presence requests have an acceptance threshold. Keep ordinary position
         // tracking unchanged, and pay for alternate peaks only after refinement fails.
         if (acceptanceThreshold is { } threshold && double.IsFinite(threshold) && !best.IsMatch(threshold))
-        {
             for (var attempt = 0; attempt < 2; attempt++)
             {
                 var suppression = Rectangle.Intersect(new Rectangle(coarsePeak.X - 2, coarsePeak.Y - 2, 5, 5),
                     new Rectangle(Point.Empty, matchResult.Size));
                 using (var suppressed = new Mat(matchResult, suppression))
+                {
                     suppressed.SetTo(new MCvScalar(-float.MaxValue));
+                }
+
                 double nextMax = 0, nextMin = 0;
                 Point nextMinLoc = new();
                 var started = frame.Metrics != null ? Stopwatch.GetTimestamp() : 0;
@@ -198,16 +211,19 @@ public static class TemplateMatcher
                     coarsePeak.Y * SearchDownscaleDivisor + SearchDownscaleDivisor / 2 - RefinementMargin,
                     fullTemplateLayer.Size.Width + RefinementMargin * 2,
                     fullTemplateLayer.Size.Height + RefinementMargin * 2), new Rectangle(Point.Empty, region.Size));
-                if (candidateRegion.Width < fullTemplateLayer.Size.Width || candidateRegion.Height < fullTemplateLayer.Size.Height)
+                if (candidateRegion.Width < fullTemplateLayer.Size.Width ||
+                    candidateRegion.Height < fullTemplateLayer.Size.Height)
                     continue;
                 using var candidateImage = frame.CreateGrayRoi(new Rectangle(
-                    region.X + candidateRegion.X, region.Y + candidateRegion.Y, candidateRegion.Width, candidateRegion.Height));
+                    region.X + candidateRegion.X, region.Y + candidateRegion.Y, candidateRegion.Width,
+                    candidateRegion.Height));
                 using var candidateLease = frame.RentMatchResult(candidateImage.Size, fullTemplateLayer.Size, true);
                 double candidateMax = 0, candidateMin = 0;
                 Point candidateMaxLoc = new(), candidateMinLoc = new();
                 MatchAndLocate(frame, candidateImage, fullTemplateLayer, candidateLease.Image, matchingType,
                     ref candidateMin, ref candidateMax, ref candidateMinLoc, ref candidateMaxLoc);
-                var candidate = new TemplateMatchResult(candidateMax, candidateMin, candidateMaxLoc, candidateMinLoc) { Scale = scale };
+                var candidate = new TemplateMatchResult(candidateMax, candidateMin, candidateMaxLoc, candidateMinLoc)
+                    { Scale = scale };
                 candidate.MaxLoc += new Size(candidateRegion.Location);
                 candidate.MinLoc += new Size(candidateRegion.Location);
                 // Alternate peaks need strong evidence even when the caller is
@@ -218,17 +234,18 @@ public static class TemplateMatcher
                     break;
                 }
             }
-        }
 
         if (ShouldShowImg(memberName))
         {
             using var image = frame.CreateGrayRoi(region);
             ShowImg(image, fullTemplateLayer, best.MaxVal, best.MaxLoc, memberName);
         }
+
         return best;
     }
 
-    private static TemplateMatchResult MatchNoCacheFull(FrameMatchContext frame, Mat img, GaMatLayer templateLayer, double scale,
+    private static TemplateMatchResult MatchNoCacheFull(FrameMatchContext frame, Mat img, GaMatLayer templateLayer,
+        double scale,
         TemplateMatchingType matchingType = TemplateMatchingType.CcoeffNormed,
         string memberName = "")
     {
@@ -257,12 +274,14 @@ public static class TemplateMatcher
         metrics?.Record(TemplateMatchingStage.Extremum, started);
     }
 
-    private static bool ShouldShowImg(string memberName) => Debugger.IsAttached &&
-        (Environment.GetEnvironmentVariable("DebugShowImg") ?? "").Contains(memberName);
+    private static bool ShouldShowImg(string memberName)
+    {
+        return Debugger.IsAttached &&
+               (Environment.GetEnvironmentVariable("DebugShowImg") ?? "").Contains(memberName);
+    }
 
     private static void ShowImg(Mat img, GaMatLayer tmp, double maxVal, Point maxLoc, string memberName)
     {
-
         using var show = img.Clone()!;
         CvInvoke.PutText(show, $"MaxVal: {maxVal:0.00}", maxLoc with { Y = maxLoc.Y - 5 },
             HersheyFonts.Simplex, 0.4, new MCvScalar(255));

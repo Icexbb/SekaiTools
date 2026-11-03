@@ -7,8 +7,8 @@ public sealed class TranslationRules
 {
     public const string FileName = "translation-rules.json";
     private static readonly Lazy<TranslationRules> CurrentValue = new(() => Load());
-    public static TranslationRules Current => CurrentValue.Value;
     private readonly Dictionary<string, Regex> _patterns = new(StringComparer.Ordinal);
+    public static TranslationRules Current => CurrentValue.Value;
 
     public required List<TranslationReplacement> Replacements { get; init; }
     public required List<TranslationCheck> Checks { get; init; }
@@ -17,18 +17,22 @@ public sealed class TranslationRules
     {
         var path = filePath ?? Path.Combine(AppContext.BaseDirectory, FileName);
         string json;
-        if (File.Exists(path)) json = File.ReadAllText(path);
+        if (File.Exists(path))
+        {
+            json = File.ReadAllText(path);
+        }
         else
         {
             using var stream = typeof(TranslationRules).Assembly.GetManifestResourceStream(
-                "SekaiToolsConfiguration.translation-rules.json")
-                ?? throw new FileNotFoundException("找不到内置翻译检查配置");
+                                   "SekaiToolsConfiguration.translation-rules.json")
+                               ?? throw new FileNotFoundException("找不到内置翻译检查配置");
             using var reader = new StreamReader(stream);
             json = reader.ReadToEnd();
         }
+
         var rules = JsonSerializer.Deserialize<TranslationRules>(json,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-            ?? throw new InvalidDataException("翻译检查配置为空");
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                    ?? throw new InvalidDataException("翻译检查配置为空");
         rules.Validate();
         return rules;
     }
@@ -44,6 +48,7 @@ public sealed class TranslationRules
                 throw new InvalidDataException("替换规则及 replacement 不能为 null");
             AddPattern(rule.Pattern, "替换规则");
         }
+
         foreach (var rule in Checks)
         {
             if (rule == null || string.IsNullOrWhiteSpace(rule.Id) || !ids.Add(rule.Id))
@@ -65,8 +70,15 @@ public sealed class TranslationRules
     private void AddPattern(string pattern, string id)
     {
         if (string.IsNullOrEmpty(pattern)) throw new InvalidDataException($"规则 {id} 的 pattern 不能为空");
-        try { _patterns.TryAdd(pattern, new Regex(pattern, RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100))); }
-        catch (ArgumentException exception) { throw new InvalidDataException($"规则 {id} 的正则表达式无效：{exception.Message}", exception); }
+        try
+        {
+            _patterns.TryAdd(pattern,
+                new Regex(pattern, RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100)));
+        }
+        catch (ArgumentException exception)
+        {
+            throw new InvalidDataException($"规则 {id} 的正则表达式无效：{exception.Message}", exception);
+        }
     }
 
     public string Format(string content)
@@ -76,14 +88,17 @@ public sealed class TranslationRules
         return content;
     }
 
-    public IReadOnlyList<TranslationCheckResult> Evaluate(string content, IReadOnlyDictionary<string, string>? context = null)
+    public IReadOnlyList<TranslationCheckResult> Evaluate(string content,
+        IReadOnlyDictionary<string, string>? context = null)
     {
         var results = new List<TranslationCheckResult>();
         var lines = content.Split('\n').Where(line => line.Length > 0).ToArray();
         foreach (var rule in Checks.Where(rule => rule.Enabled))
         {
             if (rule.Scope == "content") EvaluateText(content, null);
-            else for (var i = 0; i < lines.Length; i++) EvaluateText(lines[i].TrimEnd(), i + 1);
+            else
+                for (var i = 0; i < lines.Length; i++)
+                    EvaluateText(lines[i].TrimEnd(), i + 1);
 
             void EvaluateText(string text, int? line)
             {
@@ -93,18 +108,26 @@ public sealed class TranslationRules
                     // 未提供的指标不参与检查，包括否定条件。
                     if (value == null || _patterns[condition.Pattern].IsMatch(value) != condition.Match) return;
                 }
+
                 results.Add(new TranslationCheckResult(rule.Id, line, rule.Feedback));
             }
         }
+
         return results;
     }
 
-    public string Check(string content) => FormatResults(Evaluate(content));
+    public string Check(string content)
+    {
+        return FormatResults(Evaluate(content));
+    }
 
-    public static string FormatResults(IEnumerable<TranslationCheckResult> results) => string.Join("\n",
-        results.GroupBy(result => result.Line).OrderBy(group => group.Key ?? int.MaxValue)
-            .Select(group => (group.Key is { } line ? $"行{line}:" : "") +
-                             string.Concat(group.Select(result => $"【{result.Feedback.Message}】"))));
+    public static string FormatResults(IEnumerable<TranslationCheckResult> results)
+    {
+        return string.Join("\n",
+            results.GroupBy(result => result.Line).OrderBy(group => group.Key ?? int.MaxValue)
+                .Select(group => (group.Key is { } line ? $"行{line}:" : "") +
+                                 string.Concat(group.Select(result => $"【{result.Feedback.Message}】"))));
+    }
 }
 
 public sealed class TranslationReplacement

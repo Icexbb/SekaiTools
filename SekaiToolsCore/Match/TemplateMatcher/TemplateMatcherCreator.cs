@@ -8,6 +8,7 @@ namespace SekaiToolsCore.Match.TemplateMatcher;
 public class TemplateMatcherCreator : IDisposable
 {
     private readonly ITemplateResourceProvider _resources;
+
     public TemplateMatcherCreator(Config config, ITemplateResourceProvider resourceProvider)
     {
         Config = config;
@@ -16,7 +17,8 @@ public class TemplateMatcherCreator : IDisposable
         Story = SekaiStory.FromFile(Config.ScriptFilePath, Config.TranslateFilePath);
 
         Manager = new TemplateManager(VInfo.Resolution, resourceProvider);
-        CachePool = new TemplateMatchCachePool { UseContentPositionHints = config.PerformanceOptions.UseContentPositionHints };
+        CachePool = new TemplateMatchCachePool
+            { UseContentPositionHints = config.PerformanceOptions.UseContentPositionHints };
     }
 
     private Config Config { get; }
@@ -27,14 +29,17 @@ public class TemplateMatcherCreator : IDisposable
     private TemplateManager Manager { get; }
     public TemplateMatchCachePool CachePool { get; }
 
-    internal TemplatePreloader CreatePreloader(CancellationToken token) => new(Manager,
-        new TemplateManager(VInfo.Resolution, _resources), Manager.GetFontSize(),
-        Story.Dialogs().ToArray(), Story.Banners().ToArray(), Story.Markers().ToArray(), token);
-
     public void Dispose()
     {
         Manager.Dispose();
         CachePool.ResetAll();
+    }
+
+    internal TemplatePreloader CreatePreloader(CancellationToken token)
+    {
+        return new TemplatePreloader(Manager,
+            new TemplateManager(VInfo.Resolution, _resources), Manager.GetFontSize(),
+            Story.Dialogs().ToArray(), Story.Banners().ToArray(), Story.Markers().ToArray(), token);
     }
 
     public DialogTemplateMatcher DialogMatcher()

@@ -6,8 +6,8 @@ namespace SekaiTools.Tests;
 
 public sealed class MacHostTests : IDisposable
 {
-    private readonly string _directory = Path.Combine(Path.GetTempPath(), "SekaiToolsHostTests", Guid.NewGuid().ToString("N"));
-    private string ScriptPath => Path.Combine(_directory, "script.json");
+    private readonly string _directory =
+        Path.Combine(Path.GetTempPath(), "SekaiToolsHostTests", Guid.NewGuid().ToString("N"));
 
     public MacHostTests()
     {
@@ -20,6 +20,13 @@ public sealed class MacHostTests : IDisposable
             Snippets = [new Snippet { Action = 6 }, new Snippet { Action = 1 }]
         };
         File.WriteAllText(ScriptPath, JsonSerializer.Serialize(script));
+    }
+
+    private string ScriptPath => Path.Combine(_directory, "script.json");
+
+    public void Dispose()
+    {
+        Directory.Delete(_directory, true);
     }
 
     [Fact]
@@ -41,16 +48,21 @@ public sealed class MacHostTests : IDisposable
         var rows = TranslationService.Load(new TranslationLoad(ScriptPath));
         var output = Path.Combine(_directory, "translation.txt");
         File.WriteAllText(output, "original");
-        Assert.Throws<InvalidDataException>(() => TranslationService.Export(new TranslationSave(ScriptPath, output, rows.Reverse().ToArray())));
+        Assert.Throws<InvalidDataException>(() =>
+            TranslationService.Export(new TranslationSave(ScriptPath, output, rows.Reverse().ToArray())));
         rows[0] = rows[0] with { Original = "其他剧本" };
-        Assert.Throws<InvalidDataException>(() => TranslationService.Export(new TranslationSave(ScriptPath, output, rows)));
+        Assert.Throws<InvalidDataException>(() =>
+            TranslationService.Export(new TranslationSave(ScriptPath, output, rows)));
         Assert.Equal("original", File.ReadAllText(output));
     }
 
     [Theory]
     [InlineData("{\"version\":2,\"command\":\"capabilities\",\"args\":{}}")]
     [InlineData("{\"version\":1,\"command\":\"\",\"args\":{}}")]
-    public void ProtocolRejectsUnsupportedRequests(string json) => Assert.Throws<InvalidDataException>(() => Protocol.Parse(json));
+    public void ProtocolRejectsUnsupportedRequests(string json)
+    {
+        Assert.Throws<InvalidDataException>(() => Protocol.Parse(json));
+    }
 
     [Fact]
     public void AtomicWriteFailureLeavesNoTemporaryFiles()
@@ -68,6 +80,4 @@ public sealed class MacHostTests : IDisposable
         Assert.Throws<InvalidDataException>(() => Protocol.RejectInputOverwrite(ScriptPath, ScriptPath));
         Protocol.RejectInputOverwrite(Path.Combine(_directory, "output.ass"), ScriptPath, "");
     }
-
-    public void Dispose() => Directory.Delete(_directory, true);
 }

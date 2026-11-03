@@ -3,13 +3,15 @@ namespace SekaiToolsBase.Utils;
 public static class StringFunc
 {
     // Use integer sixths so periods (1/3) and other ASCII (1/2) accumulate exactly.
-    public static double DialogContentLength(this string str) =>
-        str.Sum(character => character switch
+    public static double DialogContentLength(this string str)
+    {
+        return str.Sum(character => character switch
         {
             '.' => 2L,
             _ when char.IsAscii(character) => 3L,
-            _ => 6L,
+            _ => 6L
         }) / 6d;
+    }
 
     public static int LineCount(this string str)
     {

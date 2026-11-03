@@ -8,6 +8,17 @@ internal sealed class CoalescingProgressWriter(Action<string, ProcessingState> s
     private bool _running;
     private Task _worker = Task.CompletedTask;
 
+    public Task Completion
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _worker;
+            }
+        }
+    }
+
     public void Enqueue(string key, ProcessingState state)
     {
         lock (_gate)
@@ -17,11 +28,6 @@ internal sealed class CoalescingProgressWriter(Action<string, ProcessingState> s
             _running = true;
             _worker = Task.Run(Drain);
         }
-    }
-
-    public Task Completion
-    {
-        get { lock (_gate) return _worker; }
     }
 
     private void Drain()
@@ -36,11 +42,19 @@ internal sealed class CoalescingProgressWriter(Action<string, ProcessingState> s
                     _running = false;
                     return;
                 }
+
                 next = pending;
                 _pending = null;
             }
-            try { save(next.Key, next.State); }
-            catch (Exception exception) { report(exception); }
+
+            try
+            {
+                save(next.Key, next.State);
+            }
+            catch (Exception exception)
+            {
+                report(exception);
+            }
         }
     }
 }

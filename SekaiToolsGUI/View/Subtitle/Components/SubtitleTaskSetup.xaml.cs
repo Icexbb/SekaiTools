@@ -1,18 +1,19 @@
-using System.IO;
 using System.Diagnostics;
-using SekaiToolsBase;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
+using SekaiToolsBase;
 using SekaiToolsGUI.ViewModel.Subtitle;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
-using Wpf.Ui.Extensions;
 
 namespace SekaiToolsGUI.View.Subtitle.Components;
 
 public partial class SubtitleTaskSetup : UserControl
 {
+    private int _selectionVersion;
+
     public SubtitleTaskSetup()
     {
         InitializeComponent();
@@ -22,8 +23,6 @@ public partial class SubtitleTaskSetup : UserControl
 
     private static ISnackbarService SnackService =>
         (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
-
-    private int _selectionVersion;
 
     private static string? SelectFile(object sender, RoutedEventArgs e, string filter)
     {
@@ -64,11 +63,18 @@ public partial class SubtitleTaskSetup : UserControl
         {
             // File-system queries can block on a slow disk. Keep them off the dispatcher.
             var related = await Task.Run(() => (
-                Video: videoExt.Contains(fileExt) ? null : videoExt.Select(ext => Path.ChangeExtension(filename, ext)).FirstOrDefault(File.Exists),
-                Script: scriptExt.Contains(fileExt) ? null : scriptExt.Select(ext => Path.ChangeExtension(filename, ext)).FirstOrDefault(File.Exists),
-                Translation: fileExt == ".txt" ? null : new[] { Path.ChangeExtension(filename, ".txt") }.FirstOrDefault(File.Exists)));
+                Video: videoExt.Contains(fileExt)
+                    ? null
+                    : videoExt.Select(ext => Path.ChangeExtension(filename, ext)).FirstOrDefault(File.Exists),
+                Script: scriptExt.Contains(fileExt)
+                    ? null
+                    : scriptExt.Select(ext => Path.ChangeExtension(filename, ext)).FirstOrDefault(File.Exists),
+                Translation: fileExt == ".txt"
+                    ? null
+                    : new[] { Path.ChangeExtension(filename, ".txt") }.FirstOrDefault(File.Exists)));
             // A later selection, dialog close or checkbox change invalidates this result.
-            if (version != _selectionVersion || !IsLoaded || DataContext != model || !model.AutoSelectSameNameFiles) return;
+            if (version != _selectionVersion || !IsLoaded || DataContext != model ||
+                !model.AutoSelectSameNameFiles) return;
             if (related.Video != null) model.VideoFilePath = related.Video;
             if (related.Script != null) model.ScriptFilePath = related.Script;
             if (related.Translation != null) model.TranslateFilePath = related.Translation;

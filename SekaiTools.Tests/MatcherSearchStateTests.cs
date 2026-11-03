@@ -58,5 +58,8 @@ public class MatcherSearchStateTests
         Assert.False(tracker.ShouldProbe(2, 140, 30));
     }
 
-    private static T Roundtrip<T>(T state) => JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(state))!;
+    private static T Roundtrip<T>(T state)
+    {
+        return JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(state))!;
+    }
 }

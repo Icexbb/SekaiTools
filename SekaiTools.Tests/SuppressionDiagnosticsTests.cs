@@ -6,9 +6,6 @@ namespace SekaiTools.Tests;
 
 public class SuppressionDiagnosticsTests
 {
-    private sealed class Resources : IMediaResourceProvider
-    { public string GetVapourSynthResourcePath(string fileName) => throw new NotSupportedException(); }
-
     [Fact]
     public void ProgressReplacesSingleLineWhileOtherLogsAreRetained()
     {
@@ -40,6 +37,15 @@ public class SuppressionDiagnosticsTests
         start.ArgumentList.Add(@"C:\video clips\source.mp4");
         start.ArgumentList.Add("a\"b");
         start.ArgumentList.Add("C:\\folder\\");
-        Assert.Equal("\"ffmpeg.exe\" \"C:\\video clips\\source.mp4\" \"a\\\"b\" \"C:\\folder\\\\\"", VideoSuppressor.FormatCommand(start));
+        Assert.Equal("\"ffmpeg.exe\" \"C:\\video clips\\source.mp4\" \"a\\\"b\" \"C:\\folder\\\\\"",
+            VideoSuppressor.FormatCommand(start));
+    }
+
+    private sealed class Resources : IMediaResourceProvider
+    {
+        public string GetVapourSynthResourcePath(string fileName)
+        {
+            throw new NotSupportedException();
+        }
     }
 }

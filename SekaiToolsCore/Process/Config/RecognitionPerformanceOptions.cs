@@ -1,6 +1,11 @@
 namespace SekaiToolsCore.Process.Config;
 
-public enum RecognitionPerformanceMode { MemorySaving, Automatic, HighPerformance }
+public enum RecognitionPerformanceMode
+{
+    MemorySaving,
+    Automatic,
+    HighPerformance
+}
 
 public sealed record RecognitionPerformanceOptions
 {
@@ -9,8 +14,10 @@ public sealed record RecognitionPerformanceOptions
     public bool EnableFramePrefetch { get; init; } = true;
     public bool PrepareGrayFrames { get; init; }
     public bool CollectDetailedMetrics { get; init; }
+
     /// <summary>可选预读帧数上限；仍受性能模式及可用内存预算约束。</summary>
     public int? FrameBufferCapacity { get; init; }
+
     /// <summary>实验性文本存在探测，默认关闭；弱匹配时恢复完整搜索。</summary>
     public bool UseContentPositionHints { get; init; }
 

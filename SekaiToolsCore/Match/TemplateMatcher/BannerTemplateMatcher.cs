@@ -23,12 +23,12 @@ public class BannerTemplateMatcher(
 ), IDisposable
 {
     private const int MaxLookaheadTargets = 3;
+    private readonly CompletedFrameSnapshotCache<BannerBaseFrameSet, BannerFrameSetDto> _checkpointFrames = new();
     private readonly FiniteLookaheadTracker _lookaheadTracker = new();
     private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
     private readonly AdaptiveSearchScheduler _searchScheduler = new();
-    private readonly CompletedFrameSnapshotCache<BannerBaseFrameSet, BannerFrameSetDto> _checkpointFrames = new();
-    private MatchStatus _status;
     private readonly TrackingLossWindow _trackingLoss = new(videoInfo.Fps.Fps());
+    private MatchStatus _status;
     internal bool IsTracking => _status == MatchStatus.Matched;
 
     public void Dispose()
@@ -80,9 +80,14 @@ public class BannerTemplateMatcher(
 
     private MatchStatus BannerMatch(FrameMatchContext frame, string text, int frameIndex = -1)
     {
-        using var measurement = cachePool.Metrics.Enter(cachePool.Metrics.CurrentState == TemplateMatchingState.Lookahead
-            ? TemplateMatchingState.Lookahead : IsUsingFallback ? TemplateMatchingState.Recovering
-            : _status == MatchStatus.Matched ? TemplateMatchingState.Tracking : TemplateMatchingState.Searching);
+        using var measurement = cachePool.Metrics.Enter(
+            cachePool.Metrics.CurrentState == TemplateMatchingState.Lookahead
+                ? TemplateMatchingState.Lookahead
+                : IsUsingFallback
+                    ? TemplateMatchingState.Recovering
+                    : _status == MatchStatus.Matched
+                        ? TemplateMatchingState.Tracking
+                        : TemplateMatchingState.Searching);
         if (string.IsNullOrWhiteSpace(text)) return MatchStatus.NotMatched;
         var sText = TrimContent(text);
         if (string.IsNullOrWhiteSpace(sText)) return MatchStatus.NotMatched;
@@ -154,7 +159,8 @@ public class BannerTemplateMatcher(
                 _searchScheduler.CompleteSample(frameIndex);
 
             if (matchResult == MatchStatus.NotMatched &&
-                _lookaheadTracker.ShouldProbe(index, frameIndex, _lookaheadTriggerFrames, VisualChangeEvidence.Sample(frame, EvidenceRegion.Banner)))
+                _lookaheadTracker.ShouldProbe(index, frameIndex, _lookaheadTriggerFrames,
+                    VisualChangeEvidence.Sample(frame, EvidenceRegion.Banner)))
             {
                 using var measurement = cachePool.Metrics.Enter(TemplateMatchingState.Lookahead);
                 var originalStatus = _status;
@@ -228,7 +234,10 @@ public class BannerTemplateMatcher(
         }
     }
 
-    public BannerMatcherStateDto SaveState() => SaveState(false);
+    public BannerMatcherStateDto SaveState()
+    {
+        return SaveState(false);
+    }
 
     internal BannerMatcherStateDto SaveState(bool checkpoint)
     {
@@ -261,7 +270,8 @@ public class BannerTemplateMatcher(
         _lookaheadTracker.RestoreState(state.LookaheadState);
         _status = (MatchStatus)state.Status;
         _trackingLoss.Restore(state.PendingLossFrame);
-        RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold, state.LastFailureFrame);
+        RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold,
+            state.LastFailureFrame);
         RestoreDiagnostics(state.Diagnostics);
 
         for (var i = 0; i < state.FrameSets.Count && i < Set.Count; i++)

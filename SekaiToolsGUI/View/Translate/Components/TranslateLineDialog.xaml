@@ -91,19 +91,19 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                <TextBox Grid.Row="0" Name="OriginalContentTextBox"
-                         KeyboardNavigation.TabNavigation="Continue"
-                         MinLines="2"
-                         Margin="0"
-                         IsTabStop="False"
-                         TextWrapping="Wrap"
-                         VerticalAlignment="Stretch"
-                         IsReadOnly="True"
-                         IsReadOnlyCaretVisible="False"
-                         Background="Transparent"
-                         BorderBrush="Transparent"
-                         HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="原文"
-                         Text="{Binding Content.Original}" />
+                    <TextBox Grid.Row="0" Name="OriginalContentTextBox"
+                             KeyboardNavigation.TabNavigation="Continue"
+                             MinLines="2"
+                             Margin="0"
+                             IsTabStop="False"
+                             TextWrapping="Wrap"
+                             VerticalAlignment="Stretch"
+                             IsReadOnly="True"
+                             IsReadOnlyCaretVisible="False"
+                             Background="Transparent"
+                             BorderBrush="Transparent"
+                             HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="原文"
+                             Text="{Binding Content.Original}" />
                     <Border x:Name="FlashbackBadge" Grid.Row="1" Padding="6,4" Margin="2,4,2,2" CornerRadius="4"
                             Background="{DynamicResource ControlFillColorSecondaryBrush}"
                             ToolTip="{Binding FlashbackHint}"
@@ -115,7 +115,8 @@
                             </Grid.ColumnDefinitions>
                             <ui:SymbolIcon Symbol="History24" FontSize="14" Margin="0,1,6,0" VerticalAlignment="Top"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Grid.Column="1" Text="{Binding FlashbackLabel}" FontSize="12" TextWrapping="Wrap"
+                            <TextBlock Grid.Column="1" Text="{Binding FlashbackLabel}" FontSize="12"
+                                       TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         </Grid>
                     </Border>
@@ -142,9 +143,11 @@
                     </ui:SymbolIcon>
                 </Grid>
                 <StackPanel Grid.Column="2" VerticalAlignment="Stretch">
-                    <Grid Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
+                    <Grid
+                        Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
                         <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="5,5,5,24"
-                                 HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
+                                 HorizontalScrollBarVisibility="Disabled" Background="Transparent"
+                                 BorderBrush="Transparent"
                                  AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
                         <TextBlock Text="参考译文" Margin="6,0,6,4" FontSize="12" Opacity="0.6"
                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
@@ -152,7 +155,8 @@
                     </Grid>
                     <TextBox MinLines="2" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
                              PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"
-                             DataObject.Pasting="TextBox_OnPasting" GotKeyboardFocus="TextBox_OnGotKeyboardFocus" LostKeyboardFocus="TextBox_OnLostKeyboardFocus"
+                             DataObject.Pasting="TextBox_OnPasting" GotKeyboardFocus="TextBox_OnGotKeyboardFocus"
+                             LostKeyboardFocus="TextBox_OnLostKeyboardFocus"
                              ToolTip="显示自动折行不改变正文中的换行。Enter 插入正文换行；Ctrl+Enter 跳到下一未译。"
                              AcceptsReturn="True" TextWrapping="Wrap" AutomationProperties.Name="{Binding Label}"
                              Text="{Binding Content.Translated,UpdateSourceTrigger=PropertyChanged}" />

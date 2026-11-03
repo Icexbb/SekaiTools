@@ -19,6 +19,7 @@ public class TranslateItemModel : ViewModelBase
         get => GetProperty(false);
         set => SetProperty(value);
     }
+
     public bool ReferencePreserveEmpty { get; set; }
 
     public string Translated
@@ -32,5 +33,6 @@ public class TranslateItemModel : ViewModelBase
         get => GetProperty(false);
         set => SetProperty(value);
     }
+
     public string Result => !PreserveEmpty && string.IsNullOrWhiteSpace(Translated) ? Original : Translated;
 }

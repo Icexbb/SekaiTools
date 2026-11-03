@@ -11,9 +11,9 @@ internal static class TaskMemoryCleanup
         await Task.Run(() =>
         {
             // Only at an explicit task reset, never during recognition or on each frame.
-            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
             GC.WaitForPendingFinalizers();
-            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
         });
     }
 }

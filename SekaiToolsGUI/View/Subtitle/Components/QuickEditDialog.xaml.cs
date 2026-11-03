@@ -1,7 +1,5 @@
-using System.Windows;
 using System.Windows.Input;
 using SekaiToolsBase.Story.StoryEvent;
-using SekaiToolsBase.Utils;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsGUI.ViewModel.Subtitle;
 using Wpf.Ui.Controls;

@@ -38,7 +38,8 @@ public class UpdateProxySettingsTests
     [Fact]
     public void MissingSettingsKeepDefaultProxyBehavior()
     {
-        var settings = UpdateProxySettings.Load(null, Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "setting.json"));
+        var settings = UpdateProxySettings.Load(null,
+            Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "setting.json"));
         using var handler = settings.CreateHandler();
         Assert.Equal(0, settings.ProxyType);
         Assert.Null(handler.Proxy);

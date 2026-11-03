@@ -32,7 +32,9 @@ public sealed class CoreRecognitionPerformanceTests
             frame.SetTo(new MCvScalar(12, 12, 12));
             var expected = new Point(20 + frameIndex % 6, 30 + frameIndex % 4);
             using (var target = new Mat(frame, new Rectangle(expected, templateBgr.Size)))
+            {
                 templateBgr.CopyTo(target);
+            }
 
             var preprocessStart = Stopwatch.GetTimestamp();
             context.Update(frame);

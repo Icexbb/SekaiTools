@@ -6,12 +6,17 @@ internal sealed class DispatcherBatchQueue(Dispatcher dispatcher, Func<IDisposab
 {
     private readonly Queue<Action> _pending = new();
     private readonly SemaphoreSlim _slots = new(128, 128);
-    private bool _scheduled;
     private Exception? _error;
+    private bool _scheduled;
 
     internal void Enqueue(Action action)
     {
-        if (dispatcher.CheckAccess()) { action(); return; }
+        if (dispatcher.CheckAccess())
+        {
+            action();
+            return;
+        }
+
         _slots.Wait();
         lock (_pending)
         {
@@ -28,7 +33,11 @@ internal sealed class DispatcherBatchQueue(Dispatcher dispatcher, Func<IDisposab
         {
             while (true)
             {
-                lock (_pending) { if (_pending.Count == 0) break; }
+                lock (_pending)
+                {
+                    if (_pending.Count == 0) break;
+                }
+
                 Drain();
             }
         }
@@ -38,6 +47,7 @@ internal sealed class DispatcherBatchQueue(Dispatcher dispatcher, Func<IDisposab
             Enqueue(() => done.TrySetResult());
             await done.Task.ConfigureAwait(false);
         }
+
         if (Interlocked.Exchange(ref _error, null) is { } error)
             throw new InvalidOperationException("批量更新识别结果失败", error);
     }
@@ -46,13 +56,22 @@ internal sealed class DispatcherBatchQueue(Dispatcher dispatcher, Func<IDisposab
     {
         var batch = new List<Action>(32);
         lock (_pending)
+        {
             while (batch.Count < 32 && _pending.TryDequeue(out var action)) batch.Add(action);
+        }
+
         try
         {
             using var scope = beginBatch();
             foreach (var action in batch)
-                try { action(); }
-                catch (Exception error) { Interlocked.CompareExchange(ref _error, error, null); }
+                try
+                {
+                    action();
+                }
+                catch (Exception error)
+                {
+                    Interlocked.CompareExchange(ref _error, error, null);
+                }
         }
         finally
         {

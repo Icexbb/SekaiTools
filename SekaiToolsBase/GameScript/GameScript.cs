@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace SekaiToolsBase.GameScript;
 
@@ -31,24 +32,24 @@ public class GameScript()
                     talkDataCount += 1;
                     break;
                 case 6:
+                {
+                    if (spEffCount >= SpecialEffectData.Length) break;
+                    var eff = SpecialEffectData[spEffCount];
+                    switch (eff.EffectType)
                     {
-                        if (spEffCount >= SpecialEffectData.Length) break;
-                        var eff = SpecialEffectData[spEffCount];
-                        switch (eff.EffectType)
-                        {
-                            case 6:
-                                if (talkDataCount > 0)
-                                    shakeIndex.Add(talkDataCount - 1);
-                                if (eff.Duration > 10) shaking = true;
-                                break;
-                            case 26:
-                                shaking = false;
-                                break;
-                        }
-
-                        spEffCount += 1;
-                        break;
+                        case 6:
+                            if (talkDataCount > 0)
+                                shakeIndex.Add(talkDataCount - 1);
+                            if (eff.Duration > 10) shaking = true;
+                            break;
+                        case 26:
+                            shaking = false;
+                            break;
                     }
+
+                    spEffCount += 1;
+                    break;
+                }
             }
 
         foreach (var i in shakeIndex.Distinct())
@@ -64,13 +65,13 @@ public class GameScript()
                     sn.Add(snippet);
                     break;
                 case 6:
-                    {
-                        if (seCount >= SpecialEffectData.Length) break;
-                        var seData = SpecialEffectData[seCount];
-                        if (seData.EffectType is 8 or 18) sn.Add(snippet);
-                        seCount += 1;
-                        break;
-                    }
+                {
+                    if (seCount >= SpecialEffectData.Length) break;
+                    var seData = SpecialEffectData[seCount];
+                    if (seData.EffectType is 8 or 18) sn.Add(snippet);
+                    seCount += 1;
+                    break;
+                }
             }
 
         Snippets = sn.ToArray();
@@ -81,8 +82,9 @@ public class GameScript()
     }
 
     public string ScenarioId { get; set; } = "";
-    [System.Text.Json.Serialization.JsonIgnore]
-    public int[] OriginalEffectIndices { get; set; } = [];
+
+    [JsonIgnore] public int[] OriginalEffectIndices { get; set; } = [];
+
     public Snippet[] Snippets { get; set; } = [];
     public SpecialEffect[] SpecialEffectData { get; set; } = [];
     public Talk[] TalkData { get; set; } = [];

@@ -1,5 +1,5 @@
-using System.Runtime.CompilerServices;
 using System.Net;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using SekaiDataFetch.Source;
 using SekaiToolsBase;
@@ -15,12 +15,30 @@ public class Fetcher : IDisposable
     private ClientEntry? _client;
     private bool _disposed;
 
-    public Fetcher() : this(GetHttpHandler) { }
-    internal Fetcher(Func<Proxy, HttpMessageHandler> handlerFactory) => _handlerFactory = handlerFactory;
+    public Fetcher() : this(GetHttpHandler)
+    {
+    }
+
+    internal Fetcher(Func<Proxy, HttpMessageHandler> handlerFactory)
+    {
+        _handlerFactory = handlerFactory;
+    }
+
     public SourceList SourceList => SourceList.Instance;
     private Proxy UserProxy { get; set; } = Proxy.None;
 
     public static Fetcher Instance { get; } = new();
+
+    public void Dispose()
+    {
+        lock (_clientLock)
+        {
+            if (_disposed) return;
+            _disposed = true;
+            Retire(_client);
+            _client = null;
+        }
+    }
 
     public void SetSource(SourceData sourceData)
     {
@@ -68,10 +86,11 @@ public class Fetcher : IDisposable
             if (_client == null || _client.Key != key)
             {
                 var next = new ClientEntry(key, new HttpClient(_handlerFactory(UserProxy))
-                { Timeout = TimeSpan.FromSeconds(10) });
+                    { Timeout = TimeSpan.FromSeconds(10) });
                 Retire(_client);
                 _client = next;
             }
+
             _client.Users++;
             return _client;
         }
@@ -93,25 +112,6 @@ public class Fetcher : IDisposable
         if (entry.Users == 0) entry.Client.Dispose();
     }
 
-    public void Dispose()
-    {
-        lock (_clientLock)
-        {
-            if (_disposed) return;
-            _disposed = true;
-            Retire(_client);
-            _client = null;
-        }
-    }
-
-    private sealed class ClientEntry(string key, HttpClient client)
-    {
-        public string Key { get; } = key;
-        public HttpClient Client { get; } = client;
-        public int Users { get; set; }
-        public bool Retired { get; set; }
-    }
-
     public async Task<byte[]> FetchBytesAsync(string url, CancellationToken cancellationToken = default)
     {
         var entry = AcquireClient();
@@ -121,7 +121,10 @@ public class Fetcher : IDisposable
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
         }
-        finally { Release(entry); }
+        finally
+        {
+            Release(entry);
+        }
     }
 
     public async Task<string> FetchOnceAsync(string url, CancellationToken cancellationToken = default)
@@ -134,13 +137,16 @@ public class Fetcher : IDisposable
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         }
-        finally { Release(entry); }
+        finally
+        {
+            Release(entry);
+        }
     }
 
     public async Task<string> Fetch(string url, CancellationToken cancellationToken = default)
     {
         const int attempts = 3;
-        for (var attempt = 1; ; attempt++)
+        for (var attempt = 1;; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             try
@@ -148,13 +154,24 @@ public class Fetcher : IDisposable
                 return await FetchOnceAsync(url, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception error) when (attempt < attempts && !cancellationToken.IsCancellationRequested &&
-                (error is TaskCanceledException || error is HttpRequestException request &&
-                    (request.StatusCode == null || request.StatusCode is HttpStatusCode.RequestTimeout or
-                        HttpStatusCode.TooManyRequests || (int)request.StatusCode >= 500)))
+                                          (error is TaskCanceledException || (error is HttpRequestException request &&
+                                                                              (request.StatusCode == null ||
+                                                                               request.StatusCode is HttpStatusCode
+                                                                                       .RequestTimeout or
+                                                                                   HttpStatusCode.TooManyRequests ||
+                                                                               (int)request.StatusCode >= 500))))
             {
                 Logger.Log($"{GetType().Name} 请求失败，第 {attempt}/{attempts} 次，稍后重试：{error.Message}", LogLevel.Warning);
                 await Task.Delay(TimeSpan.FromMilliseconds(250 * attempt), cancellationToken).ConfigureAwait(false);
             }
         }
+    }
+
+    private sealed class ClientEntry(string key, HttpClient client)
+    {
+        public string Key { get; } = key;
+        public HttpClient Client { get; } = client;
+        public int Users { get; set; }
+        public bool Retired { get; set; }
     }
 }

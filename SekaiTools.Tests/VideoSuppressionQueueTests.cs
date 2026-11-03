@@ -1,18 +1,22 @@
 using SekaiToolsMedia;
-using Xunit;
 
 namespace SekaiTools.Tests;
 
 public class VideoSuppressionQueueTests
 {
-    private static VideoSuppressionJob Job(string name) => new(new(name, "", name + ".mp4", new()));
+    private static VideoSuppressionJob Job(string name)
+    {
+        return new VideoSuppressionJob(new VideoSuppressionOptions(name, "", name + ".mp4",
+            new X264EncodingSettings()));
+    }
 
     private static Task Finished(VideoSuppressionJob job)
     {
         var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         job.ProgressChanged += p =>
         {
-            if (p.State is VideoSuppressionState.Completed or VideoSuppressionState.Cancelled or VideoSuppressionState.Failed)
+            if (p.State is VideoSuppressionState.Completed or VideoSuppressionState.Cancelled
+                or VideoSuppressionState.Failed)
                 done.TrySetResult();
         };
         return done.Task.WaitAsync(TimeSpan.FromSeconds(10));

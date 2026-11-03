@@ -5,17 +5,20 @@ namespace SekaiTools.Tests;
 
 public class SourceCacheTests
 {
-    private static SourceData Source(string name, string template) => new()
+    private static SourceData Source(string name, string template)
     {
-        SourceName = name,
-        SourceTemplate = template,
-        StorageBaseUrl = "",
-        ActionSetTemplate = "",
-        MemberStoryTemplate = "",
-        EventStoryTemplate = "",
-        SpecialStoryTemplate = "",
-        UnitStoryTemplate = ""
-    };
+        return new SourceData
+        {
+            SourceName = name,
+            SourceTemplate = template,
+            StorageBaseUrl = "",
+            ActionSetTemplate = "",
+            MemberStoryTemplate = "",
+            EventStoryTemplate = "",
+            SpecialStoryTemplate = "",
+            UnitStoryTemplate = ""
+        };
+    }
 
     [Theory]
     [InlineData("Sekai Best")]

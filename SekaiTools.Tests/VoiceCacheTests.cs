@@ -1,6 +1,5 @@
 using System.Net;
 using SekaiDataFetch;
-using Xunit;
 
 namespace SekaiTools.Tests;
 
@@ -42,13 +41,17 @@ public class VoiceCacheTests
                 Assert.True(File.Exists(recent));
                 Assert.True(File.Exists(permanent));
             }
+
             VoiceCache.Trim(root, 0);
             Assert.False(File.Exists(active));
             Assert.False(File.Exists(recent));
             Assert.True(File.Exists(permanent));
             Assert.True(File.Exists(unrelated));
         }
-        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+        }
     }
 
     [Fact]
@@ -75,7 +78,10 @@ public class VoiceCacheTests
             Assert.False(File.Exists(path));
             Assert.True(File.Exists(permanent));
         }
-        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+        }
     }
 
     private static string Create(string root, string category, char key, int ageMinutes)
@@ -91,11 +97,13 @@ public class VoiceCacheTests
     private sealed class AudioHandler : HttpMessageHandler
     {
         public int Requests;
+
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
             Requests++;
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([1, 2, 3, 4]) });
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                { Content = new ByteArrayContent([1, 2, 3, 4]) });
         }
     }
 }

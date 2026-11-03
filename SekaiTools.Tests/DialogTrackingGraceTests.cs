@@ -79,6 +79,8 @@ public class DialogTrackingGraceTests
         Assert.True(grace.Hold(100, new Point(1, 2)));
     }
 
-    private static DialogBaseFrameSet CreateSet(double fps) =>
-        new(new DialogStoryEvent(0, "ABC", 0, "Speaker", false, true), new FrameRate(fps));
+    private static DialogBaseFrameSet CreateSet(double fps)
+    {
+        return new DialogBaseFrameSet(new DialogStoryEvent(0, "ABC", 0, "Speaker", false, true), new FrameRate(fps));
+    }
 }

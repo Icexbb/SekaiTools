@@ -25,7 +25,7 @@ public class ContentPositionHintTests
         var reference = new TemplateMatchCachePool();
         var optimized = new TemplateMatchCachePool { UseContentPositionHints = true };
         var region = new Rectangle(Point.Empty, frame.Size);
-        Point?[] positions = [new(20, 30), new(21, 31), new(170, 60), null, new(5, 8)];
+        Point?[] positions = [new Point(20, 30), new Point(21, 31), new Point(170, 60), null, new Point(5, 8)];
         for (var index = 0; index < positions.Length; index++)
         {
             frame.SetTo(new MCvScalar(12, 12, 12));
@@ -34,11 +34,14 @@ public class ContentPositionHintTests
                 using var roi = new Mat(frame, new Rectangle(point, color.Size));
                 color.CopyTo(roi);
             }
+
             context.Update(frame);
             reference.SetFrameIndex(index);
             optimized.SetFrameIndex(index);
-            var expected = Matcher.Match(context, region, template, reference, TemplateMatchCachePool.MatchUsage.DialogContent3);
-            var actual = Matcher.MatchContent(context, region, template, optimized, TemplateMatchCachePool.MatchUsage.DialogContent3, 0.8);
+            var expected = Matcher.Match(context, region, template, reference,
+                TemplateMatchCachePool.MatchUsage.DialogContent3);
+            var actual = Matcher.MatchContent(context, region, template, optimized,
+                TemplateMatchCachePool.MatchUsage.DialogContent3, 0.8);
             Assert.Equal(expected.IsMatch(0.8), actual.IsMatch(0.8));
             Assert.Equal(positions[index].HasValue, actual.IsMatch(0.8));
             if (positions[index].HasValue) Assert.Equal(expected.MaxLoc, actual.MaxLoc);

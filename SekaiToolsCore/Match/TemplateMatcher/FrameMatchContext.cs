@@ -1,7 +1,8 @@
+using System.Diagnostics;
 using System.Drawing;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using System.Diagnostics;
+using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Performance;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
@@ -11,10 +12,10 @@ namespace SekaiToolsCore.Match.TemplateMatcher;
 /// </summary>
 public sealed class FrameMatchContext : IDisposable
 {
-    private readonly Dictionary<ScaledRegion, Mat> _scaledGrayRegions = new();
-    private readonly HashSet<ScaledRegion> _validRegions = [];
     private readonly Mat _coarseResult = new();
     private readonly Mat _refinementResult = new();
+    private readonly Dictionary<ScaledRegion, Mat> _scaledGrayRegions = new();
+    private readonly HashSet<ScaledRegion> _validRegions = [];
     private long _retainedRegionBytes;
 
     public FrameMatchContext()
@@ -79,6 +80,7 @@ public sealed class FrameMatchContext : IDisposable
             _scaledGrayRegions.Add(key, scaled);
             _retainedRegionBytes += bytes;
         }
+
         var started = Metrics != null ? Stopwatch.GetTimestamp() : 0;
         CvInvoke.Resize(source, scaled, new Size(width, height), interpolation: interpolation);
         Metrics?.Record(TemplateMatchingStage.Resize, started);
@@ -86,7 +88,7 @@ public sealed class FrameMatchContext : IDisposable
         return scaled;
     }
 
-    internal void UpdatePrepared(SekaiToolsCore.Process.DecodedVideoFrame frame)
+    internal void UpdatePrepared(DecodedVideoFrame frame)
     {
         if (_retainedRegionBytes > 16L * 1024 * 1024) ClearScaledRegions();
         _validRegions.Clear();
@@ -99,13 +101,7 @@ public sealed class FrameMatchContext : IDisposable
         var bytes = Math.Max(0L, (long)image.Width - template.Width + 1)
                     * Math.Max(0L, (long)image.Height - template.Height + 1) * sizeof(float);
         var retain = bytes <= 8L * 1024 * 1024;
-        return new MatchResultLease(retain ? (refinement ? _refinementResult : _coarseResult) : new Mat(), !retain);
-    }
-
-    internal readonly struct MatchResultLease(Mat image, bool owned) : IDisposable
-    {
-        internal Mat Image { get; } = image;
-        public void Dispose() { if (owned) Image.Dispose(); }
+        return new MatchResultLease(retain ? refinement ? _refinementResult : _coarseResult : new Mat(), !retain);
     }
 
     private void ClearScaledRegions()
@@ -115,6 +111,16 @@ public sealed class FrameMatchContext : IDisposable
         _scaledGrayRegions.Clear();
         _validRegions.Clear();
         _retainedRegionBytes = 0;
+    }
+
+    internal readonly struct MatchResultLease(Mat image, bool owned) : IDisposable
+    {
+        internal Mat Image { get; } = image;
+
+        public void Dispose()
+        {
+            if (owned) Image.Dispose();
+        }
     }
 
     private readonly record struct ScaledRegion(Rectangle Region, int Divisor, Inter Interpolation);

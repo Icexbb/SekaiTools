@@ -32,59 +32,95 @@
                 <StackPanel>
                     <DockPanel LastChildFill="True">
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0">
-                            <ui:Button x:Name="SaveButton" Content="保存" Icon="{ui:SymbolIcon Save24}" Click="SaveButton_OnClick" Appearance="Primary" IsEnabled="{c:Binding 'Events.Length!=0'}" Margin="0,0,8,8" />
-                            <ui:Button Content="另存为…" Icon="{ui:SymbolIcon SaveCopy24}" Click="SaveAsButton_OnClick" ToolTip="另存为 (Ctrl+Shift+S)"
-                                IsEnabled="{c:Binding 'Events.Length!=0'}" Margin="0,0,8,8" />
+                            <ui:Button x:Name="SaveButton" Content="保存" Icon="{ui:SymbolIcon Save24}"
+                                       Click="SaveButton_OnClick" Appearance="Primary"
+                                       IsEnabled="{c:Binding 'Events.Length!=0'}" Margin="0,0,8,8" />
+                            <ui:Button Content="另存为…" Icon="{ui:SymbolIcon SaveCopy24}" Click="SaveAsButton_OnClick"
+                                       ToolTip="另存为 (Ctrl+Shift+S)"
+                                       IsEnabled="{c:Binding 'Events.Length!=0'}" Margin="0,0,8,8" />
                         </StackPanel>
                         <WrapPanel>
-                            <ui:Button x:Name="LoadScriptButton" Content="载入剧本" Click="LoadFileButton_OnClick" Margin="0,0,8,8" />
-                            <ui:Button x:Name="LoadTranslationButton" Content="载入译文" Click="LoadTranslationButton_OnClick" Margin="0,0,8,8"
-                                Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}" />
-                            <ui:Button x:Name="ReferenceTranslationButton" Content="载入参考" Click="LoadReviewButton_OnClick" Margin="0,0,8,8"
-                                Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}" />
-                            <ui:Button Icon="{ui:SymbolIcon ArrowDownload24}" Click="OpenDownloadPageButton_OnClick" Margin="0,0,8,8" ToolTip="前往数据下载" AutomationProperties.Name="前往数据下载" />
+                            <ui:Button x:Name="LoadScriptButton" Content="载入剧本" Click="LoadFileButton_OnClick"
+                                       Margin="0,0,8,8" />
+                            <ui:Button x:Name="LoadTranslationButton" Content="载入译文"
+                                       Click="LoadTranslationButton_OnClick" Margin="0,0,8,8"
+                                       Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}" />
+                            <ui:Button x:Name="ReferenceTranslationButton" Content="载入参考"
+                                       Click="LoadReviewButton_OnClick" Margin="0,0,8,8"
+                                       Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}" />
+                            <ui:Button Icon="{ui:SymbolIcon ArrowDownload24}" Click="OpenDownloadPageButton_OnClick"
+                                       Margin="0,0,8,8" ToolTip="前往数据下载" AutomationProperties.Name="前往数据下载" />
                         </WrapPanel>
                     </DockPanel>
-                    <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Padding="0,10,0,0" Margin="0,2,0,0">
+                    <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                            Padding="0,10,0,0" Margin="0,2,0,0">
                         <DockPanel LastChildFill="True">
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0">
-                                <control:Popover x:Name="SpecialCharPopover" Padding="0" StaysOpen="False" Margin="0,0,8,8"
-                                    Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}">
-                                    <control:Popover.Target><ui:Button Click="SpecialCharButton_OnClick" Icon="{ui:SymbolIcon Copy24}" ToolTip="复制特殊字符" AutomationProperties.Name="复制特殊字符" /></control:Popover.Target>
-                                    <control:Popover.Content><components:TranslateFastCopy Width="240" MaxHeight="420" CustomCharacterAdding="SpecialCharacters_OnCustomCharacterAdding" /></control:Popover.Content>
+                                <control:Popover x:Name="SpecialCharPopover" Padding="0" StaysOpen="False"
+                                                 Margin="0,0,8,8"
+                                                 Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}">
+                                    <control:Popover.Target>
+                                        <ui:Button Click="SpecialCharButton_OnClick" Icon="{ui:SymbolIcon Copy24}"
+                                                   ToolTip="复制特殊字符" AutomationProperties.Name="复制特殊字符" />
+                                    </control:Popover.Target>
+                                    <control:Popover.Content>
+                                        <components:TranslateFastCopy Width="240" MaxHeight="420"
+                                                                      CustomCharacterAdding="SpecialCharacters_OnCustomCharacterAdding" />
+                                    </control:Popover.Content>
                                 </control:Popover>
-                                <ui:Button Margin="0,0,8,8" Click="UndoButton_OnClick" IsEnabled="{Binding CanUndo}" ToolTip="撤销 (Ctrl+Z)" AutomationProperties.Name="撤销">
+                                <ui:Button Margin="0,0,8,8" Click="UndoButton_OnClick" IsEnabled="{Binding CanUndo}"
+                                           ToolTip="撤销 (Ctrl+Z)" AutomationProperties.Name="撤销">
                                     <ui:SymbolIcon Symbol="ArrowUndo24" />
                                 </ui:Button>
-                                <ui:Button Margin="0,0,8,8" Click="RedoButton_OnClick" IsEnabled="{Binding CanRedo}" ToolTip="重做 (Ctrl+Y / Ctrl+Shift+Z)" AutomationProperties.Name="重做">
+                                <ui:Button Margin="0,0,8,8" Click="RedoButton_OnClick" IsEnabled="{Binding CanRedo}"
+                                           ToolTip="重做 (Ctrl+Y / Ctrl+Shift+Z)" AutomationProperties.Name="重做">
                                     <ui:SymbolIcon Symbol="ArrowRedo24" />
                                 </ui:Button>
-                                <ui:Button x:Name="ResetButton" Icon="{ui:SymbolIcon Delete24}" ToolTip="清除…" AutomationProperties.Name="清除" Click="OpenClearMenu_OnClick" IsEnabled="{Binding HasScript}" Margin="0,0,8,8">
+                                <ui:Button x:Name="ResetButton" Icon="{ui:SymbolIcon Delete24}" ToolTip="清除…"
+                                           AutomationProperties.Name="清除" Click="OpenClearMenu_OnClick"
+                                           IsEnabled="{Binding HasScript}" Margin="0,0,8,8">
                                     <ui:Button.ContextMenu>
                                         <ContextMenu>
                                             <MenuItem Header="清除当前译文（保留剧本和参考）" Click="ClearTranslation_OnClick" />
-                                            <MenuItem Header="移除参考翻译" Click="ClearReference_OnClick" IsEnabled="{Binding HasReferenceTranslation}" />
+                                            <MenuItem Header="移除参考翻译" Click="ClearReference_OnClick"
+                                                      IsEnabled="{Binding HasReferenceTranslation}" />
                                             <Separator />
                                             <MenuItem Header="清除整个工作区" Click="ResetButton_OnClick" />
                                         </ContextMenu>
                                     </ui:Button.ContextMenu>
                                 </ui:Button>
-                                <ui:Button Icon="{ui:SymbolIcon FolderOpen24}" Click="OpenSavedLocation_OnClick" Margin="0,0,0,8"
-                                    ToolTip="打开保存位置" AutomationProperties.Name="打开保存位置" Visibility="{c:Binding HasTranslation,FalseToVisibility=Collapsed}" />
+                                <ui:Button Icon="{ui:SymbolIcon FolderOpen24}" Click="OpenSavedLocation_OnClick"
+                                           Margin="0,0,0,8"
+                                           ToolTip="打开保存位置" AutomationProperties.Name="打开保存位置"
+                                           Visibility="{c:Binding HasTranslation,FalseToVisibility=Collapsed}" />
                             </StackPanel>
                             <Grid VerticalAlignment="Center" Margin="0,0,0,8">
-                                <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Margin="0,0,12,0" Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}">
-                                    <TextBlock Text="剧本" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3" />
-                                    <TextBlock x:Name="TextBlockScriptFile" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition /><ColumnDefinition /><ColumnDefinition />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,12,0"
+                                            Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}">
+                                    <TextBlock Text="剧本" FontSize="11"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Margin="0,0,0,3" />
+                                    <TextBlock x:Name="TextBlockScriptFile" FontSize="12"
+                                               TextTrimming="CharacterEllipsis" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="1" Margin="0,0,12,0" Visibility="{c:Binding HasTranslation,FalseToVisibility=Collapsed}">
-                                    <TextBlock Text="译文" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3" />
-                                    <TextBlock x:Name="TextBlockTranslation" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                <StackPanel Grid.Column="1" Margin="0,0,12,0"
+                                            Visibility="{c:Binding HasTranslation,FalseToVisibility=Collapsed}">
+                                    <TextBlock Text="译文" FontSize="11"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Margin="0,0,0,3" />
+                                    <TextBlock x:Name="TextBlockTranslation" FontSize="12"
+                                               TextTrimming="CharacterEllipsis" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="2" Margin="0,0,12,0" Visibility="{c:Binding HasReferenceTranslation,FalseToVisibility=Collapsed}">
-                                    <TextBlock Text="参考" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3" />
-                                    <TextBlock x:Name="TextBlockTranslationReference" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                <StackPanel Grid.Column="2" Margin="0,0,12,0"
+                                            Visibility="{c:Binding HasReferenceTranslation,FalseToVisibility=Collapsed}">
+                                    <TextBlock Text="参考" FontSize="11"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Margin="0,0,0,3" />
+                                    <TextBlock x:Name="TextBlockTranslationReference" FontSize="12"
+                                               TextTrimming="CharacterEllipsis" />
                                 </StackPanel>
                             </Grid>
                         </DockPanel>
@@ -105,20 +141,25 @@
                             <ui:TextBox x:Name="SearchBox" Margin="0,0,10,0" PlaceholderText="搜索原文、译文、角色或编号"
                                         Icon="{ui:SymbolIcon Search24}" AutomationProperties.Name="搜索翻译条目"
                                         Text="{Binding SearchText,UpdateSourceTrigger=PropertyChanged}" />
-                            <ComboBox Grid.Column="1" Margin="0,0,10,0" SelectedIndex="{Binding TypeFilterIndex}" AutomationProperties.Name="条目类型">
+                            <ComboBox Grid.Column="1" Margin="0,0,10,0" SelectedIndex="{Binding TypeFilterIndex}"
+                                      AutomationProperties.Name="条目类型">
                                 <ComboBoxItem Content="全部类型" />
                                 <ComboBoxItem Content="对话" />
                                 <ComboBoxItem Content="地点" />
                             </ComboBox>
-                            <ComboBox Grid.Column="2" SelectedIndex="{Binding FilterIndex}" AutomationProperties.Name="条目筛选">
+                            <ComboBox Grid.Column="2" SelectedIndex="{Binding FilterIndex}"
+                                      AutomationProperties.Name="条目筛选">
                                 <ComboBoxItem Content="全部条目" />
                                 <ComboBoxItem Content="仅看未译" />
                                 <ComboBoxItem Content="仅看有提示" />
                                 <ComboBoxItem Content="仅看闪回" />
                             </ComboBox>
                             <StackPanel Grid.Column="3" Orientation="Horizontal">
-                                <ui:Button Content="下一未译" Icon="{ui:SymbolIcon ArrowRight28}" Click="NextUntranslated_OnClick" Margin="10,0,0,0" ToolTip="下一未译 (Ctrl+Enter)" />
-                                <ui:Button Content="下一提示" Icon="{ui:SymbolIcon Warning28}" Click="NextWarning_OnClick" Margin="10,0,0,0" />
+                                <ui:Button Content="下一未译" Icon="{ui:SymbolIcon ArrowRight28}"
+                                           Click="NextUntranslated_OnClick" Margin="10,0,0,0"
+                                           ToolTip="下一未译 (Ctrl+Enter)" />
+                                <ui:Button Content="下一提示" Icon="{ui:SymbolIcon Warning28}" Click="NextWarning_OnClick"
+                                           Margin="10,0,0,0" />
                             </StackPanel>
                         </Grid>
                         <Border Margin="0,10,0,0" Padding="0,10,0,0" BorderThickness="0,1,0,0"
@@ -130,33 +171,53 @@
                                 </Grid.ColumnDefinitions>
                                 <WrapPanel Grid.Column="0" VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal" Margin="0,3,20,3">
-                                        <TextBlock Text="显示" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,6,0" />
-                                        <TextBlock Text="{Binding VisibleEvents.Length}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <TextBlock Text="显示" FontSize="12" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                   Margin="0,0,6,0" />
+                                        <TextBlock Text="{Binding VisibleEvents.Length}" FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,3,20,3">
-                                        <TextBlock Text="总条目" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,6,0" />
-                                        <TextBlock Text="{Binding Events.Length}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <TextBlock Text="总条目" FontSize="12" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                   Margin="0,0,6,0" />
+                                        <TextBlock Text="{Binding Events.Length}" FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,3,20,3">
-                                        <TextBlock Text="未译" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,6,0" />
-                                        <TextBlock Text="{Binding UntranslatedCount}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <TextBlock Text="未译" FontSize="12" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                   Margin="0,0,6,0" />
+                                        <TextBlock Text="{Binding UntranslatedCount}" FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,3,20,3">
-                                        <TextBlock Text="留空" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,6,0" />
-                                        <TextBlock Text="{Binding ExplicitEmptyCount}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <TextBlock Text="留空" FontSize="12" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                   Margin="0,0,6,0" />
+                                        <TextBlock Text="{Binding ExplicitEmptyCount}" FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,3,20,3">
-                                        <TextBlock Text="提示" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,6,0" />
-                                        <TextBlock Text="{Binding WarningCount}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <TextBlock Text="提示" FontSize="12" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                   Margin="0,0,6,0" />
+                                        <TextBlock Text="{Binding WarningCount}" FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" />
                                     </StackPanel>
                                 </WrapPanel>
-                                <WrapPanel x:Name="EditorOptionsPanel" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                    <CheckBox Content="显示参考译文" IsChecked="{Binding ShowReference}" VerticalAlignment="Center" MinHeight="32" Margin="16,0,0,0" />
-                                    <CheckBox Content="同步相同场景文字" IsChecked="{Binding SyncMatchingContent}" Margin="16,0,0,0" VerticalAlignment="Center" MinHeight="32"
+                                <WrapPanel x:Name="EditorOptionsPanel" Grid.Column="1" HorizontalAlignment="Right"
+                                           VerticalAlignment="Center">
+                                    <CheckBox Content="显示参考译文" IsChecked="{Binding ShowReference}"
+                                              VerticalAlignment="Center" MinHeight="32" Margin="16,0,0,0" />
+                                    <CheckBox Content="同步相同场景文字" IsChecked="{Binding SyncMatchingContent}"
+                                              Margin="16,0,0,0" VerticalAlignment="Center" MinHeight="32"
                                               ToolTip="项目级开关：后续编辑会同步整个剧本中原文相同的场景文字；开启时不会立即覆盖现有译文。" />
-                                    <CheckBox Content="同步相同说话人译名" IsChecked="{Binding SyncMatchingSpeakers}" Margin="16,0,0,0" VerticalAlignment="Center" MinHeight="32"
+                                    <CheckBox Content="同步相同说话人译名" IsChecked="{Binding SyncMatchingSpeakers}"
+                                              Margin="16,0,0,0" VerticalAlignment="Center" MinHeight="32"
                                               ToolTip="项目级开关：后续修改说话人译名时，同步整个剧本中原名相同的说话人，不修改对话正文。" />
-                                    <CheckBox Content="自动规范标点和用词" IsChecked="{Binding AutoFormat}" VerticalAlignment="Center" MinHeight="32" Margin="16,0,0,0"
+                                    <CheckBox Content="自动规范标点和用词" IsChecked="{Binding AutoFormat}"
+                                              VerticalAlignment="Center" MinHeight="32" Margin="16,0,0,0"
                                               ToolTip="离开编辑框后规范标点和用词（如半角标点转全角、欸转诶）。关闭可保留输入写法。" />
                                 </WrapPanel>
                             </Grid>
@@ -169,7 +230,8 @@
                         <TextBlock Text="文件未载入，当前编辑内容已保留" FontWeight="SemiBold" />
                         <TextBlock x:Name="ImportErrorText" TextWrapping="Wrap" Margin="0,4" />
                         <WrapPanel>
-                            <ui:Button Content="复制错误详情" Icon="{ui:SymbolIcon Copy24}" Click="CopyImportError_OnClick" Margin="0,0,8,0" />
+                            <ui:Button Content="复制错误详情" Icon="{ui:SymbolIcon Copy24}" Click="CopyImportError_OnClick"
+                                       Margin="0,0,8,0" />
                             <ui:Button Content="关闭提示" Click="DismissImportError_OnClick" />
                         </WrapPanel>
                     </StackPanel>
@@ -231,7 +293,8 @@
                 </ListView.ItemContainerStyle>
             </ListView>
             <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="没有符合条件的条目，请更改搜索或筛选条件。"
-                       HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" IsHitTestVisible="False"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"
+                       IsHitTestVisible="False"
                        Visibility="{c:Binding 'HasScript and VisibleEvents.Length==0',FalseToVisibility=Collapsed}" />
         </Grid>
         <Grid x:Name="DropOverlay" Visibility="Collapsed" IsHitTestVisible="False"

@@ -43,7 +43,10 @@ internal sealed class AdaptiveSearchScheduler(int searchInterval = 2) : IDisposa
         ClearPrevious();
     }
 
-    public AdaptiveSearchStateDto CaptureState() => new(_lastSampleFrameIndex, _previousSkippedFrameIndex);
+    public AdaptiveSearchStateDto CaptureState()
+    {
+        return new AdaptiveSearchStateDto(_lastSampleFrameIndex, _previousSkippedFrameIndex);
+    }
 
     public void RestoreState(AdaptiveSearchStateDto? state)
     {

@@ -1,5 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using SekaiDataFetch.Source;
 using SekaiToolsBase;
 
@@ -40,6 +42,8 @@ public abstract class BaseListStory
         }
     }
 
+    protected static string CacheDirectory => GetCacheDirectory(Fetcher.SourceList.SourceData);
+
     public void SetSource(SourceData sourceData)
     {
         Fetcher.SetSource(sourceData);
@@ -64,7 +68,9 @@ public abstract class BaseListStory
         var invalidCharacters = Path.GetInvalidFileNameChars();
         var name = new string(source.SourceName.Select(character =>
             char.IsControl(character) || invalidCharacters.Contains(character) ||
-            "<>:\"/\\|?*".Contains(character) ? '_' : character).ToArray()).Trim().TrimEnd('.');
+            "<>:\"/\\|?*".Contains(character)
+                ? '_'
+                : character).ToArray()).Trim().TrimEnd('.');
         if (name.Length == 0) name = "未命名数据源";
 
         // Windows reserves device names even when they have an extension.
@@ -73,16 +79,17 @@ public abstract class BaseListStory
             stem.Equals("PRN", StringComparison.OrdinalIgnoreCase) ||
             stem.Equals("AUX", StringComparison.OrdinalIgnoreCase) ||
             stem.Equals("NUL", StringComparison.OrdinalIgnoreCase) ||
-            System.Text.RegularExpressions.Regex.IsMatch(stem, @"^(COM|LPT)[1-9¹²³]$",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            Regex.IsMatch(stem, @"^(COM|LPT)[1-9¹²³]$",
+                RegexOptions.IgnoreCase))
             name = "_" + name;
 
         return Path.Combine(DataBaseDir, "Data", "cache", name);
     }
 
-    protected static string CacheDirectory => GetCacheDirectory(Fetcher.SourceList.SourceData);
-
-    public void ReloadFromCache() => Load();
+    public void ReloadFromCache()
+    {
+        Load();
+    }
 
     protected abstract void Load();
 
@@ -117,6 +124,7 @@ public abstract class BaseListStory
         var progressLock = new object();
         var completed = new HashSet<string>();
         var unavailable = new HashSet<string>();
+
         void Report(ListRefreshStage stage, string? completedKey = null, bool failed = false)
         {
             if (progress == null) return;
@@ -127,8 +135,10 @@ public abstract class BaseListStory
                     if (failed) unavailable.Add(completedKey);
                     else completed.Add(completedKey);
                 }
+
                 progress.Report(new ListRefreshProgress(stage, keys.Select(key =>
-                    new ListRefreshFileProgress(Path.GetFileName(cacheFields[key]!), completed.Contains(key), unavailable.Contains(key)))
+                        new ListRefreshFileProgress(Path.GetFileName(cacheFields[key]!), completed.Contains(key),
+                            unavailable.Contains(key)))
                     .ToArray()));
             }
         }
@@ -147,12 +157,13 @@ public abstract class BaseListStory
                     return (CachePath: cachePath, Content: (string?)content);
                 }
                 catch (Exception exception) when (optionalKeys.Contains(key) &&
-                    exception is HttpRequestException or TaskCanceledException or JsonException)
+                                                  exception is HttpRequestException or TaskCanceledException
+                                                      or JsonException)
                 {
                     Logger.Log($"{type.Name} optional data {key} unavailable: {exception.Message}",
-                        Microsoft.Extensions.Logging.LogLevel.Warning);
+                        LogLevel.Warning);
                     Report(ListRefreshStage.Downloading, key, true);
-                    return (CachePath: cachePath, Content: (string?)null);
+                    return (CachePath: cachePath, Content: null);
                 }
             }).ToArray();
 
@@ -166,6 +177,7 @@ public abstract class BaseListStory
                 if (File.Exists(cachePath)) File.Delete(cachePath);
                 continue;
             }
+
             var directory = Path.GetDirectoryName(cachePath)
                             ?? throw new InvalidDataException($"缓存路径无效: {cachePath}");
             Directory.CreateDirectory(directory);

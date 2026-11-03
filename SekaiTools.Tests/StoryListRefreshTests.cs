@@ -44,11 +44,11 @@ public class StoryListRefreshTests
         void Reload(int id, int characterId)
         {
             InvokeGetData(list, new[]
-            {
-                new ActionSet { Id = id, AreaId = id, ScenarioId = "story", CharacterIds = [10] },
-                new ActionSet { Id = 99, AreaId = id },
-                new ActionSet { Id = 100, AreaId = -1, ScenarioId = "missing-area" }
-            }, new[] { new Area { Id = id } },
+                {
+                    new ActionSet { Id = id, AreaId = id, ScenarioId = "story", CharacterIds = [10] },
+                    new ActionSet { Id = 99, AreaId = id },
+                    new ActionSet { Id = 100, AreaId = -1, ScenarioId = "missing-area" }
+                }, new[] { new Area { Id = id } },
                 new[] { new Character2d { Id = 10, CharacterId = characterId } });
         }
 
@@ -83,11 +83,15 @@ public class StoryListRefreshTests
             new ActionSet { Id = 70, AreaId = 1, ScenarioId = "last", ActionSetType = "normal" }
         };
 
-        void Reload() => InvokeGetData(list, actions, new[] { new Area { Id = 1 } }, Array.Empty<Character2d>());
+        void Reload()
+        {
+            InvokeGetData(list, actions, new[] { new Area { Id = 1 } }, Array.Empty<Character2d>());
+        }
+
         Reload();
         Reload();
 
-        Assert.Equal(new string?[] { null, "0002", "S0002", "0003", null, "0004" },
+        Assert.Equal(new[] { null, "0002", "S0002", "0003", null, "0004" },
             list.Data.Select(story => story.TalkId));
         Assert.Equal(new[] { 2, 20, 40, 50, 60, 70 }, list.Data.Select(story => story.ActionSet.Id));
         Assert.Equal("S0002", ((AreaStorySet)list.Data[2].Clone()).TalkId);

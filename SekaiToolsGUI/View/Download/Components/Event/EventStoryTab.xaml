@@ -80,10 +80,10 @@
         </StackPanel>
 
         <ui:ListView Grid.Row="1" ItemsSource="{Binding EventStories}"
-                  BorderBrush="Transparent" Background="Transparent"
-                  ScrollViewer.CanContentScroll="True"
-                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                  VirtualizingStackPanel.ScrollUnit="Pixel">
+                     BorderBrush="Transparent" Background="Transparent"
+                     ScrollViewer.CanContentScroll="True"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     VirtualizingStackPanel.ScrollUnit="Pixel">
             <ui:ListView.ItemTemplate>
                 <DataTemplate>
                     <event:EventStoryEvent EventStorySet="{Binding}"

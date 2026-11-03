@@ -9,6 +9,7 @@ namespace SekaiToolsGUI.View.Suppress;
 public partial class SuppressPage
 {
     private static bool _shuttingDown;
+
     private static readonly VideoSuppressionQueue Queue = new(async (options, report, token) =>
     {
         using var powerRequest = SystemPowerRequest.Acquire("SekaiTools 正在压制视频");

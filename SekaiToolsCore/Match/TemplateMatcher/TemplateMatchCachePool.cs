@@ -1,9 +1,9 @@
 using System.Drawing;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
+using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Process.Performance;
-using SekaiToolsCore.Process;
 
 namespace SekaiToolsCore.Match.TemplateMatcher;
 
@@ -13,8 +13,6 @@ namespace SekaiToolsCore.Match.TemplateMatcher;
 /// </summary>
 public sealed class TemplateMatchCachePool
 {
-    public TemplateMatchingMetrics Metrics { get; internal init; } = new();
-    internal bool UseContentPositionHints { get; init; }
     public enum MatchUsage
     {
         ContentStartSign = 0,
@@ -36,6 +34,8 @@ public sealed class TemplateMatchCachePool
             .ToArray();
 
     private int _currentFrameIndex = -1;
+    public TemplateMatchingMetrics Metrics { get; internal init; } = new();
+    internal bool UseContentPositionHints { get; init; }
 
     public void SetFrameIndex(int frameIndex)
     {
@@ -92,18 +92,21 @@ public sealed class TemplateMatchCachePool
         _scaleCalibrations[(int)usage].Observe(scale, score);
     }
 
-    internal bool TryRecoverScale(MatchUsage usage, double scale, double score, double threshold) =>
-        _scaleCalibrations[(int)usage].TryRecover(scale, score, threshold);
+    internal bool TryRecoverScale(MatchUsage usage, double scale, double score, double threshold)
+    {
+        return _scaleCalibrations[(int)usage].TryRecover(scale, score, threshold);
+    }
 
     internal bool TryGetContentPosition(MatchUsage usage, Rectangle region, GaMat template,
         double scale, out Point position)
     {
         var previous = _entries[(int)usage];
         position = previous.Result.MaxLoc;
-        return UseContentPositionHints && usage is MatchUsage.DialogContent1 or MatchUsage.DialogContent2 or MatchUsage.DialogContent3
-            && previous.FrameIndex == _currentFrameIndex - 1 && previous.Region == region
-            && ReferenceEquals(previous.Template, template) && previous.Result.Scale == scale
-            && previous.Result.IsMatch(0.85);
+        return UseContentPositionHints && usage is MatchUsage.DialogContent1 or MatchUsage.DialogContent2
+                                           or MatchUsage.DialogContent3
+                                       && previous.FrameIndex == _currentFrameIndex - 1 && previous.Region == region
+                                       && ReferenceEquals(previous.Template, template) && previous.Result.Scale == scale
+                                       && previous.Result.IsMatch(0.85);
     }
 
     public void NextDialog()
@@ -122,8 +125,10 @@ public sealed class TemplateMatchCachePool
         _currentFrameIndex = -1;
     }
 
-    internal List<TemplateScaleStateDto> CaptureScaleState() =>
-        _scaleCalibrations.Select((calibration, usage) => calibration.CaptureState(usage)).ToList();
+    internal List<TemplateScaleStateDto> CaptureScaleState()
+    {
+        return _scaleCalibrations.Select((calibration, usage) => calibration.CaptureState(usage)).ToList();
+    }
 
     internal void RestoreScaleState(IReadOnlyList<TemplateScaleStateDto>? states)
     {
@@ -135,9 +140,11 @@ public sealed class TemplateMatchCachePool
                 throw new InvalidDataException("Invalid template scale usages in checkpoint");
             foreach (var state in states) TemplateScaleCalibration.ValidateState(state);
         }
+
         ResetAll();
         if (states != null)
-            foreach (var state in states) _scaleCalibrations[state.Usage].RestoreState(state);
+            foreach (var state in states)
+                _scaleCalibrations[state.Usage].RestoreState(state);
     }
 
     private void Reset(MatchUsage usage)
@@ -151,5 +158,6 @@ public sealed class TemplateMatchCachePool
         Rectangle Region,
         GaMat? Template,
         TemplateMatchingType MatchingType,
-        TemplateMatchResult Result, double? AcceptanceThreshold);
+        TemplateMatchResult Result,
+        double? AcceptanceThreshold);
 }

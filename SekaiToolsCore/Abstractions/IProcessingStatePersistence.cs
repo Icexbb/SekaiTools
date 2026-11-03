@@ -15,4 +15,6 @@ public interface IProcessingStatePersistence
 }
 
 /// <summary>Accepts immutable timecode blocks in processing-time checkpoint snapshots.</summary>
-public interface IIncrementalCheckpointPersistence : IProcessingStatePersistence { }
+public interface IIncrementalCheckpointPersistence : IProcessingStatePersistence
+{
+}

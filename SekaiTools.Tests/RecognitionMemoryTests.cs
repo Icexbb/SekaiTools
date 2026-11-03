@@ -2,6 +2,8 @@ using System.Drawing;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using SekaiToolsBase.Story;
+using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsCore.Abstractions;
 using SekaiToolsCore.Match.TemplateMatcher;
 using SekaiToolsCore.Process;
@@ -21,9 +23,9 @@ public class RecognitionMemoryTests
         using var expectedManager = new TemplateManager(size, fonts);
         using var stop = new CancellationTokenSource();
         using var preloader = new TemplatePreloader(manager, new TemplateManager(size, fonts), manager.GetFontSize(),
-            [new SekaiToolsBase.Story.StoryEvent.DialogStoryEvent(0, "ABCDE", 1, "ABCD", false, false)],
-            [new SekaiToolsBase.Story.StoryEvent.BannerStoryEvent("Hi", 0)],
-            [new SekaiToolsBase.Story.StoryEvent.MarkerStoryEvent("MV", 0)], stop.Token);
+            [new DialogStoryEvent(0, "ABCDE", 1, "ABCD", false, false)],
+            [new BannerStoryEvent("Hi", 0)],
+            [new MarkerStoryEvent("MV", 0)], stop.Token);
         preloader.Request(0, 0, 0);
         // Foreground demand may race with publishing the same template.
         var foreground = Task.Run(() => manager.GetMatchTemplate(TemplateUsage.DialogContent, "A"));
@@ -33,6 +35,7 @@ public class RecognitionMemoryTests
             Assert.True(DateTime.UtcNow < deadline, "Preloader did not publish");
             await Task.Delay(10);
         }
+
         preloader.Dispose();
         var banner = manager.GetMatchTemplate(TemplateUsage.BannerContent, "Hi");
         var expectedBanner = expectedManager.GetMatchTemplate(TemplateUsage.BannerContent, "Hi");
@@ -46,6 +49,7 @@ public class RecognitionMemoryTests
             Assert.Equal(0d, CvInvoke.Norm(expected.Gray, actual.Gray, NormType.L1));
             Assert.Equal(0d, CvInvoke.Norm(expected.Alpha, actual.Alpha, NormType.L1));
         }
+
         using var source = expectedManager.CreateTemplate(TemplateUsage.MarkerContent, "MV");
         using var resized = new Mat();
         CvInvoke.Resize(source, resized, new Size((int)(source.Width * 0.9), (int)(source.Height * 0.9)));
@@ -76,13 +80,16 @@ public class RecognitionMemoryTests
         var path = Path.Combine(Path.GetTempPath(), $"SekaiTools-dialog-{Guid.NewGuid():N}.avi");
         try
         {
-            using (var writer = new VideoWriter(path, VideoWriter.Fourcc('M', 'J', 'P', 'G'), 30, new Size(160, 90), true))
+            using (var writer =
+                   new VideoWriter(path, VideoWriter.Fourcc('M', 'J', 'P', 'G'), 30, new Size(160, 90), true))
             using (var image = new Mat(90, 160, DepthType.Cv8U, 3))
             {
                 image.SetTo(new MCvScalar(20));
                 writer.Write(image);
             }
-            using var matcher = new DialogTemplateMatcher(new VideoInfo(path), new SekaiToolsBase.Story.Story(), manager, new TemplateMatchCachePool(), null!);
+
+            using var matcher = new DialogTemplateMatcher(new VideoInfo(path), new Story(), manager,
+                new TemplateMatchCachePool(), null!);
             var templates = matcher.GetContentTemplates("Recognition");
             var again = matcher.GetContentTemplates("Recognition");
             Assert.Same(templates.First, again.First);
@@ -93,7 +100,10 @@ public class RecognitionMemoryTests
             matcher.Dispose();
             Assert.NotEqual(IntPtr.Zero, templates.First.Gray.Ptr);
         }
-        finally { File.Delete(path); }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Theory]
@@ -101,7 +111,8 @@ public class RecognitionMemoryTests
     [InlineData(1920, 1080, 960, 540)]
     [InlineData(1080, 1920, 304, 540)]
     [InlineData(320, 180, 320, 180)]
-    public void PreviewIsBoundedAndIndependentOfRecognitionFrame(int width, int height, int expectedWidth, int expectedHeight)
+    public void PreviewIsBoundedAndIndependentOfRecognitionFrame(int width, int height, int expectedWidth,
+        int expectedHeight)
     {
         using var source = new Mat(height, width, DepthType.Cv8U, 3);
         source.SetTo(new MCvScalar(30, 80, 120));
@@ -147,8 +158,14 @@ public class RecognitionMemoryTests
             File.WriteAllBytes(_path, bytes);
         }
 
-        public string GetVideoProcessResourcePath(string fileName) => _path;
-        public void Dispose() => File.Delete(_path);
+        public void Dispose()
+        {
+            File.Delete(_path);
+        }
+
+        public string GetVideoProcessResourcePath(string fileName)
+        {
+            return _path;
+        }
     }
 }
-

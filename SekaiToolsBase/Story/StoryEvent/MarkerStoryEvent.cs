@@ -5,7 +5,8 @@ public class MarkerStoryEvent(string bodyOriginal, int index, int storyIndex = -
 {
     public override object Clone()
     {
-        var cloned = new MarkerStoryEvent(BodyOriginal, Index, StoryIndex) { BodyTranslated = BodyTranslated, HasExplicitTranslation = HasExplicitTranslation };
+        var cloned = new MarkerStoryEvent(BodyOriginal, Index, StoryIndex)
+            { BodyTranslated = BodyTranslated, HasExplicitTranslation = HasExplicitTranslation };
         return cloned;
     }
 }

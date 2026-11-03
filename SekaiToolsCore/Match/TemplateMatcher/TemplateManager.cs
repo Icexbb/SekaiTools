@@ -24,9 +24,9 @@ public class TemplateManager(
     private const string MenuSignBase = "menu-107px.png";
     private const string DbFontBase = "FOT-RodinNTLGPro-DB.otf";
     private const string EbFontBase = "FOT-RodinNTLGPro-EB.otf";
-    private readonly Dictionary<TemplateUsage, Dictionary<string, GaMat>?> _matchTemplate = new();
-    private readonly object _matchLock = new();
     private readonly Dictionary<string, GaMat> _markerTemplates = new(StringComparer.Ordinal);
+    private readonly object _matchLock = new();
+    private readonly Dictionary<TemplateUsage, Dictionary<string, GaMat>?> _matchTemplate = new();
 
     private readonly Dictionary<TemplateUsage, Dictionary<string, Mat>?> _template = new();
     private SKTypeface? _dbTypeface;
@@ -240,7 +240,9 @@ public class TemplateManager(
         const int bannerGrayScale = 80;
         using (var contentRegion = new Mat(expandedMat,
                    new Rectangle(extendPixel, extendPixel, cropped.Width, cropped.Height)))
+        {
             cropped.CopyTo(contentRegion);
+        }
 
         using var bgMat = new Mat(expandedMat.Size, expandedMat.Depth, expandedMat.NumberOfChannels);
         bgMat.SetTo(new MCvScalar(bannerGrayScale, bannerGrayScale, bannerGrayScale, 255));
@@ -263,7 +265,10 @@ public class TemplateManager(
     public GaMat GetMatchTemplate(TemplateUsage usage, string text)
     {
         lock (_matchLock)
+        {
             if (_matchTemplate.GetValueOrDefault(usage)?.TryGetValue(text, out var cached) == true) return cached;
+        }
+
         using var source = CreateTemplate(usage, text);
         return Publish(usage, text, new GaMat(source), false);
     }
@@ -279,15 +284,21 @@ public class TemplateManager(
     internal GaMat GetMarkerMatchTemplate(string text)
     {
         lock (_matchLock)
+        {
             if (_markerTemplates.TryGetValue(text, out var cached)) return cached;
+        }
+
         return Publish(TemplateUsage.MarkerContent, text, CreateMarkerMatchTemplate(text), true);
     }
 
     internal bool HasMatchTemplate(TemplateUsage usage, string text, bool marker)
     {
         lock (_matchLock)
-            return marker ? _markerTemplates.ContainsKey(text)
+        {
+            return marker
+                ? _markerTemplates.ContainsKey(text)
                 : _matchTemplate.GetValueOrDefault(usage)?.ContainsKey(text) == true;
+        }
     }
 
     internal GaMat Publish(TemplateUsage usage, string text, GaMat candidate, bool marker)
@@ -296,7 +307,12 @@ public class TemplateManager(
         {
             var cache = marker ? _markerTemplates : _matchTemplate.GetValueOrDefault(usage);
             if (cache == null) _matchTemplate[usage] = cache = new Dictionary<string, GaMat>(StringComparer.Ordinal);
-            if (cache.TryGetValue(text, out var existing)) { candidate.Dispose(); return existing; }
+            if (cache.TryGetValue(text, out var existing))
+            {
+                candidate.Dispose();
+                return existing;
+            }
+
             cache.Add(text, candidate);
             return candidate;
         }

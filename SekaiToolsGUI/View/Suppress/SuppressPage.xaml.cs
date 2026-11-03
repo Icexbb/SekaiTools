@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
@@ -6,31 +7,32 @@ using GongSolutions.Wpf.DragDrop;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 using SekaiToolsGUI.Interface;
+using SekaiToolsGUI.Service;
 using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.View.Suppress.Components;
 using SekaiToolsGUI.ViewModel.Suppress;
 using SekaiToolsMedia;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
-using Wpf.Ui.Extensions;
 using GongDragDrop = GongSolutions.Wpf.DragDrop.DragDrop;
 
 namespace SekaiToolsGUI.View.Suppress;
 
 public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 {
+    private readonly VideoSuppressionQueue _queue;
     private bool _preparingResources;
 
-    private readonly SekaiToolsMedia.VideoSuppressionQueue _queue;
-    public SuppressPage() : this(SuppressPageModel.Instance, Queue) { }
+    public SuppressPage() : this(SuppressPageModel.Instance, Queue)
+    {
+    }
 
-    internal SuppressPage(SuppressPageModel model, SekaiToolsMedia.VideoSuppressionQueue queue)
+    internal SuppressPage(SuppressPageModel model, VideoSuppressionQueue queue)
     {
         _queue = queue;
         DataContext = model;
         InitializeComponent();
         GongDragDrop.SetDropHandler(PendingJobsList, new PendingJobsDropHandler(ViewModel.PendingJobs));
-
     }
 
     private static ISnackbarService SnackService =>
@@ -88,13 +90,21 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
         }
     }
 
-    private void EditSelected_OnClick(object sender, RoutedEventArgs e) => EditJob_OnRequested(sender, EventArgs.Empty);
-    private void RemoveSelected_OnClick(object sender, RoutedEventArgs e) => TaskItem_OnRemoveRequested(sender, EventArgs.Empty);
+    private void EditSelected_OnClick(object sender, RoutedEventArgs e)
+    {
+        EditJob_OnRequested(sender, EventArgs.Empty);
+    }
+
+    private void RemoveSelected_OnClick(object sender, RoutedEventArgs e)
+    {
+        TaskItem_OnRemoveRequested(sender, EventArgs.Empty);
+    }
 
     private void TaskItem_OnSelected(object? sender, EventArgs e)
     {
         if (sender is FrameworkElement { DataContext: SuppressionJobModel job }) ViewModel.SelectedJob = job;
     }
+
     private void TaskItem_OnRemoveRequested(object? sender, EventArgs e)
     {
         if (sender is FrameworkElement { DataContext: SuppressionJobModel job }) ViewModel.RemoveJob(job);
@@ -107,7 +117,10 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
             await ShowTaskDialogAsync(job);
     }
 
-    private async void CreateTask_OnClick(object sender, RoutedEventArgs e) => await ShowTaskDialogAsync();
+    private async void CreateTask_OnClick(object sender, RoutedEventArgs e)
+    {
+        await ShowTaskDialogAsync();
+    }
 
     private async Task ShowTaskDialogAsync(SuppressionJobModel? original = null)
     {
@@ -133,20 +146,34 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
                 dialog.ViewModel.SuppressCrf = options.EncodingSettings.CustomCrf;
                 dialog.ViewModel.EncodingThreads = options.EncodingSettings.Threads;
             }
+
             dialog.ValidateSubmission = () => ViewModel.PendingJobs.Any(x => !ReferenceEquals(x, original) &&
-                string.Equals(System.IO.Path.GetFullPath(x.OutputPath), System.IO.Path.GetFullPath(dialog.ViewModel.OutputPath), StringComparison.OrdinalIgnoreCase)) ||
-                (ViewModel.RunningJob != null && string.Equals(System.IO.Path.GetFullPath(ViewModel.RunningJob.OutputPath), System.IO.Path.GetFullPath(dialog.ViewModel.OutputPath), StringComparison.OrdinalIgnoreCase))
-                ? "队列中已有任务使用此输出路径，请修改输出路径。" : "";
+                                                                             string.Equals(
+                                                                                 Path.GetFullPath(x.OutputPath),
+                                                                                 Path.GetFullPath(dialog.ViewModel
+                                                                                     .OutputPath),
+                                                                                 StringComparison.OrdinalIgnoreCase)) ||
+                                              (ViewModel.RunningJob != null &&
+                                               string.Equals(Path.GetFullPath(ViewModel.RunningJob.OutputPath),
+                                                   Path.GetFullPath(dialog.ViewModel.OutputPath),
+                                                   StringComparison.OrdinalIgnoreCase))
+                ? "队列中已有任务使用此输出路径，请修改输出路径。"
+                : "";
             dialog.CommitSubmission = () =>
             {
                 var submission = dialog.ViewModel.ToOptions(dialog.OverwriteAuthorized);
                 EnqueueSuppression(submission, original);
-                SekaiToolsGUI.Service.SuppressionPreferences.Save(submission.EncodingSettings);
+                SuppressionPreferences.Save(submission.EncodingSettings);
                 return "";
             };
-            try { await dialogService.ShowAsync(dialog, CancellationToken.None); }
-            finally { dialog.ViewModel.StopAnalysis(); }
-
+            try
+            {
+                await dialogService.ShowAsync(dialog, CancellationToken.None);
+            }
+            finally
+            {
+                dialog.ViewModel.StopAnalysis();
+            }
         }
         catch (Exception exc)
         {
@@ -170,10 +197,10 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 
     private sealed class PendingJobsDropHandler : IDropTarget
     {
-        private readonly System.Collections.ObjectModel.ObservableCollection<SuppressionJobModel> _jobs;
+        private readonly ObservableCollection<SuppressionJobModel> _jobs;
 
         public PendingJobsDropHandler(
-            System.Collections.ObjectModel.ObservableCollection<SuppressionJobModel> jobs)
+            ObservableCollection<SuppressionJobModel> jobs)
         {
             _jobs = jobs;
         }
@@ -208,5 +235,4 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
                 _jobs.Move(sourceIndex, targetIndex);
         }
     }
-
 }

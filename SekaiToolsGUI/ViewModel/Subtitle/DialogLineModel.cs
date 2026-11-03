@@ -97,8 +97,6 @@ public class DialogLineModel : ViewModelBase
         }
     }
 
-    public event EventHandler? SeparatorChanged;
-
     public int SeparateFrame
     {
         get => GetProperty(Set.Separate.SeparateFrame);
@@ -163,6 +161,8 @@ public class DialogLineModel : ViewModelBase
         get => GetProperty("");
         private set => SetProperty(value);
     }
+
+    public event EventHandler? SeparatorChanged;
 
 
     public void RefreshTiming()

@@ -63,7 +63,11 @@ public class TimelineEditorModel : ViewModelBase
     public bool IsPlaying
     {
         get => GetProperty(false);
-        set { SetProperty(value); OnPropertyChanged(nameof(CanPreview)); }
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(CanPreview));
+        }
     }
 
     public string PlaybackStatus

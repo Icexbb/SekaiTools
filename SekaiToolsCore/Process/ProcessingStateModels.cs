@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace SekaiToolsCore.Process;
 
 public record PointDto(int X, int Y);
@@ -92,10 +94,10 @@ public sealed record TemplateScaleStateDto(int Usage, double? Scale, int LowConf
 
 public class ProcessingState
 {
-    [System.Text.Json.Serialization.JsonIgnore]
-    public bool ReusesCompletedFrames { get; init; }
-    [System.Text.Json.Serialization.JsonIgnore]
-    public IReadOnlyList<int[]>? CheckpointTimecodeBlocks { get; init; }
+    [JsonIgnore] public bool ReusesCompletedFrames { get; init; }
+
+    [JsonIgnore] public IReadOnlyList<int[]>? CheckpointTimecodeBlocks { get; init; }
+
     public string Version { get; set; } = ProcessingStateCompatibility.CurrentVersion;
     public ProcessingStateMetadata? Metadata { get; set; }
     public ProcessStopReason StopReason { get; init; }

@@ -1,5 +1,5 @@
-using SekaiToolsGUI.ViewModel.General;
 using SekaiDataFetch.List;
+using SekaiToolsGUI.ViewModel.General;
 using Wpf.Ui.Controls;
 
 namespace SekaiToolsGUI.View.General;
@@ -28,7 +28,8 @@ public partial class RefreshWaitDialog : ContentDialog
             _ => "正在刷新下载源数据"
         };
         ViewModel.Percentage = progress.Percentage;
-        ViewModel.ProgressText = $"已下载 {progress.CompletedFiles} / {progress.Files.Count} 个文件（{progress.Percentage:0}%）";
+        ViewModel.ProgressText =
+            $"已下载 {progress.CompletedFiles} / {progress.Files.Count} 个文件（{progress.Percentage:0}%）";
         if (progress.UnavailableFiles > 0) ViewModel.ProgressText += $"，可选数据不可用 {progress.UnavailableFiles} 个";
         ViewModel.FileDetails = string.Join(Environment.NewLine, progress.Files.Select(file =>
             $"{file.FileName} — {(file.IsUnavailable ? "不可用（跳过）" : file.IsDownloaded ? "已下载" : "正在下载")}"));

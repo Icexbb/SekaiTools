@@ -1,9 +1,10 @@
 using System.ComponentModel;
 using System.Globalization;
-using SekaiToolsBase.Story.StoryEvent;
+using SekaiToolsBase.GameScript;
 using SekaiToolsBase.Story;
-using SekaiToolsBase.Utils;
+using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsBase.Story.Translation;
+using SekaiToolsBase.Utils;
 using SekaiToolsConfiguration;
 
 namespace SekaiToolsGUI.ViewModel.Translate;
@@ -11,28 +12,8 @@ namespace SekaiToolsGUI.ViewModel.Translate;
 public partial class LineDialogModel : LineModel
 {
     private bool _isFormatting;
-    public bool AutoFormat { get; set; } = true;
-    public bool DeferFormatting { get; set; }
-    public bool RestoringText { get; set; }
-    public string InputHint { get => GetProperty(string.Empty); private set => SetProperty(value); }
 
-    public void CompleteTextEdit()
-    {
-        DeferFormatting = false;
-        UpdateMetrics();
-    }
-
-    public bool CanReplaceText(string text, int start, int length, string replacement)
-    {
-        var candidate = text.Remove(start, length).Insert(start, replacement);
-        static int Lines(string value) => value.Replace("\r\n", "\n").Replace('\r', '\n').Count(c => c == '\n') + 1;
-        var previousLines = Lines(text);
-        var nextLines = Lines(candidate);
-        var allowed = nextLines <= 3 || nextLines <= previousLines;
-        InputHint = allowed ? string.Empty : "正文最多三行。请先删减换行，再输入或粘贴；自动折行不占正文行数。";
-        return allowed;
-    }
-    public LineDialogModel(DialogStoryEvent dialogStoryEvent, SekaiToolsBase.Story.FlashbackInfo? flashback = null, bool autoFormat = true)
+    public LineDialogModel(DialogStoryEvent dialogStoryEvent, FlashbackInfo? flashback = null, bool autoFormat = true)
     {
         AutoFormat = autoFormat;
         Flashback = flashback;
@@ -43,7 +24,8 @@ public partial class LineDialogModel : LineModel
 
         Character.Original = dialogStoryEvent.CharacterOriginal;
         Character.PreserveEmpty = Content.PreserveEmpty = dialogStoryEvent.HasExplicitTranslation;
-        Character.Translated = !dialogStoryEvent.HasExplicitTranslation && string.IsNullOrWhiteSpace(dialogStoryEvent.CharacterTranslated)
+        Character.Translated = !dialogStoryEvent.HasExplicitTranslation &&
+                               string.IsNullOrWhiteSpace(dialogStoryEvent.CharacterTranslated)
             ? dialogStoryEvent.CharacterOriginal
             : dialogStoryEvent.CharacterTranslated;
 
@@ -58,26 +40,35 @@ public partial class LineDialogModel : LineModel
         UpdateMetrics();
     }
 
-    public string VoiceScenarioId { get; set; } = "";
-    public SekaiToolsBase.GameScript.Voice? OriginalVoice { get; set; }
-    public override bool HasVoice => !string.IsNullOrWhiteSpace(OriginalVoice?.VoiceId) &&
-        (!string.IsNullOrWhiteSpace(VoiceScenarioId) || OriginalVoice.Value.VoiceId.StartsWith("partvoice_", StringComparison.Ordinal));
-    public bool Shake { get; }
-    public SekaiToolsBase.Story.FlashbackInfo? Flashback { get; }
-    public bool IsFlashback => Flashback?.IsFlashback == true;
-    public string FlashbackHint => IsFlashback ? Flashback!.Hint : string.Empty;
-    public string FlashbackLabel
+    public bool AutoFormat { get; set; } = true;
+    public bool DeferFormatting { get; set; }
+    public bool RestoringText { get; set; }
+
+    public string InputHint
     {
-        get => GetProperty(IsFlashback ? "疑似闪回 · " + string.Join("；", Flashback!.Sources
-            .Where(source => source != Flashback.MainSource).Select(FlashbackAnalyzer.DescribeSource)) : string.Empty);
+        get => GetProperty(string.Empty);
         private set => SetProperty(value);
     }
 
-    public void ApplyFlashbackOrigins(IReadOnlyDictionary<string, SekaiToolsBase.Story.FlashbackEventOrigin> origins)
+    public string VoiceScenarioId { get; set; } = "";
+    public Voice? OriginalVoice { get; set; }
+
+    public override bool HasVoice => !string.IsNullOrWhiteSpace(OriginalVoice?.VoiceId) &&
+                                     (!string.IsNullOrWhiteSpace(VoiceScenarioId) ||
+                                      OriginalVoice.Value.VoiceId.StartsWith("partvoice_", StringComparison.Ordinal));
+
+    public bool Shake { get; }
+    public FlashbackInfo? Flashback { get; }
+    public bool IsFlashback => Flashback?.IsFlashback == true;
+    public string FlashbackHint => IsFlashback ? Flashback!.Hint : string.Empty;
+
+    public string FlashbackLabel
     {
-        if (!IsFlashback) return;
-        FlashbackLabel = "疑似闪回 · " + string.Join("；", Flashback!.Sources.Where(source => source != Flashback.MainSource)
-            .Select(source => origins.TryGetValue(source, out var origin) ? origin.DisplayName : FlashbackAnalyzer.DescribeSource(source)));
+        get => GetProperty(IsFlashback
+            ? "疑似闪回 · " + string.Join("；", Flashback!.Sources
+                .Where(source => source != Flashback.MainSource).Select(FlashbackAnalyzer.DescribeSource))
+            : string.Empty);
+        private set => SetProperty(value);
     }
 
     public bool EndLine
@@ -120,10 +111,42 @@ public partial class LineDialogModel : LineModel
     public bool CharacterTranslateChangedEnabled { get; set; } = true;
     public bool ContentTranslateChangedEnabled { get; set; } = true;
 
+    public void CompleteTextEdit()
+    {
+        DeferFormatting = false;
+        UpdateMetrics();
+    }
+
+    public bool CanReplaceText(string text, int start, int length, string replacement)
+    {
+        var candidate = text.Remove(start, length).Insert(start, replacement);
+
+        static int Lines(string value)
+        {
+            return value.Replace("\r\n", "\n").Replace('\r', '\n').Count(c => c == '\n') + 1;
+        }
+
+        var previousLines = Lines(text);
+        var nextLines = Lines(candidate);
+        var allowed = nextLines <= 3 || nextLines <= previousLines;
+        InputHint = allowed ? string.Empty : "正文最多三行。请先删减换行，再输入或粘贴；自动折行不占正文行数。";
+        return allowed;
+    }
+
+    public void ApplyFlashbackOrigins(IReadOnlyDictionary<string, FlashbackEventOrigin> origins)
+    {
+        if (!IsFlashback) return;
+        FlashbackLabel = "疑似闪回 · " + string.Join("；", Flashback!.Sources.Where(source => source != Flashback.MainSource)
+            .Select(source => origins.TryGetValue(source, out var origin)
+                ? origin.DisplayName
+                : FlashbackAnalyzer.DescribeSource(source)));
+    }
+
     private void OnContentPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         // 只有当 Translated 变化时才触发
-        if (e.PropertyName is not (nameof(TranslateItemModel.Translated) or nameof(TranslateItemModel.PreserveEmpty))) return;
+        if (e.PropertyName is not (nameof(TranslateItemModel.Translated)
+            or nameof(TranslateItemModel.PreserveEmpty))) return;
         // 更新父级的 Check, LineCount 等
         UpdateMetrics();
         NotifyContentState();
@@ -146,12 +169,20 @@ public partial class LineDialogModel : LineModel
     private void UpdateMetrics()
     {
         var formatted = _isFormatting || RestoringText || DeferFormatting || !AutoFormat
-            ? Content.Translated : FormatContent(Content.Translated);
+            ? Content.Translated
+            : FormatContent(Content.Translated);
         if (formatted != Content.Translated)
         {
             _isFormatting = true;
-            try { Content.Translated = formatted; }
-            finally { _isFormatting = false; }
+            try
+            {
+                Content.Translated = formatted;
+            }
+            finally
+            {
+                _isFormatting = false;
+            }
+
             return;
         }
 
@@ -171,7 +202,8 @@ public partial class LineDialogModel : LineModel
 public partial class LineDialogModel
 {
     public override string Result =>
-        $"{Character.Result.Trim()}：{TranslationText.Normalize(Content.Result).Replace("\n", "\\N")}" + (EndLine ? "\n" : "");
+        $"{Character.Result.Trim()}：{TranslationText.Normalize(Content.Result).Replace("\n", "\\N")}" +
+        (EndLine ? "\n" : "");
 
     private int CharacterId { get; }
 
@@ -183,5 +215,4 @@ public partial class LineDialogModel
     {
         return TranslationRules.Current.Format(content);
     }
-
 }

@@ -9,13 +9,6 @@ public class SubtitlePageModel : ViewModelBase
 {
     private static readonly ImageSource EmptyFramePreview = CreateEmptyFramePreview();
 
-    private static ImageSource CreateEmptyFramePreview()
-    {
-        var image = BitmapSource.Create(100, 100, 96, 96, PixelFormats.Bgra32, null, new byte[40000], 400);
-        image.Freeze();
-        return image;
-    }
-
     public string VideoFilePath
     {
         get => GetProperty("");
@@ -159,13 +152,22 @@ public class SubtitlePageModel : ViewModelBase
     public bool IsHistory
     {
         get => GetProperty(false);
-        set { SetProperty(value); OnPropertyChanged(nameof(CanPreviewLine)); OnPropertyChanged(nameof(CanStartLinePreview)); }
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(CanPreviewLine));
+            OnPropertyChanged(nameof(CanStartLinePreview));
+        }
     }
 
     public bool IsPreviewPlaying
     {
         get => GetProperty(false);
-        set { SetProperty(value); OnPropertyChanged(nameof(CanStartLinePreview)); }
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(CanStartLinePreview));
+        }
     }
 
     public bool CanStartLinePreview => CanPreviewLine && !IsPreviewPlaying;
@@ -305,6 +307,13 @@ public class SubtitlePageModel : ViewModelBase
     {
         get => GetProperty(0);
         set => SetProperty(value);
+    }
+
+    private static ImageSource CreateEmptyFramePreview()
+    {
+        var image = BitmapSource.Create(100, 100, 96, 96, PixelFormats.Bgra32, null, new byte[40000], 400);
+        image.Freeze();
+        return image;
     }
 
 

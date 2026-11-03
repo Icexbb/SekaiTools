@@ -7,7 +7,7 @@ using System.Windows.Input;
 namespace SekaiToolsGUI.Control;
 
 /// <summary>
-/// 可承载交互内容的浮层。通过 Target 内嵌锚点，通过 IsOpen 控制显示。
+///     可承载交互内容的浮层。通过 Target 内嵌锚点，通过 IsOpen 控制显示。
 /// </summary>
 [TemplatePart(Name = "PART_Popup", Type = typeof(Popup))]
 [TemplatePart(Name = "PART_Surface", Type = typeof(Border))]
@@ -42,15 +42,16 @@ public partial class Popover : ContentControl
     public static readonly DependencyProperty CornerRadiusProperty = DependencyProperty.Register(
         nameof(CornerRadius), typeof(CornerRadius), typeof(Popover), new PropertyMetadata(new CornerRadius(8)),
         value => value is CornerRadius radius
-            && double.IsFinite(radius.TopLeft) && radius.TopLeft >= 0
-            && double.IsFinite(radius.TopRight) && radius.TopRight >= 0
-            && double.IsFinite(radius.BottomLeft) && radius.BottomLeft >= 0
-            && double.IsFinite(radius.BottomRight) && radius.BottomRight >= 0);
+                 && double.IsFinite(radius.TopLeft) && radius.TopLeft >= 0
+                 && double.IsFinite(radius.TopRight) && radius.TopRight >= 0
+                 && double.IsFinite(radius.BottomLeft) && radius.BottomLeft >= 0
+                 && double.IsFinite(radius.BottomRight) && radius.BottomRight >= 0);
+
+    private Window? _owner;
 
     private Popup? _popup;
-    private Border? _surface;
-    private Window? _owner;
     private IInputElement? _previousFocus;
+    private Border? _surface;
 
     public Popover()
     {
@@ -109,13 +110,6 @@ public partial class Popover : ContentControl
         set => SetValue(CornerRadiusProperty, value);
     }
 
-    public event EventHandler? Opened;
-    public event EventHandler? Closed;
-
-    public void Open() => SetCurrentValue(IsOpenProperty, true);
-
-    public void Close() => SetCurrentValue(IsOpenProperty, false);
-
     protected override IEnumerator LogicalChildren
     {
         get
@@ -128,6 +122,19 @@ public partial class Popover : ContentControl
                 children.Add(Target);
             return children.GetEnumerator();
         }
+    }
+
+    public event EventHandler? Opened;
+    public event EventHandler? Closed;
+
+    public void Open()
+    {
+        SetCurrentValue(IsOpenProperty, true);
+    }
+
+    public void Close()
+    {
+        SetCurrentValue(IsOpenProperty, false);
     }
 
     private static void OnTargetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -149,6 +156,7 @@ public partial class Popover : ContentControl
             _popup.Opened -= OnOpened;
             _popup.Closed -= OnClosed;
         }
+
         if (_surface != null)
             _surface.PreviewKeyDown -= OnPreviewKeyDown;
         DetachOwner();
@@ -161,6 +169,7 @@ public partial class Popover : ContentControl
             _popup.Opened += OnOpened;
             _popup.Closed += OnClosed;
         }
+
         if (_surface != null)
             _surface.PreviewKeyDown += OnPreviewKeyDown;
     }
@@ -178,6 +187,7 @@ public partial class Popover : ContentControl
             _owner.AddHandler(Mouse.PreviewMouseDownEvent,
                 new MouseButtonEventHandler(OnOwnerMouseDown), true);
         }
+
         _previousFocus = Keyboard.FocusedElement;
         _surface?.Focus();
         _surface?.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
@@ -203,9 +213,15 @@ public partial class Popover : ContentControl
         e.Handled = true;
     }
 
-    private void OnOwnerChanged(object? sender, EventArgs e) => Close();
+    private void OnOwnerChanged(object? sender, EventArgs e)
+    {
+        Close();
+    }
 
-    private void OnOwnerSizeChanged(object sender, SizeChangedEventArgs e) => Close();
+    private void OnOwnerSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        Close();
+    }
 
     private void OnOwnerMouseDown(object sender, MouseButtonEventArgs e)
     {

@@ -9,8 +9,8 @@ public interface IVideoCaptureFactory
 }
 
 /// <summary>
-/// Retains external native dependencies until all processor resources are disposed.
-/// Dispose must be idempotent and tolerate Capture having already been disposed.
+///     Retains external native dependencies until all processor resources are disposed.
+///     Dispose must be idempotent and tolerate Capture having already been disposed.
 /// </summary>
 public interface IVideoCaptureSession : IDisposable
 {

@@ -9,18 +9,29 @@ public sealed class VoiceProgressBorder : FrameworkElement
     public static readonly DependencyProperty ProgressProperty = DependencyProperty.Register(
         nameof(Progress), typeof(double), typeof(VoiceProgressBorder),
         new FrameworkPropertyMetadata(0d, FrameworkPropertyMetadataOptions.AffectsRender));
+
     public static readonly DependencyProperty StrokeProperty = DependencyProperty.Register(
         nameof(Stroke), typeof(Brush), typeof(VoiceProgressBorder),
         new FrameworkPropertyMetadata(Brushes.DodgerBlue, FrameworkPropertyMetadataOptions.AffectsRender));
 
-    public double Progress { get => (double)GetValue(ProgressProperty); set => SetValue(ProgressProperty, value); }
-    public Brush Stroke { get => (Brush)GetValue(StrokeProperty); set => SetValue(StrokeProperty, value); }
+    public double Progress
+    {
+        get => (double)GetValue(ProgressProperty);
+        set => SetValue(ProgressProperty, value);
+    }
+
+    public Brush Stroke
+    {
+        get => (Brush)GetValue(StrokeProperty);
+        set => SetValue(StrokeProperty, value);
+    }
 
     protected override void OnRender(DrawingContext drawingContext)
     {
         base.OnRender(drawingContext);
         if (!double.IsFinite(Progress) || Progress <= 0 || ActualWidth <= 2 || ActualHeight <= 2) return;
-        var outline = new RectangleGeometry(new Rect(1, 1, ActualWidth - 2, ActualHeight - 2), 4, 4).GetOutlinedPathGeometry();
+        var outline = new RectangleGeometry(new Rect(1, 1, ActualWidth - 2, ActualHeight - 2), 4, 4)
+            .GetOutlinedPathGeometry();
         var geometry = new StreamGeometry();
         using (var context = geometry.Open())
         {
@@ -34,6 +45,7 @@ public sealed class VoiceProgressBorder : FrameworkElement
                 context.LineTo(point, true, false);
             }
         }
+
         geometry.Freeze();
         drawingContext.DrawGeometry(null, new Pen(Stroke, 2), geometry);
     }

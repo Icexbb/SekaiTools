@@ -1,48 +1,93 @@
 <UserControl x:Class="SekaiToolsGUI.View.Suppress.SuppressPage"
- xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
- xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
- xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
- xmlns:dd="clr-namespace:GongSolutions.Wpf.DragDrop;assembly=GongSolutions.WPF.DragDrop"
- xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
- xmlns:components="clr-namespace:SekaiToolsGUI.View.Suppress.Components"
- layout:AdaptiveLayout.MonitorSize="True">
- <UserControl.Resources>
-  <DataTemplate x:Key="TaskItemTemplate"><components:SuppressionTaskListItem Selected="TaskItem_OnSelected" RemoveRequested="TaskItem_OnRemoveRequested" /></DataTemplate>
-  <Style x:Key="SectionHeader" TargetType="TextBlock"><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Margin" Value="0,14,0,8"/></Style>
- </UserControl.Resources>
- <Grid Margin="10">
-  <Grid.ColumnDefinitions><ColumnDefinition Width="260" MinWidth="220"/><ColumnDefinition Width="*" MinWidth="360"/></Grid.ColumnDefinitions>
-  <ui:Card Grid.Column="0" Padding="10" Margin="0,0,10,0" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
-   <Grid>
-    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-    <StackPanel Margin="0,0,0,8">
-     <StackPanel Orientation="Horizontal"><ui:SymbolIcon Symbol="Video32" Margin="0,0,8,0"/><TextBlock Text="压制任务" FontSize="18" FontWeight="SemiBold"/></StackPanel>
-     <TextBlock Text="添加后自动按顺序执行" Margin="0,6,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-     <TextBlock Text="正在准备压制环境…" Margin="0,4,0,0" Visibility="{c:Binding IsPreparingResources, FalseToVisibility=Collapsed}"/>
-     <TextBlock Text="{Binding ResourcePreparationError}" Visibility="{c:Binding 'ResourcePreparationError.Length!=0', FalseToVisibility=Collapsed}" TextWrapping="Wrap" Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
-    </StackPanel>
-    <ui:PassiveScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalContentAlignment="Stretch">
-     <StackPanel>
-      <TextBlock Text="暂无任务，请点击下方“添加”按钮创建任务。" TextWrapping="Wrap" Margin="0,12,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Visibility="{c:Binding 'PendingJobs.Count + CompletedJobs.Count == 0 &amp;&amp; !HasRunningJob', FalseToVisibility=Collapsed}"/>
-      <TextBlock Text="未开始任务 · 可拖动排序" Style="{StaticResource SectionHeader}" Visibility="{c:Binding 'PendingJobs.Count > 0', FalseToVisibility=Collapsed}"/>
-      <ItemsControl x:Name="PendingJobsList" ItemsSource="{Binding PendingJobs}" ItemTemplate="{StaticResource TaskItemTemplate}" AllowDrop="True" dd:DragDrop.IsDropTarget="True" dd:DragDrop.ShowAlwaysDropTargetAdorner="True"/>
-      <TextBlock Text="正在进行任务" Style="{StaticResource SectionHeader}" Visibility="{c:Binding HasRunningJob, FalseToVisibility=Collapsed}"/>
-      <ItemsControl ItemsSource="{Binding RunningJobs}" ItemTemplate="{StaticResource TaskItemTemplate}"/>
-      <TextBlock Text="已结束任务" Style="{StaticResource SectionHeader}" Visibility="{c:Binding 'CompletedJobs.Count > 0', FalseToVisibility=Collapsed}"/>
-      <ComboBox SelectedIndex="{Binding CompletedFilter, Mode=TwoWay}" Margin="0,0,6,8" AutomationProperties.Name="结束任务状态筛选" Visibility="{c:Binding 'CompletedJobs.Count > 0', FalseToVisibility=Collapsed}"><ComboBoxItem Content="全部状态"/><ComboBoxItem Content="成功"/><ComboBoxItem Content="失败"/><ComboBoxItem Content="已取消"/></ComboBox>
-      <ItemsControl ItemsSource="{Binding FilteredCompletedJobs}" ItemTemplate="{StaticResource TaskItemTemplate}"/>
-     </StackPanel>
-    </ui:PassiveScrollViewer>
-    <Grid Grid.Row="2" Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-     <ui:Button Content="添加" Icon="{ui:SymbolIcon Add24}" Click="CreateTask_OnClick" Appearance="Primary" IsEnabled="{Binding ResourcesReady}" HorizontalAlignment="Stretch" Margin="0,0,4,0"/>
-     <ui:Button Grid.Column="1" Content="清理" Icon="{ui:SymbolIcon Dismiss24}" ToolTip="清除已结束任务" IsEnabled="{Binding CanClear}" Click="ClearButton_OnClick" HorizontalAlignment="Stretch" Margin="4,0,0,0"/>
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
+             xmlns:dd="clr-namespace:GongSolutions.Wpf.DragDrop;assembly=GongSolutions.WPF.DragDrop"
+             xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
+             xmlns:components="clr-namespace:SekaiToolsGUI.View.Suppress.Components"
+             layout:AdaptiveLayout.MonitorSize="True">
+    <UserControl.Resources>
+        <DataTemplate x:Key="TaskItemTemplate">
+            <components:SuppressionTaskListItem Selected="TaskItem_OnSelected"
+                                                RemoveRequested="TaskItem_OnRemoveRequested" />
+        </DataTemplate>
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" /><Setter Property="Margin" Value="0,14,0,8" />
+        </Style>
+    </UserControl.Resources>
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260" MinWidth="220" /><ColumnDefinition Width="*" MinWidth="360" />
+        </Grid.ColumnDefinitions>
+        <ui:Card Grid.Column="0" Padding="10" Margin="0,0,10,0" VerticalAlignment="Stretch"
+                 VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon Symbol="Video32" Margin="0,0,8,0" />
+                        <TextBlock Text="压制任务" FontSize="18" FontWeight="SemiBold" />
+                    </StackPanel>
+                    <TextBlock Text="添加后自动按顺序执行" Margin="0,6,0,0"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="正在准备压制环境…" Margin="0,4,0,0"
+                               Visibility="{c:Binding IsPreparingResources, FalseToVisibility=Collapsed}" />
+                    <TextBlock Text="{Binding ResourcePreparationError}"
+                               Visibility="{c:Binding 'ResourcePreparationError.Length!=0', FalseToVisibility=Collapsed}"
+                               TextWrapping="Wrap" Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
+                </StackPanel>
+                <ui:PassiveScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled"
+                                        VerticalContentAlignment="Stretch">
+                    <StackPanel>
+                        <TextBlock Text="暂无任务，请点击下方“添加”按钮创建任务。" TextWrapping="Wrap" Margin="0,12,0,0"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="{c:Binding 'PendingJobs.Count + CompletedJobs.Count == 0 &amp;&amp; !HasRunningJob', FalseToVisibility=Collapsed}" />
+                        <TextBlock Text="未开始任务 · 可拖动排序" Style="{StaticResource SectionHeader}"
+                                   Visibility="{c:Binding 'PendingJobs.Count > 0', FalseToVisibility=Collapsed}" />
+                        <ItemsControl x:Name="PendingJobsList" ItemsSource="{Binding PendingJobs}"
+                                      ItemTemplate="{StaticResource TaskItemTemplate}" AllowDrop="True"
+                                      dd:DragDrop.IsDropTarget="True" dd:DragDrop.ShowAlwaysDropTargetAdorner="True" />
+                        <TextBlock Text="正在进行任务" Style="{StaticResource SectionHeader}"
+                                   Visibility="{c:Binding HasRunningJob, FalseToVisibility=Collapsed}" />
+                        <ItemsControl ItemsSource="{Binding RunningJobs}"
+                                      ItemTemplate="{StaticResource TaskItemTemplate}" />
+                        <TextBlock Text="已结束任务" Style="{StaticResource SectionHeader}"
+                                   Visibility="{c:Binding 'CompletedJobs.Count > 0', FalseToVisibility=Collapsed}" />
+                        <ComboBox SelectedIndex="{Binding CompletedFilter, Mode=TwoWay}" Margin="0,0,6,8"
+                                  AutomationProperties.Name="结束任务状态筛选"
+                                  Visibility="{c:Binding 'CompletedJobs.Count > 0', FalseToVisibility=Collapsed}">
+                            <ComboBoxItem Content="全部状态" /><ComboBoxItem Content="成功" /><ComboBoxItem Content="失败" />
+                            <ComboBoxItem Content="已取消" />
+                        </ComboBox>
+                        <ItemsControl ItemsSource="{Binding FilteredCompletedJobs}"
+                                      ItemTemplate="{StaticResource TaskItemTemplate}" />
+                    </StackPanel>
+                </ui:PassiveScrollViewer>
+                <Grid Grid.Row="2" Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ui:Button Content="添加" Icon="{ui:SymbolIcon Add24}" Click="CreateTask_OnClick"
+                               Appearance="Primary" IsEnabled="{Binding ResourcesReady}" HorizontalAlignment="Stretch"
+                               Margin="0,0,4,0" />
+                    <ui:Button Grid.Column="1" Content="清理" Icon="{ui:SymbolIcon Dismiss24}" ToolTip="清除已结束任务"
+                               IsEnabled="{Binding CanClear}" Click="ClearButton_OnClick" HorizontalAlignment="Stretch"
+                               Margin="4,0,0,0" />
+                </Grid>
+            </Grid>
+        </ui:Card>
+        <Grid Grid.Column="1">
+            <TextBlock Text="添加任务，或从左侧选择任务查看压制进度与结果" TextWrapping="Wrap" VerticalAlignment="Center"
+                       HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       Visibility="{c:Binding !HasSelection, FalseToVisibility=Collapsed}" />
+            <Grid Visibility="{c:Binding HasSelection, FalseToVisibility=Collapsed}">
+                <components:SuppressionTaskDetails DataContext="{Binding SelectedJob}"
+                                                   EditRequested="EditJob_OnRequested"
+                                                   RemoveRequested="TaskItem_OnRemoveRequested" />
+            </Grid>
+        </Grid>
     </Grid>
-   </Grid>
-  </ui:Card>
-  <Grid Grid.Column="1">
-   <TextBlock Text="添加任务，或从左侧选择任务查看压制进度与结果" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Visibility="{c:Binding !HasSelection, FalseToVisibility=Collapsed}"/>
-   <Grid Visibility="{c:Binding HasSelection, FalseToVisibility=Collapsed}"><components:SuppressionTaskDetails DataContext="{Binding SelectedJob}" EditRequested="EditJob_OnRequested" RemoveRequested="TaskItem_OnRemoveRequested" /></Grid>
-  </Grid>
- </Grid>
 </UserControl>

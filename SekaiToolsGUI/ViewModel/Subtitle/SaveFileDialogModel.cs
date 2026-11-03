@@ -1,4 +1,3 @@
-using System.IO;
 using System.Text.RegularExpressions;
 using SekaiToolsCore.Process.Config;
 
@@ -9,53 +8,8 @@ public class SaveFileDialogModel : ViewModelBase
     private string? _confirmedOverwritePath;
 
     public bool NeedsOverwriteConfirmation => File.Exists(FileName) &&
-        !string.Equals(_confirmedOverwritePath, FileName, StringComparison.OrdinalIgnoreCase);
-
-    public void SetSelectedPath(string path, bool overwriteConfirmed)
-    {
-        FileName = path;
-        _confirmedOverwritePath = overwriteConfirmed ? path : null;
-    }
-
-    public void ApplyTranslationTag(string tag)
-    {
-        if (tag is not ("翻译" or "校对" or "合意"))
-            throw new ArgumentOutOfRangeException(nameof(tag));
-        var name = Path.GetFileName(FileName);
-        var prefix = Regex.Match(name, "^【[^】]*】");
-        FileName = Path.Combine(Path.GetDirectoryName(FileName) ?? "",
-            $"【{tag}】" + (prefix.Success ? name[prefix.Length..] : name));
-        // Clicking a tag always invalidates consent, even when the path is unchanged.
-        _confirmedOverwritePath = null;
-    }
-
-    public void LoadExportOptions(ExportStyleConfig config)
-    {
-        ExportLine1 = config.ExportLine1;
-        ExportLine2 = config.ExportLine2;
-        ExportLine3 = config.ExportLine3;
-        ExportUnchangedCharacter = config.ExportUnchangedCharacter;
-        ExportCharacter = config.ExportCharacter;
-        ExportBannerMask = config.ExportBannerMask;
-        ExportBannerText = config.ExportBannerText;
-        ExportMarkerMask = config.ExportMarkerMask;
-        ExportMarkerText = config.ExportMarkerText;
-        ExportScreenComment = config.ExportScreenComment;
-    }
-
-    public ExportStyleConfig GetExportStyleConfig() => new()
-    {
-        ExportLine1 = ExportLine1,
-        ExportLine2 = ExportLine2,
-        ExportLine3 = ExportLine3,
-        ExportUnchangedCharacter = ExportUnchangedCharacter,
-        ExportCharacter = ExportCharacter,
-        ExportBannerMask = ExportBannerMask,
-        ExportBannerText = ExportBannerText,
-        ExportMarkerMask = ExportMarkerMask,
-        ExportMarkerText = ExportMarkerText,
-        ExportScreenComment = ExportScreenComment,
-    };
+                                              !string.Equals(_confirmedOverwritePath, FileName,
+                                                  StringComparison.OrdinalIgnoreCase);
 
     public bool ExportLine1
     {
@@ -209,5 +163,54 @@ public class SaveFileDialogModel : ViewModelBase
                 _confirmedOverwritePath = null;
             SetProperty(value);
         }
+    }
+
+    public void SetSelectedPath(string path, bool overwriteConfirmed)
+    {
+        FileName = path;
+        _confirmedOverwritePath = overwriteConfirmed ? path : null;
+    }
+
+    public void ApplyTranslationTag(string tag)
+    {
+        if (tag is not ("翻译" or "校对" or "合意"))
+            throw new ArgumentOutOfRangeException(nameof(tag));
+        var name = Path.GetFileName(FileName);
+        var prefix = Regex.Match(name, "^【[^】]*】");
+        FileName = Path.Combine(Path.GetDirectoryName(FileName) ?? "",
+            $"【{tag}】" + (prefix.Success ? name[prefix.Length..] : name));
+        // Clicking a tag always invalidates consent, even when the path is unchanged.
+        _confirmedOverwritePath = null;
+    }
+
+    public void LoadExportOptions(ExportStyleConfig config)
+    {
+        ExportLine1 = config.ExportLine1;
+        ExportLine2 = config.ExportLine2;
+        ExportLine3 = config.ExportLine3;
+        ExportUnchangedCharacter = config.ExportUnchangedCharacter;
+        ExportCharacter = config.ExportCharacter;
+        ExportBannerMask = config.ExportBannerMask;
+        ExportBannerText = config.ExportBannerText;
+        ExportMarkerMask = config.ExportMarkerMask;
+        ExportMarkerText = config.ExportMarkerText;
+        ExportScreenComment = config.ExportScreenComment;
+    }
+
+    public ExportStyleConfig GetExportStyleConfig()
+    {
+        return new ExportStyleConfig
+        {
+            ExportLine1 = ExportLine1,
+            ExportLine2 = ExportLine2,
+            ExportLine3 = ExportLine3,
+            ExportUnchangedCharacter = ExportUnchangedCharacter,
+            ExportCharacter = ExportCharacter,
+            ExportBannerMask = ExportBannerMask,
+            ExportBannerText = ExportBannerText,
+            ExportMarkerMask = ExportMarkerMask,
+            ExportMarkerText = ExportMarkerText,
+            ExportScreenComment = ExportScreenComment
+        };
     }
 }

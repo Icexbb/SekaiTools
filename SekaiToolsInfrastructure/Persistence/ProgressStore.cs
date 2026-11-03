@@ -1,8 +1,8 @@
-using Microsoft.Extensions.Logging;
-using SekaiToolsBase;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using SekaiToolsBase;
 using SekaiToolsCore;
 using SekaiToolsCore.Abstractions;
 using SekaiToolsCore.Process;
@@ -43,7 +43,10 @@ public static class ProgressStore
         DeleteOtherProgressFiles(saveKey);
     }
 
-    internal static bool IsIncomplete(ProcessingState state) => state.StopReason != ProcessStopReason.Completed;
+    internal static bool IsIncomplete(ProcessingState state)
+    {
+        return state.StopReason != ProcessStopReason.Completed;
+    }
 
     internal static List<(string SaveKey, ProcessingState State, DateTime LastWriteTime)> SelectLatestIncomplete(
         IEnumerable<(string SaveKey, ProcessingState State, DateTime LastWriteTime)> entries)
@@ -123,7 +126,8 @@ public static class ProgressStore
         if (!Directory.Exists(ProgressDir)) return;
         var currentPath = GetSavePath(saveKey);
         foreach (var file in Directory.EnumerateFiles(ProgressDir, "*.json"))
-            if (!string.Equals(Path.GetFullPath(file), Path.GetFullPath(currentPath), StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(Path.GetFullPath(file), Path.GetFullPath(currentPath),
+                    StringComparison.OrdinalIgnoreCase))
                 try
                 {
                     File.Delete(file);

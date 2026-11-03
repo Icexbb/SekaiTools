@@ -88,10 +88,12 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
         return templateManager.GetMatchTemplate(TemplateUsage.DialogNameTag, name).Size.Width;
     }
 
-    private Point GetCharacterAnchor(DialogBaseFrameSet set, Point point) =>
-        string.IsNullOrWhiteSpace(set.Data.CharacterOriginal)
+    private Point GetCharacterAnchor(DialogBaseFrameSet set, Point point)
+    {
+        return string.IsNullOrWhiteSpace(set.Data.CharacterOriginal)
             ? _nameTagPosition + new Size(point.X - set.Start().Point.X, point.Y - set.Start().Point.Y)
             : point;
+    }
 
     private static Queue<char> FormatDialogBodyArr(string body)
     {
@@ -273,8 +275,10 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             dialogEvents.Add(SubtitleEvent.Comment($"{dialogMarker}  End",
                 set.StartTime(), set.EndTime(), "Screen"));
 
-            var sameCharacter = string.Equals(set.Data.FinalCharacter, set.Data.CharacterOriginal, StringComparison.Ordinal);
-            var exportCharacter = sameCharacter ? _outputOptions.ExportUnchangedCharacter : _outputOptions.ExportCharacter;
+            var sameCharacter = string.Equals(set.Data.FinalCharacter, set.Data.CharacterOriginal,
+                StringComparison.Ordinal);
+            var exportCharacter =
+                sameCharacter ? _outputOptions.ExportUnchangedCharacter : _outputOptions.ExportCharacter;
             if (!exportCharacter) dialogEvents.RemoveAll(item => item.Style == "Character");
             result.AddRange(dialogEvents);
 
@@ -381,6 +385,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
                     lastPosition = new Point(x, y);
                     continue;
                 }
+
                 if (characterEvents.Count > 0 && lastPosition.X == x && lastPosition.Y == y &&
                     body == characterEvents[^1].Text)
                 {

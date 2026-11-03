@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using SekaiToolsBase;
 
 namespace SekaiToolsGUI;
 
@@ -13,7 +14,7 @@ internal static class AssemblyResolver
     internal static void FlushDiagnostics()
     {
         while (Diagnostics.TryDequeue(out var message))
-            SekaiToolsBase.Logger.Log(message, callerMemberName: nameof(AssemblyResolver));
+            Logger.Log(message, callerMemberName: nameof(AssemblyResolver));
     }
 
     [ModuleInitializer]

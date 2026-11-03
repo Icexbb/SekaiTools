@@ -1,6 +1,4 @@
-using System.IO;
 using System.Net;
-using System.Net.Http;
 using System.Text.Json;
 
 namespace Updater;
@@ -20,17 +18,19 @@ internal sealed record UpdateProxySettings(int ProxyType = 0, string ProxyHost =
         }
         catch (FileNotFoundException)
         {
-            return new();
+            return new UpdateProxySettings();
         }
         catch (DirectoryNotFoundException)
         {
-            return new();
+            return new UpdateProxySettings();
         }
     }
 
-    private static UpdateProxySettings Parse(string json) =>
-        JsonSerializer.Deserialize<UpdateProxySettings>(json)
-        ?? throw new InvalidDataException("代理设置无效");
+    private static UpdateProxySettings Parse(string json)
+    {
+        return JsonSerializer.Deserialize<UpdateProxySettings>(json)
+               ?? throw new InvalidDataException("代理设置无效");
+    }
 
     internal HttpClientHandler CreateHandler()
     {

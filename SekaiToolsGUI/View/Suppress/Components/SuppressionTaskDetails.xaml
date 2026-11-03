@@ -1,36 +1,86 @@
 <UserControl x:Class="SekaiToolsGUI.View.Suppress.Components.SuppressionTaskDetails"
- xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- xmlns:layout="clr-namespace:SekaiToolsGUI.Control" xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml" xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding">
- <Grid>
-  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*" MinHeight="100"/></Grid.RowDefinitions>
-  <ui:Card Padding="16" Margin="0,0,0,10" VerticalAlignment="Top">
-   <ScrollViewer VerticalScrollBarVisibility="Auto"><ScrollViewer.Style><Style TargetType="ScrollViewer"><Setter Property="MaxHeight" Value="370"/><Style.Triggers><Trigger Property="layout:AdaptiveLayout.IsShort" Value="True"><Setter Property="MaxHeight" Value="210"/></Trigger></Style.Triggers></Style></ScrollViewer.Style>
-    <StackPanel>
-     <TextBlock Text="任务详情" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12"/>
-     <DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding ListStatus}" FontWeight="SemiBold"/><TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding SourceVideo}"/></DockPanel>
-     <TextBlock Text="{Binding EncodingDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4,0,8" TextWrapping="Wrap"/>
-     <WrapPanel><TextBlock Text="{Binding Progress.Fraction, StringFormat={}{0:P1}}" Margin="0,0,12,4"/><TextBlock Text="{Binding Progress.FramesPerSecond, StringFormat={}{0:F1} FPS}" Margin="0,0,12,4"/><TextBlock Text="{Binding Progress.ElapsedDisplay}" Margin="0,0,12,4"/><TextBlock Text="{Binding Progress.RemainingDisplay}" Margin="0,0,12,4"/><TextBlock Text="{Binding Progress.OutputDisplay}" Margin="0,0,0,4"/></WrapPanel>
-     <ProgressBar Height="5" Maximum="1" Value="{Binding Progress.Fraction, Mode=OneWay}" IsIndeterminate="{Binding IsPreparing, Mode=OneWay}" Margin="0,4,0,12"/>
-     <WrapPanel>
-      <ui:Button Content="取消当前任务" Icon="{ui:SymbolIcon Dismiss24}" Click="Cancel_OnClick" Visibility="{c:Binding IsActive, FalseToVisibility=Collapsed}" IsEnabled="{Binding CanCancel}" Margin="0,0,8,4"/>
-      <ui:Button Content="{Binding EditLabel}" Icon="{ui:SymbolIcon Edit24}" Click="Edit_OnClick" IsEnabled="{Binding CanEdit}" Visibility="{c:Binding !IsActive, FalseToVisibility=Collapsed}" Margin="0,0,8,4"/>
-      <ui:Button Content="在文件夹中显示" Icon="{ui:SymbolIcon FolderOpen24}" Click="ShowFile_OnClick" IsEnabled="{Binding IsCompleted}" Margin="0,0,8,4"/>
-      <ui:Button Content="移除任务" Icon="{ui:SymbolIcon Dismiss24}" Click="Remove_OnClick" IsEnabled="{Binding CanEdit}" Margin="0,0,0,4"/>
-     </WrapPanel>
-     <TextBlock Text="{Binding FailureSummary}" TextWrapping="Wrap" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Margin="0,4,0,8"/>
-     <TextBlock Text="视频文件" FontWeight="SemiBold"/><TextBlock Text="{Binding SourceVideo}" TextWrapping="Wrap" Margin="0,4,0,8"/>
-     <TextBlock Text="烧录字幕" FontWeight="SemiBold"/><TextBlock Text="{Binding SubtitleDescription}" TextWrapping="Wrap" Margin="0,4,0,8"/>
-     <TextBlock Text="输出路径" FontWeight="SemiBold"/><TextBlock Text="{Binding OutputPath}" TextWrapping="Wrap" Margin="0,4,0,0"/>
-    </StackPanel>
-   </ScrollViewer>
-  </ui:Card>
-  <ui:Card Grid.Row="1" Padding="12" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
-   <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-    <TextBlock Text="FFmpeg 参数" FontWeight="SemiBold" Margin="0,0,0,6"/>
-    <TextBox Grid.Row="1" x:Name="CommandTextBox" Text="{Binding FfmpegCommandDisplay, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas" MaxHeight="90" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,0,0,10" AutomationProperties.Name="FFmpeg 参数"/>
-    <DockPanel Grid.Row="2" Margin="0,0,0,6"><CheckBox DockPanel.Dock="Right" x:Name="FollowLog" IsChecked="True" Content="跟随最新日志"/><TextBlock Text="完整任务日志" FontWeight="SemiBold" VerticalAlignment="Center"/></DockPanel>
-    <TextBox Grid.Row="3" x:Name="LogTextBox" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" TextWrapping="NoWrap" TextChanged="Log_OnChanged" AutomationProperties.Name="完整任务日志"/>
-   </Grid>
-  </ui:Card>
- </Grid>
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:layout="clr-namespace:SekaiToolsGUI.Control" xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" /><RowDefinition Height="*" MinHeight="100" />
+        </Grid.RowDefinitions>
+        <ui:Card Padding="16" Margin="0,0,0,10" VerticalAlignment="Top">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ScrollViewer.Style>
+                    <Style TargetType="ScrollViewer">
+                        <Setter Property="MaxHeight" Value="370" />
+                        <Style.Triggers>
+                            <Trigger Property="layout:AdaptiveLayout.IsShort" Value="True">
+                                <Setter Property="MaxHeight" Value="210" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ScrollViewer.Style>
+                <StackPanel>
+                    <TextBlock Text="任务详情" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12" />
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding ListStatus}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                   ToolTip="{Binding SourceVideo}" />
+                    </DockPanel>
+                    <TextBlock Text="{Binding EncodingDescription}"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4,0,8"
+                               TextWrapping="Wrap" />
+                    <WrapPanel>
+                        <TextBlock Text="{Binding Progress.Fraction, StringFormat={}{0:P1}}" Margin="0,0,12,4" />
+                        <TextBlock Text="{Binding Progress.FramesPerSecond, StringFormat={}{0:F1} FPS}"
+                                   Margin="0,0,12,4" />
+                        <TextBlock Text="{Binding Progress.ElapsedDisplay}" Margin="0,0,12,4" />
+                        <TextBlock Text="{Binding Progress.RemainingDisplay}" Margin="0,0,12,4" />
+                        <TextBlock Text="{Binding Progress.OutputDisplay}" Margin="0,0,0,4" />
+                    </WrapPanel>
+                    <ProgressBar Height="5" Maximum="1" Value="{Binding Progress.Fraction, Mode=OneWay}"
+                                 IsIndeterminate="{Binding IsPreparing, Mode=OneWay}" Margin="0,4,0,12" />
+                    <WrapPanel>
+                        <ui:Button Content="取消当前任务" Icon="{ui:SymbolIcon Dismiss24}" Click="Cancel_OnClick"
+                                   Visibility="{c:Binding IsActive, FalseToVisibility=Collapsed}"
+                                   IsEnabled="{Binding CanCancel}" Margin="0,0,8,4" />
+                        <ui:Button Content="{Binding EditLabel}" Icon="{ui:SymbolIcon Edit24}" Click="Edit_OnClick"
+                                   IsEnabled="{Binding CanEdit}"
+                                   Visibility="{c:Binding !IsActive, FalseToVisibility=Collapsed}" Margin="0,0,8,4" />
+                        <ui:Button Content="在文件夹中显示" Icon="{ui:SymbolIcon FolderOpen24}" Click="ShowFile_OnClick"
+                                   IsEnabled="{Binding IsCompleted}" Margin="0,0,8,4" />
+                        <ui:Button Content="移除任务" Icon="{ui:SymbolIcon Dismiss24}" Click="Remove_OnClick"
+                                   IsEnabled="{Binding CanEdit}" Margin="0,0,0,4" />
+                    </WrapPanel>
+                    <TextBlock Text="{Binding FailureSummary}" TextWrapping="Wrap"
+                               Foreground="{DynamicResource SystemFillColorCriticalBrush}" Margin="0,4,0,8" />
+                    <TextBlock Text="视频文件" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding SourceVideo}" TextWrapping="Wrap" Margin="0,4,0,8" />
+                    <TextBlock Text="烧录字幕" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding SubtitleDescription}" TextWrapping="Wrap" Margin="0,4,0,8" />
+                    <TextBlock Text="输出路径" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding OutputPath}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                </StackPanel>
+            </ScrollViewer>
+        </ui:Card>
+        <ui:Card Grid.Row="1" Padding="12" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
+                 HorizontalContentAlignment="Stretch">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <TextBlock Text="FFmpeg 参数" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <TextBox Grid.Row="1" x:Name="CommandTextBox" Text="{Binding FfmpegCommandDisplay, Mode=OneWay}"
+                         IsReadOnly="True" FontFamily="Consolas" MaxHeight="90" TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto" Margin="0,0,0,10" AutomationProperties.Name="FFmpeg 参数" />
+                <DockPanel Grid.Row="2" Margin="0,0,0,6">
+                    <CheckBox DockPanel.Dock="Right" x:Name="FollowLog" IsChecked="True" Content="跟随最新日志" />
+                    <TextBlock Text="完整任务日志" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </DockPanel>
+                <TextBox Grid.Row="3" x:Name="LogTextBox" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True"
+                         FontFamily="Consolas" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                         TextWrapping="NoWrap" TextChanged="Log_OnChanged" AutomationProperties.Name="完整任务日志" />
+            </Grid>
+        </ui:Card>
+    </Grid>
 </UserControl>

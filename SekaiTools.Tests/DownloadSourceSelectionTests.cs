@@ -41,6 +41,7 @@ public class DownloadSourceSelectionTests
                 model.CurrentSourceIndex = -1;
                 Assert.Same(replacement[0], model.CurrentSource);
             }
+
             if (args.PropertyName == nameof(model.CurrentSourceIndex))
                 selectionNotified = true;
         };

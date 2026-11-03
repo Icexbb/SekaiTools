@@ -6,8 +6,27 @@ namespace SekaiToolsGUI.ViewModel.Subtitle;
 public sealed class SubtitleQueuePageModel(SequentialTaskQueue<SubtitleQueueTaskModel> queue) : ViewModelBase
 {
     public SequentialTaskQueue<SubtitleQueueTaskModel> Queue { get; } = queue;
-    public bool ResourcesReady { get => GetProperty(false); set { SetProperty(value); OnPropertyChanged(nameof(CanOpenDialog)); } }
-    public bool IsDialogOpen { get => GetProperty(false); set { SetProperty(value); OnPropertyChanged(nameof(CanOpenDialog)); } }
+
+    public bool ResourcesReady
+    {
+        get => GetProperty(false);
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(CanOpenDialog));
+        }
+    }
+
+    public bool IsDialogOpen
+    {
+        get => GetProperty(false);
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(CanOpenDialog));
+        }
+    }
+
     public bool CanOpenDialog => ResourcesReady && !IsDialogOpen;
     public bool HasSelection => SelectedTask != null;
     public SubtitleTask? SelectedControl => SelectedTask?.Control;

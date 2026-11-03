@@ -31,7 +31,10 @@ public class StoryParsingTests
             else Assert.Contains(expectedReason, reason);
             Assert.Equal(expectedReason == null, translation.IsApplicable(script));
         }
-        finally { File.Delete(path); }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]

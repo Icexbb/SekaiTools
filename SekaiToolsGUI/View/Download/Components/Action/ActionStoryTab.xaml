@@ -77,71 +77,81 @@
                         </StackPanel>
                     </Grid>
                     <Expander x:Name="AdvancedFilters" IsExpanded="False" Margin="0,8,0,0">
-                        <Expander.Header><StackPanel Orientation="Horizontal"><ui:SymbolIcon Symbol="Filter24" FontSize="16" Margin="0,0,6,0" /><TextBlock x:Name="AdvancedSummary" Text="更多筛选：活动、批次与编号" /></StackPanel></Expander.Header>
+                        <Expander.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Filter24" FontSize="16" Margin="0,0,6,0" />
+                                <TextBlock x:Name="AdvancedSummary" Text="更多筛选：活动、批次与编号" />
+                            </StackPanel>
+                        </Expander.Header>
                         <StackPanel>
-                    <Grid Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="筛选方式" FontSize="12" Margin="0,0,0,5"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                            <ComboBox x:Name="ModeBox" MinHeight="34" SelectedIndex="0"
-                                      HorizontalContentAlignment="Stretch"
-                                      SelectionChanged="Mode_OnSelectionChanged" AutomationProperties.Name="地图对话筛选方式">
-                                <ComboBoxItem Content="全部对话" />
-                                <ComboBoxItem Content="活动解锁" />
-                                <ComboBoxItem Content="活动追加（推断）" />
-                                <ComboBoxItem Content="对话类型" />
-                                <ComboBoxItem Content="更新批次" />
-                                <ComboBoxItem Content="归档日期（UTC+9）" />
-                            </ComboBox>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="筛选条件" FontSize="12" Margin="0,0,0,5"
-                                       Visibility="{Binding Visibility, ElementName=ValueBox}"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                            <ComboBox x:Name="ValueBox" MinHeight="34" HorizontalContentAlignment="Stretch"
-                                      DisplayMemberPath="Name" SelectionChanged="Value_OnSelectionChanged"
-                                      AutomationProperties.Name="地图对话筛选值" />
-                        </StackPanel>
-                    </Grid>
-                    <TextBlock x:Name="FilterHint" Margin="0,7,0,0" FontSize="11" TextWrapping="Wrap"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    <Border Margin="0,12,0,0" Padding="0,8,0,0" BorderThickness="0,1,0,0"
-                            BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
-                        <StackPanel>
-                            <TextBlock Text="编号范围" FontSize="12" Margin="0,0,0,6"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                            <Grid>
+                            <Grid Margin="0,8,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="96" />
-                                    <ColumnDefinition Width="10" />
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="12" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <ComboBox x:Name="IdIndexBox" Grid.Column="0" MinHeight="34" SelectedIndex="0"
-                                          SelectionChanged="IdIndex_OnSelectionChanged"
-                                          AutomationProperties.Name="对话索引类型"
-                                          ToolTip="ID 为原始数据编号；TalkId 为普通／特殊对话的顺序编号">
-                                    <ComboBoxItem Content="ID" />
-                                    <ComboBoxItem Content="TalkId" />
-                                </ComboBox>
-                                <ui:TextBox x:Name="MinimumIdBox" Grid.Column="2" MinHeight="34" PlaceholderText="起始编号"
-                                            ToolTip="包含起始编号，留空表示不限；TalkId 支持 0001 或 S0001"
-                                            AutomationProperties.Name="起始对话编号" TextChanged="IdRange_OnTextChanged" />
-                                <TextBlock Grid.Column="3" Text="—" HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                                <ui:TextBox x:Name="MaximumIdBox" Grid.Column="4" MinHeight="34" PlaceholderText="结束编号"
-                                            ToolTip="包含结束编号，留空表示不限；TalkId 支持 0001 或 S0001"
-                                            AutomationProperties.Name="结束对话编号" TextChanged="IdRange_OnTextChanged" />
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="筛选方式" FontSize="12" Margin="0,0,0,5"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                    <ComboBox x:Name="ModeBox" MinHeight="34" SelectedIndex="0"
+                                              HorizontalContentAlignment="Stretch"
+                                              SelectionChanged="Mode_OnSelectionChanged"
+                                              AutomationProperties.Name="地图对话筛选方式">
+                                        <ComboBoxItem Content="全部对话" />
+                                        <ComboBoxItem Content="活动解锁" />
+                                        <ComboBoxItem Content="活动追加（推断）" />
+                                        <ComboBoxItem Content="对话类型" />
+                                        <ComboBoxItem Content="更新批次" />
+                                        <ComboBoxItem Content="归档日期（UTC+9）" />
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="筛选条件" FontSize="12" Margin="0,0,0,5"
+                                               Visibility="{Binding Visibility, ElementName=ValueBox}"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                    <ComboBox x:Name="ValueBox" MinHeight="34" HorizontalContentAlignment="Stretch"
+                                              DisplayMemberPath="Name" SelectionChanged="Value_OnSelectionChanged"
+                                              AutomationProperties.Name="地图对话筛选值" />
+                                </StackPanel>
                             </Grid>
-                        </StackPanel>
-                    </Border>
+                            <TextBlock x:Name="FilterHint" Margin="0,7,0,0" FontSize="11" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <Border Margin="0,12,0,0" Padding="0,8,0,0" BorderThickness="0,1,0,0"
+                                    BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
+                                <StackPanel>
+                                    <TextBlock Text="编号范围" FontSize="12" Margin="0,0,0,6"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="96" />
+                                            <ColumnDefinition Width="10" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="28" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="IdIndexBox" Grid.Column="0" MinHeight="34" SelectedIndex="0"
+                                                  SelectionChanged="IdIndex_OnSelectionChanged"
+                                                  AutomationProperties.Name="对话索引类型"
+                                                  ToolTip="ID 为原始数据编号；TalkId 为普通／特殊对话的顺序编号">
+                                            <ComboBoxItem Content="ID" />
+                                            <ComboBoxItem Content="TalkId" />
+                                        </ComboBox>
+                                        <ui:TextBox x:Name="MinimumIdBox" Grid.Column="2" MinHeight="34"
+                                                    PlaceholderText="起始编号"
+                                                    ToolTip="包含起始编号，留空表示不限；TalkId 支持 0001 或 S0001"
+                                                    AutomationProperties.Name="起始对话编号"
+                                                    TextChanged="IdRange_OnTextChanged" />
+                                        <TextBlock Grid.Column="3" Text="—" HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                        <ui:TextBox x:Name="MaximumIdBox" Grid.Column="4" MinHeight="34"
+                                                    PlaceholderText="结束编号"
+                                                    ToolTip="包含结束编号，留空表示不限；TalkId 支持 0001 或 S0001"
+                                                    AutomationProperties.Name="结束对话编号"
+                                                    TextChanged="IdRange_OnTextChanged" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </Expander>
                 </StackPanel>
@@ -160,7 +170,7 @@
                                ToolTip="切换排序方向" AutomationProperties.Name="切换排序方向">
                         <ui:SymbolIcon Symbol="ArrowSortDownLines24" FontSize="16" />
                     </ui:Button>
-                    <ui:Button x:Name="AddFilteredButton" Grid.Column="1" Appearance="Primary"
+                    <ui:Button x:Name="AddFilteredButton" Appearance="Primary"
                                Content="全部加入下载列表" IsEnabled="False" Click="AddFiltered_OnClick">
                         <ui:Button.Icon>
                             <ui:SymbolIcon Symbol="AddCircle24" />
@@ -170,12 +180,12 @@
             </Grid>
         </StackPanel>
         <ui:ListView Grid.Row="1" ItemsSource="{Binding EventStories}"
-                  BorderBrush="Transparent"
-                  Background="Transparent"
-                  Padding="0"
-                  ScrollViewer.CanContentScroll="True"
-                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                  VirtualizingStackPanel.ScrollUnit="Pixel">
+                     BorderBrush="Transparent"
+                     Background="Transparent"
+                     Padding="0"
+                     ScrollViewer.CanContentScroll="True"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     VirtualizingStackPanel.ScrollUnit="Pixel">
             <ui:ListView.ItemTemplate>
                 <DataTemplate>
                     <local:ActionStoryItem AreaStorySet="{Binding}" HorizontalAlignment="Stretch" />

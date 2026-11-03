@@ -8,11 +8,12 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using Microsoft.Extensions.Logging;
-using SekaiToolsBase;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
+using SekaiToolsBase;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
+using SekaiToolsGUI.ViewModel.Setting;
 using SekaiToolsGUI.ViewModel.Subtitle;
 using Path = System.Windows.Shapes.Path;
 
@@ -131,22 +132,16 @@ public partial class TimelineEditor : UserControl
         typeof(TimelineEditor),
         new FrameworkPropertyMetadata(false, OnIsReadOnlyChanged));
 
-    private CancellationTokenSource? _nativePlaybackCancellation;
-    private CancellationTokenSource? _cursorScrubCancellation;
-    private Task _cursorScrubTask = Task.CompletedTask;
-    private int? _pendingCursorFrame;
-    private PlaybackMode _resumeCursorPlayback;
-    private TimeSpan _resumeCursorEnd;
-    private Action<ImageSource>? _cursorPreview;
-    private long _lastPreviewLogTick;
-    private string _activePlaybackBackend = "";
-    private double? _playbackPositionMilliseconds;
     private readonly List<TimelineHitRegion> _eventHitRegions = [];
     private readonly List<TimelineEventSelection> _events = [];
     private readonly DispatcherTimer _playbackTimer;
     private readonly Stack<TimingEditCommand> _undoStack = new();
+    private string _activePlaybackBackend = "";
     private WaveOut? _audioOutput;
     private MediaFoundationReader? _audioReader;
+    private Action<ImageSource>? _cursorPreview;
+    private CancellationTokenSource? _cursorScrubCancellation;
+    private Task _cursorScrubTask = Task.CompletedTask;
     private int _dragAnchorFrame;
     private DragMode _dragMode;
     private bool _dragMoved;
@@ -158,18 +153,29 @@ public partial class TimelineEditor : UserControl
     private double _framePreviewHandleX;
     private TimelineFramePreviewLoader? _framePreviewLoader;
     private double _framePreviewScale = 1;
+    private Action<ImageSource>? _inlineVideoFrame;
+    private long _lastPreviewLogTick;
     private int _lastVideoFrame = -1;
     private string? _mediaPath;
+
+    private CancellationTokenSource? _nativePlaybackCancellation;
     private bool _overviewDragging;
     private StreamGeometry? _overviewWaveformGeometry;
     private Size _overviewWaveformSize;
     private AudioWaveformEnvelope? _overviewWaveformSource;
+    private int? _pendingCursorFrame;
     private double _pixelsPerSecond = 100;
     private TimeSpan _playbackEnd;
     private PlaybackMode _playbackMode;
+    private double? _playbackPositionMilliseconds;
     private TimeSpan _playbackStart;
     private int _playbackVersion;
     private bool _preserveHandleSelectionAfterDrag;
+
+    private int _renderBatchDepth;
+    private bool _renderPending;
+    private TimeSpan _resumeCursorEnd;
+    private PlaybackMode _resumeCursorPlayback;
     private DragMode _selectedHandle;
     private TimelineEventSelection? _selection;
     private bool _updatingTimeBoxes;
@@ -178,7 +184,6 @@ public partial class TimelineEditor : UserControl
     private CancellationTokenSource? _videoPlaybackCancellation;
     private TimelineFramePreviewLoader? _videoPlaybackLoader;
     private TimelinePlaybackWindow? _videoPlaybackWindow;
-    private Action<ImageSource>? _inlineVideoFrame;
     private double _viewStartMilliseconds;
     private AudioWaveformEnvelope? _waveform;
     private CancellationTokenSource? _waveformCancellation;
@@ -462,6 +467,7 @@ public partial class TimelineEditor : UserControl
             e.Handled = true;
             return;
         }
+
         if (_selection != null && !IsReadOnly)
         {
             var startX = TimeToX(GetStartMilliseconds(_selection));
@@ -538,6 +544,7 @@ public partial class TimelineEditor : UserControl
             e.Handled = true;
             return;
         }
+
         TimelineCanvas.Cursor = CanDragPlaybackCursor(e.GetPosition(TimelineCanvas)) ? Cursors.SizeWE : Cursors.Arrow;
         if (_selection == null || _dragMode == DragMode.None || IsReadOnly)
             return;
@@ -569,14 +576,14 @@ public partial class TimelineEditor : UserControl
                     frame);
                 break;
             case DragMode.Range:
-                {
-                    var delta = frame - _dragAnchorFrame;
-                    if (_dragOriginalStart + delta < 0)
-                        delta = -_dragOriginalStart;
-                    start = _dragOriginalStart + delta;
-                    end = _dragOriginalEnd + delta;
-                    break;
-                }
+            {
+                var delta = frame - _dragAnchorFrame;
+                if (_dragOriginalStart + delta < 0)
+                    delta = -_dragOriginalStart;
+                start = _dragOriginalStart + delta;
+                end = _dragOriginalEnd + delta;
+                break;
+            }
             case DragMode.Separator:
                 _selection.SetSeparateFrame(Math.Clamp(frame, start + 1, end - 1));
                 UpdateTimingDisplay();
@@ -604,6 +611,7 @@ public partial class TimelineEditor : UserControl
             CompleteCursorDrag();
             return;
         }
+
         if (_dragMode == DragMode.None)
             return;
 
@@ -646,11 +654,13 @@ public partial class TimelineEditor : UserControl
         }
     }
 
-    private bool CanDragPlaybackCursor(Point point) =>
-        !IsReadOnly && _selection != null && _framePreviewLoader != null &&
-        _playbackPositionMilliseconds.HasValue && _videoDurationMilliseconds > 0 &&
-        point.X >= TrackHeaderWidth &&
-        Math.Abs(point.X - TimeToX(_playbackPositionMilliseconds.Value)) <= (point.Y <= 14 ? 9 : 6);
+    private bool CanDragPlaybackCursor(Point point)
+    {
+        return !IsReadOnly && _selection != null && _framePreviewLoader != null &&
+               _playbackPositionMilliseconds.HasValue && _videoDurationMilliseconds > 0 &&
+               point.X >= TrackHeaderWidth &&
+               Math.Abs(point.X - TimeToX(_playbackPositionMilliseconds.Value)) <= (point.Y <= 14 ? 9 : 6);
+    }
 
     private void BeginCursorDrag(double x)
     {
@@ -711,7 +721,9 @@ public partial class TimelineEditor : UserControl
                 }
             }
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException)
+        {
+        }
         catch (Exception ex)
         {
             if (ReferenceEquals(cancellation, _cursorScrubCancellation))
@@ -730,11 +742,12 @@ public partial class TimelineEditor : UserControl
         var preview = _cursorPreview;
         var position = (int)(_playbackPositionMilliseconds ?? 0);
         var end = position < _resumeCursorEnd.TotalMilliseconds
-            ? (int)_resumeCursorEnd.TotalMilliseconds : _videoDurationMilliseconds;
+            ? (int)_resumeCursorEnd.TotalMilliseconds
+            : _videoDurationMilliseconds;
         await _cursorScrubTask;
         if (cancellation == null || !ReferenceEquals(cancellation, _cursorScrubCancellation)) return;
         if (mode != PlaybackMode.None && position < end)
-            await StartPlaybackAsync(mode, requireFeatureSwitch: false, showFrame: preview,
+            await StartPlaybackAsync(mode, false, preview,
                 startMillisecondsOverride: position, endMillisecondsOverride: end);
         else
             SetPlaybackStatus("已定位");
@@ -939,31 +952,31 @@ public partial class TimelineEditor : UserControl
                         _selection.EndFrame + delta));
                 break;
             case DragMode.Separator:
+            {
+                if (!_selection.HasSeparator)
                 {
-                    if (!_selection.HasSeparator)
-                    {
-                        DeselectHandle();
-                        return;
-                    }
-
-                    var oldFrame = _selection.SeparateFrame;
-                    _selection.SetSeparateFrame(oldFrame + delta);
-                    var newFrame = _selection.SeparateFrame;
-                    if (oldFrame == newFrame)
-                        return;
-                    _undoStack.Push(new TimingEditCommand(
-                        _selection,
-                        _selection.StartFrame,
-                        _selection.EndFrame,
-                        _selection.StartFrame,
-                        _selection.EndFrame,
-                        oldFrame,
-                        newFrame));
-                    UpdateUndoState();
-                    UpdateTimingDisplay();
-                    RenderTimeline();
-                    break;
+                    DeselectHandle();
+                    return;
                 }
+
+                var oldFrame = _selection.SeparateFrame;
+                _selection.SetSeparateFrame(oldFrame + delta);
+                var newFrame = _selection.SeparateFrame;
+                if (oldFrame == newFrame)
+                    return;
+                _undoStack.Push(new TimingEditCommand(
+                    _selection,
+                    _selection.StartFrame,
+                    _selection.EndFrame,
+                    _selection.StartFrame,
+                    _selection.EndFrame,
+                    oldFrame,
+                    newFrame));
+                UpdateUndoState();
+                UpdateTimingDisplay();
+                RenderTimeline();
+                break;
+            }
             default:
                 return;
         }
@@ -1032,19 +1045,23 @@ public partial class TimelineEditor : UserControl
         StopPlayback();
     }
 
-    public void StopEventPreview() => StopPlayback("已停止预览", keepVideoPreview: true);
+    public void StopEventPreview()
+    {
+        StopPlayback("已停止预览", true);
+    }
 
     private async void PreviewEventButton_OnClick(object sender, RoutedEventArgs e)
     {
         if (ViewModel.CanPreview)
-            await StartPlaybackAsync(PlaybackMode.Video, requireFeatureSwitch: false);
+            await StartPlaybackAsync(PlaybackMode.Video, false);
     }
 
     public void UpdateRecognitionPreviewInfo(int frameIndex, VideoInfo videoInfo, bool isRunning)
     {
         var time = TimeSpan.FromMilliseconds(videoInfo.Fps.TimeAtFrame(frameIndex).Milliseconds);
         var percent = videoInfo.FrameCount > 0
-            ? Math.Clamp((frameIndex + 1d) / videoInfo.FrameCount * 100, 0, 100) : 0;
+            ? Math.Clamp((frameIndex + 1d) / videoInfo.FrameCount * 100, 0, 100)
+            : 0;
         ViewModel.HasPlaybackPreviewInfo = true;
         ViewModel.PreviewPlaybackProgress = percent;
         ViewModel.PreviewFrameInfo = $"帧 {frameIndex} · 时间 {time:hh\\:mm\\:ss\\.fff} · 视频 {percent:F1}%";
@@ -1053,19 +1070,27 @@ public partial class TimelineEditor : UserControl
         UpdatePlaybackCursor();
     }
 
-    public Task PreviewEventVideoAsync(string videoPath, TimelineEventSelection selection, Action<ImageSource> showFrame, int? startFrame = null, int? endFrameExclusive = null)
+    public Task PreviewEventVideoAsync(string videoPath, TimelineEventSelection selection,
+        Action<ImageSource> showFrame, int? startFrame = null, int? endFrameExclusive = null)
     {
         SelectEvent(selection);
         _mediaPath = videoPath;
-        var start = startFrame.HasValue ? selection.FrameRate.TimeAtFrame(
-            Math.Clamp(startFrame.Value, selection.StartFrame, selection.EndFrame), FrameType.Start).Milliseconds : (int?)null;
-        var end = endFrameExclusive.HasValue ? selection.FrameRate.TimeAtFrame(
-            Math.Clamp(endFrameExclusive.Value, selection.StartFrame, selection.EndFrame), FrameType.Start).Milliseconds : (int?)null;
-        return StartPlaybackAsync(PlaybackMode.Video, requireFeatureSwitch: false, showFrame,
+        var start = startFrame.HasValue
+            ? selection.FrameRate.TimeAtFrame(
+                Math.Clamp(startFrame.Value, selection.StartFrame, selection.EndFrame), FrameType.Start).Milliseconds
+            : (int?)null;
+        var end = endFrameExclusive.HasValue
+            ? selection.FrameRate.TimeAtFrame(
+                    Math.Clamp(endFrameExclusive.Value, selection.StartFrame, selection.EndFrame), FrameType.Start)
+                .Milliseconds
+            : (int?)null;
+        return StartPlaybackAsync(PlaybackMode.Video, false, showFrame,
             startMillisecondsOverride: start, endMillisecondsOverride: end);
     }
 
-    private async Task StartPlaybackAsync(PlaybackMode mode, bool requireFeatureSwitch = true, Action<ImageSource>? showFrame = null, bool forceLegacy = false, int? startMillisecondsOverride = null, int? endMillisecondsOverride = null)
+    private async Task StartPlaybackAsync(PlaybackMode mode, bool requireFeatureSwitch = true,
+        Action<ImageSource>? showFrame = null, bool forceLegacy = false, int? startMillisecondsOverride = null,
+        int? endMillisecondsOverride = null)
     {
         if (requireFeatureSwitch && !GeneralFunctionSwitch.EventPlayBack)
             return;
@@ -1082,7 +1107,8 @@ public partial class TimelineEditor : UserControl
         if (endMilliseconds <= startMilliseconds)
         {
             SetPlaybackStatus("事件区间无效");
-            Logger.Log($"[语句预览] 无法开始：事件区间无效 | {_selection.EventNumber} | {startMilliseconds}–{endMilliseconds} ms", LogLevel.Warning);
+            Logger.Log($"[语句预览] 无法开始：事件区间无效 | {_selection.EventNumber} | {startMilliseconds}–{endMilliseconds} ms",
+                LogLevel.Warning);
             return;
         }
 
@@ -1099,11 +1125,12 @@ public partial class TimelineEditor : UserControl
         ViewModel.IsPlaying = true;
         SetPlaybackStatus("正在加载…");
 
-        var backend = SekaiToolsGUI.ViewModel.Setting.SettingPageModel.Instance.PreviewPlaybackBackend;
+        var backend = SettingPageModel.Instance.PreviewPlaybackBackend;
         _activePlaybackBackend = !forceLegacy && backend != 1 ? "WPF 内嵌播放" : "OpenCV + NAudio";
         _lastPreviewLogTick = Environment.TickCount64;
         UpdatePlaybackStatus(_playbackStart);
-        Logger.Log($"[语句预览] 开始 | {_activePlaybackBackend} | {_selection.EventNumber} {_selection.EventType} | 文件={_mediaPath} | 帧={_selection.StartFrame}–{_selection.EndFrame}（0 起） | 时间={_playbackStart:hh\\:mm\\:ss\\.fff}–{_playbackEnd:hh\\:mm\\:ss\\.fff}");
+        Logger.Log(
+            $"[语句预览] 开始 | {_activePlaybackBackend} | {_selection.EventNumber} {_selection.EventType} | 文件={_mediaPath} | 帧={_selection.StartFrame}–{_selection.EndFrame}（0 起） | 时间={_playbackStart:hh\\:mm\\:ss\\.fff}–{_playbackEnd:hh\\:mm\\:ss\\.fff}");
         if (!forceLegacy && backend != 1)
         {
             var version = _playbackVersion;
@@ -1115,6 +1142,7 @@ public partial class TimelineEditor : UserControl
                 window.Title = $"事件预览 · {_selection.EventNumber} {_selection.EventType}";
                 if (!window.IsVisible) window.Show();
             }
+
             SetPlaybackStatus("正在加载…");
             try
             {
@@ -1130,7 +1158,9 @@ public partial class TimelineEditor : UserControl
                     }, cancellation.Token);
                 if (version == _playbackVersion) StopPlayback("播放完成", mode == PlaybackMode.Video);
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException)
+            {
+            }
             catch (Exception ex)
             {
                 if (version == _playbackVersion)
@@ -1138,16 +1168,20 @@ public partial class TimelineEditor : UserControl
                     if (backend == 0)
                     {
                         Logger.Log($"[语句预览] WPF 播放失败，回退到 OpenCV + NAudio | {ex}", LogLevel.Warning);
-                        await StartPlaybackAsync(mode, requireFeatureSwitch, showFrame, forceLegacy: true, startMillisecondsOverride, endMillisecondsOverride);
+                        await StartPlaybackAsync(mode, requireFeatureSwitch, showFrame, true, startMillisecondsOverride,
+                            endMillisecondsOverride);
                     }
                     else
+                    {
                         StopPlayback($"播放失败：{ex.Message}");
+                    }
                 }
             }
             finally
             {
                 if (ReferenceEquals(_nativePlaybackCancellation, cancellation)) _nativePlaybackCancellation = null;
             }
+
             return;
         }
 
@@ -1270,6 +1304,7 @@ public partial class TimelineEditor : UserControl
             StopPlayback($"无法读取音频播放位置：{ex.Message}");
             return;
         }
+
         if (position >= _playbackEnd)
         {
             StopPlayback("播放完成", _playbackMode == PlaybackMode.Video);
@@ -1350,18 +1385,23 @@ public partial class TimelineEditor : UserControl
             CoerceViewport();
             RenderTimeline();
         }
+
         UpdatePlaybackCursor();
-        var frameIndex = _selection == null ? 0 : Math.Clamp(
-            _selection.FrameRate.FrameAtTime((int)time.TotalMilliseconds),
-            0, Math.Max(0, _selection.FrameRate.FrameAtTime(Math.Max(0, _videoDurationMilliseconds - 1))));
+        var frameIndex = _selection == null
+            ? 0
+            : Math.Clamp(
+                _selection.FrameRate.FrameAtTime((int)time.TotalMilliseconds),
+                0, Math.Max(0, _selection.FrameRate.FrameAtTime(Math.Max(0, _videoDurationMilliseconds - 1))));
         ViewModel.HasPlaybackPreviewInfo = true;
         ViewModel.PreviewPlaybackProgress = progress;
         ViewModel.PreviewFrameInfo = $"帧 {frameIndex} · 时间 {time:hh\\:mm\\:ss\\.fff} · 片段 {progress:F1}%";
         if (Environment.TickCount64 - _lastPreviewLogTick >= 1000)
         {
             _lastPreviewLogTick = Environment.TickCount64;
-            Logger.Log($"[语句预览] 进度 | {_activePlaybackBackend} | {_selection?.EventNumber} | {ViewModel.PreviewFrameInfo}");
+            Logger.Log(
+                $"[语句预览] 进度 | {_activePlaybackBackend} | {_selection?.EventNumber} | {ViewModel.PreviewFrameInfo}");
         }
+
         SetPlaybackStatus($"{mode} · {FormatTimestamp((int)elapsed)} / {FormatTimestamp((int)duration)}");
     }
 
@@ -1377,9 +1417,11 @@ public partial class TimelineEditor : UserControl
         {
             if (status == "播放完成") UpdatePlaybackStatus(_playbackEnd);
             var reason = string.IsNullOrEmpty(status) ? "已停止预览" : status;
-            Logger.Log($"[语句预览] {reason} | {_activePlaybackBackend} | {_selection?.EventNumber} | {ViewModel.PreviewFrameInfo}",
+            Logger.Log(
+                $"[语句预览] {reason} | {_activePlaybackBackend} | {_selection?.EventNumber} | {ViewModel.PreviewFrameInfo}",
                 reason.Contains("失败") || reason.Contains("无法") ? LogLevel.Error : LogLevel.Information);
         }
+
         _nativePlaybackCancellation?.Cancel();
         _nativePlaybackCancellation = null;
         _inlineVideoFrame = null;
@@ -1668,7 +1710,12 @@ public partial class TimelineEditor : UserControl
 
     private void RenderTimeline()
     {
-        if (_renderBatchDepth > 0) { _renderPending = true; return; }
+        if (_renderBatchDepth > 0)
+        {
+            _renderPending = true;
+            return;
+        }
+
         if (TimelineCanvas == null)
             return;
 
@@ -2282,12 +2329,19 @@ public partial class TimelineEditor : UserControl
             _viewStartMilliseconds = Math.Max(0, _playbackPositionMilliseconds.Value - GetVisibleMilliseconds() * 0.2);
             CoerceViewport();
         }
+
         RenderTimeline();
     }
 
     private void HideTimeLine_OnClick(object sender, RoutedEventArgs e)
     {
         ViewModel.ShowTimeLine = false;
+    }
+
+    internal IDisposable DeferRendering()
+    {
+        _renderBatchDepth++;
+        return new RenderBatch(this);
     }
 
     private enum PlaybackMode
@@ -2318,16 +2372,10 @@ public partial class TimelineEditor : UserControl
 
     private sealed record TimelineHitRegion(TimelineEventSelection Selection, Rect Bounds);
 
-    private int _renderBatchDepth;
-    private bool _renderPending;
-    internal IDisposable DeferRendering()
-    {
-        _renderBatchDepth++;
-        return new RenderBatch(this);
-    }
     private sealed class RenderBatch(TimelineEditor owner) : IDisposable
     {
         private TimelineEditor? _owner = owner;
+
         public void Dispose()
         {
             var editor = Interlocked.Exchange(ref _owner, null);

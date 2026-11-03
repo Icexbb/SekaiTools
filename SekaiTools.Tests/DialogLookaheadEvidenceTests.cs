@@ -40,5 +40,8 @@ public class DialogLookaheadEvidenceTests
             Dialog("こはね", "（……次が）"), [Dialog("杏", "（……熱いな）")]));
     }
 
-    private static DialogStoryEvent Dialog(string speaker, string body) => new(0, body, 0, speaker, false, false);
+    private static DialogStoryEvent Dialog(string speaker, string body)
+    {
+        return new DialogStoryEvent(0, body, 0, speaker, false, false);
+    }
 }

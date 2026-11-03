@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -8,11 +8,13 @@ using System.Reflection;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Shell;
+using System.Windows.Threading;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 using SekaiToolsConfiguration;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.Service;
+using SekaiToolsGUI.View.Download;
 using SekaiToolsGUI.View.Setting;
 using SekaiToolsGUI.View.Subtitle;
 using SekaiToolsGUI.View.Suppress;
@@ -29,11 +31,17 @@ namespace SekaiToolsGUI;
 
 public partial class MainWindow : FluentWindow
 {
+    private readonly EditorSessionStore _sessions = new();
+
+    private readonly WindowsNotifyingSnackbarService _windowSnackbarService = new()
+    {
+        DefaultTimeOut = TimeSpan.FromSeconds(3)
+    };
+
+    private bool _closeConfirmed;
+    private bool _closeInProgress;
     private object? _currentNavigatedPage;
     private TranslatePage? _translationPage;
-    private readonly EditorSessionStore _sessions = new();
-    private bool _closeInProgress;
-    private bool _closeConfirmed;
 
     public MainWindow() : this(true)
     {
@@ -50,11 +58,6 @@ public partial class MainWindow : FluentWindow
         TaskbarItemInfo = new TaskbarItemInfo();
         SetWindowTitle("");
     }
-
-    private readonly WindowsNotifyingSnackbarService _windowSnackbarService = new()
-    {
-        DefaultTimeOut = TimeSpan.FromSeconds(3)
-    };
 
     public ISnackbarService WindowSnackbarService => _windowSnackbarService;
     public ISnackbarService WindowInAppSnackbarService => _windowSnackbarService.InAppService;
@@ -143,18 +146,19 @@ public partial class MainWindow : FluentWindow
                 _closeInProgress = false;
                 return;
             }
+
             _closeConfirmed = true;
             SetWindowTitle("正在停止任务");
             SetTaskbarProgressState(TaskbarItemProgressState.Indeterminate, 0);
             await SuppressPage.DisposeSuppressorAsync();
             await SubtitlePage.DisposeTasksAsync();
-            await View.Download.DownloadPage.StopDownloadsAsync();
+            await DownloadPage.StopDownloadsAsync();
 
             // Let the current Closing event finish before requesting the
             // actual close. The second Closing event is allowed by the flag.
             await Dispatcher.InvokeAsync(
                 Close,
-                System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                DispatcherPriority.ApplicationIdle);
         }
         catch
         {
@@ -351,6 +355,8 @@ partial class MainWindow
             Process.Start(startInfo);
         }
         else
+        {
             MessageBox.Show("检测到新版本，但 Updater.exe 不存在！", "更新失败", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 }

@@ -44,7 +44,8 @@
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0"
                           Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
-                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" MinLines="1" Padding="5,5,5,24"
+                        <TextBox IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" MinLines="1"
+                                 Padding="5,5,5,24"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent"
                                  BorderBrush="Transparent"
                                  AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />

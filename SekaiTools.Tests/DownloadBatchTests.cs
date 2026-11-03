@@ -1,13 +1,16 @@
 using System.Collections.Concurrent;
+using System.Net;
 using SekaiDataFetch;
 
 namespace SekaiTools.Tests;
 
 public class DownloadBatchTests
 {
-    private static DownloadJob Job(int index, string? path = null) =>
-        new(Guid.NewGuid(), $"Story {index}", $"https://download.invalid/{index}.json",
+    private static DownloadJob Job(int index, string? path = null)
+    {
+        return new DownloadJob(Guid.NewGuid(), $"Story {index}", $"https://download.invalid/{index}.json",
             path ?? Path.Combine(Path.GetTempPath(), $"SekaiTools-not-written-{Guid.NewGuid():N}.json"), "Source");
+    }
 
     [Fact]
     public async Task LimitsConcurrencyToThreeAndKeepsBatchSnapshotIndependent()
@@ -20,7 +23,11 @@ public class DownloadBatchTests
         var batch = new DownloadBatch(async (_, _, token) =>
         {
             var count = Interlocked.Increment(ref active);
-            lock (gate) peak = Math.Max(peak, count);
+            lock (gate)
+            {
+                peak = Math.Max(peak, count);
+            }
+
             if (Interlocked.Increment(ref calls) == 3) entered.SetResult();
             await gate.Task.WaitAsync(token);
             Interlocked.Decrement(ref active);
@@ -88,14 +95,21 @@ public class DownloadBatchTests
         try
         {
             var calls = 0;
-            var batch = new DownloadBatch((_, _, _) => { calls++; return Task.CompletedTask; });
+            var batch = new DownloadBatch((_, _, _) =>
+            {
+                calls++;
+                return Task.CompletedTask;
+            });
             var jobs = new[] { Job(0, path) };
             Assert.Equal(1, (await batch.RunAsync(jobs, ExistingFilePolicy.Skip, _ => { })).Skipped);
             Assert.Equal(0, calls);
             Assert.Equal(1, (await batch.RunAsync(jobs, ExistingFilePolicy.Replace, _ => { })).Succeeded);
             Assert.Equal(1, calls);
         }
-        finally { File.Delete(path); }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]
@@ -112,15 +126,19 @@ public class DownloadBatchTests
             Assert.Equal("created elsewhere", await File.ReadAllTextAsync(path));
             Assert.Single(Directory.GetFiles(directory));
         }
-        finally { Directory.Delete(directory, true); }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
     }
 
     private sealed class RaceHandler(string path) : HttpMessageHandler
     {
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+            CancellationToken cancellationToken)
         {
             await File.WriteAllTextAsync(path, "created elsewhere", cancellationToken);
-            return new(System.Net.HttpStatusCode.OK) { Content = new StringContent("{}") };
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{}") };
         }
     }
 }

@@ -66,6 +66,7 @@ public sealed class SequentialTaskQueue<T>(Func<T, Task> execute) where T : clas
         {
             _completion = null;
         }
+
         completion.TrySetResult();
     }
 }

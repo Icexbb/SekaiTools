@@ -6,7 +6,6 @@ using System.Windows.Shell;
 using GongSolutions.Wpf.DragDrop;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
-using SekaiToolsCore;
 using SekaiToolsCore.Process;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.Service;
@@ -23,10 +22,10 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
 {
     private static SubtitlePage? _instance;
     private readonly SequentialTaskQueue<SubtitleQueueTaskModel> _queue;
-    private bool _preparingResources;
     private bool _checkedSavedProgress;
     private bool _closing;
     private Task? _historyLoading;
+    private bool _preparingResources;
     private SubtitlePageModel? _selectedState;
 
     public SubtitlePage()
@@ -47,11 +46,13 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
         _instance = this;
     }
 
-    public SubtitleQueuePageModel ViewModel => (SubtitleQueuePageModel)DataContext;
     private static IContentDialogService DialogService =>
         ((MainWindow)Application.Current.MainWindow!).WindowContentDialogService;
+
     private static ISnackbarService SnackService =>
         ((MainWindow)Application.Current.MainWindow!).WindowSnackbarService;
+
+    public SubtitleQueuePageModel ViewModel => (SubtitleQueuePageModel)DataContext;
 
     public async void OnNavigatedTo()
     {
@@ -78,7 +79,8 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
                     }, CancellationToken.None);
                     ViewModel.IsDialogOpen = false;
                     if (result == ContentDialogResult.Primary && !_closing)
-                        foreach (var entry in saved) AddTask(CreateTask(entry.State, false));
+                        foreach (var entry in saved)
+                            AddTask(CreateTask(entry.State, false));
                 }
             }
         }
@@ -100,13 +102,20 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
         ViewModel.IsDialogOpen = true;
         try
         {
-            var dialog = new SubtitleTaskDialog(DialogService.GetDialogHostEx() ?? throw new InvalidOperationException());
+            var dialog =
+                new SubtitleTaskDialog(DialogService.GetDialogHostEx() ?? throw new InvalidOperationException());
             var result = await DialogService.ShowAsync(dialog, CancellationToken.None);
             if (result == ContentDialogResult.Primary && !_closing)
                 AddTask(new SubtitleQueueTaskModel(dialog.ViewModel));
         }
-        catch (Exception exception) { ShowError("添加任务失败", exception); }
-        finally { ViewModel.IsDialogOpen = false; }
+        catch (Exception exception)
+        {
+            ShowError("添加任务失败", exception);
+        }
+        finally
+        {
+            ViewModel.IsDialogOpen = false;
+        }
     }
 
     private void AddTask(SubtitleQueueTaskModel task)
@@ -120,6 +129,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
             task.Detach();
             return;
         }
+
         _queue.PendingTasks.Add(task);
         SelectTask(task);
         _ = AdvanceQueueAsync();
@@ -127,11 +137,20 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
 
     private async Task AdvanceQueueAsync()
     {
-        try { await _queue.RunAsync(); }
-        catch (Exception exception) { ShowError("字幕队列异常", exception); }
+        try
+        {
+            await _queue.RunAsync();
+        }
+        catch (Exception exception)
+        {
+            ShowError("字幕队列异常", exception);
+        }
     }
 
-    private static Task RunTaskAsync(SubtitleQueueTaskModel task) => task.Control.RunAsync(task.SavedState);
+    private static Task RunTaskAsync(SubtitleQueueTaskModel task)
+    {
+        return task.Control.RunAsync(task.SavedState);
+    }
 
     private void QueuePageModel_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -188,7 +207,9 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
                     new SymbolIcon(SymbolRegular.Info24), TimeSpan.FromSeconds(3));
                 return;
             }
-            var dialog = new HistoryDialog(DialogService.GetDialogHostEx() ?? throw new InvalidOperationException(), entries, unfinished);
+
+            var dialog = new HistoryDialog(DialogService.GetDialogHostEx() ?? throw new InvalidOperationException(),
+                entries, unfinished);
             var result = await DialogService.ShowAsync(dialog, CancellationToken.None);
             if (_closing) return;
             if (result == ContentDialogResult.Secondary)
@@ -203,13 +224,21 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
                 if (clear == ContentDialogResult.Primary) await Task.Run(HistoryStore.Clear);
                 return;
             }
+
             var selected = dialog.SelectedEntry ?? dialog.SelectedUnfinishedEntry;
             if (result != ContentDialogResult.Primary || selected == null) return;
             _historyLoading = LoadSelectedHistoryAsync(selected);
             await _historyLoading;
         }
-        catch (Exception exception) { ShowError("读取历史失败", exception); }
-        finally { _historyLoading = null; ViewModel.IsDialogOpen = false; }
+        catch (Exception exception)
+        {
+            ShowError("读取历史失败", exception);
+        }
+        finally
+        {
+            _historyLoading = null;
+            ViewModel.IsDialogOpen = false;
+        }
     }
 
     private async Task LoadSelectedHistoryAsync(HistoryCatalogEntry selected)
@@ -218,17 +247,26 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
         if (_closing) return;
         var task = CreateTask(state, true);
         await task.Control.LoadHistoryStateAsync(state);
-        if (_closing) { await task.Control.DisposeAsync(); task.Detach(); return; }
+        if (_closing)
+        {
+            await task.Control.DisposeAsync();
+            task.Detach();
+            return;
+        }
+
         _queue.HistoryTasks.Add(task);
         SelectTask(task);
     }
 
-    private static SubtitleQueueTaskModel CreateTask(ProcessingState state, bool isHistory) => new(new SubtitlePageModel
+    private static SubtitleQueueTaskModel CreateTask(ProcessingState state, bool isHistory)
     {
-        VideoFilePath = state.VideoFilePath,
-        ScriptFilePath = state.ScriptFilePath,
-        TranslateFilePath = state.TranslateFilePath
-    }, isHistory, state);
+        return new SubtitleQueueTaskModel(new SubtitlePageModel
+        {
+            VideoFilePath = state.VideoFilePath,
+            ScriptFilePath = state.ScriptFilePath,
+            TranslateFilePath = state.TranslateFilePath
+        }, isHistory, state);
+    }
 
     private void SelectTask(SubtitleQueueTaskModel task)
     {
@@ -247,7 +285,8 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
 
     private async void TaskItem_OnRemoveRequested(object? sender, EventArgs e)
     {
-        if (sender is not SubtitleQueueTaskItem { DataContext: SubtitleQueueTaskModel task } || task.State.IsRunning) return;
+        if (sender is not SubtitleQueueTaskItem { DataContext: SubtitleQueueTaskModel task } ||
+            task.State.IsRunning) return;
         if (!task.State.HasNotStarted)
         {
             var result = await DialogService.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
@@ -259,6 +298,7 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
             }, CancellationToken.None);
             if (result != ContentDialogResult.Primary) return;
         }
+
         await RemoveTaskAsync(task);
     }
 
@@ -279,16 +319,21 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
             ViewModel.SelectedTask = null;
             if (AllTasks().FirstOrDefault() is { } next) SelectTask(next);
         }
+
         if (task.CreatedControl is { } control)
         {
             control.RemoveRequested -= TaskControl_OnRemoveRequested;
             await control.DisposeAsync();
         }
+
         task.Detach();
     }
 
-    private IEnumerable<SubtitleQueueTaskModel> AllTasks() => _queue.ProcessingTasks.Concat(_queue.PendingTasks)
-        .Concat(_queue.FinishedTasks).Concat(_queue.HistoryTasks);
+    private IEnumerable<SubtitleQueueTaskModel> AllTasks()
+    {
+        return _queue.ProcessingTasks.Concat(_queue.PendingTasks)
+            .Concat(_queue.FinishedTasks).Concat(_queue.HistoryTasks);
+    }
 
     public static async Task DisposeTasksAsync()
     {
@@ -302,23 +347,36 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
         foreach (var task in page._queue.ProcessingTasks) task.CreatedControl?.RequestStop();
         await stopped;
         if (page._historyLoading is { } historyLoading)
-            try { await historyLoading; }
-            catch (Exception exception) { Logger.Log($"历史加载退出失败: {exception}", LogLevel.Warning); }
+            try
+            {
+                await historyLoading;
+            }
+            catch (Exception exception)
+            {
+                Logger.Log($"历史加载退出失败: {exception}", LogLevel.Warning);
+            }
+
         foreach (var task in page.AllTasks().ToArray())
         {
             if (task.CreatedControl is { } control) await control.DisposeAsync();
             task.Detach();
         }
+
         _instance = null;
     }
 
-    private static bool MaterialsExist(ProcessingState state) => File.Exists(state.VideoFilePath) &&
-        File.Exists(state.ScriptFilePath) && File.Exists(state.TranslateFilePath);
+    private static bool MaterialsExist(ProcessingState state)
+    {
+        return File.Exists(state.VideoFilePath) &&
+               File.Exists(state.ScriptFilePath) && File.Exists(state.TranslateFilePath);
+    }
 
-    private static bool SameMaterials(SubtitlePageModel left, SubtitlePageModel right) =>
-        string.Equals(left.VideoFilePath, right.VideoFilePath, StringComparison.OrdinalIgnoreCase) &&
-        string.Equals(left.ScriptFilePath, right.ScriptFilePath, StringComparison.OrdinalIgnoreCase) &&
-        string.Equals(left.TranslateFilePath, right.TranslateFilePath, StringComparison.OrdinalIgnoreCase);
+    private static bool SameMaterials(SubtitlePageModel left, SubtitlePageModel right)
+    {
+        return string.Equals(left.VideoFilePath, right.VideoFilePath, StringComparison.OrdinalIgnoreCase) &&
+               string.Equals(left.ScriptFilePath, right.ScriptFilePath, StringComparison.OrdinalIgnoreCase) &&
+               string.Equals(left.TranslateFilePath, right.TranslateFilePath, StringComparison.OrdinalIgnoreCase);
+    }
 
     private static void ShowError(string title, Exception exception)
     {

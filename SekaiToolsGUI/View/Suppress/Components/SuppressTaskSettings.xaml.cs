@@ -7,6 +7,9 @@ namespace SekaiToolsGUI.View.Suppress.Components;
 
 public partial class SuppressTaskSettings
 {
+    private static readonly HashSet<string> VideoExtensions = new(StringComparer.OrdinalIgnoreCase)
+        { ".mp4", ".avi", ".mkv", ".webm", ".wmv" };
+
     public SuppressTaskSettings()
     {
         DataContext = new SuppressTaskSettingsModel();
@@ -15,19 +18,23 @@ public partial class SuppressTaskSettings
 
     public SuppressTaskSettingsModel ViewModel => (SuppressTaskSettingsModel)DataContext;
 
-    private static readonly HashSet<string> VideoExtensions = new(StringComparer.OrdinalIgnoreCase) { ".mp4", ".avi", ".mkv", ".webm", ".wmv" };
     private static bool AcceptFiles(IDataObject data)
     {
         if (data.GetData(DataFormats.FileDrop) is not string[] files || files.Length is < 1 or > 2) return false;
         return files.All(File.Exists) && files.Count(x => VideoExtensions.Contains(Path.GetExtension(x))) <= 1
-            && files.Count(x => Path.GetExtension(x).Equals(".ass", StringComparison.OrdinalIgnoreCase)) <= 1
-            && files.All(x => VideoExtensions.Contains(Path.GetExtension(x)) || Path.GetExtension(x).Equals(".ass", StringComparison.OrdinalIgnoreCase));
+                                      && files.Count(x =>
+                                          Path.GetExtension(x).Equals(".ass", StringComparison.OrdinalIgnoreCase)) <= 1
+                                      && files.All(x =>
+                                          VideoExtensions.Contains(Path.GetExtension(x)) || Path.GetExtension(x)
+                                              .Equals(".ass", StringComparison.OrdinalIgnoreCase));
     }
+
     private void Files_OnDragOver(object sender, DragEventArgs e)
     {
         e.Effects = AcceptFiles(e.Data) ? DragDropEffects.Copy : DragDropEffects.None;
         e.Handled = true;
     }
+
     private void Files_OnDrop(object sender, DragEventArgs e)
     {
         e.Handled = true;
@@ -35,11 +42,19 @@ public partial class SuppressTaskSettings
         var files = (string[])e.Data.GetData(DataFormats.FileDrop);
         var video = files.FirstOrDefault(x => VideoExtensions.Contains(Path.GetExtension(x)));
         if (video != null) ViewModel.SourceVideo = video;
-        var subtitle = files.FirstOrDefault(x => Path.GetExtension(x).Equals(".ass", StringComparison.OrdinalIgnoreCase));
-        if (subtitle != null) { ViewModel.SourceSubtitle = subtitle; ViewModel.SubtitleNotice = "已使用拖入的 ASS 字幕"; }
+        var subtitle =
+            files.FirstOrDefault(x => Path.GetExtension(x).Equals(".ass", StringComparison.OrdinalIgnoreCase));
+        if (subtitle != null)
+        {
+            ViewModel.SourceSubtitle = subtitle;
+            ViewModel.SubtitleNotice = "已使用拖入的 ASS 字幕";
+        }
     }
 
-    private void RetryAnalysis_OnClick(object sender, RoutedEventArgs e) => ViewModel.RetryAnalysis();
+    private void RetryAnalysis_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.RetryAnalysis();
+    }
 
     private static string? SelectFile(string filter)
     {
@@ -56,10 +71,18 @@ public partial class SuppressTaskSettings
     private void ScriptFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {
         var result = SelectFile("字幕文件|*.ass");
-        if (result != null) { ViewModel.SourceSubtitle = result; ViewModel.SubtitleNotice = "已手动选择 ASS 字幕"; }
+        if (result != null)
+        {
+            ViewModel.SourceSubtitle = result;
+            ViewModel.SubtitleNotice = "已手动选择 ASS 字幕";
+        }
     }
 
-    private void ClearSubtitle_OnClick(object sender, RoutedEventArgs e) { ViewModel.SourceSubtitle = ""; ViewModel.SubtitleNotice = "未选择字幕，将仅转码"; }
+    private void ClearSubtitle_OnClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.SourceSubtitle = "";
+        ViewModel.SubtitleNotice = "未选择字幕，将仅转码";
+    }
 
     private void SaveFileBrowser_OnClick(object sender, RoutedEventArgs e)
     {

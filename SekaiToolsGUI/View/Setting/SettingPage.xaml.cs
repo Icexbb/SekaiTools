@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
-using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.Control;
+using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.Setting.Components;
 using SekaiToolsGUI.ViewModel;
 using SekaiToolsGUI.ViewModel.Setting;
@@ -49,7 +49,10 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
 
     public SettingPageModel ViewModel => (SettingPageModel)DataContext;
 
-    private void OpenLogs_Click(object sender, RoutedEventArgs e) => RuntimeLogWindow.Open(Window.GetWindow(this));
+    private void OpenLogs_Click(object sender, RoutedEventArgs e)
+    {
+        RuntimeLogWindow.Open(Window.GetWindow(this));
+    }
 
     private async Task<string> OpenFontDialog(string currentFontFamily)
     {

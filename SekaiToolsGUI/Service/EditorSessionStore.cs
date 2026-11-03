@@ -11,15 +11,22 @@ namespace SekaiToolsGUI.Service;
 public sealed class EditorSessionStore
 {
     private readonly string _directory;
-    public EditorSessionStore(string? directory = null) =>
+
+    public EditorSessionStore(string? directory = null)
+    {
         _directory = directory ?? Path.Combine(ResourceManager.DataBaseDir, "Data");
+    }
 
-    public sealed record Draft(GameScript Script, int[] OriginalEffectIndices, string ScriptPath,
-        string TranslationPath, TranslatePageModel.EditValue[] Values, TranslatePageModel.EditValue[] SavedValues, bool UseV2 = true,
-        bool AutoFormat = true, int ActiveSequenceNumber = 0, bool SyncMatchingContent = true, bool SyncMatchingSpeakers = true);
+    public string? ReadLastModule()
+    {
+        return Read<string>("last-module.json");
+    }
 
-    public string? ReadLastModule() => Read<string>("last-module.json");
-    public void SaveLastModule(string module) => Write("last-module.json", module);
+    public void SaveLastModule(string module)
+    {
+        Write("last-module.json", module);
+    }
+
     public Type? ResolveLastModule(IEnumerable<Type> mainModules)
     {
         var modules = mainModules.ToArray();
@@ -31,21 +38,32 @@ public sealed class EditorSessionStore
     {
         if (mainModules.Contains(page)) SaveLastModule(page.Name);
     }
-    public Draft? ReadDraft() => Read<Draft>("translation-draft.json");
+
+    public Draft? ReadDraft()
+    {
+        return Read<Draft>("translation-draft.json");
+    }
+
     public bool SaveDraft(TranslatePageModel model)
     {
-        if (!model.IsDirty || model.DraftScript is not { } script)
-        {
-            return DeleteDraft();
-        }
+        if (!model.IsDirty || model.DraftScript is not { } script) return DeleteDraft();
         return Write("translation-draft.json", new Draft(script, script.OriginalEffectIndices, model.ScriptPath,
-            model.TranslationPath, model.ReadValues(), model.SavedValues, model.ExportUsesV2, model.AutoFormat, model.ActiveSequenceNumber, model.SyncMatchingContent, model.SyncMatchingSpeakers));
+            model.TranslationPath, model.ReadValues(), model.SavedValues, model.ExportUsesV2, model.AutoFormat,
+            model.ActiveSequenceNumber, model.SyncMatchingContent, model.SyncMatchingSpeakers));
     }
 
     public bool DeleteDraft()
     {
-        try { File.Delete(Path.Combine(_directory, "translation-draft.json")); return true; }
-        catch (Exception e) { Log(e); return false; }
+        try
+        {
+            File.Delete(Path.Combine(_directory, "translation-draft.json"));
+            return true;
+        }
+        catch (Exception e)
+        {
+            Log(e);
+            return false;
+        }
     }
 
     private T? Read<T>(string name)
@@ -55,7 +73,11 @@ public sealed class EditorSessionStore
             var path = Path.Combine(_directory, name);
             return File.Exists(path) ? JsonSerializer.Deserialize<T>(File.ReadAllText(path)) : default;
         }
-        catch (Exception e) { Log(e); return default; }
+        catch (Exception e)
+        {
+            Log(e);
+            return default;
+        }
     }
 
     private bool Write<T>(string name, T value)
@@ -69,8 +91,28 @@ public sealed class EditorSessionStore
             File.Move(temporary, path, true);
             return true;
         }
-        catch (Exception e) { Log(e); return false; }
+        catch (Exception e)
+        {
+            Log(e);
+            return false;
+        }
     }
 
-    private static void Log(Exception e) => Logger.Log($"保存或读取编辑会话失败: {e.Message}", LogLevel.Warning);
+    private static void Log(Exception e)
+    {
+        Logger.Log($"保存或读取编辑会话失败: {e.Message}", LogLevel.Warning);
+    }
+
+    public sealed record Draft(
+        GameScript Script,
+        int[] OriginalEffectIndices,
+        string ScriptPath,
+        string TranslationPath,
+        TranslatePageModel.EditValue[] Values,
+        TranslatePageModel.EditValue[] SavedValues,
+        bool UseV2 = true,
+        bool AutoFormat = true,
+        int ActiveSequenceNumber = 0,
+        bool SyncMatchingContent = true,
+        bool SyncMatchingSpeakers = true);
 }

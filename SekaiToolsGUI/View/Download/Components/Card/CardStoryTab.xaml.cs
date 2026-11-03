@@ -1,8 +1,8 @@
-using SekaiDataFetch;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
+using SekaiDataFetch;
 using SekaiDataFetch.List;
 using SekaiDataFetch.Source;
 using SekaiToolsGUI.Interface;
@@ -75,7 +75,8 @@ public partial class CardStoryTab : UserControl, IRefreshable
         var stories = CardStory.Data
             .Where(item => characterId == 0 || item.Card.CharacterId == characterId)
             .Where(item => string.IsNullOrEmpty(rarity) || item.Card.CardRarityType == rarity)
-            .Where(story => StoryDownloadCandidates.Card(story, DownloadPageModel.Instance.CurrentSource).Any(candidate => candidate.Matches(_query)))
+            .Where(story => StoryDownloadCandidates.Card(story, DownloadPageModel.Instance.CurrentSource)
+                .Any(candidate => candidate.Matches(_query)))
             .ToArray();
 
         ViewModel.CardStories = _currentDirection == -1 ? [.. stories.Reverse()] : stories;

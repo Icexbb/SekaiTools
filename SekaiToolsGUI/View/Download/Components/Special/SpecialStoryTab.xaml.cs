@@ -1,11 +1,11 @@
-using SekaiDataFetch;
-using SekaiToolsGUI.ViewModel.Download;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using SekaiDataFetch.List;
 using SekaiDataFetch.Source;
 using SekaiToolsGUI.Interface;
+using SekaiToolsGUI.ViewModel.Download;
 using SekaiToolsGUI.ViewModel.Setting;
 
 namespace SekaiToolsGUI.View.Download.Components.Special;
@@ -29,7 +29,10 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
             await ListSpecialStory.Refresh(progress);
             RefreshCombo();
         }
-        finally { SpecialStoryTypeSelector.IsEnabled = true; }
+        finally
+        {
+            SpecialStoryTypeSelector.IsEnabled = true;
+        }
     }
 
 
@@ -65,7 +68,8 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
 
         foreach (var episode in set.Episodes)
         {
-            var item = DownloadItem.GetItem(() => new SourceList(DownloadPageModel.Instance.CurrentSource).SpecialStory(episode),
+            var item = DownloadItem.GetItem(
+                () => new SourceList(DownloadPageModel.Instance.CurrentSource).SpecialStory(episode),
                 episode.Title,
                 episode.ScenarioId,
                 $"SpecialStory|{set.SpecialStory.AssetBundleName}-{set.SpecialStory.Title}|{episode.ScenarioId}-{episode.Title}"
@@ -73,6 +77,7 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
             item.Margin = new Thickness(0, 0, 0, 5);
             CardContents.Children.Add(item);
         }
+
         ResultsChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -82,9 +87,12 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
         try
         {
             return DateTimeOffset.FromUnixTimeMilliseconds(timestamp).ToLocalTime()
-                .ToString("yyyy-MM-dd HH:mm:ss zzz", System.Globalization.CultureInfo.InvariantCulture);
+                .ToString("yyyy-MM-dd HH:mm:ss zzz", CultureInfo.InvariantCulture);
         }
-        catch (ArgumentOutOfRangeException) { return "时间无效"; }
+        catch (ArgumentOutOfRangeException)
+        {
+            return "时间无效";
+        }
     }
 
     private void SpecialStoryTab_OnLoaded(object sender, RoutedEventArgs e)

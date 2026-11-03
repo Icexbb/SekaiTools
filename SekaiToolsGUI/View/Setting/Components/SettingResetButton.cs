@@ -1,26 +1,23 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Wpf.Ui.Controls;
 using SekaiToolsGUI.ViewModel.Setting;
+using Wpf.Ui.Controls;
+using Button = Wpf.Ui.Controls.Button;
 
 namespace SekaiToolsGUI.View.Setting.Components;
 
 /// <summary>Resets only the properties owned by the adjacent setting card.</summary>
-public sealed class SettingResetButton : Wpf.Ui.Controls.Button
+public sealed class SettingResetButton : Button
 {
     public static readonly DependencyProperty PropertiesProperty = DependencyProperty.Register(
         nameof(Properties), typeof(string), typeof(SettingResetButton),
         new PropertyMetadata("", (sender, _) => ((SettingResetButton)sender).RefreshVisibility()));
 
-    public string Properties
-    {
-        get => (string)GetValue(PropertiesProperty);
-        set => SetValue(PropertiesProperty, value);
-    }
-
     private SettingPageModel? _model;
+
     public SettingResetButton()
     {
         // A content-only template keeps theme button chrome out of this inline action.
@@ -40,10 +37,13 @@ public sealed class SettingResetButton : Wpf.Ui.Controls.Button
         VerticalAlignment = VerticalAlignment.Center;
         Visibility = Visibility.Collapsed;
         ToolTip = "还原此项默认设置";
-        System.Windows.Automation.AutomationProperties.SetName(this, "还原此项默认设置");
+        AutomationProperties.SetName(this, "还原此项默认设置");
         Loaded += (_, _) => Attach();
         Unloaded += (_, _) => Detach();
-        DataContextChanged += (_, _) => { if (IsLoaded) Attach(); };
+        DataContextChanged += (_, _) =>
+        {
+            if (IsLoaded) Attach();
+        };
         Click += (_, args) =>
         {
             args.Handled = true;
@@ -52,7 +52,17 @@ public sealed class SettingResetButton : Wpf.Ui.Controls.Button
         };
     }
 
-    private string[] Names() => Properties.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+    public string Properties
+    {
+        get => (string)GetValue(PropertiesProperty);
+        set => SetValue(PropertiesProperty, value);
+    }
+
+    private string[] Names()
+    {
+        return Properties.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+    }
+
     private void Attach()
     {
         Detach();
@@ -60,12 +70,22 @@ public sealed class SettingResetButton : Wpf.Ui.Controls.Button
         if (_model != null) PropertyChangedEventManager.AddHandler(_model, OnChanged, "");
         RefreshVisibility();
     }
+
     private void Detach()
     {
         if (_model != null) PropertyChangedEventManager.RemoveHandler(_model, OnChanged, "");
         _model = null;
     }
-    private void OnChanged(object? sender, PropertyChangedEventArgs args) => RefreshVisibility();
-    private void RefreshVisibility() => Visibility = _model != null && _model.ArePropertiesModified(Names())
-        ? Visibility.Visible : Visibility.Collapsed;
+
+    private void OnChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        RefreshVisibility();
+    }
+
+    private void RefreshVisibility()
+    {
+        Visibility = _model != null && _model.ArePropertiesModified(Names())
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
 }

@@ -52,9 +52,9 @@ public sealed record ProcessingStateMetadata(
     string ConfigHash)
 {
     /// <summary>
-    /// Optional qualified capture implementation identity. Null preserves ordinary
-    /// capture checkpoints; alternate implementations must include runtime,
-    /// decoder and frame-format settings in a stable identity.
+    ///     Optional qualified capture implementation identity. Null preserves ordinary
+    ///     capture checkpoints; alternate implementations must include runtime,
+    ///     decoder and frame-format settings in a stable identity.
     /// </summary>
     public string? CaptureIdentity { get; init; }
 

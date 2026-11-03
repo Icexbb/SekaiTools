@@ -1,6 +1,6 @@
+using System.Text.Json;
 using SekaiToolsCore.Match.TemplateMatcher;
 using SekaiToolsCore.Process;
-using System.Text.Json;
 
 namespace SekaiTools.Tests;
 
@@ -34,7 +34,8 @@ public class TemplateScaleCalibrationTests
         var continuous = new TemplateScaleCalibration();
         continuous.Observe(0.96, 0.9);
         for (var index = 0; index < 29; index++) continuous.Observe(0.96, 0.1);
-        var state = JsonSerializer.Deserialize<TemplateScaleStateDto>(JsonSerializer.Serialize(continuous.CaptureState(3)))!;
+        var state = JsonSerializer.Deserialize<TemplateScaleStateDto>(
+            JsonSerializer.Serialize(continuous.CaptureState(3)))!;
         var resumed = new TemplateScaleCalibration();
         resumed.RestoreState(state);
         Assert.Equal(continuous.CandidateScales, resumed.CandidateScales);

@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Runtime.InteropServices;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -24,16 +25,17 @@ public class TemplateMatchResultTests
             _ => -0.5f
         }).ToArray();
         for (var row = 0; row < 2; row++)
-            System.Runtime.InteropServices.Marshal.Copy(values, 0, scores.DataPointer + row * scores.Step, values.Length);
+            Marshal.Copy(values, 0, scores.DataPointer + row * scores.Step, values.Length);
         scores.MatRemoveErrorInf();
         for (var row = 0; row < 2; row++)
         {
             var actual = new float[35];
-            System.Runtime.InteropServices.Marshal.Copy(scores.DataPointer + row * scores.Step, actual, 0, 35);
+            Marshal.Copy(scores.DataPointer + row * scores.Step, actual, 0, 35);
             Assert.Equal(values.Select(v => float.IsFinite(v) ? v : 0), actual);
         }
+
         var surrounding = new float[40];
-        System.Runtime.InteropServices.Marshal.Copy(parent.DataPointer, surrounding, 0, 40);
+        Marshal.Copy(parent.DataPointer, surrounding, 0, 40);
         Assert.All(surrounding, value => Assert.Equal(0.75f, value));
     }
 

@@ -13,8 +13,10 @@ public class DownloadSearchTests
     [InlineData("天空 42", "42-天空の物語", true)]
     [InlineData("天空 43", "42-天空の物語", false)]
     [InlineData("S0001", "ID 77 TalkId S0001", true)]
-    public void NormalizesWidthAndCaseButRequiresEverySearchTerm(string query, string text, bool expected) =>
+    public void NormalizesWidthAndCaseButRequiresEverySearchTerm(string query, string text, bool expected)
+    {
         Assert.Equal(expected, DownloadSearch.Matches(query, text));
+    }
 
     [Fact]
     public void EventSearchIncludesActualEventIdAndOnlyMatchingEpisodeIsSelected()
@@ -23,8 +25,11 @@ public class DownloadSearchTests
         {
             EventId = 777,
             AssetBundleName = "event-pack",
-            EventStoryEpisodes = [new() { EpisodeNo = 1, Title = "First", ScenarioId = "script_one" },
-                new() { EpisodeNo = 2, Title = "Second", ScenarioId = "script_two" }]
+            EventStoryEpisodes =
+            [
+                new EventEpisode { EpisodeNo = 1, Title = "First", ScenarioId = "script_one" },
+                new EventEpisode { EpisodeNo = 2, Title = "Second", ScenarioId = "script_two" }
+            ]
         }, new GameEvent { Name = "Sky" }, 123);
         var candidates = StoryDownloadCandidates.Event(story, SourceData.Default[0]).ToArray();
         Assert.Equal(2, candidates.Count(candidate => candidate.Matches("777")));
@@ -46,14 +51,17 @@ public class DownloadSearchTests
         Assert.Equal(urls.MemberStory(card.FirstPart), cards[0].Url);
         Assert.Single(cards, candidate => candidate.Matches("42 后篇"));
         var chapter = new UnitStorySet.Chapter(new UnitChapter
-        { Title = "Start", AssetBundleName = "unit", Episodes = [new UnitEpisode { Title = "Opening", ScenarioId = "opening", EpisodeNoLabel = "1" }] });
+        {
+            Title = "Start", AssetBundleName = "unit",
+            Episodes = [new UnitEpisode { Title = "Opening", ScenarioId = "opening", EpisodeNoLabel = "1" }]
+        });
         Assert.Single(StoryDownloadCandidates.Unit(chapter, source), candidate => candidate.Matches("start opening"));
         var special = new SpecialStorySet(new SpecialStory
         {
             AssetBundleName = "special",
             Title = "Festival",
             Episodes =
-            [new SpecialStoryEpisode { Title = "Morning", ScenarioId = "morning", AssetBundleName = "episode" }]
+                [new SpecialStoryEpisode { Title = "Morning", ScenarioId = "morning", AssetBundleName = "episode" }]
         });
         var candidate = Assert.Single(StoryDownloadCandidates.Special(special, source));
         Assert.Equal(urls.SpecialStory(special.Episodes[0]), candidate.Url);
@@ -64,8 +72,9 @@ public class DownloadSearchTests
     public void TalkIdSearchNeverReplacesOriginalIdBasedDownloadAddress()
     {
         var source = SourceData.Default[0];
-        var story = new AreaStorySet(new ActionSet { Id = 1234, AreaId = 1, ScenarioId = "scenario", ScriptId = "script" })
-        { TalkId = "S0001" };
+        var story = new AreaStorySet(new ActionSet
+                { Id = 1234, AreaId = 1, ScenarioId = "scenario", ScriptId = "script" })
+            { TalkId = "S0001" };
         var candidate = StoryDownloadCandidates.Action(story, source);
         Assert.True(candidate.Matches("s0001"));
         Assert.Equal(new SourceList(source).ActionSet(story), candidate.Url);

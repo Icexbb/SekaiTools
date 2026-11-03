@@ -1,8 +1,8 @@
-using SekaiDataFetch;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using SekaiDataFetch;
 using SekaiDataFetch.Item;
 using SekaiDataFetch.Source;
 using SekaiToolsGUI.ViewModel.Download;
@@ -46,7 +46,8 @@ public partial class ActionStoryItem : UserControl
     private void Initialize(AreaStorySet areaStorySet)
     {
         AreaStorySet = areaStorySet;
-        Choice.CandidateFactory = () => StoryDownloadCandidates.Action(AreaStorySet, DownloadPageModel.Instance.CurrentSource);
+        Choice.CandidateFactory = () =>
+            StoryDownloadCandidates.Action(AreaStorySet, DownloadPageModel.Instance.CurrentSource);
         Choice.RefreshState();
         Icons.Children.Clear();
         var cIds = areaStorySet.CharacterIds.ToList();

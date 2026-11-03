@@ -1,6 +1,6 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
-using System.Text.Json;
 using SekaiToolsCore;
 using SekaiToolsCore.Process;
 using SekaiToolsInfrastructure.Resources;
@@ -81,7 +81,10 @@ public static class HistoryStore
         return result;
     }
 
-    public static bool IsCompleted(ProcessingState state) => state.StopReason == ProcessStopReason.Completed;
+    public static bool IsCompleted(ProcessingState state)
+    {
+        return state.StopReason == ProcessStopReason.Completed;
+    }
 
     public static void Clear()
     {

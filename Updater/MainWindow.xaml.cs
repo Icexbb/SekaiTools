@@ -266,5 +266,4 @@ public partial class MainWindow : Window
             CopyButton.Content = "复制失败";
         }
     }
-
 }

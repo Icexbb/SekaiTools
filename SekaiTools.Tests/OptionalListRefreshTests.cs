@@ -8,24 +8,6 @@ namespace SekaiTools.Tests;
 
 public class OptionalListRefreshTests
 {
-    private sealed class TestList : BaseListStory
-    {
-        public static string Root { get; set; } = "";
-        public static string Server { get; set; } = "";
-        [CachePath("required")] private static string RequiredCache => Path.Combine(Root, "required.json");
-        [CachePath("optional")] private static string OptionalCache => Path.Combine(Root, "optional.json");
-        [SourcePath("required")] private static string RequiredSource => Server + "required";
-        [SourcePath("optional", optional: true)] private static string OptionalSource => Server + "optional";
-        public bool Loaded { get; private set; }
-        protected override void Load() => Loaded = File.Exists(RequiredCache);
-    }
-
-    private sealed class InlineProgress : IProgress<ListRefreshProgress>
-    {
-        public List<ListRefreshProgress> Reports { get; } = [];
-        public void Report(ListRefreshProgress value) => Reports.Add(value);
-    }
-
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -103,14 +85,45 @@ public class OptionalListRefreshTests
                     context.Response.Close();
                 }
             }
-            catch (Exception exception) when (exception is HttpListenerException or ObjectDisposedException) { }
+            catch (Exception exception) when (exception is HttpListenerException or ObjectDisposedException)
+            {
+            }
         });
-        try { await test(root); }
+        try
+        {
+            await test(root);
+        }
         finally
         {
             listener.Stop();
             await server;
-            Directory.Delete(root, recursive: true);
+            Directory.Delete(root, true);
+        }
+    }
+
+    private sealed class TestList : BaseListStory
+    {
+        public static string Root { get; set; } = "";
+        public static string Server { get; set; } = "";
+        [CachePath("required")] private static string RequiredCache => Path.Combine(Root, "required.json");
+        [CachePath("optional")] private static string OptionalCache => Path.Combine(Root, "optional.json");
+        [SourcePath("required")] private static string RequiredSource => Server + "required";
+        [SourcePath("optional", true)] private static string OptionalSource => Server + "optional";
+        public bool Loaded { get; private set; }
+
+        protected override void Load()
+        {
+            Loaded = File.Exists(RequiredCache);
+        }
+    }
+
+    private sealed class InlineProgress : IProgress<ListRefreshProgress>
+    {
+        public List<ListRefreshProgress> Reports { get; } = [];
+
+        public void Report(ListRefreshProgress value)
+        {
+            Reports.Add(value);
         }
     }
 }

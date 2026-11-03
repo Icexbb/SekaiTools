@@ -72,7 +72,8 @@
                                    Margin="5,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    Visibility="{c:Binding IsActive, FalseToVisibility=Collapsed}" />
                     </Grid>
-                    <ProgressBar Height="4" Margin="0,6,0,0" Maximum="1" Value="{Binding Progress.Fraction, Mode=OneWay}"
+                    <ProgressBar Height="4" Margin="0,6,0,0" Maximum="1"
+                                 Value="{Binding Progress.Fraction, Mode=OneWay}"
                                  Visibility="{c:Binding IsActive, FalseToVisibility=Collapsed}" />
                 </StackPanel>
             </ui:Button>

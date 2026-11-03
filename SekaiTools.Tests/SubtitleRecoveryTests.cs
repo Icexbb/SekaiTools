@@ -1,7 +1,6 @@
 using SekaiToolsCore;
 using SekaiToolsCore.Abstractions;
 using SekaiToolsCore.Process;
-using SekaiToolsInfrastructure.Persistence;
 
 namespace SekaiTools.Tests;
 
@@ -13,8 +12,12 @@ public sealed class SubtitleRecoveryTests
         var root = Path.Combine(Path.GetTempPath(), "SekaiTools-recovery-" + Guid.NewGuid().ToString("N"));
         try
         {
-            void Save(string relative, string video, ProcessStopReason reason = ProcessStopReason.Canceled) =>
-                ProgressStore.SaveToPath(Path.Combine(root, relative), new ProcessingState { VideoFilePath = video, StopReason = reason });
+            void Save(string relative, string video, ProcessStopReason reason = ProcessStopReason.Canceled)
+            {
+                ProgressStore.SaveToPath(Path.Combine(root, relative),
+                    new ProcessingState { VideoFilePath = video, StopReason = reason });
+            }
+
             Save("SubtitleQueueProgress/shared.json", "queue.mp4");
             Save("SubtitleQueueProgress/second.json", "missing-materials.mp4");
             Save("Progress/shared.json", "legacy.mp4");
@@ -33,7 +36,10 @@ public sealed class SubtitleRecoveryTests
             Assert.Equal("new", Assert.Single(SubtitleRecoveryStore.TakeOnce(root)).SaveKey);
             Assert.Empty(SubtitleRecoveryStore.TakeOnce(root));
         }
-        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+        }
     }
 
     [Fact]
@@ -43,12 +49,16 @@ public sealed class SubtitleRecoveryTests
         try
         {
             var path = Path.Combine(root, "Progress", "legacy.json");
-            ProgressStore.SaveToPath(path, new ProcessingState { VideoFilePath = "legacy.mp4", StopReason = ProcessStopReason.EndOfStream });
+            ProgressStore.SaveToPath(path,
+                new ProcessingState { VideoFilePath = "legacy.mp4", StopReason = ProcessStopReason.EndOfStream });
             Assert.Equal("legacy", Assert.Single(SubtitleRecoveryStore.TakeOnce(root)).SaveKey);
             Assert.False(File.Exists(path));
             Assert.Empty(SubtitleRecoveryStore.TakeOnce(root));
         }
-        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+        }
     }
 
     [Fact]
@@ -70,8 +80,20 @@ public sealed class SubtitleRecoveryTests
     private sealed class Sink : IProcessingStatePersistence
     {
         public int Saves, Deletes, Histories;
-        public void SaveProgress(string key, ProcessingState state) => Saves++;
-        public void DeleteProgress(string key) => Deletes++;
-        public void AddHistory(ProcessingState state) => Histories++;
+
+        public void SaveProgress(string key, ProcessingState state)
+        {
+            Saves++;
+        }
+
+        public void DeleteProgress(string key)
+        {
+            Deletes++;
+        }
+
+        public void AddHistory(ProcessingState state)
+        {
+            Histories++;
+        }
     }
 }

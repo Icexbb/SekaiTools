@@ -27,7 +27,10 @@ public class DialogScaleRecoveryTests
         using var image = new Mat(160, 300, DepthType.Cv8U, 1);
         image.SetTo(new MCvScalar(12));
         using (var target = new Mat(image, new Rectangle(new Point(32, 20), scaled.Size)))
+        {
             scaled.Gray.CopyTo(target);
+        }
+
         using var frame = new FrameMatchContext();
         frame.Update(image);
         var pool = new TemplateMatchCachePool();
@@ -66,7 +69,8 @@ public class DialogScaleRecoveryTests
     [InlineData(0.96, 0.90, 0.95)]
     [InlineData(1.08, 0.99, 0.752)]
     [InlineData(0.96, double.NaN, 0.752)]
-    public void WeakUnsupportedOrBelowConfiguredThresholdEvidenceCannotMoveLock(double scale, double score, double threshold)
+    public void WeakUnsupportedOrBelowConfiguredThresholdEvidenceCannotMoveLock(double scale, double score,
+        double threshold)
     {
         var calibration = new TemplateScaleCalibration();
         calibration.Observe(1, 0.99);

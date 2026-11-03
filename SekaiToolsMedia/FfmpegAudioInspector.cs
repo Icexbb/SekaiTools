@@ -57,6 +57,7 @@ internal static partial class FfmpegAudioInspector
             log.AppendLine(line);
             reportLog?.Invoke(line);
         }
+
         await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
         return Parse(log.ToString());
     }

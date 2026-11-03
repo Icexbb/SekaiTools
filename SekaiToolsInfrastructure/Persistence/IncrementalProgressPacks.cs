@@ -18,24 +18,26 @@ internal static partial class IncrementalProgressStore
             if (root.TryGetProperty(name, out var matcher) && matcher.ValueKind == JsonValueKind.Object &&
                 matcher.TryGetProperty("FrameSets", out var frames) && frames.ValueKind == JsonValueKind.Array)
                 foreach (var item in frames.EnumerateArray())
-                    if (item.ValueKind == JsonValueKind.Object) yield return item;
+                    if (item.ValueKind == JsonValueKind.Object)
+                        yield return item;
         if (root.TryGetProperty("Timecodes", out var times) && times.ValueKind == JsonValueKind.Object &&
             times.TryGetProperty("$blocks", out var blocks) && blocks.ValueKind == JsonValueKind.Array)
             foreach (var item in blocks.EnumerateArray())
-                if (item.ValueKind == JsonValueKind.Object) yield return item;
+                if (item.ValueKind == JsonValueKind.Object)
+                    yield return item;
     }
 
     private sealed class ChunkWriteBatch : IDisposable
     {
+        private readonly HashSet<string> _available = new(StringComparer.Ordinal);
         private readonly string _directory;
         private readonly Dictionary<string, string?> _locations = new(StringComparer.Ordinal);
         private readonly Dictionary<string, byte[]> _pending = new(StringComparer.Ordinal);
-        private readonly Dictionary<string, List<ChunkIdentity>> _waiting = new(StringComparer.Ordinal);
         private readonly ChunkReadSession _reader;
         private readonly Dictionary<object, ChunkIdentity> _snapshot = new(ReferenceEqualityComparer.Instance);
-        private readonly HashSet<string> _available = new(StringComparer.Ordinal);
-        private bool _prepared;
+        private readonly Dictionary<string, List<ChunkIdentity>> _waiting = new(StringComparer.Ordinal);
         private long _pendingBytes;
+        private bool _prepared;
 
         public ChunkWriteBatch(string manifest)
         {
@@ -46,14 +48,18 @@ internal static partial class IncrementalProgressStore
             {
                 using var document = JsonDocument.Parse(File.ReadAllBytes(manifest));
                 var root = document.RootElement;
-                if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("CheckpointStorage", out var storage) ||
-                    storage.ValueKind != JsonValueKind.Number || !storage.TryGetInt32(out var format) || format is not (1 or 2)) return;
+                if (root.ValueKind != JsonValueKind.Object ||
+                    !root.TryGetProperty("CheckpointStorage", out var storage) ||
+                    storage.ValueKind != JsonValueKind.Number || !storage.TryGetInt32(out var format) ||
+                    format is not (1 or 2)) return;
                 foreach (var reference in References(root))
                 {
-                    if (!reference.TryGetProperty("$chunk", out var chunk) || chunk.ValueKind != JsonValueKind.String || !IsHash(chunk.GetString())) continue;
+                    if (!reference.TryGetProperty("$chunk", out var chunk) || chunk.ValueKind != JsonValueKind.String ||
+                        !IsHash(chunk.GetString())) continue;
                     var hash = chunk.GetString()!;
                     if (!reference.TryGetProperty("$pack", out var pack)) _locations[hash] = null;
-                    else if (pack.ValueKind == JsonValueKind.String && IsHash(pack.GetString())) _locations[hash] = pack.GetString();
+                    else if (pack.ValueKind == JsonValueKind.String && IsHash(pack.GetString()))
+                        _locations[hash] = pack.GetString();
                 }
             }
             catch (Exception error) when (error is IOException or JsonException or UnauthorizedAccessException)
@@ -62,6 +68,11 @@ internal static partial class IncrementalProgressStore
                 // only prevents reuse; it must not supply unchecked paths.
                 Logger.Log($"检查点块索引无法复用，将从当前快照重建: {error.Message}", LogLevel.Warning);
             }
+        }
+
+        public void Dispose()
+        {
+            _reader.Dispose();
         }
 
         public ChunkIdentity Add<T>(T value, bool reuse) where T : class
@@ -77,9 +88,11 @@ internal static partial class IncrementalProgressStore
                     bytes = JsonSerializer.SerializeToUtf8Bytes((T)item);
                     return new ChunkIdentity(Convert.ToHexString(SHA256.HashData(bytes)));
                 }
+
                 identity = reuse ? Identities.GetValue(value, Create) : Create(value);
                 _snapshot.Add(value, identity);
             }
+
             Add(identity, () => bytes ?? JsonSerializer.SerializeToUtf8Bytes(value));
             return identity;
         }
@@ -87,14 +100,21 @@ internal static partial class IncrementalProgressStore
         public void Add(ChunkIdentity identity, Func<byte[]> payload)
         {
             var hash = identity.Hash;
-            if (_pending.ContainsKey(hash)) { _waiting[hash].Add(identity); return; }
+            if (_pending.ContainsKey(hash))
+            {
+                _waiting[hash].Add(identity);
+                return;
+            }
+
             var trusted = identity.Location;
             if (trusted != null && trusted.Directory == _directory && Exists(trusted.Pack ?? hash))
             {
                 _locations[hash] = trusted.Pack;
                 return;
             }
-            if (_locations.TryGetValue(hash, out var pack) && Exists(pack ?? hash) && VerifyExisting(identity, pack)) return;
+
+            if (_locations.TryGetValue(hash, out var pack) && Exists(pack ?? hash) &&
+                VerifyExisting(identity, pack)) return;
             _locations.Remove(hash);
             // Version 1 chunks remain valid and need no migration rewrite.
             if (Exists(hash) && VerifyExisting(identity, null)) return;
@@ -109,6 +129,7 @@ internal static partial class IncrementalProgressStore
                 identity.Location = new ChunkLocation(_directory, null);
                 return;
             }
+
             if (_pending.Count > 0 && _pendingBytes + bytes.Length > PackTargetBytes) Flush();
             _pending.Add(hash, bytes);
             _waiting.Add(hash, [identity]);
@@ -125,7 +146,8 @@ internal static partial class IncrementalProgressStore
                 _locations[identity.Hash] = pack;
                 return true;
             }
-            catch (Exception error) when (error is IOException or InvalidDataException or JsonException or UnauthorizedAccessException)
+            catch (Exception error) when (error is IOException or InvalidDataException or JsonException
+                                              or UnauthorizedAccessException)
             {
                 Logger.Log($"已有检查点块索引校验失败，将由当前快照重建: {identity.Hash}, {error.Message}", LogLevel.Warning);
                 return false;
@@ -158,11 +180,13 @@ internal static partial class IncrementalProgressStore
                 foreach (var (hash, bytes) in _pending)
                 {
                     writer.WritePropertyName(hash);
-                    writer.WriteRawValue(bytes, skipInputValidation: true);
+                    writer.WriteRawValue(bytes, true);
                 }
+
                 writer.WriteEndObject();
                 writer.WriteEndObject();
             }
+
             var packed = buffer.ToArray();
             var identity = Convert.ToHexString(SHA256.HashData(packed));
             WritePayload(identity, packed);
@@ -171,6 +195,7 @@ internal static partial class IncrementalProgressStore
                 _locations[hash] = identity;
                 foreach (var waiting in _waiting[hash]) waiting.Location = new ChunkLocation(_directory, identity);
             }
+
             _pending.Clear();
             _waiting.Clear();
             _pendingBytes = 0;
@@ -186,21 +211,28 @@ internal static partial class IncrementalProgressStore
             _available.Add(identity);
         }
 
-        public void Dispose() => _reader.Dispose();
-
         public void CompletePreparation()
         {
             Flush();
             _prepared = true;
         }
 
-        public string? PackFor(string hash) => _locations[hash];
+        public string? PackFor(string hash)
+        {
+            return _locations[hash];
+        }
     }
 
     private sealed class ChunkReadSession(string manifest, bool allowPacks) : IDisposable
     {
         private readonly string _directory = Path.GetFullPath(manifest) + ".chunks";
         private readonly Dictionary<string, JsonDocument> _packs = new(StringComparer.Ordinal);
+
+        public void Dispose()
+        {
+            foreach (var document in _packs.Values) document.Dispose();
+            _packs.Clear();
+        }
 
         private byte[] ReadFile(string hash)
         {
@@ -223,19 +255,16 @@ internal static partial class IncrementalProgressStore
                 document = JsonDocument.Parse(ReadFile(pack));
                 _packs.Add(pack, document);
             }
+
             if (document.RootElement.ValueKind != JsonValueKind.Object ||
-                !document.RootElement.TryGetProperty("$chunks", out var chunks) || chunks.ValueKind != JsonValueKind.Object ||
-                !chunks.TryGetProperty(hash, out var value)) throw new InvalidDataException("Missing packed checkpoint chunk");
+                !document.RootElement.TryGetProperty("$chunks", out var chunks) ||
+                chunks.ValueKind != JsonValueKind.Object ||
+                !chunks.TryGetProperty(hash, out var value))
+                throw new InvalidDataException("Missing packed checkpoint chunk");
             var bytes = Encoding.UTF8.GetBytes(value.GetRawText());
             if (Convert.ToHexString(SHA256.HashData(bytes)) != hash)
                 throw new InvalidDataException("Packed checkpoint chunk checksum mismatch");
             return bytes;
-        }
-
-        public void Dispose()
-        {
-            foreach (var document in _packs.Values) document.Dispose();
-            _packs.Clear();
         }
     }
 }

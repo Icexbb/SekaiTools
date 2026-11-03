@@ -1,9 +1,11 @@
 using System.Drawing;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using SekaiToolsBase.GameScript;
 using SekaiToolsCore;
 using SekaiToolsCore.Abstractions;
 using SekaiToolsCore.Process;
@@ -19,7 +21,8 @@ public class VideoProcessorLifecycleTests
     public async Task DiskCheckpointRestoresRealDecoderStateWithoutChangingResult(bool forceChunks)
     {
         using var fixture = new Fixture();
-        using var original = fixture.Create(new VideoProcessCallbacks { IsPreviewEnabled = () => false }, persistence: new ChunkedSink());
+        using var original = fixture.Create(new VideoProcessCallbacks { IsPreviewEnabled = () => false },
+            persistence: new ChunkedSink());
         original.StartProcess();
         await original.WaitForCompletionAsync().WaitAsync(TimeSpan.FromSeconds(10));
         var expected = original.CaptureState();
@@ -27,27 +30,25 @@ public class VideoProcessorLifecycleTests
         var path = Path.Combine(directory, "checkpoint.json");
         try
         {
-            var checkpoint = (ProcessingState)typeof(VideoProcessor).GetMethod("CaptureState", BindingFlags.Instance | BindingFlags.NonPublic)!
-                .Invoke(original, [true])!;
+            var checkpoint =
+                (ProcessingState)typeof(VideoProcessor).GetMethod("CaptureState",
+                        BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .Invoke(original, [true])!;
             Assert.Empty(checkpoint.Timecodes);
             Assert.NotNull(checkpoint.CheckpointTimecodeBlocks);
-            if (forceChunks) SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.SaveChunked(path, checkpoint);
-            else SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.Save(path, checkpoint);
-            var loaded = SekaiToolsInfrastructure.Persistence.IncrementalProgressStore.Load(path);
+            if (forceChunks) IncrementalProgressStore.SaveChunked(path, checkpoint);
+            else IncrementalProgressStore.Save(path, checkpoint);
+            var loaded = IncrementalProgressStore.Load(path);
             using var resumed = fixture.Create(new VideoProcessCallbacks { IsPreviewEnabled = () => false });
             resumed.ApplyState(loaded);
             resumed.StartProcess();
             await resumed.WaitForCompletionAsync().WaitAsync(TimeSpan.FromSeconds(10));
             Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(resumed.CaptureState()));
         }
-        finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
-    }
-
-    private sealed class ChunkedSink : IIncrementalCheckpointPersistence
-    {
-        public void SaveProgress(string key, ProcessingState state) { }
-        public void DeleteProgress(string key) { }
-        public void AddHistory(ProcessingState state) { }
+        finally
+        {
+            if (Directory.Exists(directory)) Directory.Delete(directory, true);
+        }
     }
 
     [Fact]
@@ -59,7 +60,11 @@ public class VideoProcessorLifecycleTests
         var factory = new TrackingFactory("qualified-test", false);
         using var processor = fixture.Create(new VideoProcessCallbacks
         {
-            OnTaskStarted = () => { started.SetResult(); gate.Wait(TimeSpan.FromSeconds(10)); }
+            OnTaskStarted = () =>
+            {
+                started.SetResult();
+                gate.Wait(TimeSpan.FromSeconds(10));
+            }
         }, factory);
         Assert.Equal("qualified-test", processor.CaptureState().Metadata!.CaptureIdentity);
         processor.StartProcess();
@@ -69,7 +74,11 @@ public class VideoProcessorLifecycleTests
             Assert.Throws<InvalidOperationException>(processor.Dispose);
             Assert.Equal(0, factory.Session!.DisposeCount);
         }
-        finally { gate.Set(); }
+        finally
+        {
+            gate.Set();
+        }
+
         await processor.StopProcessAsync().WaitAsync(TimeSpan.FromSeconds(10));
         Assert.Equal(IntPtr.Zero, factory.Session!.Capture.Ptr);
         Assert.Equal(0, factory.Session.DisposeCount);
@@ -91,22 +100,6 @@ public class VideoProcessorLifecycleTests
         Assert.Equal(IntPtr.Zero, factory.Session.Capture.Ptr);
     }
 
-    private sealed class TrackingFactory(string identity, bool mixed) : IVideoCaptureFactory
-    {
-        public TrackingSession? Session { get; private set; }
-        public IVideoCaptureSession Open(string videoPath, int previewInterval) =>
-            Session = new TrackingSession(new VideoCapture(videoPath), identity, mixed);
-    }
-
-    private sealed class TrackingSession(VideoCapture capture, string identity, bool mixed) : IVideoCaptureSession
-    {
-        public VideoCapture Capture => capture;
-        public string Identity => identity;
-        public bool HasMixedFrameChannels => mixed;
-        public int DisposeCount { get; private set; }
-        public void Dispose() { DisposeCount++; capture.Dispose(); }
-    }
-
     [Fact]
     public async Task WaitingForCompletionDoesNotCancelProcessing()
     {
@@ -116,14 +109,25 @@ public class VideoProcessorLifecycleTests
         var finished = false;
         using var processor = fixture.Create(new VideoProcessCallbacks
         {
-            OnTaskStarted = () => { started.SetResult(); gate.Wait(TimeSpan.FromSeconds(10)); },
+            OnTaskStarted = () =>
+            {
+                started.SetResult();
+                gate.Wait(TimeSpan.FromSeconds(10));
+            },
             OnTaskFinished = () => finished = true
         });
         processor.StartProcess();
         await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
         var completion = processor.WaitForCompletionAsync();
-        try { Assert.False(completion.IsCompleted); }
-        finally { gate.Set(); }
+        try
+        {
+            Assert.False(completion.IsCompleted);
+        }
+        finally
+        {
+            gate.Set();
+        }
+
         await completion.WaitAsync(TimeSpan.FromSeconds(10));
         Assert.True(finished);
         Assert.Equal(ProcessStopReason.EndOfStream, processor.StopReason);
@@ -155,7 +159,7 @@ public class VideoProcessorLifecycleTests
     [Fact]
     public async Task PreviewMetadataMatchesDeliveredImage()
     {
-        using var fixture = new Fixture(encodeFrameIndex: true);
+        using var fixture = new Fixture(true);
         var delivered = new List<(int Index, double Blue)>();
         using var processor = fixture.Create(new VideoProcessCallbacks
         {
@@ -211,14 +215,25 @@ public class VideoProcessorLifecycleTests
         var finished = false;
         using var processor = fixture.Create(new VideoProcessCallbacks
         {
-            OnTaskStarted = () => { started.SetResult(); gate.Wait(TimeSpan.FromSeconds(10)); },
+            OnTaskStarted = () =>
+            {
+                started.SetResult();
+                gate.Wait(TimeSpan.FromSeconds(10));
+            },
             OnTaskFinished = () => finished = true
         });
         processor.StartProcess();
         await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
         var stop = processor.StopProcessAsync();
-        try { Assert.False(stop.IsCompleted); }
-        finally { gate.Set(); }
+        try
+        {
+            Assert.False(stop.IsCompleted);
+        }
+        finally
+        {
+            gate.Set();
+        }
+
         await stop.WaitAsync(TimeSpan.FromSeconds(10));
         Assert.True(finished);
         Assert.Equal(ProcessStopReason.Canceled, processor.StopReason);
@@ -237,7 +252,8 @@ public class VideoProcessorLifecycleTests
             OnException = e => reported = e,
             OnTaskFinished = () => finished.SetResult()
         });
-        var captureProperty = typeof(VideoProcessor).GetProperty("Capture", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var captureProperty =
+            typeof(VideoProcessor).GetProperty("Capture", BindingFlags.Instance | BindingFlags.NonPublic)!;
         var decoder = (VideoCapture)captureProperty.GetValue(processor)!;
         processor.StartProcess();
         await finished.Task.WaitAsync(TimeSpan.FromSeconds(10));
@@ -268,7 +284,7 @@ public class VideoProcessorLifecycleTests
         Assert.Equal(2, state.FrameIndex);
         // The synthetic clip has no targets. Inject only a pending backcheck to
         // exercise decoder warmup independently of template resource matching.
-        var json = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(state))!;
+        var json = JsonNode.Parse(JsonSerializer.Serialize(state))!;
         json["Dialog"]!["SearchState"] = JsonSerializer.SerializeToNode(new AdaptiveSearchStateDto(1, 2));
         var checkpoint = json.Deserialize<ProcessingState>()!;
         Exception? error = null;
@@ -288,18 +304,56 @@ public class VideoProcessorLifecycleTests
         Assert.Equal(state.Timecodes, resumed.CaptureState().Timecodes.Take(2));
     }
 
+    private sealed class ChunkedSink : IIncrementalCheckpointPersistence
+    {
+        public void SaveProgress(string key, ProcessingState state)
+        {
+        }
+
+        public void DeleteProgress(string key)
+        {
+        }
+
+        public void AddHistory(ProcessingState state)
+        {
+        }
+    }
+
+    private sealed class TrackingFactory(string identity, bool mixed) : IVideoCaptureFactory
+    {
+        public TrackingSession? Session { get; private set; }
+
+        public IVideoCaptureSession Open(string videoPath, int previewInterval)
+        {
+            return Session = new TrackingSession(new VideoCapture(videoPath), identity, mixed);
+        }
+    }
+
+    private sealed class TrackingSession(VideoCapture capture, string identity, bool mixed) : IVideoCaptureSession
+    {
+        public int DisposeCount { get; private set; }
+        public VideoCapture Capture => capture;
+        public string Identity => identity;
+        public bool HasMixedFrameChannels => mixed;
+
+        public void Dispose()
+        {
+            DisposeCount++;
+            capture.Dispose();
+        }
+    }
+
     private sealed class Fixture : ITemplateResourceProvider, IProcessingStatePersistence, IDisposable
     {
-        private readonly string _directory = Path.Combine(Path.GetTempPath(), "SekaiTools-lifecycle-" + Guid.NewGuid().ToString("N"));
-        private string VideoPath => Path.Combine(_directory, "input.avi");
-        private string ScriptPath => Path.Combine(_directory, "story.json");
-        private string MenuPath => Path.Combine(_directory, "menu.png");
+        private readonly string _directory =
+            Path.Combine(Path.GetTempPath(), "SekaiTools-lifecycle-" + Guid.NewGuid().ToString("N"));
 
         public Fixture(bool encodeFrameIndex = false)
         {
             Directory.CreateDirectory(_directory);
             using (var frame = new Mat(90, 160, DepthType.Cv8U, 3))
-            using (var writer = new VideoWriter(VideoPath, VideoWriter.Fourcc('M', 'J', 'P', 'G'), 30, new Size(160, 90), true))
+            using (var writer = new VideoWriter(VideoPath, VideoWriter.Fourcc('M', 'J', 'P', 'G'), 30,
+                       new Size(160, 90), true))
             {
                 Assert.True(writer.IsOpened);
                 frame.SetTo(new MCvScalar(20, 40, 60));
@@ -309,27 +363,53 @@ public class VideoProcessorLifecycleTests
                     writer.Write(frame);
                 }
             }
+
             using (var menu = new Mat(32, 32, DepthType.Cv8U, 4))
             {
                 menu.SetTo(new MCvScalar(20, 20, 20, 255));
                 CvInvoke.Rectangle(menu, new Rectangle(8, 5, 12, 10), new MCvScalar(255, 255, 255, 255), -1);
                 CvInvoke.Imwrite(MenuPath, menu);
             }
-            File.WriteAllText(ScriptPath, JsonSerializer.Serialize(new SekaiToolsBase.GameScript.GameScript { Snippets = [], TalkData = [], SpecialEffectData = [] }));
+
+            File.WriteAllText(ScriptPath,
+                JsonSerializer.Serialize(new GameScript { Snippets = [], TalkData = [], SpecialEffectData = [] }));
         }
-        public VideoProcessor Create(VideoProcessCallbacks callbacks, IVideoCaptureFactory? factory = null,
-            RecognitionPerformanceOptions? options = null, IProcessingStatePersistence? persistence = null) =>
-            new(new Config(VideoPath, ScriptPath, "", performanceOptions: options), callbacks, this, persistence ?? this, factory);
-        public string GetVideoProcessResourcePath(string fileName) => MenuPath;
-        public void SaveProgress(string key, ProcessingState state) { }
-        public void DeleteProgress(string key) { }
-        public void AddHistory(ProcessingState state) { }
+
+        private string VideoPath => Path.Combine(_directory, "input.avi");
+        private string ScriptPath => Path.Combine(_directory, "story.json");
+        private string MenuPath => Path.Combine(_directory, "menu.png");
+
         public void Dispose()
         {
             File.Delete(VideoPath);
             File.Delete(ScriptPath);
             File.Delete(MenuPath);
             Directory.Delete(_directory);
+        }
+
+        public void SaveProgress(string key, ProcessingState state)
+        {
+        }
+
+        public void DeleteProgress(string key)
+        {
+        }
+
+        public void AddHistory(ProcessingState state)
+        {
+        }
+
+        public string GetVideoProcessResourcePath(string fileName)
+        {
+            return MenuPath;
+        }
+
+        public VideoProcessor Create(VideoProcessCallbacks callbacks, IVideoCaptureFactory? factory = null,
+            RecognitionPerformanceOptions? options = null, IProcessingStatePersistence? persistence = null)
+        {
+            return new VideoProcessor(new Config(VideoPath, ScriptPath, "", performanceOptions: options), callbacks,
+                this,
+                persistence ?? this, factory);
         }
     }
 }

@@ -55,7 +55,11 @@ public class TemplateMatcherRefinementTests
         CvInvoke.Resize(small, distractor, gray.Size, interpolation: Inter.Nearest);
         using var image = new Mat(120, 180, DepthType.Cv8U, 1);
         image.SetTo(new MCvScalar(12));
-        using (var roi = new Mat(image, new Rectangle(10, 10, 32, 32))) distractor.CopyTo(roi);
+        using (var roi = new Mat(image, new Rectangle(10, 10, 32, 32)))
+        {
+            distractor.CopyTo(roi);
+        }
+
         var expected = new Point(91, 51);
         using (var roi = new Mat(image, new Rectangle(expected, gray.Size)))
         {
@@ -70,6 +74,7 @@ public class TemplateMatcherRefinementTests
                 noisy.CopyTo(roi);
             }
         }
+
         using var context = new FrameMatchContext();
         context.Update(image);
         var pool = new TemplateMatchCachePool();

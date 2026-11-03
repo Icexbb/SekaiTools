@@ -7,7 +7,8 @@
              xmlns:components="clr-namespace:SekaiToolsGUI.View.Subtitle.Components">
     <UserControl.Resources>
         <DataTemplate x:Key="TaskItemTemplate">
-            <components:SubtitleQueueTaskItem Selected="TaskItem_OnSelected" RemoveRequested="TaskItem_OnRemoveRequested" />
+            <components:SubtitleQueueTaskItem Selected="TaskItem_OnSelected"
+                                              RemoveRequested="TaskItem_OnRemoveRequested" />
         </DataTemplate>
         <Style x:Key="SectionHeader" TargetType="TextBlock">
             <Setter Property="FontWeight" Value="SemiBold" />
@@ -44,13 +45,16 @@
                                       dd:DragDrop.IsDropTarget="True" dd:DragDrop.ShowAlwaysDropTargetAdorner="True" />
                         <TextBlock Style="{StaticResource SectionHeader}" Text="正在进行任务"
                                    Visibility="{c:Binding 'Queue.ProcessingTasks.Count > 0', FalseToVisibility=Collapsed}" />
-                        <ItemsControl ItemsSource="{Binding Queue.ProcessingTasks}" ItemTemplate="{StaticResource TaskItemTemplate}" />
+                        <ItemsControl ItemsSource="{Binding Queue.ProcessingTasks}"
+                                      ItemTemplate="{StaticResource TaskItemTemplate}" />
                         <TextBlock Style="{StaticResource SectionHeader}" Text="已完成任务"
                                    Visibility="{c:Binding 'Queue.FinishedTasks.Count > 0', FalseToVisibility=Collapsed}" />
-                        <ItemsControl ItemsSource="{Binding Queue.FinishedTasks}" ItemTemplate="{StaticResource TaskItemTemplate}" />
+                        <ItemsControl ItemsSource="{Binding Queue.FinishedTasks}"
+                                      ItemTemplate="{StaticResource TaskItemTemplate}" />
                         <TextBlock Style="{StaticResource SectionHeader}" Text="历史任务"
                                    Visibility="{c:Binding 'Queue.HistoryTasks.Count > 0', FalseToVisibility=Collapsed}" />
-                        <ItemsControl ItemsSource="{Binding Queue.HistoryTasks}" ItemTemplate="{StaticResource TaskItemTemplate}" />
+                        <ItemsControl ItemsSource="{Binding Queue.HistoryTasks}"
+                                      ItemTemplate="{StaticResource TaskItemTemplate}" />
                     </StackPanel>
                 </ui:PassiveScrollViewer>
                 <Grid Grid.Row="2" Margin="0,10,0,0">

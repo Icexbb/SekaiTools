@@ -5,20 +5,24 @@ namespace SekaiDataFetch;
 
 public static class VoiceCache
 {
+    private const long MiB = 1024 * 1024;
     private static readonly object Gate = new();
     private static readonly Dictionary<string, int> ProtectedPaths = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ILogger Log = Logger.CreateLogger("VoiceCache");
-    private const long MiB = 1024 * 1024;
 
     // 0.1% of C: capacity, bounded to 128 MiB–2 GiB and at most 5% of available space.
-    public static long CalculateLimit(long totalBytes, long availableBytes) =>
-        Math.Min(Math.Clamp(totalBytes / 1000, 128 * MiB, 2048 * MiB), Math.Max(0, availableBytes / 20));
+    public static long CalculateLimit(long totalBytes, long availableBytes)
+    {
+        return Math.Min(Math.Clamp(totalBytes / 1000, 128 * MiB, 2048 * MiB), Math.Max(0, availableBytes / 20));
+    }
 
     public static long AutomaticLimit(string cacheDirectory)
     {
         try
         {
-            var drive = new DriveInfo(OperatingSystem.IsWindows() ? @"C:\" : Path.GetPathRoot(Path.GetFullPath(cacheDirectory))!);
+            var drive = new DriveInfo(OperatingSystem.IsWindows()
+                ? @"C:\"
+                : Path.GetPathRoot(Path.GetFullPath(cacheDirectory))!);
             return CalculateLimit(drive.TotalSize, drive.AvailableFreeSpace);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
@@ -31,22 +35,12 @@ public static class VoiceCache
     public static IDisposable Protect(string path)
     {
         path = Path.GetFullPath(path);
-        lock (Gate) ProtectedPaths[path] = ProtectedPaths.GetValueOrDefault(path) + 1;
-        return new Protection(path);
-    }
-
-    private sealed class Protection(string path) : IDisposable
-    {
-        private bool _disposed;
-        public void Dispose()
+        lock (Gate)
         {
-            lock (Gate)
-            {
-                if (_disposed) return;
-                _disposed = true;
-                if (--ProtectedPaths[path] == 0) ProtectedPaths.Remove(path);
-            }
+            ProtectedPaths[path] = ProtectedPaths.GetValueOrDefault(path) + 1;
         }
+
+        return new Protection(path);
     }
 
     public static void Trim(string cacheDirectory, long limitBytes, string? keepPath = null)
@@ -64,20 +58,41 @@ public static class VoiceCache
                 foreach (var file in files)
                 {
                     if (size <= limitBytes) break;
-                    if (string.Equals(file.FullName, keepPath, StringComparison.OrdinalIgnoreCase) || ProtectedPaths.ContainsKey(file.FullName)) continue;
+                    if (string.Equals(file.FullName, keepPath, StringComparison.OrdinalIgnoreCase) ||
+                        ProtectedPaths.ContainsKey(file.FullName)) continue;
                     try
                     {
                         var length = file.Length;
                         file.Delete();
                         size -= length;
-                        Log.LogInformation("清理普通语音缓存：{File}，{Bytes} 字节，上限 {LimitBytes} 字节", file.Name, length, limitBytes);
+                        Log.LogInformation("清理普通语音缓存：{File}，{Bytes} 字节，上限 {LimitBytes} 字节", file.Name, length,
+                            limitBytes);
                     }
                     catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-                    { Log.LogWarning(ex, "无法清理语音缓存：{File}", file.Name); }
+                    {
+                        Log.LogWarning(ex, "无法清理语音缓存：{File}", file.Name);
+                    }
                 }
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            { Log.LogWarning(ex, "扫描语音缓存失败：{Directory}", directory); }
+            {
+                Log.LogWarning(ex, "扫描语音缓存失败：{Directory}", directory);
+            }
+        }
+    }
+
+    private sealed class Protection(string path) : IDisposable
+    {
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            lock (Gate)
+            {
+                if (_disposed) return;
+                _disposed = true;
+                if (--ProtectedPaths[path] == 0) ProtectedPaths.Remove(path);
+            }
         }
     }
 }

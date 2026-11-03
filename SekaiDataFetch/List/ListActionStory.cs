@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using SekaiDataFetch.Item;
 using SekaiToolsBase;
@@ -31,13 +33,18 @@ public class ListActionStory : BaseListStory
 
     [CachePath("releaseConditions")]
     private static string CachePathReleaseConditions => Path.Combine(CacheDirectory, "releaseConditions.json");
+
     [CachePath("eventStories")]
     private static string CachePathEventStories => Path.Combine(CacheDirectory, "eventStories.json");
+
     [CachePath("gameEvents")]
     private static string CachePathGameEvents => Path.Combine(CacheDirectory, "gameEvents.json");
-    [SourcePath("releaseConditions", optional: true)] private static string SourceReleaseConditions => Fetcher.SourceList.ReleaseConditions;
-    [SourcePath("eventStories", optional: true)] private static string SourceEventStories => Fetcher.SourceList.EventStories;
-    [SourcePath("gameEvents", optional: true)] private static string SourceGameEvents => Fetcher.SourceList.Events;
+
+    [SourcePath("releaseConditions", true)]
+    private static string SourceReleaseConditions => Fetcher.SourceList.ReleaseConditions;
+
+    [SourcePath("eventStories", true)] private static string SourceEventStories => Fetcher.SourceList.EventStories;
+    [SourcePath("gameEvents", true)] private static string SourceGameEvents => Fetcher.SourceList.Events;
 
     public bool ActivityMetadataAvailable { get; private set; }
 
@@ -97,10 +104,11 @@ public class ListActionStory : BaseListStory
             if (!string.IsNullOrEmpty(actionSet.ScenarioId) && actionSet.ScenarioId != "none")
             {
                 if (actionSet.ActionSetType == "normal")
-                    talkId = (++normalCount).ToString("D4", System.Globalization.CultureInfo.InvariantCulture);
+                    talkId = (++normalCount).ToString("D4", CultureInfo.InvariantCulture);
                 else if (!string.IsNullOrEmpty(actionSet.ActionSetType) && actionSet.ActionSetType != "none")
-                    talkId = "S" + (++specialCount).ToString("D4", System.Globalization.CultureInfo.InvariantCulture);
+                    talkId = "S" + (++specialCount).ToString("D4", CultureInfo.InvariantCulture);
             }
+
             var area = areas.FirstOrDefault(area => area.Id == actionSet.AreaId);
             if (area == null) continue;
             if (actionSet.ScenarioId == "") continue;
@@ -127,7 +135,8 @@ public class ListActionStory : BaseListStory
         ActivityMetadataAvailable = false;
         // Classification works even without any activity data.
         ActionStoryMetadata.Apply(Data, actionSets, [], [], []);
-        if (!File.Exists(CachePathReleaseConditions) || !File.Exists(CachePathEventStories) || !File.Exists(CachePathGameEvents)) return;
+        if (!File.Exists(CachePathReleaseConditions) || !File.Exists(CachePathEventStories) ||
+            !File.Exists(CachePathGameEvents)) return;
         try
         {
             var conditions = Utils.Deserialize<ReleaseCondition[]>(File.ReadAllText(CachePathReleaseConditions));
@@ -135,9 +144,10 @@ public class ListActionStory : BaseListStory
             var events = Utils.Deserialize<GameEvent[]>(File.ReadAllText(CachePathGameEvents));
             if (conditions == null || stories == null || events == null) throw new InvalidDataException("活动筛选数据无效");
             ActionStoryMetadata.Apply(Data, actionSets, conditions, stories, events);
-            ActivityMetadataAvailable = conditions.Length > 0 && stories.Any(story => story.EventStoryEpisodes.Length > 0) && events.Length > 0;
+            ActivityMetadataAvailable = conditions.Length > 0 &&
+                                        stories.Any(story => story.EventStoryEpisodes.Length > 0) && events.Length > 0;
         }
-        catch (Exception exception) when (exception is System.Text.Json.JsonException or IOException or ArgumentException)
+        catch (Exception exception) when (exception is JsonException or IOException or ArgumentException)
         {
             ActionStoryMetadata.Apply(Data, actionSets, [], [], []);
             Logger.Log($"活动筛选数据不可用，保留地图对话基础筛选：{exception.Message}", LogLevel.Warning);

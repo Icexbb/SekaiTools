@@ -9,17 +9,26 @@ public sealed class VideoSuppressionQueue : IDisposable
 {
     private readonly Channel<VideoSuppressionJob> _jobs = Channel.CreateUnbounded<VideoSuppressionJob>(
         new UnboundedChannelOptions { SingleReader = true });
-    private readonly CancellationTokenSource _shutdown = new();
+
     private readonly Func<VideoSuppressionOptions, Action<VideoSuppressionProgress>, CancellationToken, Task> _run;
+    private readonly CancellationTokenSource _shutdown = new();
     private int _disposed;
 
-    public VideoSuppressionQueue(Func<VideoSuppressionOptions, Action<VideoSuppressionProgress>, CancellationToken, Task> run)
+    public VideoSuppressionQueue(
+        Func<VideoSuppressionOptions, Action<VideoSuppressionProgress>, CancellationToken, Task> run)
     {
         _run = run;
         Completion = Task.Run(ProcessAsync);
     }
 
     public Task Completion { get; }
+
+    public void Dispose()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        _jobs.Writer.TryComplete();
+        _shutdown.Cancel();
+    }
 
     public void Enqueue(VideoSuppressionJob job)
     {
@@ -37,7 +46,8 @@ public sealed class VideoSuppressionQueue : IDisposable
             {
                 source.Token.ThrowIfCancellationRequested();
                 Logger.Log($"开始执行压制队列任务: 输出={job.Options.OutputPath}");
-                job.Report(new(0, job.Options.SourceFrameCount, 0, VideoSuppressionState.Preparing, "正在准备压制…"));
+                job.Report(new VideoSuppressionProgress(0, job.Options.SourceFrameCount, 0,
+                    VideoSuppressionState.Preparing, "正在准备压制…"));
                 await _run(job.Options, job.Report, source.Token).ConfigureAwait(false);
                 job.Finish(VideoSuppressionState.Completed);
                 Logger.Log($"压制队列任务完成: 输出={job.Options.OutputPath}");
@@ -68,13 +78,6 @@ public sealed class VideoSuppressionQueue : IDisposable
             // 应用关闭不应因单个外部进程卡住而阻塞 UI。
         }
     }
-
-    public void Dispose()
-    {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
-        _jobs.Writer.TryComplete();
-        _shutdown.Cancel();
-    }
 }
 
 public sealed class VideoSuppressionJob(VideoSuppressionOptions options)
@@ -82,17 +85,29 @@ public sealed class VideoSuppressionJob(VideoSuppressionOptions options)
     private readonly CancellationTokenSource _cancellation = new();
     private int _enqueued;
     public VideoSuppressionOptions Options { get; } = options;
+
     public VideoSuppressionProgress Progress { get; private set; } = new(
         0, options.SourceFrameCount, 0, VideoSuppressionState.Idle, "等待中");
-    public event Action<VideoSuppressionProgress>? ProgressChanged;
+
     internal CancellationToken Token => _cancellation.Token;
-    internal bool TryEnqueue() => Interlocked.Exchange(ref _enqueued, 1) == 0;
-    public void Cancel() => _cancellation.Cancel();
+    public event Action<VideoSuppressionProgress>? ProgressChanged;
+
+    internal bool TryEnqueue()
+    {
+        return Interlocked.Exchange(ref _enqueued, 1) == 0;
+    }
+
+    public void Cancel()
+    {
+        _cancellation.Cancel();
+    }
+
     internal void Report(VideoSuppressionProgress progress)
     {
         Progress = progress;
         ProgressChanged?.Invoke(progress);
     }
+
     internal void Finish(VideoSuppressionState state, string? log = null)
     {
         var finalLog = string.IsNullOrWhiteSpace(log)

@@ -64,10 +64,10 @@ internal static class WpfMediaPreview
             if (player.NaturalDuration.HasTimeSpan && start >= player.NaturalDuration.TimeSpan)
                 throw new InvalidOperationException("语句起点超出媒体时长");
 
-            Logger.Log($"[语句预览] WPF 媒体已打开 | 文件={path} | 视频={player.HasVideo} | 音频={player.HasAudio} | 分辨率={player.NaturalVideoWidth}×{player.NaturalVideoHeight} | 时长={player.NaturalDuration}");
+            Logger.Log(
+                $"[语句预览] WPF 媒体已打开 | 文件={path} | 视频={player.HasVideo} | 音频={player.HasAudio} | 分辨率={player.NaturalVideoWidth}×{player.NaturalVideoHeight} | 时长={player.NaturalDuration}");
 
             if (video)
-            {
                 // Keep this drawing live: freezing it or copying frames during playback would
                 // separate video presentation from the player's audio clock again.
                 showFrame(new DrawingImage(new VideoDrawing
@@ -75,7 +75,6 @@ internal static class WpfMediaPreview
                     Player = player,
                     Rect = new Rect(0, 0, player.NaturalVideoWidth, player.NaturalVideoHeight)
                 }));
-            }
             player.Position = start;
             player.Play();
             timer.Start();
@@ -105,7 +104,10 @@ internal static class WpfMediaPreview
         var height = Math.Max(1, (int)(player.NaturalVideoHeight * scale));
         var visual = new DrawingVisual();
         using (var context = visual.RenderOpen())
+        {
             context.DrawVideo(player, new Rect(0, 0, width, height));
+        }
+
         var frame = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
         frame.Render(visual);
         frame.Freeze();

@@ -35,9 +35,9 @@ public class ExportSaveOptionsTests
             File.WriteAllText(path, "original");
             File.WriteAllText(other, "other");
             Assert.True(model.NeedsOverwriteConfirmation);
-            model.SetSelectedPath(path, overwriteConfirmed: false);
+            model.SetSelectedPath(path, false);
             Assert.True(model.NeedsOverwriteConfirmation);
-            model.SetSelectedPath(path, overwriteConfirmed: true);
+            model.SetSelectedPath(path, true);
             Assert.False(model.NeedsOverwriteConfirmation);
             model.FileName = other;
             Assert.True(model.NeedsOverwriteConfirmation);
@@ -45,7 +45,10 @@ public class ExportSaveOptionsTests
             Assert.True(model.NeedsOverwriteConfirmation);
             Assert.Equal("original", File.ReadAllText(path));
         }
-        finally { Directory.Delete(folder, true); }
+        finally
+        {
+            Directory.Delete(folder, true);
+        }
     }
 
     [Theory]
@@ -61,12 +64,15 @@ public class ExportSaveOptionsTests
             var path = Path.Combine(folder, $"【{tag}】event.txt");
             File.WriteAllText(path, "original");
             var model = new SaveFileDialogModel();
-            model.SetSelectedPath(path, overwriteConfirmed: true);
+            model.SetSelectedPath(path, true);
             Assert.False(model.NeedsOverwriteConfirmation);
             model.ApplyTranslationTag(tag);
             Assert.Equal(path, model.FileName);
             Assert.True(model.NeedsOverwriteConfirmation);
         }
-        finally { Directory.Delete(folder, true); }
+        finally
+        {
+            Directory.Delete(folder, true);
+        }
     }
 }

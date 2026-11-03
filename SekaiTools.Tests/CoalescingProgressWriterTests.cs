@@ -30,7 +30,11 @@ public class CoalescingProgressWriterTests
             writer.Enqueue("task", new ProcessingState { FrameIndex = 2 });
             writer.Enqueue("task", new ProcessingState { FrameIndex = 3 });
         }
-        finally { release.Set(); }
+        finally
+        {
+            release.Set();
+        }
+
         await writer.Completion.WaitAsync(TimeSpan.FromSeconds(10));
         Assert.Equal(new[] { 1, 3 }, written);
         Assert.Equal(failFirst ? 1 : 0, failures.Count);

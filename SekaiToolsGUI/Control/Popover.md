@@ -16,7 +16,8 @@
 ```
 
 - `Content` 支持任意内容，并支持 `ContentTemplate`、`ContentTemplateSelector`。
-- `Target` 支持任意 UIElement（包括 Button），在页面布局中正常显示并继承数据上下文。它仅设定目标，打开动作通过 `IsOpen` 绑定或 `Open()` 控制。
+- `Target` 支持任意 UIElement（包括 Button），在页面布局中正常显示并继承数据上下文。它仅设定目标，打开动作通过 `IsOpen` 绑定或
+  `Open()` 控制。
 - 默认使用 `Target` 定位；显式设置 `PlacementTarget` 可覆盖锚点，兼容原有外部目标用法。
 - `IsOpen` 默认双向绑定，也可以调用 `Open()` / `Close()`，不会覆盖已有绑定。
 - `Placement` 默认 `Bottom`，偏移由 `HorizontalOffset` / `VerticalOffset` 控制（默认 0 / 8）。

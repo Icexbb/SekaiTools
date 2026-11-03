@@ -7,14 +7,12 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:calcBinding="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:subtitle="clr-namespace:SekaiToolsGUI.ViewModel.Subtitle"
-             xmlns:components="clr-namespace:SekaiToolsGUI.View.Subtitle.Components"
-             xmlns:layout="clr-namespace:SekaiToolsGUI.Control"
              mc:Ignorable="d"
              d:Background="White"
              d:DesignWidth="600"
              d:DataContext="{d:DesignInstance subtitle:SubtitlePageModel, IsDesignTimeCreatable=True}">
     <StackPanel
-        MinWidth="400" 
+        MinWidth="400"
         VerticalAlignment="Center" HorizontalAlignment="Stretch"
         AllowDrop="True" DragEnter="UIElement_OnDragEnter" Drop="UIElement_OnDrop">
         <ui:Card Height="70" VerticalAlignment="Stretch"

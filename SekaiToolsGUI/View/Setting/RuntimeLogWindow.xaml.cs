@@ -6,6 +6,7 @@ using System.Windows.Data;
 using System.Windows.Threading;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
+using SekaiToolsGUI.Service;
 using Wpf.Ui.Controls;
 
 namespace SekaiToolsGUI.View.Setting;
@@ -13,27 +14,13 @@ namespace SekaiToolsGUI.View.Setting;
 public partial class RuntimeLogWindow : FluentWindow
 {
     private static RuntimeLogWindow? _instance;
-    private int _refreshPending;
     private volatile bool _closed;
-
-    public static RuntimeLogWindow Open(Window? owner)
-    {
-        if (_instance is { } existing)
-        {
-            if (existing.WindowState == WindowState.Minimized) existing.WindowState = WindowState.Normal;
-            existing.Activate();
-            return existing;
-        }
-        var window = new RuntimeLogWindow { Owner = owner };
-        _instance = window;
-        window.Show();
-        return window;
-    }
+    private int _refreshPending;
 
     private RuntimeLogWindow()
     {
         InitializeComponent();
-        Service.WindowWorkArea.Attach(this);
+        WindowWorkArea.Attach(this);
         TestErrorButton.Visibility = Debugger.IsAttached ? Visibility.Visible : Visibility.Collapsed;
         InMemoryLogSink.Entries.CollectionChanged += LogsChanged;
         Closed += (_, _) =>
@@ -44,6 +31,21 @@ public partial class RuntimeLogWindow : FluentWindow
             if (ReferenceEquals(_instance, this)) _instance = null;
         };
         RefreshLogs();
+    }
+
+    public static RuntimeLogWindow Open(Window? owner)
+    {
+        if (_instance is { } existing)
+        {
+            if (existing.WindowState == WindowState.Minimized) existing.WindowState = WindowState.Normal;
+            existing.Activate();
+            return existing;
+        }
+
+        var window = new RuntimeLogWindow { Owner = owner };
+        _instance = window;
+        window.Show();
+        return window;
     }
 
     private void LogsChanged(object? sender, NotifyCollectionChangedEventArgs args)
@@ -73,7 +75,18 @@ public partial class RuntimeLogWindow : FluentWindow
         if (LogListBox.Items.Count > 0) LogListBox.ScrollIntoView(LogListBox.Items[^1]);
     }
 
-    private void LevelFilter_SelectionChanged(object sender, SelectionChangedEventArgs args) => RefreshLogs();
-    private void ClearLogs_Click(object sender, RoutedEventArgs args) => InMemoryLogSink.Clear();
-    private void TestError_Click(object sender, RoutedEventArgs args) => throw new InvalidOperationException("这是用于测试错误提示的模拟异常。");
+    private void LevelFilter_SelectionChanged(object sender, SelectionChangedEventArgs args)
+    {
+        RefreshLogs();
+    }
+
+    private void ClearLogs_Click(object sender, RoutedEventArgs args)
+    {
+        InMemoryLogSink.Clear();
+    }
+
+    private void TestError_Click(object sender, RoutedEventArgs args)
+    {
+        throw new InvalidOperationException("这是用于测试错误提示的模拟异常。");
+    }
 }

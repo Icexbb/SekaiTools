@@ -1,5 +1,4 @@
 using SekaiToolsCore;
-using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsInfrastructure.Persistence;
@@ -8,7 +7,15 @@ using SekaiToolsInfrastructure.Resources;
 namespace SekaiToolsHost;
 
 public sealed record SubtitleArgs(string Video, string Script, string Translation, string Output, bool Resume = false);
-public sealed record TimingRow(string Kind, int Index, string Content, int StartFrame, int EndFrame, string Start, string End);
+
+public sealed record TimingRow(
+    string Kind,
+    int Index,
+    string Content,
+    int StartFrame,
+    int EndFrame,
+    string Start,
+    string End);
 
 public static class SubtitleService
 {
@@ -33,10 +40,12 @@ public static class SubtitleService
         var key = ProgressStore.GetSaveKey(args.Video, args.Script, args.Translation);
         if (args.Resume)
         {
-            var saved = SubtitleQueueProgressStore.EnumerateProgressFiles().FirstOrDefault(entry => entry.SaveKey == key);
+            var saved = SubtitleQueueProgressStore.EnumerateProgressFiles()
+                .FirstOrDefault(entry => entry.SaveKey == key);
             if (saved.State == null) throw new InvalidDataException("未找到匹配的未完成进度");
             processor.ApplyState(saved.State);
         }
+
         processor.EnableProgressSaving(key);
         using var cancellation = token.Register(processor.StopProcess);
         token.ThrowIfCancellationRequested();
@@ -51,8 +60,13 @@ public static class SubtitleService
         List<MarkerBaseFrameSet> markers = [];
         processor.ReplayExportableCallbacks(dialogs.Add, banners.Add, markers.Add);
         var rows = new List<TimingRow>();
-        void Add(BaseFrameSet set, string kind, int index, string content) => rows.Add(new TimingRow(kind, index,
-            content, set.StartIndex(), set.EndIndex(), set.StartTime(), set.EndTime()));
+
+        void Add(BaseFrameSet set, string kind, int index, string content)
+        {
+            rows.Add(new TimingRow(kind, index,
+                content, set.StartIndex(), set.EndIndex(), set.StartTime(), set.EndTime()));
+        }
+
         foreach (var set in dialogs) Add(set, "Dialog", set.Data.Index, set.Data.FinalContent);
         foreach (var set in banners) Add(set, "Banner", set.Data.Index, set.Data.FinalContent);
         foreach (var set in markers) Add(set, "Marker", set.Data.Index, set.Data.FinalContent);

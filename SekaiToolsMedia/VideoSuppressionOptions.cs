@@ -74,15 +74,13 @@ public sealed record VideoSuppressionProgress(
     };
 
     public string ElapsedDisplay => $"已用 {FormatDuration(ElapsedSeconds)}";
-    public string RemainingDisplay => State != VideoSuppressionState.Running || IsFinalizing ? "" :
-        ElapsedSeconds < 5 || ProcessedFrames < 30 || FramesPerSecond <= 0 || TotalFrames <= 0
-        ? "剩余时间估算中…"
-        : $"预计剩余 {FormatDuration(Math.Clamp((TotalFrames - ProcessedFrames) / FramesPerSecond, 0, 31536000))}";
-    private static string FormatDuration(double seconds)
-    {
-        var time = TimeSpan.FromSeconds(double.IsFinite(seconds) ? Math.Clamp(seconds, 0, 31536000) : 0);
-        return $"{(int)time.TotalHours:00}:{time.Minutes:00}:{time.Seconds:00}";
-    }
+
+    public string RemainingDisplay => State != VideoSuppressionState.Running || IsFinalizing
+        ? ""
+        : ElapsedSeconds < 5 || ProcessedFrames < 30 || FramesPerSecond <= 0 || TotalFrames <= 0
+            ? "剩余时间估算中…"
+            : $"预计剩余 {FormatDuration(Math.Clamp((TotalFrames - ProcessedFrames) / FramesPerSecond, 0, 31536000))}";
+
     public string OutputDisplay => string.IsNullOrWhiteSpace(OutputSize) ? "输出大小待统计" : $"已输出 {OutputSize} · {Speed}";
 
     public bool Running => State is VideoSuppressionState.Preparing
@@ -92,4 +90,10 @@ public sealed record VideoSuppressionProgress(
     public double Fraction => TotalFrames > 0
         ? Math.Clamp((double)ProcessedFrames / TotalFrames, 0, 1)
         : 0;
+
+    private static string FormatDuration(double seconds)
+    {
+        var time = TimeSpan.FromSeconds(double.IsFinite(seconds) ? Math.Clamp(seconds, 0, 31536000) : 0);
+        return $"{(int)time.TotalHours:00}:{time.Minutes:00}:{time.Seconds:00}";
+    }
 }

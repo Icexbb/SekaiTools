@@ -12,8 +12,6 @@ namespace SekaiToolsGUI.View.Translate.Components;
 
 public partial class TranslateFastCopy : UserControl
 {
-    public event EventHandler? CustomCharacterAdding;
-
     public TranslateFastCopy()
     {
         InitializeComponent();
@@ -22,6 +20,8 @@ public partial class TranslateFastCopy : UserControl
 
     private static ISnackbarService SnackService =>
         (Application.Current.MainWindow as MainWindow)?.WindowSnackbarService!;
+
+    public event EventHandler? CustomCharacterAdding;
 
 
     private void AddCustomButton(string content)

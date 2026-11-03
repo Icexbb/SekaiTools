@@ -11,8 +11,8 @@ public class TranslationWorkspaceTests
         model.LoadScript(new GameScript
         {
             ScenarioId = "workspace",
-            TalkData = [new("角色", "原文一", 0), new("角色", "原文二", 1)],
-            Snippets = [new() { Action = 1 }, new() { Action = 1 }]
+            TalkData = [new Talk("角色", "原文一", 0), new Talk("角色", "原文二", 1)],
+            Snippets = [new Snippet { Action = 1 }, new Snippet { Action = 1 }]
         }, "script.json");
         return model;
     }
@@ -118,9 +118,9 @@ public class TranslationWorkspaceTests
         model.LoadScript(new GameScript
         {
             ScenarioId = "mixed",
-            TalkData = [new("角色", "教室对话", 0)],
-            SpecialEffectData = [new(8, "教室", "", 0, 0)],
-            Snippets = [new() { Action = 1 }, new() { Action = 6 }]
+            TalkData = [new Talk("角色", "教室对话", 0)],
+            SpecialEffectData = [new SpecialEffect(8, "教室", "", 0, 0)],
+            Snippets = [new Snippet { Action = 1 }, new Snippet { Action = 6 }]
         }, "mixed.json");
         var exported = model.Export();
         model.TypeFilterIndex = 1;
@@ -182,8 +182,8 @@ public class TranslationWorkspaceTests
         model.LoadScript(new GameScript
         {
             ScenarioId = "effects",
-            SpecialEffectData = [new(8, "教室", "", 0, 0), new(8, "教室", "", 0, 0)],
-            Snippets = [new() { Action = 6 }, new() { Action = 6 }]
+            SpecialEffectData = [new SpecialEffect(8, "教室", "", 0, 0), new SpecialEffect(8, "教室", "", 0, 0)],
+            Snippets = [new Snippet { Action = 6 }, new Snippet { Action = 6 }]
         }, "effects.json");
         var first = (LineEffectModel)model.Events[0];
         var second = (LineEffectModel)model.Events[1];
@@ -295,7 +295,8 @@ public class TranslationWorkspaceTests
         model.AutoFormat = false;
         model.Events[0].Body.Translated = "欸,原样!";
         var restored = new TranslatePageModel();
-        restored.RestoreDraft(model.DraftScript!, "script.json", "legacy.txt", model.ReadValues(), model.SavedValues, false, false, 2);
+        restored.RestoreDraft(model.DraftScript!, "script.json", "legacy.txt", model.ReadValues(), model.SavedValues,
+            false, false, 2);
         Assert.False(restored.ExportUsesV2);
         Assert.False(restored.AutoFormat);
         Assert.Equal(2, restored.ActiveSequenceNumber);

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -13,9 +14,18 @@ namespace SekaiToolsGUI.ViewModel.Setting;
 
 public partial class SettingPageModel : ViewModelBase
 {
+    private static readonly Lazy<(bool Supported, string Reason)> PeriodicColorAvailability = new(() =>
+    {
+        var timer = Stopwatch.StartNew();
+        var supported = PeriodicColorCaptureFactory.IsCurrentRuntimeSupported(out var reason);
+        Logger.Log($"启动周期彩色资格检查: {timer.Elapsed.TotalMilliseconds:F0} ms; {reason}");
+        return (supported, reason);
+    });
+
+    private static readonly Lazy<SettingPageModel> SharedInstance = new(() => new SettingPageModel());
     public readonly List<string> CustomSpecialCharacters = [];
-    private bool _suspendSaving;
     private readonly string _settingsPath;
+    private bool _suspendSaving;
 
     private SettingPageModel() : this(Path.Combine(ResourceManager.DataBaseDir, "Data", "setting.json"))
     {
@@ -30,20 +40,10 @@ public partial class SettingPageModel : ViewModelBase
         LoadSetting();
     }
 
-    private static readonly Lazy<(bool Supported, string Reason)> PeriodicColorAvailability = new(() =>
-    {
-        var timer = System.Diagnostics.Stopwatch.StartNew();
-        var supported = PeriodicColorCaptureFactory.IsCurrentRuntimeSupported(out var reason);
-        Logger.Log($"启动周期彩色资格检查: {timer.Elapsed.TotalMilliseconds:F0} ms; {reason}");
-        return (supported, reason);
-    });
-
-    public static void InitializePeriodicColorAvailability() => _ = PeriodicColorAvailability.Value;
-
-    private static readonly Lazy<SettingPageModel> SharedInstance = new(() => new SettingPageModel());
     public static SettingPageModel Instance => SharedInstance.Value;
     public bool IsPeriodicColorAvailable { get; }
     public string PeriodicColorAvailabilityReason { get; }
+
     public int PreviewPlaybackBackend
     {
         get => GetProperty(0);
@@ -62,23 +62,18 @@ public partial class SettingPageModel : ViewModelBase
         set => SetProperty(Math.Clamp(value, 128, 4096));
     }
 
-    public RecognitionPerformanceOptions GetRecognitionPerformanceOptions() => new()
-    {
-        Mode = (RecognitionPerformanceMode)RecognitionPerformanceMode,
-        MemoryBudgetMiB = RecognitionMemoryBudgetMiB,
-        PrepareGrayFrames = RecognitionPrepareGray,
-        FrameBufferCapacity = RecognitionFrameBufferChoice switch { 1 => 4, 2 => 8, 3 => 16, _ => null }
-    };
     public int RecognitionThreadChoice
     {
         get => GetProperty(0);
         set => SetProperty(value is >= 0 and <= 3 ? value : 0);
     }
+
     public int RecognitionFrameBufferChoice
     {
         get => GetProperty(0);
         set => SetProperty(value is >= 0 and <= 3 ? value : 0);
     }
+
     public bool RecognitionPrepareGray
     {
         get => GetProperty(false);
@@ -100,6 +95,7 @@ public partial class SettingPageModel : ViewModelBase
                 OnPropertyChanged();
                 return;
             }
+
             if (value) RecognitionPrepareGray = false;
             SetProperty(value);
         }
@@ -168,15 +164,6 @@ public partial class SettingPageModel : ViewModelBase
     {
         get => GetProperty(Model.Setting.Default.DownloadDirectory);
         set => SetProperty(value ?? "");
-    }
-
-    public string GetDownloadDirectory()
-    {
-        var directory = string.IsNullOrWhiteSpace(DownloadDirectory)
-            ? Model.Setting.Default.DownloadDirectory : DownloadDirectory.Trim();
-        if (!Path.IsPathFullyQualified(directory))
-            throw new ArgumentException("下载文件存储目录必须是绝对路径，请在设置中重新选择。");
-        return Path.GetFullPath(directory);
     }
 
     public int TypewriterFadeTime
@@ -275,6 +262,32 @@ public partial class SettingPageModel : ViewModelBase
             new Version(0, 0, 0, 0)).ToString();
 
     public ObservableCollection<LogEntry> LogEntries => InMemoryLogSink.Entries;
+
+    public static void InitializePeriodicColorAvailability()
+    {
+        _ = PeriodicColorAvailability.Value;
+    }
+
+    public RecognitionPerformanceOptions GetRecognitionPerformanceOptions()
+    {
+        return new RecognitionPerformanceOptions
+        {
+            Mode = (RecognitionPerformanceMode)RecognitionPerformanceMode,
+            MemoryBudgetMiB = RecognitionMemoryBudgetMiB,
+            PrepareGrayFrames = RecognitionPrepareGray,
+            FrameBufferCapacity = RecognitionFrameBufferChoice switch { 1 => 4, 2 => 8, 3 => 16, _ => null }
+        };
+    }
+
+    public string GetDownloadDirectory()
+    {
+        var directory = string.IsNullOrWhiteSpace(DownloadDirectory)
+            ? Model.Setting.Default.DownloadDirectory
+            : DownloadDirectory.Trim();
+        if (!Path.IsPathFullyQualified(directory))
+            throw new ArgumentException("下载文件存储目录必须是绝对路径，请在设置中重新选择。");
+        return Path.GetFullPath(directory);
+    }
 
     private new void SetProperty<T>(T value, [CallerMemberName] string? propertyName = null)
     {
@@ -429,7 +442,8 @@ partial class SettingPageModel
             ProxyHost = setting.ProxyHost;
             ProxyPort = setting.ProxyPort;
             DownloadDirectory = string.IsNullOrWhiteSpace(setting.DownloadDirectory)
-                ? Model.Setting.Default.DownloadDirectory : setting.DownloadDirectory;
+                ? Model.Setting.Default.DownloadDirectory
+                : setting.DownloadDirectory;
             PreviewPlaybackBackend = setting.PreviewPlaybackBackend;
             RecognitionPerformanceMode = setting.RecognitionPerformanceMode;
             RecognitionMemoryBudgetMiB = setting.RecognitionMemoryBudgetMiB;
@@ -466,6 +480,7 @@ partial class SettingPageModel
         {
             _suspendSaving = false;
         }
+
         if (setting.RecognitionPeriodicColor && !IsPeriodicColorAvailable)
             SaveSetting();
     }

@@ -3,12 +3,16 @@ using System.Windows;
 using SekaiToolsGUI.ViewModel.Subtitle;
 using SekaiToolsGUI.ViewModel.Translate;
 using Wpf.Ui.Controls;
+using Button = System.Windows.Controls.Button;
 
 namespace SekaiToolsGUI.View.Translate.Components;
 
 public partial class SaveFileDialog : ContentDialog
 {
-    public SaveFileDialog(ContentDialogHost contentPresenter, string scriptFile, string translationFile = "", TranslatePageModel? translation = null) : base(
+    private readonly TranslatePageModel? _translation;
+
+    public SaveFileDialog(ContentDialogHost contentPresenter, string scriptFile, string translationFile = "",
+        TranslatePageModel? translation = null) : base(
         contentPresenter)
     {
         ScriptFile = scriptFile;
@@ -28,18 +32,21 @@ public partial class SaveFileDialog : ContentDialog
         UpdatePath();
     }
 
-    private readonly TranslatePageModel? _translation;
-    private void UpdateSummary() => PreflightSummary.Text = _translation?.GetExportSummary(UseV2) ?? string.Empty;
+    public SaveFileDialogModel ViewModel => (SaveFileDialogModel)DataContext;
+    public bool UseV2 => FormatSelector.SelectedIndex == 0;
+    private string ScriptFile { get; }
+    private string TranslationFile { get; }
+
+    private void UpdateSummary()
+    {
+        PreflightSummary.Text = _translation?.GetExportSummary(UseV2) ?? string.Empty;
+    }
+
     private void UpdatePath()
     {
         TargetFileName.Text = Path.GetFileName(ViewModel.FileName);
         TargetDirectory.Text = Path.GetDirectoryName(ViewModel.FileName);
     }
-
-    public SaveFileDialogModel ViewModel => (SaveFileDialogModel)DataContext;
-    public bool UseV2 => FormatSelector.SelectedIndex == 0;
-    private string ScriptFile { get; }
-    private string TranslationFile { get; }
 
     protected override void OnButtonClick(ContentDialogButton button)
     {
@@ -77,7 +84,7 @@ public partial class SaveFileDialog : ContentDialog
 
     private void TranslationTag_OnClick(object sender, RoutedEventArgs e)
     {
-        if (sender is System.Windows.Controls.Button { Tag: string tag })
+        if (sender is Button { Tag: string tag })
             ViewModel.ApplyTranslationTag(tag);
     }
 }

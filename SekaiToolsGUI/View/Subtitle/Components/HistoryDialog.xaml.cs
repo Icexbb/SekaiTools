@@ -1,7 +1,7 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
-using SekaiToolsInfrastructure.Persistence;
 using SekaiToolsCore;
 using Wpf.Ui.Controls;
 using Button = Wpf.Ui.Controls.Button;
@@ -68,7 +68,7 @@ public partial class HistoryDialog : ContentDialog
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var text = new System.Windows.Controls.TextBlock
+        var text = new TextBlock
         {
             Text = $"{videoName}\n{prefix} · {GetStatusText(summary.StopReason)}",
             TextWrapping = TextWrapping.Wrap,
@@ -82,7 +82,7 @@ public partial class HistoryDialog : ContentDialog
             VerticalAlignment = VerticalAlignment.Center,
             ToolTip = $"加载 {videoName}"
         };
-        System.Windows.Automation.AutomationProperties.SetName(button, $"加载 {videoName}");
+        AutomationProperties.SetName(button, $"加载 {videoName}");
         Grid.SetColumn(button, 1);
         grid.Children.Add(text);
         grid.Children.Add(button);

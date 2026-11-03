@@ -1,9 +1,9 @@
-using System.Net;
-using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 using SekaiToolsConfiguration;
 using SekaiToolsCore.Abstractions;
@@ -33,6 +33,8 @@ public struct Resource
 
 public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
 {
+    private const int MaxConcurrentDownloads = 3;
+
     public static readonly string DataBaseDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "SekaiTools");
 
@@ -46,7 +48,6 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
 
     private static readonly ConcurrentDictionary<ResourceType, Resource[]> ResourceFileList = new();
     private static readonly ConcurrentDictionary<ResourceType, SemaphoreSlim> ResourceLocks = new();
-    private const int MaxConcurrentDownloads = 3;
     private static string ResourceServerUrl => NetworkEndpoints.Current.Resources.BaseUrl;
 
     public static ResourceManager Instance { get; } = new();
@@ -169,7 +170,8 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
             Logger.Log($"开始准备资源: {type}");
             var fileList = await GetFileList(type, cancellationToken);
             using var downloadLimiter = new SemaphoreSlim(MaxConcurrentDownloads, MaxConcurrentDownloads);
-            var tasks = fileList.Select(file => EnsureResourceFile(type, file, downloadLimiter, cancellationToken)).ToArray();
+            var tasks = fileList.Select(file => EnsureResourceFile(type, file, downloadLimiter, cancellationToken))
+                .ToArray();
             await Task.WhenAll(tasks);
             Logger.Log($"资源准备完成: {type}, 文件数={fileList.Length}");
         }
@@ -219,7 +221,8 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
             Logger.Log($"开始下载资源: {resource.Path}, 大小={resource.Size} 字节");
             using var response = await Download(fileUrl, cancellationToken);
             await using (var source = await response.Content.ReadAsStreamAsync(cancellationToken))
-            await using (var target = new FileStream(temporaryFilename, FileMode.CreateNew, FileAccess.Write, FileShare.None, 64 * 1024, useAsync: true))
+            await using (var target = new FileStream(temporaryFilename, FileMode.CreateNew, FileAccess.Write,
+                             FileShare.None, 64 * 1024, true))
             {
                 await source.CopyToAsync(target, cancellationToken);
             }

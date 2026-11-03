@@ -5,9 +5,7 @@ namespace SekaiToolsBase.Story.Translation;
 public class TranslationData
 {
     public readonly List<Translation> Translations = [];
-    public bool IsV2 { get; private set; }
-    public string? ScenarioId { get; private set; }
-    private List<TranslationFormatV2.Entry> _entries = [];
+    private readonly List<TranslationFormatV2.Entry> _entries = [];
 
     public TranslationData(string? filePath)
     {
@@ -41,6 +39,9 @@ public class TranslationData
         });
     }
 
+    public bool IsV2 { get; }
+    public string? ScenarioId { get; }
+
     public bool IsEmpty()
     {
         return Translations.Count == 0;
@@ -63,6 +64,7 @@ public class TranslationData
             ValidateV2(gameScript);
             return true;
         }
+
         return GetMismatchReason(gameScript) == null;
     }
 
@@ -70,10 +72,18 @@ public class TranslationData
     {
         if (IsV2)
         {
-            try { ValidateV2(gameScript); }
-            catch (FormatException exception) { return exception.Message; }
+            try
+            {
+                ValidateV2(gameScript);
+            }
+            catch (FormatException exception)
+            {
+                return exception.Message;
+            }
+
             return null;
         }
+
         if (gameScript.Empty() || IsEmpty()) return null;
         var reasons = new List<string>();
         if (DialogCount() != gameScript.TalkData.Length)
@@ -94,6 +104,7 @@ public class TranslationData
                     break;
             }
         }
+
         return null;
     }
 

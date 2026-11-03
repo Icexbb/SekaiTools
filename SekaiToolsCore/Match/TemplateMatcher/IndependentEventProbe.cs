@@ -6,8 +6,10 @@ namespace SekaiToolsCore.Match.TemplateMatcher;
 
 internal static class IndependentEventProbe
 {
-    public static bool IsDue(int frameIndex, double fps) =>
-        frameIndex % Math.Max(2, (int)Math.Ceiling(fps * 0.5)) == 0;
+    public static bool IsDue(int frameIndex, double fps)
+    {
+        return frameIndex % Math.Max(2, (int)Math.Ceiling(fps * 0.5)) == 0;
+    }
 
     public static bool Confirm(FrameMatchContext frame, GaMat template, Rectangle region,
         TemplateMatchingMetrics metrics, double configuredThreshold)

@@ -91,7 +91,8 @@ public class TranslationRulesTests
     [Fact]
     public void AbsentContextDoesNotTriggerNegativeConditions()
     {
-        Assert.DoesNotContain(TranslationRules.Current.Evaluate("你好！"), result => result.Feedback.Tags.Contains("length"));
+        Assert.DoesNotContain(TranslationRules.Current.Evaluate("你好！"),
+            result => result.Feedback.Tags.Contains("length"));
     }
 
     private static TranslationRules LoadModified(Action<JsonObject> modify)
@@ -104,6 +105,9 @@ public class TranslationRulesTests
             File.WriteAllText(path, json.ToJsonString());
             return TranslationRules.Load(path);
         }
-        finally { File.Delete(path); }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 }

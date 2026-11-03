@@ -10,9 +10,11 @@ public static class ScenarioVoice
         if (string.IsNullOrWhiteSpace(voiceId)) throw new ArgumentException("语音标识为空");
         var root = new Uri(storageBaseUrl.TrimEnd('/') + "/");
         if (voiceId.StartsWith("partvoice_", StringComparison.Ordinal))
-            return new Uri(root, "sound/scenario/part_voice/" + PartVoiceFolder(voiceId) + "/" + Uri.EscapeDataString(voiceId) + ".mp3");
+            return new Uri(root,
+                "sound/scenario/part_voice/" + PartVoiceFolder(voiceId) + "/" + Uri.EscapeDataString(voiceId) + ".mp3");
         if (string.IsNullOrWhiteSpace(scenarioId)) throw new ArgumentException("剧本标识为空");
-        return new Uri(root, "sound/scenario/voice/" + Uri.EscapeDataString(scenarioId) + "/" + Uri.EscapeDataString(voiceId) + ".mp3");
+        return new Uri(root,
+            "sound/scenario/voice/" + Uri.EscapeDataString(scenarioId) + "/" + Uri.EscapeDataString(voiceId) + ".mp3");
     }
 
     private static string PartVoiceFolder(string voiceId)
@@ -48,16 +50,22 @@ public static class ScenarioVoice
     {
         var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(uri.AbsoluteUri)));
         token.ThrowIfCancellationRequested();
-        var category = uri.AbsolutePath.Contains("/sound/scenario/part_voice/", StringComparison.Ordinal) ? "partvoice" : "voice";
+        var category = uri.AbsolutePath.Contains("/sound/scenario/part_voice/", StringComparison.Ordinal)
+            ? "partvoice"
+            : "voice";
         var directory = Path.Combine(cacheDirectory, category);
         Directory.CreateDirectory(directory);
         var path = Path.Combine(directory, key + ".mp3");
         var legacy = Path.Combine(cacheDirectory, key + ".mp3");
         if (!File.Exists(path) && File.Exists(legacy))
-        {
-            try { File.Move(legacy, path); }
-            catch (IOException) when (File.Exists(path)) { }
-        }
+            try
+            {
+                File.Move(legacy, path);
+            }
+            catch (IOException) when (File.Exists(path))
+            {
+            }
+
         var limit = VoiceCache.AutomaticLimit(cacheDirectory);
         if (File.Exists(path) && new FileInfo(path).Length > 0)
         {
@@ -65,6 +73,7 @@ public static class ScenarioVoice
             VoiceCache.Trim(cacheDirectory, limit, path);
             return path;
         }
+
         var bytes = await fetcher.FetchBytesAsync(uri.AbsoluteUri, token).ConfigureAwait(false);
         if (bytes.Length == 0) throw new IOException("语音文件为空");
         var temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
@@ -74,7 +83,11 @@ public static class ScenarioVoice
             token.ThrowIfCancellationRequested();
             File.Move(temporary, path, true);
         }
-        finally { if (File.Exists(temporary)) File.Delete(temporary); }
+        finally
+        {
+            if (File.Exists(temporary)) File.Delete(temporary);
+        }
+
         File.SetLastWriteTimeUtc(path, DateTime.UtcNow);
         VoiceCache.Trim(cacheDirectory, limit, path);
         return path;

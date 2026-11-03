@@ -1,9 +1,12 @@
-﻿using System.Windows;
+﻿using System.Text;
+using System.Windows;
 using System.Windows.Threading;
+using Emgu.CV;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
 using SekaiToolsGUI.Service;
 using SekaiToolsGUI.View.General;
+using SekaiToolsGUI.ViewModel.Setting;
 
 namespace SekaiToolsGUI;
 
@@ -16,7 +19,7 @@ public partial class App : Application
 
     public App()
     {
-        Console.OutputEncoding = new System.Text.UTF8Encoding(false);
+        Console.OutputEncoding = new UTF8Encoding(false);
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
@@ -39,15 +42,16 @@ public partial class App : Application
         }
 
         // Probe once before any window or file selection; settings instances reuse the result.
-        ViewModel.Setting.SettingPageModel.InitializePeriodicColorAvailability();
+        SettingPageModel.InitializePeriodicColorAvailability();
         // OpenCV threads are process-wide. Apply only once, before starting any video task.
-        var threadChoice = ViewModel.Setting.SettingPageModel.Instance.RecognitionThreadChoice;
+        var threadChoice = SettingPageModel.Instance.RecognitionThreadChoice;
         var threads = threadChoice switch { 1 => 4, 2 => 8, 3 => 16, _ => 0 };
         if (threads > 0)
         {
-            Emgu.CV.CvInvoke.NumThreads = threads;
+            CvInvoke.NumThreads = threads;
             Logger.Log($"OpenCV 计算线程数: {threads}");
         }
+
         WindowsNotificationService.Initialize();
         base.OnStartup(e);
         AssemblyResolver.FlushDiagnostics();

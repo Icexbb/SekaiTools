@@ -31,7 +31,11 @@ public partial class DialogLine : UserControl, INavigableView<DialogLineModel>
     public DialogLineModel ViewModel => (DialogLineModel)DataContext;
 
     public event EventHandler? SeparatorChanged;
-    private void ViewModel_OnSeparatorChanged(object? sender, EventArgs e) => SeparatorChanged?.Invoke(this, e);
+
+    private void ViewModel_OnSeparatorChanged(object? sender, EventArgs e)
+    {
+        SeparatorChanged?.Invoke(this, e);
+    }
 
     public event EventHandler? TimelineRequested;
     public event EventHandler? PreviewRequested;

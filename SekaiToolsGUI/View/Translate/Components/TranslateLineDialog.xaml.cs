@@ -54,8 +54,17 @@ public partial class TranslateLineDialog : UserControl, INavigableView<LineDialo
             !ViewModel.CanReplaceText(box.Text, box.SelectionStart, box.SelectionLength, text)) e.CancelCommand();
     }
 
-    private void TextBox_OnGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => ViewModel.DeferFormatting = true;
-    private void TextBox_OnLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => ViewModel.CompleteTextEdit();
+    private void TextBox_OnGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        ViewModel.DeferFormatting = true;
+    }
 
-    private void NameEditBoxChanged(object sender, TextChangedEventArgs e) { }
+    private void TextBox_OnLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        ViewModel.CompleteTextEdit();
+    }
+
+    private void NameEditBoxChanged(object sender, TextChangedEventArgs e)
+    {
+    }
 }

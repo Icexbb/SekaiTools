@@ -18,7 +18,9 @@ public class SpeakerExportOptionsTests
     [InlineData(false)]
     public void OldJsonPreservesExistingSpeakerChoice(bool enabled)
     {
-        var options = JsonSerializer.Deserialize<ExportStyleConfig>("{\"ExportCharacter\":" + enabled.ToString().ToLowerInvariant() + "}");
+        var options =
+            JsonSerializer.Deserialize<ExportStyleConfig>("{\"ExportCharacter\":" +
+                                                          enabled.ToString().ToLowerInvariant() + "}");
         Assert.Equal(enabled, options.ExportCharacter);
         Assert.False(options.ExportUnchangedCharacter);
         var copy = JsonSerializer.Deserialize<ExportStyleConfig>(JsonSerializer.Serialize(

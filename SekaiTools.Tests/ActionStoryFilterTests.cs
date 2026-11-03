@@ -5,21 +5,23 @@ namespace SekaiTools.Tests;
 
 public class ActionStoryFilterTests
 {
-    private static AreaStorySet Story(int id, int area, params int[] characters) =>
-        new(new ActionSet { Id = id, AreaId = area }) { CharacterIds = characters };
+    private static AreaStorySet Story(int id, int area, params int[] characters)
+    {
+        return new AreaStorySet(new ActionSet { Id = id, AreaId = area }) { CharacterIds = characters };
+    }
 
     [Fact]
     public void AllAreasIncludesDifferentLocations()
     {
         var stories = new[] { Story(10, 1, 1), Story(11, 2, 2) };
         Assert.Equal(2, stories.Count(new ActionStoryFilter().Matches));
-        Assert.Single(stories, new ActionStoryFilter(AreaId: 2).Matches);
+        Assert.Single(stories, new ActionStoryFilter(2).Matches);
     }
 
     [Fact]
     public void FiltersIntersectAndIdBoundsAreInclusive()
     {
-        var filter = new ActionStoryFilter(AreaId: 2, CharacterId: 3, MinimumId: 10, MaximumId: 20);
+        var filter = new ActionStoryFilter(2, 3, 10, 20);
         Assert.True(filter.Matches(Story(10, 2, 3)));
         Assert.True(filter.Matches(Story(20, 2, 3)));
         Assert.False(filter.Matches(Story(9, 2, 3)));
@@ -37,13 +39,16 @@ public class ActionStoryFilterTests
         Assert.False(filter.Matches(Story(9, 99, 3)));
         Assert.True(new ActionStoryFilter(MaximumId: 10).Matches(Story(10, 1)));
     }
-    private static AreaStorySet TalkStory(int id, string? talkId) =>
-        new(new ActionSet { Id = id, AreaId = 2 }) { TalkId = talkId, CharacterIds = [3] };
+
+    private static AreaStorySet TalkStory(int id, string? talkId)
+    {
+        return new AreaStorySet(new ActionSet { Id = id, AreaId = 2 }) { TalkId = talkId, CharacterIds = [3] };
+    }
 
     [Fact]
     public void TalkIdRangeUsesSequentialNumberAndIntersectsOtherFilters()
     {
-        var filter = new ActionStoryFilter(AreaId: 2, CharacterId: 3, MinimumId: 2646, MaximumId: 2649,
+        var filter = new ActionStoryFilter(2, 3, 2646, 2649,
             IdIndex: ActionStoryIdIndex.TalkId);
         Assert.True(filter.Matches(TalkStory(9000, "2646")));
         Assert.True(filter.Matches(TalkStory(9001, "2649")));

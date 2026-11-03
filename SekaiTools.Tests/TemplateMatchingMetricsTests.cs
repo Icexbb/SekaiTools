@@ -17,7 +17,10 @@ public class TemplateMatchingMetricsTests
     {
         var metrics = new TemplateMatchingMetrics();
         using (metrics.Enter(TemplateMatchingState.Tracking))
+        {
             metrics.RecordRequest(TemplateMatchCachePool.MatchUsage.DialogContent3, false, Stopwatch.GetTimestamp());
+        }
+
         Assert.Empty(metrics.Snapshot().States);
         metrics.Enabled = true;
         using (metrics.Enter(TemplateMatchingState.Lookahead))
@@ -25,10 +28,13 @@ public class TemplateMatchingMetricsTests
             using (metrics.Enter(TemplateMatchingState.Recovering, TemplateMatchCachePool.MatchUsage.DialogContent2))
             {
                 metrics.Record(TemplateMatchingStage.Correlation, Stopwatch.GetTimestamp());
-                metrics.RecordRequest(TemplateMatchCachePool.MatchUsage.DialogContent2, false, Stopwatch.GetTimestamp());
+                metrics.RecordRequest(TemplateMatchCachePool.MatchUsage.DialogContent2, false,
+                    Stopwatch.GetTimestamp());
             }
+
             Assert.Equal(TemplateMatchingState.Lookahead, metrics.CurrentState);
         }
+
         Assert.Equal(TemplateMatchingState.Searching, metrics.CurrentState);
         var row = Assert.Single(metrics.Snapshot().States);
         Assert.Equal("DialogContent2", row.Usage);
@@ -55,12 +61,16 @@ public class TemplateMatchingMetricsTests
         reference.SetFrameIndex(1);
         measured.SetFrameIndex(1);
         var region = new Rectangle(Point.Empty, source.Size);
-        var expected = Matcher.Match(context, region, template, reference, TemplateMatchCachePool.MatchUsage.DialogContent3);
+        var expected = Matcher.Match(context, region, template, reference,
+            TemplateMatchCachePool.MatchUsage.DialogContent3);
         using (measured.Metrics.Enter(TemplateMatchingState.Tracking))
         {
-            Assert.Equal(expected, Matcher.Match(context, region, template, measured, TemplateMatchCachePool.MatchUsage.DialogContent3));
-            Assert.Equal(expected, Matcher.Match(context, region, template, measured, TemplateMatchCachePool.MatchUsage.DialogContent3));
+            Assert.Equal(expected,
+                Matcher.Match(context, region, template, measured, TemplateMatchCachePool.MatchUsage.DialogContent3));
+            Assert.Equal(expected,
+                Matcher.Match(context, region, template, measured, TemplateMatchCachePool.MatchUsage.DialogContent3));
         }
+
         var snapshot = measured.Metrics.Snapshot();
         var row = Assert.Single(snapshot.States);
         Assert.Equal("Tracking", row.State);
@@ -77,7 +87,10 @@ public class TemplateMatchingMetricsTests
         var evidence = new TemplateMatchCachePool { Metrics = measured.Metrics };
         evidence.SetFrameIndex(1);
         using (measured.Metrics.Enter(TemplateMatchingState.Lookahead))
+        {
             Assert.Equal(expected, Matcher.Match(context, region, template, evidence));
+        }
+
         var combined = measured.Metrics.Snapshot();
         Assert.Equal(3, combined.Requests);
         Assert.Equal(combined.CorrelationCalls, combined.States.Sum(s => s.CorrelationCalls));

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using SekaiToolsBase.DataList;
 
@@ -11,11 +12,8 @@ public sealed record FlashbackEventOrigin(int EventId, int Number, string Name, 
 /// <summary>通过主数据的解锁关系关联语音前缀与活动，避免将团内序号当作活动期数。</summary>
 public sealed partial class FlashbackEventCatalog
 {
-    private readonly Dictionary<string, FlashbackEventOrigin> _origins = new(StringComparer.Ordinal);
     private readonly Dictionary<int, HashSet<int>> _episodeNumbers;
-
-    [GeneratedRegex(@"^areatalk_(ev|wl)_(.+)_\d+$", RegexOptions.CultureInvariant)]
-    private static partial Regex AreaPattern();
+    private readonly Dictionary<string, FlashbackEventOrigin> _origins = new(StringComparer.Ordinal);
 
     public FlashbackEventCatalog(IEnumerable<GameEvent> events, IEnumerable<EventStory> stories,
         IEnumerable<ActionSet> actions, IEnumerable<ReleaseCondition> conditions)
@@ -23,7 +21,8 @@ public sealed partial class FlashbackEventCatalog
         var eventMap = events.Where(item => item != null && item.Id > 0 && !string.IsNullOrWhiteSpace(item.Name))
             .DistinctBy(item => item.Id).ToDictionary(item => item.Id);
         var storyMap = stories.Where(item => item != null && item.Id > 0 && item.EventStoryEpisodes != null
-                && eventMap.ContainsKey(item.EventId)).DistinctBy(item => item.Id).ToArray();
+                                             && eventMap.ContainsKey(item.EventId)).DistinctBy(item => item.Id)
+            .ToArray();
         _episodeNumbers = storyMap.GroupBy(story => story.EventId).ToDictionary(group => group.Key,
             group => group.SelectMany(story => story.EventStoryEpisodes).Where(episode => episode != null)
                 .Select(episode => episode.EpisodeNo).Where(number => number > 0).ToHashSet());
@@ -35,7 +34,8 @@ public sealed partial class FlashbackEventCatalog
                 .Select(episode => (episode.Id, Origin: origins[story.Id])))
             .DistinctBy(item => item.Id).ToDictionary(item => item.Id, item => item.Origin);
         var actionMap = actions.Where(item => item != null).DistinctBy(item => item.Id).ToDictionary(item => item.Id);
-        var conditionMap = conditions.Where(item => item != null).DistinctBy(item => item.Id).ToDictionary(item => item.Id);
+        var conditionMap = conditions.Where(item => item != null).DistinctBy(item => item.Id)
+            .ToDictionary(item => item.Id);
 
         FlashbackEventOrigin? ResolveAction(int id, HashSet<int> visited)
         {
@@ -62,17 +62,23 @@ public sealed partial class FlashbackEventCatalog
             if (!match.Success || ResolveAction(action.Id, []) is not { } origin) continue;
             Add((match.Groups[1].Value == "wl" ? "wl_" : "") + match.Groups[2].Value, origin);
         }
+
         foreach (var story in storyMap)
-            foreach (var episode in story.EventStoryEpisodes.Where(episode => episode != null))
-            {
-                var scenario = episode.ScenarioId ?? "";
-                if (scenario.StartsWith("wl_", StringComparison.Ordinal) && scenario.LastIndexOf('_') is var end && end > 3)
-                    Add(scenario[..end], origins[story.Id]);
-            }
+        foreach (var episode in story.EventStoryEpisodes.Where(episode => episode != null))
+        {
+            var scenario = episode.ScenarioId ?? "";
+            if (scenario.StartsWith("wl_", StringComparison.Ordinal) && scenario.LastIndexOf('_') is var end && end > 3)
+                Add(scenario[..end], origins[story.Id]);
+        }
+
         // 参考项目记录的早期命名例外，无对应活动数据时不生成虚假的标题。
         foreach (var (key, eventId) in new[] { ("band_01", 1), ("shuffle_03", 9), ("night_", 53) })
-            if (byEvent.TryGetValue(eventId, out var origin)) _origins[key] = origin;
+            if (byEvent.TryGetValue(eventId, out var origin))
+                _origins[key] = origin;
     }
+
+    [GeneratedRegex(@"^areatalk_(ev|wl)_(.+)_\d+$", RegexOptions.CultureInvariant)]
+    private static partial Regex AreaPattern();
 
     public FlashbackEventOrigin? Resolve(string source)
     {
@@ -81,12 +87,13 @@ public sealed partial class FlashbackEventCatalog
         if (normalized.StartsWith("card_", StringComparison.Ordinal)) return origin;
         // 来源最后一段是语音章节号；卡面最后一段为星数和前后篇，不属于活动正文话数。
         var suffix = source[(source.LastIndexOf('_') + 1)..];
-        if (!int.TryParse(suffix, System.Globalization.NumberStyles.None,
-                System.Globalization.CultureInfo.InvariantCulture, out var voiceEpisode)) return origin;
+        if (!int.TryParse(suffix, NumberStyles.None,
+                CultureInfo.InvariantCulture, out var voiceEpisode)) return origin;
         // 第 9 期语音从 00 开始，对应主数据中的第 1 话，沿用参考项目的命名修正。
         var episode = (long)voiceEpisode + (origin.EventId == 9 ? 1 : 0);
         return episode <= int.MaxValue && _episodeNumbers[origin.EventId].Contains((int)episode)
-            ? origin with { EpisodeNumber = (int)episode } : origin;
+            ? origin with { EpisodeNumber = (int)episode }
+            : origin;
     }
 
     public static string? GetEventKey(string source)
@@ -103,6 +110,7 @@ public sealed partial class FlashbackEventCatalog
             source = source[..character];
             return source.StartsWith("ev_", StringComparison.Ordinal) ? source[3..] : null;
         }
+
         if (!source.StartsWith("ev_", StringComparison.Ordinal)) return null;
         source = source[3..];
         // 部分卡面语音没有 card_ 前缀。

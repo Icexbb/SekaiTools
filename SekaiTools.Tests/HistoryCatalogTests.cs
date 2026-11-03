@@ -8,6 +8,11 @@ public sealed class HistoryCatalogTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), $"HistoryCatalog-{Guid.NewGuid():N}");
 
+    public void Dispose()
+    {
+        if (Directory.Exists(_root)) Directory.Delete(_root, true);
+    }
+
     [Fact]
     public void SummarySkipsMatcherPayloadAndSelectedEntryLoadsFullState()
     {
@@ -21,7 +26,8 @@ public sealed class HistoryCatalogTests : IDisposable
                 FrameSets = [new DialogFrameSetDto { Frames = [new FrameResultDto(1, 2, 3)] }]
             }
         };
-        Write("History/20261019_key.json", JsonSerializer.Serialize(new HistoryEntry { Timestamp = "today", State = state }));
+        Write("History/20261019_key.json",
+            JsonSerializer.Serialize(new HistoryEntry { Timestamp = "today", State = state }));
         var entry = Assert.Single(HistoryCatalog.Read(_root));
         Assert.Equal("video.mp4", entry.Summary.VideoFilePath);
         Assert.Equal("today", entry.Timestamp);
@@ -29,7 +35,8 @@ public sealed class HistoryCatalogTests : IDisposable
         Assert.Equal(state.Timecodes, restored.Timecodes);
         Assert.Equal(new FrameResultDto(1, 2, 3), Assert.Single(Assert.Single(restored.Dialog!.FrameSets).Frames));
         // A type-invalid frame payload is not materialized merely to list metadata.
-        Write("History/20261019_key.json", File.ReadAllText(entry.FilePath).Replace("\"Timecodes\":[0,40,80]", "\"Timecodes\":\"not an array\""));
+        Write("History/20261019_key.json",
+            File.ReadAllText(entry.FilePath).Replace("\"Timecodes\":[0,40,80]", "\"Timecodes\":\"not an array\""));
         Assert.Single(HistoryCatalog.Read(_root));
         Assert.Throws<JsonException>(() => entry.LoadState());
     }
@@ -40,9 +47,12 @@ public sealed class HistoryCatalogTests : IDisposable
         var canceled = JsonSerializer.Serialize(new ProcessingState { StopReason = ProcessStopReason.Canceled });
         Write("SubtitleQueueProgress/shared.json", canceled);
         Write("Progress/shared.json", canceled);
-        Write("SubtitleQueueProgress/done.json", JsonSerializer.Serialize(new ProcessingState { StopReason = ProcessStopReason.Completed }));
+        Write("SubtitleQueueProgress/done.json",
+            JsonSerializer.Serialize(new ProcessingState { StopReason = ProcessStopReason.Completed }));
         Write("History/broken.json", "{");
-        Write("History/canceled.json", JsonSerializer.Serialize(new HistoryEntry { State = new ProcessingState { StopReason = ProcessStopReason.Canceled } }));
+        Write("History/canceled.json",
+            JsonSerializer.Serialize(new HistoryEntry
+                { State = new ProcessingState { StopReason = ProcessStopReason.Canceled } }));
         var entry = Assert.Single(HistoryCatalog.Read(_root));
         Assert.False(entry.IsHistory);
         Assert.Contains("SubtitleQueueProgress", entry.FilePath);
@@ -56,6 +66,4 @@ public sealed class HistoryCatalogTests : IDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, json);
     }
-
-    public void Dispose() { if (Directory.Exists(_root)) Directory.Delete(_root, true); }
 }

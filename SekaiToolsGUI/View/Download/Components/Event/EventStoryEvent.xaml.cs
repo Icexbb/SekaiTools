@@ -1,11 +1,11 @@
-using SekaiDataFetch;
-using SekaiToolsGUI.ViewModel.Download;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media.Imaging;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using SekaiDataFetch;
 using SekaiDataFetch.Item;
 using SekaiDataFetch.Source;
+using SekaiToolsGUI.ViewModel.Download;
 
 namespace SekaiToolsGUI.View.Download.Components.Event;
 
@@ -96,7 +96,8 @@ public partial class EventStoryEvent
                 Height = 24,
                 Margin = new Thickness(0, 0, 5, 0),
                 Source = new BitmapImage(
-                    new Uri($"pack://application:,,,/SekaiToolsGUI;component/Resource/Characters/chr_{characterId}.png"))
+                    new Uri(
+                        $"pack://application:,,,/SekaiToolsGUI;component/Resource/Characters/chr_{characterId}.png"))
             });
     }
 
@@ -118,8 +119,9 @@ public partial class EventStoryEvent
             var episode = EventStorySet.EventStory.EventStoryEpisodes[i];
             var key = $"{storyIndex}-{episode.EpisodeNo}";
 
-            var downloadItem = DownloadItem.GetItem(() => new SourceList(DownloadPageModel.Instance.CurrentSource).EventStory(episode.ScenarioId,
-                    EventStorySet.EventStory.AssetBundleName), episode.Title, key,
+            var downloadItem = DownloadItem.GetItem(() =>
+                    new SourceList(DownloadPageModel.Instance.CurrentSource).EventStory(episode.ScenarioId,
+                        EventStorySet.EventStory.AssetBundleName), episode.Title, key,
                 $"EventStory|{storyIndex}-{EventStorySet.GameEvent.Name}|{episode.EpisodeNo}-{episode.Title}",
                 EventStorySet.EventStory.EventId.ToString());
 

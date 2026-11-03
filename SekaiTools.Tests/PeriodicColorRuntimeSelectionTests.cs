@@ -8,7 +8,8 @@ public class PeriodicColorRuntimeSelectionTests
     public void DuplicateOriginalLibrariesExplainUnsupportedExperiment()
     {
         var exception = Assert.Throws<InvalidDataException>(() =>
-            PeriodicColorCaptureFactory.SelectQualifiedRuntimePath(["root/cvextern.dll", "runtimes/cvextern.dll"], _ => "original"));
+            PeriodicColorCaptureFactory.SelectQualifiedRuntimePath(["root/cvextern.dll", "runtimes/cvextern.dll"],
+                _ => "original"));
         Assert.Contains("请关闭该实验设置", exception.Message);
     }
 
@@ -28,7 +29,9 @@ public class PeriodicColorRuntimeSelectionTests
     {
         var exception = Assert.Throws<InvalidDataException>(() =>
             PeriodicColorCaptureFactory.SelectQualifiedRuntimePath(["root/cvextern.dll", "runtimes/cvextern.dll"],
-                path => sameBytes || path.StartsWith("root") ? PeriodicColorCaptureFactory.QualifiedExpandedNativeHash : "original"));
+                path => sameBytes || path.StartsWith("root")
+                    ? PeriodicColorCaptureFactory.QualifiedExpandedNativeHash
+                    : "original"));
         Assert.Contains("加载了多份", exception.Message);
         Assert.Contains("root/cvextern.dll", exception.Message);
         Assert.Contains("runtimes/cvextern.dll", exception.Message);
@@ -38,6 +41,7 @@ public class PeriodicColorRuntimeSelectionTests
     public void RepeatedEnumerationOfSamePathDoesNotMeanTwoInstances()
     {
         Assert.Equal("candidate/cvextern.dll", PeriodicColorCaptureFactory.SelectQualifiedRuntimePath(
-            ["candidate/cvextern.dll", "CANDIDATE/CVEXTERN.DLL"], _ => PeriodicColorCaptureFactory.QualifiedExpandedNativeHash));
+            ["candidate/cvextern.dll", "CANDIDATE/CVEXTERN.DLL"],
+            _ => PeriodicColorCaptureFactory.QualifiedExpandedNativeHash));
     }
 }

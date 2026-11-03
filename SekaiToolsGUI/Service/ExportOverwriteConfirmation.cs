@@ -2,6 +2,7 @@ using System.Windows;
 using SekaiToolsGUI.ViewModel.Subtitle;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
+using TextBlock = System.Windows.Controls.TextBlock;
 
 namespace SekaiToolsGUI.Service;
 
@@ -14,7 +15,7 @@ internal static class ExportOverwriteConfirmation
         var dialog = new ContentDialog
         {
             Title = "覆盖已有文件？",
-            Content = new System.Windows.Controls.TextBlock
+            Content = new TextBlock
             {
                 Text = $"以下文件已存在，是否覆盖？\n\n{model.FileName}",
                 TextWrapping = TextWrapping.Wrap,

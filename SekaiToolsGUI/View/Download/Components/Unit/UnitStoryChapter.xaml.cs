@@ -1,8 +1,8 @@
-using SekaiToolsGUI.ViewModel.Download;
 using System.Windows;
 using System.Windows.Controls;
 using SekaiDataFetch.Item;
 using SekaiDataFetch.Source;
+using SekaiToolsGUI.ViewModel.Download;
 
 namespace SekaiToolsGUI.View.Download.Components.Unit;
 
@@ -21,7 +21,8 @@ public partial class UnitStoryChapter : UserControl
         foreach (var episode in chapter.Episodes)
         {
             var item = DownloadItem.GetItem(
-                () => new SourceList(DownloadPageModel.Instance.CurrentSource).UnitStory(episode.ScenarioId, chapter.AssetBundleName),
+                () => new SourceList(DownloadPageModel.Instance.CurrentSource).UnitStory(episode.ScenarioId,
+                    chapter.AssetBundleName),
                 episode.Title, episode.EpisodeNoLabel,
                 $"UnitStory|{chapter.Name}|{episode.EpisodeNoLabel}-{episode.Title}"
             );

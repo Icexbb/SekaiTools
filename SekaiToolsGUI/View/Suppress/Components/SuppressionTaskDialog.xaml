@@ -36,7 +36,9 @@
                        Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                        TextAlignment="Center" HorizontalAlignment="Stretch" />
             <StackPanel Grid.Row="2">
-            <TextBlock x:Name="QueueHint" TextWrapping="Wrap" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" /></StackPanel>
+                <TextBlock x:Name="QueueHint" TextWrapping="Wrap" Margin="0,4,0,0"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
         </Grid>
     </ui:ContentDialog.Content>
 </ui:ContentDialog>

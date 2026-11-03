@@ -1,13 +1,14 @@
 namespace SekaiToolsCore.Process;
 
 /// <summary>
-/// 控制进度检查点频率，避免随着视频帧数增长重复写入完整状态。
+///     控制进度检查点频率，避免随着视频帧数增长重复写入完整状态。
 /// </summary>
 internal static class ProgressSavePolicy
 {
-    public static readonly TimeSpan MaximumSnapshotInterval = TimeSpan.FromSeconds(30);
     public const int InitialInterval = 300;
     public const int MinimumCompletionInterval = 30;
+    public static readonly TimeSpan MaximumSnapshotInterval = TimeSpan.FromSeconds(30);
+
     public static int GetNextFrame(int currentFrame)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(currentFrame);
@@ -17,7 +18,8 @@ internal static class ProgressSavePolicy
             : currentFrame + interval;
     }
 
-    public static bool ShouldSave(int frameIndex, int nextFrame, int lastSavedFrame, bool frameSetJustCompleted, TimeSpan elapsedSinceSnapshot = default)
+    public static bool ShouldSave(int frameIndex, int nextFrame, int lastSavedFrame, bool frameSetJustCompleted,
+        TimeSpan elapsedSinceSnapshot = default)
     {
         if (elapsedSinceSnapshot >= MaximumSnapshotInterval || frameIndex >= nextFrame) return true;
         // 仅允许第一次完成事件提前落一个检查点；之后统一遵循增长中的计划，

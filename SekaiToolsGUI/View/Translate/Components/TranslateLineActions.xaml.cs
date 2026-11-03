@@ -6,10 +6,13 @@ namespace SekaiToolsGUI.View.Translate.Components;
 
 public partial class TranslateLineActions : UserControl
 {
-    public TranslateLineActions() => InitializeComponent();
-
     public static readonly RoutedEvent VoiceRequestedEvent = EventManager.RegisterRoutedEvent(
         "VoiceRequested", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(TranslateLineActions));
+
+    public TranslateLineActions()
+    {
+        InitializeComponent();
+    }
 
     private void PlayVoice(object sender, RoutedEventArgs e)
     {

@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using SekaiToolsInfrastructure.Resources;
-using Xunit;
 
 namespace SekaiTools.Tests;
 

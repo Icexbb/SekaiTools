@@ -1,15 +1,16 @@
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Automation;
 using SekaiDataFetch;
+using SekaiToolsGUI.View.Download.Components.Event;
 
 namespace SekaiToolsGUI.View.Download.Components;
 
 public partial class DownloadChoice : UserControl
 {
-    public Func<DownloadCandidate?> CandidateFactory { get; set; } = () => null;
     private DownloadPage? _page;
+
     public DownloadChoice()
     {
         InitializeComponent();
@@ -27,7 +28,14 @@ public partial class DownloadChoice : UserControl
             _page = null;
         };
     }
-    private void Page_OnChanged(object? sender, EventArgs e) => RefreshState();
+
+    public Func<DownloadCandidate?> CandidateFactory { get; set; } = () => null;
+
+    private void Page_OnChanged(object? sender, EventArgs e)
+    {
+        RefreshState();
+    }
+
     public void RefreshState()
     {
         var candidate = CandidateFactory();
@@ -38,6 +46,7 @@ public partial class DownloadChoice : UserControl
         ChoiceBox.Content = _page.GetDownloadState(candidate.Url);
         AutomationProperties.SetName(ChoiceBox, "选择下载项 " + candidate.Tag);
     }
+
     private void Choice_OnClick(object sender, RoutedEventArgs e)
     {
         e.Handled = true;
@@ -49,12 +58,21 @@ public partial class DownloadChoice : UserControl
 public static class StoryBrowserState
 {
     public static readonly DependencyProperty QueryProperty = DependencyProperty.RegisterAttached(
-        "Query", typeof(string), typeof(StoryBrowserState), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.Inherits,
+        "Query", typeof(string), typeof(StoryBrowserState), new FrameworkPropertyMetadata("",
+            FrameworkPropertyMetadataOptions.Inherits,
             (target, _) =>
             {
                 if (target is DownloadItem item) item.ApplyVisibility();
-                if (target is Event.EventStoryEvent story) story.ApplySearchPresentation();
+                if (target is EventStoryEvent story) story.ApplySearchPresentation();
             }));
-    public static string GetQuery(DependencyObject target) => (string)target.GetValue(QueryProperty);
-    public static void SetQuery(DependencyObject target, string value) => target.SetValue(QueryProperty, value);
+
+    public static string GetQuery(DependencyObject target)
+    {
+        return (string)target.GetValue(QueryProperty);
+    }
+
+    public static void SetQuery(DependencyObject target, string value)
+    {
+        target.SetValue(QueryProperty, value);
+    }
 }

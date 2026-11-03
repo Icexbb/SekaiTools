@@ -1,5 +1,5 @@
-using System.Runtime.CompilerServices;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 
 namespace SekaiToolsBase;
@@ -16,8 +16,10 @@ public static class Logger
 
     private static ConcurrentDictionary<string, ILogger> LoggerDictionary { get; } = new();
 
-    public static ILogger CreateLogger(string categoryName) =>
-        LoggerDictionary.GetOrAdd(categoryName, Factory.CreateLogger);
+    public static ILogger CreateLogger(string categoryName)
+    {
+        return LoggerDictionary.GetOrAdd(categoryName, Factory.CreateLogger);
+    }
 
     public static bool IsEnabled(LogLevel logLevel,
         [CallerMemberName] string callerMemberName = "")

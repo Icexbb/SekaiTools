@@ -6,7 +6,9 @@ using SekaiToolsBase.GameScript;
 namespace SekaiToolsHost;
 
 public sealed record CatalogArgs(int Source, string Category, bool Refresh = false);
+
 public sealed record DownloadArgs(int Source, string Category, string Id, string Output);
+
 public sealed record DownloadRow(string Id, string Title, string Group, string Url);
 
 public static class DownloadService
@@ -35,9 +37,10 @@ public static class DownloadService
                     source.EventStory(ep.ScenarioId, set.EventStory.AssetBundleName)))).ToArray(),
             "card" => ListCardStory.Instance.Data.SelectMany(set => new[] { set.FirstPart, set.SecondPart }.Select(ep =>
                 new DownloadRow(ep.ScenarioId, ep.Title, set.Card.Prefix, source.MemberStory(ep)))).ToArray(),
-            "unit" => ListUnitStory.Instance.Data.Values.SelectMany(set => set.Chapters.SelectMany(ch => ch.Episodes.Select(ep =>
-                new DownloadRow(ep.ScenarioId, ep.Title, set.Name + " / " + ch.Name,
-                    source.UnitStory(ep.ScenarioId, ch.AssetBundleName))))).ToArray(),
+            "unit" => ListUnitStory.Instance.Data.Values.SelectMany(set => set.Chapters.SelectMany(ch =>
+                ch.Episodes.Select(ep =>
+                    new DownloadRow(ep.ScenarioId, ep.Title, set.Name + " / " + ch.Name,
+                        source.UnitStory(ep.ScenarioId, ch.AssetBundleName))))).ToArray(),
             "special" => ListSpecialStory.Instance.Data.Values.SelectMany(set => set.Episodes.Select(ep =>
                 new DownloadRow(ep.ScenarioId, ep.Title, set.AssetBundleName, source.SpecialStory(ep)))).ToArray(),
             "action" => ListActionStory.Instance.Data.Select(set => new DownloadRow(set.ScenarioId,
@@ -60,6 +63,9 @@ public static class DownloadService
             _ = new GameScript(temp);
             Protocol.AtomicWrite(args.Output, content);
         }
-        finally { File.Delete(temp); }
+        finally
+        {
+            File.Delete(temp);
+        }
     }
 }

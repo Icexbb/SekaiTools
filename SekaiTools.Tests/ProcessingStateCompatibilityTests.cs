@@ -1,3 +1,4 @@
+using System.Text.Json;
 using SekaiToolsCore.Process;
 using SekaiToolsCore.Process.Config;
 
@@ -17,8 +18,8 @@ public class ProcessingStateCompatibilityTests
         WithInputs((config, metadata) =>
         {
             var state = CreateState(config, metadata with { CaptureIdentity = saved });
-            state = System.Text.Json.JsonSerializer.Deserialize<ProcessingState>(
-                System.Text.Json.JsonSerializer.Serialize(state))!;
+            state = JsonSerializer.Deserialize<ProcessingState>(
+                JsonSerializer.Serialize(state))!;
             Assert.Equal(saved, state.Metadata!.CaptureIdentity);
             var result = ProcessingStateCompatibility.ValidateAndMigrate(state, config,
                 metadata with { CaptureIdentity = current });

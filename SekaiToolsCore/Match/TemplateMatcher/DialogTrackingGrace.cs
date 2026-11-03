@@ -8,9 +8,13 @@ namespace SekaiToolsCore.Match.TemplateMatcher;
 internal sealed class DialogTrackingGrace(double fps)
 {
     private static readonly Point UnknownPosition = new(int.MinValue, int.MinValue);
-    private readonly List<FrameResultDto> _pending = [];
     private readonly int _maximumFrames = Math.Max(1, (int)Math.Ceiling(fps * 0.05));
-    public bool HoldUnlocated(int index) => Hold(index, UnknownPosition);
+    private readonly List<FrameResultDto> _pending = [];
+
+    public bool HoldUnlocated(int index)
+    {
+        return Hold(index, UnknownPosition);
+    }
 
     public bool Hold(int index, Point point)
     {
@@ -28,8 +32,16 @@ internal sealed class DialogTrackingGrace(double fps)
         Clear();
     }
 
-    public void Clear() => _pending.Clear();
-    public List<FrameResultDto> CaptureState() => [.. _pending];
+    public void Clear()
+    {
+        _pending.Clear();
+    }
+
+    public List<FrameResultDto> CaptureState()
+    {
+        return [.. _pending];
+    }
+
     public void RestoreState(IEnumerable<FrameResultDto> frames)
     {
         Clear();

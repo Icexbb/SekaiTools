@@ -15,6 +15,9 @@ public static class FetcherFileExtensions
             cancellationToken.ThrowIfCancellationRequested();
             File.Move(temporary, destination, overwrite);
         }
-        finally { if (File.Exists(temporary)) File.Delete(temporary); }
+        finally
+        {
+            if (File.Exists(temporary)) File.Delete(temporary);
+        }
     }
 }

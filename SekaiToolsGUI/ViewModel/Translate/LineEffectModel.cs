@@ -28,7 +28,8 @@ public class LineEffectModel : LineModel
     private void OnContentPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         // 只有当 Translated 变化时才触发
-        if (e.PropertyName is not (nameof(TranslateItemModel.Translated) or nameof(TranslateItemModel.PreserveEmpty))) return;
+        if (e.PropertyName is not (nameof(TranslateItemModel.Translated)
+            or nameof(TranslateItemModel.PreserveEmpty))) return;
         NotifyContentState();
         // 更新父级的 Check, LineCount 等
         if (ContentTranslateChangedEnabled) ContentTranslateChanged?.Invoke(this, EventArgs.Empty);

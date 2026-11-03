@@ -19,10 +19,11 @@ internal static class BytePixelComparison
         var unequal = 0;
         for (var i = 0; i < a.Length; i++)
         {
-            var difference = Math.Abs((int)a[i] - b[i]);
+            var difference = Math.Abs(a[i] - b[i]);
             maximum = Math.Max(maximum, difference);
             if (difference != 0) unequal++;
         }
+
         return new BytePixelDifference(maximum, unequal);
     }
 }

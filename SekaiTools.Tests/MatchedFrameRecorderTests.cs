@@ -21,7 +21,12 @@ public class MatchedFrameRecorderTests
         var tracking = false;
         for (var index = 11; index <= 16; index++)
         {
-            if (!tracking && !scheduler.ShouldSample(index)) { scheduler.RememberSkipped(index); continue; }
+            if (!tracking && !scheduler.ShouldSample(index))
+            {
+                scheduler.RememberSkipped(index);
+                continue;
+            }
+
             var selected = index;
             if (!tracking && scheduler.TryGetPrevious(previous, index - 1, out _, out var prior)) selected = prior;
             scheduler.CompleteSample(index);
@@ -29,6 +34,7 @@ public class MatchedFrameRecorderTests
             MatchedFrameRecorder.Record(marker, selected, Position(selected), index, Position(index));
             tracking = true;
         }
+
         Assert.Equal(Enumerable.Range(10, 6), dialog.Frames.Select(f => f.Index));
         Assert.Equal(Enumerable.Range(10, 6), marker.Frames.Select(f => f.Index));
         Assert.Equal(Enumerable.Range(11, 6).Select(Position), dialog.Frames.Select(f => f.Point));
@@ -47,6 +53,8 @@ public class MatchedFrameRecorderTests
         Assert.Single(marker.Frames);
     }
 
-    private static Point Position(int index) => new(index * 2, index * 3);
+    private static Point Position(int index)
+    {
+        return new Point(index * 2, index * 3);
+    }
 }
-

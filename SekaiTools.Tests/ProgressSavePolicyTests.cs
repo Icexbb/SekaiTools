@@ -1,5 +1,4 @@
 using SekaiToolsCore.Process;
-using Xunit;
 
 namespace SekaiTools.Tests;
 
@@ -11,6 +10,7 @@ public sealed class ProgressSavePolicyTests
         Assert.False(ProgressSavePolicy.ShouldSave(120001, 240000, 120000, false, TimeSpan.FromSeconds(29)));
         Assert.True(ProgressSavePolicy.ShouldSave(120001, 240000, 120000, false, TimeSpan.FromSeconds(30)));
     }
+
     [Fact]
     public void SaveIntervalGrowsWithProcessedFrames()
     {
@@ -37,9 +37,9 @@ public sealed class ProgressSavePolicyTests
     [Fact]
     public void CompletionSaveIsDebounced()
     {
-        Assert.False(ProgressSavePolicy.ShouldSave(110, 300, 100, frameSetJustCompleted: true));
-        Assert.False(ProgressSavePolicy.ShouldSave(130, 300, 100, frameSetJustCompleted: true));
-        Assert.True(ProgressSavePolicy.ShouldSave(40, 300, 0, frameSetJustCompleted: true));
-        Assert.True(ProgressSavePolicy.ShouldSave(300, 300, 100, frameSetJustCompleted: false));
+        Assert.False(ProgressSavePolicy.ShouldSave(110, 300, 100, true));
+        Assert.False(ProgressSavePolicy.ShouldSave(130, 300, 100, true));
+        Assert.True(ProgressSavePolicy.ShouldSave(40, 300, 0, true));
+        Assert.True(ProgressSavePolicy.ShouldSave(300, 300, 100, false));
     }
 }

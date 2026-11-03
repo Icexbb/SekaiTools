@@ -1,11 +1,11 @@
-using SekaiDataFetch;
-using SekaiToolsGUI.ViewModel.Download;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using SekaiDataFetch;
 using SekaiDataFetch.List;
 using SekaiDataFetch.Source;
 using SekaiToolsGUI.Interface;
+using SekaiToolsGUI.ViewModel.Download;
 using SekaiToolsGUI.ViewModel.Setting;
 
 namespace SekaiToolsGUI.View.Download.Components.Unit;
@@ -54,6 +54,7 @@ public partial class UnitStoryTab : UserControl, IRefreshable
             };
             CardContents.Children.Add(chapterItem);
         }
+
         ResultsChanged?.Invoke(this, EventArgs.Empty);
     }
 

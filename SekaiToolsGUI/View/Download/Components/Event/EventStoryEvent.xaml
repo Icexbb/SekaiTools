@@ -25,7 +25,8 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
                     <StackPanel Name="IconContainer" Orientation="Horizontal" VerticalAlignment="Center"
                                 Margin="10,0">
-                        <Image Height="24" Width="24" Source="pack://application:,,,/SekaiToolsGUI;component/Resource/Characters/chr_1.png" />
+                        <Image Height="24" Width="24"
+                               Source="pack://application:,,,/SekaiToolsGUI;component/Resource/Characters/chr_1.png" />
                     </StackPanel>
 
                     <ui:Button x:Name="AddAllButton" IsEnabled="False"

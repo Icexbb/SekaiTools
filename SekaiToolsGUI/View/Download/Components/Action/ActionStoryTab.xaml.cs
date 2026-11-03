@@ -1,12 +1,11 @@
-using SekaiDataFetch;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
+using SekaiDataFetch;
 using SekaiDataFetch.Item;
 using SekaiDataFetch.List;
 using SekaiDataFetch.Source;
-using SekaiToolsBase.DataList;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.ViewModel.Download;
 using SekaiToolsGUI.ViewModel.Setting;
@@ -27,6 +26,18 @@ public partial class ActionStoryTab : UserControl, IRefreshable
 
     private ActionStoryTabModel ViewModel => (ActionStoryTabModel)DataContext;
     private ListActionStory ActionStory => ListActionStory.Instance;
+
+    private ActionStoryFilterMode FilterMode => ModeBox == null
+        ? ActionStoryFilterMode.All
+        : ModeBox.SelectedIndex switch
+        {
+            1 => ActionStoryFilterMode.ReleaseActivity,
+            2 => ActionStoryFilterMode.AdditionActivity,
+            3 => ActionStoryFilterMode.Type,
+            4 => ActionStoryFilterMode.Batch,
+            5 => ActionStoryFilterMode.ArchiveDate,
+            _ => ActionStoryFilterMode.All
+        };
 
 
     public async Task Refresh(IProgress<ListRefreshProgress>? progress = null)
@@ -59,7 +70,11 @@ public partial class ActionStoryTab : UserControl, IRefreshable
     public void InitializeAreas()
     {
         var selectedId = (BoxType.SelectedItem as AreaFilterOption)?.Id;
-        ViewModel.Areas = [new(null, "全部地点"), .. ActionStory.Areas.Select(area => new AreaFilterOption(area.Id, area.AreaName))];
+        ViewModel.Areas =
+        [
+            new AreaFilterOption(null, "全部地点"),
+            .. ActionStory.Areas.Select(area => new AreaFilterOption(area.Id, area.AreaName))
+        ];
         BoxType.SelectedItem = ViewModel.Areas.FirstOrDefault(area => area.Id == selectedId) ?? ViewModel.Areas[0];
         RefreshItems();
     }
@@ -91,19 +106,9 @@ public partial class ActionStoryTab : UserControl, IRefreshable
         RefreshItems();
     }
 
-    private ActionStoryFilterMode FilterMode => ModeBox == null ? ActionStoryFilterMode.All : ModeBox.SelectedIndex switch
-    {
-        1 => ActionStoryFilterMode.ReleaseActivity,
-        2 => ActionStoryFilterMode.AdditionActivity,
-        3 => ActionStoryFilterMode.Type,
-        4 => ActionStoryFilterMode.Batch,
-        5 => ActionStoryFilterMode.ArchiveDate,
-        _ => ActionStoryFilterMode.All
-    };
-
     private void Mode_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        InitializeFilterValues(preserveSelection: false);
+        InitializeFilterValues(false);
         RefreshItems();
     }
 
@@ -117,24 +122,27 @@ public partial class ActionStoryTab : UserControl, IRefreshable
         if (ValueBox == null || FilterHint == null) return;
         var previous = preserveSelection ? (ValueBox.SelectedItem as ActionFilterOption)?.Value : null;
         var data = ActionStory.Data;
-        IEnumerable<ActionFilterOption> values = FilterMode switch
+        var values = FilterMode switch
         {
-            ActionStoryFilterMode.ReleaseActivity => data.Select(story => story.ReleaseActivity).OfType<ActionStoryActivity>()
+            ActionStoryFilterMode.ReleaseActivity => data.Select(story => story.ReleaseActivity)
+                .OfType<ActionStoryActivity>()
                 .DistinctBy(activity => activity.Id).OrderByDescending(activity => activity.Number)
                 .Select(activity => new ActionFilterOption(activity.Id.ToString(), activity.DisplayName))
-                .Append(new("unknown", "无活动关联／未归类")),
-            ActionStoryFilterMode.AdditionActivity => data.Select(story => story.AdditionActivity).OfType<ActionStoryActivity>()
+                .Append(new ActionFilterOption("unknown", "无活动关联／未归类")),
+            ActionStoryFilterMode.AdditionActivity => data.Select(story => story.AdditionActivity)
+                .OfType<ActionStoryActivity>()
                 .DistinctBy(activity => activity.Id).OrderByDescending(activity => activity.Number)
                 .Select(activity => new ActionFilterOption(activity.Id.ToString(), activity.DisplayName + " · 推断"))
-                .Append(new("unknown", "初始／特殊批次／未归类")),
+                .Append(new ActionFilterOption("unknown", "初始／特殊批次／未归类")),
             ActionStoryFilterMode.Type => data.DistinctBy(story => story.ActionSet.ActionSetType)
                 .OrderBy(story => story.ActionSet.ActionSetType)
                 .Select(story => new ActionFilterOption(story.ActionSet.ActionSetType, story.TypeName)),
-            ActionStoryFilterMode.Batch => data.DistinctBy(story => story.BatchKey).OrderByDescending(story => story.BatchKey)
+            ActionStoryFilterMode.Batch => data.DistinctBy(story => story.BatchKey)
+                .OrderByDescending(story => story.BatchKey)
                 .Select(story => new ActionFilterOption(story.BatchKey, story.BatchName)),
             ActionStoryFilterMode.ArchiveDate => data.Select(story => story.ArchiveDate).OfType<string>()
                 .Distinct().OrderDescending().Select(date => new ActionFilterOption(date, date))
-                .Append(new("unknown", "未设置归档日期")),
+                .Append(new ActionFilterOption("unknown", "未设置归档日期")),
             _ => []
         };
         var options = new[] { new ActionFilterOption(null, "全部") }.Concat(values).ToArray();
@@ -149,6 +157,7 @@ public partial class ActionStoryTab : UserControl, IRefreshable
         {
             _updatingFilterValues = false;
         }
+
         FilterHint.Text = FilterMode switch
         {
             ActionStoryFilterMode.AdditionActivity => "追加活动按对话 ID 和已知解锁活动推断，可能与实际追加批次不同；特殊批次请使用“更新批次”。",
@@ -164,11 +173,18 @@ public partial class ActionStoryTab : UserControl, IRefreshable
 
 partial class ActionStoryTab
 {
+    private ActionStoryIdIndex IdIndex => IdIndexBox?.SelectedIndex == 1
+        ? ActionStoryIdIndex.TalkId
+        : ActionStoryIdIndex.Id;
+
     private void RefreshItems()
     {
         if (MinimumIdBox == null || MaximumIdBox == null || ResultText == null || AddFilteredButton == null) return;
-        if (AdvancedSummary != null) AdvancedSummary.Text = FilterMode != ActionStoryFilterMode.All || MinimumIdBox.Text.Length > 0 || MaximumIdBox.Text.Length > 0
-            ? "更多筛选（已启用）" : "更多筛选：活动、批次与编号";
+        if (AdvancedSummary != null)
+            AdvancedSummary.Text = FilterMode != ActionStoryFilterMode.All || MinimumIdBox.Text.Length > 0 ||
+                                   MaximumIdBox.Text.Length > 0
+                ? "更多筛选（已启用）"
+                : "更多筛选：活动、批次与编号";
         var validMinimum = TryReadId(MinimumIdBox.Text, out var minimum, out var minimumSpecial);
         var validMaximum = TryReadId(MaximumIdBox.Text, out var maximum, out var maximumSpecial);
         var valid = validMinimum && validMaximum;
@@ -190,7 +206,8 @@ partial class ActionStoryTab
             FilterMode, (ValueBox?.SelectedItem as ActionFilterOption)?.Value, IdIndex,
             minimum.HasValue ? minimumSpecial : maximumSpecial);
         var data = ActionStory.Data.Where(filter.Matches)
-            .Where(story => StoryDownloadCandidates.Action(story, DownloadPageModel.Instance.CurrentSource).Matches(_query));
+            .Where(story =>
+                StoryDownloadCandidates.Action(story, DownloadPageModel.Instance.CurrentSource).Matches(_query));
         ViewModel.EventStories = (_currentDirection == 1
             ? data.OrderBy(filter.GetSortKey).ThenBy(item => item.ActionSet.Id)
             : data.OrderByDescending(filter.GetSortKey).ThenByDescending(item => item.ActionSet.Id)).ToArray();
@@ -198,9 +215,6 @@ partial class ActionStoryTab
         AddFilteredButton.IsEnabled = ViewModel.EventStories.Length > 0;
         ResultsChanged?.Invoke(this, EventArgs.Empty);
     }
-
-    private ActionStoryIdIndex IdIndex => IdIndexBox?.SelectedIndex == 1
-        ? ActionStoryIdIndex.TalkId : ActionStoryIdIndex.Id;
 
     private bool TryReadId(string text, out int? value, out bool special)
     {
@@ -213,9 +227,15 @@ partial class ActionStoryTab
         return true;
     }
 
-    private void IdIndex_OnSelectionChanged(object sender, SelectionChangedEventArgs e) => RefreshItems();
+    private void IdIndex_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        RefreshItems();
+    }
 
-    private void IdRange_OnTextChanged(object sender, TextChangedEventArgs e) => RefreshItems();
+    private void IdRange_OnTextChanged(object sender, TextChangedEventArgs e)
+    {
+        RefreshItems();
+    }
 
     private void AddFiltered_OnClick(object sender, RoutedEventArgs e)
     {

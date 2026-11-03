@@ -10,13 +10,13 @@ namespace SekaiToolsCore.Process;
 /// <summary>Single decoder owner; bounded, reusable frames consumed in decode order.</summary>
 public sealed class BufferedVideoReader : IDisposable
 {
+    private readonly List<FrameBuffer> _buffers = [];
     private readonly VideoCapture _capture;
-    private readonly CancellationTokenSource _stop;
     private readonly Channel<DecodedVideoFrame>? _frames;
     private readonly ConcurrentQueue<FrameBuffer> _free = new();
-    private readonly List<FrameBuffer> _buffers = [];
-    private readonly SemaphoreSlim _slots;
     private readonly Task? _producer;
+    private readonly SemaphoreSlim _slots;
+    private readonly CancellationTokenSource _stop;
     private bool _disposed;
 
     public BufferedVideoReader(VideoCapture capture, int capacity, CancellationToken token, bool prepareGray = true)
@@ -32,6 +32,7 @@ public sealed class BufferedVideoReader : IDisposable
             _buffers.Add(buffer);
             _free.Enqueue(buffer);
         }
+
         if (Capacity == 0) return;
         _frames = Channel.CreateBounded<DecodedVideoFrame>(new BoundedChannelOptions(count)
         {
@@ -45,6 +46,18 @@ public sealed class BufferedVideoReader : IDisposable
 
     public int Capacity { get; }
 
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _stop.Cancel();
+        _producer?.GetAwaiter().GetResult();
+        while (_frames?.Reader.TryRead(out var pending) == true) pending.Dispose();
+        foreach (var buffer in _buffers) buffer.Dispose();
+        _stop.Dispose();
+        _slots.Dispose();
+        _disposed = true;
+    }
+
     public DecodedVideoFrame Read()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -54,6 +67,7 @@ public sealed class BufferedVideoReader : IDisposable
             if (_frames.Reader.TryRead(out var prepared)) return prepared;
             return _frames.Reader.ReadAsync(_stop.Token).AsTask().GetAwaiter().GetResult();
         }
+
         _slots.Wait(_stop.Token);
         _free.TryDequeue(out var buffer);
         return Decode(buffer!);
@@ -105,14 +119,30 @@ public sealed class BufferedVideoReader : IDisposable
                 var terminal = !frame.Succeeded && VideoReadFailureClassifier.Classify(
                     frame.CaptureOpened, frame.FrameIndex, frameCount, retries, 2) != VideoReadFailureAction.Retry;
                 retries = frame.Succeeded ? 0 : retries + 1;
-                try { await _frames!.Writer.WriteAsync(frame, _stop.Token).ConfigureAwait(false); }
-                catch { frame.Dispose(); throw; }
+                try
+                {
+                    await _frames!.Writer.WriteAsync(frame, _stop.Token).ConfigureAwait(false);
+                }
+                catch
+                {
+                    frame.Dispose();
+                    throw;
+                }
+
                 if (terminal) break;
             }
         }
-        catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
-        catch (Exception exception) { error = exception; }
-        finally { _frames!.Writer.TryComplete(error); }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            error = exception;
+        }
+        finally
+        {
+            _frames!.Writer.TryComplete(error);
+        }
     }
 
     private void Return(FrameBuffer frame)
@@ -121,51 +151,57 @@ public sealed class BufferedVideoReader : IDisposable
         _slots.Release();
     }
 
-    public void Dispose()
-    {
-        if (_disposed) return;
-        _stop.Cancel();
-        _producer?.GetAwaiter().GetResult();
-        while (_frames?.Reader.TryRead(out var pending) == true) pending.Dispose();
-        foreach (var buffer in _buffers) buffer.Dispose();
-        _stop.Dispose();
-        _slots.Dispose();
-        _disposed = true;
-    }
-
     public static long AvailableMemoryBytes()
     {
         if (OperatingSystem.IsWindows())
         {
             var status = new MemoryStatus { Length = (uint)Marshal.SizeOf<MemoryStatus>() };
-            if (GlobalMemoryStatusEx(ref status)) return (long)Math.Min(status.AvailablePhysical, (ulong)long.MaxValue);
+            if (GlobalMemoryStatusEx(ref status)) return (long)Math.Min(status.AvailablePhysical, long.MaxValue);
         }
+
         var info = GC.GetGCMemoryInfo();
         return Math.Max(0, info.TotalAvailableMemoryBytes - info.MemoryLoadBytes);
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct MemoryStatus
-    {
-        public uint Length, Load;
-        public ulong TotalPhysical, AvailablePhysical, TotalPageFile, AvailablePageFile,
-            TotalVirtual, AvailableVirtual, AvailableExtendedVirtual;
     }
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GlobalMemoryStatusEx(ref MemoryStatus status);
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MemoryStatus
+    {
+        public uint Length, Load;
+
+        public ulong TotalPhysical,
+            AvailablePhysical,
+            TotalPageFile,
+            AvailablePageFile,
+            TotalVirtual,
+            AvailableVirtual,
+            AvailableExtendedVirtual;
+    }
+
     private sealed class FrameBuffer(bool prepareGray) : IDisposable
     {
         internal Mat Image { get; } = new();
         internal Mat? Gray { get; set; } = prepareGray ? new Mat() : null;
-        public void Dispose() { Image.Dispose(); Gray?.Dispose(); }
+
+        public void Dispose()
+        {
+            Image.Dispose();
+            Gray?.Dispose();
+        }
     }
 }
 
-public sealed class DecodedVideoFrame(Mat image, bool succeeded, bool captureOpened,
-    int frameIndex, double timecode, TimeSpan decodeDuration, Action<Mat> release) : IDisposable
+public sealed class DecodedVideoFrame(
+    Mat image,
+    bool succeeded,
+    bool captureOpened,
+    int frameIndex,
+    double timecode,
+    TimeSpan decodeDuration,
+    Action<Mat> release) : IDisposable
 {
     private Action<Mat>? _release = release;
     public Mat Image { get; } = image;
@@ -177,11 +213,16 @@ public sealed class DecodedVideoFrame(Mat image, bool succeeded, bool captureOpe
     public Mat? PreparedGray { get; internal set; }
     public TimeSpan PreprocessDuration { get; internal init; }
     internal Func<Mat, Mat>? ExchangeGray { get; init; }
+
+    public void Dispose()
+    {
+        Interlocked.Exchange(ref _release, null)?.Invoke(Image);
+    }
+
     internal Mat TakeGray(Mat replacement)
     {
         var result = ExchangeGray!(replacement);
         PreparedGray = replacement;
         return result;
     }
-    public void Dispose() => Interlocked.Exchange(ref _release, null)?.Invoke(Image);
 }

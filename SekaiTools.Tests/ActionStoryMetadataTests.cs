@@ -5,20 +5,25 @@ namespace SekaiTools.Tests;
 
 public class ActionStoryMetadataTests
 {
-    private static ActionSet Action(int id, int condition = 1, string scenario = "areatalk_test_001") =>
-        new() { Id = id, ReleaseConditionId = condition, ScenarioId = scenario, ActionSetType = "normal" };
-
     private static readonly EventStory[] EventStories =
     [
-        new() { Id = 10, EventId = 99, EventStoryEpisodes = [new() { Id = 1000 }] },
-        new() { Id = 20, EventId = 5, EventStoryEpisodes = [new() { Id = 2000 }] }
+        new() { Id = 10, EventId = 99, EventStoryEpisodes = [new EventEpisode { Id = 1000 }] },
+        new() { Id = 20, EventId = 5, EventStoryEpisodes = [new EventEpisode { Id = 2000 }] }
     ];
+
     private static readonly GameEvent[] Events = [new() { Id = 99, Name = "第一期" }, new() { Id = 5, Name = "第二期" }];
+
     private static readonly ReleaseCondition[] Conditions =
     [
         new() { Id = 500, ReleaseConditionType = "event_story", ReleaseConditionTypeId = 1000 },
         new() { Id = 600, ReleaseConditionType = "event_story", ReleaseConditionTypeId = 2000 }
     ];
+
+    private static ActionSet Action(int id, int condition = 1, string scenario = "areatalk_test_001")
+    {
+        return new ActionSet
+            { Id = id, ReleaseConditionId = condition, ScenarioId = scenario, ActionSetType = "normal" };
+    }
 
     [Fact]
     public void ResolvesEpisodeToRealEventIdWithoutUsingConditionNumberFormula()
@@ -111,7 +116,7 @@ public class ActionStoryMetadataTests
     public void MalformedMetadataIsRejectedBeforeChangingStoryAssociations()
     {
         var action = Action(10, 500);
-        var story = new AreaStorySet(action) { ReleaseActivity = new(99, 1, "活动") };
+        var story = new AreaStorySet(action) { ReleaseActivity = new ActionStoryActivity(99, 1, "活动") };
         Assert.Throws<ArgumentException>(() => ActionStoryMetadata.Apply([story], [action], Conditions,
             [new EventStory { EventId = 99, EventStoryEpisodes = null! }], Events));
         Assert.Equal(99, story.ReleaseActivity!.Id);
@@ -129,12 +134,13 @@ public class ActionStoryMetadataTests
         })
         {
             CharacterIds = [3],
-            ReleaseActivity = new(99, 1, "活动"),
+            ReleaseActivity = new ActionStoryActivity(99, 1, "活动"),
             BatchKey = "monthly:2609"
         };
         Assert.True(new ActionStoryFilter(2, 3, 10, 10, ActionStoryFilterMode.ReleaseActivity, "99").Matches(story));
         Assert.False(new ActionStoryFilter(1, Mode: ActionStoryFilterMode.ReleaseActivity, Value: "99").Matches(story));
-        Assert.True(new ActionStoryFilter(Mode: ActionStoryFilterMode.AdditionActivity, Value: "unknown").Matches(story));
+        Assert.True(
+            new ActionStoryFilter(Mode: ActionStoryFilterMode.AdditionActivity, Value: "unknown").Matches(story));
         Assert.True(new ActionStoryFilter(Mode: ActionStoryFilterMode.Batch, Value: "monthly:2609").Matches(story));
         Assert.True(new ActionStoryFilter(Mode: ActionStoryFilterMode.Type, Value: "normal").Matches(story));
         Assert.True(new ActionStoryFilter(Mode: ActionStoryFilterMode.ArchiveDate, Value: "2026-09-27").Matches(story));
