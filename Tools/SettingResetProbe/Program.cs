@@ -29,9 +29,12 @@ internal static class Program
         var page = (SettingPage)pageConstructor.Invoke([model]);
         var window = new Window { Content = page, Width = 1100, Height = 850, Left = -15000, Top = -15000, ShowActivated = false, ShowInTaskbar = false };
         window.Show(); Pump();
-        var groups = ((StackPanel)page.FindName("SettingsItems")).Children.OfType<CardExpander>().ToArray();
-        Require(groups.Select(group => group.Header?.ToString()).SequenceEqual(SettingCatalog.Categories),
-            "Settings modules are missing or out of order");
+        var items = (StackPanel)page.FindName("SettingsItems");
+        var about = (CardExpander)page.FindName("AboutSection");
+        Require(ReferenceEquals(items.Children[items.Children.Count - 1], about), "About must be last in settings panel");
+        var groups = items.Children.OfType<CardExpander>().Where(group => !ReferenceEquals(group, about)).ToArray();
+        Require(groups.Select(group => group.Header?.ToString()).SequenceEqual(new[] { "通用", "轴机", "下载", "翻译" }),
+            "Nonempty modules must remain ordered and empty compression module must be hidden");
         Require(Nodes(groups[3]).OfType<ComboBox>().Any(), "Translation module lacks newline marker editor");
         Require(Nodes(groups[2]).OfType<Wpf.Ui.Controls.TextBox>().Any(), "Download module lacks directory editor");
         foreach (var expander in Nodes(page).OfType<CardExpander>()) expander.IsExpanded = true;

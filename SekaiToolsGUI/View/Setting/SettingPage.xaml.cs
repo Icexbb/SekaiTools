@@ -37,7 +37,7 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
         foreach (var category in SettingCatalog.Categories)
         {
             var content = new StackPanel();
-            foreach (var section in sections.Where(section => section.Category == category && section.Custom != "logs"))
+            foreach (var section in sections.Where(section => section.Category == category && section.Custom is not ("logs" or "about")))
                 content.Children.Add(section.Custom == null && section.Properties.Contains("ExportLine1")
                     ? new ExportOptionsControl
                     {
@@ -46,17 +46,7 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
                         IsExpanded = section.IsExpanded
                     }
                     : builder.Build(section));
-            if (content.Children.Count == 0)
-            {
-                var empty = new System.Windows.Controls.TextBlock
-                {
-                    Text = category == "压制" ? "压制参数在视频压制页面的任务中设置。" : "此模块暂无全局设置。",
-                    TextWrapping = TextWrapping.Wrap,
-                    Margin = new Thickness(8)
-                };
-                empty.SetResourceReference(ForegroundProperty, "TextFillColorSecondaryBrush");
-                content.Children.Add(empty);
-            }
+            if (content.Children.Count == 0) continue;
             var icon = category switch
             {
                 "轴机" => SymbolRegular.Subtitles24,
@@ -77,6 +67,7 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
             System.Windows.Automation.AutomationProperties.SetName(group, $"{category}设置");
             SettingsItems.Children.Add(group);
         }
+        SettingsItems.Children.Add(AboutSection);
     }
 
     private static ISnackbarService SnackService =>
