@@ -145,8 +145,16 @@
                         </ui:SymbolIcon.Style>
                     </ui:SymbolIcon>
                 </Grid>
-                <StackPanel Grid.Column="2" VerticalAlignment="Stretch">
-                    <Grid
+                <Grid Grid.Column="2" VerticalAlignment="Stretch">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0"
                         Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
                         <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="10,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent"
@@ -159,7 +167,7 @@
                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
-                    <Grid Visibility="{c:Binding Content.HasLoadedChanges,FalseToVisibility=Collapsed}">
+                    <Grid Grid.Row="1" Visibility="{c:Binding Content.HasLoadedChanges,FalseToVisibility=Collapsed}">
                         <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="10,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
                                  behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.Translated}"
@@ -170,7 +178,7 @@
                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
-                    <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" behaviors:NewlineMarker.Style="{Binding TranslationNewlineMarker, Source={x:Static settings:SettingPageModel.Instance}}"
+                    <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" Grid.Row="2" VerticalAlignment="Stretch" behaviors:NewlineMarker.Style="{Binding TranslationNewlineMarker, Source={x:Static settings:SettingPageModel.Instance}}"
                              MinLines="2" Padding="10,2" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
                              PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"
                              DataObject.Pasting="TextBox_OnPasting" GotKeyboardFocus="TextBox_OnGotKeyboardFocus"
@@ -181,15 +189,15 @@
                              behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Reference}"
                              behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference'}"
                              Text="{Binding Content.Translated,UpdateSourceTrigger=PropertyChanged}" />
-                    <TextBlock Margin="4,2" TextWrapping="Wrap" FontSize="12"
+                    <TextBlock Grid.Row="3" Margin="4,2" TextWrapping="Wrap" FontSize="12"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                         <Run Text="最长行加权长度：" /><Run Text="{Binding MaxLineLength,Mode=OneWay}" />
                         <Run Text="；全文字符数：" /><Run Text="{Binding Content.Translated.Length,Mode=OneWay}" />
                     </TextBlock>
-                    <TextBlock Text="{Binding InputHint}" TextWrapping="Wrap" Margin="4,2"
+                    <TextBlock Grid.Row="4" Text="{Binding InputHint}" TextWrapping="Wrap" Margin="4,2"
                                Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                                Visibility="{c:Binding 'InputHint.Length>0',FalseToVisibility=Collapsed}" />
-                    <Border Margin="2,4" Padding="6" CornerRadius="4"
+                    <Border Grid.Row="5" Margin="2,4" Padding="6" CornerRadius="4"
                             Background="{DynamicResource ControlFillColorSecondaryBrush}"
                             Visibility="{c:Binding 'Check.Length>0',FalseToVisibility=Collapsed}">
                         <DockPanel>
@@ -200,7 +208,7 @@
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                         </DockPanel>
                     </Border>
-                </StackPanel>
+                </Grid>
             </Grid>
         </ui:Card>
     </Grid>

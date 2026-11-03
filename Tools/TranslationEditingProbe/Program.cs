@@ -308,6 +308,7 @@ internal static class Program
         Check(page.FlushDraft() && store.ReadDraft() == null, "close flush cannot recreate discarded draft");
         CheckReferenceDifferences(window, script);
         CheckLoadedDifferences(window, script);
+        CheckInputStretch(window, script);
         CheckNewlineMarkers(window);
         CheckCloseDialog(window);
         window.Close();
@@ -437,6 +438,30 @@ internal static class Program
         }
     }
 
+    private static void CheckInputStretch(Window window, GameScript script)
+    {
+        var model = new TranslatePageModel();
+        model.LoadScript(script, "stretch-probe.json");
+        var line = model.Events.OfType<LineDialogModel>().First();
+        line.Content.Original = string.Join("\n", Enumerable.Repeat("撑高行的原文", 8));
+        line.Content.Translated = "短译文";
+        var view = new SekaiToolsGUI.View.Translate.Components.TranslateLineDialog { LineDialogModel = line, VerticalAlignment = VerticalAlignment.Top };
+        window.Content = new System.Windows.Documents.AdornerDecorator { Child = view };
+        window.Width = 1280;
+        Pump();
+        var editor = Nodes(view).OfType<System.Windows.Controls.TextBox>().Single(box =>
+            box.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.ParentBinding.Path?.Path == "Content.Translated");
+        var parent = (Grid)editor.Parent;
+        Check(editor.ActualHeight > 100 && Math.Abs(editor.ActualHeight - parent.RowDefinitions[2].ActualHeight) < 1,
+            "translation editor fills remaining height beside tall original");
+        Check(parent.RowDefinitions[3].ActualHeight < 35 && Grid.GetRow(editor) == 2,
+            "statistics keep natural height below stretched editor");
+        var oldHeight = editor.ActualHeight;
+        line.Content.Translated = string.Join("\n", Enumerable.Repeat("增长的译文", 15));
+        Pump();
+        Check(editor.ActualHeight > oldHeight, "translation editor still grows with multiline input");
+    }
+
     private static void CheckNewlineMarkers(Window window)
     {
         var box = new System.Windows.Controls.TextBox
@@ -514,7 +539,7 @@ internal static class Program
         model.LoadTranslation(data, "loaded-probe.txt");
         var line = (LineDialogModel)model.Events[0];
         var effect = model.Events.OfType<LineEffectModel>().First();
-        var view = new SekaiToolsGUI.View.Translate.Components.TranslateLineDialog { LineDialogModel = line };
+        var view = new SekaiToolsGUI.View.Translate.Components.TranslateLineDialog { LineDialogModel = line, VerticalAlignment = VerticalAlignment.Top };
         var effectView = new SekaiToolsGUI.View.Translate.Components.TranslateLineEffect { LineEffectModel = effect };
         var panel = new StackPanel { Margin = new Thickness(16) };
         var title = new TextBlock { Text = "黄色框：参考差异 · 蓝色框：相对载入译文的修改", Margin = new Thickness(4, 12, 4, 20) };
