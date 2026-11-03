@@ -37,6 +37,26 @@ public class SuppressPageModel : ViewModelBase
     public string QueueSummary =>
         $"共 {PendingJobs.Count + CompletedJobs.Count + (HasRunningJob ? 1 : 0)} 项 · 等待 {PendingJobs.Count} · 处理中 {(HasRunningJob ? 1 : 0)} · 已结束 {CompletedJobs.Count}";
 
+    public void RefreshQueueEstimate() => OnPropertyChanged(nameof(QueueTimeEstimate));
+
+    public string QueueTimeEstimate
+    {
+        get
+        {
+            if (RunningJob == null && PendingJobs.Count == 0) return CompletedJobs.Count > 0 ? "队列已结束" : "尚无任务";
+            if (PendingJobs.Any(job => job.IsEditing)) return "正在编辑任务，整队完成时间待估算";
+            var remaining = SuppressionQueueEstimator.EstimateRemaining(
+                RunningJob == null ? null : new(RunningJob.Job.Options, RunningJob.Progress),
+                PendingJobs.Select(job => job.Job.Options).ToArray(),
+                CompletedJobs.Select(job => new SuppressionTimingSample(job.Job.Options, job.Progress)).ToArray());
+            if (remaining == null) return "整队完成时间估算中…";
+            if (remaining.Value.TotalDays > 365) return "整队预计耗时超过一年";
+            var duration = remaining.Value;
+            var finish = DateTimeOffset.Now.Add(duration);
+            return $"整队约剩 {(int)duration.TotalHours:00}:{duration.Minutes:00}:{duration.Seconds:00}\n预计完成 {finish:MM-dd HH:mm:ss}";
+        }
+    }
+
     public static SuppressPageModel Instance { get; } = new();
     public ObservableCollection<SuppressionJobModel> PendingJobs { get; } = new();
     public ObservableCollection<SuppressionJobModel> CompletedJobs { get; } = new();
@@ -116,6 +136,7 @@ public class SuppressPageModel : ViewModelBase
     private void RefreshSummary()
     {
         OnPropertyChanged(nameof(QueueSummary));
+        OnPropertyChanged(nameof(QueueTimeEstimate));
         OnPropertyChanged(nameof(CanClear));
     }
 
@@ -140,6 +161,7 @@ public class SuppressPageModel : ViewModelBase
         if (job.IsEditing || ReferenceEquals(RunningJob, job)) return false;
         if (!PendingJobs.Contains(job) && !CompletedJobs.Contains(job)) return false;
         job.IsEditing = true;
+        OnPropertyChanged(nameof(QueueTimeEstimate));
         RefreshStartStates();
         return true;
     }
@@ -147,6 +169,7 @@ public class SuppressPageModel : ViewModelBase
     public void EndEdit(SuppressionJobModel job)
     {
         job.IsEditing = false;
+        OnPropertyChanged(nameof(QueueTimeEstimate));
         RefreshStartStates();
     }
 

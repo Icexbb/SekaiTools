@@ -89,7 +89,7 @@ internal static class Program
                         var encodingType = optionsType.GetConstructors().OrderByDescending(x => x.GetParameters().Length).First().GetParameters()[3].ParameterType;
                         var progressType = jobModelType.GetProperty("Progress")!.PropertyType;
                         var stateType = progressType.GetConstructors().OrderByDescending(x => x.GetParameters().Length).First().GetParameters()[3].ParameterType;
-                        object Job(string file) => Construct(jobModelType, Construct(jobType, Construct(optionsType, "E:\\Videos\\" + file, "E:\\Subtitles\\翻译.ass", "E:\\Output\\" + file, Construct(encodingType))));
+                        object Job(string file) => Construct(jobModelType, Construct(jobType, Construct(optionsType, "E:\\Videos\\" + file, "E:\\Subtitles\\翻译.ass", "E:\\Output\\" + file, Construct(encodingType), 9000, false, 1080)));
                         var current = modelType.GetProperty("RunningJob")!.GetValue(model);
                         if (current != null) jobModelType.GetProperty("Progress")!.SetValue(current, Construct(progressType, 100, 100, 30d, Enum.Parse(stateType, "Completed"), "示例任务"));
                         finished.Clear();
@@ -106,6 +106,7 @@ internal static class Program
                         if (((System.Windows.Data.ListCollectionView)modelType.GetProperty("FilteredCompletedJobs")!.GetValue(model)!).Count != 1) throw new Exception("Failed filter incorrect");
                         modelType.GetProperty("CompletedFilter")!.SetValue(model, 0);
                         modelType.GetProperty("SelectedJob")!.SetValue(model, running);
+                        if (!((string)modelType.GetProperty("QueueTimeEstimate")!.GetValue(model)!).Contains("整队约剩")) throw new Exception("Queue estimate missing for matching samples");
                     }
                     FrameworkElement content = name.Contains("Settings") ? new ScrollViewer { Content = view, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } : view;
                     var host = new Window { Width = size.Width, Height = size.Height, Content = content, Left = -15000, Top = -15000, ShowActivated = false, ShowInTaskbar = false };

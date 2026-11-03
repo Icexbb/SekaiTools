@@ -20,6 +20,7 @@ namespace SekaiToolsGUI.View.Suppress;
 
 public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 {
+    private readonly System.Windows.Threading.DispatcherTimer _estimateTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly VideoSuppressionQueue _queue;
     private bool _preparingResources;
 
@@ -32,6 +33,9 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
         _queue = queue;
         DataContext = model;
         InitializeComponent();
+        _estimateTimer.Tick += (_, _) => ViewModel.RefreshQueueEstimate();
+        Loaded += (_, _) => _estimateTimer.Start();
+        Unloaded += (_, _) => _estimateTimer.Stop();
         GongDragDrop.SetDropHandler(PendingJobsList, new PendingJobsDropHandler(ViewModel.PendingJobs));
     }
 

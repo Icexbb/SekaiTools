@@ -33,6 +33,9 @@
                     </StackPanel>
                     <TextBlock Text="添加后自动按顺序执行" Margin="0,6,0,0"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="{Binding QueueTimeEstimate}" Margin="0,6,0,0" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               ToolTip="根据当前速度及相同视频高度、字幕模式和编码设置的成功任务估算。字幕复杂度、准备阶段和磁盘速度会影响实际完成时间；样本不足时暂不显示时刻。" />
                     <TextBlock Text="正在准备压制环境…" Margin="0,4,0,0"
                                Visibility="{c:Binding IsPreparingResources, FalseToVisibility=Collapsed}" />
                     <TextBlock Text="{Binding ResourcePreparationError}"
