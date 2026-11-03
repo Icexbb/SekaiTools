@@ -6,6 +6,9 @@ public sealed class SuppressionJobModel(VideoSuppressionJob job) : ViewModelBase
 {
     public VideoSuppressionJob Job { get; } = job;
     public string SourceVideo => Job.Options.SourceVideo;
+    public string FfmpegCommandDisplay => string.IsNullOrWhiteSpace(Progress.FfmpegCommand) ? "任务开始后显示实际 FFmpeg 参数（包含音轨检测结果与临时输出路径）。" : Progress.FfmpegCommand;
+    public string EditLabel => IsWaiting ? "编辑任务" : "修改后重试";
+    public bool CanEdit => !IsActive && !IsEditing;
     public string SubtitleDescription => string.IsNullOrWhiteSpace(Job.Options.SourceSubtitle) ? "未选择字幕，仅转码" : Job.Options.SourceSubtitle;
     public string OutputPath => Job.Options.OutputPath;
     public string FileName => System.IO.Path.GetFileName(SourceVideo);
@@ -23,7 +26,7 @@ public sealed class SuppressionJobModel(VideoSuppressionJob job) : ViewModelBase
     public bool IsEditing
     {
         get => GetProperty(false);
-        internal set { SetProperty(value); OnPropertyChanged(nameof(WaitingStatus)); OnPropertyChanged(nameof(ListStatus)); OnPropertyChanged(nameof(CanReorder)); }
+        internal set { SetProperty(value); OnPropertyChanged(nameof(WaitingStatus)); OnPropertyChanged(nameof(ListStatus)); OnPropertyChanged(nameof(CanReorder)); OnPropertyChanged(nameof(CanEdit)); }
     }
     public bool IsFailed => Progress.State == VideoSuppressionState.Failed;
     public bool IsSelected { get => GetProperty(false); set => SetProperty(value); }
@@ -48,6 +51,9 @@ public sealed class SuppressionJobModel(VideoSuppressionJob job) : ViewModelBase
             OnPropertyChanged(nameof(IsCompleted));
             OnPropertyChanged(nameof(IsFinished));
             OnPropertyChanged(nameof(IsPreparing));
+            OnPropertyChanged(nameof(FfmpegCommandDisplay));
+            OnPropertyChanged(nameof(EditLabel));
+            OnPropertyChanged(nameof(CanEdit));
             OnPropertyChanged(nameof(IsFailed));
             OnPropertyChanged(nameof(IsActive));
             OnPropertyChanged(nameof(IsWaiting));

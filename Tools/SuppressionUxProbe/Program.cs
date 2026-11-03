@@ -15,7 +15,7 @@ internal static class Program
     }
     private static FrameworkElement? FindExecuting(DependencyObject parent)
     {
-        if (parent is FrameworkElement element && element.GetType().Name == "SuppressionExecutingJobItem") return element;
+        if (parent is FrameworkElement element && element.GetType().Name == "SuppressionTaskDetails") return element;
         for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
         { var found = FindExecuting(VisualTreeHelper.GetChild(parent, i)); if (found != null) return found; }
         return null;
@@ -23,20 +23,15 @@ internal static class Program
     private static void CheckLogWindow(FrameworkElement page)
     {
         var executing = FindExecuting(page) ?? throw new Exception("Missing executing panel");
-        Exception? failure = null;
-        Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, () =>
-        {
-            var log = Application.Current.Windows.Cast<Window>().Single(window => window.Title == "压制执行日志");
-            try
-            {
-                if (log.Content is not TextBox text || !text.IsReadOnly || string.IsNullOrWhiteSpace(text.Text)) throw new Exception("Log window binding failed");
-            }
-            catch (Exception ex) { failure = ex; }
-            finally { log.Close(); }
-        });
-        executing.GetType().GetMethod("ShowLog_OnClick", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(executing, [executing, new RoutedEventArgs()]);
-        if (failure != null) throw failure;
-        Console.WriteLine("Log window opened, read-only log binding verified, closed.");
+        var log = (TextBox)executing.FindName("LogTextBox");
+        if (!log.IsReadOnly || string.IsNullOrWhiteSpace(log.Text)) throw new Exception("Inline log binding failed");
+        var command = (TextBox)executing.FindName("CommandTextBox");
+        if (!command.IsReadOnly || string.IsNullOrWhiteSpace(command.Text)) throw new Exception("Command binding failed");
+        var model = executing.DataContext;
+        var progress = model.GetType().GetProperty("Progress")!.GetValue(model)!;
+        if (log.Text != (string)progress.GetType().GetProperty("Log")!.GetValue(progress)!) throw new Exception("Wrong task log");
+        if (command.Text != (string)model.GetType().GetProperty("FfmpegCommandDisplay")!.GetValue(model)!) throw new Exception("Wrong task parameters");
+        Console.WriteLine("Unified detail component: inline parameters and task-specific read-only logs verified.");
     }
     [STAThread]
     private static void Main(string[] args)
@@ -98,7 +93,7 @@ internal static class Program
                         if (current != null) jobModelType.GetProperty("Progress")!.SetValue(current, Construct(progressType, 100, 100, 30d, Enum.Parse(stateType, "Completed"), "示例任务"));
                         finished.Clear();
                         var running = Job("剧情视频.mp4"); pending.Add(running); modelType.GetMethod("TryStart")!.Invoke(model, [running]);
-                        jobModelType.GetProperty("Progress")!.SetValue(running, Construct(progressType, 1800, 9000, 45d, Enum.Parse(stateType, "Running"), "面板布局示例，未运行编码进程", "3200kbits/s", "0.75x", "128MiB", "00:00:30", 40d, false));
+                        jobModelType.GetProperty("Progress")!.SetValue(running, Construct(progressType, 1800, 9000, 45d, Enum.Parse(stateType, "Running"), "面板布局示例，未运行编码进程", "3200kbits/s", "0.75x", "128MiB", "00:00:30", 40d, false, "ffmpeg.exe -f yuv4mpegpipe -i - -i source.mp4 -c:v libx264 -preset medium -crf 21 output.partial.mp4 -n"));
                         pending.Add(Job("下一段剧情.mp4"));
                         foreach (var status in new[] { "Completed", "Failed", "Cancelled" })
                         {
@@ -133,11 +128,14 @@ internal static class Program
                         var pageModel = view.DataContext;
                         var pendingItems = (System.Collections.IList)pageModel.GetType().GetProperty("PendingJobs")!.GetValue(pageModel)!;
                         var finishedItems = (System.Collections.IList)pageModel.GetType().GetProperty("CompletedJobs")!.GetValue(pageModel)!;
+                        var unifiedDetails = FindExecuting(view);
                         foreach (var selection in new[] { ("Pending", pendingItems[0]), ("Completed", finishedItems[0]), ("Failed", finishedItems[1]) })
                         {
                             pageModel.GetType().GetProperty("SelectedJob")!.SetValue(pageModel, selection.Item2);
                             var detailFrame = new DispatcherFrame(); Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () => detailFrame.Continue = false); Dispatcher.PushFrame(detailFrame);
                             background.UpdateLayout();
+                            if (!ReferenceEquals(unifiedDetails, FindExecuting(view))) throw new Exception("Detail component replaced on task switch");
+                            CheckLogWindow(view);
                             var details = new RenderTargetBitmap((int)content.ActualWidth, (int)content.ActualHeight, 96, 96, PixelFormats.Pbgra32); details.Render(background);
                             var detailEncoder = new PngBitmapEncoder(); detailEncoder.Frames.Add(BitmapFrame.Create(details));
                             using var detailStream = File.Create(Path.Combine(args[1], $"{theme}-SuppressPage-{size.Width}-{selection.Item1}.png")); detailEncoder.Save(detailStream);

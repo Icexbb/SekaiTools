@@ -42,24 +42,7 @@
   </ui:Card>
   <Grid Grid.Column="1">
    <TextBlock Text="添加任务，或从左侧选择任务查看压制进度与结果" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Visibility="{c:Binding !HasSelection, FalseToVisibility=Collapsed}"/>
-   <ScrollViewer VerticalAlignment="Stretch" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Visibility="{c:Binding HasSelection, FalseToVisibility=Collapsed}">
-    <ui:Card Padding="16" VerticalAlignment="Top" HorizontalAlignment="Stretch" VerticalContentAlignment="Stretch">
-     <StackPanel DataContext="{Binding SelectedJob}">
-      <TextBlock Text="任务详情" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,16"/>
-      <components:SuppressionExecutingJobItem Visibility="{c:Binding IsActive, FalseToVisibility=Collapsed}"/>
-      <StackPanel Visibility="{c:Binding IsWaiting, FalseToVisibility=Collapsed}">
-       <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding ListStatus}" Margin="0,8" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-       <TextBlock Text="{Binding EncodingDescription}" TextWrapping="Wrap" Margin="0,0,0,12"/>
-       <WrapPanel><ui:Button Content="编辑任务" Icon="{ui:SymbolIcon Edit24}" Click="EditSelected_OnClick" Margin="0,0,8,0"/><ui:Button Content="移除任务" Icon="{ui:SymbolIcon Dismiss24}" Click="RemoveSelected_OnClick"/></WrapPanel>
-      </StackPanel>
-      <components:SuppressionFinishJobItem RemoveRequested="RemoveFinishedJob_OnRemoveRequested" RetryRequested="EditJob_OnRequested" Visibility="{c:Binding IsFinished, FalseToVisibility=Collapsed}"/>
-      <Separator Margin="0,16"/>
-      <TextBlock Text="视频文件" FontWeight="SemiBold"/><TextBlock Text="{Binding SourceVideo}" TextWrapping="Wrap" Margin="0,4,0,12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-      <TextBlock Text="烧录字幕" FontWeight="SemiBold"/><TextBlock Text="{Binding SubtitleDescription}" TextWrapping="Wrap" Margin="0,4,0,12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-      <TextBlock Text="输出路径" FontWeight="SemiBold"/><TextBlock Text="{Binding OutputPath}" TextWrapping="Wrap" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-     </StackPanel>
-    </ui:Card>
-   </ScrollViewer>
+   <Grid Visibility="{c:Binding HasSelection, FalseToVisibility=Collapsed}"><components:SuppressionTaskDetails DataContext="{Binding SelectedJob}" EditRequested="EditJob_OnRequested" RemoveRequested="TaskItem_OnRemoveRequested" /></Grid>
   </Grid>
  </Grid>
 </UserControl>

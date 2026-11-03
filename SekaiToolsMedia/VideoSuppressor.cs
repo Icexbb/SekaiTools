@@ -13,6 +13,7 @@ namespace SekaiToolsMedia;
 public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvider) : IDisposable
 {
     private bool _isFinalizing;
+    private volatile bool _drainingLogs;
     private readonly Stopwatch _elapsed = new();
     private readonly object _runLock = new();
     private string _bitrate = "";
@@ -25,7 +26,11 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
     private Task? _runTask;
     private string _speed = "";
     private VideoSuppressionState _state = VideoSuppressionState.Idle;
-    private string _status = "";
+    private readonly object _publishLock = new();
+    private readonly object _logLock = new();
+    private readonly StringBuilder _fullLog = new();
+    private string _ffmpegCommand = "";
+    private string _latestProgressLine = "";
     private int _totalFrames;
     private Process? _vapourProcess;
 
@@ -84,7 +89,7 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
                 return;
 
             State = VideoSuppressionState.Cancelling;
-            _status = "正在取消压制…";
+            AppendLog("正在取消压制…");
             _cancellationTokenSource?.Cancel();
             StopProcess(_vapourProcess);
             StopProcess(_ffmpegProcess);
@@ -104,6 +109,7 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
     private async Task RunAsync(VideoSuppressionOptions options, CancellationToken cancellationToken)
     {
         _isFinalizing = false;
+        _drainingLogs = false;
         _elapsed.Restart();
         _processedFrames = 0;
         _totalFrames = 0;
@@ -112,11 +118,16 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
         _speed = "";
         _outputSize = "";
         _outputTime = "";
-        _status = "正在分析媒体信息…";
+        lock (_logLock) _fullLog.Clear();
+        _ffmpegCommand = "";
+        _latestProgressLine = "";
+        AppendLog("正在分析媒体信息…");
         State = VideoSuppressionState.Preparing;
         PublishProgress();
 
         VideoOutputTransaction? outputTransaction = null;
+        Task? vapourLogTask = null;
+        Task? ffmpegLogTask = null;
         try
         {
             ValidateOptions(options);
@@ -124,27 +135,35 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
             outputTransaction = new VideoOutputTransaction(options.OutputPath, options.OverwriteExisting);
             var ffmpegPath = resourceProvider.GetVapourSynthResourcePath("ffmpeg.exe");
             var audioPlan = await FfmpegAudioInspector
-                .InspectAsync(ffmpegPath, options.SourceVideo, cancellationToken)
+                .InspectAsync(ffmpegPath, options.SourceVideo, cancellationToken, line => { AppendLog("[媒体检测] " + line); PublishProgress(); })
                 .ConfigureAwait(false);
-            _status = audioPlan.StreamCount switch
+            var audioDescription = audioPlan.StreamCount switch
             {
                 0 => "未检测到音轨，将仅输出视频",
                 _ when audioPlan.CopyAudio => $"检测到 {audioPlan.StreamCount} 条兼容音轨，将全部保留",
                 _ => $"检测到 {audioPlan.StreamCount} 条音轨，存在 MP4 不兼容编码，将全部转为 AAC"
             };
+            AppendLog(audioDescription);
             var (frameCount, sourceHeight) = GetVideoInfo(options);
             _totalFrames = frameCount;
             var threads = options.EncodingSettings.GetThreadCount(sourceHeight, Environment.ProcessorCount);
-            _status += threads > 0 ? $"\n编码线程数：{threads}" : "\n编码线程数：由 x264 自动选择";
-            Logger.Log($"压制媒体分析完成: 总帧={frameCount}, {_status}");
+            AppendLog(threads > 0 ? $"编码线程数：{threads}" : "编码线程数：由 x264 自动选择");
+            Logger.Log($"压制媒体分析完成: 总帧={frameCount}, {audioDescription}");
             _vapourProcess = CreateVapourProcess(options);
             _ffmpegProcess = CreateFfmpegProcess(
                 options, audioPlan, ffmpegPath, outputTransaction.TemporaryPath, sourceHeight);
 
+            _ffmpegCommand = FormatCommand(_ffmpegProcess.StartInfo);
+            AppendLog("[FFmpeg 参数] " + _ffmpegCommand);
+            AppendLog("[VSPipe 参数] " + FormatCommand(_vapourProcess.StartInfo));
+            PublishProgress();
+
             if (!_vapourProcess.Start())
                 throw new InvalidOperationException("无法启动 VSPipe");
+            vapourLogTask = ReadProcessLogAsync(_vapourProcess, "VSPipe");
             if (!_ffmpegProcess.Start())
                 throw new InvalidOperationException("无法启动 FFmpeg");
+            ffmpegLogTask = ReadProcessLogAsync(_ffmpegProcess, "FFmpeg");
 
             using var cancellationRegistration = cancellationToken.Register(() =>
             {
@@ -158,7 +177,8 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
 
             await Task.WhenAll(
                 TransferPipeWithCleanupAsync(cancellationToken),
-                ReadFfmpegLogAsync(cancellationToken),
+                ffmpegLogTask,
+                vapourLogTask,
                 WaitForSuccessfulExitAsync(_vapourProcess, "VSPipe", cancellationToken),
                 WaitForSuccessfulExitAsync(_ffmpegProcess, "FFmpeg", cancellationToken)).ConfigureAwait(false);
 
@@ -166,30 +186,37 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
             PublishProgress();
             outputTransaction.Commit();
             _processedFrames = _totalFrames;
-            _status = $"{_status}\n压制完成";
+            AppendLog("压制完成");
             State = VideoSuppressionState.Completed;
             Logger.Log($"视频压制完成: 输出={options.OutputPath}, 总帧={_totalFrames}");
         }
         catch (Exception) when (cancellationToken.IsCancellationRequested)
         {
-            _status = $"{_status}\n压制已取消";
+            _drainingLogs = true;
+            AppendLog("压制已取消");
             State = VideoSuppressionState.Cancelled;
             Logger.Log($"视频压制已取消: 输出={options.OutputPath}, 已处理帧={_processedFrames}");
             throw new OperationCanceledException(cancellationToken);
         }
         catch (Exception exception)
         {
+            _drainingLogs = true;
             State = VideoSuppressionState.Failed;
             Logger.Log($"视频压制失败: 输出={options.OutputPath}, {exception}", LogLevel.Error);
-            _status = string.IsNullOrWhiteSpace(_status)
-                ? $"压制失败：{exception.Message}"
-                : $"{_status}\n压制失败：{exception.Message}";
+            AppendLog($"压制失败：{exception}");
             throw;
         }
         finally
         {
             StopProcess(_vapourProcess);
             StopProcess(_ffmpegProcess);
+            _drainingLogs = true;
+            foreach (var reader in new[] { vapourLogTask, ffmpegLogTask })
+            {
+                if (reader == null) continue;
+                try { await reader.ConfigureAwait(false); }
+                catch (Exception ex) { AppendLog($"日志读取异常：{ex.Message}"); }
+            }
             _elapsed.Stop();
             PublishProgress();
             _vapourProcess?.Dispose();
@@ -215,7 +242,9 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
             FileName = resourceProvider.GetVapourSynthResourcePath("VSPipe.exe"),
             UseShellExecute = false,
             CreateNoWindow = true,
-            RedirectStandardOutput = true
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            StandardErrorEncoding = Encoding.UTF8
         };
         startInfo.ArgumentList.Add(resourceProvider.GetVapourSynthResourcePath("lim5994.vpy"));
         startInfo.ArgumentList.Add("-");
@@ -321,38 +350,58 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
         _ffmpegProcess.StandardInput.Close();
     }
 
-    private async Task ReadFfmpegLogAsync(CancellationToken cancellationToken)
+    internal static string FormatCommand(ProcessStartInfo startInfo)
     {
-        if (_ffmpegProcess == null) return;
-        while (await _ffmpegProcess.StandardError.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } log)
+        // Display argv faithfully; this string is never used for process execution.
+        static string Quote(string value)
         {
-            UpdateLog(log);
-            PublishProgress();
+            var result = new StringBuilder("\"");
+            var slashes = 0;
+            foreach (var character in value)
+            {
+                if (character == '\\') { slashes++; continue; }
+                result.Append('\\', character == '"' ? slashes * 2 + 1 : slashes);
+                result.Append(character);
+                slashes = 0;
+            }
+            result.Append('\\', slashes * 2);
+            return result.Append('"').ToString();
+        }
+        return string.Join(" ", new[] { startInfo.FileName }.Concat(startInfo.ArgumentList).Select(Quote));
+    }
+
+    private void AppendLog(string line)
+    {
+        lock (_logLock) _fullLog.AppendLine(line);
+    }
+
+    private async Task ReadProcessLogAsync(Process process, string source)
+    {
+        // Drain to EOF even on cancellation: cancellation kills both processes, closing their streams.
+        while (await process.StandardError.ReadLineAsync().ConfigureAwait(false) is { } line)
+        {
+            if (source == "FFmpeg") UpdateLog(line);
+            else AppendLog($"[{source}] {line}");
+            if (!_drainingLogs) PublishProgress();
         }
     }
 
     private void UpdateLog(string log)
     {
-        if (TryParseFfmpegProgress(log, out var progress))
+        lock (_logLock)
         {
-            _processedFrames = progress.Frame;
-            _fps = progress.FramesPerSecond;
-            _bitrate = progress.Bitrate;
-            _speed = progress.Speed;
-            _outputSize = progress.OutputSize;
-            _outputTime = progress.OutputTime;
-            var lastLine = _status.Split('\n').LastOrDefault() ?? "";
-            if (TryParseFfmpegProgress(lastLine, out _))
-                _status = _status[..Math.Max(0, _status.LastIndexOf('\n'))] + "\n" + log;
-            else
-                _status += "\n" + log;
+            if (TryParseFfmpegProgress(log, out var progress))
+            {
+                _processedFrames = progress.Frame;
+                _fps = progress.FramesPerSecond;
+                _bitrate = progress.Bitrate;
+                _speed = progress.Speed;
+                _outputSize = progress.OutputSize;
+                _outputTime = progress.OutputTime;
+                _latestProgressLine = $"[FFmpeg 进度] {log}";
+            }
+            else _fullLog.AppendLine($"[FFmpeg] {log}");
         }
-        else
-        {
-            _status += "\n" + log;
-        }
-
-        _status = _status.Trim();
     }
 
     internal static bool TryParseFfmpegProgress(string log, out FfmpegProgressValues progress)
@@ -386,9 +435,15 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
 
     private void PublishProgress()
     {
-        ProgressChanged?.Invoke(new VideoSuppressionProgress(
-            _processedFrames, _totalFrames, _fps, State, _status,
-            _bitrate, _speed, _outputSize, _outputTime, _elapsed.Elapsed.TotalSeconds, _isFinalizing));
+        lock (_publishLock)
+        {
+            var state = State;
+            VideoSuppressionProgress progress;
+            lock (_logLock)
+                progress = new(_processedFrames, _totalFrames, _fps, state, _fullLog.ToString() + _latestProgressLine,
+                    _bitrate, _speed, _outputSize, _outputTime, _elapsed.Elapsed.TotalSeconds, _isFinalizing, _ffmpegCommand);
+            ProgressChanged?.Invoke(progress);
+        }
     }
 
     private static void StopProcess(Process? process)

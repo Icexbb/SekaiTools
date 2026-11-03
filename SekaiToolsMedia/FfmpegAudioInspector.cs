@@ -30,7 +30,7 @@ internal static partial class FfmpegAudioInspector
     public static async Task<FfmpegAudioPlan> InspectAsync(
         string ffmpegPath,
         string sourceVideo,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, Action<string>? reportLog = null)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -44,15 +44,21 @@ internal static partial class FfmpegAudioInspector
         startInfo.ArgumentList.Add("-i");
         startInfo.ArgumentList.Add(sourceVideo);
 
+        reportLog?.Invoke("[参数] " + VideoSuppressor.FormatCommand(startInfo));
         using var process = new Process { StartInfo = startInfo };
         if (!process.Start())
             throw new InvalidOperationException("无法启动 FFmpeg 检测媒体信息");
 
         using var cancellationRegistration = cancellationToken.Register(
             static state => StopProcess((Process)state!), process);
-        var log = await process.StandardError.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+        var log = new StringBuilder();
+        while (await process.StandardError.ReadLineAsync().ConfigureAwait(false) is { } line)
+        {
+            log.AppendLine(line);
+            reportLog?.Invoke(line);
+        }
         await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-        return Parse(log);
+        return Parse(log.ToString());
     }
 
     internal static FfmpegAudioPlan Parse(string ffmpegLog)

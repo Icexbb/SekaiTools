@@ -58,7 +58,8 @@ public sealed record VideoSuppressionProgress(
     string OutputSize = "",
     string OutputTime = "",
     double ElapsedSeconds = 0,
-    bool IsFinalizing = false)
+    bool IsFinalizing = false,
+    string FfmpegCommand = "")
 {
     public string Status => State switch
     {

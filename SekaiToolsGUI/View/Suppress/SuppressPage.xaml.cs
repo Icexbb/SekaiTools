@@ -168,18 +168,6 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
         if (!ViewModel.HasRunningJob) ClearTaskbarProgress();
     }
 
-    private void StartJobItem_OnStartRequested(object? sender, EventArgs e)
-    {
-        if (sender is SuppressionQueueJobItem { DataContext: SuppressionJobModel job })
-            StartJob(job);
-    }
-
-    private void RemoveFinishedJob_OnRemoveRequested(object? sender, EventArgs e)
-    {
-        if (sender is SuppressionFinishJobItem { DataContext: SuppressionJobModel job })
-            ViewModel.RemoveJob(job);
-    }
-
     private sealed class PendingJobsDropHandler : IDropTarget
     {
         private readonly System.Collections.ObjectModel.ObservableCollection<SuppressionJobModel> _jobs;
