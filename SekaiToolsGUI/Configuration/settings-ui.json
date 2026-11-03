@@ -1,5 +1,23 @@
 [
   {
+    "title": "译文换行标记",
+    "icon": "TextDescription24",
+    "description": "在正文实际换行处显示淡色标记；不写入译文，也不改变光标或自动折行",
+    "fields": [
+      {
+        "kind": "choice",
+        "property": "TranslationNewlineMarker",
+        "width": 200,
+        "options": [
+          "关闭",
+          "\\N",
+          "↵"
+        ]
+      }
+    ]
+  },
+
+  {
     "title": "主题",
     "icon": "Color24",
     "description": "选择应用配色主题",

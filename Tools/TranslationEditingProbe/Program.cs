@@ -307,6 +307,7 @@ internal static class Program
         Check(page.FlushDraft() && store.ReadDraft() == null, "close flush cannot recreate discarded draft");
         CheckReferenceDifferences(window, script);
         CheckLoadedDifferences(window, script);
+        CheckNewlineMarkers(window);
         CheckCloseDialog(window);
         window.Close();
         Check(store.ReadDraft() == null, "unload cannot recreate discarded draft");
@@ -361,6 +362,70 @@ internal static class Program
             box.RaiseEvent(key);
             return key;
         }
+    }
+
+    private static void CheckNewlineMarkers(Window window)
+    {
+        var box = new System.Windows.Controls.TextBox
+        {
+            Text = "第一行\r\n\r\n末行\n",
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            Width = 240,
+            Height = 180,
+            FontSize = 18,
+            Padding = new Thickness(10, 2, 10, 2)
+        };
+        window.Content = new System.Windows.Documents.AdornerDecorator { Child = box };
+        Pump();
+        box.Focus();
+        box.Select(2, 3);
+        var text = box.Text;
+        var start = box.SelectionStart;
+        var length = box.SelectionLength;
+        var caret = box.CaretIndex;
+        var geometry = box.GetRectFromCharacterIndex(2);
+        foreach (var theme in new[] { ApplicationTheme.Light, ApplicationTheme.Dark })
+        {
+            ApplicationThemeManager.Apply(theme);
+            foreach (var style in new[] { 1, 2, 0 })
+            {
+                SekaiToolsGUI.Behaviors.NewlineMarker.SetStyle(box, style);
+                Pump();
+                var adorners = System.Windows.Documents.AdornerLayer.GetAdornerLayer(box).GetAdorners(box);
+                Check(style == 0 ? adorners == null || adorners.Length == 0 :
+                    adorners is { Length: 1 } && !adorners[0].IsHitTestVisible && !adorners[0].Focusable,
+                    $"newline marker input transparency {theme}/{style}");
+                if (style != 0)
+                {
+                    var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)window.ActualWidth, (int)window.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+                    bitmap.Render(window);
+                    var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                    encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+                    using var stream = File.Create(Path.Combine(Directory.GetCurrentDirectory(),
+                        ".codex-build", "reference-diff", $"newline-{theme}-{style}.png"));
+                    encoder.Save(stream);
+                }
+                Check(box.Text == text && box.SelectionStart == start && box.SelectionLength == length &&
+                    box.CaretIndex == caret && box.GetRectFromCharacterIndex(2) == geometry,
+                    "newline markers preserve text, selection, caret and layout");
+            }
+        }
+        SekaiToolsGUI.Behaviors.NewlineMarker.SetStyle(box, 2);
+        box.Text = new string('长', 100);
+        Pump();
+        Check(System.Windows.Documents.AdornerLayer.GetAdornerLayer(box).GetAdorners(box) == null,
+            "automatic wrapping does not create newline markers");
+        box.Text = "换行\n";
+        Pump();
+        Check(System.Windows.Documents.AdornerLayer.GetAdornerLayer(box).GetAdorners(box)?.Length == 1,
+            "typing a newline recreates overlay");
+        var setting = new SekaiToolsGUI.Model.Setting { TranslationNewlineMarker = 2 };
+        Check(System.Text.Json.JsonSerializer.Deserialize<SekaiToolsGUI.Model.Setting>(setting.Dump())
+            .TranslationNewlineMarker == 2, "newline marker setting persists");
+        Check(SekaiToolsGUI.View.Setting.SettingCatalog.Load().SelectMany(section => section.Fields)
+            .Any(field => field.Property == "TranslationNewlineMarker" && field.Options.Length == 3),
+            "newline marker choices and settings icon are valid");
     }
 
     private static void CheckLoadedDifferences(Window window, GameScript script)

@@ -23,6 +23,8 @@ public struct Setting
     public string DownloadDirectory { get; init; } = Path.Combine(
         ResourceManager.DataBaseDir, "Scripts");
 
+    public int TranslationNewlineMarker { get; init; } = 0;
+
     public int PreviewPlaybackBackend { get; init; } = 0;
     public int RecognitionPerformanceMode { get; init; } = 1;
     public int RecognitionMemoryBudgetMiB { get; init; } = 2048;
@@ -85,6 +87,7 @@ public struct Setting
             ProxyHost = model.ProxyHost,
             ProxyPort = model.ProxyPort,
             DownloadDirectory = model.DownloadDirectory,
+            TranslationNewlineMarker = model.TranslationNewlineMarker,
             PreviewPlaybackBackend = model.PreviewPlaybackBackend,
             RecognitionPerformanceMode = model.RecognitionPerformanceMode,
             RecognitionMemoryBudgetMiB = model.RecognitionMemoryBudgetMiB,

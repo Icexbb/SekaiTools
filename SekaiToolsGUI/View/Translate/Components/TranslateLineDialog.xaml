@@ -7,6 +7,7 @@
              xmlns:c='clr-namespace:CalcBinding;assembly=CalcBinding'
              xmlns:components="clr-namespace:SekaiToolsGUI.View.Translate.Components"
              xmlns:translate="clr-namespace:SekaiToolsGUI.ViewModel.Translate"
+             xmlns:settings="clr-namespace:SekaiToolsGUI.ViewModel.Setting"
              xmlns:behaviors="clr-namespace:SekaiToolsGUI.Behaviors"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance translate:LineDialogModel, IsDesignTimeCreatable=False}"
              d:DesignWidth="800"
@@ -169,7 +170,8 @@
                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                     </Grid>
-                    <TextBox MinLines="2" Padding="10,2" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
+                    <TextBox behaviors:NewlineMarker.Style="{Binding TranslationNewlineMarker, Source={x:Static settings:SettingPageModel.Instance}}"
+                             MinLines="2" Padding="10,2" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
                              PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"
                              DataObject.Pasting="TextBox_OnPasting" GotKeyboardFocus="TextBox_OnGotKeyboardFocus"
                              LostKeyboardFocus="TextBox_OnLostKeyboardFocus"

@@ -44,6 +44,12 @@ public partial class SettingPageModel : ViewModelBase
     public bool IsPeriodicColorAvailable { get; }
     public string PeriodicColorAvailabilityReason { get; }
 
+    public int TranslationNewlineMarker
+    {
+        get => GetProperty(0);
+        set => SetProperty(value is >= 0 and <= 2 ? value : 0);
+    }
+
     public int PreviewPlaybackBackend
     {
         get => GetProperty(0);
@@ -387,6 +393,7 @@ partial class SettingPageModel
             ProxyHost = Model.Setting.Default.ProxyHost;
             ProxyPort = Model.Setting.Default.ProxyPort;
             DownloadDirectory = Model.Setting.Default.DownloadDirectory;
+            TranslationNewlineMarker = Model.Setting.Default.TranslationNewlineMarker;
             PreviewPlaybackBackend = Model.Setting.Default.PreviewPlaybackBackend;
             RecognitionPerformanceMode = Model.Setting.Default.RecognitionPerformanceMode;
             RecognitionMemoryBudgetMiB = Model.Setting.Default.RecognitionMemoryBudgetMiB;
@@ -444,6 +451,7 @@ partial class SettingPageModel
             DownloadDirectory = string.IsNullOrWhiteSpace(setting.DownloadDirectory)
                 ? Model.Setting.Default.DownloadDirectory
                 : setting.DownloadDirectory;
+            TranslationNewlineMarker = setting.TranslationNewlineMarker;
             PreviewPlaybackBackend = setting.PreviewPlaybackBackend;
             RecognitionPerformanceMode = setting.RecognitionPerformanceMode;
             RecognitionMemoryBudgetMiB = setting.RecognitionMemoryBudgetMiB;
