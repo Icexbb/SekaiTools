@@ -1,4 +1,4 @@
-﻿<ui:FluentWindow
+<ui:FluentWindow
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -19,8 +19,19 @@
     d:DataContext="{d:DesignInstance viewModel:MainWindowViewModel,IsDesignTimeCreatable=True}"
     Loaded="MainWindow_OnLoaded">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="42" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <ui:Button x:Name="UpdateButton" Grid.Row="1" HorizontalAlignment="Right" Margin="0,4,16,4"
+                   Visibility="Collapsed" IsEnabled="False" Click="RestartForUpdate_Click">
+            <ui:Button.Icon>
+                <ui:SymbolIcon Symbol="ArrowDownload24" />
+            </ui:Button.Icon>
+        </ui:Button>
         <ui:NavigationView
-            Margin="0,42,0,0"
+            Grid.Row="2"
             IsBackButtonVisible="Collapsed"
             Name="NavigationView"
             MenuItemsSource="{Binding NavigationItems}"
@@ -38,7 +49,7 @@
                 <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
             </ui:NavigationView.ContentOverlay>
         </ui:NavigationView>
-        <ui:ContentDialogHost x:Name="RootContentDialog" Grid.Row="0" Margin="0,42,0,0" />
+        <ui:ContentDialogHost x:Name="RootContentDialog" Grid.Row="1" Grid.RowSpan="2" />
         <ui:TitleBar Name="TitleBar" Grid.Row="0" Title="Sekai Tools">
             <ui:TitleBar.Icon>
                 <ui:ImageIcon Source="pack://application:,,,/Resource/icon.png" />

@@ -1,17 +1,12 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Reflection;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Shell;
 using System.Windows.Threading;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
-using SekaiToolsConfiguration;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.Service;
 using SekaiToolsGUI.View.Download;
@@ -24,8 +19,6 @@ using SekaiToolsGUI.ViewModel.Setting;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
-using MessageBox = System.Windows.MessageBox;
-using MessageBoxButton = System.Windows.MessageBoxButton;
 
 namespace SekaiToolsGUI;
 
@@ -38,6 +31,7 @@ public partial class MainWindow : FluentWindow
         DefaultTimeOut = TimeSpan.FromSeconds(3)
     };
 
+    private readonly bool _useCheckUpdate;
     private bool _closeConfirmed;
     private bool _closeInProgress;
     private object? _currentNavigatedPage;
@@ -55,7 +49,7 @@ public partial class MainWindow : FluentWindow
         WindowWorkArea.Attach(this);
         DataContext = new MainWindowViewModel();
         Closing += MainWindow_OnClosing;
-        ContentRendered += (sender, args) => { CheckUpdate(); };
+        ContentRendered += OnUpdateContentRendered;
         TaskbarItemInfo = new TaskbarItemInfo();
         SetWindowTitle("");
     }
@@ -139,32 +133,39 @@ public partial class MainWindow : FluentWindow
             if (_translationPage is { } translatePage && !await translatePage.ConfirmCloseAsync())
             {
                 _closeInProgress = false;
+                _restartForUpdate = false;
                 return;
             }
 
             if (_translationPage != null && !_translationPage.FlushDraft())
             {
                 _closeInProgress = false;
+                _restartForUpdate = false;
                 return;
             }
 
-            _closeConfirmed = true;
             SetWindowTitle("正在停止任务");
             SetTaskbarProgressState(TaskbarItemProgressState.Indeterminate, 0);
             await SuppressPage.DisposeSuppressorAsync();
             await SubtitlePage.DisposeTasksAsync();
             await DownloadPage.StopDownloadsAsync();
+            await FinishUpdateOnCloseAsync();
 
             // Let the current Closing event finish before requesting the
             // actual close. The second Closing event is allowed by the flag.
             await Dispatcher.InvokeAsync(
-                Close,
+                () =>
+                {
+                    _closeConfirmed = true;
+                    Close();
+                },
                 DispatcherPriority.ApplicationIdle);
         }
         catch
         {
             _closeInProgress = false;
             _closeConfirmed = false;
+            _restartForUpdate = false;
             throw;
         }
     }
@@ -229,135 +230,6 @@ public partial class MainWindow : FluentWindow
                     SecondaryButtonText = "检查设置"
                 }, token);
             return dialogResult;
-        }
-    }
-}
-
-partial class MainWindow
-{
-    private readonly bool _useCheckUpdate;
-
-    private async void CheckUpdate()
-    {
-        if (!_useCheckUpdate) return;
-        var needUpdate = await CheckForUpdateAsync();
-        if (!needUpdate) return;
-        if (!await ShowJudgeDialog()) return;
-
-        LaunchUpdater();
-        Application.Current.Shutdown();
-        return;
-
-        async Task<bool> ShowJudgeDialog()
-        {
-            var dialogService = WindowContentDialogService!;
-            var token = CancellationToken.None;
-            var dialogResult = await dialogService.ShowSimpleDialogAsync(
-                new SimpleContentDialogCreateOptions
-                {
-                    Title = "提示",
-                    Content = "检测到新版本，是否立即更新？",
-                    PrimaryButtonText = "是",
-                    CloseButtonText = "否"
-                }, token);
-            return dialogResult == ContentDialogResult.Primary;
-        }
-    }
-
-    private async Task<bool> CheckForUpdateAsync()
-    {
-        try
-        {
-            // 1. 获取本地版本
-            var localVersion = GetLocalVersion();
-            // 2. 获取远程版本
-            var remoteVersion = await GetLatestVersionAsync();
-
-            // 3. 比较
-            if (new Version(remoteVersion) > new Version(localVersion)) return true;
-        }
-        catch (Exception ex)
-        {
-            Logger.Log($"检查更新失败: {ex.Message}", LogLevel.Warning);
-
-            var message = ex is TaskCanceledException
-                ? "检查更新超时，请检查网络连接"
-                : "检查更新失败，请检查网络连接";
-
-            WindowSnackbarService.Show("错误", message, ControlAppearance.Danger,
-                new SymbolIcon(SymbolRegular.DocumentDismiss24), new TimeSpan(0, 0, 3));
-        }
-
-        return false;
-    }
-
-    private static string GetLocalVersion()
-    {
-        var path = Assembly.GetEntryAssembly()?.Location;
-        if (path == null || !File.Exists(path)) return "0.0.0";
-        var vi = FileVersionInfo.GetVersionInfo(path);
-        return vi.FileVersion ?? "0.0.0";
-    }
-
-    private static async Task<string> GetLatestVersionAsync()
-    {
-        var url = NetworkEndpoints.Current.GitHub.LatestReleaseApiUrl;
-        var proxy = SettingPageModel.Instance.GetProxy();
-
-        using var client = new HttpClient(GetHttpHandler(proxy))
-        {
-            Timeout = TimeSpan.FromSeconds(30)
-        };
-
-        client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("SekaiToolsGUI", "1.0"));
-        var json = await client.GetStringAsync(url);
-
-        using var doc = JsonDocument.Parse(json);
-        var version = doc.RootElement.GetProperty("tag_name").GetString();
-        return version?.TrimStart('v')?.Split('-')[0] ?? "0.0.0";
-
-        HttpMessageHandler GetHttpHandler(Proxy proxyInfo)
-        {
-            return proxyInfo.ProxyType switch
-            {
-                Proxy.Type.None or Proxy.Type.System => new HttpClientHandler(),
-                Proxy.Type.Http => new HttpClientHandler
-                {
-                    Proxy = new WebProxy(new Uri($"http://{proxyInfo.Host}:{proxyInfo.Port}")),
-                    UseProxy = true
-                },
-                Proxy.Type.Socks5 => new SocketsHttpHandler
-                {
-                    Proxy = new WebProxy(new UriBuilder("socks5", proxyInfo.Host, proxyInfo.Port).Uri),
-                    UseProxy = true
-                },
-                _ => throw new ArgumentOutOfRangeException()
-            };
-        }
-    }
-
-    private static void LaunchUpdater()
-    {
-        var updaterPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Updater.exe");
-        if (File.Exists(updaterPath))
-        {
-            var settings = SettingPageModel.Instance;
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = updaterPath,
-                UseShellExecute = false
-            };
-            startInfo.Environment["SEKAI_TOOLS_UPDATE_PROXY"] = JsonSerializer.Serialize(new
-            {
-                settings.ProxyType,
-                settings.ProxyHost,
-                settings.ProxyPort
-            });
-            Process.Start(startInfo);
-        }
-        else
-        {
-            MessageBox.Show("检测到新版本，但 Updater.exe 不存在！", "更新失败", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

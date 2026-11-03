@@ -1,4 +1,7 @@
-﻿using System.Text;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Threading;
 using Emgu.CV;
@@ -7,6 +10,7 @@ using SekaiToolsBase;
 using SekaiToolsGUI.Service;
 using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.ViewModel.Setting;
+using Updater;
 
 namespace SekaiToolsGUI;
 
@@ -30,6 +34,12 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        if (DeferStartupForUpdate())
+        {
+            Shutdown();
+            return;
+        }
+
         _singleInstanceMutex = new Mutex(true, SingleInstanceMutexName, out var createdNew);
         _ownsSingleInstanceMutex = createdNew;
         if (!createdNew)
@@ -55,6 +65,37 @@ public partial class App : Application
         WindowsNotificationService.Initialize();
         base.OnStartup(e);
         AssemblyResolver.FlushDiagnostics();
+    }
+
+    private static bool DeferStartupForUpdate()
+    {
+        if (Environment.GetEnvironmentVariable(UpdatePaths.SkipUpdate) is not null) return false;
+        var install = AppContext.BaseDirectory;
+        var work = UpdatePaths.WorkDirectory(install);
+        if (!Directory.Exists(work)) return false;
+
+        try
+        {
+            using (UpdatePaths.AcquireLock(work))
+            {
+                if (!File.Exists(Path.Combine(work, UpdatePaths.Journal))) return false;
+            }
+
+            using var parent = Process.GetCurrentProcess();
+            using var recovery = UpdatePaths.Start(Path.Combine(work, "Updater.exe"), work, "--recover", install,
+                parent.Id.ToString(CultureInfo.InvariantCulture),
+                parent.StartTime.ToUniversalTime().Ticks.ToString(CultureInfo.InvariantCulture));
+        }
+        catch (IOException ex) when ((ex.HResult & 0xFFFF) is 32 or 33)
+        {
+            MessageBox.Show("SekaiTools 正在应用更新，请稍候。", "SekaiTools");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"无法恢复上次更新：{ex.Message}", "SekaiTools");
+        }
+
+        return true;
     }
 
     protected override void OnExit(ExitEventArgs e)
