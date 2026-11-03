@@ -50,6 +50,8 @@ public class DialogMatcherStateDto
 {
     public int PendingResumeStatus { get; init; } = 3;
     public List<FrameResultDto> PendingTrackingFrames { get; init; } = [];
+    public int? PendingNextDialogIndex { get; init; }
+    public List<FrameResultDto> PendingNextDialogFrames { get; init; } = [];
     public AdaptiveSearchStateDto? SearchState { get; init; }
     public LookaheadStateDto? LookaheadState { get; init; }
     public int Status { get; init; }

@@ -174,6 +174,101 @@ public class UnnamedDialogTests
         Assert.DoesNotContain(",Character,", result.Events.ToString());
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void BlankOpeningAcquiresFirstGlyphOnSkippedFrame(bool unnamed)
+    {
+        using var fixture = new Fixture();
+        var story = new Story(new GameScript
+        {
+            TalkData = [new Talk(unnamed ? "" : "A", "World", 0)],
+            Snippets = [new Snippet { Action = 1 }]
+        }, new TranslationData(null));
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        var cache = new TemplateMatchCachePool();
+        using var matcher = new DialogTemplateMatcher(fixture.Info, story, manager, cache, fixture.Config);
+        using var blank = new Mat(720, 1280, DepthType.Cv8U, 3);
+        blank.SetTo(new MCvScalar(0));
+        using var glyph = unnamed
+            ? fixture.Frame(manager, "W", new Point(160, 555))
+            : fixture.NamedFrame(manager, "W", 0);
+        using var previous = new FrameMatchContext();
+        using var current = new FrameMatchContext();
+        previous.Update(blank);
+        cache.SetFrameIndex(1);
+        matcher.Process(previous, 1);
+        current.Update(glyph);
+        cache.SetFrameIndex(2);
+        matcher.Process(current, 2, previous, 1);
+        previous.Update(glyph);
+        cache.SetFrameIndex(3);
+        matcher.Process(previous, 3, current, 2);
+        Assert.Equal(1, matcher.Set[0].Start().Index);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void NextFirstGlyphSurvivesLossConfirmationAndDiskResume(bool unnamed, bool recoverPrevious)
+    {
+        using var fixture = new Fixture();
+        var story = new Story(new GameScript
+        {
+            TalkData = [new Talk(unnamed ? "" : "A", "Hello", 0) { Shake = !unnamed }, new Talk(unnamed ? "" : "B", "World", 0)],
+            Snippets = [new Snippet { Action = 1 }, new Snippet { Action = 1 }]
+        }, new TranslationData(null));
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        var cache = new TemplateMatchCachePool();
+        var resumedCache = new TemplateMatchCachePool();
+        using var matcher = new DialogTemplateMatcher(fixture.Info, story, manager, cache, fixture.Config);
+        using var resumed = new DialogTemplateMatcher(fixture.Info, story, manager, resumedCache, fixture.Config);
+        using var first = MakeFrame("Hel");
+        using var next = MakeFrame("W");
+        using var context = new FrameMatchContext();
+        context.Update(first);
+        for (var index = 1; index <= 4; index++)
+        {
+            cache.SetFrameIndex(index);
+            matcher.Process(context, index);
+        }
+        context.Update(next);
+        cache.SetFrameIndex(5);
+        matcher.Process(context, 5);
+        var checkpoint = DiskRoundtrip(matcher.SaveState());
+        Assert.Single(checkpoint.PendingNextDialogFrames);
+        Assert.Empty(matcher.Set[1].Frames);
+        resumed.RestoreState(checkpoint);
+        for (var index = 6; index <= 8; index++)
+        {
+            context.Update(recoverPrevious ? first : next);
+            cache.SetFrameIndex(index);
+            resumedCache.SetFrameIndex(index);
+            matcher.Process(context, index);
+            resumed.Process(context, index);
+        }
+        if (recoverPrevious)
+        {
+            Assert.False(matcher.Set[0].Finished);
+            Assert.Empty(matcher.Set[1].Frames);
+        }
+        else
+        {
+            Assert.True(matcher.Set[0].Finished);
+            Assert.Equal(3, matcher.Set[0].End().Index);
+            Assert.Equal(4, matcher.Set[1].Start().Index);
+            Assert.Equal(Enumerable.Range(4, 4), matcher.Set[1].Frames.Select(frame => frame.Index));
+        }
+        Assert.Empty(matcher.SaveState().PendingNextDialogFrames);
+        Assert.Equal(JsonSerializer.Serialize(matcher.SaveState()), JsonSerializer.Serialize(resumed.SaveState()));
+
+        Mat MakeFrame(string body) => unnamed
+            ? fixture.Frame(manager, body, new Point(160, 555))
+            : fixture.NamedFrame(manager, body, 0, body == "Hel" ? "A" : "B");
+    }
+
     [Fact]
     public void ConsecutiveUnnamedDialoguesAdvanceWithoutSkipping()
     {
@@ -213,7 +308,7 @@ public class UnnamedDialogTests
     {
         using var fixture = new Fixture();
         var story = new Story(new GameScript
-                { TalkData = [new Talk("", "Hello", 0)], Snippets = [new Snippet { Action = 1 }] },
+        { TalkData = [new Talk("", "Hello", 0)], Snippets = [new Snippet { Action = 1 }] },
             new TranslationData(null));
         using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
         using var matcher =
@@ -611,9 +706,9 @@ public class UnnamedDialogTests
         banner.Set.Add(new BannerBaseFrameSet(new BannerStoryEvent("Title", 0), fixture.Info.Fps));
         marker.Set.Add(new MarkerBaseFrameSet(new MarkerStoryEvent("Place", 0), fixture.Info.Fps));
         banner.RestoreState(new BannerMatcherStateDto
-            { Status = 1, FrameSets = [new BannerFrameSetDto { Start = 1, End = 4 }] });
+        { Status = 1, FrameSets = [new BannerFrameSetDto { Start = 1, End = 4 }] });
         marker.RestoreState(new MarkerMatcherStateDto
-            { Status = 2, FrameSets = [new MarkerFrameSetDto { Frames = [new FrameResultDto(4, 10, 20)] }] });
+        { Status = 2, FrameSets = [new MarkerFrameSetDto { Frames = [new FrameResultDto(4, 10, 20)] }] });
         using var blank = new Mat(720, 1280, DepthType.Cv8U, 3);
         blank.SetTo(new MCvScalar(0));
         using var context = new FrameMatchContext();
@@ -842,10 +937,10 @@ public class UnnamedDialogTests
             return frame;
         }
 
-        public Mat NamedFrame(TemplateManager manager, string body, int shift)
+        public Mat NamedFrame(TemplateManager manager, string body, int shift, string speaker = "A")
         {
             var frame = Frame(manager, body, new Point(160 + shift, 555 + shift));
-            using var name = manager.CreateTemplate(TemplateUsage.DialogNameTag, "A");
+            using var name = manager.CreateTemplate(TemplateUsage.DialogNameTag, speaker);
             using var resized = new Mat();
             using var bgr = new Mat();
             CvInvoke.Resize(name, resized, new Size(name.Width / 5, name.Height / 5));

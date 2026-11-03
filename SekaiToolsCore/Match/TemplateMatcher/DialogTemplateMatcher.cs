@@ -30,6 +30,9 @@ public class DialogTemplateMatcher(
         new(StringComparer.Ordinal);
 
     private readonly TemplateMatchCachePool _lookaheadEvidencePool = new() { Metrics = cachePool.Metrics };
+    private readonly TemplateMatchCachePool _transitionEvidencePool = new() { Metrics = cachePool.Metrics };
+    private readonly List<FrameResultDto> _pendingNextFrames = [];
+    private int? _pendingNextIndex;
     private readonly FiniteLookaheadTracker _lookaheadTracker = new();
     private readonly int _lookaheadTriggerFrames = (int)Math.Ceiling(videoInfo.Fps.Fps() * 3);
     private readonly Dictionary<string, GaMat> _nameTemplates = new(StringComparer.Ordinal);
@@ -46,6 +49,8 @@ public class DialogTemplateMatcher(
         _nameTemplates.Clear();
         _contentTemplates.Clear();
         _lookaheadEvidencePool.ResetAll();
+        _transitionEvidencePool.ResetAll();
+        ClearPendingNext();
     }
 
     public int LastNotProcessedIndex()
@@ -58,8 +63,10 @@ public class DialogTemplateMatcher(
         return templateManager.GetMatchTemplate(TemplateUsage.DialogNameTag, name);
     }
 
-    private Point DialogMatchNameTag(FrameMatchContext frame, DialogBaseFrameSet dialogBase, int frameIndex = -1)
+    private Point DialogMatchNameTag(FrameMatchContext frame, DialogBaseFrameSet dialogBase, int frameIndex = -1,
+        TemplateMatchCachePool? matchPool = null)
     {
+        matchPool ??= cachePool;
         var content = dialogBase.Data.CharacterOriginal;
         if (string.IsNullOrWhiteSpace(content)) return Point.Empty;
         var contentLen = content.Length;
@@ -77,7 +84,7 @@ public class DialogTemplateMatcher(
             var roi = LocalGetCropArea();
             if (roi.Width < tmp.Size.Width || roi.Height < tmp.Size.Height)
                 return Point.Empty;
-            var result = TemplateMatcher.Match(src, roi, tmp, cachePool,
+            var result = TemplateMatcher.Match(src, roi, tmp, matchPool,
                 TemplateMatchCachePool.MatchUsage.DialogNameTag);
 
             if (frameIndex != -1)
@@ -141,8 +148,9 @@ public class DialogTemplateMatcher(
 
     private MatchStatus DialogMatchContent(FrameMatchContext frame, DialogBaseFrameSet dialogBase, Point point,
         MatchStatus lastStatus = 0,
-        int frameIndex = -1)
+        int frameIndex = -1, TemplateMatchCachePool? matchPool = null)
     {
+        matchPool ??= cachePool;
         var content = dialogBase.Data.BodyOriginal;
         if (point.IsEmpty || string.IsNullOrEmpty(content)) return MatchStatus.DialogNotMatched;
         var (template1, template2, template3) = GetContentTemplates(content);
@@ -155,44 +163,44 @@ public class DialogTemplateMatcher(
         switch (lastStatus)
         {
             case MatchStatus.DialogNotMatched:
-            {
-                matchRes = LocalMatch(frame, template1, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent1);
-                return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogNotMatched;
-            }
+                {
+                    matchRes = LocalMatch(frame, template1, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent1);
+                    return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogNotMatched;
+                }
             case MatchStatus.DialogMatched1:
-            {
-                matchRes = LocalMatch(frame, template2, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent2);
-                if (matchRes) return MatchStatus.DialogMatched2;
-                matchRes = LocalMatch(frame, template1, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent1);
-                return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogDropped;
-            }
+                {
+                    matchRes = LocalMatch(frame, template2, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent2);
+                    if (matchRes) return MatchStatus.DialogMatched2;
+                    matchRes = LocalMatch(frame, template1, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent1);
+                    return matchRes ? MatchStatus.DialogMatched1 : MatchStatus.DialogDropped;
+                }
             case MatchStatus.DialogMatched2:
-            {
-                matchRes = LocalMatch(frame, template3, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent3);
-                if (matchRes) return MatchStatus.DialogMatched3;
-                matchRes = LocalMatch(frame, template2, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent2);
-                return matchRes ? MatchStatus.DialogMatched2 : MatchStatus.DialogDropped;
-            }
+                {
+                    matchRes = LocalMatch(frame, template3, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent3);
+                    if (matchRes) return MatchStatus.DialogMatched3;
+                    matchRes = LocalMatch(frame, template2, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent2);
+                    return matchRes ? MatchStatus.DialogMatched2 : MatchStatus.DialogDropped;
+                }
             case MatchStatus.DialogMatched3:
             case MatchStatus.DialogPending:
-            {
-                matchRes = LocalMatch(frame, template3, matchingThreshold,
-                    TemplateMatchCachePool.MatchUsage.DialogContent3);
-                if (matchRes) return MatchStatus.DialogMatched3;
-                // Only a fresh name match plus a two-glyph match may bridge a
-                // short loss of the three-glyph template. Never lower thresholds.
-                if (!string.IsNullOrWhiteSpace(dialogBase.Data.CharacterOriginal) &&
-                    !DialogMatchNameTag(frame, dialogBase, frameIndex).IsEmpty &&
-                    LocalMatch(frame, template2, matchingThreshold,
-                        TemplateMatchCachePool.MatchUsage.DialogContent2))
-                    return MatchStatus.DialogPending;
-                return MatchStatus.DialogDropped;
-            }
+                {
+                    matchRes = LocalMatch(frame, template3, matchingThreshold,
+                        TemplateMatchCachePool.MatchUsage.DialogContent3);
+                    if (matchRes) return MatchStatus.DialogMatched3;
+                    // Only a fresh name match plus a two-glyph match may bridge a
+                    // short loss of the three-glyph template. Never lower thresholds.
+                    if (!string.IsNullOrWhiteSpace(dialogBase.Data.CharacterOriginal) &&
+                        !DialogMatchNameTag(frame, dialogBase, frameIndex, matchPool).IsEmpty &&
+                        LocalMatch(frame, template2, matchingThreshold,
+                            TemplateMatchCachePool.MatchUsage.DialogContent2))
+                        return MatchStatus.DialogPending;
+                    return MatchStatus.DialogDropped;
+                }
             case MatchStatus.NameTagNotMatched:
             case MatchStatus.DialogDropped:
             default:
@@ -217,7 +225,7 @@ public class DialogTemplateMatcher(
                 return false;
 
             var effectiveThreshold = EffectiveThreshold(threshold, IsStatusMatched(lastStatus));
-            var result = TemplateMatcher.MatchContent(src, dialogStartPosition, tmp, cachePool, usage,
+            var result = TemplateMatcher.MatchContent(src, dialogStartPosition, tmp, matchPool, usage,
                 effectiveThreshold,
                 allowScaleRecovery: IsStatusMatched(lastStatus));
 
@@ -341,8 +349,10 @@ public class DialogTemplateMatcher(
         return new Point(contentPosition.X + (int)(0.5f * fontSize), contentPosition.Y - fontSize);
     }
 
-    private Point DialogMatchUnnamed(FrameMatchContext frame, DialogBaseFrameSet dialog)
+    private Point DialogMatchUnnamed(FrameMatchContext frame, DialogBaseFrameSet dialog,
+        TemplateMatchCachePool? matchPool = null)
     {
+        matchPool ??= cachePool;
         var content = dialog.Data.BodyOriginal;
         if (string.IsNullOrWhiteSpace(content)) return Point.Empty;
         var font = TemplateManager.GetFontSize(frame.Size);
@@ -370,7 +380,7 @@ public class DialogTemplateMatcher(
                 dialog.Data.Shake
                     ? config.MatchingThreshold.DialogContentSpecial
                     : config.MatchingThreshold.DialogContentNormal);
-            var result = TemplateMatcher.Match(frame, region, template, cachePool);
+            var result = TemplateMatcher.Match(frame, region, template, matchPool);
             if (!result.IsMatch(threshold)) continue;
             var point = ContentToDialogAnchor(new Point(region.X + result.MaxLoc.X, region.Y + result.MaxLoc.Y), font);
             if (_nameTagPosition.IsEmpty) _nameTagPosition = point;
@@ -515,6 +525,9 @@ public class DialogTemplateMatcher(
                 }
             }
 
+            if (matchResult.Status == MatchStatus.DialogPending)
+                RememberNextDuringLoss(frame, dIndex, frameIndex);
+
             if (matchResult.Status == MatchStatus.DialogPending &&
                 !(matchResult.Point.IsEmpty
                     ? _trackingGrace.HoldUnlocated(frameIndex)
@@ -536,12 +549,14 @@ public class DialogTemplateMatcher(
                     cachePool.NextDialog();
                     continue;
                 case MatchStatus.DialogNotMatched or MatchStatus.NameTagNotMatched:
+                    ClearPendingNext();
                     if (TryEnterFallback(frameIndex)) continue;
                     return IsStatusMatched(firstStatus.Value);
                 case MatchStatus.DialogPending:
                     // Do not export uncertain frames until full evidence returns.
                     return true;
                 default:
+                    CommitPendingNext(dIndex, matchedFrameIndex);
                     _trackingGrace.Commit(Set[dIndex]);
                     MatchedFrameRecorder.Record(Set[dIndex], matchedFrameIndex, matchResult.Point,
                         frameIndex, currentMatchPoint);
@@ -552,6 +567,79 @@ public class DialogTemplateMatcher(
         }
 
         return IsStatusMatched(firstStatus ?? MatchStatus.DialogNotMatched);
+    }
+
+    // Keep only bounded, independently matched coordinates while disappearance is
+    // uncertain. No image buffers or speculative frames enter the exported sets.
+    private void RememberNextDuringLoss(FrameMatchContext frame, int currentIndex, int frameIndex)
+    {
+        var nextIndex = currentIndex + 1;
+        if (nextIndex >= Set.Count || Set[nextIndex].Finished || !Set[nextIndex].IsEmpty())
+        {
+            ClearPendingNext();
+            return;
+        }
+
+        var current = Set[currentIndex].Data;
+        var candidate = Set[nextIndex].Data;
+        // Shared opening glyphs cannot prove when a same-speaker line changed.
+        // Keep the existing distinguishing-prefix path for those transitions.
+        if (TrimTemplateContent(current.CharacterOriginal) == TrimTemplateContent(candidate.CharacterOriginal) &&
+            (current.BodyOriginal.Length == 0 || candidate.BodyOriginal.Length == 0 ||
+             current.BodyOriginal[0] == candidate.BodyOriginal[0]))
+        {
+            ClearPendingNext();
+            return;
+        }
+
+        var savedStatus = _status;
+        var savedPosition = _nameTagPosition;
+        try
+        {
+            _status = MatchStatus.DialogNotMatched;
+            _transitionEvidencePool.ResetAll();
+            _transitionEvidencePool.SetFrameIndex(frameIndex);
+            var next = Set[nextIndex];
+            var point = string.IsNullOrWhiteSpace(next.Data.CharacterOriginal)
+                ? DialogMatchUnnamed(frame, next, _transitionEvidencePool)
+                : DialogMatchNameTag(frame, next, frameIndex, _transitionEvidencePool);
+            var status = DialogMatchContent(frame, next, point, MatchStatus.DialogNotMatched,
+                frameIndex, _transitionEvidencePool);
+            if (!IsStatusMatched(status))
+            {
+                ClearPendingNext();
+                return;
+            }
+
+            if (_pendingNextIndex != nextIndex ||
+                (_pendingNextFrames.Count > 0 && _pendingNextFrames[^1].Index != frameIndex - 1))
+                ClearPendingNext();
+            _pendingNextIndex = nextIndex;
+            _pendingNextFrames.Add(new FrameResultDto(frameIndex, point.X, point.Y));
+            var limit = Math.Max(1, (int)Math.Ceiling(videoInfo.Fps.Fps() * 0.05)) + 1;
+            if (_pendingNextFrames.Count > limit) _pendingNextFrames.RemoveAt(0);
+        }
+        finally
+        {
+            _status = savedStatus;
+            _nameTagPosition = savedPosition;
+        }
+    }
+
+    private void CommitPendingNext(int index, int selectedFrame)
+    {
+        if (_pendingNextIndex == index && _pendingNextFrames.Count > 0 &&
+            _pendingNextFrames[^1].Index >= selectedFrame - 1)
+            foreach (var frame in _pendingNextFrames)
+                if (frame.Index < selectedFrame)
+                    Set[index].Add(frame.Index, new Point(frame.X, frame.Y));
+        ClearPendingNext();
+    }
+
+    private void ClearPendingNext()
+    {
+        _pendingNextFrames.Clear();
+        _pendingNextIndex = null;
     }
 
     private static bool IsStatusMatched(MatchStatus status)
@@ -575,7 +663,7 @@ public class DialogTemplateMatcher(
                             ? TemplateMatchingState.Acquiring
                             : TemplateMatchingState.Searching);
         var lastStatus = _status == MatchStatus.DialogPending ? _pendingResumeStatus : _status;
-        if (lastStatus is MatchStatus.DialogDropped && dialogBase.IsEmpty())
+        if (dialogBase.IsEmpty() && lastStatus is MatchStatus.DialogDropped or MatchStatus.NameTagNotMatched)
             lastStatus = MatchStatus.DialogNotMatched;
         Point point;
         if (string.IsNullOrWhiteSpace(dialogBase.Data.CharacterOriginal))
@@ -617,6 +705,8 @@ public class DialogTemplateMatcher(
             SearchState = _searchScheduler.CaptureState(),
             LookaheadState = _lookaheadTracker.CaptureState(),
             PendingTrackingFrames = _trackingGrace.CaptureState(),
+            PendingNextDialogIndex = _pendingNextIndex,
+            PendingNextDialogFrames = [.. _pendingNextFrames],
             Status = (int)_status,
             PendingResumeStatus =
                 (int)(_status == MatchStatus.DialogPending ? _pendingResumeStatus : MatchStatus.DialogMatched3),
@@ -650,6 +740,13 @@ public class DialogTemplateMatcher(
         _status = (MatchStatus)state.Status;
         _pendingResumeStatus = (MatchStatus)state.PendingResumeStatus;
         _trackingGrace.RestoreState(state.PendingTrackingFrames);
+        ClearPendingNext();
+        if (state.PendingNextDialogIndex is { } nextIndex && nextIndex >= 0 && nextIndex < Set.Count &&
+            state.Status == (int)MatchStatus.DialogPending)
+        {
+            _pendingNextIndex = nextIndex;
+            _pendingNextFrames.AddRange(state.PendingNextDialogFrames);
+        }
         RestoreFallbackState(state.ConsecutiveFailures, state.LastFailedIndex, state.UseFallbackThreshold,
             state.LastFailureFrame);
         _nameTagPosition = state.NameTagPosition is { } p
