@@ -44,6 +44,12 @@ public static class StringFunc
             .Replace("\\R", "\n");
     }
 
+    public static double MaxDialogLineLength(this string str)
+    {
+        return str.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n')
+            .Max(line => line.Trim().DialogContentLength());
+    }
+
     public static int MaxLineLength(this string str)
     {
         return str.Split('\n').Max(x => x.Trim().Length);

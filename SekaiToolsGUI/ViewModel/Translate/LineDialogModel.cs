@@ -90,9 +90,9 @@ public partial class LineDialogModel : LineModel
     }
 
 
-    public int MaxLineLength
+    public double MaxLineLength
     {
-        get => GetProperty(0);
+        get => GetProperty(0d);
         set => SetProperty(value);
     }
 
@@ -186,11 +186,12 @@ public partial class LineDialogModel : LineModel
             return;
         }
 
-        MaxLineLength = (Content.Translated + "\n").MaxLineLength();
+        MaxLineLength = Content.Translated.MaxDialogLineLength();
         var results = TranslationRules.Current.Evaluate(Content.Translated, new Dictionary<string, string>
         {
             ["originalLineCount"] = Content.Original.LineCount().ToString(CultureInfo.InvariantCulture),
-            ["maxLineLength"] = MaxLineLength.ToString(CultureInfo.InvariantCulture)
+            // Existing rule catalogs compare integer thresholds; ceiling preserves strict > checks for fractional weights.
+            ["maxLineLength"] = Math.Ceiling(MaxLineLength).ToString(CultureInfo.InvariantCulture)
         });
         Check = TranslationRules.FormatResults(results);
         if (Content.Translated.Count(c => c == '\n') >= 3)

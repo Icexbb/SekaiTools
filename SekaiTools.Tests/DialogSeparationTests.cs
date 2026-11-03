@@ -19,6 +19,22 @@ public class DialogSeparationTests
     }
 
     [Theory]
+    [InlineData(".", 1d / 3)]
+    [InlineData("......", 2)]
+    [InlineData("A1", 1)]
+    [InlineData("中文......A1", 5)]
+    [InlineData("中文\n......A1", 3)]
+    [InlineData("中文\r\n......A1", 3)]
+    [InlineData("中文\r......A1", 3)]
+    [InlineData("  ...  \n中", 1)]
+    [InlineData("", 0)]
+    [InlineData("\n\n", 0)]
+    public void LongestDialogLineUsesAxisWeights(string content, double expected)
+    {
+        Assert.Equal(expected, content.MaxDialogLineLength(), 12);
+    }
+
+    [Theory]
     [InlineData(35, "......", false)]
     [InlineData(35, ".......", true)]
     [InlineData(36, "...", false)]

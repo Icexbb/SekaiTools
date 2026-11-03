@@ -444,6 +444,12 @@ internal static class Program
         model.LoadScript(script, "stretch-probe.json");
         var line = model.Events.OfType<LineDialogModel>().First();
         line.Content.Original = string.Join("\n", Enumerable.Repeat("撑高行的原文", 8));
+        line.Content.Translated = "......\nA1";
+        Check(line.MaxLineLength == 2, "translation length uses axis period and ASCII weights");
+        line.Content.Translated = new string('中', 37) + ".";
+        Check(line.TooLong && line.MaxLineLength > 37, "fractional excess triggers legacy length rule");
+        line.Content.Translated = new string('中', 37);
+        Check(!line.TooLong, "exact weighted threshold does not trigger length rule");
         line.Content.Translated = "短译文";
         var view = new SekaiToolsGUI.View.Translate.Components.TranslateLineDialog { LineDialogModel = line, VerticalAlignment = VerticalAlignment.Top };
         window.Content = new System.Windows.Documents.AdornerDecorator { Child = view };

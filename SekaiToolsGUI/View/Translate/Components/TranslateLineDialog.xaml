@@ -191,7 +191,7 @@
                              Text="{Binding Content.Translated,UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock Grid.Row="3" Margin="4,2" TextWrapping="Wrap" FontSize="12"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}">
-                        <Run Text="最长行加权长度：" /><Run Text="{Binding MaxLineLength,Mode=OneWay}" />
+                        <Run Text="最长行加权长度：" /><Run Text="{Binding MaxLineLength,Mode=OneWay,StringFormat={}{0:0.##}}" />
                         <Run Text="；全文字符数：" /><Run Text="{Binding Content.Translated.Length,Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock Grid.Row="4" Text="{Binding InputHint}" TextWrapping="Wrap" Margin="4,2"
