@@ -257,6 +257,9 @@ public class BannerTemplateMatcher(
             FrameSets = Set.Select(b => _checkpointFrames.Capture(b, b.Finished, checkpoint, b => new BannerFrameSetDto
             {
                 Finished = b.Finished,
+                HasRefinedTiming = b.HasRefinedTiming,
+                TextStartOffset = b.TextStartOffset,
+                TextEndOffset = b.TextEndOffset,
                 Start = b.IsEmpty() ? -1 : b.StartIndex(),
                 End = b.IsEmpty() ? -1 : b.EndIndex()
             })).ToList()
@@ -280,7 +283,13 @@ public class BannerTemplateMatcher(
             var dst = Set[i];
             dst.Finished = src.Finished;
             if (src.Start >= 0 && src.End >= 0)
-                dst.SetFrameRange(src.Start, src.End);
+            {
+                dst.RestoreUnrefinedTiming(src.Start, src.End);
+                if (src.HasRefinedTiming && src.TextStartOffset >= 0 && src.TextEndOffset >= 0 &&
+                    (long)src.TextStartOffset + src.TextEndOffset <= src.End - src.Start)
+                    dst.SetRefinedTiming(src.Start, src.End, src.Start + src.TextStartOffset,
+                        src.End - src.TextEndOffset);
+            }
         }
 
         NextUnfinishedIndex();

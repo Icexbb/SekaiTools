@@ -20,6 +20,44 @@ namespace SekaiTools.Tests;
 
 public class UnnamedDialogTests
 {
+    [Fact]
+    public void RefinedBannerTiming_RoundtripsAndExportsIndependentTextRange()
+    {
+        using var fixture = new Fixture();
+        var story = new Story(new GameScript(), new TranslationData(null));
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        using var matcher = new BannerTemplateMatcher(fixture.Info, story, manager,
+            new TemplateMatchCachePool(), fixture.Config);
+        var set = new BannerBaseFrameSet(new BannerStoryEvent("Title", 0), fixture.Info.Fps);
+        set.SetRefinedTiming(100, 200, 104, 199);
+        set.Finished = true;
+        matcher.Set.Add(set);
+        var state = JsonSerializer.Deserialize<BannerMatcherStateDto>(JsonSerializer.Serialize(matcher.SaveState()))!;
+        using var restored = new BannerTemplateMatcher(fixture.Info, story, manager,
+            new TemplateMatchCachePool(), fixture.Config);
+        restored.Set.Add(new BannerBaseFrameSet(set.Data, fixture.Info.Fps));
+        restored.RestoreState(state);
+        var actual = restored.Set[0];
+        Assert.True(actual.HasRefinedTiming);
+        Assert.False(actual.HasTimingEdits);
+        Assert.Equal(set.TextStartTime(), actual.TextStartTime());
+        Assert.Equal(set.TextEndTime(), actual.TextEndTime());
+        var subtitle = new SubtitleMaker(fixture.Info, manager, fixture.Config).Make([], [actual], [],
+            new SubtitleExportInfo("test", "1", "done", "", "", ""), new ExportStyleConfig());
+        var lines = subtitle.Events.ToString().Split('\n').Where(line => line.StartsWith("Dialogue:")).ToArray();
+        Assert.Equal(3, lines.Length);
+        Assert.Contains(lines, line => line.Contains($",{actual.TextStartTime()},{actual.TextEndTime()},BannerText,"));
+        Assert.Equal(2, lines.Count(line => line.Contains($",{actual.StartTime()},{actual.EndTime()},BannerMask,")));
+        restored.RestoreState(new BannerMatcherStateDto
+        {
+            FrameSets = [new BannerFrameSetDto { Finished = true, Start = 120, End = 220 }]
+        });
+        Assert.False(actual.HasRefinedTiming);
+        Assert.False(actual.HasTimingEdits);
+        Assert.Equal(actual.StartTime(), actual.TextStartTime());
+        Assert.Equal(actual.EndTime(), actual.TextEndTime());
+    }
+
     [Theory]
     [InlineData(false, "Speaker", false, true, false)]
     [InlineData(true, "Speaker", false, true, false)]

@@ -25,6 +25,9 @@ public class DialogFrameSetDto
 
 public class BannerFrameSetDto
 {
+    public bool HasRefinedTiming { get; init; }
+    public int TextStartOffset { get; init; }
+    public int TextEndOffset { get; init; }
     public bool Finished { get; init; }
     public int Start { get; init; } = -1;
     public int End { get; init; } = -1;

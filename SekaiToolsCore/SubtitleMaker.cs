@@ -451,7 +451,7 @@ public class SubtitleMaker(VideoInfo videoInfo, TemplateManager templateManager,
             var body = maskFade + Tags.Anchor(5) + Tags.FontSize(offset) +
                        Tags.Move(center.X - offset / 3, center.Y, center.X, center.Y, 0, 200) + content;
 
-            var contentItem = SubtitleEvent.Dialog(body, startTime, endTime, "BannerText");
+            var contentItem = SubtitleEvent.Dialog(body, set.TextStartTime(), set.TextEndTime(), "BannerText");
 
             var cRec = UtilFunc.FromCenter(center,
                 new Size(offset * 12 / 20 * 20, (int)(offset * 1.4) / 20 * 20));

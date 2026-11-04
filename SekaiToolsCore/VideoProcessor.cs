@@ -70,6 +70,7 @@ public class VideoProcessor : IDisposable
     private readonly ProcessingStateMetadata _stateMetadata;
     private readonly string _translatePath;
     private readonly string _videoPath;
+    private BannerTimingRefiner? _bannerTimingRefiner;
     private int _consecutiveExceptionCount;
     private bool _disposed;
     private bool _frameSetJustCompleted;
@@ -141,9 +142,9 @@ public class VideoProcessor : IDisposable
             MarkerMatcher = Creator.MarkerMatcher();
             _stateMetadata = ProcessingStateMetadata.Create(config,
                     VideoStateMetadata.From(Creator.VideoInfo)) with
-                {
-                    CaptureIdentity = _captureSession?.Identity
-                };
+            {
+                CaptureIdentity = _captureSession?.Identity
+            };
         }
         catch
         {
@@ -212,6 +213,7 @@ public class VideoProcessor : IDisposable
         ContentMatcher?.Dispose();
         DialogMatcher?.Dispose();
         BannerMatcher?.Dispose();
+        _bannerTimingRefiner?.Dispose();
         MarkerMatcher?.Dispose();
         Creator?.Dispose();
         _captureSession?.Dispose();
@@ -437,6 +439,8 @@ public class VideoProcessor : IDisposable
                 // its normal capture cleanup. Always release the decoder here.
                 Capture?.Dispose();
                 Capture = null;
+                _bannerTimingRefiner?.Dispose();
+                _bannerTimingRefiner = null;
                 _isProcessing = false;
                 _performanceMetrics.RecordElapsed(Stopwatch.GetElapsedTime(processingStart));
                 Callbacks.OnTaskFinished();
@@ -647,6 +651,15 @@ public class VideoProcessor : IDisposable
                     BannerMatcher.Process(matchFrame, frameIndex, backcheckFrame, backcheckFrameIndex);
                     if (BannerMatcher.Set[bannerIndex].Finished)
                     {
+                        try
+                        {
+                            _bannerTimingRefiner ??= new BannerTimingRefiner(_videoPath, VideoInfo.Fps.Fps());
+                            _bannerTimingRefiner.Refine(BannerMatcher.Set[bannerIndex], token);
+                        }
+                        catch (Exception exception) when (exception is not OperationCanceledException)
+                        {
+                            Logger.Log($"地点动画边界复核失败，保留原识别区间: {exception.Message}", ExtLogLevel.Warning);
+                        }
                         Callbacks.OnNewBanner(BannerMatcher.Set[bannerIndex]);
                         _frameSetJustCompleted = true;
                     }

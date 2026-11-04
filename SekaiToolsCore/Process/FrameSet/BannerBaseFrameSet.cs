@@ -7,6 +7,34 @@ public class BannerBaseFrameSet(BannerStoryEvent data, FrameRate fps) : BaseFram
 {
     private (int StartFrame, int EndFrame)? _recognizedFrameRange;
     private int _start = int.MaxValue, _end = int.MinValue;
+    public bool HasRefinedTiming { get; private set; }
+    public int TextStartOffset { get; private set; }
+    public int TextEndOffset { get; private set; }
+
+    public string TextStartTime() => new ProcessFrame(Math.Min(_end, _start + TextStartOffset), Fps).StartTime();
+    public string TextEndTime() => new ProcessFrame(Math.Max(Math.Min(_end, _start + TextStartOffset),
+        _end - TextEndOffset), Fps).EndTime();
+
+    public void SetRefinedTiming(int maskStart, int maskEnd, int textStart, int textEnd)
+    {
+        if (maskStart < 0 || maskStart > textStart || textStart > textEnd || textEnd > maskEnd)
+            throw new ArgumentOutOfRangeException(nameof(maskStart));
+        _start = maskStart;
+        _end = maskEnd;
+        TextStartOffset = textStart - maskStart;
+        TextEndOffset = maskEnd - textEnd;
+        HasRefinedTiming = true;
+        _recognizedFrameRange = (maskStart, maskEnd);
+    }
+
+    internal void RestoreUnrefinedTiming(int start, int end)
+    {
+        SetFrameRange(start, end);
+        _recognizedFrameRange = (start, end);
+        HasRefinedTiming = false;
+        TextStartOffset = TextEndOffset = 0;
+    }
+
     public BannerStoryEvent Data { get; } = data;
     private FrameRate Fps { get; } = fps;
 
