@@ -54,7 +54,19 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"更新失败：{ex.Message}", "SekaiTools", MessageBoxButton.OK, MessageBoxImage.Error);
+            var details = ex.ToString();
+            try
+            {
+                var report = Path.Combine(AppContext.BaseDirectory, "update-error.txt");
+                File.WriteAllText(report, details);
+                details = $"{ex.Message}\n\n错误记录：{report}";
+            }
+            catch (Exception reportError) when (reportError is IOException or UnauthorizedAccessException)
+            {
+                // Keep the original failure available if the report cannot be written.
+            }
+
+            MessageBox.Show($"更新失败：{details}", "SekaiTools", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
         }
     }

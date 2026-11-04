@@ -5,6 +5,33 @@ namespace SekaiTools.Tests;
 public sealed class UpdateInstallationTests
 {
     [Fact]
+    public async Task ReplacementWaitsUntilDestinationIsReleased()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        var source = Path.Combine(root, "new.dll");
+        var destination = Path.Combine(root, "installed.dll");
+        File.WriteAllText(source, "new version");
+        File.WriteAllText(destination, "old version");
+        try
+        {
+            using var locked = new FileStream(destination, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var replacement = Task.Run(() => UpdateInstallation.Replace(source, destination));
+            await Task.Delay(500);
+            var waitedForRelease = !replacement.IsCompleted;
+            locked.Dispose();
+            await replacement;
+            Assert.True(waitedForRelease);
+            Assert.Equal("new version", File.ReadAllText(destination));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public void FailedStartupRestoresManagedFilesAndPreservesUnrelatedFiles()
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));

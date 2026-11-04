@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace Updater;
@@ -101,9 +102,18 @@ internal static class UpdateInstallation
                 throw;
             }
         }
-        catch
+        catch (Exception installError)
         {
-            Restore(install, backup, files);
+            try
+            {
+                Restore(install, backup, files);
+            }
+            catch (Exception restoreError)
+            {
+                throw new AggregateException("安装失败，恢复旧版也未完成，已保留恢复记录和备份。", installError,
+                    restoreError);
+            }
+
             File.Delete(journal);
             File.Delete(trial);
             DeleteDirectory(backup);
@@ -171,13 +181,38 @@ internal static class UpdateInstallation
         output.Flush(flushToDisk: true);
     }
 
-    private static void Replace(string source, string destination)
+    internal static void Replace(string source, string destination)
     {
+        if (File.Exists(destination))
+        {
+            using var original = File.OpenRead(source);
+            using var current = File.OpenRead(destination);
+            if (SHA256.HashData(original).AsSpan().SequenceEqual(SHA256.HashData(current))) return;
+        }
+
         var temporary = destination + ".sekaitools-update";
         try
         {
             Copy(source, temporary);
-            File.Move(temporary, destination, overwrite: true);
+            var timer = Stopwatch.StartNew();
+            while (true)
+            {
+                try
+                {
+                    File.Move(temporary, destination, overwrite: true);
+                    break;
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException &&
+                                           (ex.HResult & 0xFFFF) is 5 or 32 or 33 &&
+                                           timer.Elapsed < TimeSpan.FromSeconds(15))
+                {
+                    Thread.Sleep(200);
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw new IOException($"无法替换文件 {destination}", ex);
         }
         finally
         {
