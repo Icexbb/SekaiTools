@@ -17,7 +17,7 @@ internal static class UpdatePaths
     {
         var normalized = Path.TrimEndingDirectorySeparator(Path.GetFullPath(installDirectory));
         var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(normalized.ToUpperInvariant())));
-        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "SekaiTools", "Update", key);
     }
 
