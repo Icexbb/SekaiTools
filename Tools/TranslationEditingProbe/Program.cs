@@ -221,8 +221,17 @@ internal static class Program
             window.UpdateLayout();
             Pump();
             Check(Nodes(dialog).OfType<FrameworkElement>().Any(element =>
-                    Math.Abs(element.ActualWidth - expected.Width) < 1 && Math.Abs(element.ActualHeight - expected.Height) < 1),
-                $"{purpose} renders a surface at requested size");
+                    Math.Abs(element.ActualWidth - expected.Width) < 1 && double.IsNaN(element.Height)),
+                $"{purpose} renders fixed width with automatic height");
+            var content = (TextBlock)dialog.Content;
+            var surfaceBeforeResize = ((Grid)dialog.Template.FindName("DialogRootGrid", dialog)).Children.OfType<Border>().First();
+            var longHeight = surfaceBeforeResize.ActualHeight;
+            content.Text = "简短正文";
+            window.UpdateLayout();
+            Pump();
+            Check(surfaceBeforeResize.ActualHeight < longHeight, $"{purpose} shrinks height for short content");
+            content.Text = string.Concat(Enumerable.Repeat("需要滚动查看的长正文。", 200));
+            window.UpdateLayout();
             window.Width = 420;
             window.Height = 350;
             Pump();

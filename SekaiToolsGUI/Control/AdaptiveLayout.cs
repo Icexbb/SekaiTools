@@ -114,28 +114,28 @@ public static class AdaptiveLayout
         {
             var availableWidth = Math.Max(1, viewport.ActualWidth - 80);
             var availableHeight = Math.Max(1, viewport.ActualHeight - 80);
-            var requested = purpose switch
+            var requestedWidth = purpose switch
             {
-                DialogPurpose.Workspace => new Size(viewport.ActualWidth * .7, viewport.ActualHeight * .7),
-                DialogPurpose.CompactEditor => new Size(560, 360),
-                DialogPurpose.TranslationExport => new Size(600, 480),
-                _ => new Size(480, 280)
+                DialogPurpose.Workspace => viewport.ActualWidth * .7,
+                DialogPurpose.CompactEditor => 560,
+                DialogPurpose.TranslationExport => 600,
+                _ => 480
             };
-            var width = Math.Min(requested.Width, availableWidth);
-            var height = Math.Min(requested.Height, availableHeight);
+            var width = Math.Min(requestedWidth, availableWidth);
             dialog.MinWidth = 0;
             dialog.MinHeight = 0;
             dialog.DialogMaxWidth = availableWidth;
             dialog.DialogMaxHeight = availableHeight;
             dialog.DialogWidth = width;
-            dialog.DialogHeight = height;
+            dialog.DialogHeight = availableHeight;
             if (surface != null)
             {
                 surface.Width = width;
-                surface.Height = height;
+                surface.Height = double.NaN;
+                surface.MaxHeight = availableHeight;
             }
             if (dialog.Content is FrameworkElement content && (content is ScrollViewer || content is Grid))
-                content.MaxHeight = Math.Min(contentMaximumHeight, Math.Max(1, height - (dialog.IsFooterVisible ? 160 : 64)));
+                content.MaxHeight = Math.Min(contentMaximumHeight, Math.Max(1, availableHeight - (dialog.IsFooterVisible ? 160 : 64)));
         }
 
         Fit();

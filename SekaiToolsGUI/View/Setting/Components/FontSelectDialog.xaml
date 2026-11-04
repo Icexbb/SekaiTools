@@ -17,7 +17,7 @@
                TargetType="{x:Type components:FontSelectDialog}" />
     </ui:ContentDialog.Resources>
     <ui:ContentDialog.Content>
-        <Grid Height="580">
+        <Grid MaxHeight="580">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />

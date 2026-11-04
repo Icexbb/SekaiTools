@@ -807,8 +807,7 @@ public partial class SubtitleTask
                                 Owner = Window.GetWindow(this),
                                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                                 Width = 480,
-                                Height = 280,
-                                SizeToContent = SizeToContent.Manual,
+                                SizeToContent = SizeToContent.Height,
                                 ResizeMode = ResizeMode.NoResize,
                                 Content = e.Message + "\n" + e.StackTrace
                             };
