@@ -51,6 +51,8 @@ public sealed record LookaheadStateDto(int FirstFailureFrame, int TargetIndex)
 
 public class DialogMatcherStateDto
 {
+    public int? AcquisitionCandidateStartFrame { get; init; }
+    public List<FrameResultDto> AcquisitionCandidateFrames { get; init; } = [];
     public int PendingResumeStatus { get; init; } = 3;
     public List<FrameResultDto> PendingTrackingFrames { get; init; } = [];
     public int? PendingNextDialogIndex { get; init; }

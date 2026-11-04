@@ -41,6 +41,8 @@ public class DialogTemplateMatcher(
     private Point _nameTagPosition;
     private MatchStatus _pendingResumeStatus = MatchStatus.DialogMatched3;
     private MatchStatus _status;
+    private int? _acquisitionCandidateStart;
+    private readonly List<FrameResultDto> _acquisitionCandidateFrames = [];
 
     public void Dispose()
     {
@@ -51,6 +53,7 @@ public class DialogTemplateMatcher(
         _lookaheadEvidencePool.ResetAll();
         _transitionEvidencePool.ResetAll();
         ClearPendingNext();
+        ClearAcquisitionCandidate();
     }
 
     public int LastNotProcessedIndex()
@@ -439,6 +442,7 @@ public class DialogTemplateMatcher(
                 return IsStatusMatched(firstStatus ?? MatchStatus.DialogNotMatched);
             }
 
+            var matchedWithFallback = IsUsingFallback;
             var matchResult = MatchForDialog(frame, dialogRefers, frameIndex);
             if (_status == MatchStatus.DialogMatched3 && matchResult.Status == MatchStatus.DialogMatched3 &&
                 ConfirmsSharedPrefixTransition(frame, dIndex, matchResult.Point, frameIndex))
@@ -525,7 +529,35 @@ public class DialogTemplateMatcher(
                 }
             }
 
-            if (matchResult.Status == MatchStatus.DialogPending)
+            var beginCandidate = _acquisitionCandidateStart == null && dialogRefers.IsEmpty() &&
+                                 matchedWithFallback && IsStatusMatched(matchResult.Status) &&
+                                 matchResult.Status != MatchStatus.DialogPending;
+            if (beginCandidate)
+            {
+                // Fallback may also find a perfectly strong first glyph. Recheck
+                // normally before withholding it, including the sampled backcheck.
+                MarkSucceeded();
+                var normalResult = MatchForDialog(frame, dialogRefers, frameIndex);
+                if (IsStatusMatched(normalResult.Status))
+                {
+                    beginCandidate = false;
+                    matchResult = normalResult;
+                    currentMatchPoint = normalResult.Point;
+                    matchedFrameIndex = frameIndex;
+                    if (backcheckFrame != null)
+                    {
+                        var normalPrevious = MatchForDialog(backcheckFrame, dialogRefers, backcheckFrameIndex);
+                        if (IsStatusMatched(normalPrevious.Status))
+                        {
+                            matchResult = normalPrevious;
+                            matchedFrameIndex = backcheckFrameIndex;
+                        }
+                    }
+                }
+            }
+            if (beginCandidate) _acquisitionCandidateStart = matchedFrameIndex;
+
+            if (_acquisitionCandidateStart == null && matchResult.Status == MatchStatus.DialogPending)
                 RememberNextDuringLoss(frame, dIndex, frameIndex);
 
             if (matchResult.Status == MatchStatus.DialogPending &&
@@ -533,6 +565,22 @@ public class DialogTemplateMatcher(
                     ? _trackingGrace.HoldUnlocated(frameIndex)
                     : _trackingGrace.Hold(frameIndex, matchResult.Point)))
                 matchResult = new MatchResult(matchResult.Point, MatchStatus.DialogDropped);
+
+            // A weak opening glyph has not identified a dialogue yet. Losing it
+            // must retry this target, rather than consume an entire script event.
+            if (_acquisitionCandidateStart is { } candidateStart &&
+                (matchResult.Status == MatchStatus.DialogDropped || frameIndex - candidateStart >= videoInfo.Fps.Fps() * 2))
+            {
+                ClearAcquisitionCandidate();
+                _trackingGrace.Clear();
+                ClearPendingNext();
+                _status = MatchStatus.DialogNotMatched;
+                _pendingResumeStatus = MatchStatus.DialogMatched3;
+                _nameTagPosition = Point.Empty;
+                _searchScheduler.Reset();
+                MarkSucceeded();
+                return false;
+            }
 
             if (matchResult.Status == MatchStatus.DialogPending && _status != MatchStatus.DialogPending)
                 _pendingResumeStatus = _status;
@@ -556,6 +604,33 @@ public class DialogTemplateMatcher(
                     // Do not export uncertain frames until full evidence returns.
                     return true;
                 default:
+                    if (_acquisitionCandidateStart != null)
+                    {
+                        // The first fallback hit is never exported. Only later
+                        // normal-threshold evidence may confirm and populate it.
+                        _trackingGrace.Clear();
+                        if (!beginCandidate)
+                        {
+                            _acquisitionCandidateFrames.Add(new FrameResultDto(matchedFrameIndex,
+                                matchResult.Point.X, matchResult.Point.Y));
+                            if (matchedFrameIndex < frameIndex)
+                                _acquisitionCandidateFrames.Add(new FrameResultDto(frameIndex,
+                                    currentMatchPoint.X, currentMatchPoint.Y));
+                        }
+                        var shortConfirmed = dialogRefers.Data.BodyOriginal.Length < 3 &&
+                                             _acquisitionCandidateFrames.Count >= 2 &&
+                                             _acquisitionCandidateFrames[^1].Index ==
+                                             _acquisitionCandidateFrames[^2].Index + 1;
+                        if (matchResult.Status == MatchStatus.DialogMatched3 || shortConfirmed)
+                        {
+                            foreach (var evidence in _acquisitionCandidateFrames)
+                                dialogRefers.Add(evidence.Index, new Point(evidence.X, evidence.Y));
+                            ClearAcquisitionCandidate();
+                            _lookaheadTracker.Reset();
+                        }
+                        MarkSucceeded();
+                        return true;
+                    }
                     CommitPendingNext(dIndex, matchedFrameIndex);
                     _trackingGrace.Commit(Set[dIndex]);
                     MatchedFrameRecorder.Record(Set[dIndex], matchedFrameIndex, matchResult.Point,
@@ -642,6 +717,12 @@ public class DialogTemplateMatcher(
         _pendingNextIndex = null;
     }
 
+    private void ClearAcquisitionCandidate()
+    {
+        _acquisitionCandidateStart = null;
+        _acquisitionCandidateFrames.Clear();
+    }
+
     private static bool IsStatusMatched(MatchStatus status)
     {
         return status is MatchStatus.DialogMatched1
@@ -702,6 +783,8 @@ public class DialogTemplateMatcher(
         var (cf, lfi, uft) = SaveFallbackState();
         return new DialogMatcherStateDto
         {
+            AcquisitionCandidateStartFrame = _acquisitionCandidateStart,
+            AcquisitionCandidateFrames = [.. _acquisitionCandidateFrames],
             SearchState = _searchScheduler.CaptureState(),
             LookaheadState = _lookaheadTracker.CaptureState(),
             PendingTrackingFrames = _trackingGrace.CaptureState(),
@@ -740,6 +823,16 @@ public class DialogTemplateMatcher(
         _status = (MatchStatus)state.Status;
         _pendingResumeStatus = (MatchStatus)state.PendingResumeStatus;
         _trackingGrace.RestoreState(state.PendingTrackingFrames);
+        ClearAcquisitionCandidate();
+        if (state.AcquisitionCandidateStartFrame is { } candidateStart)
+        {
+            if (candidateStart < 0 || state.Status is not (1 or 2 or 4) ||
+                state.AcquisitionCandidateFrames.Count > Math.Ceiling(videoInfo.Fps.Fps() * 2) + 1 ||
+                state.AcquisitionCandidateFrames.Any(item => item.Index < candidateStart))
+                throw new InvalidDataException("Invalid dialogue acquisition candidate");
+            _acquisitionCandidateStart = candidateStart;
+            _acquisitionCandidateFrames.AddRange(state.AcquisitionCandidateFrames);
+        }
         ClearPendingNext();
         if (state.PendingNextDialogIndex is { } nextIndex && nextIndex >= 0 && nextIndex < Set.Count &&
             state.Status == (int)MatchStatus.DialogPending)

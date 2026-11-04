@@ -905,6 +905,190 @@ public class UnnamedDialogTests
         Assert.Equal(end, matcher.Set[0].End().Index);
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void FallbackAcquisitionLoss_RetriesSameDialogueAndRestoresPendingCandidate(int stage)
+    {
+        using var fixture = new Fixture();
+        var story = new Story(new GameScript
+        {
+            TalkData = [new Talk("A", "WXYZ", 0) { Shake = true }],
+            Snippets = [new Snippet { Action = 1 }]
+        }, new TranslationData(null));
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        var cache = new TemplateMatchCachePool();
+        var resumedCache = new TemplateMatchCachePool();
+        using var matcher = new DialogTemplateMatcher(fixture.Info, story, manager, cache, fixture.Config);
+        using var restored = new DialogTemplateMatcher(fixture.Info, story, manager, resumedCache, fixture.Config);
+        matcher.RestoreState(new DialogMatcherStateDto
+        {
+            Status = 0,
+            LastFailedIndex = 0,
+            UseFallbackThreshold = true,
+            LookaheadState = new LookaheadStateDto(0, 0),
+            FrameSets = [new DialogFrameSetDto()]
+        });
+        using var first = fixture.WeakNamedFrame(manager);
+        using var second = fixture.NamedFrame(manager, "WX", 0);
+        using var full = fixture.NamedFrame(manager, "WXYZ", 0);
+        using var blank = new Mat(720, 1280, DepthType.Cv8U, 3);
+        blank.SetTo(new MCvScalar(0));
+        using var context = new FrameMatchContext();
+        context.Update(first);
+        cache.SetFrameIndex(1);
+        matcher.Process(context, 1);
+        Assert.Equal(1, matcher.SaveState().AcquisitionCandidateStartFrame);
+        Assert.True(matcher.Set[0].IsEmpty());
+        if (stage == 2)
+        {
+            context.Update(second);
+            cache.SetFrameIndex(2);
+            matcher.Process(context, 2);
+        }
+        context.Update(blank);
+        cache.SetFrameIndex(stage + 1);
+        matcher.Process(context, stage + 1);
+        var checkpoint = DiskRoundtrip(matcher.SaveState());
+        Assert.Equal(4, checkpoint.Status);
+        Assert.Equal(stage, checkpoint.PendingResumeStatus);
+        Assert.Equal(stage - 1, checkpoint.AcquisitionCandidateFrames.Count);
+        restored.RestoreState(checkpoint);
+        for (var index = stage + 2; index <= stage + 3; index++) ProcessBoth(blank, index);
+        Assert.False(matcher.Finished);
+        Assert.Equal(0, matcher.LastNotProcessedIndex());
+        Assert.True(matcher.Set[0].IsEmpty());
+        Assert.Null(matcher.SaveState().AcquisitionCandidateStartFrame);
+        Assert.Empty(matcher.SaveState().AcquisitionCandidateFrames);
+        Assert.Equal(0, matcher.SaveState().LookaheadState!.FirstFailureFrame);
+        for (var index = stage + 4; index <= stage + 6; index++) ProcessBoth(full, index);
+        Assert.Equal(3, matcher.Set[0].Frames.Count);
+        Assert.Equal(stage + 3, matcher.Set[0].StartIndex());
+        for (var index = stage + 7; index <= stage + 9; index++) ProcessBoth(blank, index);
+        Assert.True(matcher.Finished);
+        Assert.Equal(stage + 5, matcher.Set[0].EndIndex());
+
+        void ProcessBoth(Mat image, int index)
+        {
+            context.Update(image);
+            cache.SetFrameIndex(index);
+            resumedCache.SetFrameIndex(index);
+            matcher.Process(context, index);
+            restored.Process(context, index);
+            Assert.Equal(JsonSerializer.Serialize(matcher.SaveState()), JsonSerializer.Serialize(restored.SaveState()));
+        }
+    }
+
+    [Theory]
+    [InlineData("W")]
+    [InlineData("WX")]
+    [InlineData("WXYZ")]
+    public void FallbackCandidate_ConfirmsWithNormalEvidenceAndDoesNotExportWeakOpening(string body)
+    {
+        using var fixture = new Fixture();
+        var story = new Story(new GameScript
+        {
+            TalkData = [new Talk("A", body, 0)],
+            Snippets = [new Snippet { Action = 1 }]
+        }, new TranslationData(null));
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        var cache = new TemplateMatchCachePool();
+        var resumedCache = new TemplateMatchCachePool();
+        using var matcher = new DialogTemplateMatcher(fixture.Info, story, manager, cache, fixture.Config);
+        using var restored = new DialogTemplateMatcher(fixture.Info, story, manager, resumedCache, fixture.Config);
+        matcher.RestoreState(new DialogMatcherStateDto
+        {
+            LastFailedIndex = 0,
+            UseFallbackThreshold = true,
+            FrameSets = [new DialogFrameSetDto()]
+        });
+        using var weak = fixture.WeakNamedFrame(manager);
+        using var frame = fixture.NamedFrame(manager, body, 0);
+        using var context = new FrameMatchContext();
+        context.Update(frame);
+        for (var index = 1; index <= 2; index++)
+        {
+            context.Update(index == 1 ? weak : frame);
+            cache.SetFrameIndex(index);
+            matcher.Process(context, index);
+        }
+        Assert.True(matcher.Set[0].IsEmpty());
+        var checkpoint = DiskRoundtrip(matcher.SaveState());
+        Assert.Single(checkpoint.AcquisitionCandidateFrames);
+        restored.RestoreState(checkpoint);
+        cache.SetFrameIndex(3);
+        resumedCache.SetFrameIndex(3);
+        matcher.Process(context, 3);
+        restored.Process(context, 3);
+        Assert.Null(matcher.SaveState().AcquisitionCandidateStartFrame);
+        Assert.Equal([1, 2], matcher.Set[0].Frames.Select(item => item.Index));
+        Assert.Equal(JsonSerializer.Serialize(matcher.SaveState()), JsonSerializer.Serialize(restored.SaveState()));
+    }
+
+    [Fact]
+    public void StrongOpeningDuringFallback_PreservesNormalFirstFrame()
+    {
+        using var fixture = new Fixture();
+        var story = new Story(new GameScript
+        {
+            TalkData = [new Talk("A", "WXYZ", 0)],
+            Snippets = [new Snippet { Action = 1 }]
+        }, new TranslationData(null));
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        var cache = new TemplateMatchCachePool();
+        using var matcher = new DialogTemplateMatcher(fixture.Info, story, manager, cache, fixture.Config);
+        matcher.RestoreState(new DialogMatcherStateDto
+        {
+            LastFailedIndex = 0,
+            UseFallbackThreshold = true,
+            FrameSets = [new DialogFrameSetDto()]
+        });
+        using var frame = fixture.NamedFrame(manager, "WXYZ", 0);
+        using var context = new FrameMatchContext();
+        context.Update(frame);
+        for (var index = 1; index <= 3; index++)
+        {
+            cache.SetFrameIndex(index);
+            matcher.Process(context, index);
+            Assert.Null(matcher.SaveState().AcquisitionCandidateStartFrame);
+        }
+        Assert.Equal([0, 1, 2], matcher.Set[0].Frames.Select(item => item.Index));
+    }
+
+    [Fact]
+    public void FallbackCandidate_ExpiresWithoutExportingUnconfirmedFrames()
+    {
+        using var fixture = new Fixture();
+        var story = new Story(new GameScript
+        {
+            TalkData = [new Talk("A", "WXYZ", 0)],
+            Snippets = [new Snippet { Action = 1 }]
+        }, new TranslationData(null));
+        using var manager = new TemplateManager(fixture.Info.Resolution, fixture);
+        var cache = new TemplateMatchCachePool();
+        using var matcher = new DialogTemplateMatcher(fixture.Info, story, manager, cache, fixture.Config);
+        matcher.RestoreState(new DialogMatcherStateDto
+        {
+            LastFailedIndex = 0,
+            UseFallbackThreshold = true,
+            FrameSets = [new DialogFrameSetDto()]
+        });
+        using var weak = fixture.WeakNamedFrame(manager);
+        using var first = fixture.NamedFrame(manager, "W", 0);
+        using var context = new FrameMatchContext();
+        var limit = (int)Math.Ceiling(fixture.Info.Fps.Fps() * 2) + 1;
+        for (var index = 1; index <= limit; index++)
+        {
+            context.Update(index == 1 ? weak : first);
+            cache.SetFrameIndex(index);
+            matcher.Process(context, index);
+            Assert.True(matcher.Set[0].IsEmpty());
+            Assert.False(matcher.Finished);
+            Assert.True(matcher.SaveState().AcquisitionCandidateFrames.Count < limit);
+        }
+        Assert.Null(matcher.SaveState().AcquisitionCandidateStartFrame);
+    }
+
     private static DialogMatcherStateDto DiskRoundtrip(DialogMatcherStateDto state)
     {
         var directory = Path.Combine(Path.GetTempPath(), "SekaiTools-matcher-disk-" + Guid.NewGuid().ToString("N"));
@@ -986,6 +1170,40 @@ public class UnnamedDialogTests
             using var roi = new Mat(frame, new Rectangle(new Point(160 + shift, 520 + shift), bgr.Size));
             bgr.CopyTo(roi);
             return frame;
+        }
+
+        public Mat WeakNamedFrame(TemplateManager manager)
+        {
+            using var original = NamedFrame(manager, "W", 0);
+            using var context = new FrameMatchContext();
+            var random = new Random(63);
+            var noise = Enumerable.Range(0, 210 * 65).Select(_ => random.Next(256)).ToArray();
+            var template = manager.GetMatchTemplate(TemplateUsage.DialogContent, "W");
+            for (var step = 1; step <= 19; step++)
+            {
+                var frame = original.Clone();
+                var strength = step / 20d;
+                var row = new byte[210 * 3];
+                for (var y = 0; y < 65; y++)
+                {
+                    var address = frame.DataPointer + (555 + y) * frame.Step + 140 * 3;
+                    System.Runtime.InteropServices.Marshal.Copy(address, row, 0, row.Length);
+                    for (var x = 0; x < 210; x++)
+                        for (var channel = 0; channel < 3; channel++)
+                            row[x * 3 + channel] = (byte)(row[x * 3 + channel] * (1 - strength) +
+                                                         noise[y * 210 + x] * strength);
+                    System.Runtime.InteropServices.Marshal.Copy(row, 0, address, row.Length);
+                }
+                context.Update(frame);
+                var offset = TemplateManager.GetFontSize(frame.Size);
+                var region = new Rectangle(160 + (int)(-0.5f * offset), 520 + (int)offset,
+                    (int)(5f * offset), (int)(2f * offset));
+                var score = TemplateMatcher.MatchContent(context, region, template, new TemplateMatchCachePool(),
+                    TemplateMatchCachePool.MatchUsage.DialogContent1, 0.56).MaxVal;
+                if (score is > 0.57 and < 0.70) return frame;
+                frame.Dispose();
+            }
+            throw new InvalidOperationException("Could not create a weak opening glyph");
         }
     }
 }
