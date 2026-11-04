@@ -39,12 +39,36 @@ public partial class SuppressPage
         StartNextQueuedJob();
     }
 
-    internal void StartJob(SuppressionJobModel model)
+    internal async void StartJob(SuppressionJobModel model)
     {
         if (!ViewModel.TryStart(model)) return;
 
         try
         {
+            var storage = await Task.Run(() => SuppressionStorageCheck.Inspect(model.Job.Options.SourceVideo));
+            if (storage.NeedsWarning && !_shuttingDown && model.Progress.State == VideoSuppressionState.Preparing)
+            {
+                var confirmation = new Wpf.Ui.Controls.MessageBox
+                {
+                    Owner = Application.Current.MainWindow,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Title = "压制临时目录空间风险",
+                    Width = 520,
+                    SizeToContent = SizeToContent.Height,
+                    ResizeMode = ResizeMode.NoResize,
+                    Content = storage.WarningMessage,
+                    PrimaryButtonText = "仍然压制",
+                    CloseButtonText = "暂不压制"
+                };
+                if (await confirmation.ShowDialogAsync() != Wpf.Ui.Controls.MessageBoxResult.Primary)
+                {
+                    model.Progress = model.Progress with { State = VideoSuppressionState.Idle };
+                    ViewModel.RestorePending(model);
+                    return;
+                }
+            }
+
+            if (_shuttingDown) return;
             _queue.Enqueue(model.Job);
         }
         catch (Exception ex)
@@ -55,6 +79,11 @@ public partial class SuppressPage
                 Log = $"压制失败：{ex.Message}"
             };
         }
+    }
+
+    private void StartJob_OnRequested(object? sender, EventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: SuppressionJobModel model }) StartJob(model);
     }
 
     private void StartNextQueuedJob()

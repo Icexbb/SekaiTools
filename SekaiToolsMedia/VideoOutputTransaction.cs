@@ -13,7 +13,7 @@ internal sealed class VideoOutputTransaction : IDisposable
             throw new IOException($"输出文件已存在: {TargetPath}");
 
         // Keep in-progress videos outside output folders watched by backup/sync software.
-        var directory = Path.Combine(Path.GetTempPath(), "SekaiTools", "Suppression");
+        var directory = SuppressionStorageCheck.TemporaryRoot;
         Directory.CreateDirectory(directory);
         var extension = Path.GetExtension(TargetPath);
         do

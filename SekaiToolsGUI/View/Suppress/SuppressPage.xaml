@@ -88,6 +88,7 @@
                        Visibility="{c:Binding !HasSelection, FalseToVisibility=Collapsed}" />
             <Grid Visibility="{c:Binding HasSelection, FalseToVisibility=Collapsed}">
                 <components:SuppressionTaskDetails DataContext="{Binding SelectedJob}"
+                                                   StartRequested="StartJob_OnRequested"
                                                    EditRequested="EditJob_OnRequested"
                                                    RemoveRequested="TaskItem_OnRemoveRequested" />
             </Grid>

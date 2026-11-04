@@ -14,6 +14,12 @@ public partial class SuppressionTaskDetails : UserControl
 
     public event EventHandler? EditRequested;
     public event EventHandler? RemoveRequested;
+    public event EventHandler? StartRequested;
+
+    private void Start_OnClick(object sender, RoutedEventArgs e)
+    {
+        StartRequested?.Invoke(this, EventArgs.Empty);
+    }
 
     private void Edit_OnClick(object sender, RoutedEventArgs e)
     {

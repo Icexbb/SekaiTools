@@ -40,6 +40,9 @@
                     <ProgressBar Height="5" Maximum="1" Value="{Binding Progress.Fraction, Mode=OneWay}"
                                  IsIndeterminate="{Binding IsPreparing, Mode=OneWay}" Margin="0,4,0,12" />
                     <WrapPanel>
+                        <ui:Button Content="开始压制" Icon="{ui:SymbolIcon Play24}" Click="Start_OnClick"
+                                   Visibility="{c:Binding IsWaiting, FalseToVisibility=Collapsed}"
+                                   IsEnabled="{Binding CanStart}" Margin="0,0,8,4" />
                         <ui:Button Content="取消当前任务" Icon="{ui:SymbolIcon Dismiss24}" Click="Cancel_OnClick"
                                    Visibility="{c:Binding IsActive, FalseToVisibility=Collapsed}"
                                    IsEnabled="{Binding CanCancel}" Margin="0,0,8,4" />
