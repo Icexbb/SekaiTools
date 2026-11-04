@@ -12,14 +12,14 @@ internal sealed class VideoOutputTransaction : IDisposable
         if (File.Exists(TargetPath) && !overwriteExisting)
             throw new IOException($"输出文件已存在: {TargetPath}");
 
-        var directory = Path.GetDirectoryName(TargetPath)
-                        ?? throw new ArgumentException("输出路径缺少目录", nameof(targetPath));
-        var fileName = Path.GetFileNameWithoutExtension(TargetPath);
+        // Keep in-progress videos outside output folders watched by backup/sync software.
+        var directory = Path.Combine(Path.GetTempPath(), "SekaiTools", "Suppression");
+        Directory.CreateDirectory(directory);
         var extension = Path.GetExtension(TargetPath);
         do
         {
             TemporaryPath = Path.Combine(
-                directory, $".{fileName}.{Guid.NewGuid():N}.partial{extension}");
+                directory, $"{Guid.NewGuid():N}.partial{extension}");
         } while (File.Exists(TemporaryPath));
     }
 
