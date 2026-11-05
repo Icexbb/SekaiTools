@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
@@ -34,6 +34,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Compile Include="..\Updater\UpdatePaths.cs;..\Updater\UpdatePackage.cs;..\Updater\UpdateHandoff.cs" LinkBase="Update"/>
         <ProjectReference Include="..\SekaiDataFetch\SekaiDataFetch.csproj"/>
         <ProjectReference Include="..\SekaiToolsCore\SekaiToolsCore.csproj"/>
         <ProjectReference Include="..\SekaiToolsInfrastructure\SekaiToolsInfrastructure.csproj"/>
@@ -250,7 +251,7 @@
             <UpdaterFiles Include="..\Updater\7zr.exe"/>
         </ItemGroup>
         <Copy SourceFiles="@(UpdaterFiles)"
-              DestinationFolder="$(OutputDir)"/>
+              DestinationFolder="$([System.IO.Path]::Combine($(OutputDir), tools, updater))"/>
 
         <Message Text="Updater 构建完成" Importance="high"/>
     </Target>
@@ -309,6 +310,14 @@
         <Message Text="========================================" Importance="high"/>
         <Message Text="文件整理完成！" Importance="high"/>
         <Message Text="========================================" Importance="high"/>
+    </Target>
+
+    <Target Name="WriteUpdateManifest" AfterTargets="OrganizeOutput">
+        <ItemGroup>
+            <UpdatePayload Include="$(OutputDir)**\*" Exclude="$(OutputDir)update-files.txt"/>
+        </ItemGroup>
+        <WriteLinesToFile File="$(OutputDir)update-files.txt"
+                          Lines="@(UpdatePayload->'%(RecursiveDir)%(Filename)%(Extension)')" Overwrite="true"/>
     </Target>
 
 </Project>

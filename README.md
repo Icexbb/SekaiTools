@@ -21,7 +21,12 @@ Sekai Tools 是面向《Project SEKAI》剧情字幕制作的 Windows 桌面工�
 1. 准备 Windows x64 环境。当前程序目标平台为 Windows 10 版本 2004（Build 19041）及以上。
 2. 安装 [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)，在下载页选择 **Windows x64** 的桌面运行时。普通 .NET Runtime 不包含 WPF 所需组件。
 3. 在 [Releases](https://github.com/Icexbb/SekaiTools/releases) 下载 `SekaiTools-<版本号>.7z`，完整解压到一个可写目录。
-4. 运行 `SekaiToolsGUI.exe`。保留同目录的 `libs/`、`runtimes/`、`Updater.exe`、`7zr.exe` 及配置文件，不要只复制主程序 EXE。
+4. 运行 `SekaiToolsGUI.exe`。保留同目录的 `libs/`、`runtimes/`、`tools/updater/` 及配置文件，不要只复制主程序 EXE。
+
+发现更新时，程序会先询问是否下载。选择“暂不更新”后，本次启动不会下载更新，下次启动时会重新检查。确认下载后，程序会在后台下载并校验。顶部显示“重启并更新”后，可以选择何时重启。安装或启动失败时，更新助手会尝试恢复旧版。若更新中断后主程序无法启动，可运行同目录下的 `tools/updater/Updater.exe` 恢复。
+
+更新工作目录位于用户目录下的 `SekaiTools/Update/`，与默认脚本目录 `SekaiTools/Scripts/` 并列。每个程序安装目录对应独立的更新工作目录；正常更新完成后会清理下载包、解压文件和旧版备份。
+
 5. 首次使用自动轴机或视频压制时，等待程序下载和校验所需资源。网络访问失败时，在“设置与关于”检查代理，再重试。
 
 ## 快速开始：从录制视频到字幕
