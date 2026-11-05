@@ -1,3 +1,4 @@
+using SekaiToolsInfrastructure.Resources;
 using SekaiDataFetch.List;
 using SekaiToolsGUI.ViewModel.General;
 using Wpf.Ui.Controls;
@@ -15,6 +16,15 @@ public partial class RefreshWaitDialog : ContentDialog
     }
 
     private RefreshWaitDialogModel ViewModel => (RefreshWaitDialogModel)DataContext;
+
+    public void UpdateResourceProgress(ResourceDownloadProgress progress)
+    {
+        ViewModel.HasProgress = true;
+        ViewModel.Percentage = progress.TotalBytes > 0
+            ? Math.Min(100, progress.BytesReceived * 100.0 / progress.TotalBytes) : 0;
+        ViewModel.ProgressText = $"{progress.FileName}：{progress.BytesReceived / 1024.0:N0} / {progress.TotalBytes / 1024.0:N0} KiB";
+        ViewModel.FileDetails = $"第 {progress.Attempt} / 3 次尝试（多个文件并行下载）";
+    }
 
     public void UpdateProgress(ListRefreshProgress progress)
     {

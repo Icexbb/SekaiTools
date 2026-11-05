@@ -224,7 +224,7 @@ public partial class MainWindow : FluentWindow
                 new SimpleContentDialogCreateOptions
                 {
                     Title = "错误",
-                    Content = content + "\n" + e.StackTrace,
+                    Content = content + "\n" + e.Message,
                     PrimaryButtonText = "重试",
                     CloseButtonText = "退出",
                     SecondaryButtonText = "检查设置"

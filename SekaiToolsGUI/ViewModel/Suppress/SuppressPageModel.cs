@@ -254,10 +254,10 @@ public class SuppressPageModel : ViewModelBase
         ResourcePreparationError = "";
     }
 
-    public void FailResourcePreparation()
+    public void FailResourcePreparation(string message = "视频压制环境准备失败，请重试或检查设置")
     {
         IsPreparingResources = false;
         ResourcesReady = false;
-        ResourcePreparationError = "视频压制环境准备失败，请重试或检查设置";
+        ResourcePreparationError = message;
     }
 }

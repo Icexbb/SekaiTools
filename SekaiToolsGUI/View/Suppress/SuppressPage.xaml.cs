@@ -52,12 +52,15 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
         ViewModel.BeginResourcePreparation();
         try
         {
-            if (!await ResourceManager.Instance.CheckResource(ResourceType.VapourSynth))
-                await EnsureVapourSynthResourceAsync();
+            await EnsureVapourSynthResourceAsync();
             if (!await ResourceManager.Instance.CheckResource(ResourceType.VapourSynth))
                 throw new InvalidDataException("VapourSynth 运行环境校验失败");
 
             ViewModel.CompleteResourcePreparation();
+        }
+        catch (OperationCanceledException)
+        {
+            ViewModel.FailResourcePreparation("已取消环境准备，可点击重新准备继续下载");
         }
         catch (Exception e)
         {
@@ -70,15 +73,21 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
         }
     }
 
+    private void RetryResources_OnClick(object sender, RoutedEventArgs e) => OnNavigatedTo();
+
     private static async Task EnsureVapourSynthResourceAsync()
     {
         var dialogService = (Application.Current.MainWindow as MainWindow)?.WindowContentDialogService!;
         var dialog = new RefreshWaitDialog("正在准备 VapourSynth 运行环境，请稍候……");
         using var source = new CancellationTokenSource();
+        dialog.IsFooterVisible = true;
+        dialog.CloseButtonText = "取消";
+        dialog.ButtonClicked += (_, _) => source.Cancel();
+        var progress = new Progress<ResourceDownloadProgress>(dialog.UpdateResourceProgress);
         var dialogTask = dialogService.ShowAsync(dialog, source.Token);
         try
         {
-            await ResourceManager.Instance.EnsureResource(ResourceType.VapourSynth);
+            await ResourceManager.Instance.EnsureResource(ResourceType.VapourSynth, source.Token, progress);
         }
         finally
         {

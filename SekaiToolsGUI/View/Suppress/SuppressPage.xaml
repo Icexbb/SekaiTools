@@ -41,6 +41,9 @@
                     <TextBlock Text="{Binding ResourcePreparationError}"
                                Visibility="{c:Binding 'ResourcePreparationError.Length!=0', FalseToVisibility=Collapsed}"
                                TextWrapping="Wrap" Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
+                    <ui:Button Content="重新准备" Icon="{ui:SymbolIcon ArrowClockwise24}"
+                               Click="RetryResources_OnClick" Margin="0,8,0,0"
+                               Visibility="{c:Binding 'ResourcePreparationError.Length!=0', FalseToVisibility=Collapsed}" />
                 </StackPanel>
                 <ui:PassiveScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled"
                                         VerticalContentAlignment="Stretch">

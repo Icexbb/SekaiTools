@@ -71,33 +71,32 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
 
     private HttpMessageHandler GetHttpHandler()
     {
-        return UserProxy.ProxyType switch
+        return new ResourceHttpFallbackHandler(validateCertificate =>
         {
-            Proxy.Type.None => new HttpClientHandler(),
-            Proxy.Type.System => new HttpClientHandler(),
-            Proxy.Type.Http => new HttpClientHandler
+            if (UserProxy.ProxyType == Proxy.Type.Socks5)
+                return new SocketsHttpHandler
+                {
+                    Proxy = new WebProxy(UserProxy.Host, UserProxy.Port),
+                    UseProxy = true,
+                    SslOptions = new System.Net.Security.SslClientAuthenticationOptions
+                    {
+                        RemoteCertificateValidationCallback = validateCertificate
+                    }
+                };
+            var handler = UserProxy.ProxyType switch
             {
-                Proxy = new WebProxy(UserProxy.Host, UserProxy.Port),
-                UseProxy = true
-            },
-            Proxy.Type.Socks5 => new SocketsHttpHandler
-            {
-                Proxy = new WebProxy(UserProxy.Host, UserProxy.Port),
-                UseProxy = true
-            },
-            _ => throw new ArgumentOutOfRangeException()
-        };
-    }
-
-    private async Task<HttpResponseMessage> Download(string url, CancellationToken cancellationToken)
-    {
-        using var client = new HttpClient(GetHttpHandler())
-        {
-            Timeout = TimeSpan.FromSeconds(30)
-        };
-        var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return response;
+                Proxy.Type.None or Proxy.Type.System => new HttpClientHandler(),
+                Proxy.Type.Http => new HttpClientHandler
+                {
+                    Proxy = new WebProxy(UserProxy.Host, UserProxy.Port),
+                    UseProxy = true
+                },
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            handler.ServerCertificateCustomValidationCallback = (request, certificate, chain, errors) =>
+                validateCertificate(request, certificate, chain, errors);
+            return handler;
+        });
     }
 
     public string ResourcePath(ResourceType type, string fileName)
@@ -158,7 +157,8 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
         return sb.ToString();
     }
 
-    public async Task EnsureResource(ResourceType type, CancellationToken cancellationToken = default)
+    public async Task EnsureResource(ResourceType type, CancellationToken cancellationToken = default,
+        IProgress<ResourceDownloadProgress>? progress = null)
     {
         if (!ResourceTypePathMap.TryGetValue(type, out var typeDir))
             throw new ArgumentException($"ResourceType {type} not mapped");
@@ -170,7 +170,7 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
             Logger.Log($"开始准备资源: {type}");
             var fileList = await GetFileList(type, cancellationToken);
             using var downloadLimiter = new SemaphoreSlim(MaxConcurrentDownloads, MaxConcurrentDownloads);
-            var tasks = fileList.Select(file => EnsureResourceFile(type, file, downloadLimiter, cancellationToken))
+            var tasks = fileList.Select(file => EnsureResourceFile(type, file, downloadLimiter, progress, cancellationToken))
                 .ToArray();
             await Task.WhenAll(tasks);
             Logger.Log($"资源准备完成: {type}, 文件数={fileList.Length}");
@@ -204,6 +204,7 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
         ResourceType type,
         Resource resource,
         SemaphoreSlim downloadLimiter,
+        IProgress<ResourceDownloadProgress>? progress,
         CancellationToken cancellationToken)
     {
         var filename = EnsurePathWithinType(type, Path.Combine(BasePath, resource.Path));
@@ -219,16 +220,17 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
             var fileUrl = ResourceServerUrl + resource.Path;
 
             Logger.Log($"开始下载资源: {resource.Path}, 大小={resource.Size} 字节");
-            using var response = await Download(fileUrl, cancellationToken);
-            await using (var source = await response.Content.ReadAsStreamAsync(cancellationToken))
-            await using (var target = new FileStream(temporaryFilename, FileMode.CreateNew, FileAccess.Write,
-                             FileShare.None, 64 * 1024, true))
-            {
-                await source.CopyToAsync(target, cancellationToken);
-            }
-
-            if (!IsResourceValid(temporaryFilename, resource))
-                throw new InvalidDataException($"资源校验失败: {resource.Path}");
+            await new ResourceDownloader(GetHttpHandler).DownloadAsync(fileUrl, resource.Path, resource.Size,
+                async (source, token) =>
+                {
+                    await using (var target = new FileStream(temporaryFilename, FileMode.Create, FileAccess.Write,
+                                     FileShare.None, 64 * 1024, true))
+                    {
+                        await source.CopyToAsync(target, token);
+                    }
+                    if (!IsResourceValid(temporaryFilename, resource))
+                        throw new InvalidDataException($"资源校验失败: {resource.Path}");
+                }, progress, cancellationToken);
 
             File.Move(temporaryFilename, filename, true);
             Logger.Log($"资源下载并校验完成: {resource.Path}");
@@ -282,8 +284,14 @@ public class ResourceManager : ITemplateResourceProvider, IMediaResourceProvider
 
         Logger.Log($"开始获取资源清单: {type}");
 
-        using var response = await Download(fileListUrl, cancellationToken);
-        var fileListJson = await response.Content.ReadAsStringAsync(cancellationToken);
+        using var content = new MemoryStream();
+        await new ResourceDownloader(GetHttpHandler).DownloadAsync(fileListUrl, $"{typeDir}.json", 0,
+            async (source, token) =>
+            {
+                content.SetLength(0);
+                await source.CopyToAsync(content, token);
+            }, null, cancellationToken);
+        var fileListJson = Encoding.UTF8.GetString(content.ToArray());
 
         var fileList = JsonSerializer.Deserialize<Resource[]>(fileListJson, new JsonSerializerOptions
         {
