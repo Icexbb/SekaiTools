@@ -4,8 +4,10 @@ namespace SekaiTools.Tests;
 
 public sealed class UpdateInstallationTests
 {
-    [Fact]
-    public async Task ReplacementWaitsUntilDestinationIsReleased()
+    [Theory]
+    [InlineData(FileShare.Read)]
+    [InlineData(FileShare.None)]
+    public async Task ReplacementWaitsUntilDestinationIsReleased(FileShare sharing)
     {
         if (!OperatingSystem.IsWindows()) return;
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -16,7 +18,7 @@ public sealed class UpdateInstallationTests
         File.WriteAllText(destination, "old version");
         try
         {
-            using var locked = new FileStream(destination, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var locked = new FileStream(destination, FileMode.Open, FileAccess.Read, sharing);
             var replacement = Task.Run(() => UpdateInstallation.Replace(source, destination));
             await Task.Delay(500);
             var waitedForRelease = !replacement.IsCompleted;

@@ -183,22 +183,22 @@ internal static class UpdateInstallation
 
     internal static void Replace(string source, string destination)
     {
-        if (File.Exists(destination))
-        {
-            using var original = File.OpenRead(source);
-            using var current = File.OpenRead(destination);
-            if (SHA256.HashData(original).AsSpan().SequenceEqual(SHA256.HashData(current))) return;
-        }
-
         var temporary = destination + ".sekaitools-update";
+        var timer = Stopwatch.StartNew();
         try
         {
-            Copy(source, temporary);
-            var timer = Stopwatch.StartNew();
             while (true)
             {
                 try
                 {
+                    if (File.Exists(destination))
+                    {
+                        using var original = File.OpenRead(source);
+                        using var current = File.OpenRead(destination);
+                        if (SHA256.HashData(original).AsSpan().SequenceEqual(SHA256.HashData(current))) return;
+                    }
+
+                    Copy(source, temporary);
                     File.Move(temporary, destination, overwrite: true);
                     break;
                 }
