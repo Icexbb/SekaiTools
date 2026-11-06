@@ -69,6 +69,7 @@
                                 <ui:SymbolIcon Grid.Column="1" Symbol="Link24" />
                             </Grid>
                         </ui:Anchor>
+                        <StackPanel x:Name="AboutSettingsHost" Margin="8,0,8,8" />
                     </StackPanel>
                 </ui:CardExpander>
             </StackPanel>

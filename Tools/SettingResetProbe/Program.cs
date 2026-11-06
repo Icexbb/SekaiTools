@@ -35,6 +35,10 @@ internal static class Program
         var groups = items.Children.OfType<CardExpander>().Where(group => !ReferenceEquals(group, about)).ToArray();
         Require(groups.Select(group => group.Header?.ToString()).SequenceEqual(new[] { "通用", "轴机", "下载", "翻译", "开发者设置" }),
             "Nonempty modules must remain ordered and empty compression module must be hidden");
+        about.IsExpanded = true;
+        Pump();
+        Require(Nodes(about).OfType<SettingResetButton>().Any(button => button.Properties == "DeveloperMode"), "Developer toggle must be inside About expander");
+        Require(!Nodes(groups[0]).OfType<SettingResetButton>().Any(button => button.Properties == "DeveloperMode"), "Developer toggle still in General group");
         var developerGroup = groups.Single(group => Equals(group.Header, "开发者设置"));
         Require(developerGroup.Visibility == Visibility.Collapsed, "Developer group visible while mode disabled");
         model.DeveloperMode = true; Pump();
@@ -174,9 +178,13 @@ internal static class Program
         var controlConstructor = typeof(DeveloperThresholdSettingsControl).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic,
             null, [typeof(SekaiToolsGUI.Service.DeveloperModeService)], null)!;
         var control = (DeveloperThresholdSettingsControl)controlConstructor.Invoke([service]);
-        var window = new Window { Content = control, Width = 780, Height = 820, Left = -15000, Top = -15000, ShowInTaskbar = false, ShowActivated = false };
+        control.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary { Theme = Wpf.Ui.Appearance.ApplicationTheme.Dark });
+        control.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
+        control.Background = (Brush)control.FindResource("ApplicationBackgroundBrush");
+        var window = new Window { Content = control, Foreground = (Brush)control.FindResource("TextFillColorPrimaryBrush"), Width = 780, Height = 360, Left = -15000, Top = -15000, ShowInTaskbar = false, ShowActivated = false };
         window.Show(); Pump();
         var editor = Nodes(control).OfType<NumberBox>().Single(box => Equals(box.ToolTip, "DialogContentNormal"));
+        Require(control.ActualHeight < 330, "Threshold editor is not compact at desktop width");
         editor.Value = 0.87;
         Nodes(control).OfType<Wpf.Ui.Controls.Button>().Single(button => Equals(button.Content, "保存阈值"))
             .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));

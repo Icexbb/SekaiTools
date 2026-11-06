@@ -39,10 +39,14 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
         SettingsItems.Children.Clear();
         var builder = new SettingViewBuilder(OpenFontDialog, key => specialSections[key]);
         var sections = SettingCatalog.Load();
+        AboutSettingsHost.Children.Clear();
+        foreach (var section in sections.Where(section => section.Properties.Contains(nameof(SettingPageModel.DeveloperMode))))
+            AboutSettingsHost.Children.Add(builder.Build(section));
         foreach (var category in SettingCatalog.Categories)
         {
             var content = new StackPanel();
-            foreach (var section in sections.Where(section => section.Category == category && section.Custom is not ("logs" or "about")))
+            foreach (var section in sections.Where(section => section.Category == category && section.Custom is not ("logs" or "about")
+                         && !section.Properties.Contains(nameof(SettingPageModel.DeveloperMode))))
                 content.Children.Add(section.Custom == null && section.Properties.Contains("ExportLine1")
                     ? new ExportOptionsControl
                     {

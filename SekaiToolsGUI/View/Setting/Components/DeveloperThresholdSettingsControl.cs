@@ -22,9 +22,13 @@ public sealed class DeveloperThresholdSettingsControl : StackPanel
     internal DeveloperThresholdSettingsControl(DeveloperModeService service)
     {
         _service = service;
+        var heading = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
+        heading.Children.Add(new SymbolIcon(SymbolRegular.Beaker24) { Margin = new Thickness(0, 0, 8, 0) });
+        heading.Children.Add(new TextBlock { Text = "识别阈值", FontWeight = FontWeights.SemiBold });
+        Children.Add(heading);
         Children.Add(new TextBlock
         {
-            Text = "识别阈值：保存后用于之后启动的识别任务，正在运行的任务不受影响。与 HTTP API 共用同一份参数。",
+            Text = "保存后用于之后启动的识别任务；与 HTTP API 共用参数。",
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 12)
         });
@@ -37,6 +41,9 @@ public sealed class DeveloperThresholdSettingsControl : StackPanel
             [nameof(MatchingThreshold.BannerNormal)] = "横幅",
             [nameof(MatchingThreshold.MarkerNormal)] = "标记"
         };
+        var fields = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+        var cells = new List<Grid>();
+        Children.Add(fields);
         foreach (var (name, label) in labels)
         {
             var number = new NumberBox
@@ -51,14 +58,38 @@ public sealed class DeveloperThresholdSettingsControl : StackPanel
             AutomationProperties.SetName(number, $"{label}识别阈值");
             number.ToolTip = name;
             _editors.Add(name, number);
-            Children.Add(new CardControl
+            var cell = new Grid { Margin = new Thickness(0, 0, 12, 6) };
+            cell.ColumnDefinitions.Add(new ColumnDefinition());
+            cell.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            cell.Children.Add(new TextBlock
             {
-                Header = label,
-                Icon = new SymbolIcon(SymbolRegular.Beaker24),
-                Content = number,
-                Margin = new Thickness(0, 0, 0, 8)
+                Text = label,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 8, 0)
             });
+            Grid.SetColumn(number, 1);
+            cell.Children.Add(number);
+            cells.Add(cell);
+            fields.Children.Add(cell);
         }
+        void ArrangeFields()
+        {
+            var columns = ActualWidth >= 560 ? 2 : 1;
+            fields.ColumnDefinitions.Clear();
+            fields.RowDefinitions.Clear();
+            for (var column = 0; column < columns; column++) fields.ColumnDefinitions.Add(new ColumnDefinition());
+            for (var row = 0; row < (cells.Count + columns - 1) / columns; row++)
+                fields.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            for (var index = 0; index < cells.Count; index++)
+            {
+                Grid.SetColumn(cells[index], index % columns);
+                Grid.SetRow(cells[index], index / columns);
+                cells[index].Margin = new Thickness(0, 0, index % columns == columns - 1 ? 0 : 20, 6);
+            }
+        }
+        SizeChanged += (_, _) => ArrangeFields();
+        ArrangeFields();
         var actions = new StackPanel { Orientation = Orientation.Horizontal };
         var save = new Button { Content = "保存阈值", Icon = new SymbolIcon(SymbolRegular.Save24) };
         var reset = new Button
