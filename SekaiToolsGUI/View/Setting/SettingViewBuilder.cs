@@ -74,22 +74,10 @@ public sealed class SettingViewBuilder(
         var panel = new StackPanel();
         panel.Children.Add(heading);
         if (!string.IsNullOrEmpty(section.Description)) panel.Children.Add(Description(section.Description));
-        if (section.StatusProperty is { } status)
+        // Older external catalogs may still request the former multiline developer status.
+        // Connection details now have their own full-width panel in Developer settings.
+        if (section.StatusProperty is { } status && status != "DeveloperApiStatus")
         {
-            if (status == "DeveloperApiStatus")
-            {
-                var connection = new TextBox
-                {
-                    IsReadOnly = true,
-                    TextWrapping = TextWrapping.Wrap,
-                    MaxWidth = 430,
-                    Margin = new Thickness(0, 4, 0, 0)
-                };
-                connection.SetBinding(TextBox.TextProperty, new Binding(status) { Mode = BindingMode.OneWay });
-                AutomationProperties.SetName(connection, "开发者 API 连接信息，可选择复制");
-                panel.Children.Add(connection);
-                return panel;
-            }
             var text = Description("");
             text.Margin = new Thickness(0, 4, 0, 0);
             text.SetBinding(TextBlock.TextProperty, new Binding(status));

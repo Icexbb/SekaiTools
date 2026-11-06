@@ -43,6 +43,7 @@ internal static class Program
         model.DeveloperMode = false; Pump();
         Require(developerGroup.Visibility == Visibility.Collapsed, "Developer group not hidden live");
         VerifyDeveloperThresholds(constructor, output);
+        VerifyDeveloperConnectionLayout(model, output);
         Require(Nodes(groups[3]).OfType<ComboBox>().Any(), "Translation module lacks newline marker editor");
         Require(Nodes(groups[2]).OfType<Wpf.Ui.Controls.TextBox>().Any(), "Download module lacks directory editor");
         foreach (var expander in Nodes(page).OfType<CardExpander>()) expander.IsExpanded = true;
@@ -96,6 +97,69 @@ internal static class Program
         using (var file = File.Create(Path.Combine(output, "settings.png"))) encoder.Save(file);
         Console.WriteLine($"PASS: {buttons.Length} cards, visibility, grouped reset, isolation, persistence; periodic available={model.IsPeriodicColorAvailable}");
         window.Close(); app.Shutdown();
+    }
+
+    private static void VerifyDeveloperConnectionLayout(SettingPageModel model, string output)
+    {
+        model.DeveloperMode = true;
+        var toggleSection = SettingCatalog.Load().Single(section => section.Properties.Contains("DeveloperMode"));
+        var legacySection = new SettingSection
+        {
+            Title = toggleSection.Title,
+            Icon = toggleSection.Icon,
+            Description = toggleSection.Description,
+            Fields = toggleSection.Fields,
+            StatusProperty = "DeveloperApiStatus"
+        };
+        foreach (var dark in new[] { true, false })
+        {
+
+            var toggle = new SettingViewBuilder(_ => Task.FromResult(""), _ => throw new Exception()).Build(legacySection);
+            var connection = new DeveloperConnectionControl();
+            var content = new StackPanel { DataContext = model, Margin = new Thickness(16) };
+            content.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary
+            { Theme = dark ? Wpf.Ui.Appearance.ApplicationTheme.Dark : Wpf.Ui.Appearance.ApplicationTheme.Light });
+            content.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
+            content.Children.Add(toggle); content.Children.Add(connection);
+            var surface = new Border { Child = content, Background = (Brush)content.FindResource("ApplicationBackgroundBrush") };
+            typeof(SettingPageModel).GetProperty(nameof(model.DeveloperApiStatus))!.SetValue(model,
+                "http://127.0.0.1:18339/\nBearer " + new string('A', 64));
+            var window = new Window
+            {
+                Content = surface,
+                Width = dark ? 900 : 650,
+                Height = 460,
+                Left = -15000,
+                Top = -15000,
+                ShowInTaskbar = false,
+                ShowActivated = false,
+                Foreground = (Brush)content.FindResource("TextFillColorPrimaryBrush")
+            };
+            window.Show(); Pump();
+            var frame = new DispatcherFrame();
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
+            timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; };
+            timer.Start(); Dispatcher.PushFrame(frame); Pump();
+            Require(toggle.ActualHeight <= 110, "Developer toggle expanded to fit connection details");
+            Require(!Nodes(toggle).OfType<Wpf.Ui.Controls.TextBox>().Any(), "Connection details still inside toggle header");
+            Require(connection.Style != null, "Connection panel lost Fluent CardExpander style");
+            var fields = Nodes(connection).OfType<Wpf.Ui.Controls.TextBox>().ToArray();
+            Require(fields.Length == 2 && fields.All(field => field.TextWrapping == TextWrapping.NoWrap), "Connection fields must be separate single-line rows");
+            Require(fields.Any(field => field.Text == new string('A', 64)), "Token missing from connection panel");
+            foreach (var field in fields)
+            {
+                var bounds = field.TransformToAncestor(content).TransformBounds(new Rect(field.RenderSize));
+                Require(bounds.Right <= content.ActualWidth + 1 && field.ActualWidth > 200, "Connection field overflows narrow layout");
+            }
+            var bitmap = new RenderTargetBitmap((int)surface.ActualWidth, (int)surface.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+            bitmap.Render(surface);
+            var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
+            using (var file = File.Create(Path.Combine(output, dark ? "developer-connection-dark.png" : "developer-connection-narrow.png"))) encoder.Save(file);
+            typeof(SettingPageModel).GetProperty(nameof(model.DeveloperApiStatus))!.SetValue(model, "已关闭"); Pump();
+            Require(Nodes(connection).OfType<Wpf.Ui.Controls.Button>().Where(button => Equals(button.Content, "复制")).All(button => !button.IsEnabled), "Copy enabled with no connection");
+            window.Close();
+        }
+        model.DeveloperMode = false;
     }
 
     private static void VerifyDeveloperThresholds(ConstructorInfo modelConstructor, string output)

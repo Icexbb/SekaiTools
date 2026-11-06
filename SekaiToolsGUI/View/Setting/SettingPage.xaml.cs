@@ -25,7 +25,10 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
         var specialSections = new Dictionary<string, FrameworkElement>
         {
             ["about"] = AboutSection,
-            ["developer-thresholds"] = new DeveloperThresholdSettingsControl(),
+            ["developer-thresholds"] = new StackPanel
+            {
+                Children = { new DeveloperConnectionControl(), new DeveloperThresholdSettingsControl() }
+            },
             ["subtitle-export"] = new ExportOptionsControl
             {
                 ShowResetButtons = true,

@@ -4,8 +4,7 @@
     "title": "开发者模式",
     "icon": "Beaker24",
     "category": "通用",
-    "description": "启用本机 HTTP 调试接口；阈值与识别设置用于之后启动的任务。连接令牌仅在本次启用期间有效。",
-    "statusProperty": "DeveloperApiStatus",
+    "description": "显示开发者设置并启用本机 HTTP 调试接口。",
     "fields": [{ "kind": "toggle", "property": "DeveloperMode", "label": "启用" }]
   },
   {
