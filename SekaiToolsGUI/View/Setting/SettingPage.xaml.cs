@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using SekaiToolsGUI.Control;
 using SekaiToolsGUI.Interface;
 using SekaiToolsGUI.View.Setting.Components;
@@ -24,6 +25,7 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
         var specialSections = new Dictionary<string, FrameworkElement>
         {
             ["about"] = AboutSection,
+            ["developer-thresholds"] = new DeveloperThresholdSettingsControl(),
             ["subtitle-export"] = new ExportOptionsControl
             {
                 ShowResetButtons = true,
@@ -53,6 +55,7 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
                 "下载" => SymbolRegular.ArrowDownload24,
                 "翻译" => SymbolRegular.Translate24,
                 "压制" => SymbolRegular.AnimalTurtle24,
+                "开发者设置" => SymbolRegular.Beaker24,
                 _ => SymbolRegular.Settings24
             };
             var group = new CardExpander
@@ -65,6 +68,9 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
                 ContentPadding = new Thickness(8)
             };
             System.Windows.Automation.AutomationProperties.SetName(group, $"{category}设置");
+            if (category == "开发者设置")
+                group.SetBinding(VisibilityProperty, new Binding(nameof(SettingPageModel.DeveloperMode))
+                { Converter = new BooleanToVisibilityConverter() });
             SettingsItems.Children.Add(group);
         }
         SettingsItems.Children.Add(AboutSection);

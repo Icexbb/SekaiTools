@@ -12,12 +12,22 @@ public sealed class DeveloperModeService : IDisposable
 {
     public static DeveloperModeService Instance { get; } = new();
     private DeveloperApiServer? _server;
-    private readonly string _path = Path.Combine(ResourceManager.DataBaseDir, "Data", "developer-thresholds.json");
+    private readonly string _path;
+    private readonly Func<SettingPageModel> _settings;
+
+    private DeveloperModeService() : this(Path.Combine(ResourceManager.DataBaseDir, "Data", "developer-thresholds.json"), () => SettingPageModel.Instance) { }
+
+    internal DeveloperModeService(string path, Func<SettingPageModel> settings)
+    {
+        _path = path;
+        _settings = settings;
+    }
     public MatchingThreshold? Thresholds { get; private set; }
+    public event Action? ThresholdsChanged;
 
     public void Initialize()
     {
-        SettingPageModel.Instance.PropertyChanged += SettingsChanged;
+        _settings().PropertyChanged += SettingsChanged;
         UpdateServer();
     }
 
@@ -31,7 +41,7 @@ public sealed class DeveloperModeService : IDisposable
         _server?.Dispose();
         _server = null;
         Thresholds = null;
-        var settings = SettingPageModel.Instance;
+        var settings = _settings();
         settings.DeveloperApiStatus = "已关闭";
         if (!settings.DeveloperMode) return;
         try
@@ -43,6 +53,7 @@ public sealed class DeveloperModeService : IDisposable
             _server = server;
             server.Start();
             settings.DeveloperApiStatus = $"{server.Address}\nBearer {server.Token}";
+            ThresholdsChanged?.Invoke();
         }
         catch (Exception ex)
         {
@@ -52,7 +63,7 @@ public sealed class DeveloperModeService : IDisposable
         }
     }
 
-    private MatchingThreshold EffectiveThresholds()
+    public MatchingThreshold EffectiveThresholds()
     {
         if (Thresholds is { } value) return value;
         var path = ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, "thresholds.json");
@@ -63,7 +74,7 @@ public sealed class DeveloperModeService : IDisposable
 
     private object Dispatch(string method, string path, JsonElement body)
     {
-        var settings = SettingPageModel.Instance;
+        var settings = _settings();
         if (!settings.DeveloperMode) throw new ArgumentException("开发者模式已关闭");
         switch (method, path)
         {
@@ -79,17 +90,9 @@ public sealed class DeveloperModeService : IDisposable
             case ("GET", "/api/v1/thresholds"):
                 return EffectiveThresholds();
             case ("PATCH", "/api/v1/thresholds"):
-                var next = DeveloperThresholds.Patch(EffectiveThresholds(), body);
-                Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-                var temp = _path + ".tmp";
-                File.WriteAllText(temp, JsonSerializer.Serialize(next));
-                File.Move(temp, _path, true);
-                Thresholds = next;
-                return next;
+                return UpdateThresholds(body);
             case ("DELETE", "/api/v1/thresholds"):
-                File.Delete(_path);
-                Thresholds = null;
-                return EffectiveThresholds();
+                return ResetThresholds();
             case ("GET", "/api/v1/settings"):
                 return new
                 {
@@ -127,6 +130,28 @@ public sealed class DeveloperModeService : IDisposable
         }
     }
 
+    public MatchingThreshold UpdateThresholds(JsonElement patch)
+    {
+        if (!_settings().DeveloperMode) throw new ArgumentException("开发者模式已关闭");
+        var next = DeveloperThresholds.Patch(EffectiveThresholds(), patch);
+        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+        var temp = _path + ".tmp";
+        File.WriteAllText(temp, JsonSerializer.Serialize(next));
+        File.Move(temp, _path, true);
+        Thresholds = next;
+        ThresholdsChanged?.Invoke();
+        return next;
+    }
+
+    public MatchingThreshold ResetThresholds()
+    {
+        if (!_settings().DeveloperMode) throw new ArgumentException("开发者模式已关闭");
+        File.Delete(_path);
+        Thresholds = null;
+        ThresholdsChanged?.Invoke();
+        return EffectiveThresholds();
+    }
+
     private static void PatchSettings(JsonElement body, SettingPageModel settings)
     {
         if (body.ValueKind != JsonValueKind.Object) throw new ArgumentException("设置必须是 JSON 对象");
@@ -158,7 +183,7 @@ public sealed class DeveloperModeService : IDisposable
 
     public void Dispose()
     {
-        SettingPageModel.Instance.PropertyChanged -= SettingsChanged;
+        _settings().PropertyChanged -= SettingsChanged;
         _server?.Dispose();
         _server = null;
     }

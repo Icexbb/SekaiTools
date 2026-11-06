@@ -33,8 +33,16 @@ internal static class Program
         var about = (CardExpander)page.FindName("AboutSection");
         Require(ReferenceEquals(items.Children[items.Children.Count - 1], about), "About must be last in settings panel");
         var groups = items.Children.OfType<CardExpander>().Where(group => !ReferenceEquals(group, about)).ToArray();
-        Require(groups.Select(group => group.Header?.ToString()).SequenceEqual(new[] { "通用", "轴机", "下载", "翻译" }),
+        Require(groups.Select(group => group.Header?.ToString()).SequenceEqual(new[] { "通用", "轴机", "下载", "翻译", "开发者设置" }),
             "Nonempty modules must remain ordered and empty compression module must be hidden");
+        var developerGroup = groups.Single(group => Equals(group.Header, "开发者设置"));
+        Require(developerGroup.Visibility == Visibility.Collapsed, "Developer group visible while mode disabled");
+        model.DeveloperMode = true; Pump();
+        Require(developerGroup.Visibility == Visibility.Visible && developerGroup.Icon is SymbolIcon { Symbol: SymbolRegular.Beaker24 }, "Developer group/icon not enabled live");
+        Require(Nodes(developerGroup).OfType<NumberBox>().Count() == 6, "Missing threshold editors");
+        model.DeveloperMode = false; Pump();
+        Require(developerGroup.Visibility == Visibility.Collapsed, "Developer group not hidden live");
+        VerifyDeveloperThresholds(constructor, output);
         Require(Nodes(groups[3]).OfType<ComboBox>().Any(), "Translation module lacks newline marker editor");
         Require(Nodes(groups[2]).OfType<Wpf.Ui.Controls.TextBox>().Any(), "Download module lacks directory editor");
         foreach (var expander in Nodes(page).OfType<CardExpander>()) expander.IsExpanded = true;
@@ -88,6 +96,44 @@ internal static class Program
         using (var file = File.Create(Path.Combine(output, "settings.png"))) encoder.Save(file);
         Console.WriteLine($"PASS: {buttons.Length} cards, visibility, grouped reset, isolation, persistence; periodic available={model.IsPeriodicColorAvailable}");
         window.Close(); app.Shutdown();
+    }
+
+    private static void VerifyDeveloperThresholds(ConstructorInfo modelConstructor, string output)
+    {
+        var model = (SettingPageModel)modelConstructor.Invoke([Path.Combine(output, "developer-settings.json")]);
+        model.DeveloperMode = true;
+        var serviceConstructor = typeof(SekaiToolsGUI.Service.DeveloperModeService).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic,
+            null, [typeof(string), typeof(Func<SettingPageModel>)], null)!;
+        var thresholdPath = Path.Combine(output, "developer-thresholds.json");
+        File.Delete(thresholdPath);
+        using var service = (SekaiToolsGUI.Service.DeveloperModeService)serviceConstructor.Invoke([thresholdPath, (Func<SettingPageModel>)(() => model)]);
+        var controlConstructor = typeof(DeveloperThresholdSettingsControl).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic,
+            null, [typeof(SekaiToolsGUI.Service.DeveloperModeService)], null)!;
+        var control = (DeveloperThresholdSettingsControl)controlConstructor.Invoke([service]);
+        var window = new Window { Content = control, Width = 780, Height = 820, Left = -15000, Top = -15000, ShowInTaskbar = false, ShowActivated = false };
+        window.Show(); Pump();
+        var editor = Nodes(control).OfType<NumberBox>().Single(box => Equals(box.ToolTip, "DialogContentNormal"));
+        editor.Value = 0.87;
+        Nodes(control).OfType<Wpf.Ui.Controls.Button>().Single(button => Equals(button.Content, "保存阈值"))
+            .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+        Require(service.Thresholds?.DialogContentNormal == 0.87 && File.Exists(thresholdPath), "UI save did not persist shared threshold");
+        service.UpdateThresholds(System.Text.Json.JsonSerializer.SerializeToElement(new { DialogContentNormal = 0.91 })); Pump();
+        Require(editor.Value == 0.91, "API update did not refresh editor");
+        editor.Value = 0;
+        Nodes(control).OfType<Wpf.Ui.Controls.Button>().Single(button => Equals(button.Content, "保存阈值"))
+            .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+        Require(service.Thresholds?.DialogContentNormal == 0.91, "Invalid UI value mutated thresholds");
+        var bitmap = new RenderTargetBitmap((int)control.ActualWidth, (int)control.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(control);
+        var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using (var file = File.Create(Path.Combine(output, "developer-thresholds.png"))) encoder.Save(file);
+        Nodes(control).OfType<Wpf.Ui.Controls.Button>().Single(button => Equals(button.Content, "恢复默认来源"))
+            .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+        Require(service.Thresholds == null && !File.Exists(thresholdPath), "UI reset did not clear override");
+        model.DeveloperMode = false;
+        try { service.UpdateThresholds(System.Text.Json.JsonSerializer.SerializeToElement(new { BannerNormal = 0.8 })); throw new Exception("Disabled mode accepted edit"); }
+        catch (ArgumentException) { }
+        window.Close();
     }
 
     private static void VerifyRuntimeLogWindow(Window owner, string output)

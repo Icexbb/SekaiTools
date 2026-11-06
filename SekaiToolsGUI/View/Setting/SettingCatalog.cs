@@ -43,7 +43,7 @@ public sealed class SettingField
 
 public static class SettingCatalog
 {
-    public static IReadOnlyList<string> Categories { get; } = ["通用", "轴机", "下载", "翻译", "压制"];
+    public static IReadOnlyList<string> Categories { get; } = ["通用", "轴机", "下载", "翻译", "压制", "开发者设置"];
 
     public static SettingSection[] Load()
     {
@@ -84,7 +84,7 @@ public static class SettingCatalog
             throw new InvalidDataException($"未知设置模块：{section.Category}");
         if (section.Custom is { } custom)
         {
-            if (custom is not ("logs" or "about" or "subtitle-export") || !customs.Add(custom) ||
+            if (custom is not ("logs" or "about" or "subtitle-export" or "developer-thresholds") || !customs.Add(custom) ||
                 section.Fields.Length > 0 || section.Children.Length > 0)
                 throw new InvalidDataException($"无效的自定义设置区域：{custom}");
             return;
