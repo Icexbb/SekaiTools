@@ -18,6 +18,7 @@ using SekaiToolsCore.Process.Config;
 using SekaiToolsCore.Process.FrameSet;
 using SekaiToolsCore.Process.Model;
 using SekaiToolsCore.Utils;
+using SekaiToolsCore.Timing;
 using SekaiToolsGUI.Service;
 using SekaiToolsGUI.View.General;
 using SekaiToolsGUI.ViewModel.Setting;
@@ -82,6 +83,11 @@ public partial class SubtitleTask : UserControl
     internal async Task RunAsync(ProcessingState? savedState)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        if (ViewModel.IsTimingOnly)
+        {
+            await RunTimingOnlyAsync();
+            return;
+        }
         if (!ViewModel.CanStart || !File.Exists(ViewModel.VideoFilePath) ||
             !File.Exists(ViewModel.ScriptFilePath) || !File.Exists(ViewModel.TranslateFilePath))
             throw new FileNotFoundException("字幕任务的视频、剧本或翻译文件不存在");
@@ -103,6 +109,7 @@ public partial class SubtitleTask : UserControl
 
     internal void RequestStop()
     {
+        _timingCancellation?.Cancel();
         VideoProcessor?.StopProcess();
     }
 
@@ -238,6 +245,7 @@ public partial class SubtitleTask : UserControl
 
     private async Task ReleaseProcessorAsync()
     {
+        _timingResult = null;
         var processor = VideoProcessor;
         if (processor == null) return;
         try
@@ -453,10 +461,9 @@ public partial class SubtitleTask : UserControl
 
     private void SetTimelineVideoDuration()
     {
-        if (!GeneralFunctionSwitch.EventTimeline || VideoProcessor == null)
+        var videoInfo = VideoProcessor?.VideoInfo ?? _timingResult?.Video;
+        if (!GeneralFunctionSwitch.EventTimeline || videoInfo == null)
             return;
-
-        var videoInfo = VideoProcessor.VideoInfo;
         var fps = videoInfo.Fps.Fps();
         var durationMilliseconds = fps > 0
             ? (int)Math.Ceiling(videoInfo.FrameCount * 1000d / fps)
@@ -503,7 +510,7 @@ public partial class SubtitleTask : UserControl
 
             await File.WriteAllTextAsync(fileName, subtitle.ToString(), Encoding.UTF8, token);
 
-            if (CanDeleteSavedProgress?.Invoke() == true)
+            if (!ViewModel.IsTimingOnly && CanDeleteSavedProgress?.Invoke() == true)
             {
                 var saveKey = ProgressStore.GetSaveKey(ViewModel.VideoFilePath, ViewModel.ScriptFilePath,
                     ViewModel.TranslateFilePath);
@@ -563,6 +570,7 @@ public partial class SubtitleTask
 
     private void StopProcess()
     {
+        _timingCancellation?.Cancel();
         VideoProcessor?.StopProcess();
     }
 
@@ -622,6 +630,9 @@ public partial class SubtitleTask
                     break;
             }
 
+        if (ViewModel.IsTimingOnly && _timingResult != null)
+            return TimingSubtitleExporter.Make(_timingResult.Video.Resolution, ViewModel.VideoFilePath,
+                dialogFrameSets, _settings.GetStyleFontConfig(), exportStyleConfig);
         if (VideoProcessor == null) throw new NullReferenceException();
         return VideoProcessor.GenerateSubtitle(bannerFrameSets, dialogFrameSets, markerFrameSets, exportStyleConfig);
     }

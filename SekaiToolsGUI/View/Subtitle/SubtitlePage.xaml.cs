@@ -373,6 +373,9 @@ public partial class SubtitlePage : UserControl, IAppPage<SubtitleQueuePageModel
 
     private static bool SameMaterials(SubtitlePageModel left, SubtitlePageModel right)
     {
+        if (left.IsTimingOnly != right.IsTimingOnly) return false;
+        if (left.IsTimingOnly)
+            return string.Equals(left.VideoFilePath, right.VideoFilePath, StringComparison.OrdinalIgnoreCase);
         return string.Equals(left.VideoFilePath, right.VideoFilePath, StringComparison.OrdinalIgnoreCase) &&
                string.Equals(left.ScriptFilePath, right.ScriptFilePath, StringComparison.OrdinalIgnoreCase) &&
                string.Equals(left.TranslateFilePath, right.TranslateFilePath, StringComparison.OrdinalIgnoreCase);

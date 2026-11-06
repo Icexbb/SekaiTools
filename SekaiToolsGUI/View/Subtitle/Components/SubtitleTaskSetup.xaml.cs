@@ -56,7 +56,7 @@ public partial class SubtitleTaskSetup : UserControl
         else if (scriptExt.Contains(fileExt)) model.ScriptFilePath = filename;
         else if (fileExt == ".txt") model.TranslateFilePath = filename;
         else return;
-        if (!model.AutoSelectSameNameFiles) return;
+        if (!model.AutoSelectSameNameFiles || model.IsTimingOnly) return;
 
         var timer = Stopwatch.StartNew();
         try
@@ -74,7 +74,7 @@ public partial class SubtitleTaskSetup : UserControl
                     : new[] { Path.ChangeExtension(filename, ".txt") }.FirstOrDefault(File.Exists)));
             // A later selection, dialog close or checkbox change invalidates this result.
             if (version != _selectionVersion || !IsLoaded || DataContext != model ||
-                !model.AutoSelectSameNameFiles) return;
+                !model.AutoSelectSameNameFiles || model.IsTimingOnly) return;
             if (related.Video != null) model.VideoFilePath = related.Video;
             if (related.Script != null) model.ScriptFilePath = related.Script;
             if (related.Translation != null) model.TranslateFilePath = related.Translation;

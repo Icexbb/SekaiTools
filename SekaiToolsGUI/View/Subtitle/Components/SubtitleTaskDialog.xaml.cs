@@ -27,7 +27,8 @@ public partial class SubtitleTaskDialog : ContentDialog
 
     private async void OnMaterialChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(SubtitlePageModel.ScriptFilePath) or nameof(SubtitlePageModel.TranslateFilePath))
+        if (e.PropertyName is nameof(SubtitlePageModel.ScriptFilePath) or nameof(SubtitlePageModel.TranslateFilePath)
+            or nameof(SubtitlePageModel.IsTimingOnly))
             await ValidateFilesAsync();
         else if (e.PropertyName == nameof(SubtitlePageModel.VideoFilePath))
             UpdateSubmitButton();
@@ -41,6 +42,15 @@ public partial class SubtitleTaskDialog : ContentDialog
     private async Task<bool> ValidateFilesAsync()
     {
         var version = ++_validationVersion;
+        if (ViewModel.IsTimingOnly)
+        {
+            _materialsValid = true;
+            MaterialValidation.Title = "纯视频时间轴（实验性）";
+            MaterialValidation.Message = "只需视频。识别后在现有编辑器填写翻译和校正时间；导出普通 ASS。暂不支持断点恢复或历史保存，请完成后及时导出。";
+            MaterialValidation.Severity = InfoBarSeverity.Informational;
+            UpdateSubmitButton();
+            return true;
+        }
         var script = ViewModel.ScriptFilePath;
         var translation = ViewModel.TranslateFilePath;
         _materialsValid = false;

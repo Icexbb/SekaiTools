@@ -7,6 +7,18 @@ namespace SekaiToolsGUI.ViewModel.Subtitle;
 
 public class SubtitlePageModel : ViewModelBase
 {
+    public bool IsTimingOnly
+    {
+        get => GetProperty(false);
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(CanStart));
+            OnPropertyChanged(nameof(StartHint));
+            OnPropertyChanged(nameof(ScriptFileName));
+            OnPropertyChanged(nameof(TranslateFileName));
+        }
+    }
     private static readonly ImageSource EmptyFramePreview = CreateEmptyFramePreview();
 
     public string VideoFilePath
@@ -44,7 +56,7 @@ public class SubtitlePageModel : ViewModelBase
 
     public string ScriptFileName
     {
-        get => GetProperty("");
+        get => IsTimingOnly ? "此模式无需剧本" : GetProperty("");
         set => SetProperty(value);
     }
 
@@ -63,7 +75,7 @@ public class SubtitlePageModel : ViewModelBase
 
     public string TranslateFileName
     {
-        get => GetProperty("");
+        get => IsTimingOnly ? "识别后手动填写翻译" : GetProperty("");
         set => SetProperty(value);
     }
 
@@ -188,10 +200,10 @@ public class SubtitlePageModel : ViewModelBase
     }
 
     public bool CanStart => !string.IsNullOrWhiteSpace(VideoFilePath) &&
-                            !string.IsNullOrWhiteSpace(ScriptFilePath) &&
-                            !string.IsNullOrWhiteSpace(TranslateFilePath);
+                            (IsTimingOnly || (!string.IsNullOrWhiteSpace(ScriptFilePath) &&
+                            !string.IsNullOrWhiteSpace(TranslateFilePath)));
 
-    public string? StartHint => CanStart ? null : "请选择视频、剧本和翻译文件";
+    public string? StartHint => CanStart ? null : IsTimingOnly ? "请选择视频文件" : "请选择视频、剧本和翻译文件";
 
     public string RunningStatus
     {

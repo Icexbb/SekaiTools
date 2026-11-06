@@ -1,5 +1,15 @@
 # 单视频识别实验入口
 
+## 应用内入口（实验性）
+
+字幕页 → 添加任务 → 勾选底部“纯视频时间轴（实验性）” → 只选择视频 → 加入队列。应用使用 C# / OpenCV 实现，不依赖 Python、OCR 模型、剧本或翻译文件；复用已有菜单模板资源。
+
+完成后使用原有对白行的译文输入、快速编辑和时间轴调整功能，再通过原有“输出”按钮导出普通 ASS。角色未识别时显示“未指定角色”，原文为提示文字；这些提示不进入字幕。空译文条目不会导出。字幕样式使用当前对白字体和普通底部布局，不生成游戏遮罩或打字机动画；未知原文布局统一按 Line1 导出，受“单行”导出开关控制。
+
+本轮支持停止/取消和任务移除；暂不支持纯视频任务的断点恢复、历史保存或跨会话保留手填译文，添加任务时已提示及时导出。规则仍有误检、漏检，尤其 16:10 长视频复测尚未通过完整识别验收，结果需要人工复核。当前布局是比例预设，不支持任意裁切、黑边和变化中的对话框位置。
+
+实际 C# 与离屏 WPF 验收工具在 [VideoTimingProbe](../VideoTimingProbe/README.md)。下文 Python 工具继续保留用于算法对照。
+
 ## 当前主目标：只识别时间轴
 
 需求已确认：“字幕长度”指每条对白显示的起止时间和时长，不是字符数或文字宽度。基础模式只需要分出对白时间段，随后复用产品现有的逐条翻译编辑、时间轴调整和字幕导出方式手填译文；原文与角色名识别属于更高识别强度的可选目标，不能成为基础模式的前置条件。
@@ -15,7 +25,7 @@ python -m venv .codex-build/single-video/venv
 python -X utf8 Tools/SingleVideoProbe/compare_timing.py .codex-build/single-video/my-timing/recognition.json .codex-build/single-video/reference-short/state-1.json .codex-build/single-video/my-timing-comparison.json
 ```
 
-输出 `recognition.json`（空 `translation`）和 `visual-samples.jsonl`，可使用下文 `evidence` 生成截图。实验阶段可在 JSON 中填入 `translation`，再用 `export` 导出；空译文不生成空白字幕。JSON 仅是实验接口，正式用户流程应复用现有编辑器，不要求用户编辑 JSON。当前尚未接入 WPF，不能直接在应用内打开该结果。
+输出 `recognition.json`（空 `translation`）和 `visual-samples.jsonl`，可使用下文 `evidence` 生成截图。实验阶段可在 JSON 中填入 `translation`，再用 `export` 导出；空译文不生成空白字幕。JSON 仅是 Python 实验接口，应用内入口直接识别视频并复用现有编辑器，不要求用户编辑 JSON，也暂不导入这些实验 JSON。
 
 基础模式的评估重点是多余/缺失时间段、换句正确性、起止帧误差及编辑导出流程，不是 OCR 字符错误率。当前视觉门槛仍会将片头、片尾主界面和横幅误识别为对白，下一步优先补对话框存在检测，再做 GUI 接入。
 

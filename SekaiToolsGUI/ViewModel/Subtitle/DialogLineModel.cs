@@ -16,7 +16,7 @@ public class DialogLineModel : ViewModelBase
     {
         Set = set;
         _speakerPalette = SpeakerColorConfig.Get(set.Data.CharacterId);
-        RawContent = set.Data.BodyOriginal;
+        RawContent = string.IsNullOrWhiteSpace(set.Data.BodyOriginal) ? "未识别原文，可直接填写翻译" : set.Data.BodyOriginal;
         TranslatedContent = set.Data.BodyTranslated.EscapedReturn();
         FrameRate = set.Fps;
         _charTime = charTime;
@@ -37,7 +37,7 @@ public class DialogLineModel : ViewModelBase
     public int EventIndex => Set.Data.EffectiveStoryIndex;
     public string EventNumber => $"#{EventIndex + 1}";
     public int SpeakerId => Set.Data.CharacterId;
-    public string SpeakerName => Set.Data.FinalCharacter;
+    public string SpeakerName => string.IsNullOrWhiteSpace(Set.Data.FinalCharacter) ? "未指定角色" : Set.Data.FinalCharacter;
     public string SpeakerOriginalName => Set.Data.CharacterOriginal;
     public string SpeakerTranslatedName => Set.Data.CharacterTranslated;
 
