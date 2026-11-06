@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import unittest
 
 from probe import assemble, distance, evaluate, export, normalized, stamp
+from compare_timing import compare
 
 
 def sample(time, body, speaker="MEIKO"):
@@ -12,6 +13,31 @@ def sample(time, body, speaker="MEIKO"):
 
 
 class ProbeTests(unittest.TestCase):
+    def test_time_alignment_uses_intervals_and_counts_background_as_extra(self):
+        state = {"VideoFilePath": "same.mp4", "Dialog": {"FrameSets": [
+            {"Frames": [{"Index": 60}, {"Index": 119}]},
+            {"Frames": [{"Index": 180}, {"Index": 239}]}]}}
+        report = {"video": "same.mp4", "fps": 60, "dialogs": [
+            {"start": 0, "end": .5}, {"start": 1, "end": 2},
+            {"start": 3, "end": 4}]}
+        result = compare(report, state)
+        self.assertEqual(2, result["matched"])
+        self.assertEqual(1, result["extra"])
+        self.assertEqual(0, result["start_mae_seconds"])
+        report["dialogs"].pop()
+        self.assertEqual(1, compare(report, state)["missing"])
+
+    def test_timing_export_requires_translation_and_does_not_invent_text(self):
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp)
+            dialogs = [{"start": 1, "end": 2, "speaker": "", "body": "", "translation": ""},
+                       {"start": 3, "end": 4, "speaker": "", "body": "", "translation": "手填译文"}]
+            export(output, dialogs)
+            text = (output / "subtitles.srt").read_text(encoding="utf-8-sig")
+            self.assertTrue(text.startswith("1\n00:00:03,000"))
+            self.assertIn("手填译文", text)
+            self.assertNotIn("00:00:01,000", text)
+
     def test_typewriter_and_single_frame_error_do_not_split(self):
         values = [sample(0, "……ふう"), sample(.25, "ふう。体が"),
                   sample(.5, "……ふう。体が軽くなった"), sample(.75, "誤認識"),

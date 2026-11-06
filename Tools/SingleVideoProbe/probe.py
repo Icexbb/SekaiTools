@@ -172,8 +172,11 @@ def export(output, dialogs):
                     "Style: Default,Yu Gothic,42,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,2,0,2,80,80,60,1",
                     "[Events]", "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"]
     for i, item in enumerate(dialogs, 1):
-        text = (item["speaker"] + "：" if item["speaker"] else "") + item["body"]
-        srt.append(f"{i}\n{stamp(item['start'])} --> {stamp(item['end'])}\n{text}\n")
+        content = item.get("translation", item["body"])
+        if not content.strip():
+            continue
+        text = (item["speaker"] + "：" if item["speaker"] else "") + content
+        srt.append(f"{len(srt) + 1}\n{stamp(item['start'])} --> {stamp(item['end'])}\n{text}\n")
         # OCR is untrusted text, never interpret it as ASS override tags.
         safe = text.replace("\\", "＼").replace("{", "｛").replace("}", "｝").replace("\n", "\\N")
         ass.append(f"Dialogue: 0,{stamp(item['start'], True)},{stamp(item['end'], True)},Default,,0,0,0,,{safe}")
@@ -206,11 +209,12 @@ def evidence(args):
                 raise RuntimeError("JPEG encoding failed")
             filename = f"{index:04}.jpg"
             (images / filename).write_bytes(buffer.tobytes())
+            label = ("时间轴候选 · 待填写翻译" if report.get("mode") == "timing-only"
+                     else f'OCR {item["confidence"]:.3f} · 待校对')
             cards.append(f'<article><h2>{index} · {html.escape(item["speaker"])}</h2>'
-                         f'<p>{stamp(item["start"])} → {stamp(item["end"])} · '
-                         f'OCR {item["confidence"]:.3f} · 待校对</p>'
+                         f'<p>{stamp(item["start"])} → {stamp(item["end"])} · {label}</p>'
                          f'<img src="evidence/{filename}" alt="对白截图 {index}">'
-                         f'<pre>{html.escape(item["body"])}</pre></article>')
+                         f'<pre>{html.escape(item.get("translation", item["body"]))}</pre></article>')
     finally:
         capture.release()
     page = ('<!doctype html><html lang="zh-CN"><meta charset="utf-8">'

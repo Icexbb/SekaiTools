@@ -1,5 +1,26 @@
 # 单视频识别实验入口
 
+## 当前主目标：只识别时间轴
+
+需求已确认：“字幕长度”指每条对白显示的起止时间和时长，不是字符数或文字宽度。基础模式只需要分出对白时间段，随后复用产品现有的逐条翻译编辑、时间轴调整和字幕导出方式手填译文；原文与角色名识别属于更高识别强度的可选目标，不能成为基础模式的前置条件。
+
+新增 `timing.py` 是无 OCR 的视觉变化实验：只依赖 OpenCV/Numpy，不导入 RapidOCR/ONNX Runtime，不下载模型，不读取剧本、翻译或参考状态。根据文字像素的增加/清空/替换检测换句，原文和角色留空。默认约 12 次/秒取样，时间尚未逐帧精修。
+
+```powershell
+# 只需要基础时间轴模式时，安装 requirements-timing.txt 即可，无需 OCR 包。
+python -m venv .codex-build/single-video/venv
+.codex-build/single-video/venv/Scripts/python -m pip install -r Tools/SingleVideoProbe/requirements-timing.txt
+.codex-build/single-video/venv/Scripts/python -X utf8 Tools/SingleVideoProbe/timing.py E:/ProjectSekai/test/1963_areatalk_ev_street_16_003.mp4 .codex-build/single-video/my-timing
+# 完成后独立比较时间段；不使用文本匹配，也不反向修改识别结果。
+python -X utf8 Tools/SingleVideoProbe/compare_timing.py .codex-build/single-video/my-timing/recognition.json .codex-build/single-video/reference-short/state-1.json .codex-build/single-video/my-timing-comparison.json
+```
+
+输出 `recognition.json`（空 `translation`）和 `visual-samples.jsonl`，可使用下文 `evidence` 生成截图。实验阶段可在 JSON 中填入 `translation`，再用 `export` 导出；空译文不生成空白字幕。JSON 仅是实验接口，正式用户流程应复用现有编辑器，不要求用户编辑 JSON。当前尚未接入 WPF，不能直接在应用内打开该结果。
+
+基础模式的评估重点是多余/缺失时间段、换句正确性、起止帧误差及编辑导出流程，不是 OCR 字符错误率。当前视觉门槛仍会将片头、片尾主界面和横幅误识别为对白，下一步优先补对话框存在检测，再做 GUI 接入。
+
+## 可选高级目标：识别原文
+
 只输入视频，用本地 OCR 提取角色名、日文对白和抽样时间轴，输出可编辑 JSON、SRT、基础 ASS。此工具是模型与算法验证入口，尚未接入 WPF 字幕任务，不调用现有依赖剧本的 `VideoProcessor`，不读写应用历史和检查点。
 
 `recognize` 不接受剧本或翻译参数，也不搜索同名文件；`evaluate` 在识别完成后独立读取剧本进行顺序对齐，绝不回填、纠正识别结果。视频、剧本、翻译文件均只读。输出目录必须是新目录。
