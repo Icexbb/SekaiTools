@@ -57,7 +57,7 @@ public sealed class SettingViewBuilder(
         }
 
         return new CardControl
-            { Header = header, Icon = icon, Content = editors, Margin = new Thickness(0, 0, 0, nested ? 0 : 8) };
+        { Header = header, Icon = icon, Content = editors, Margin = new Thickness(0, 0, 0, nested ? 0 : 8) };
     }
 
     private StackPanel Header(SettingSection section)
@@ -76,6 +76,20 @@ public sealed class SettingViewBuilder(
         if (!string.IsNullOrEmpty(section.Description)) panel.Children.Add(Description(section.Description));
         if (section.StatusProperty is { } status)
         {
+            if (status == "DeveloperApiStatus")
+            {
+                var connection = new TextBox
+                {
+                    IsReadOnly = true,
+                    TextWrapping = TextWrapping.Wrap,
+                    MaxWidth = 430,
+                    Margin = new Thickness(0, 4, 0, 0)
+                };
+                connection.SetBinding(TextBox.TextProperty, new Binding(status) { Mode = BindingMode.OneWay });
+                AutomationProperties.SetName(connection, "开发者 API 连接信息，可选择复制");
+                panel.Children.Add(connection);
+                return panel;
+            }
             var text = Description("");
             text.Margin = new Thickness(0, 4, 0, 0);
             text.SetBinding(TextBlock.TextProperty, new Binding(status));
@@ -168,7 +182,9 @@ public sealed class SettingViewBuilder(
                 var labeled = new StackPanel { Orientation = Orientation.Horizontal };
                 labeled.Children.Add(new TextBlock
                 {
-                    Text = field.Label, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 5, 0)
+                    Text = field.Label,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(0, 0, 5, 0)
                 });
                 labeled.Children.Add(toggle);
                 editor = labeled;
@@ -192,6 +208,6 @@ public sealed class SettingViewBuilder(
     private static Binding Value(string property)
     {
         return new Binding(property)
-            { Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged };
+        { Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged };
     }
 }

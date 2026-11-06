@@ -388,6 +388,7 @@ partial class SettingPageModel
         _suspendSaving = true;
         try
         {
+            DeveloperMode = false;
             CurrentApplicationTheme = Model.Setting.Default.CurrentApplicationTheme;
             ProxyType = Model.Setting.Default.ProxyType;
             ProxyHost = Model.Setting.Default.ProxyHost;
@@ -443,6 +444,7 @@ partial class SettingPageModel
         _suspendSaving = true;
         try
         {
+            DeveloperMode = setting.DeveloperMode;
             CurrentApplicationTheme = setting.CurrentApplicationTheme;
             CustomSpecialCharacters.AddRange(setting.CustomSpecialCharacters);
             ProxyType = setting.ProxyType;

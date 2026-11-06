@@ -628,6 +628,8 @@ public partial class SubtitleTask
 
     private MatchingThreshold GetMatchingThreshold()
     {
+        if (SettingPageModel.Instance.DeveloperMode &&
+            SekaiToolsGUI.Service.DeveloperModeService.Instance.Thresholds is { } overrides) return overrides;
         var thresholdData = ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, "thresholds.json");
         if (!File.Exists(thresholdData)) return new MatchingThreshold();
         var json = File.ReadAllText(thresholdData);

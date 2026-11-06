@@ -16,6 +16,8 @@ public struct Setting
     public int CurrentApplicationTheme { get; init; } = 0;
     public string[] CustomSpecialCharacters { get; init; } = [];
 
+    public bool DeveloperMode { get; init; }
+
     public int ProxyType { get; init; } = 0;
     public string ProxyHost { get; init; } = "127.0.0.1";
     public int ProxyPort { get; init; } = 1080;
@@ -80,6 +82,7 @@ public struct Setting
         return new Setting
         {
             AppVersion = SettingPageModel.AppVersion,
+            DeveloperMode = model.DeveloperMode,
             CurrentApplicationTheme = model.CurrentApplicationTheme,
             CustomSpecialCharacters = model.CustomSpecialCharacters.ToArray(),
 

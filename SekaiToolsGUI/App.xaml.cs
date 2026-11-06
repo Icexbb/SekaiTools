@@ -62,6 +62,7 @@ public partial class App : Application
             Logger.Log($"OpenCV 计算线程数: {threads}");
         }
 
+        DeveloperModeService.Instance.Initialize();
         WindowsNotificationService.Initialize();
         base.OnStartup(e);
         AssemblyResolver.FlushDiagnostics();
@@ -100,6 +101,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        DeveloperModeService.Instance.Dispose();
         WindowsNotificationService.Shutdown();
         AssemblyResolver.FlushDiagnostics();
         Logger.Log($"SekaiToolsGUI 退出 (exitCode={e.ApplicationExitCode})");

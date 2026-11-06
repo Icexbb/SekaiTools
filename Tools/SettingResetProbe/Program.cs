@@ -40,7 +40,7 @@ internal static class Program
         foreach (var expander in Nodes(page).OfType<CardExpander>()) expander.IsExpanded = true;
         Pump();
         var buttons = Nodes(page).OfType<SettingResetButton>().ToArray();
-        Require(buttons.Length == 23, $"Expected 23 reset buttons, got {buttons.Length}");
+        Require(buttons.Length == 24, $"Expected 24 reset buttons, got {buttons.Length}");
         foreach (var button in buttons)
         {
             Require(button.Visibility == Visibility.Collapsed, "Default unexpectedly modified: " + button.Properties);
