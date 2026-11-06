@@ -117,6 +117,10 @@ dotnet test SekaiTools.sln
 
 页面实现 `IAppPage<object>` 接口，通过 `OnNavigatedTo()` 进行初始化。自定义的 `ViewModelBase` 将属性值存储在 `Dictionary<string, object>` 中，而非单独的字段。
 
+### 设置项排列规范
+
+新增配置项必须追加到所属类别的末尾，不插入类别开头；保留已有配置项的相对顺序。新增类别追加到类别列表末尾。
+
 ### 图标适配规范
 
 新增或调整界面功能时，必须同步适配图标，包括设置卡片（`CardControl`、`CardExpander`）、导航项和需要图标的操作入口。优先从 Microsoft Fluent System Icons 中选择与功能语义一致的图标，并确认当前 WPF-UI 版本支持对应的 `SymbolRegular` 或 `SymbolFilled` 成员。

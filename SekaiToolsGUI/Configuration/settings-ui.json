@@ -1,12 +1,4 @@
 [
-  { "category": "开发者设置", "custom": "developer-thresholds" },
-  {
-    "title": "开发者模式",
-    "icon": "Beaker24",
-    "category": "通用",
-    "description": "显示开发者设置并启用本机 HTTP 调试接口。",
-    "fields": [{ "kind": "toggle", "property": "DeveloperMode", "label": "启用" }]
-  },
   {
     "title": "译文换行标记",
     "icon": "TextDescription24",
@@ -280,7 +272,15 @@
     "category": "轴机"
   },
   {
+    "title": "开发者模式",
+    "icon": "Beaker24",
+    "category": "通用",
+    "description": "显示开发者设置并启用本机 HTTP 调试接口。",
+    "fields": [{ "kind": "toggle", "property": "DeveloperMode", "label": "启用" }]
+  },
+  {
     "custom": "about",
     "category": "通用"
-  }
+  },
+  { "category": "开发者设置", "custom": "developer-thresholds" }
 ]
