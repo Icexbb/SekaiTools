@@ -52,19 +52,39 @@ internal static class Program
         dialog.ViewModel.IsTimingOnly = true;
         dialog.ViewModel.VideoFilePath = video;
         Require(dialog.IsPrimaryButtonEnabled, "Video-only task dialog submission without script/translation");
-        var state = new SubtitlePageModel { IsTimingOnly = true, VideoFilePath = video, ShowPreview = false };
+        var state = new SubtitlePageModel { IsTimingOnly = true, VideoFilePath = video, ShowPreview = true };
         Require(state.CanStart && state.ScriptFilePath == "" && state.TranslateFilePath == "", "Video-only setup");
         var control = new SubtitleTask(state);
         Wpf.Ui.Appearance.ApplicationThemeManager.Apply(Wpf.Ui.Appearance.ApplicationTheme.Light);
         control.Foreground = (Brush)app.FindResource("TextFillColorPrimaryBrush");
+        var previewCount = 0;
+        DateTime? disabledAt = null;
+        var resumed = false;
+        state.PropertyChanged += (_, change) =>
+        {
+            if (change.PropertyName != nameof(SubtitlePageModel.FramePreviewImage) || !state.IsRunning) return;
+            previewCount++;
+            if (previewCount == 3)
+            {
+                state.ShowPreview = false;
+                disabledAt = DateTime.UtcNow;
+            }
+        };
         var run = (Task)typeof(SubtitleTask).GetMethod("RunAsync", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(control, [null])!;
         while (!run.IsCompleted)
         {
             Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+            if (!resumed && disabledAt.HasValue && DateTime.UtcNow - disabledAt.Value >= TimeSpan.FromMilliseconds(400))
+            {
+                Require(previewCount == 3, "Disabled preview must stop updates");
+                state.ShowPreview = true;
+                resumed = true;
+            }
             Thread.Sleep(10);
         }
         run.GetAwaiter().GetResult();
+        Require(resumed && previewCount > 3, "Running preview must update and resume after toggling");
         Require(state.IsFinished && state.CanEditLine && state.CanOutput, "Finished task must be editable/exportable");
         var process = (SubtitleTaskProcess)control.FindName("ProcessView");
         var panel = (StackPanel)process.FindName("LinePanel");
@@ -94,12 +114,20 @@ internal static class Program
             encoder.Frames.Add(BitmapFrame.Create(bitmap));
             encoder.Save(stream);
         }
-        var setup = new SubtitleTaskSetup { DataContext = new SubtitlePageModel { IsTimingOnly = true } };
+        var setupState = new SubtitlePageModel { IsTimingOnly = true };
+        var setup = new SubtitleTaskSetup { DataContext = setupState };
         setup.Measure(new Size(650, 850));
         setup.Arrange(new Rect(0, 0, 650, 850));
         setup.UpdateLayout();
+        foreach (var name in new[] { "ScriptFileCard", "TranslationFileCard", "AutoSelectFilesCheckBox" })
+            Require(((FrameworkElement)setup.FindName(name)).Visibility == Visibility.Collapsed, "Timing-only selection hidden: " + name);
+        setupState.IsTimingOnly = false;
+        Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+        setup.UpdateLayout();
+        foreach (var name in new[] { "ScriptFileCard", "TranslationFileCard", "AutoSelectFilesCheckBox" })
+            Require(((FrameworkElement)setup.FindName(name)).Visibility == Visibility.Visible, "Script-mode selection restored: " + name);
         Require(VisualNodes(setup).OfType<Wpf.Ui.Controls.SymbolIcon>().Any(icon => icon.Symbol == Wpf.Ui.Controls.SymbolRegular.Beaker24), "Experimental icon");
-        Console.WriteLine("PASS: video-only recognition, existing editing, timing edit, translated-only ASS, setup icon and WPF render");
+        Console.WriteLine("PASS: material visibility switch, running preview toggle/resume, existing editing, timing edit, translated-only ASS and WPF render");
         var dispose = (Task)typeof(SubtitleTask).GetMethod("DisposeAsync", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(control, null)!;
         while (!dispose.IsCompleted) Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);

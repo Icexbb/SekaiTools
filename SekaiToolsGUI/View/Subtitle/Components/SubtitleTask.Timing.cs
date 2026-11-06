@@ -1,4 +1,5 @@
 using System.IO;
+using Emgu.CV;
 using SekaiToolsBase;
 using SekaiToolsCore.Timing;
 using SekaiToolsGUI.Service;
@@ -24,7 +25,13 @@ public partial class SubtitleTask
             var path = ResourceManager.Instance.GetVideoProcessResourcePath("menu-107px.png");
             var videoPath = ViewModel.VideoFilePath;
             _timingResult = await Task.Run(() => new VideoTimingRecognizer().Recognize(videoPath,
-                path, LinePanel_AddDialogLine, OnProgressChanged, source.Token));
+                path, LinePanel_AddDialogLine, OnProgressChanged, source.Token,
+                (frame, frameIndex, info) => Dispatcher.Invoke(() =>
+                {
+                    if (_disposed || !ViewModel.ShowPreview || !ViewModel.IsRunning) return;
+                    ViewModel.FramePreviewImage = frame.ToBitmapSource();
+                    ProcessView.EventTimelineEditor.UpdateRecognitionPreviewInfo(frameIndex, info, true);
+                }), () => Volatile.Read(ref _previewEnabled)));
             await _resultQueue.FlushAsync();
             if (!_timingResult.Canceled && _timingResult.Dialogs.Count == 0)
                 throw new InvalidDataException("未检测到对白。当前实验模式仅支持常规游戏对话框，请检查视频画面布局。");

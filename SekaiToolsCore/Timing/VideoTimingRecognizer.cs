@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
@@ -17,7 +18,8 @@ public sealed class VideoTimingRecognizer
 {
     public VideoTimingResult Recognize(string videoPath, string menuTemplatePath,
         Action<DialogBaseFrameSet>? onDialog = null, Action<double>? onProgress = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Action<Mat, int, VideoInfo>? onPreview = null, Func<bool>? isPreviewEnabled = null)
     {
         Logger.Log("开始纯视频时间轴识别");
         var info = new VideoInfo(videoPath);
@@ -43,6 +45,7 @@ public sealed class VideoTimingRecognizer
         var start = -1;
         var lastVisible = -1;
         var pendingReset = -1;
+        long lastPreviewTimestamp = 0;
         Mat? previous = null;
         using var frame = new Mat();
         try
@@ -88,6 +91,16 @@ public sealed class VideoTimingRecognizer
                     previous = null;
                 }
                 onProgress?.Invoke((index + 1d) / info.FrameCount);
+                if (onPreview != null && (isPreviewEnabled?.Invoke() ?? true) &&
+                    (lastPreviewTimestamp == 0 || Stopwatch.GetElapsedTime(lastPreviewTimestamp).TotalMilliseconds >= 200))
+                {
+                    // The callback borrows this Mat synchronously; no unbounded frame queue.
+                    using var preview = new Mat();
+                    var previewScale = Math.Min(1, 960d / frame.Width);
+                    CvInvoke.Resize(frame, preview, new Size((int)(frame.Width * previewScale), (int)(frame.Height * previewScale)));
+                    onPreview(preview, index, info);
+                    lastPreviewTimestamp = Stopwatch.GetTimestamp();
+                }
             }
             Finish(Math.Min(info.FrameCount, lastVisible + step));
         }
@@ -103,7 +116,7 @@ public sealed class VideoTimingRecognizer
             if (start >= 0 && exclusiveEnd - start >= info.Fps.Fps() * .25)
             {
                 var data = new DialogStoryEvent(dialogs.Count, "", 0, "", false, false)
-                    { HasExplicitTranslation = true };
+                { HasExplicitTranslation = true };
                 var set = new DialogBaseFrameSet(data, info.Fps) { Finished = true };
                 for (var i = start; i < exclusiveEnd; i++)
                     set.Frames.Add(new DialogFrameResult(i, info.Fps, rect.Location));
@@ -157,11 +170,11 @@ public sealed class VideoTimingRecognizer
         using var brightImage = new Mat(region.Size, DepthType.Cv8U, 1);
         var bright = new byte[region.Width * region.Height];
         for (var i = 0; i < bright.Length; i++)
-            {
-                var min = Math.Min(data[i * 3], Math.Min(data[i * 3 + 1], data[i * 3 + 2]));
-                var max = Math.Max(data[i * 3], Math.Max(data[i * 3 + 1], data[i * 3 + 2]));
-                if (min > 175 && max - min < 65) bright[i] = 255;
-            }
+        {
+            var min = Math.Min(data[i * 3], Math.Min(data[i * 3 + 1], data[i * 3 + 2]));
+            var max = Math.Max(data[i * 3], Math.Max(data[i * 3 + 1], data[i * 3 + 2]));
+            if (min > 175 && max - min < 65) bright[i] = 255;
+        }
         Marshal.Copy(bright, 0, brightImage.DataPointer, bright.Length);
         using var labels = new Mat();
         using var stats = new Mat();

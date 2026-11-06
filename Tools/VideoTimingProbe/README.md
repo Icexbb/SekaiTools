@@ -10,3 +10,5 @@ python Tools/SingleVideoProbe/compare_timing.py .codex-build/single-video/new-na
 ```
 
 CLI 结果保存至 `recognition.json`，用于独立时间重叠对比；WPF 模式保存 `editor.png` 和 `edited.ass`。离屏验证不等价于真实桌面点击、不同 DPI 和主题下的完整人工验收。工具读取当前应用设置但不修改设置。
+
+WPF 回归同时检查：仅视频模式隐藏剧本、翻译及同名文件选择组件，切回普通模式后恢复；识别过程中持续产生画面预览，关闭预览后停止更新，再开启后恢复。
