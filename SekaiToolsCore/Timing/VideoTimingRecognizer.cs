@@ -13,13 +13,17 @@ namespace SekaiToolsCore.Timing;
 
 public sealed record VideoTimingResult(VideoInfo Video, IReadOnlyList<DialogBaseFrameSet> Dialogs, bool Canceled);
 
+public sealed record VideoTimingObservation(int Frame, int NamePixels, int BodyPixels,
+    bool MenuPresent, bool NameLinePresent, bool Visible, double RetainedFraction);
+
 /// <summary>Finds dialogue intervals using visual changes, without a script or OCR.</summary>
 public sealed class VideoTimingRecognizer
 {
     public VideoTimingResult Recognize(string videoPath, string menuTemplatePath,
         Action<DialogBaseFrameSet>? onDialog = null, Action<double>? onProgress = null,
         CancellationToken cancellationToken = default,
-        Action<Mat, int, VideoInfo>? onPreview = null, Func<bool>? isPreviewEnabled = null)
+        Action<Mat, int, VideoInfo>? onPreview = null, Func<bool>? isPreviewEnabled = null,
+        Action<VideoTimingObservation>? onObservation = null)
     {
         Logger.Log("开始纯视频时间轴识别");
         var info = new VideoInfo(videoPath);
@@ -64,9 +68,16 @@ public sealed class VideoTimingRecognizer
                 using var bodyRegion = new Mat(crop, new Rectangle(0, boundary, crop.Width, crop.Height - boundary));
                 using var name = TextMask(nameLeft);
                 using var body = TextMask(bodyRegion);
-                var visible = CvInvoke.CountNonZero(name) >= 30 && CvInvoke.CountNonZero(body) >= 35 &&
-                              HasMenu(frame, menu) && HasNameLine(nameRegion);
-                var reset = visible && previous != null && Retained(previous, body) < .65;
+                var namePixels = CvInvoke.CountNonZero(name);
+                var bodyPixels = CvInvoke.CountNonZero(body);
+                var enoughPixels = namePixels >= 30 && bodyPixels >= 35;
+                var menuPresent = (enoughPixels || onObservation != null) && HasMenu(frame, menu);
+                var nameLinePresent = ((enoughPixels && menuPresent) || onObservation != null) && HasNameLine(nameRegion);
+                var visible = enoughPixels && menuPresent && nameLinePresent;
+                var retained = previous != null && (visible || onObservation != null) ? Retained(previous, body) : 1;
+                onObservation?.Invoke(new VideoTimingObservation(index, namePixels, bodyPixels,
+                    menuPresent, nameLinePresent, visible, retained));
+                var reset = visible && previous != null && retained < .65;
                 if (visible)
                 {
                     if (start < 0) start = index;

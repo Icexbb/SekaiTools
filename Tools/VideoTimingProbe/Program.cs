@@ -16,14 +16,17 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
-        if (args.Length < 3) throw new ArgumentException("VideoTimingProbe <video> <menu.png> <new-output> [--ui]");
+        if (args.Length < 3) throw new ArgumentException("VideoTimingProbe <video> <menu.png> <new-output> [--ui|--diagnostics]");
         var video = Path.GetFullPath(args[0]);
         var output = Path.GetFullPath(args[2]);
         if (Directory.Exists(output)) throw new IOException("Output must be a new directory");
         Directory.CreateDirectory(output);
         if (!args.Contains("--ui"))
         {
-            var result = new VideoTimingRecognizer().Recognize(video, args[1]);
+            using var observations = args.Contains("--diagnostics")
+                ? new StreamWriter(Path.Combine(output, "observations.jsonl")) : null;
+            var result = new VideoTimingRecognizer().Recognize(video, args[1],
+                onObservation: observations == null ? null : item => observations.WriteLine(JsonSerializer.Serialize(item)));
             var report = new
             {
                 video,
