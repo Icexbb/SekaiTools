@@ -67,7 +67,7 @@ def main():
                             "diagnostic_visible": sum(item["Visible"] for item in samples),
                             "diagnostic_menu_failures": sum(not item["MenuPresent"] for item in samples),
                             "diagnostic_line_failures": sum(not item["NameLinePresent"] for item in samples),
-                            "diagnostic_glyph_failures": sum(item["NamePixels"] < 30 or item["BodyPixels"] < 35 for item in samples),
+                            "diagnostic_glyph_failures": sum(not item.get("EnoughPixels", item["NamePixels"] >= 30 and item["BodyPixels"] >= 35) for item in samples),
                             "diagnostic_reset_evidence": sum(item["Visible"] and item["RetainedFraction"] < .65 for item in samples)})
         if j is not None:
             a, b = candidates[j]

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
+using Emgu.CV.Structure;
 using SekaiToolsBase;
 using SekaiToolsBase.Story.StoryEvent;
 using SekaiToolsCore.Match.TemplateMatcher;
@@ -14,7 +15,7 @@ namespace SekaiToolsCore.Timing;
 public sealed record VideoTimingResult(VideoInfo Video, IReadOnlyList<DialogBaseFrameSet> Dialogs, bool Canceled);
 
 public sealed record VideoTimingObservation(int Frame, int NamePixels, int BodyPixels,
-    bool MenuPresent, bool NameLinePresent, bool Visible, double RetainedFraction);
+    bool MenuPresent, bool NameLinePresent, bool Visible, double RetainedFraction, bool EnoughPixels = true);
 
 /// <summary>Finds dialogue intervals using visual changes, without a script or OCR.</summary>
 public sealed class VideoTimingRecognizer
@@ -49,6 +50,8 @@ public sealed class VideoTimingRecognizer
         var start = -1;
         var lastVisible = -1;
         var pendingReset = -1;
+        var pendingEnd = -1;
+        var pendingTextCleared = false;
         long lastPreviewTimestamp = 0;
         Mat? previous = null;
         using var frame = new Mat();
@@ -66,26 +69,34 @@ public sealed class VideoTimingRecognizer
                 using var nameRegion = new Mat(crop, new Rectangle(0, 0, crop.Width, boundary));
                 using var nameLeft = new Mat(nameRegion, new Rectangle(0, 0, 576, boundary));
                 using var bodyRegion = new Mat(crop, new Rectangle(0, boundary, crop.Width, crop.Height - boundary));
-                using var name = TextMask(nameLeft);
-                using var body = TextMask(bodyRegion);
+                using var name = TextMask(nameLeft, rejectBorderComponents: true);
+                using var body = TextMask(bodyRegion, includeInitialPunctuation: true);
                 var namePixels = CvInvoke.CountNonZero(name);
                 var bodyPixels = CvInvoke.CountNonZero(body);
-                var enoughPixels = namePixels >= 30 && bodyPixels >= 35;
+                var enoughPixels = namePixels >= 80 && bodyPixels >= 35;
                 var menuPresent = (enoughPixels || onObservation != null) && HasMenu(frame, menu);
                 var nameLinePresent = ((enoughPixels && menuPresent) || onObservation != null) && HasNameLine(nameRegion);
-                var visible = enoughPixels && menuPresent && nameLinePresent;
+                // The translucent underline can disappear against light clothing.
+                // Require it to acquire a window, but retain an established window
+                // while the menu and name/body evidence remain present.
+                var visible = enoughPixels && menuPresent && (nameLinePresent || start >= 0);
                 var retained = previous != null && (visible || onObservation != null) ? Retained(previous, body) : 1;
                 onObservation?.Invoke(new VideoTimingObservation(index, namePixels, bodyPixels,
-                    menuPresent, nameLinePresent, visible, retained));
+                    menuPresent, nameLinePresent, visible, retained, enoughPixels));
                 var reset = visible && previous != null && retained < .65;
                 if (visible)
                 {
                     if (start < 0) start = index;
                     else if (reset)
                     {
-                        if (pendingReset < 0) pendingReset = index;
+                        if (pendingReset < 0)
+                        {
+                            pendingReset = index;
+                            pendingEnd = Math.Min(index, lastVisible + step);
+                            pendingTextCleared = previous != null && bodyPixels <= CvInvoke.CountNonZero(previous) * .35;
+                        }
                     }
-                    else if (pendingReset >= 0)
+                    else if (pendingReset >= 0 && (nameLinePresent || pendingTextCleared))
                     {
                         var next = pendingReset;
                         Finish(next);
@@ -124,6 +135,9 @@ public sealed class VideoTimingRecognizer
 
         void Finish(int exclusiveEnd)
         {
+            // Unconfirmed replacement at a disappearing window is an ending,
+            // not a new short dialogue made from the transition/background.
+            if (pendingEnd >= 0) exclusiveEnd = Math.Min(exclusiveEnd, pendingEnd);
             if (start >= 0 && exclusiveEnd - start >= info.Fps.Fps() * .25)
             {
                 var data = new DialogStoryEvent(dialogs.Count, "", 0, "", false, false)
@@ -136,6 +150,8 @@ public sealed class VideoTimingRecognizer
             }
             start = -1;
             pendingReset = -1;
+            pendingEnd = -1;
+            pendingTextCleared = false;
         }
     }
 
@@ -173,7 +189,7 @@ public sealed class VideoTimingRecognizer
         return false;
     }
 
-    private static Mat TextMask(Mat region)
+    internal static Mat TextMask(Mat region, bool includeInitialPunctuation = false, bool rejectBorderComponents = false)
     {
         using var image = region.Clone();
         var data = new byte[region.Width * region.Height * 3];
@@ -195,8 +211,20 @@ public sealed class VideoTimingRecognizer
         Marshal.Copy(stats.DataPointer, statistics, 0, statistics.Length);
         var valid = new bool[count];
         for (var i = 1; i < count; i++)
-            valid[i] = statistics[i * 5 + 2] is >= 2 and <= 70 && statistics[i * 5 + 3] is >= 4 and <= 65 &&
-                       statistics[i * 5 + 4] is >= 5 and <= 2500;
+        {
+            var width = statistics[i * 5 + 2];
+            var height = statistics[i * 5 + 3];
+            var area = statistics[i * 5 + 4];
+            valid[i] = width is >= 2 and <= 70 && height is >= 4 and <= 65 && area is >= 5 and <= 2500;
+            // Initial dashes can be only two pixels high after normalization.
+            // Keep this exception within the first body line, never the name region.
+            if (includeInitialPunctuation && statistics[i * 5 + 1] is >= 10 and < 45 &&
+                width is >= 8 and <= 70 && height is >= 2 and <= 3 && area >= 8)
+                valid[i] = true;
+            if (rejectBorderComponents && (statistics[i * 5] == 0 || statistics[i * 5 + 1] == 0 ||
+                statistics[i * 5] + width >= region.Width || statistics[i * 5 + 1] + height >= region.Height))
+                valid[i] = false;
+        }
         var ids = new int[region.Width * region.Height];
         Marshal.Copy(labels.DataPointer, ids, 0, ids.Length);
         var bytes = new byte[ids.Length];
@@ -206,7 +234,7 @@ public sealed class VideoTimingRecognizer
         return result;
     }
 
-    private static double Retained(Mat previous, Mat current)
+    internal static double Retained(Mat previous, Mat current)
     {
         var count = CvInvoke.CountNonZero(previous);
         if (count == 0) return 1;
@@ -215,6 +243,17 @@ public sealed class VideoTimingRecognizer
         using var kernel = CvInvoke.GetStructuringElement(MorphShapes.Rectangle, new Size(5, 5), new Point(-1, -1));
         CvInvoke.Dilate(current, expanded, kernel, new Point(-1, -1), 1, BorderType.Constant, default);
         CvInvoke.BitwiseAnd(previous, expanded, intersection);
-        return CvInvoke.CountNonZero(intersection) / (double)count;
+        var retained = CvInvoke.CountNonZero(intersection) / (double)count;
+        if (retained >= .65) return retained;
+        // Compensate small whole-window motion before interpreting lost pixels
+        // as a new line. Padding keeps the previous mask fully inside each shift.
+        using var padded = new Mat();
+        using var scores = new Mat();
+        CvInvoke.CopyMakeBorder(expanded, padded, 8, 8, 8, 8, BorderType.Constant, new MCvScalar(0));
+        CvInvoke.MatchTemplate(padded, previous, scores, TemplateMatchingType.Ccorr);
+        var values = new float[scores.Rows * scores.Cols];
+        Marshal.Copy(scores.DataPointer, values, 0, values.Length);
+        var aligned = values.Where(float.IsFinite).DefaultIfEmpty(0).Max() / (255d * 255 * count);
+        return Math.Clamp(Math.Max(retained, aligned), 0, 1);
     }
 }
