@@ -36,7 +36,8 @@ public sealed class StoryDownloadTests
         });
         server.Response = request => request.Contains("/sources.json ") ? sources
             : request.Contains("/master/unitStories.json ") ? stories
-            : request.Contains("/assets/fixture-scenario.asset ") ? script : null;
+            : request.Contains("/assets/fixture-scenario.asset ") ? script
+            : request.StartsWith("GET /master/", StringComparison.Ordinal) ? "[]" : null;
         app.Step("启动与下载页", "正常获取本地数据源并加载页面", () =>
         {
             app.Start();
@@ -61,6 +62,29 @@ public sealed class StoryDownloadTests
             WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("Fixture Episode")), "清空搜索后条目恢复");
             ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download.UnitStory");
             app.Data.WriteJson("fixture-requests", server.Requests.ToArray());
+        });
+        app.Step("切换五类剧情", "其余分类正常刷新空数据，搜索状态保留，返回主线恢复已载入样本", () =>
+        {
+            app.Finder.ById(app.Window!, "StoryDownload.SearchBox").AsTextBox().Text = "NoMatchingFixture";
+            foreach (var (category, resource) in new[] { ("Event", "eventStories"), ("Special", "specialStories"), ("Card", "cardEpisodes"), ("Action", "actionSets") })
+            {
+                var tab = app.Finder.ById(app.Window!, "StoryDownload.Category." + category).AsListBoxItem();
+                tab.Select();
+                Assert.True(tab.IsSelected);
+                app.Finder.ById(app.Window!, "StoryDownload." + category + ".Root");
+                Assert.Equal("NoMatchingFixture", app.Finder.ById(app.Window!, "StoryDownload.SearchBox").AsTextBox().Text);
+                var refresh = app.Finder.ById(app.Window!, "StoryDownload.RefreshButton");
+                WaitHelper.Until(() => refresh.IsEnabled, category + " 刷新就绪");
+                refresh.AsButton().Invoke();
+                WaitHelper.Until(() => server.Requests.Any(request => request.Contains("/master/" + resource + ".json ")), category + " 实际数据请求");
+                WaitHelper.Until(() => refresh.IsEnabled, category + " 刷新结束");
+                WaitHelper.Until(() => !app.Finder.ById(app.Window!, "StoryDownload.EmptyMessage").IsOffscreen, category + " 空结果提示");
+                ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download.Empty." + category);
+            }
+            app.Finder.ById(app.Window!, "StoryDownload.Category.Unit").AsListBoxItem().Select();
+            app.Finder.ById(app.Window!, "StoryDownload.Unit.Root");
+            app.Finder.ById(app.Window!, "StoryDownload.SearchBox").AsTextBox().Text = "";
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("Fixture Episode")), "返回主线恢复样本");
         });
         app.Step("选择并下载", "通过队列实际获取本地剧本，文件位于隔离下载目录", () =>
         {

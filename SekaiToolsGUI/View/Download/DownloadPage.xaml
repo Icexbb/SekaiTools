@@ -75,11 +75,11 @@
                                      AutomationProperties.Name="剧情类型"
                                      SelectionChanged="StoryTypeSelector_OnSelected">
                     <control:SelectorBar.Items>
-                        <control:SelectorBarItem Content="主线剧情" />
-                        <control:SelectorBarItem Content="活动剧情" />
-                        <control:SelectorBarItem Content="特殊剧情" />
-                        <control:SelectorBarItem Content="角色剧情" />
-                        <control:SelectorBarItem Content="地图对话" />
+                        <control:SelectorBarItem Content="主线剧情" AutomationProperties.AutomationId="StoryDownload.Category.Unit" />
+                        <control:SelectorBarItem Content="活动剧情" AutomationProperties.AutomationId="StoryDownload.Category.Event" />
+                        <control:SelectorBarItem Content="特殊剧情" AutomationProperties.AutomationId="StoryDownload.Category.Special" />
+                        <control:SelectorBarItem Content="角色剧情" AutomationProperties.AutomationId="StoryDownload.Category.Card" />
+                        <control:SelectorBarItem Content="地图对话" AutomationProperties.AutomationId="StoryDownload.Category.Action" />
                     </control:SelectorBar.Items>
                 </control:SelectorBar>
             </ui:Card>
