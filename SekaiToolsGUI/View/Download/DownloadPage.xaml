@@ -104,9 +104,9 @@
                     <TextBlock x:Name="BrowserResultText" Text="正在准备列表…" FontSize="12" VerticalAlignment="Center"
                                Margin="0,0,16,0"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    <CheckBox x:Name="SelectResultsBox" Content="选择当前结果" Click="SelectResults_OnClick"
+                    <CheckBox x:Name="SelectResultsBox" AutomationProperties.AutomationId="StoryDownload.SelectResults" Content="选择当前结果" Checked="SelectResults_OnCheckedChanged" Unchecked="SelectResults_OnCheckedChanged"
                               VerticalAlignment="Center" Margin="0,0,12,0" />
-                    <Button x:Name="AddSelectedButton" IsEnabled="False" Click="AddSelected_OnClick" Padding="8,4">
+                    <Button x:Name="AddSelectedButton" AutomationProperties.AutomationId="StoryDownload.AddSelectedButton" IsEnabled="False" Click="AddSelected_OnClick" Padding="8,4">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="AddCircle24" FontSize="16" Margin="0,0,6,0" />
                             <TextBlock x:Name="AddSelectedText" Text="加入已选" />
@@ -221,13 +221,13 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <ui:Button Grid.Column="0" Name="TaskClearButton" IsEnabled="False"
+                            <ui:Button Grid.Column="0" Name="TaskClearButton" AutomationProperties.AutomationId="StoryDownload.ClearQueueButton" IsEnabled="False"
                                        Click="ClearButton_OnClick"
                                        Margin="0,0,8,0" Padding="10" ToolTip="清空下载列表，不删除文件"
                                        AutomationProperties.Name="清空下载列表">
                                 <ui:SymbolIcon Symbol="Delete24" FontSize="18" />
                             </ui:Button>
-                            <ui:Button Grid.Column="1" Name="DownloadButton" IsEnabled="False" Appearance="Primary"
+                            <ui:Button Grid.Column="1" Name="DownloadButton" AutomationProperties.AutomationId="StoryDownload.StartDownloadButton" IsEnabled="False" Appearance="Primary"
                                        Click="DownloadButton_OnClick" HorizontalAlignment="Stretch"
                                        HorizontalContentAlignment="Center" Padding="10">
                                 <StackPanel Orientation="Horizontal">

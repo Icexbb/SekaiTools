@@ -293,6 +293,8 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         DownloadChoicesChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    private bool _updatingResultSelection;
+
     private void UpdateBrowserSelection()
     {
         if (BrowserResultText == null) return;
@@ -300,8 +302,13 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         BrowserResultText.Text = $"{_browserResults.Count} 项结果 · 已选 {_selectedDownloads.Count}";
         var available = _browserResults.Where(candidate => !IsDownloadQueued(candidate.Url)).ToArray();
         SelectResultsBox.IsEnabled = available.Length > 0;
-        SelectResultsBox.IsChecked = available.Length > 0 &&
-                                     available.All(candidate => _selectedDownloads.ContainsKey(candidate.Url));
+        _updatingResultSelection = true;
+        try
+        {
+            SelectResultsBox.IsChecked = available.Length > 0 &&
+                                         available.All(candidate => _selectedDownloads.ContainsKey(candidate.Url));
+        }
+        finally { _updatingResultSelection = false; }
         AddSelectedButton.IsEnabled = _selectedDownloads.Count > 0;
         AddSelectedText.Text = $"加入已选（{_selectedDownloads.Count}）";
     }
@@ -350,8 +357,9 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         }
     }
 
-    private void SelectResults_OnClick(object sender, RoutedEventArgs e)
+    private void SelectResults_OnCheckedChanged(object sender, RoutedEventArgs e)
     {
+        if (_updatingResultSelection) return;
         var select = SelectResultsBox.IsChecked == true;
         foreach (var candidate in _browserResults)
             if (select && !IsDownloadQueued(candidate.Url)) _selectedDownloads[candidate.Url] = candidate;

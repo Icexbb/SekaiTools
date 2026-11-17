@@ -28,8 +28,15 @@ public sealed class StoryDownloadTests
                 Episodes = [new UnitEpisode { Id = 1, Title = "Fixture Episode", ScenarioId = "fixture-scenario", EpisodeNoLabel = "1" }]
             }]
         }});
+        var script = JsonSerializer.Serialize(new SekaiToolsBase.GameScript.GameScript
+        {
+            ScenarioId = "fixture-scenario",
+            TalkData = [new("测试角色", "下载正文", 0)],
+            Snippets = [new() { Action = 1 }]
+        });
         server.Response = request => request.Contains("/sources.json ") ? sources
-            : request.Contains("/master/unitStories.json ") ? stories : null;
+            : request.Contains("/master/unitStories.json ") ? stories
+            : request.Contains("/assets/fixture-scenario.asset ") ? script : null;
         app.Step("启动与下载页", "正常获取本地数据源并加载页面", () =>
         {
             app.Start();
@@ -53,6 +60,33 @@ public sealed class StoryDownloadTests
             search.Text = "";
             WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("Fixture Episode")), "清空搜索后条目恢复");
             ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download.UnitStory");
+            app.Data.WriteJson("fixture-requests", server.Requests.ToArray());
+        });
+        app.Step("选择并下载", "通过队列实际获取本地剧本，文件位于隔离下载目录", () =>
+        {
+            app.Finder.ById(app.Window!, "StoryDownload.SelectResults").AsCheckBox().IsChecked = true;
+            var add = app.Finder.ById(app.Window!, "StoryDownload.AddSelectedButton");
+            WaitHelper.Until(() => add.IsEnabled, "加入已选按钮启用");
+            app.Finder.ById(app.Window!, "StoryDownload.SelectResults").AsCheckBox().IsChecked = false;
+            WaitHelper.Until(() => !add.IsEnabled, "取消全选清除选择");
+            app.Finder.ById(app.Window!, "StoryDownload.SelectResults").AsCheckBox().IsChecked = true;
+            WaitHelper.Until(() => add.IsEnabled, "重新全选后可加入队列");
+            add.AsButton().Invoke();
+            var start = app.Finder.ById(app.Window!, "StoryDownload.StartDownloadButton");
+            WaitHelper.Until(() => start.IsEnabled, "队列可下载");
+            start.AsButton().Invoke();
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("下载完成")), "任务完成状态");
+            var path = Path.Combine(app.Data.Paths.DataRoot, "Scripts", "fixture-scenario.asset");
+            Assert.True(File.Exists(path));
+            Assert.Equal(script, File.ReadAllText(path));
+            var parsed = new SekaiToolsBase.GameScript.GameScript(path);
+            Assert.Equal("fixture-scenario", parsed.ScenarioId);
+            Assert.Equal("下载正文", Assert.Single(parsed.TalkData).Body);
+            Assert.Contains(server.Requests, request => request.Contains("/assets/fixture-scenario.asset "));
+            ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download.Completed");
+            app.Finder.ById(app.Window!, "StoryDownload.ClearQueueButton").AsButton().Invoke();
+            WaitHelper.Until(() => !start.IsEnabled, "清空队列后无任务可下载");
+            Assert.Equal(script, File.ReadAllText(path));
             app.Data.WriteJson("fixture-requests", server.Requests.ToArray());
         });
         app.Step("退出", "正常退出", app.Close);

@@ -104,4 +104,6 @@ UI-RESOURCE-001 在隔离环境启动仅绑定 loopback 随机端口的 HTTP fix
 
 ## 下载页正常路径基线
 
-UI-DOWNLOAD-001 使用 LoopbackHttpFixture 提供有效数据源列表及单条主线剧情数据，通过真实刷新按钮加载条目、搜索无匹配内容并恢复。新增 StoryDownload.SearchBox、StoryDownload.RefreshButton 和 StoryDownload.EmptyMessage 契约。请求日志记录实际本地请求；未映射路由返回503，避免意外成功。该场景不等同于五类完整内容、文件下载或队列操作验收；有效识别/压制资源和其余分类fixture仍需继续交付。
+UI-DOWNLOAD-001 使用 LoopbackHttpFixture 提供有效数据源列表及单条主线剧情数据，通过真实刷新按钮加载条目、搜索无匹配内容并恢复。新增 StoryDownload.SearchBox、StoryDownload.RefreshButton 和 StoryDownload.EmptyMessage 契约。请求日志记录实际本地请求；未映射路由返回503，避免意外成功。该场景不等同于五类完整内容、下载失败重试或取消验收；有效识别/压制资源和其余分类fixture仍需继续交付。
+
+下载基线进一步通过 UIA 勾选/取消全选、加入队列和开始下载，获取本地合成剧本并核对隔离 Scripts 目录中的实际文件、原始响应内容和解析后的 ScenarioId/对白。清空队列后再次核对文件仍存在且内容不变。新增 StoryDownload.SelectResults、AddSelectedButton、StartDownloadButton、ClearQueueButton（均带 StoryDownload. 前缀）。全选逻辑响应 Checked/Unchecked，界面刷新回写状态时使用保护标志避免递归误选；鼠标、键盘和 UIA 共用选择规则。
