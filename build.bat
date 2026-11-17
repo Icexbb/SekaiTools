@@ -1,4 +1,4 @@
-set VERSION=1.15.0.1104
+set VERSION=1.16.0.1117
 set PROJECT_NAME=SekaiToolsGUI
 set BUILD_DIR=Build
 
