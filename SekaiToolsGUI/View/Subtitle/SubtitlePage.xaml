@@ -63,7 +63,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <ui:Button Grid.Column="0" Click="AddButton_OnClick" Appearance="Primary"
+                    <ui:Button Grid.Column="0" Click="AddButton_OnClick" Appearance="Primary" AutomationProperties.AutomationId="Subtitle.AddTaskButton"
                                IsEnabled="{Binding CanOpenDialog}" HorizontalAlignment="Stretch" Margin="0,0,4,0">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="Add24" Margin="0,0,5,0" />

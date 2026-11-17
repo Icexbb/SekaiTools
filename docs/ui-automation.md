@@ -100,12 +100,20 @@ UI-TRANSLATION-002 使用三条独立对话，组合未译状态与原文搜索�
 
 ## 资源失败恢复基线
 
-UI-RESOURCE-001 在隔离环境启动仅绑定 loopback 随机端口的 HTTP fixture，向真实字幕页和压制页资源请求返回 503。分别验证错误对话框、检查设置入口、正常退出，并记录请求与失败场景截图。这是资源失败与恢复导航验证，不代表资源准备成功、识别或编码功能验收。fixture 随用例关闭，不访问正式资源或外部服务。有效资源清单、真实小素材和下载页面的数据 fixture 仍待后续交付。
+UI-RESOURCE-001 在隔离环境启动仅绑定 loopback 随机端口的 HTTP fixture，向真实字幕页和压制页资源请求返回 503。分别验证错误对话框、检查设置入口、正常退出，并记录请求与失败场景截图。这是资源失败与恢复导航验证，不代表资源准备成功、识别或编码功能验收。fixture 随用例关闭，不访问正式资源或外部服务。真实字幕资源清单和下载数据 fixture 已由下述正常路径覆盖；真实小素材识别及压制资源仍待后续交付。
 
 ## 下载页正常路径基线
 
-UI-DOWNLOAD-001 使用 LoopbackHttpFixture 提供有效数据源列表及单条主线剧情数据，通过真实刷新按钮加载条目、搜索无匹配内容并恢复。新增 StoryDownload.SearchBox、StoryDownload.RefreshButton 和 StoryDownload.EmptyMessage 契约。请求日志记录实际本地请求；未映射路由返回503，避免意外成功。该场景不等同于五类完整内容、下载失败重试或取消验收；有效识别/压制资源和其余分类fixture仍需继续交付。
+UI-DOWNLOAD-001 使用 LoopbackHttpFixture 提供有效数据源列表及单条主线剧情数据，通过真实刷新按钮加载条目、搜索无匹配内容并恢复。新增 StoryDownload.SearchBox、StoryDownload.RefreshButton 和 StoryDownload.EmptyMessage 契约。请求日志记录实际本地请求；未映射路由返回503，避免意外成功。该场景不等同于五类完整内容、下载失败重试或取消验收；压制资源及其余分类的非空内容 fixture 仍需继续交付。
 
 下载基线进一步通过 UIA 勾选/取消全选、加入队列和开始下载，获取本地合成剧本并核对隔离 Scripts 目录中的实际文件、原始响应内容和解析后的 ScenarioId/对白。清空队列后再次核对文件仍存在且内容不变。新增 StoryDownload.SelectResults、AddSelectedButton、StartDownloadButton、ClearQueueButton（均带 StoryDownload. 前缀）。全选逻辑响应 Checked/Unchecked，界面刷新回写状态时使用保护标志避免递归误选；鼠标、键盘和 UIA 共用选择规则。
 
 下载基线已扩展至五类切换：活动、特殊、角色及地图对话通过正常 HTTP 200 返回空数组，实际刷新各类数据并确认空结果；搜索词跨分类保持，返回主线可恢复非空样本并继续下载。分类入口契约为 StoryDownload.Category.Unit/Event/Special/Card/Action，内容根为 StoryDownload.Unit/Event/Special/Card/Action.Root（各后缀分别使用）。这些空数组仅验证对应分类空数据加载，不代表其非空业务内容、地图活动关联或完整元数据矩阵已验收。
+
+## 真实字幕资源包
+
+UI-SUBTITLE-001 校验四个锁定版本文件，经本地 HTTP 触发真实 ResourceManager 下载与 MD5/大小校验，再独立比较落盘 SHA-256，验证添加任务表单可打开、取消和退出。该场景不执行视频识别或 ASS 导出，不能当作算法或真实视频流程验收。
+
+Functional/All 的完整运行需先准备固定资源包：运行 Tools/PrepareUIVideoResources.ps1 -SourceDirectory <合法取得且版本匹配的videoProcess目录>。脚本先核对 TestData/video-resources.lock.json 的全部 SHA-256，再复制至 .codex-build/fluent-workbench/fixtures/videoProcess；不修改源目录，也不把字体文件提交到仓库。测试只读该副本，不依赖用户正式资源路径。缺失或版本不匹配会明确失败，不跳过验收；Smoke 不需要这个包。
+
+新增 Subtitle.AddTaskButton 和 Subtitle.AddTaskDialog 契约。LoopbackHttpFixture 已支持二进制响应，并在响应前消费有界请求头，仍仅监听本地随机端口；未映射路由继续返回503。
