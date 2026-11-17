@@ -37,14 +37,24 @@ internal static class Program
             "Nonempty modules must remain ordered and empty compression module must be hidden");
         about.IsExpanded = true;
         Pump();
-        Require(Nodes(about).OfType<SettingResetButton>().Any(button => button.Properties == "DeveloperMode"), "Developer toggle must be inside About expander");
-        Require(!Nodes(groups[0]).OfType<SettingResetButton>().Any(button => button.Properties == "DeveloperMode"), "Developer toggle still in General group");
+        Require(!Nodes(page).OfType<SettingResetButton>().Any(button => button.Properties == "DeveloperMode"), "Developer toggle must be hidden");
         var developerGroup = groups.Single(group => Equals(group.Header, "开发者设置"));
         Require(developerGroup.Visibility == Visibility.Collapsed, "Developer group visible while mode disabled");
-        model.DeveloperMode = true; Pump();
+        Require(!developerGroup.IsExpanded, "Developer settings must start collapsed");
+        var version = (System.Windows.UIElement)page.FindName("VersionLabel");
+        void ClickVersion() => version.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0, System.Windows.Input.MouseButton.Left)
+        { RoutedEvent = System.Windows.UIElement.PreviewMouseLeftButtonDownEvent });
+        for (var click = 0; click < 6; click++) ClickVersion();
+        Require(!model.DeveloperMode, "Developer mode enabled before seventh click");
+        ClickVersion(); Pump();
+        Require(model.DeveloperMode && !developerGroup.IsExpanded, "Unlock must leave developer settings collapsed");
+        developerGroup.IsExpanded = true; Pump();
         Require(developerGroup.Visibility == Visibility.Visible && developerGroup.Icon is SymbolIcon { Symbol: SymbolRegular.Beaker24 }, "Developer group/icon not enabled live");
         Require(Nodes(developerGroup).OfType<NumberBox>().Count() == 6, "Missing threshold editors");
-        model.DeveloperMode = false; Pump();
+        Nodes(developerGroup).OfType<Wpf.Ui.Controls.Button>().Single(button => Equals(button.Content, "关闭开发者模式"))
+            .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+        Pump();
+        Require(!model.DeveloperMode && !developerGroup.IsExpanded, "Disable action must switch off mode and collapse settings");
         Require(developerGroup.Visibility == Visibility.Collapsed, "Developer group not hidden live");
         VerifyDeveloperThresholds(constructor, output);
         VerifyDeveloperConnectionLayout(model, output);
@@ -53,7 +63,7 @@ internal static class Program
         foreach (var expander in Nodes(page).OfType<CardExpander>()) expander.IsExpanded = true;
         Pump();
         var buttons = Nodes(page).OfType<SettingResetButton>().ToArray();
-        Require(buttons.Length == 24, $"Expected 24 reset buttons, got {buttons.Length}");
+        Require(buttons.Length == 23, $"Expected 23 reset buttons, got {buttons.Length}");
         foreach (var button in buttons)
         {
             Require(button.Visibility == Visibility.Collapsed, "Default unexpectedly modified: " + button.Properties);
@@ -106,7 +116,13 @@ internal static class Program
     private static void VerifyDeveloperConnectionLayout(SettingPageModel model, string output)
     {
         model.DeveloperMode = true;
-        var toggleSection = SettingCatalog.Load().Single(section => section.Properties.Contains("DeveloperMode"));
+        var toggleSection = new SettingSection
+        {
+            Title = "开发者模式",
+            Icon = "Beaker24",
+            Description = "旧版配置兼容验证",
+            Fields = [new SettingField { Kind = "toggle", Property = "DeveloperMode" }]
+        };
         var legacySection = new SettingSection
         {
             Title = toggleSection.Title,

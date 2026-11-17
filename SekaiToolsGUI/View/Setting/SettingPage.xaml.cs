@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Controls;
 using System.Windows.Data;
 using SekaiToolsGUI.Control;
@@ -14,6 +16,9 @@ namespace SekaiToolsGUI.View.Setting;
 
 public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
 {
+    private int _versionClickCount;
+    private long _lastVersionClick;
+
     public SettingPage() : this(MainWindowViewModel.SettingPageModel)
     {
     }
@@ -39,9 +44,6 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
         SettingsItems.Children.Clear();
         var builder = new SettingViewBuilder(OpenFontDialog, key => specialSections[key]);
         var sections = SettingCatalog.Load();
-        AboutSettingsHost.Children.Clear();
-        foreach (var section in sections.Where(section => section.Properties.Contains(nameof(SettingPageModel.DeveloperMode))))
-            AboutSettingsHost.Children.Add(builder.Build(section));
         foreach (var category in SettingCatalog.Categories)
         {
             var content = new StackPanel();
@@ -70,7 +72,7 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
                 Header = category,
                 Icon = new SymbolIcon(icon),
                 Content = content,
-                IsExpanded = true,
+                IsExpanded = category != "开发者设置",
                 Margin = new Thickness(0, 0, 0, 12),
                 ContentPadding = new Thickness(8)
             };
@@ -80,7 +82,65 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
                 { Converter = new BooleanToVisibilityConverter() });
             SettingsItems.Children.Add(group);
         }
+        var developerGroup = SettingsItems.Children.OfType<CardExpander>()
+            .FirstOrDefault(group => Equals(group.Header, "开发者设置"));
+        if (developerGroup?.Content is StackPanel developerContent)
+        {
+            var disable = new Wpf.Ui.Controls.Button
+            {
+                Content = "关闭开发者模式",
+                Icon = new SymbolIcon(SymbolRegular.Power24),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 12, 0, 0)
+            };
+            disable.Click += (_, _) =>
+            {
+                ViewModel.DeveloperMode = false;
+                developerGroup.IsExpanded = false;
+                _versionClickCount = 0;
+                VersionLabel.ToolTip = null;
+            };
+            developerContent.Children.Add(disable);
+        }
+        Unloaded += (_, _) => { _versionClickCount = 0; _lastVersionClick = 0; };
         SettingsItems.Children.Add(AboutSection);
+    }
+
+    private void VersionLabel_OnClick(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true; // Clicking the version must not toggle the surrounding expander.
+        CountVersionClick();
+    }
+
+    private void VersionLabel_OnKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key is not (Key.Enter or Key.Space) || e.IsRepeat) return;
+        e.Handled = true;
+        CountVersionClick();
+    }
+
+    private void CountVersionClick()
+    {
+        if (ViewModel.DeveloperMode)
+        {
+            VersionLabel.ToolTip = "开发者模式已开启";
+            return;
+        }
+        var now = Stopwatch.GetTimestamp();
+        if (_lastVersionClick == 0 || Stopwatch.GetElapsedTime(_lastVersionClick, now).TotalSeconds > 3)
+        {
+            _versionClickCount = 0;
+            VersionLabel.ToolTip = null;
+        }
+        _lastVersionClick = now;
+        if (++_versionClickCount >= 7)
+        {
+            _versionClickCount = 0;
+            ViewModel.DeveloperMode = true;
+            VersionLabel.ToolTip = "开发者模式已开启，可展开开发者设置";
+        }
+        else if (_versionClickCount >= 4)
+            VersionLabel.ToolTip = $"再点击 {7 - _versionClickCount} 次即可开启开发者模式";
     }
 
     private static ISnackbarService SnackService =>

@@ -42,7 +42,10 @@
                                 Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                                 Text="© 2024 PJS字幕组 | Icexbb 以 AGPL-3.0 协议开源" />
 
-                            <ui:TextBlock
+                            <ui:TextBlock x:Name="VersionLabel"
+                                Focusable="True"
+                                PreviewMouseLeftButtonDown="VersionLabel_OnClick"
+                                KeyDown="VersionLabel_OnKeyDown"
                                 Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"
                                 Margin="0,0,16,0"
                                 VerticalAlignment="Center"
@@ -69,7 +72,6 @@
                                 <ui:SymbolIcon Grid.Column="1" Symbol="Link24" />
                             </Grid>
                         </ui:Anchor>
-                        <StackPanel x:Name="AboutSettingsHost" Margin="8,0,8,8" />
                     </StackPanel>
                 </ui:CardExpander>
             </StackPanel>
