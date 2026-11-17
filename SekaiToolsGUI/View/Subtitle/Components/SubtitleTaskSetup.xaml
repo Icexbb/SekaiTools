@@ -41,7 +41,7 @@
                 </StackPanel>
                 <ui:Button Grid.Column="1" HorizontalAlignment="Right"
                            IsEnabled="{Binding HasNotStarted}"
-                           Content="浏览" Click="VideoFileBrowser_OnClick" />
+                           Content="浏览" Click="VideoFileBrowser_OnClick" AutomationProperties.AutomationId="Subtitle.VideoBrowseButton" />
             </Grid>
         </ui:Card>
         <ui:Card x:Name="ScriptFileCard" Height="70" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"

@@ -158,7 +158,7 @@
                                 Content="终止任务" Appearance="Danger" />
                             <ui:Button
                                 Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center"
-                                Click="OutputButton_OnClick"
+                                Click="OutputButton_OnClick" AutomationProperties.AutomationId="Subtitle.ExportButton"
                                 IsEnabled="{Binding Path=CanOutput}"
                                 Margin="5,0" Content="输出" Appearance="Primary" />
                             <ui:Button

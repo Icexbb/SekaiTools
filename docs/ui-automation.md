@@ -100,7 +100,7 @@ UI-TRANSLATION-002 使用三条独立对话，组合未译状态与原文搜索�
 
 ## 资源失败恢复基线
 
-UI-RESOURCE-001 在隔离环境启动仅绑定 loopback 随机端口的 HTTP fixture，向真实字幕页和压制页资源请求返回 503。分别验证错误对话框、检查设置入口、正常退出，并记录请求与失败场景截图。这是资源失败与恢复导航验证，不代表资源准备成功、识别或编码功能验收。fixture 随用例关闭，不访问正式资源或外部服务。真实字幕资源清单和下载数据 fixture 已由下述正常路径覆盖；真实小素材识别仍待后续交付；压制运行库及仅转码路径由下述用例覆盖。
+UI-RESOURCE-001 在隔离环境启动仅绑定 loopback 随机端口的 HTTP fixture，向真实字幕页和压制页资源请求返回 503。分别验证错误对话框、检查设置入口、正常退出，并记录请求与失败场景截图。这是资源失败与恢复导航验证，不代表资源准备成功、识别或编码功能验收。fixture 随用例关闭，不访问正式资源或外部服务。真实字幕资源清单、合成视频识别和压制管线由下述正常路径覆盖。
 
 ## 下载页正常路径基线
 
@@ -113,6 +113,10 @@ UI-DOWNLOAD-001 使用 LoopbackHttpFixture 提供有效数据源列表及单条�
 ## 真实字幕资源包
 
 UI-SUBTITLE-001 校验四个锁定版本文件，经本地 HTTP 触发真实 ResourceManager 下载与 MD5/大小校验，再独立比较落盘 SHA-256，验证添加任务表单可打开、取消和退出。该场景不执行视频识别或 ASS 导出，不能当作算法或真实视频流程验收。
+
+UI-SUBTITLE-002 用固定资源生成三秒 1280×720/24 FPS 合成对话视频，通过真实文件选择器自动匹配同名 JSON/TXT、加入常规识别队列并导出 ASS。验证单条 Dialogue 的译文、起止时间接近素材的 0.5～2.5 秒（容差 0.1 秒）及源视频 SHA-256 不变；保留素材、ASS、识别区间、应用日志和完成截图。新增 Subtitle.VideoBrowseButton、Subtitle.ExportButton、Subtitle.ExportOptions 契约。素材复用模板渲染器，因此它验证界面到真实处理器和导出的流程，不是独立的实际录屏准确率基准；横幅、标记、恢复及实验性仅视频模式仍需另行覆盖。该用例同时需要下述两个固定资源包。
+
+隔离测试模式下 ExplorerHelper 不打开或聚焦全局资源管理器，避免 ASS 导出干扰其他桌面窗口；实际 ASS 写入和识别处理照常执行。此模式不覆盖导出后的 Windows Shell 集成。
 
 Functional/All 的完整运行需先准备固定资源包：运行 Tools/PrepareUIVideoResources.ps1 -SourceDirectory <合法取得且版本匹配的videoProcess目录>。脚本先核对 TestData/video-resources.lock.json 的全部 SHA-256，再复制至 .codex-build/fluent-workbench/fixtures/videoProcess；不修改源目录，也不把字体文件提交到仓库。测试只读该副本，不依赖用户正式资源路径。缺失或版本不匹配会明确失败，不跳过验收；Smoke 不需要这个包。
 

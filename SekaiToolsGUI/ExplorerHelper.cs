@@ -13,6 +13,7 @@ public static class ExplorerHelper
 
     public static void OpenFolderAndFocus(string filePath)
     {
+        if (SekaiToolsConfiguration.ApplicationPaths.Current.IsIsolated) return;
         if (!File.Exists(filePath))
         {
             MessageBox.Show("文件不存在或路径错误", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
