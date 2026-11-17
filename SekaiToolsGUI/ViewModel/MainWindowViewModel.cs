@@ -28,7 +28,18 @@ public class MainWindowViewModel : ViewModelBase
                 : item.TargetPageType == typeof(SuppressPage) ? "Encoding"
                 : item.TargetPageType == typeof(DownloadPage) ? "StoryDownload" : "Settings";
             System.Windows.Automation.AutomationProperties.SetAutomationId(item, $"MainWindow.Navigation.{key}");
+            System.Windows.Data.BindingOperations.SetBinding(item, System.Windows.Automation.AutomationProperties.ItemStatusProperty,
+                new System.Windows.Data.Binding(nameof(NavigationViewItem.IsActive))
+                { Source = item, Converter = new CurrentPageStatusConverter() });
         }
+    }
+
+    private sealed class CurrentPageStatusConverter : System.Windows.Data.IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) =>
+            value is true ? "当前页面" : "";
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) =>
+            System.Windows.Data.Binding.DoNothing;
     }
 
     public object[] NavigationItems { get; set; } =

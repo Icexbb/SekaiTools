@@ -46,6 +46,7 @@
                                        AutomationProperties.AutomationId="Translation.LoadScriptButton"
                                        Margin="0,0,8,8" />
                             <ui:Button x:Name="LoadTranslationButton" Content="载入译文"
+                                       AutomationProperties.AutomationId="Translation.LoadTranslationButton"
                                        Click="LoadTranslationButton_OnClick" Margin="0,0,8,8"
                                        Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}" />
                             <ui:Button x:Name="ReferenceTranslationButton" Content="载入参考"

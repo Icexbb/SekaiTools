@@ -131,12 +131,17 @@ public sealed class ApplicationFixture : IDisposable
         ScreenshotHelper.CaptureStable(Window, Path.Combine(Data.Directory, "Screenshots"), "BeforeNavigation");
         var item = Finder.ById(Window!, navigationId);
         // WPF-UI 4.3 exposes these as data-item peers without Invoke/SelectionItem.
-        // FlaUI clicks the located element's current clickable point; no fixed screen coordinates.
+        // Use the located item's keyboard activation; no fixed screen coordinates.
         WaitHelper.Until(() => item.IsEnabled && !item.IsOffscreen, $"导航项可操作：{navigationId}");
         item.Focus();
         FlaUI.Core.Input.Keyboard.Type(FlaUI.Core.WindowsAPI.VirtualKeyShort.RETURN);
         Finder.ById(Window!, pageId);
         WaitHelper.Until(() => !Finder.ById(Window!, pageId).IsOffscreen, $"页面可见：{pageId}");
+        WaitHelper.Until(() => item.Properties.ItemStatus.ValueOrDefault == "当前页面", "导航选中态与页面一致");
+        foreach (var otherId in new[] { Catalog.SubtitleNavigation, Catalog.TranslationNavigation,
+            Catalog.DownloadNavigation, Catalog.EncodingNavigation, Catalog.SettingsNavigation }.Where(id => id != navigationId))
+            if (Finder.ById(Window!, otherId).Properties.ItemStatus.ValueOrDefault == "当前页面")
+                throw new InvalidOperationException($"多个导航项同时选中：{navigationId} / {otherId}");
     }
 
     public void Close()

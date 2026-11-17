@@ -49,6 +49,21 @@ public sealed class TranslationEditorTests
             app.Finder.ById(app.Window!, "Translation.SearchBox").AsTextBox().Text = "原文丙";
             app.Finder.ById(app.Window!, "Translation.Dialog.3.TargetText").AsTextBox().Text = "第三译文。";
         });
+        app.Step("离页草稿与缓存", "离开翻译页写入实际草稿，返回保留搜索和编辑", () =>
+        {
+            app.Navigate(Catalog.SettingsNavigation, Catalog.Settings);
+            var draft = Path.Combine(app.Data.Paths.DataRoot, "Data", "translation-draft.json");
+            WaitHelper.Until(() => File.Exists(draft), "离页草稿写入");
+            using var json = JsonDocument.Parse(File.ReadAllText(draft));
+            var values = json.RootElement.GetProperty("Values").EnumerateArray()
+                .Select(value => value.GetProperty("Text").GetString()).ToArray();
+            Assert.Contains("第二译文。", values);
+            Assert.Contains("第三译文。", values);
+            Assert.Equal(scriptPath, json.RootElement.GetProperty("ScriptPath").GetString());
+            app.Navigate(Catalog.TranslationNavigation, Catalog.Translation);
+            Assert.Equal("原文丙", app.Finder.ById(app.Window!, "Translation.SearchBox").AsTextBox().Text);
+            Assert.Equal("第三译文。", app.Finder.ById(app.Window!, "Translation.Dialog.3.TargetText").AsTextBox().Text);
+        });
         app.Step("过滤列表导出", "输出全篇三条且保持原剧本顺序，未译沿用原文", () =>
         {
             app.Finder.ById(app.Window!, Catalog.LoadScript).Focus();
@@ -135,6 +150,19 @@ public sealed class TranslationEditorTests
             app.Finder.ById(app.Window!, "Translation.SearchBox").AsTextBox().Text = "";
             Assert.Equal("修订译文", app.Finder.ById(app.Window!, "Translation.Dialog.1.TargetText").AsTextBox().Text);
             ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Translation.SaveAs");
+        });
+        app.Step("载入TXT译文", "通过原生文件选择器导入普通TXT并显示匹配正文", () =>
+        {
+            var translation = Path.Combine(app.Data.Root, "import.txt");
+            File.WriteAllText(translation, "角色：导入译文。");
+            var before = System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(translation));
+            app.Finder.ById(app.Window!, "Translation.LoadTranslationButton").AsButton().Invoke();
+            var dialog = app.OwnedFileDialog();
+            WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByAutomationId("1148").And(cf.ByControlType(FlaUI.Core.Definitions.ControlType.Edit))), "TXT文件名框").AsTextBox().Text = translation;
+            Keyboard.Type(VirtualKeyShort.RETURN);
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("继续").And(cf.ByControlType(FlaUI.Core.Definitions.ControlType.Button))), "确认替换当前译文").AsButton().Invoke();
+            WaitHelper.Until(() => app.Finder.ById(app.Window!, "Translation.Dialog.1.TargetText").AsTextBox().Text == "导入译文。", "匹配TXT正文载入");
+            Assert.Equal(before, System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(translation)));
         });
         app.Step("关闭", "已保存文档正常退出", app.Close);
     }

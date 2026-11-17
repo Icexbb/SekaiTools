@@ -53,6 +53,7 @@ public sealed class SubtitleResourceTests
             }
             add.AsButton().Invoke();
             var dialog = app.Finder.ById(app.Window!, "Subtitle.AddTaskDialog");
+            Assert.DoesNotContain(dialog.FindAllDescendants(cf => cf.ByName("加入队列").And(cf.ByControlType(ControlType.Button))), button => button.IsEnabled);
             ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Subtitle.AddTask");
             WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("取消").And(cf.ByControlType(ControlType.Button))), "取消添加任务").AsButton().Invoke();
             WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByAutomationId("Subtitle.AddTaskDialog")) is null, "任务表单关闭");

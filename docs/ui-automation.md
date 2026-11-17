@@ -83,6 +83,8 @@ WPF-UI 4.3.0 的 NavigationView 本身不提供容器 Peer，因此使用保持�
 
 新增重要控件时扩展 `Automation/Catalog.cs` 和对应测试。不可把 x:Name 的偶然回退视为已建立显式契约；动态行和任务的稳定身份策略在各页改造前落实。
 
+主导航沿用 WPF-UI 原始 peer，ItemStatus 通过绑定真实 IsActive 提供“当前页面”状态，未选中为空。共用 Navigate 同时检查目标页面根、目标选中态及其他导航项未同时选中。此状态不改变原导航顺序和样式，也不代替高亮外观检查。
+
 ## 报告、截图和诊断
 
 每轮输出至 `.codex-build/fluent-workbench/artifacts/{RunId}/`，包括 TRX，以及每个独立实例的：
@@ -101,6 +103,8 @@ WPF-UI 4.3.0 的 NavigationView 本身不提供容器 Peer，因此使用保持�
 UI-TRANSLATION-001 使用合成单条剧本，通过原生文件选择器载入、UIA 输入正文、Ctrl+S 及保存选项导出，再从磁盘解析 TXT v2 并核对条目数和译文。所有样本和输出均在隔离根内。Translation.Dialog.{SequenceNumber}.TargetText 使用当前已载入剧本的原始事件顺序，非筛选后的显示索引；身份仅在该载入会话内有效。Translation.SaveOptions 标识导出弹窗。同一用例继续验证覆盖取消后原文件 SHA-256 不变、未保存编辑保留，以及搜索隐藏条目后另存为校对副本仍完整导出；副本重新解析核对正文，原文件哈希保持不变，清空搜索后条目重新显示。多条目组合筛选由下述 UI-TRANSLATION-002 覆盖，完整导入矩阵仍待后续覆盖。新增契约为 Translation.SearchBox、Translation.SaveAsButton 和共享的 Export.OverwriteConfirmation。
 
 UI-TRANSLATION-002 使用三条独立对话，组合未译状态与原文搜索，验证原始第二条在筛选后仍使用同一 ID、译后即时退出未译列表、恢复全部状态后保留编辑。筛选显示第三条时保存全篇，再从磁盘解析核对三条正文及原剧本顺序，未译第一条沿用原文。新增 Translation.StatusFilter 契约。该小样本验证身份和数据行为，不代表长列表虚拟化或滚动性能验收。
+
+该用例在导出前导航至设置，解析实际离页草稿的 ScriptPath 和 Values，核对第二、第三条译文；返回后核对搜索词及正文仍保留。UI-TRANSLATION-001 另通过 Translation.LoadTranslationButton 和原生文件选择器载入普通 TXT，接受现有替换确认后核对正文，源 TXT 哈希不变。此处仍不代表重启草稿恢复或复杂导入矩阵。
 
 ## 资源失败恢复基线
 

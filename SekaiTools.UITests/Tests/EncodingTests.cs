@@ -78,6 +78,7 @@ public sealed class EncodingTests
             WaitHelper.Until(() => add.IsEnabled, "压制运行库准备完成", TimeSpan.FromSeconds(60));
             add.AsButton().Invoke();
             var dialog = app.Finder.ById(app.Window!, "Encoding.AddTaskDialog");
+            Assert.DoesNotContain(dialog.FindAllDescendants(cf => cf.ByName("添加任务").And(cf.ByControlType(ControlType.Button))), button => button.IsEnabled);
             app.Finder.ById(dialog, "Encoding.VideoBrowseButton").AsButton().Invoke();
             var picker = app.OwnedFileDialog();
             WaitHelper.Until(() => picker.FindFirstDescendant(cf => cf.ByAutomationId("1148").And(cf.ByControlType(ControlType.Edit))), "视频文件名框").AsTextBox().Text = video;
