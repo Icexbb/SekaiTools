@@ -43,7 +43,7 @@
                         <ui:Button Content="开始压制" Icon="{ui:SymbolIcon Play24}" Click="Start_OnClick"
                                    Visibility="{c:Binding IsWaiting, FalseToVisibility=Collapsed}"
                                    IsEnabled="{Binding CanStart}" Margin="0,0,8,4" />
-                        <ui:Button Content="取消当前任务" Icon="{ui:SymbolIcon Dismiss24}" Click="Cancel_OnClick"
+                        <ui:Button Content="取消当前任务" AutomationProperties.AutomationId="Encoding.CancelButton" Icon="{ui:SymbolIcon Dismiss24}" Click="Cancel_OnClick"
                                    Visibility="{c:Binding IsActive, FalseToVisibility=Collapsed}"
                                    IsEnabled="{Binding CanCancel}" Margin="0,0,8,4" />
                         <ui:Button Content="{Binding EditLabel}" Icon="{ui:SymbolIcon Edit24}" Click="Edit_OnClick"
@@ -80,7 +80,7 @@
                     <CheckBox DockPanel.Dock="Right" x:Name="FollowLog" IsChecked="True" Content="跟随最新日志" />
                     <TextBlock Text="完整任务日志" FontWeight="SemiBold" VerticalAlignment="Center" />
                 </DockPanel>
-                <TextBox Grid.Row="3" x:Name="LogTextBox" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True"
+                <TextBox Grid.Row="3" x:Name="LogTextBox" AutomationProperties.AutomationId="Encoding.TaskLog" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True"
                          FontFamily="Consolas" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
                          TextWrapping="NoWrap" TextChanged="Log_OnChanged" AutomationProperties.Name="完整任务日志" />
             </Grid>

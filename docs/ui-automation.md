@@ -137,3 +137,5 @@ UI-ENCODING-001 使用 media-resources.lock.json 锁定的83个运行库文件�
 新增 Encoding.AddTaskButton、Encoding.AddTaskDialog、Encoding.VideoBrowseButton 契约；原生文件选择定位检查文件名Edit，避免误选嵌套的WPF任务表单。
 
 UI-ENCODING-002 复用真实转码链路，在输入目录准备同名ASS，确认任务自动采用并实际烧录。字幕使用无字体依赖的绿色绘图矩形；独立FFmpeg从输入/输出中心32×32区域提取平均RGB，验证蓝色输入变为绿色输出，同时确认视频及ASS源文件哈希未变、输出48帧。报告含数值、解码日志和烧录后帧PNG。该场景验证绘图字幕进入画面，不等同于多字体文字、特效、音轨或所有分辨率验收。
+
+UI-ENCODING-003 生成十分钟320×240合成视频，等待隔离 TEMP 下真实 FFmpeg 临时视频开始写入，再通过 Encoding.CancelButton 取消。验证已取消状态、Encoding.TaskLog 的取消记录、源视频 SHA-256 不变、临时视频删除且目标输出未发布。报告包含取消日志、临时文件路径、清理结果和截图。此用例沿用真实输出事务，不能等待最终目标出现才取消，也不把取消结果当作成功转码；仍未覆盖音轨、多任务取消、覆盖已有输出或强制终止矩阵。

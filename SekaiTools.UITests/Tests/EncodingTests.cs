@@ -21,16 +21,20 @@ public sealed class EncodingTests
     [Trait("Category", "Functional")]
     public void UI_ENCODING_002_ASS实际烧录改变输出画面() => RunEncodingCase(true);
 
-    private static void RunEncodingCase(bool burnSubtitle)
+    [DesktopFact]
+    [Trait("Category", "Functional")]
+    public void UI_ENCODING_003_真实编码运行后取消并清理临时文件() => RunEncodingCase(false, true);
+
+    private static void RunEncodingCase(bool burnSubtitle, bool cancel = false)
     {
         using var server = new LoopbackHttpFixture();
-        using var app = new ApplicationFixture(burnSubtitle ? "UI-ENCODING-002" : "UI-ENCODING-001", "Functional");
+        using var app = new ApplicationFixture(cancel ? "UI-ENCODING-003" : burnSubtitle ? "UI-ENCODING-002" : "UI-ENCODING-001", "Functional");
         var executable = Environment.GetEnvironmentVariable("SEKAI_TOOLS_UI_EXE")!;
         var pack = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(executable)!, "..", "fixtures", "vapourSynth"));
         var files = new Dictionary<string, byte[]>();
         var manifest = new List<object>();
         var video = Path.Combine(app.Data.Root, "input.mp4");
-        app.Step("资源及素材", "固定版本真实运行库和两秒合成视频就绪", () =>
+        app.Step("资源及素材", cancel ? "固定运行库和十分钟合成视频就绪" : "固定版本真实运行库和两秒合成视频就绪", () =>
         {
             using var resourceLock = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "media-resources.lock.json")));
             foreach (var entry in resourceLock.RootElement.EnumerateArray())
@@ -49,7 +53,7 @@ public sealed class EncodingTests
             server.Response = request => request.Contains("/resources/vapourSynth.json ") ? JsonSerializer.Serialize(manifest) : null;
             server.BinaryResponse = request => files.FirstOrDefault(file => request.Contains("/resources/vapourSynth/" + file.Key + " ")).Value;
             FfmpegFixture.Run(Path.Combine(pack, "ffmpeg.exe"), Path.Combine(app.Data.Directory, "generate-video.log"),
-                "-y", "-f", "lavfi", "-i", "color=c=blue:s=320x240:r=24", "-t", "2", "-c:v", "libx264", "-pix_fmt", "yuv420p", video);
+                "-y", "-f", "lavfi", "-i", "color=c=blue:s=320x240:r=24", "-t", cancel ? "600" : "2", "-c:v", "libx264", "-pix_fmt", "yuv420p", video);
             if (burnSubtitle)
                 File.WriteAllText(Path.ChangeExtension(video, ".ass"), """
                     [Script Info]
@@ -82,6 +86,29 @@ public sealed class EncodingTests
             WaitHelper.Until(() => submit.IsEnabled, "小视频分析与提交校验通过", TimeSpan.FromSeconds(30));
             submit.AsButton().Invoke();
         });
+        if (cancel)
+        {
+            app.Step("取消真实编码", "临时视频已开始写入后取消，日志正确且临时文件清理", () =>
+            {
+                var output = Path.Combine(app.Data.Root, "[STVS]input.mp4");
+                var partial = WaitHelper.Until(() => Directory.EnumerateFiles(app.Data.Temp, "*.partial.mp4", SearchOption.AllDirectories)
+                    .FirstOrDefault(path => new FileInfo(path).Length > 0), "真实FFmpeg开始写入临时视频", TimeSpan.FromSeconds(30));
+                var stop = app.Finder.ById(app.Window!, "Encoding.CancelButton");
+                WaitHelper.Until(() => stop.IsEnabled, "取消按钮可用");
+                stop.AsButton().Invoke();
+                WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("已取消")), "编码取消完成", TimeSpan.FromSeconds(30));
+                Assert.Equal(inputHash, SHA256.HashData(File.ReadAllBytes(video)));
+                var log = app.Finder.ById(app.Window!, "Encoding.TaskLog").AsTextBox().Text;
+                Assert.Contains("压制已取消", log);
+                File.WriteAllText(Path.Combine(app.Data.Directory, "canceled-task.log"), log);
+                WaitHelper.Until(() => !File.Exists(partial), "临时视频清理完成");
+                Assert.False(File.Exists(output));
+                app.Data.WriteJson("canceled-output", new { Temporary = partial, Removed = true, TargetPublished = false });
+                ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Encoding.Canceled");
+            });
+            app.Step("退出", "取消后正常退出", app.Close);
+            return;
+        }
         app.Step(burnSubtitle ? "真实ASS烧录" : "真实转码",
             burnSubtitle ? "输出48帧且中心由蓝色变为ASS绿色绘图，视频与字幕源文件不变" : "队列任务完成且输出能被FFmpeg完整解码，源文件不变", () =>
         {
