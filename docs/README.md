@@ -19,6 +19,7 @@
 
 | 文档 | 内容 |
 | --- | --- |
+| [Fluent Workbench 实施方案](fluent-workbench-implementation-plan.md) | FlaUI 先行、现有功能基线、逐页改造范围与验收；[阶段零审计](fluent-workbench-phase0-audit.md)提供源码证据 |
 | [翻译检查配置](translation-rules.md) | `translation-rules.json` 的正则替换与反馈 |
 | [设置页界面配置](settings-ui-configuration.md) | `settings-ui.json` 的控件、绑定、图标及还原范围 |
 | [识别性能与诊断](recognition-performance.md) | 帧池、内存、实验取舍、复测工具及文件选择延迟排查 |

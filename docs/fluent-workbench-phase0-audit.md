@@ -2,6 +2,8 @@
 
 审计日期：2026-11-17（Asia/Hong_Kong）。代码基线：`b21fece`，分支 `main`，开始审计时工作区干净。
 
+实施顺序已按补充要求调整，后续执行以 [FlaUI 先行实施方案](fluent-workbench-implementation-plan.md) 为准：先独立完成 FlaUI 与现有功能基线，再进入设计系统和业务页面改造。本文保留阶段零审计证据；下文阶段编号为原始安排。
+
 ## 1. 结论与证据边界
 
 现有 WPF / WPF-UI / MVVM 可以承载本次改造，无需更换框架或重写业务。应先建立测试隔离、稳定 AutomationId 和主题资源层，再以翻译编辑器验证设计系统，随后推进字幕、压制、下载和设置。
@@ -49,8 +51,8 @@
 | --- | --- | --- |
 | `View/Translate/TranslatePage.xaml`、`Components/TranslateLineDialog.xaml` | 文件工具栏、搜索与类型/状态筛选、统计、参考/差异选项；ListView；多处 Card | 先统一 PageHeader/Toolbar，减少重复容器；保留保存/另存为、撤销重做、同步、留空、TXT/TXT-v2、拖入、原声和参考差异；实测大列表滚动、焦点和离屏条目 |
 | `View/Subtitle/SubtitlePage.xaml`、`Components/SubtitleTaskProcess.xaml` | 左侧 260、最小 220，右侧最小 420；分组队列、预览、结果及时间轴 | 增加可调分栏与时间轴高度/折叠，保留队列排序、恢复、导出、播放和定位；先验证小素材，避免把识别算法变化混入 UI |
-| `View/Suppress/SuppressPage.xaml`、`Components/SuppressionTaskDetails.xaml` | 分组任务、详情、资源初始化和状态模型 | 统一任务工具栏、阶段/FPS/ETA/大小展示、日志搜索/复制/自动滚动与高级参数；逐项确认现有能力和缺口；缺少业务数据时另列功能工作，不伪造展示值 |
-| `View/Download/DownloadPage.xaml` 及 Unit/Event/Special/Card/Action 组件 | 数据源、分类、部分虚拟化列表、下载队列 | 统一资源浏览工作区；补齐可调/可折叠队列、列表/网格状态契约；验证五类数据、选择、取消、失败重试及离线数据源 |
+| `View/Suppress/SuppressPage.xaml`、`Components/SuppressionTaskDetails.xaml` | 分组任务、详情、资源初始化和状态模型；已有阶段/FPS/ETA/大小及日志跟随 | 统一任务工具栏和高级详情，保留真实进度与参数规则；日志搜索、专用复制与错误高亮列为独立增强，不当作既有能力 |
+| `View/Download/DownloadPage.xaml` 及 Unit/Event/Special/Card/Action 组件 | 数据源、五类专有浏览列表、部分虚拟化列表、下载队列 | 统一资源浏览工作区和可调/可折叠队列；统一列表/网格切换列为独立增强；验证五类数据、选择、取消、失败反馈及离线数据源 |
 | `View/Setting/SettingPage.xaml(.cs)`、`SettingViewBuilder.cs` | 元数据驱动 CardExpander、动态编辑器、开发者区 | 标签与编辑器对齐、合理最大内容宽度、敏感值隐藏、展开/重置/保存重载；保持所有设置、排序和开发者入口 |
 
 翻译页已有 `ScrollViewer.CanContentScroll=True` 和像素滚动配置，不能假定换容器后仍然虚拟化。字幕和压制页使用 PassiveScrollViewer 内的分组 ItemsControl，应实测队列数量增长时的容器和布局成本。
