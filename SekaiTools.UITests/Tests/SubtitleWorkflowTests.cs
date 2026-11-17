@@ -16,6 +16,66 @@ public sealed class SubtitleWorkflowTests
 {
     [DesktopFact]
     [Trait("Category", "Functional")]
+    public void UI_SUBTITLE_003_取消后重启恢复并完成识别()
+    {
+        using var server = new LoopbackHttpFixture();
+        using var app = new ApplicationFixture("UI-SUBTITLE-003", "Functional");
+        string video = "";
+        app.Step("准备长对话", "合成持续120秒的对话供真实取消和恢复", () =>
+        {
+            ResourcePackFixture.Serve(app, server, "videoProcess", "video-resources.lock.json");
+            video = RecognitionVideoFixture.Create(app.Data.Root, 120);
+        });
+        app.Step("取消识别", "通过终止按钮保存实际未完成进度", () =>
+        {
+            app.Start();
+            app.Navigate("MainWindow.Navigation.Subtitle", "Subtitle.Root");
+            var add = app.Finder.ById(app.Window!, "Subtitle.AddTaskButton");
+            WaitHelper.Until(() => add.IsEnabled, "资源准备完成");
+            add.AsButton().Invoke();
+            var dialog = app.Finder.ById(app.Window!, "Subtitle.AddTaskDialog");
+            app.Finder.ById(dialog, "Subtitle.VideoBrowseButton").AsButton().Invoke();
+            var picker = app.OwnedFileDialog();
+            WaitHelper.Until(() => picker.FindFirstDescendant(cf => cf.ByAutomationId("1148").And(cf.ByControlType(ControlType.Edit))), "文件名框").AsTextBox().Text = video;
+            Keyboard.Type(VirtualKeyShort.RETURN);
+            var submit = WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("加入队列").And(cf.ByControlType(ControlType.Button))), "加入队列按钮");
+            WaitHelper.Until(() => submit.IsEnabled, "素材校验通过");
+            submit.AsButton().Invoke();
+            var stop = app.Finder.ById(app.Window!, "Subtitle.StopButton");
+            WaitHelper.Until(() => stop.IsEnabled, "处理已开始");
+            stop.AsButton().Invoke();
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("已取消")), "取消已完成");
+            var progress = Assert.Single(Directory.GetFiles(Path.Combine(app.Data.Paths.DataRoot, "SubtitleQueueProgress"), "*.json"));
+            using var state = System.Text.Json.JsonDocument.Parse(File.ReadAllText(progress));
+            var frame = state.RootElement.GetProperty("FrameIndex").GetInt32();
+            Assert.InRange(frame, 1, 2899);
+            app.Data.WriteJson("canceled-frame", new { frame });
+            ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Subtitle.Canceled");
+        });
+        app.Step("恢复处理", "重启时接受一次恢复机会并完成真实识别", () =>
+        {
+            app.Restart("Subtitle.Root");
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("恢复未完成任务")), "恢复提示");
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("加入队列").And(cf.ByControlType(ControlType.Button))), "恢复加入队列").AsButton().Invoke();
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("已完成")), "恢复识别完成", TimeSpan.FromSeconds(60));
+            Assert.Empty(Directory.GetFiles(Path.Combine(app.Data.Paths.DataRoot, "SubtitleQueueProgress"), "*.json"));
+            app.Finder.ById(app.Window!, "Subtitle.ExportButton").AsButton().Invoke();
+            var options = app.Finder.ById(app.Window!, "Subtitle.ExportOptions");
+            WaitHelper.Until(() => options.FindFirstDescendant(cf => cf.ByName("保存").And(cf.ByControlType(ControlType.Button))), "保存恢复ASS").AsButton().Invoke();
+            var output = Path.Combine(app.Data.Root, "[STGenerated] recognition.ass");
+            WaitHelper.Until(() => File.Exists(output) && new FileInfo(output).Length > 0, "恢复ASS写入完成");
+            var line = Assert.Single(File.ReadAllLines(output), line => line.StartsWith("Dialogue:", StringComparison.Ordinal));
+            Assert.Contains("识别译文", Regex.Replace(line, @"\{[^}]*\}", ""));
+            var fields = line.Split(',', 10);
+            Assert.InRange(TimeSpan.Parse(fields[1], CultureInfo.InvariantCulture).TotalSeconds, 0.45, 0.6);
+            Assert.InRange(TimeSpan.Parse(fields[2], CultureInfo.InvariantCulture).TotalSeconds, 120.45, 120.6);
+            ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Subtitle.Resumed");
+        });
+        app.Step("退出", "恢复完成后正常退出", app.Close);
+    }
+
+    [DesktopFact]
+    [Trait("Category", "Functional")]
     public void UI_SUBTITLE_002_常规识别队列完成并导出真实ASS()
     {
         using var server = new LoopbackHttpFixture();

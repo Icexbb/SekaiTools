@@ -153,7 +153,7 @@
 
                             <ui:Button
                                 Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"
-                                Click="StopButton_OnClick"
+                                Click="StopButton_OnClick" AutomationProperties.AutomationId="Subtitle.StopButton"
                                 IsEnabled="{Binding CanStop}"
                                 Content="终止任务" Appearance="Danger" />
                             <ui:Button

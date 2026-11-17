@@ -120,6 +120,8 @@ UI-SUBTITLE-002 用固定资源生成三秒 1280×720/24 FPS 合成对话视频�
 
 UI-SUBTITLE-002 继续关闭并启动独立进程，验证应用恢复上次字幕页，通过 Subtitle.HistoryButton / Subtitle.HistoryDialog 加载首次真实识别生成的历史记录。移开第一次导出的 ASS 后再次导出，核对全部 Dialogue 行与首次结果一致、历史 JSON 的 SHA-256 和条目数不变，并采集历史任务分组截图。这覆盖已完成历史的读取与复用，不代表未完成队列的断点续跑或取消恢复验收。测试宿主允许显式指定预期启动页，默认仍验证翻译工作区，不改写应用保存的最近模块。
 
+UI-SUBTITLE-003 将同一合成对话延长至120秒，经真实终止按钮取消，读取实际检查点确认已推进且未到片尾；重启后接受“恢复未完成任务”提示，继续完成识别并导出 ASS，核对单条译文与完整起止时间，以及恢复记录已消费。新增 Subtitle.StopButton 契约。报告保留取消帧、前后截图和日志中的恢复帧；不注入 ProcessingState 或改写进度。该场景覆盖一次取消后的正常恢复完成，不代表恢复后再次取消、放弃恢复、多任务排序或异常退出矩阵。
+
 Functional/All 的完整运行需先准备固定资源包：运行 Tools/PrepareUIVideoResources.ps1 -SourceDirectory <合法取得且版本匹配的videoProcess目录>。脚本先核对 TestData/video-resources.lock.json 的全部 SHA-256，再复制至 .codex-build/fluent-workbench/fixtures/videoProcess；不修改源目录，也不把字体文件提交到仓库。测试只读该副本，不依赖用户正式资源路径。缺失或版本不匹配会明确失败，不跳过验收；Smoke 不需要这个包。
 
 新增 Subtitle.AddTaskButton 和 Subtitle.AddTaskDialog 契约。LoopbackHttpFixture 已支持二进制响应，并在响应前消费有界请求头，仍仅监听本地随机端口；未映射路由继续返回503。
