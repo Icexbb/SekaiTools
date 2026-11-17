@@ -160,6 +160,7 @@
                                 <ComboBoxItem Content="地点" />
                             </ComboBox>
                             <ComboBox Grid.Column="2" SelectedIndex="{Binding FilterIndex}"
+                                      AutomationProperties.AutomationId="Translation.StatusFilter"
                                       AutomationProperties.Name="条目筛选">
                                 <ComboBoxItem Content="全部条目" />
                                 <ComboBoxItem Content="仅看未译" />
