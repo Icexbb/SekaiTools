@@ -56,6 +56,7 @@ public sealed class DeveloperThresholdSettingsControl : StackPanel
                 ClearButtonEnabled = false
             };
             AutomationProperties.SetName(number, $"{label}识别阈值");
+            AutomationProperties.SetAutomationId(number, $"Settings.Threshold.{name}");
             number.ToolTip = name;
             _editors.Add(name, number);
             var cell = new Grid { Margin = new Thickness(0, 0, 12, 6) };
@@ -92,12 +93,15 @@ public sealed class DeveloperThresholdSettingsControl : StackPanel
         ArrangeFields();
         var actions = new StackPanel { Orientation = Orientation.Horizontal };
         var save = new Button { Content = "保存阈值", Icon = new SymbolIcon(SymbolRegular.Save24) };
+        AutomationProperties.SetAutomationId(save, "Settings.Threshold.Save");
         var reset = new Button
         {
             Content = "恢复默认来源",
             Icon = new SymbolIcon(SymbolRegular.ArrowUndo24),
             Margin = new Thickness(8, 0, 0, 0)
         };
+        AutomationProperties.SetAutomationId(reset, "Settings.Threshold.Reset");
+        AutomationProperties.SetAutomationId(_status, "Settings.Threshold.Status");
         save.Click += (_, _) => Execute(() =>
         {
             var patch = JsonSerializer.SerializeToElement(_editors.ToDictionary(pair => pair.Key, pair => pair.Value.Value));

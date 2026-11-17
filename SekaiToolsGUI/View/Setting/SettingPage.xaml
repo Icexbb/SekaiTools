@@ -44,6 +44,7 @@
                                 Text="© 2024 PJS字幕组 | Icexbb 以 AGPL-3.0 协议开源" />
 
                             <ui:TextBlock x:Name="VersionLabel"
+                                AutomationProperties.AutomationId="Settings.VersionLabel"
                                 Focusable="True"
                                 PreviewMouseLeftButtonDown="VersionLabel_OnClick"
                                 KeyDown="VersionLabel_OnKeyDown"
@@ -80,7 +81,7 @@
         <ui:Card Grid.Row="1" Padding="5">
             <Grid>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="10">
-                    <ui:Button Width="100" Content="重置为默认" Click="ResetToDefault_Click" />
+                    <ui:Button Width="100" Content="重置为默认" AutomationProperties.AutomationId="Settings.ResetAll" Click="ResetToDefault_Click" />
                     <ui:Button Margin="8,0,0,0" Content="运行日志" Icon="{ui:SymbolIcon ClipboardTask24}"
                                AutomationProperties.Name="打开运行日志窗口" Click="OpenLogs_Click" />
                 </StackPanel>

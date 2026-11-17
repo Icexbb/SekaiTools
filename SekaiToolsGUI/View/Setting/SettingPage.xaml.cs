@@ -78,8 +78,11 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
             };
             System.Windows.Automation.AutomationProperties.SetName(group, $"{category}设置");
             if (category == "开发者设置")
+            {
+                System.Windows.Automation.AutomationProperties.SetAutomationId(group, "Settings.DeveloperGroup");
                 group.SetBinding(VisibilityProperty, new Binding(nameof(SettingPageModel.DeveloperMode))
                 { Converter = new BooleanToVisibilityConverter() });
+            }
             SettingsItems.Children.Add(group);
         }
         var developerGroup = SettingsItems.Children.OfType<CardExpander>()

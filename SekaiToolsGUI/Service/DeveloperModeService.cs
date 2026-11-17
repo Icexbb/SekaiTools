@@ -66,10 +66,15 @@ public sealed class DeveloperModeService : IDisposable
     public MatchingThreshold EffectiveThresholds()
     {
         if (Thresholds is { } value) return value;
-        var path = ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, "thresholds.json");
-        return File.Exists(path)
-            ? DeveloperThresholds.Patch(new MatchingThreshold(), JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(path)))
-            : new MatchingThreshold();
+        try
+        {
+            var path = ResourceManager.Instance.ResourcePath(ResourceType.VideoProcess, "thresholds.json");
+            return DeveloperThresholds.Patch(new MatchingThreshold(), JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(path)));
+        }
+        catch (FileNotFoundException)
+        {
+            return new MatchingThreshold();
+        }
     }
 
     private object Dispatch(string method, string path, JsonElement body)
