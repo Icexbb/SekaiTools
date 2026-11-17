@@ -61,7 +61,7 @@
                             <TextBlock Text="清除列表缓存" />
                         </StackPanel>
                     </Button>
-                    <Button x:Name="RefreshButton" Click="ButtonRefresh_OnClick">
+                    <Button x:Name="RefreshButton" Click="ButtonRefresh_OnClick" AutomationProperties.AutomationId="StoryDownload.RefreshButton">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="ArrowSync24" Margin="0,0,6,0" />
                             <TextBlock Text="刷新当前列表" />
@@ -88,7 +88,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <ui:TextBox x:Name="SearchBox" PlaceholderText="搜索当前列表：标题、ID、剧本名"
+                    <ui:TextBox x:Name="SearchBox" AutomationProperties.AutomationId="StoryDownload.SearchBox" PlaceholderText="搜索当前列表：标题、ID、剧本名"
                                 TextChanged="Search_OnTextChanged"
                                 AutomationProperties.Name="搜索当前剧情列表" />
                     <Button x:Name="ResetSearchButton" Grid.Column="1" Margin="8,0,0,0" Padding="10,6"
@@ -122,7 +122,7 @@
         <StackPanel x:Name="BrowserEmptyPanel" Grid.Column="0" Grid.Row="1" Visibility="Collapsed"
                     VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False" Margin="16">
             <ui:SymbolIcon Symbol="Search24" FontSize="28" HorizontalAlignment="Center" Opacity="0.65" />
-            <TextBlock x:Name="BrowserEmptyText" Text="当前没有可下载结果" Margin="0,8,0,0" TextWrapping="Wrap"
+            <TextBlock x:Name="BrowserEmptyText" Text="当前没有可下载结果" Margin="0,8,0,0" TextWrapping="Wrap" AutomationProperties.AutomationId="StoryDownload.EmptyMessage"
                        TextAlignment="Center" />
             <TextBlock Text="可调整筛选、重置搜索，或刷新当前列表" Margin="0,4,0,0" FontSize="12" TextWrapping="Wrap"
                        TextAlignment="Center"

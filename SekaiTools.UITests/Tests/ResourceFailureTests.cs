@@ -16,7 +16,7 @@ public sealed class ResourceFailureTests
     {
         foreach (var page in new[] { "Subtitle", "Encoding" })
         {
-            using var server = new ResourceFailureServer();
+            using var server = new LoopbackHttpFixture();
             using var app = new ApplicationFixture($"UI-RESOURCE-001-{page}", "Functional");
             var config = Path.Combine(app.Data.Root, "network-endpoints.json");
             File.WriteAllText(config, File.ReadAllText(config).Replace(":9/", $":{server.Port}/"));

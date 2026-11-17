@@ -5,16 +5,17 @@ using System.Text;
 
 namespace SekaiTools.UITests.Fixtures;
 
-/// <summary>Bounded loopback HTTP fixture for resource-service failure paths.</summary>
-public sealed class ResourceFailureServer : IDisposable
+/// <summary>Bounded loopback HTTP fixture; unmapped requests receive HTTP 503.</summary>
+public sealed class LoopbackHttpFixture : IDisposable
 {
     private readonly TcpListener _listener = new(IPAddress.Loopback, 0);
     private readonly CancellationTokenSource _stop = new();
     private readonly Task _worker;
     public ConcurrentQueue<string> Requests { get; } = new();
     public int Port { get; }
+    public Func<string, string?>? Response { get; set; }
 
-    public ResourceFailureServer()
+    public LoopbackHttpFixture()
     {
         _listener.Start();
         Port = ((IPEndPoint)_listener.LocalEndpoint).Port;
@@ -34,7 +35,10 @@ public sealed class ResourceFailureServer : IDisposable
                 using var reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
                 var line = await reader.ReadLineAsync(timeout.Token);
                 Requests.Enqueue(line ?? "empty request");
-                var bytes = Encoding.ASCII.GetBytes("HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+                var body = Response?.Invoke(line ?? "");
+                var content = Encoding.UTF8.GetBytes(body ?? "");
+                var header = Encoding.ASCII.GetBytes($"HTTP/1.1 {(body is null ? "503 Service Unavailable" : "200 OK")}\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: {content.Length}\r\nConnection: close\r\n\r\n");
+                var bytes = header.Concat(content).ToArray();
                 await stream.WriteAsync(bytes, timeout.Token);
             }
         }
