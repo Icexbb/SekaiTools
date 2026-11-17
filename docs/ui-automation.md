@@ -9,7 +9,9 @@ M0-A 用例包括：
 - `UI-SMOKE-001`：连续三轮真实启动，确认五个导航入口，打开设置并返回翻译空工作区，采集稳定截图，正常关闭应用。
 - `UI-INFRA-001`：故意查找不存在的 AutomationId，验证超时、窗口截图、UIA 树和结构化诊断文件，再正常退出。这是诊断系统自检，不能代表业务错误场景已全部覆盖。
 
-当前不执行字幕资源初始化、下载列表刷新、编码、文件编辑或保存；固定端点仅指向本地未提供业务响应的端口，不是完整 fixture 服务器。其他业务页、明暗主题、尺寸和 DPI 矩阵、视觉差异比较属于后续里程碑。现有 WPF 探针仍作补充，不代替 FlaUI。
+M0-B 首批功能用例 `UI-SETTINGS-001` 通过真实 ComboBox 切换暗色、关闭并启动新进程，验证自动保存后的主题重载，再切回亮色；采集两个主题的翻译空工作区截图。动态生成的 choice 控件使用 `Settings.Field.{Property}` 标识。
+
+当前不执行字幕资源初始化、下载列表刷新、编码、翻译文件编辑或保存；固定端点仅指向本地未提供业务响应的端口，不是完整 fixture 服务器。其他业务页、完整主题/尺寸/DPI 矩阵、视觉差异比较属于后续里程碑。现有 WPF 探针仍作补充，不代替 FlaUI。
 
 ## 运行
 
@@ -25,6 +27,9 @@ dotnet restore SekaiTools.sln
 pwsh -NoProfile -File Tools/RunUITests.ps1
 # 使用已构建的独立测试应用
 pwsh -NoProfile -File Tools/RunUITests.ps1 -SkipBuild
+# 功能测试或当前全部用例
+pwsh -NoProfile -File Tools/RunUITests.ps1 -Mode Functional
+pwsh -NoProfile -File Tools/RunUITests.ps1 -Mode All
 # 只运行诊断自检
 pwsh -NoProfile -File Tools/RunUITests.ps1 -Filter "FullyQualifiedName~UI_INFRA_001"
 ```
@@ -70,7 +75,7 @@ dotnet test SekaiTools.Tests/SekaiTools.Tests.csproj
 | `Translation.LoadScriptButton` | 翻译空工作区可操作性检查 |
 | `MainWindow.DialogHost` | 弹窗宿主的源码标识；运行时需以实际弹窗 Peer 为定位依据 |
 
-WPF-UI 4.3.0 的 NavigationView 本身不提供容器 Peer，因此使用保持原样式的 `AccessibleNavigationView` 暴露 Pane。导航项由框架 ListBox 的 DataItem Peer 暴露，当前不提供 Invoke/SelectionItem；测试按稳定 ID 定位后使用 FlaUI 元素点击，再验证目标页面。点击位置由元素当前几何范围取得，没有固定屏幕坐标，也不直接调用产品处理器。后续键盘/屏幕阅读器语义应独立验证。
+WPF-UI 4.3.0 的 NavigationView 本身不提供容器 Peer，因此使用保持原样式的 `AccessibleNavigationView` 暴露 Pane。导航项由框架 ListBox 的 DataItem Peer 暴露，当前不提供 Invoke/SelectionItem；测试按稳定 ID 定位、聚焦后使用 Enter 激活，再验证目标页面；导航前等待静态窗口画面稳定，不使用固定屏幕坐标，也不直接调用产品处理器。完整屏幕阅读器语义仍需独立验证。
 
 新增重要控件时扩展 `Automation/Catalog.cs` 和对应测试。不可把 x:Name 的偶然回退视为已建立显式契约；动态行和任务的稳定身份策略在各页改造前落实。
 

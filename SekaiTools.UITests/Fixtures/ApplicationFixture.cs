@@ -23,13 +23,15 @@ public sealed class ApplicationFixture : IDisposable
     private object? _environment;
     private Exception? _failure;
 
-    public ApplicationFixture(string testId)
+    public ApplicationFixture(string testId, string category = "Smoke")
     {
         TestId = testId;
+        Category = category;
         Data = new TestDataManager(testId);
     }
 
     public string TestId { get; }
+    public string Category { get; }
     public TestDataManager Data { get; }
     public ElementFinder Finder { get; } = new();
     public Window? Window { get; private set; }
@@ -102,11 +104,14 @@ public sealed class ApplicationFixture : IDisposable
 
     public void Navigate(string navigationId, string pageId)
     {
+        Window!.SetForeground();
+        ScreenshotHelper.CaptureStable(Window, Path.Combine(Data.Directory, "Screenshots"), "BeforeNavigation");
         var item = Finder.ById(Window!, navigationId);
         // WPF-UI 4.3 exposes these as data-item peers without Invoke/SelectionItem.
         // FlaUI clicks the located element's current clickable point; no fixed screen coordinates.
         WaitHelper.Until(() => item.IsEnabled && !item.IsOffscreen, $"导航项可操作：{navigationId}");
-        item.Click();
+        item.Focus();
+        FlaUI.Core.Input.Keyboard.Type(FlaUI.Core.WindowsAPI.VirtualKeyShort.RETURN);
         Finder.ById(Window!, pageId);
         WaitHelper.Until(() => !Finder.ById(Window!, pageId).IsOffscreen, $"页面可见：{pageId}");
     }
@@ -122,6 +127,19 @@ public sealed class ApplicationFixture : IDisposable
         _process.WaitForExit();
         if (_process.ExitCode != 0) throw new InvalidOperationException($"应用异常退出：{_process.ExitCode}");
         _cleanup = "正常退出，无自有进程残留";
+    }
+
+    public void Restart()
+    {
+        Close();
+        _application?.Dispose();
+        _automation?.Dispose();
+        _process?.Dispose();
+        _application = null;
+        _automation = null;
+        _process = null;
+        Window = null;
+        Start();
     }
 
     public void RecordFailure(Exception exception)
@@ -168,7 +186,7 @@ public sealed class ApplicationFixture : IDisposable
         Attempt(() => _application?.Dispose());
         Attempt(() => _automation?.Dispose());
         Attempt(() => _process?.Dispose());
-        Attempt(() => Data.WriteJson("report", new { TestId, Category = "Smoke", Result = _failure is null ? "Passed" : "Failed",
+        Attempt(() => Data.WriteJson("report", new { TestId, Category, Result = _failure is null ? "Passed" : "Failed",
             DurationMs = _watch.Elapsed.TotalMilliseconds, Steps = _steps, Cleanup = _cleanup,
             ProtectedDataUnchanged = Data.Before == after, Error = _failure is null ? null : FailureDiagnostics.Redact(_failure.ToString()), TargetId = Finder.TargetId }));
         if (_failure is not null) throw new InvalidOperationException($"{TestId} 失败，报告：{Data.Directory}", _failure);

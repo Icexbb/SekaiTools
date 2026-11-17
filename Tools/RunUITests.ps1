@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('Smoke', 'All')][string]$Mode = 'Smoke',
+    [ValidateSet('Smoke', 'Functional', 'All')][string]$Mode = 'Smoke',
     [string]$Filter,
     [switch]$SkipBuild
 )
@@ -36,7 +36,7 @@ try {
     $env:SEKAI_TOOLS_UI_ARTIFACTS = $taskArtifacts
     $taskArguments = @('test', 'SekaiTools.UITests/SekaiTools.UITests.csproj', '-c', 'Release', '--no-build', '--no-restore',
         '--logger', 'trx;LogFileName=ui-tests.trx', '--results-directory', $taskArtifacts)
-    $taskSelectedFilter = if ($Filter) { $Filter } elseif ($Mode -eq 'Smoke') { 'Category=Smoke' } else { $null }
+    $taskSelectedFilter = if ($Filter) { $Filter } elseif ($Mode -ne 'All') { "Category=$Mode" } else { $null }
     if ($taskSelectedFilter) { $taskArguments += @('--filter', $taskSelectedFilter) }
     Invoke-CheckedDotnet -Arguments $taskArguments
     [xml]$taskTrx = Get-Content -Raw -LiteralPath (Join-Path $taskArtifacts 'ui-tests.trx')

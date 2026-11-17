@@ -108,6 +108,7 @@ public sealed class SettingViewBuilder(
                 var combo = new ComboBox();
                 foreach (var option in field.Options) combo.Items.Add(new ComboBoxItem { Content = option });
                 combo.SetBinding(Selector.SelectedIndexProperty, Value(field.Property));
+                AutomationProperties.SetAutomationId(combo, $"Settings.Field.{field.Property}");
                 editor = combo;
                 break;
             case "number":
