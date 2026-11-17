@@ -70,7 +70,7 @@
                             <TextBlock Text="添加" />
                         </StackPanel>
                     </ui:Button>
-                    <ui:Button Grid.Column="1" Click="HistoryButton_OnClick" IsEnabled="{Binding CanOpenDialog}"
+                    <ui:Button Grid.Column="1" Click="HistoryButton_OnClick" IsEnabled="{Binding CanOpenDialog}" AutomationProperties.AutomationId="Subtitle.HistoryButton"
                                HorizontalAlignment="Stretch" Margin="4,0,0,0">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="History24" Margin="0,0,5,0" />

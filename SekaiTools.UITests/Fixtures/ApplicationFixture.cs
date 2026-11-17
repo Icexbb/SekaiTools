@@ -66,7 +66,9 @@ public sealed class ApplicationFixture : IDisposable
         }
     }
 
-    public void Start()
+    public void Start() => Start(Catalog.Translation);
+
+    public void Start(string expectedPageRoot)
     {
         _environment = TestEnvironment.Verify();
         var executable = Environment.GetEnvironmentVariable("SEKAI_TOOLS_UI_EXE")
@@ -100,8 +102,8 @@ public sealed class ApplicationFixture : IDisposable
             return _application.GetAllTopLevelWindows(_automation).FirstOrDefault(window => window.Properties.AutomationId.ValueOrDefault == Catalog.MainWindow);
         }, "真实主窗口就绪", TimeSpan.FromSeconds(30));
         Window.SetForeground();
-        Finder.ById(Window, Catalog.Translation);
-        Finder.ById(Window, Catalog.LoadScript);
+        Finder.ById(Window, expectedPageRoot);
+        if (expectedPageRoot == Catalog.Translation) Finder.ById(Window, Catalog.LoadScript);
         using (var resolved = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(Data.Root, "resolved-paths.json"))))
         {
             foreach (var key in new[] { "ResourceData", "DownloadData", "VoiceCache", "Temporary" })
@@ -150,7 +152,7 @@ public sealed class ApplicationFixture : IDisposable
         _cleanup = "正常退出，无自有进程残留";
     }
 
-    public void Restart()
+    public void Restart(string expectedPageRoot = Catalog.Translation)
     {
         Close();
         _application?.Dispose();
@@ -160,7 +162,7 @@ public sealed class ApplicationFixture : IDisposable
         _automation = null;
         _process = null;
         Window = null;
-        Start();
+        Start(expectedPageRoot);
     }
 
     public Window OwnedFileDialog() => WaitHelper.Until(() =>

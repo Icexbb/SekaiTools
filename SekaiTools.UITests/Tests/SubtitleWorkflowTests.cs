@@ -70,5 +70,32 @@ public sealed class SubtitleWorkflowTests
             app.Data.WriteJson("fixture-requests", server.Requests.ToArray());
         });
         app.Step("退出", "识别输出后正常退出", app.Close);
+        app.Step("重启加载历史", "独立进程从已完成历史加载已有识别结果并再次导出", () =>
+        {
+            var historyFile = Assert.Single(Directory.GetFiles(Path.Combine(app.Data.Paths.DataRoot, "History"), "*.json"));
+            var historyHash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(historyFile)));
+            var output = Path.Combine(app.Data.Root, "[STGenerated] recognition.ass");
+            var originalDialogue = File.ReadAllLines(output).Where(line => line.StartsWith("Dialogue:", StringComparison.Ordinal)).ToArray();
+            File.Move(output, Path.Combine(app.Data.Root, "first-export.ass"));
+            app.Restart("Subtitle.Root");
+            app.Navigate("MainWindow.Navigation.Subtitle", "Subtitle.Root");
+            var historyButton = app.Finder.ById(app.Window!, "Subtitle.HistoryButton");
+            WaitHelper.Until(() => historyButton.IsEnabled, "资源准备完成");
+            historyButton.AsButton().Invoke();
+            var dialog = app.Finder.ById(app.Window!, "Subtitle.HistoryDialog");
+            WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("加载 recognition.mp4").And(cf.ByControlType(ControlType.Button))), "已完成历史加载入口").AsButton().Invoke();
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("历史任务")), "历史任务分组");
+            var export = app.Finder.ById(app.Window!, "Subtitle.ExportButton");
+            WaitHelper.Until(() => export.IsEnabled, "历史结果允许导出");
+            export.AsButton().Invoke();
+            var options = app.Finder.ById(app.Window!, "Subtitle.ExportOptions");
+            WaitHelper.Until(() => options.FindFirstDescendant(cf => cf.ByName("保存").And(cf.ByControlType(ControlType.Button))), "再次保存ASS").AsButton().Invoke();
+            WaitHelper.Until(() => File.Exists(output) && new FileInfo(output).Length > 0, "历史ASS写入完成");
+            Assert.Equal(originalDialogue, File.ReadAllLines(output).Where(line => line.StartsWith("Dialogue:", StringComparison.Ordinal)).ToArray());
+            Assert.Equal(historyHash, Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(historyFile))));
+            Assert.Single(Directory.GetFiles(Path.GetDirectoryName(historyFile)!, "*.json"));
+            ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Subtitle.HistoryRestored");
+        });
+        app.Step("历史退出", "加载历史后正常退出", app.Close);
     }
 }
