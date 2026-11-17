@@ -16,16 +16,31 @@ public sealed class NetworkEndpoints
     public static NetworkEndpoints Current => CurrentValue.Value;
     public static string RepositoryUrl => Current.GitHub.RepositoryUrl;
 
-    public static NetworkEndpoints Load(string? filePath = null)
+    public static NetworkEndpoints Load(string? filePath = null, ApplicationPaths? paths = null)
     {
-        var path = filePath ?? Path.Combine(AppContext.BaseDirectory, FileName);
+        paths ??= ApplicationPaths.Current;
+        var path = filePath ?? Path.Combine(paths.TestRoot ?? AppContext.BaseDirectory, FileName);
+        if (paths.TestRoot is { } root && !ApplicationPaths.ContainsPath(root, path))
+            throw new InvalidDataException("隔离网络配置必须位于测试数据根中。");
+        if (paths.IsIsolated && !File.Exists(path))
+            throw new InvalidDataException("隔离测试必须提供本地网络端点配置，不能回退正式端点。");
         var json = File.Exists(path) ? File.ReadAllText(path) : ReadEmbeddedDefault();
         var endpoints = JsonSerializer.Deserialize<NetworkEndpoints>(json, new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         }) ?? throw new InvalidDataException("网络端点配置为空");
         endpoints.Validate();
+        if (paths.IsIsolated) endpoints.ValidateLoopback();
         return endpoints;
+    }
+
+    private void ValidateLoopback()
+    {
+        var urls = new[] { GitHub.RepositoryUrl, GitHub.LatestReleaseApiUrl, GitHub.ReleaseDownloadBaseUrl,
+            Resources.BaseUrl, Resources.SourceListUrl }.Concat(DefaultDataSources.SelectMany(source =>
+            new[] { source.SourceTemplate, source.StorageBaseUrl }));
+        if (urls.Any(url => !new Uri(url).IsLoopback))
+            throw new InvalidDataException("隔离 UI 测试仅允许 loopback 网络端点。");
     }
 
     private static string ReadEmbeddedDefault()

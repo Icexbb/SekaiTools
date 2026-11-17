@@ -24,8 +24,7 @@ public abstract class BaseListStory
 {
     protected static readonly Fetcher Fetcher = Fetcher.Instance;
 
-    public static readonly string DataBaseDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "SekaiTools");
+    public static readonly string DataBaseDir = SekaiToolsConfiguration.ApplicationPaths.Current.DataRoot;
 
     private string[] CachePaths
     {

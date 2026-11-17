@@ -16,8 +16,11 @@ dotnet publish SekaiToolsGUI/SekaiToolsGUI.csproj -c Release -o Build/
 # 或使用批处理脚本
 ./build.bat
 
-# 运行全部测试（当前包含 SekaiTools.Tests）
+# 运行测试（桌面用例默认明确跳过，需单独显式启用）
 dotnet test SekaiTools.sln
+
+# 交互式 Windows 桌面上的 FlaUI 测试（首次先 restore）
+pwsh -NoProfile -File Tools/RunUITests.ps1
 ```
 
 基于 .NET 10 的解决方案。所有项目通过 `Directory.Build.props` 全局启用可空引用类型。
@@ -62,8 +65,11 @@ dotnet test SekaiTools.sln
 | **SekaiToolsGUI** | net10.0-windows (WPF) | WPF 组合根、导航、ViewModel 与 Windows 集成 |
 | **Updater** | net10.0-windows (WPF) | 独立更新程序，由 GUI 发布目标构建和复制 |
 | **SekaiTools.Tests** | net10.0 | 非 UI 项目的单元与兼容性测试 |
+| **SekaiTools.UITests** | net10.0-windows (x64) | 进程外 FlaUI/UIA3 测试、隔离桌面运行与失败诊断 |
 
 完整依赖方向和新代码放置规则见 [ARCHITECTURE.md](ARCHITECTURE.md)。
+
+UI 自动化运行、隔离和当前覆盖边界见 [Windows UI 自动化测试](docs/ui-automation.md)。UI 测试不能附加或关闭正式实例；新增页面测试必须使用独立数据根，当前最小闭环不能替代全页面业务及视觉验收。
 
 ### 核心数据流（"自动轴机"管线）
 

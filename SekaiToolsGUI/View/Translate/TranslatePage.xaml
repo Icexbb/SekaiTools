@@ -1,4 +1,5 @@
 <UserControl x:Class="SekaiToolsGUI.View.Translate.TranslatePage"
+             AutomationProperties.AutomationId="Translation.Root"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -41,6 +42,7 @@
                         </StackPanel>
                         <WrapPanel>
                             <ui:Button x:Name="LoadScriptButton" Content="载入剧本" Click="LoadFileButton_OnClick"
+                                       AutomationProperties.AutomationId="Translation.LoadScriptButton"
                                        Margin="0,0,8,8" />
                             <ui:Button x:Name="LoadTranslationButton" Content="载入译文"
                                        Click="LoadTranslationButton_OnClick" Margin="0,0,8,8"

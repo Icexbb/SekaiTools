@@ -111,8 +111,7 @@ public partial class TranslatePage
             VoiceLogger.LogInformation("语音资源地址：第 {Sequence} 条，剧本 {ScenarioId}，语音 {VoiceId}，URL {AudioUrl}",
                 line.SequenceNumber, line.VoiceScenarioId, originalVoice.VoiceId, uri.AbsoluteUri);
             var path = await ScenarioVoice.LoadAsync(Fetcher.Instance, uri,
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SekaiTools",
-                    "VoiceCache"), request.Token);
+                SekaiToolsConfiguration.ApplicationPaths.Current.VoiceCache, request.Token);
             if (request.IsCancellationRequested || !ReferenceEquals(_voiceRequest, request)) return;
             VoiceLogger.LogInformation("语音资源已就绪：第 {Sequence} 条，语音 {VoiceId}，本地文件 {Path}",
                 line.SequenceNumber, line.OriginalVoice?.VoiceId, path);

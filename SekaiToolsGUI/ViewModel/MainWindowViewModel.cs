@@ -20,6 +20,15 @@ public class MainWindowViewModel : ViewModelBase
         {
             // 设置加载失败，使用默认值继续运行
         }
+
+        foreach (var item in NavigationItems.Concat(NavigationFooterItems).OfType<NavigationViewItem>())
+        {
+            var key = item.TargetPageType == typeof(TranslatePage) ? "Translation"
+                : item.TargetPageType == typeof(SubtitlePage) ? "Subtitle"
+                : item.TargetPageType == typeof(SuppressPage) ? "Encoding"
+                : item.TargetPageType == typeof(DownloadPage) ? "StoryDownload" : "Settings";
+            System.Windows.Automation.AutomationProperties.SetAutomationId(item, $"MainWindow.Navigation.{key}");
+        }
     }
 
     public object[] NavigationItems { get; set; } =

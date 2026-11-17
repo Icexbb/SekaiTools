@@ -20,6 +20,7 @@
 | `SekaiToolsMac` | Apple Silicon SwiftUI 客户端，通过子进程调用 Host | 重复实现 C# 识别和翻译规则 |
 | `Updater` | 独立更新进程 | 除统一配置外的主程序程序集依赖 |
 | `SekaiTools.Tests` | 非 UI 项目的单元测试与兼容性测试 | 产品运行时代码 |
+| `SekaiTools.UITests` | Windows x64 进程外 FlaUI/UIA3、隔离数据和失败诊断 | 产品运行时代码、替代真实交互的反射调用 |
 
 `SekaiToolsSubtitles` 暂时保留 `SekaiToolsBase.SubStationAlpha` 公共命名空间，以维持源码与序列化兼容；程序集边界已经独立，命名空间迁移应另行作为破坏性变更处理。
 
@@ -55,6 +56,7 @@ SekaiTools.Tests → 所有被测非 UI 项目
 
 - 游戏 JSON、Story 或翻译领域规则：`SekaiToolsBase`
 - 网络服务地址及默认数据源端点：根目录 `network-endpoints.json`，由 `SekaiToolsConfiguration` 负责加载与校验
+- 正式/隔离测试数据根解析：`SekaiToolsConfiguration.ApplicationPaths`；GUI、Infrastructure 和 DataFetch 共用，Media 临时区通过子进程 TEMP/TMP 隔离，不增加反向依赖
 - ASS 格式及渲染字符串模型：`SekaiToolsSubtitles`
 - 视频识别与字幕生成算法：`SekaiToolsCore`
 - FFmpeg/VapourSynth 流程：`SekaiToolsMedia`

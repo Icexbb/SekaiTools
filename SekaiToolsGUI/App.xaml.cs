@@ -23,6 +23,13 @@ public partial class App : Application
 
     public App()
     {
+        var paths = SekaiToolsConfiguration.ApplicationPaths.Current;
+        if (paths.TestRoot is { } root)
+        {
+            if (!SekaiToolsConfiguration.ApplicationPaths.ContainsPath(root, Path.GetTempPath()))
+                throw new InvalidDataException("隔离测试的临时目录必须位于测试数据根中。");
+            _ = SekaiToolsConfiguration.NetworkEndpoints.Current;
+        }
         Console.OutputEncoding = new UTF8Encoding(false);
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
@@ -63,7 +70,20 @@ public partial class App : Application
         }
 
         DeveloperModeService.Instance.Initialize();
-        WindowsNotificationService.Initialize();
+        if (SekaiToolsConfiguration.ApplicationPaths.Current.TestRoot is { } testRoot)
+        {
+            var paths = SekaiToolsConfiguration.ApplicationPaths.Current;
+            File.WriteAllText(Path.Combine(testRoot, "resolved-paths.json"), System.Text.Json.JsonSerializer.Serialize(new
+            {
+                ResourceData = ResourceManager.DataBaseDir,
+                DownloadData = SekaiDataFetch.List.BaseListStory.DataBaseDir,
+                paths.VoiceCache,
+                Temporary = Path.GetTempPath(),
+                Install = AppContext.BaseDirectory
+            }));
+        }
+        if (!SekaiToolsConfiguration.ApplicationPaths.Current.IsIsolated)
+            WindowsNotificationService.Initialize();
         base.OnStartup(e);
         AssemblyResolver.FlushDiagnostics();
     }

@@ -5,7 +5,9 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:viewModel="clr-namespace:SekaiToolsGUI.ViewModel"
+    xmlns:control="clr-namespace:SekaiToolsGUI.Control"
     x:Class="SekaiToolsGUI.MainWindow"
+    AutomationProperties.AutomationId="MainWindow.Root"
     mc:Ignorable="d"
     Icon="pack://application:,,,/Resource/icon.png"
     MinHeight="600" MinWidth="960"
@@ -30,10 +32,13 @@
                 <ui:SymbolIcon Symbol="ArrowDownload24" />
             </ui:Button.Icon>
         </ui:Button>
-        <ui:NavigationView
+        <control:AccessibleNavigationView
+            Style="{StaticResource {x:Type ui:NavigationView}}"
             Grid.Row="2"
             IsBackButtonVisible="Collapsed"
-            Name="NavigationView"
+            x:Name="NavigationView"
+            AutomationProperties.AutomationId="MainWindow.Navigation"
+            AutomationProperties.Name="主导航与工作区"
             MenuItemsSource="{Binding NavigationItems}"
             FooterMenuItemsSource="{Binding NavigationFooterItems}"
             Loaded="NavigationView_OnLoaded" HorizontalContentAlignment="Stretch"
@@ -48,8 +53,9 @@
             <ui:NavigationView.ContentOverlay>
                 <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
             </ui:NavigationView.ContentOverlay>
-        </ui:NavigationView>
-        <ui:ContentDialogHost x:Name="RootContentDialog" Grid.Row="1" Grid.RowSpan="2" />
+        </control:AccessibleNavigationView>
+        <ui:ContentDialogHost x:Name="RootContentDialog" Grid.Row="1" Grid.RowSpan="2"
+                              AutomationProperties.AutomationId="MainWindow.DialogHost" />
         <ui:TitleBar Name="TitleBar" Grid.Row="0" Title="Sekai Tools">
             <ui:TitleBar.Icon>
                 <ui:ImageIcon Source="pack://application:,,,/Resource/icon.png" />

@@ -1,0 +1,21 @@
+{
+  "github": {
+    "repositoryUrl": "http://127.0.0.1:9/repository",
+    "latestReleaseApiUrl": "http://127.0.0.1:9/latest",
+    "releaseDownloadBaseUrl": "http://127.0.0.1:9/releases/"
+  },
+  "resources": {
+    "baseUrl": "http://127.0.0.1:9/resources/",
+    "sourceListUrl": "http://127.0.0.1:9/sources.json"
+  },
+  "defaultDataSources": [{
+    "SourceName": "UI Test Fixture",
+    "SourceTemplate": "http://127.0.0.1:9/master/{type}.json",
+    "StorageBaseUrl": "http://127.0.0.1:9/assets/",
+    "ActionSetTemplate": "{scenarioId}.asset",
+    "MemberStoryTemplate": "{scenarioId}.asset",
+    "EventStoryTemplate": "{scenarioId}.asset",
+    "SpecialStoryTemplate": "{scenarioId}.asset",
+    "UnitStoryTemplate": "{scenarioId}.asset"
+  }]
+}
