@@ -46,8 +46,11 @@ public sealed class TestDataManager
     public void CleanTemporaryFiles()
     {
         _ = ApplicationPaths.Create(Root);
-        if (!ApplicationPaths.ContainsPath(Root, Temp)) throw new InvalidOperationException("临时目录越界。");
-        if (System.IO.Directory.Exists(Temp)) System.IO.Directory.Delete(Temp, true);
+        foreach (var path in new[] { Temp, Path.Combine(Paths.DataRoot, "Resource") })
+        {
+            if (!ApplicationPaths.ContainsPath(Root, path)) throw new InvalidOperationException("临时目录越界。");
+            if (System.IO.Directory.Exists(path)) System.IO.Directory.Delete(path, true);
+        }
     }
 
     public void WriteJson(string name, object value) => File.WriteAllText(Path.Combine(Directory, name + ".json"),

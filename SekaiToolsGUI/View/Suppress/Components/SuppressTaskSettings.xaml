@@ -30,7 +30,7 @@
                                   Visibility="{c:Binding 'SourceVideo.Length!=0', FalseToVisibility=Collapsed}" />
                 </StackPanel>
             </ui:CardControl.Header>
-            <ui:Button HorizontalAlignment="Right" Content="浏览" Click="VideoFileBrowser_OnClick" />
+            <ui:Button HorizontalAlignment="Right" Content="浏览" Click="VideoFileBrowser_OnClick" AutomationProperties.AutomationId="Encoding.VideoBrowseButton" />
         </ui:CardControl>
         <ui:CardControl MinHeight="70" Margin="0,0,0,5" Icon="{ui:SymbolIcon Subtitles24}"
                         Visibility="{c:Binding 'SourceVideo.Length!=0', FalseToVisibility=Collapsed}">

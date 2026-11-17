@@ -42,13 +42,25 @@ public sealed class ApplicationFixture : IDisposable
         try
         {
             action();
-            _steps.Add(new { Name = name, Expected = expected, Actual = expected, Result = "Passed",
-                DurationMs = (_watch.Elapsed - started).TotalMilliseconds });
+            _steps.Add(new
+            {
+                Name = name,
+                Expected = expected,
+                Actual = expected,
+                Result = "Passed",
+                DurationMs = (_watch.Elapsed - started).TotalMilliseconds
+            });
         }
         catch (Exception e)
         {
-            _steps.Add(new { Name = name, Expected = expected, Actual = e.Message, Result = "Failed",
-                DurationMs = (_watch.Elapsed - started).TotalMilliseconds });
+            _steps.Add(new
+            {
+                Name = name,
+                Expected = expected,
+                Actual = e.Message,
+                Result = "Failed",
+                DurationMs = (_watch.Elapsed - started).TotalMilliseconds
+            });
             RecordFailure(e);
             throw;
         }
@@ -96,10 +108,19 @@ public sealed class ApplicationFixture : IDisposable
                 if (!ApplicationPaths.ContainsPath(Data.Root, resolved.RootElement.GetProperty(key).GetString()!))
                     throw new InvalidOperationException($"应用实际路径未隔离：{key}");
         }
-        Data.WriteJson("environment", new { Environment = _environment, Executable = executable,
-            ProcessId = _process.Id, StartTime = _process.StartTime.ToUniversalTime(), Window = Window.BoundingRectangle.ToString(),
-            Data.Paths.DataRoot, Data.Paths.LocalRoot, TemporaryRoot = Data.Temp,
-            Data.Before, Scope = "M0-A: translation empty workspace and settings navigation; no resource downloads" });
+        Data.WriteJson("environment", new
+        {
+            Environment = _environment,
+            Executable = executable,
+            ProcessId = _process.Id,
+            StartTime = _process.StartTime.ToUniversalTime(),
+            Window = Window.BoundingRectangle.ToString(),
+            Data.Paths.DataRoot,
+            Data.Paths.LocalRoot,
+            TemporaryRoot = Data.Temp,
+            Data.Before,
+            Scope = "M0-A: translation empty workspace and settings navigation; no resource downloads"
+        });
     }
 
     public void Navigate(string navigationId, string pageId)
@@ -143,7 +164,8 @@ public sealed class ApplicationFixture : IDisposable
     }
 
     public Window OwnedFileDialog() => WaitHelper.Until(() =>
-        Window!.ModalWindows.FirstOrDefault(),
+        Window!.ModalWindows.FirstOrDefault(window => window.FindFirstDescendant(cf =>
+            cf.ByAutomationId("1148").And(cf.ByControlType(FlaUI.Core.Definitions.ControlType.Edit))) is not null),
         "自有进程的原生文件选择窗口");
 
     public void RecordFailure(Exception exception)
@@ -190,9 +212,18 @@ public sealed class ApplicationFixture : IDisposable
         Attempt(() => _application?.Dispose());
         Attempt(() => _automation?.Dispose());
         Attempt(() => _process?.Dispose());
-        Attempt(() => Data.WriteJson("report", new { TestId, Category, Result = _failure is null ? "Passed" : "Failed",
-            DurationMs = _watch.Elapsed.TotalMilliseconds, Steps = _steps, Cleanup = _cleanup,
-            ProtectedDataUnchanged = Data.Before == after, Error = _failure is null ? null : FailureDiagnostics.Redact(_failure.ToString()), TargetId = Finder.TargetId }));
+        Attempt(() => Data.WriteJson("report", new
+        {
+            TestId,
+            Category,
+            Result = _failure is null ? "Passed" : "Failed",
+            DurationMs = _watch.Elapsed.TotalMilliseconds,
+            Steps = _steps,
+            Cleanup = _cleanup,
+            ProtectedDataUnchanged = Data.Before == after,
+            Error = _failure is null ? null : FailureDiagnostics.Redact(_failure.ToString()),
+            TargetId = Finder.TargetId
+        }));
         if (_failure is not null) throw new InvalidOperationException($"{TestId} 失败，报告：{Data.Directory}", _failure);
     }
 }

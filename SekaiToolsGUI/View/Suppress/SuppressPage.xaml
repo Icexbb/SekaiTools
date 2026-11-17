@@ -78,6 +78,7 @@
                         <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <ui:Button Content="添加" Icon="{ui:SymbolIcon Add24}" Click="CreateTask_OnClick"
+                               AutomationProperties.AutomationId="Encoding.AddTaskButton"
                                Appearance="Primary" IsEnabled="{Binding ResourcesReady}" HorizontalAlignment="Stretch"
                                Margin="0,0,4,0" />
                     <ui:Button Grid.Column="1" Content="清理" Icon="{ui:SymbolIcon Dismiss24}" ToolTip="清除已结束任务"

@@ -59,7 +59,7 @@ dotnet test SekaiTools.Tests/SekaiTools.Tests.csproj
 
 启动前设置独立的上次模块记录，使应用通过正常会话恢复路径进入翻译空工作区，不绕过正式导航初始化。应用输出 `resolved-paths.json`，测试核对实际资源、下载、语音与临时路径；前后比较正式数据目录的路径/大小/修改时间指纹。这是路径与文件元数据检查，不是操作系统级文件访问审计。
 
-成功后清理测试临时目录，保留配置、解析路径及报告以便复现；失败保留必要现场。测试结束走真实关闭流程，超时先采集诊断，再仅清理本次创建的进程树。不存在按进程名结束其他实例的逻辑。
+成功后清理测试临时目录和自有 Resource 下载缓存，保留固定资源包、配置、输入输出、解析路径及报告以便复现；失败保留必要现场。测试结束走真实关闭流程，超时先采集诊断，再仅清理本次创建的进程树。不存在按进程名结束其他实例的逻辑。
 
 ## AutomationId 与控件行为
 
@@ -100,11 +100,11 @@ UI-TRANSLATION-002 使用三条独立对话，组合未译状态与原文搜索�
 
 ## 资源失败恢复基线
 
-UI-RESOURCE-001 在隔离环境启动仅绑定 loopback 随机端口的 HTTP fixture，向真实字幕页和压制页资源请求返回 503。分别验证错误对话框、检查设置入口、正常退出，并记录请求与失败场景截图。这是资源失败与恢复导航验证，不代表资源准备成功、识别或编码功能验收。fixture 随用例关闭，不访问正式资源或外部服务。真实字幕资源清单和下载数据 fixture 已由下述正常路径覆盖；真实小素材识别及压制资源仍待后续交付。
+UI-RESOURCE-001 在隔离环境启动仅绑定 loopback 随机端口的 HTTP fixture，向真实字幕页和压制页资源请求返回 503。分别验证错误对话框、检查设置入口、正常退出，并记录请求与失败场景截图。这是资源失败与恢复导航验证，不代表资源准备成功、识别或编码功能验收。fixture 随用例关闭，不访问正式资源或外部服务。真实字幕资源清单和下载数据 fixture 已由下述正常路径覆盖；真实小素材识别仍待后续交付；压制运行库及仅转码路径由下述用例覆盖。
 
 ## 下载页正常路径基线
 
-UI-DOWNLOAD-001 使用 LoopbackHttpFixture 提供有效数据源列表及单条主线剧情数据，通过真实刷新按钮加载条目、搜索无匹配内容并恢复。新增 StoryDownload.SearchBox、StoryDownload.RefreshButton 和 StoryDownload.EmptyMessage 契约。请求日志记录实际本地请求；未映射路由返回503，避免意外成功。该场景不等同于五类完整内容、下载失败重试或取消验收；压制资源及其余分类的非空内容 fixture 仍需继续交付。
+UI-DOWNLOAD-001 使用 LoopbackHttpFixture 提供有效数据源列表及单条主线剧情数据，通过真实刷新按钮加载条目、搜索无匹配内容并恢复。新增 StoryDownload.SearchBox、StoryDownload.RefreshButton 和 StoryDownload.EmptyMessage 契约。请求日志记录实际本地请求；未映射路由返回503，避免意外成功。该场景不等同于五类完整内容、下载失败重试或取消验收；其余分类的非空内容 fixture 仍需继续交付。
 
 下载基线进一步通过 UIA 勾选/取消全选、加入队列和开始下载，获取本地合成剧本并核对隔离 Scripts 目录中的实际文件、原始响应内容和解析后的 ScenarioId/对白。清空队列后再次核对文件仍存在且内容不变。新增 StoryDownload.SelectResults、AddSelectedButton、StartDownloadButton、ClearQueueButton（均带 StoryDownload. 前缀）。全选逻辑响应 Checked/Unchecked，界面刷新回写状态时使用保护标志避免递归误选；鼠标、键盘和 UIA 共用选择规则。
 
@@ -117,3 +117,11 @@ UI-SUBTITLE-001 校验四个锁定版本文件，经本地 HTTP 触发真实 Res
 Functional/All 的完整运行需先准备固定资源包：运行 Tools/PrepareUIVideoResources.ps1 -SourceDirectory <合法取得且版本匹配的videoProcess目录>。脚本先核对 TestData/video-resources.lock.json 的全部 SHA-256，再复制至 .codex-build/fluent-workbench/fixtures/videoProcess；不修改源目录，也不把字体文件提交到仓库。测试只读该副本，不依赖用户正式资源路径。缺失或版本不匹配会明确失败，不跳过验收；Smoke 不需要这个包。
 
 新增 Subtitle.AddTaskButton 和 Subtitle.AddTaskDialog 契约。LoopbackHttpFixture 已支持二进制响应，并在响应前消费有界请求头，仍仅监听本地随机端口；未映射路由继续返回503。
+
+## 真实压制运行库与转码基线
+
+UI-ENCODING-001 使用 media-resources.lock.json 锁定的83个运行库文件。运行 Tools/PrepareUIMediaResources.ps1 -SourceDirectory <合法取得且版本匹配的vapourSynth目录> 先校验全部SHA-256再复制到 .codex-build/fluent-workbench/fixtures/vapourSynth；源目录不修改，二进制不入库。Functional/All 现在需要视频与压制两套资源包，缺失明确失败。
+
+测试使用固定FFmpeg生成两秒320×240/24 FPS无音轨合成视频，经真实页面资源准备、原生文件选择、后台媒体分析和添加任务进入自动队列。验证已完成状态、隔离输出存在、源文件哈希不变，并用独立FFmpeg解码输出，核对48帧。该用例经真实VSPipe与FFmpeg管线完成仅转码，日志和输出解码提供运行证据；不代表ASS烧录、取消、音轨或覆盖输出矩阵验收。请求日志、生成及解码日志、完成截图均留在实例报告目录。
+
+新增 Encoding.AddTaskButton、Encoding.AddTaskDialog、Encoding.VideoBrowseButton 契约；原生文件选择定位检查文件名Edit，避免误选嵌套的WPF任务表单。
