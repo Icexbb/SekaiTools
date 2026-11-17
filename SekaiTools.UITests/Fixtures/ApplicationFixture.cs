@@ -142,6 +142,10 @@ public sealed class ApplicationFixture : IDisposable
         Start();
     }
 
+    public Window OwnedFileDialog() => WaitHelper.Until(() =>
+        Window!.ModalWindows.FirstOrDefault(),
+        "自有进程的原生文件选择窗口");
+
     public void RecordFailure(Exception exception)
     {
         _failure ??= exception;

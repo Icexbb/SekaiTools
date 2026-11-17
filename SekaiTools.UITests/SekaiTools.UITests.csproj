@@ -15,5 +15,6 @@
         <PackageReference Include="FlaUI.UIA3" Version="5.0.0" />
         <PackageReference Include="System.Drawing.Common" Version="10.0.8" />
         <ProjectReference Include="..\SekaiToolsConfiguration\SekaiToolsConfiguration.csproj" />
+        <ProjectReference Include="..\SekaiToolsBase\SekaiToolsBase.csproj" />
     </ItemGroup>
 </Project>

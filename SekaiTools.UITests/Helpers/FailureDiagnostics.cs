@@ -61,8 +61,8 @@ public static class FailureDiagnostics
             if (++count > 600 || depth > 14 || watch.Elapsed > TimeSpan.FromSeconds(10)) return;
             try
             {
-                text.Append(' ', depth * 2).Append(element.ControlType).Append(" Id=").Append(element.AutomationId)
-                    .Append(" Name=").Append(Redact(element.Name)).Append(" Enabled=").Append(element.IsEnabled)
+                text.Append(' ', depth * 2).Append(element.ControlType).Append(" Id=").Append(element.Properties.AutomationId.ValueOrDefault)
+                    .Append(" Name=").Append(Redact(element.Properties.Name.ValueOrDefault ?? "")).Append(" Enabled=").Append(element.IsEnabled)
                     .Append(" Bounds=").Append(element.BoundingRectangle).AppendLine();
                 foreach (var child in element.FindAllChildren()) Visit(child, depth + 1);
             }
