@@ -94,4 +94,4 @@ WPF-UI 4.3.0 的 NavigationView 本身不提供容器 Peer，因此使用保持�
 
 ## 翻译文件基线
 
-UI-TRANSLATION-001 使用合成单条剧本，通过原生文件选择器载入、UIA 输入正文、Ctrl+S 及保存选项导出，再从磁盘解析 TXT v2 并核对条目数和译文。所有样本和输出均在隔离根内。Translation.Dialog.{SequenceNumber}.TargetText 使用当前已载入剧本的原始事件顺序，非筛选后的显示索引；身份仅在该载入会话内有效。Translation.SaveOptions 标识导出弹窗。覆盖取消、另存为、多条目筛选和完整导入矩阵仍待后续覆盖。
+UI-TRANSLATION-001 使用合成单条剧本，通过原生文件选择器载入、UIA 输入正文、Ctrl+S 及保存选项导出，再从磁盘解析 TXT v2 并核对条目数和译文。所有样本和输出均在隔离根内。Translation.Dialog.{SequenceNumber}.TargetText 使用当前已载入剧本的原始事件顺序，非筛选后的显示索引；身份仅在该载入会话内有效。Translation.SaveOptions 标识导出弹窗。同一用例继续验证覆盖取消后原文件 SHA-256 不变、未保存编辑保留，以及搜索隐藏条目后另存为校对副本仍完整导出；副本重新解析核对正文，原文件哈希保持不变，清空搜索后条目重新显示。多条目组合筛选和完整导入矩阵仍待后续覆盖。新增契约为 Translation.SearchBox、Translation.SaveAsButton 和共享的 Export.OverwriteConfirmation。

@@ -37,6 +37,7 @@
                                        Click="SaveButton_OnClick" Appearance="Primary"
                                        IsEnabled="{c:Binding 'Events.Length!=0'}" Margin="0,0,8,8" />
                             <ui:Button Content="另存为…" Icon="{ui:SymbolIcon SaveCopy24}" Click="SaveAsButton_OnClick"
+                                       AutomationProperties.AutomationId="Translation.SaveAsButton"
                                        ToolTip="另存为 (Ctrl+Shift+S)"
                                        IsEnabled="{c:Binding 'Events.Length!=0'}" Margin="0,0,8,8" />
                         </StackPanel>
@@ -149,6 +150,7 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <ui:TextBox x:Name="SearchBox" Margin="0,0,10,0" PlaceholderText="搜索原文、译文、角色或编号"
+                                        AutomationProperties.AutomationId="Translation.SearchBox"
                                         Icon="{ui:SymbolIcon Search24}" AutomationProperties.Name="搜索翻译条目"
                                         Text="{Binding SearchText,UpdateSourceTrigger=PropertyChanged}" />
                             <ComboBox Grid.Column="1" Margin="0,0,10,0" SelectedIndex="{Binding TypeFilterIndex}"

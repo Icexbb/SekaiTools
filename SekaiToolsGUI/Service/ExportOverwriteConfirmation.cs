@@ -25,6 +25,7 @@ internal static class ExportOverwriteConfirmation
             CloseButtonText = "取消",
             DefaultButton = ContentDialogButton.Close
         };
+        System.Windows.Automation.AutomationProperties.SetAutomationId(dialog, "Export.OverwriteConfirmation");
         return await service.ShowAsync(dialog, token) == ContentDialogResult.Primary;
     }
 }
