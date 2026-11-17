@@ -36,7 +36,7 @@
                                Margin="0,0,5,0" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Name="StatusText" Text="等待下载"
                            VerticalAlignment="Center" />
-                <Button Grid.Column="2" Name="RetryButton" Margin="4,0" Padding="6" Visibility="Collapsed"
+                <Button Grid.Column="2" Name="RetryButton" AutomationProperties.AutomationId="StoryDownload.Task.RetryButton" Margin="4,0" Padding="6" Visibility="Collapsed"
                         ToolTip="重试此任务" AutomationProperties.Name="重试此下载任务" Click="RetryButton_OnClick">
                     <ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" />
                 </Button>

@@ -34,9 +34,20 @@ public sealed class StoryDownloadTests
             TalkData = [new("测试角色", "下载正文", 0)],
             Snippets = [new() { Action = 1 }]
         });
+        var assetMode = 0;
+        var releaseResponse = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var heldRequest = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        server.BeforeResponseAsync = async (request, token) =>
+        {
+            if (request.Contains("/assets/fixture-scenario.asset ") && Volatile.Read(ref assetMode) == 1)
+            {
+                heldRequest.TrySetResult();
+                await releaseResponse.Task.WaitAsync(token);
+            }
+        };
         server.Response = request => request.Contains("/sources.json ") ? sources
             : request.Contains("/master/unitStories.json ") ? stories
-            : request.Contains("/assets/fixture-scenario.asset ") ? script
+            : request.Contains("/assets/fixture-scenario.asset ") ? Volatile.Read(ref assetMode) == 0 ? null : script
             : request.StartsWith("GET /master/", StringComparison.Ordinal) ? "[]" : null;
         app.Step("启动与下载页", "正常获取本地数据源并加载页面", () =>
         {
@@ -99,8 +110,27 @@ public sealed class StoryDownloadTests
             var start = app.Finder.ById(app.Window!, "StoryDownload.StartDownloadButton");
             WaitHelper.Until(() => start.IsEnabled, "队列可下载");
             start.AsButton().Invoke();
-            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("下载完成")), "任务完成状态");
             var path = Path.Combine(app.Data.Paths.DataRoot, "Scripts", "fixture-scenario.asset");
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("下载失败")), "503失败状态");
+            Assert.False(File.Exists(path));
+            if (Directory.Exists(Path.GetDirectoryName(path))) Assert.Empty(Directory.GetFiles(Path.GetDirectoryName(path)!));
+            ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download.Failed");
+            var retry = app.Finder.ById(app.Window!, "StoryDownload.Task.RetryButton");
+            WaitHelper.Until(() => retry.IsEnabled, "失败任务可重试");
+            Volatile.Write(ref assetMode, 1);
+            retry.AsButton().Invoke();
+            WaitHelper.Until(() => heldRequest.Task.IsCompleted, "真实资产请求等待受控响应");
+            WaitHelper.Until(() => start.IsEnabled, "停止下载按钮启用");
+            start.AsButton().Invoke();
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("已停止")), "停止任务状态");
+            Assert.False(File.Exists(path));
+            if (Directory.Exists(Path.GetDirectoryName(path))) Assert.Empty(Directory.GetFiles(Path.GetDirectoryName(path)!));
+            releaseResponse.TrySetResult();
+            ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download.Stopped");
+            Volatile.Write(ref assetMode, 2);
+            WaitHelper.Until(() => retry.IsEnabled, "停止任务可重试");
+            retry.AsButton().Invoke();
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("下载完成")), "任务完成状态");
             Assert.True(File.Exists(path));
             Assert.Equal(script, File.ReadAllText(path));
             var parsed = new SekaiToolsBase.GameScript.GameScript(path);

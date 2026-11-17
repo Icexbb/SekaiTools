@@ -15,6 +15,7 @@ public sealed class LoopbackHttpFixture : IDisposable
     public int Port { get; }
     public Func<string, string?>? Response { get; set; }
     public Func<string, byte[]?>? BinaryResponse { get; set; }
+    public Func<string, CancellationToken, Task>? BeforeResponseAsync { get; set; }
 
     public LoopbackHttpFixture()
     {
@@ -39,12 +40,18 @@ public sealed class LoopbackHttpFixture : IDisposable
                 while (await reader.ReadLineAsync(timeout.Token) is { Length: > 0 } requestHeader)
                     if ((headerSize += requestHeader.Length) > 16384) throw new InvalidDataException("Fixture request headers too large.");
                 Requests.Enqueue(line ?? "empty request");
+                if (BeforeResponseAsync is { } beforeResponse)
+                {
+                    try { await beforeResponse(line ?? "", timeout.Token); }
+                    catch (OperationCanceledException) when (!_stop.IsCancellationRequested) { continue; }
+                }
                 var body = Response?.Invoke(line ?? "");
                 var binary = BinaryResponse?.Invoke(line ?? "");
                 var content = binary ?? Encoding.UTF8.GetBytes(body ?? "");
                 var header = Encoding.ASCII.GetBytes($"HTTP/1.1 {(body is null && binary is null ? "503 Service Unavailable" : "200 OK")}\r\nContent-Type: application/octet-stream\r\nContent-Length: {content.Length}\r\nConnection: close\r\n\r\n");
                 var bytes = header.Concat(content).ToArray();
-                await stream.WriteAsync(bytes, timeout.Token);
+                try { await stream.WriteAsync(bytes, timeout.Token); }
+                catch (IOException) { /* A canceled client may close before the controlled response is released. */ }
             }
         }
         catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
