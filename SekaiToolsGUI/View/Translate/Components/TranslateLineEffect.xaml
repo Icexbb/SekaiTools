@@ -39,14 +39,14 @@
                            TextAlignment="Center"
                            TextWrapping="Wrap" Text="{Binding Path= Content.Original}" />
                 <ui:SymbolIcon Grid.Column="1" Symbol="ArrowRight28" Margin="5" />
-                <Grid Grid.Column="2" VerticalAlignment="Center">
+                <Grid Grid.Column="2" VerticalAlignment="Center" Grid.IsSharedSizeScope="True">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" SharedSizeGroup="Support" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" SharedSizeGroup="Support" />
                     </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
+                    <StackPanel Grid.Row="0" VerticalAlignment="Bottom">
+                    <StackPanel Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
                         <TextBlock Text="参考译文" FontSize="11" Margin="4,2,4,0" Foreground="{DynamicResource ST.Brush.SecondaryText}"/>
                         <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" IsReadOnly="True" IsTabStop="False" TextWrapping="NoWrap" MinLines="1" MaxLines="1"
                                  TextAlignment="Center" VerticalScrollBarVisibility="Hidden"
@@ -58,7 +58,7 @@
                                  ToolTip="{Binding Content.Reference}"
                                  AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
                     </StackPanel>
-                    <StackPanel Grid.Row="1" Visibility="{c:Binding Content.HasLoadedChanges,FalseToVisibility=Collapsed}">
+                    <StackPanel Visibility="{c:Binding Content.HasLoadedChanges,FalseToVisibility=Collapsed}">
                         <TextBlock Text="载入时译文" FontSize="11" Margin="4,2,4,0" Foreground="{DynamicResource ST.Brush.SecondaryText}"/>
                         <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" IsReadOnly="True" IsTabStop="False" TextWrapping="NoWrap" MinLines="1" MaxLines="1"
                                  TextAlignment="Center" VerticalScrollBarVisibility="Hidden" Padding="10,2"
@@ -68,7 +68,8 @@
                                  ToolTip="{Binding Content.LoadedText}"
                                  AutomationProperties.Name="载入时译文" Text="{Binding Content.LoadedText}" />
                     </StackPanel>
-                    <ui:TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" Grid.Row="2" Padding="10,2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                    </StackPanel>
+                    <ui:TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" Grid.Row="1" Padding="10,2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                 TextAlignment="Center"
                                 AutomationProperties.Name="{Binding Label}"
                                 AutomationProperties.AutomationId="{Binding SequenceNumber, StringFormat=Translation.Effect.{0}.TargetText}"
@@ -78,7 +79,7 @@
                                 behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Reference}"
                                 behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference and HighlightReferenceDifferences'}"
                                 Text="{Binding Content.Translated,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
-                    <TextBlock Grid.Row="3" Text="{Binding StateText}" FontSize="12" Margin="4,2"
+                    <TextBlock Grid.Row="2" VerticalAlignment="Top" Text="{Binding StateText}" FontSize="12" Margin="4,2"
                         Foreground="{DynamicResource ST.Brush.SecondaryText}"
                         AutomationProperties.AutomationId="{Binding SequenceNumber, StringFormat=Translation.Effect.{0}.State}"/>
                 </Grid>
