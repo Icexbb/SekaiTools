@@ -67,6 +67,19 @@ public sealed class WorkbenchShowcaseTests
                 throw;
             }
         });
+        app.Step("紧凑预览", "800×600下主操作可见，公共工具栏真实折行", () =>
+        {
+            showcase.Patterns.Transform.Pattern.Resize(800, 600);
+            WaitHelper.Until(() => showcase.BoundingRectangle.Width <= 810, "预览窗口缩小");
+            var first = app.Finder.ById(showcase, "Showcase.Toolbar.First");
+            var second = app.Finder.ById(showcase, "Showcase.Toolbar.Second");
+            Assert.True(second.BoundingRectangle.Top >= first.BoundingRectangle.Bottom);
+            var editor = app.Finder.ById(showcase, "Showcase.Editor");
+            editor.Focus();
+            Assert.False(editor.IsOffscreen);
+            Assert.False(app.Finder.ById(showcase, "Showcase.Confirm").IsOffscreen);
+            ScreenshotHelper.CaptureStable(showcase, Path.Combine(app.Data.Directory, "Screenshots"), "Showcase.Narrow");
+        });
         app.Step("关闭预览", "关闭后返回原工作区", () =>
         {
             showcase.Close();

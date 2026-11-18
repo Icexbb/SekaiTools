@@ -7,14 +7,14 @@
  WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="Showcase.Root"
  Background="{DynamicResource ST.Brush.App}" Foreground="{DynamicResource ST.Brush.Text}"
  FontFamily="{StaticResource ST.Font.UI}">
- <Grid Background="{DynamicResource ST.Brush.App}">
+ <Grid Background="{DynamicResource ST.Brush.App}" workbench:AdaptiveLayout.MonitorSize="True">
  <Grid.RowDefinitions><RowDefinition Height="36"/><RowDefinition Height="*"/></Grid.RowDefinitions>
  <ui:TitleBar Title="组件预览"/>
  <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
   <StackPanel Margin="{StaticResource ST.Padding.Page}">
-   <workbench:WorkbenchPageHeader Title="Fluent Workbench" Icon="Beaker24"
+   <workbench:WorkbenchPageHeader x:Name="PreviewHeader" Title="Fluent Workbench" Icon="Beaker24"
       Description="公共组件与业务样例 · 主题预览仅在本窗口打开期间生效"/>
-   <WrapPanel Margin="0,16,0,16">
+   <workbench:WorkbenchPageToolbar Margin="0,16,0,16">
     <TextBlock Text="主题" VerticalAlignment="Center" Margin="0,0,12,0"/>
     <ComboBox x:Name="ThemeChoice" Width="160" AutomationProperties.AutomationId="Showcase.Theme" AutomationProperties.Name="预览主题"
       SelectedIndex="{Binding CurrentApplicationTheme, Mode=TwoWay}">
@@ -22,7 +22,14 @@
     </ComboBox>
     <ui:Button Content="暂不可用" IsEnabled="False" Style="{StaticResource ST.Button}" Margin="12,0,0,0"
       Icon="{ui:SymbolIcon Play24}" AutomationProperties.AutomationId="Showcase.Disabled"/>
-   </WrapPanel>
+   </workbench:WorkbenchPageToolbar>
+   <workbench:WorkbenchPageToolbar Width="220" HorizontalAlignment="Left" Margin="0,0,0,16"
+      AutomationProperties.Name="工具栏折行示例">
+    <ui:Button Content="首要操作" Style="{StaticResource ST.Button}" IsEnabled="False" Width="120" Margin="0,0,8,8"
+       AutomationProperties.AutomationId="Showcase.Toolbar.First"/>
+    <ui:Button Content="次要操作" Style="{StaticResource ST.Button}" IsEnabled="False" Width="120" Margin="0,0,0,8"
+       AutomationProperties.AutomationId="Showcase.Toolbar.Second"/>
+   </workbench:WorkbenchPageToolbar>
    <Border Style="{StaticResource ST.Surface}" Margin="0,0,0,16">
     <StackPanel>
      <TextBlock Text="编辑与校验" FontWeight="SemiBold" Margin="0,0,0,12"/>

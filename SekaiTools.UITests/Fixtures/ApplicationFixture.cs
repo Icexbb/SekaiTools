@@ -170,6 +170,11 @@ public sealed class ApplicationFixture : IDisposable
         Start(expectedPageRoot);
     }
 
+    public Window OwnedWindow(string automationId) => WaitHelper.Until(() =>
+        Window!.FindFirstDescendant(cf => cf.ByAutomationId(automationId).And(cf.ByProcessId(_process!.Id)))?.AsWindow()
+        ?? _application!.GetAllTopLevelWindows(_automation!).FirstOrDefault(window => window.Properties.AutomationId.ValueOrDefault == automationId),
+        $"自有进程窗口：{automationId}");
+
     public Window OwnedFileDialog() => WaitHelper.Until(() =>
         Window!.ModalWindows.FirstOrDefault(window => window.FindFirstDescendant(cf =>
             cf.ByAutomationId("1148").And(cf.ByControlType(FlaUI.Core.Definitions.ControlType.Edit))) is not null),

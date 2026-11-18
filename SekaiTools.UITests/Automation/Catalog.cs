@@ -4,6 +4,9 @@ public static class Catalog
 {
     public const string MainWindow = "MainWindow.Root";
     public const string Navigation = "MainWindow.Navigation";
+    public const string PageHeader = "MainWindow.PageHeader";
+    public const string ToggleNavigation = "MainWindow.ToggleNavigation";
+    public const string OpenLogs = "MainWindow.OpenLogs";
     public const string Translation = "Translation.Root";
     public const string LoadScript = "Translation.LoadScriptButton";
     public const string Settings = "Settings.Root";

@@ -1,5 +1,7 @@
 # Windows UI 自动化测试
 
+`UI-DESIGN-002` 验证公共外壳页头随真实导航更新，并在960×600窗口通过 MainWindow.ToggleNavigation 展开/收起导航、通过 MainWindow.OpenLogs 打开现有日志窗口。MainWindow.PageHeader 下的 Workbench.Header.Title 是当前标题契约；运行日志根为 RuntimeLog.Root。UI-DESIGN-001 另在800×600预览检查主操作可见及公共工具栏实际折行。相关状态和未执行矩阵见设计系统说明。
+
 M1 新增 `UI-DESIGN-001` 组件预览用例：在隔离实例按 Ctrl+Alt+F12 打开 Showcase，检查三种应用主题的编辑、实际翻译行、选择、禁用、校验、焦点、背景像素及关闭恢复原主题，并保存截图。入口、资源与验证边界见 [设计系统说明](fluent-workbench-design-system.md)。应用高对比选项不等同于已经验证 Windows 系统高对比。
 
 ## 当前范围
