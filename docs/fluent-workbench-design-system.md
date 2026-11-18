@@ -1,6 +1,6 @@
-# Fluent Workbench 设计系统 · M1 首批
+# Fluent Workbench 设计系统 · M1
 
-2026-11-18。M0 已完成，M1 已建立显式公共资源、可交互预览，并接入外壳页头与工具栏；更多状态和窗口矩阵仍在后续实施范围内。
+2026-11-18。M1已完成显式公共资源、三主题可交互预览、外壳页头/工具栏和紧凑可调分栏；完整逐项证据见 [M1验收记录](fluent-workbench-m1-acceptance.md)。正式业务页接入和完整显示环境矩阵属于后续里程碑。
 
 ## 资源和组件
 
@@ -15,6 +15,7 @@
 | WorkbenchPageHeader | 图标、可折行标题和说明；已接入外壳并跟随实际页面，短窗口隐藏说明 |
 | WorkbenchPageToolbar | 基于 WrapPanel 的真实操作容器，保留调用页命名作用域和键盘顺序；UIA 暴露为 ToolBar |
 | WorkbenchNotice | 保留 InfoBar 外观，补充 UIA 可读标题/正文和 Polite 状态通知 |
+| WorkbenchSplitView / ST.Splitter | Grid 三列主编辑/分隔条/辅助区，支持鼠标与键盘调整；沿用 AdaptiveLayout.IsNarrow 收起辅助区并恢复原宽度 |
 
 `WorkbenchTheme` 在现有主题设置应用后切换语义字典。当前不改变主题枚举或尚未启用的系统跟随行为。实际下载任务项可通过 `UseWorkbenchTheme` 显式采用语义状态色；默认路径保留原样，Showcase 已启用。
 
@@ -39,7 +40,7 @@
 
 已人工检查亮色、暗色和应用高对比截图，修复了 FluentWindow 底层背景未随预览变暗的问题。首批仅在 100% 缩放验证应用的高对比选项，未切换 Windows 系统高对比，不宣称真实系统高对比或完整 M1 验收完成。
 
-后续继续：公共分栏模式，以及真实 DPI/系统高对比矩阵。正式页面接入仍按对应 M0 基线逐项回归。
+后续继续：正式业务页接入，以及真实 DPI/系统高对比矩阵。各页仍按对应 M0 基线逐项回归。
 
 ## 外壳与紧凑操作
 
@@ -80,3 +81,15 @@ Showcase 通过实际 `DownloadTask.ChangeStatus` 展示等待、下载中、完
 `UI-DESIGN-005` 从真实设置页切换主题，组合三种应用主题与960×600、1280×960、1920×1080，共9个场景。逐项核对公共标题、导航展开/收起、按钮完整边界和运行日志打开/关闭；保存展开导航和工作区两种截图，并采样页头背景验证明暗字典已生效。正式页面主体的视觉改造仍属于后续里程碑。
 
 记录 `.codex-build/fluent-workbench/artifacts/20261118-121850-a39d93e6/ui-tests.trx` 定向通过，shell-matrix.json 的9个场景完成，共18张截图。已检查暗色960×600及应用高对比1280×960截图：短窗口隐藏页头说明、窄窗口操作移至标题下方，展开导航与页头保持独立。该批仅新增测试，沿用前一批18项完整业务回归，修改文件格式验证通过。首轮因错误沿用Showcase的“高对比”文案而未完成高对比场景，修正为设置实际选项“高对比度”后完成，失败现场保留。
+
+## 可调整分栏
+
+`WorkbenchSplitView` 提供 PrimaryContent/AuxiliaryContent 两个内容槽，默认2:1星号宽度，主区最小320 DIP、辅助区最小240 DIP。分隔条采用原生GridSplitter及显式ST.Splitter样式，方向键每次调整16 DIP，也支持鼠标拖动，焦点边框随主题变化。
+
+宿主祖先应启用现有 `AdaptiveLayout.MonitorSize`，组件继承其IsNarrow，不增加另一套断点。窄窗口收起辅助区与分隔条，将空间交给主编辑区；恢复宽窗口后还原用户调整的列宽。辅助区持有键盘焦点时先转移到主区，并在布局后将聚焦主区滚入视口，避免窗口缩矮后编辑框底边被裁切。内容对象一直保留，不通过重新创建控件恢复数据。
+
+Showcase仅演示译文与参考分栏；正式业务页按对应里程碑接入，不在M1替换其现有主体布局。UI-DESIGN-006实际操作三个主题下的方向键、鼠标拖动、800×600收起及1280×960恢复；split-matrix.json记录每次调整前后和恢复宽度，另检查主编辑框完整可见。最终定向记录为 `.codex-build/fluent-workbench/artifacts/20261118-122747-a6e14762/ui-tests.trx`，保存9张聚焦/紧凑/恢复截图，已复核暗色焦点和应用高对比紧凑截图。
+
+测试环境报告同时移除过时的“M0-A空工作区”固定范围，记录实际TestId、Category和启动页面；执行范围以本例report.json为准。
+
+最终完整回归 `.codex-build/fluent-workbench/artifacts/20261118-122827-b544f8c2/ui-tests.trx` 为20项全部通过、零跳过，耗时3分42秒；23份实例报告均通过、正常退出，正式数据指纹未变化。格式化、格式验证及git diff --check通过。各项M1要求的对应证据和未执行环境见 [M1验收记录](fluent-workbench-m1-acceptance.md)。

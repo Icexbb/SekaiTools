@@ -2,7 +2,7 @@
 
 编制日期：2026-11-17。依据当前 `main` 的 WPF 源码、[阶段零审计](fluent-workbench-phase0-audit.md)及项目功能文档制定。本文替代原审计中的实施阶段安排；原审计保留技术证据和风险分析。
 
-本文定义分阶段实施范围。M0-A 的 FlaUI 工程、隔离宿主及最小运行闭环，以及 M0-B 的最低行为基线已完成，证据与限制见 [M0 验收记录](fluent-workbench-m0-acceptance.md)，运行方式见 [Windows UI 自动化测试](ui-automation.md)。用户继续执行后，M1 已开始，首批资源和预览见 [设计系统说明](fluent-workbench-design-system.md)；M1 尚未完整验收，后续里程碑尚未开始。
+本文定义分阶段实施范围。M0-A 的 FlaUI 工程、隔离宿主及最小运行闭环，以及 M0-B 的最低行为基线已完成，证据与限制见 [M0 验收记录](fluent-workbench-m0-acceptance.md)，运行方式见 [Windows UI 自动化测试](ui-automation.md)。M1公共资源、外壳与组件预览已完成，见 [设计系统说明](fluent-workbench-design-system.md) 和 [M1验收记录](fluent-workbench-m1-acceptance.md)；后续里程碑尚未开始。
 
 ## 1. 第一优先级：先引入 FlaUI，取得现有界面的可重复测试基线
 
@@ -74,6 +74,8 @@ FlaUI 不再与设计系统合并实施，也不等待页面改造后补测。�
 - 建立仅开发/测试入口可访问的 Showcase，使用真实公共样式和业务组件；展示主题、焦点、禁用、校验、空状态、任务项及翻译行，FlaUI 可操作和截图，不占用正式主导航。
 
 **退出条件：** Smoke、Showcase 交互、明暗与高对比检查通过；公共组件实际截图审查完成；主题切换后编辑、选择、焦点、禁用和错误状态可辨。
+
+M1已逐项核对并完成：最终20项桌面测试全部通过，覆盖三主题公共组件、外壳/尺寸组合、六种任务状态和可调分栏；截图已复核。当前96 DPI与应用高对比的证据、真实系统显示环境仍待M7的边界，详见 [M1验收记录](fluent-workbench-m1-acceptance.md)。
 
 ## 4. M2：脚本翻译作为首个完整业务试点
 

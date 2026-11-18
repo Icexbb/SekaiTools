@@ -121,7 +121,10 @@ public sealed class ApplicationFixture : IDisposable
             Data.Paths.LocalRoot,
             TemporaryRoot = Data.Temp,
             Data.Before,
-            Scope = "M0-A: translation empty workspace and settings navigation; no resource downloads"
+            TestId,
+            Category,
+            InitialPage = expectedPageRoot,
+            Scope = "Isolated desktop scenario; executed steps and results are recorded in report.json"
         });
     }
 

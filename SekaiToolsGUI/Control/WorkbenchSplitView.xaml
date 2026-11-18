@@ -1,0 +1,16 @@
+<UserControl x:Class="SekaiToolsGUI.Control.WorkbenchSplitView"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="SplitRoot">
+ <Grid>
+  <Grid.ColumnDefinitions>
+   <ColumnDefinition x:Name="PrimaryColumn" Width="2*" MinWidth="320"/>
+   <ColumnDefinition x:Name="DividerColumn" Width="8"/>
+   <ColumnDefinition x:Name="AuxiliaryColumn" Width="*" MinWidth="240"/>
+  </Grid.ColumnDefinitions>
+  <ContentPresenter x:Name="PrimaryPresenter" Content="{Binding PrimaryContent, ElementName=SplitRoot}"/>
+  <GridSplitter x:Name="Divider" Grid.Column="1" Style="{StaticResource ST.Splitter}"
+     AutomationProperties.AutomationId="Workbench.Splitter" AutomationProperties.Name="调整主编辑区与辅助区宽度"
+     ToolTip="拖动或使用左右方向键调整主编辑区与辅助区宽度"/>
+  <ContentPresenter x:Name="AuxiliaryPresenter" Grid.Column="2" Content="{Binding AuxiliaryContent, ElementName=SplitRoot}"/>
+ </Grid>
+</UserControl>
