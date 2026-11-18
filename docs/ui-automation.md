@@ -1,5 +1,11 @@
 # Windows UI 自动化测试
 
+## 翻译退出与恢复验证补充
+
+UI-TRANSLATION-009经真实窗口关闭验证取消、不保存与保存，读取实际自动草稿和导出TXT，等待自有进程正常退出。UI-TRANSLATION-010使用应用生成的隔离草稿副本，跨进程覆盖稍后、重新打开和丢弃，核对正文、角色译名、载入快照、编辑选项和活动条目焦点，源文件指纹不变。副本只放回测试数据根；这不是强制终止或崩溃恢复测试。
+
+确认按钮限定在标题匹配的真实ContentDialog窗口中，避免与底层工具栏重名按钮混淆；测试宿主支持单独等待已发起的退出流程。UI-TRANSLATION-007同时等待清理菜单展开稳定后核对按钮下方锚点，并捕获同进程原生菜单全图。
+
 UI-TRANSLATION-007/008覆盖导入失败/V2替换取消、全局清理分支、角色译名同步、格式化焦点与100%～200%真实字体缩放。Translation.ClearButton为清理入口，Translation.ZoomIn/ZoomOut为缩放按钮，Translation.ImportErrorDetails/DismissImportError为失败详情与关闭入口。TranslationWorkspaceDriver封装真实文件选择、同PID弹出菜单及编辑设置，不直接调用生产处理器；详见 [M2进展](fluent-workbench-m2-progress.md)。
 
 `UI-TRANSLATION-006` 经Translation.Row.{SequenceNumber}.Actions打开真实菜单，验证采用参考仅影响当前正文、上下文恢复、有意留空/未译/使用原文及撤销恢复状态。MenuItem使用同进程UIA菜单定位，输出V2后独立解析全篇并检查参考输入文件未改动。该入口复用原有操作处理，不以新业务实现替代既有语义。

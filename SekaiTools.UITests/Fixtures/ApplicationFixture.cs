@@ -150,11 +150,14 @@ public sealed class ApplicationFixture : IDisposable
     public void Close()
     {
         if (_process is null) return;
-        if (!_process.HasExited)
-        {
-            Window?.Close();
-            WaitHelper.Until(() => _process.HasExited, "真实关闭流程完成", TimeSpan.FromSeconds(20));
-        }
+        if (!_process.HasExited) Window?.Close();
+        WaitForExit();
+    }
+
+    public void WaitForExit()
+    {
+        if (_process is null) return;
+        WaitHelper.Until(() => _process.HasExited, "真实关闭流程完成", TimeSpan.FromSeconds(20));
         _process.WaitForExit();
         if (_process.ExitCode != 0) throw new InvalidOperationException($"应用异常退出：{_process.ExitCode}");
         _cleanup = "正常退出，无自有进程残留";

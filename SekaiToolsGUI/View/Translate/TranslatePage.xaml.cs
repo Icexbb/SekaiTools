@@ -4,6 +4,7 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -697,6 +698,7 @@ public partial class TranslatePage : UserControl
         if (sender is Button { ContextMenu: { } menu } button)
         {
             menu.PlacementTarget = button;
+            menu.Placement = PlacementMode.Bottom;
             menu.DataContext = ViewModel;
             menu.IsOpen = true;
         }

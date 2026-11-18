@@ -47,9 +47,9 @@ public sealed class TranslationWorkspaceBehaviorTests
         });
         app.Step("V2替换取消和确认", "取消保留当前编辑，确认后导入V2及明确空白，同时保留参考", () =>
         {
-            ui.Load("Translation.LoadTranslationButton", version2); ui.Confirm("取消");
+            ui.Load("Translation.LoadTranslationButton", version2); ui.Confirm("取消", "替换当前内容？");
             Assert.Equal("保留编辑。", ui.Body(1).Text);
-            ui.Load("Translation.LoadTranslationButton", version2); ui.Confirm("不保存");
+            ui.Load("Translation.LoadTranslationButton", version2); ui.Confirm("不保存", "替换当前内容？");
             WaitHelper.Until(() => ui.Body(1).Text == "V2译文。", "V2正文载入");
             Assert.Equal("译名", ui.Speaker(1).Text);
             Assert.Equal("有意留空", app.Finder.ById(app.Window!, "Translation.Dialog.2.State").Name);
@@ -57,9 +57,18 @@ public sealed class TranslationWorkspaceBehaviorTests
         });
         app.Step("译文清理与参考移除", "取消无变化，确认只清译文，移除参考保留剧本", () =>
         {
-            ui.Clear("清除当前译文（保留剧本和参考）"); ui.Confirm("取消");
+            ui.Button("Translation.ClearButton").Invoke();
+            var button = ui.Button("Translation.ClearButton").BoundingRectangle;
+            var menuItem = ui.Owned("", "清除当前译文（保留剧本和参考）", FlaUI.Core.Definitions.ControlType.MenuItem);
+            WaitHelper.Until(() => menuItem.BoundingRectangle.Top >= button.Bottom - 2 && menuItem.BoundingRectangle.Top <= button.Bottom + 32, "清理菜单完成展开布局");
+            var menu = menuItem.BoundingRectangle;
+            Assert.InRange(menu.Left, button.Left - 4, button.Right + 4);
+            Assert.InRange(menu.Top, button.Bottom - 2, button.Bottom + 32);
+            ScreenshotHelper.CaptureStable(ui.Owned("", type: FlaUI.Core.Definitions.ControlType.Menu), Path.Combine(app.Data.Directory, "Screenshots"), "Workspace.ClearMenu");
+            Keyboard.Type(VirtualKeyShort.ESCAPE);
+            ui.Clear("清除当前译文（保留剧本和参考）"); ui.Confirm("取消", "清除当前译文？");
             Assert.Equal("V2译文。", ui.Body(1).Text);
-            ui.Clear("清除当前译文（保留剧本和参考）"); ui.Confirm("继续");
+            ui.Clear("清除当前译文（保留剧本和参考）"); ui.Confirm("继续", "清除当前译文？");
             WaitHelper.Until(() => ui.Body(1).Text == "" && ui.Speaker(1).Text == "角色", "清除译文保留原剧本");
             Assert.Equal("参考甲。", app.Finder.ById(app.Window!, "Translation.Dialog.1.Reference").AsTextBox().Text);
             ui.Clear("移除参考翻译");
@@ -68,8 +77,8 @@ public sealed class TranslationWorkspaceBehaviorTests
         });
         app.Step("清空整个工作区", "取消保留剧本，确认恢复空状态，输入文件未改动", () =>
         {
-            ui.Clear("清除整个工作区"); ui.Confirm("取消"); ui.Body(2);
-            ui.Clear("清除整个工作区"); ui.Confirm("继续");
+            ui.Clear("清除整个工作区"); ui.Confirm("取消", "清除整个翻译工作区？"); ui.Body(2);
+            ui.Clear("清除整个工作区"); ui.Confirm("继续", "清除整个翻译工作区？");
             WaitHelper.Until(() => ui.Button(Catalog.LoadScript).Name == "载入剧本", "工作区已清空");
             Assert.Null(app.Window!.FindFirstDescendant(cf => cf.ByAutomationId("Translation.Dialog.1.TargetText")));
             foreach (var (path, hash) in hashes) Assert.Equal(hash, SHA256.HashData(File.ReadAllBytes(path)));

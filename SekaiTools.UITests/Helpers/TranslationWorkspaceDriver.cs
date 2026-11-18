@@ -34,7 +34,11 @@ internal sealed class TranslationWorkspaceDriver(ApplicationFixture app)
         WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByAutomationId("1148").And(cf.ByControlType(ControlType.Edit))), "文件名输入框").AsTextBox().Text = path;
         Keyboard.Type(VirtualKeyShort.RETURN);
     }
-    public void Confirm(string text) => WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button).And(cf.ByName(text))), "确认操作：" + text).AsButton().Invoke();
+    public void Confirm(string text, string title)
+    {
+        var dialog = WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Window).And(cf.ByName(title))), "当前对话框：" + title);
+        WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button).And(cf.ByName(text))), "确认操作：" + text).AsButton().Invoke();
+    }
     public void Clear(string label)
     {
         Button("Translation.ClearButton").Invoke();
