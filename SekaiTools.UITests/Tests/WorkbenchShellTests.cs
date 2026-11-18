@@ -16,7 +16,7 @@ public sealed class WorkbenchShellTests
         using var app = new ApplicationFixture("UI-DESIGN-005", "Functional");
         app.Step("启动", "隔离外壳就绪", app.Start);
         var cases = new List<object>();
-        app.Step("外壳矩阵", "实际主题、页头、导航开合及日志入口在各尺寸可用", () =>
+        app.Step("外壳矩阵", "实际主题、紧凑导航及日志入口在各尺寸可用", () =>
         {
             var window = app.Window!;
             var desktop = window.Automation.GetDesktop().BoundingRectangle;
@@ -40,10 +40,7 @@ public sealed class WorkbenchShellTests
                         window.Patterns.Transform.Pattern.Resize(width, height);
                         window.Patterns.Transform.Pattern.Move(desktop.Left + (desktop.Width - width) / 2, desktop.Top + (desktop.Height - height) / 2);
                         WaitHelper.Until(() => Math.Abs(window.BoundingRectangle.Width - width) <= 1 && Math.Abs(window.BoundingRectangle.Height - height) <= 1, "实际外壳尺寸");
-                        var header = app.Finder.ById(window, Catalog.PageHeader);
-                        var title = app.Finder.ById(header, "Workbench.Header.Title");
-                        Assert.Equal("脚本翻译", title.Name);
-                        VisibleInside(title);
+                        AssertWorkspace();
                         var toggle = app.Finder.ById(window, Catalog.ToggleNavigation).AsButton();
                         var logs = app.Finder.ById(window, Catalog.OpenLogs).AsButton();
                         VisibleInside(toggle);
@@ -58,20 +55,37 @@ public sealed class WorkbenchShellTests
                         ScreenshotHelper.CaptureStable(window, Path.Combine(app.Data.Directory, "Screenshots"), prefix + ".NavigationOpen");
                         toggle.Invoke();
                         WaitHelper.Until(() => toggle.Name == "展开导航", "恢复编辑区");
+                        foreach (var button in new[] { toggle, logs })
+                        {
+                            WaitHelper.Until(() => button.BoundingRectangle.Width <= 44, "收起后的侧栏按钮完成布局");
+                            Assert.InRange(button.BoundingRectangle.Width, 28, 44);
+                            var contentLeft = app.Finder.ById(window, Catalog.Translation).BoundingRectangle.Left;
+                            Assert.True(button.BoundingRectangle.Right <= contentLeft - 4,
+                                "收起后的按钮必须完整落在侧栏内部，不能延伸到容器裁切边缘。");
+                        }
                         logs.Invoke();
                         var logWindow = app.OwnedWindow("RuntimeLog.Root");
                         Assert.Equal("运行日志", logWindow.Title);
                         logWindow.Close();
+                        FlaUI.Core.Input.Mouse.MoveTo((int)window.BoundingRectangle.Right - 30, (int)window.BoundingRectangle.Bottom - 30);
                         var screenshot = ScreenshotHelper.CaptureStable(window, Path.Combine(app.Data.Directory, "Screenshots"), prefix + ".Workspace");
                         using var bitmap = new System.Drawing.Bitmap(screenshot);
-                        var background = bitmap.GetPixel(10, 50);
-                        if (theme == "Dark") Assert.True(background.R < 70 && background.G < 70 && background.B < 70, "外壳页头应使用暗色工作区画刷。");
-                        if (theme == "Light") Assert.True(background.R > 230 && background.G > 230 && background.B > 230, "外壳页头应使用浅色工作区画刷。");
+                        var background = bitmap.GetPixel(width - 10, height / 2);
+                        if (theme == "Dark") Assert.True(background.R < 70 && background.G < 70 && background.B < 70, "工作区应保持暗色。");
+                        if (theme == "Light") Assert.True(background.R > 230 && background.G > 230 && background.B > 230, "工作区应保持浅色。");
                         cases.Add(new { Theme = theme, Width = width, Height = height, Background = background.ToArgb().ToString("X8"), Result = "Passed" });
                     }
                 }
             }
             finally { app.Data.WriteJson("shell-matrix", cases); }
+
+            void AssertWorkspace()
+            {
+                Assert.Null(window.FindFirstDescendant(cf => cf.ByAutomationId("MainWindow.PageHeader")));
+                var page = app.Finder.ById(window, Catalog.Translation).BoundingRectangle;
+                Assert.InRange(page.Top, window.BoundingRectangle.Top + 35, window.BoundingRectangle.Top + 60);
+                Assert.True(page.Height >= window.BoundingRectangle.Height - 65, "工作区应紧接标题栏，不能再保留独立页头的空白高度。");
+            }
 
             void VisibleInside(AutomationElement element)
             {
@@ -88,17 +102,17 @@ public sealed class WorkbenchShellTests
 
     [DesktopFact]
     [Trait("Category", "Functional")]
-    public void UI_DESIGN_002_外壳页头导航与紧凑工具栏()
+    public void UI_DESIGN_002_紧凑外壳导航与日志()
     {
         using var app = new ApplicationFixture("UI-DESIGN-002", "Functional");
-        app.Step("启动", "翻译工作区和公共页头就绪", app.Start);
-        app.Step("页头跟随导航", "实际页面、选中项与公共标题一致", () =>
+        app.Step("启动", "翻译工作区就绪", app.Start);
+        app.Step("导航保持当前页面", "实际页面与导航选中项一致", () =>
         {
-            AssertTitle("脚本翻译");
+            AssertPage(Catalog.TranslationNavigation, Catalog.Translation);
             app.Navigate(Catalog.SettingsNavigation, Catalog.Settings);
-            AssertTitle("设置与关于");
+            AssertPage(Catalog.SettingsNavigation, Catalog.Settings);
             app.Navigate(Catalog.TranslationNavigation, Catalog.Translation);
-            AssertTitle("脚本翻译");
+            AssertPage(Catalog.TranslationNavigation, Catalog.Translation);
         });
         app.Step("紧凑外壳", "960×600时导航开合和日志入口可操作", () =>
         {
@@ -120,16 +134,17 @@ public sealed class WorkbenchShellTests
             Assert.Equal("运行日志", logWindow.Title);
             logWindow.Close();
             app.Navigate(Catalog.SettingsNavigation, Catalog.Settings);
-            AssertTitle("设置与关于");
+            AssertPage(Catalog.SettingsNavigation, Catalog.Settings);
             app.Navigate(Catalog.TranslationNavigation, Catalog.Translation);
             ScreenshotHelper.CaptureStable(app.Window, Path.Combine(app.Data.Directory, "Screenshots"), "Shell.Narrow.Translation");
         });
         app.Step("退出", "紧凑工作区正常退出", app.Close);
 
-        void AssertTitle(string expected)
+        void AssertPage(string navigation, string page)
         {
-            var header = app.Finder.ById(app.Window!, Catalog.PageHeader);
-            WaitHelper.Until(() => app.Finder.ById(header, "Workbench.Header.Title").Name == expected, "公共页头更新");
+            app.Finder.ById(app.Window!, page);
+            WaitHelper.Until(() => app.Finder.ById(app.Window!, navigation).Properties.ItemStatus.Value == "当前页面", "导航选中项更新");
+            Assert.Null(app.Window!.FindFirstDescendant(cf => cf.ByAutomationId("MainWindow.PageHeader")));
         }
     }
 }

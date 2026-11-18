@@ -181,19 +181,6 @@ public partial class MainWindow : FluentWindow
 
     private void NavigationView_OnNavigated(NavigationView sender, NavigatedEventArgs args)
     {
-        var selected = NavigationView.MenuItems.OfType<NavigationViewItem>().Concat(NavigationView.FooterMenuItems.OfType<NavigationViewItem>())
-            .FirstOrDefault(item => item.TargetPageType == args.Page.GetType());
-        ShellHeader.Title = selected?.Content?.ToString() ?? "Sekai Tools";
-        if (selected?.Icon is SymbolIcon icon) ShellHeader.Icon = icon.Symbol;
-        ShellHeader.Description = args.Page switch
-        {
-            TranslatePage => "载入剧本与译文，编辑、校对并保存。",
-            SubtitlePage => "从录屏识别时间轴，复核后导出字幕。",
-            DownloadPage => "选择剧情与数据源，下载所需剧本。",
-            SuppressPage => "添加视频与字幕，查看压制队列和结果。",
-            SettingPage => "调整各模块偏好、查看应用信息。",
-            _ => ""
-        };
         _currentNavigatedPage = args.Page;
         if (args.Page is TranslatePage translatePage) _translationPage = translatePage;
         _sessions.RecordModule(args.Page.GetType(), NavigationView.MenuItems.OfType<NavigationViewItem>()

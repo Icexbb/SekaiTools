@@ -1,6 +1,7 @@
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Input;
 using FlaUI.Core.WindowsAPI;
+using SekaiTools.UITests.Automation;
 using SekaiTools.UITests.Fixtures;
 using SekaiTools.UITests.Helpers;
 using Xunit;
@@ -16,8 +17,14 @@ public sealed class WorkbenchShowcaseTests
     {
         using var app = new ApplicationFixture("UI-DESIGN-001", "Functional");
         app.Step("启动", "隔离应用就绪", app.Start);
-        using (Keyboard.Pressing(VirtualKeyShort.CONTROL, VirtualKeyShort.ALT)) Keyboard.Type(VirtualKeyShort.F12);
-        var showcase = WaitHelper.Until(() => app.Window!.ModalWindows.FirstOrDefault(window => window.Properties.AutomationId.ValueOrDefault == "Showcase.Root"), "组件预览窗口");
+        Window showcase = null!;
+        app.Step("打开预览", "通过实际快捷键打开自有预览窗口", () =>
+        {
+            app.Window!.SetForeground();
+            app.Finder.ById(app.Window, Catalog.LoadScript).Focus();
+            using (Keyboard.Pressing(VirtualKeyShort.CONTROL, VirtualKeyShort.ALT)) Keyboard.Type(VirtualKeyShort.F12);
+            showcase = app.OwnedWindow(Catalog.Showcase);
+        });
         app.Step("三主题交互", "编辑与选择保持，禁用和校验状态可操作并截图", () =>
         {
             try
