@@ -10,7 +10,7 @@
              xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
              xmlns:control="clr-namespace:SekaiToolsGUI.Control"
              mc:Ignorable="d"
-             AllowDrop="True" Background="Transparent" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+             AllowDrop="True" Background="{DynamicResource ST.Brush.Workspace}" Foreground="{DynamicResource ST.Brush.Text}"
              PreviewDragOver="Page_OnPreviewDragOver" PreviewDrop="Page_OnPreviewDrop"
              PreviewDragLeave="Page_OnPreviewDragLeave" Unloaded="Page_OnUnloaded"
              d:DesignHeight="960" d:DesignWidth="1280" d:Background="White"
@@ -27,9 +27,8 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <ui:Card Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,8"
-                     Padding="15,10,15,5" VerticalContentAlignment="Center"
-                     HorizontalAlignment="Stretch">
+            <Border Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,8"
+                    Style="{StaticResource ST.Surface}" Padding="12,8,12,4">
                 <StackPanel>
                     <DockPanel LastChildFill="True">
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0">
@@ -56,7 +55,7 @@
                                        Margin="0,0,8,8" ToolTip="前往数据下载" AutomationProperties.Name="前往数据下载" />
                         </WrapPanel>
                     </DockPanel>
-                    <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                    <Border Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource ST.Brush.Border}"
                             Padding="0,10,0,0" Margin="0,2,0,0">
                         <DockPanel LastChildFill="True">
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0">
@@ -138,52 +137,78 @@
                         </DockPanel>
                     </Border>
                 </StackPanel>
-            </ui:Card>
+            </Border>
 
             <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}">
-                <ui:Card Padding="12,10" Margin="0,0,0,10" HorizontalContentAlignment="Stretch">
+                <Border Style="{StaticResource ST.Surface}" Padding="12,8" Margin="0,0,0,8">
                     <StackPanel>
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="110" />
-                                <ColumnDefinition Width="130" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <ui:TextBox x:Name="SearchBox" Margin="0,0,10,0" PlaceholderText="搜索原文、译文、角色或编号"
-                                        AutomationProperties.AutomationId="Translation.SearchBox"
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <ui:TextBox x:Name="SearchBox" Margin="0,0,10,8" PlaceholderText="搜索原文、译文、角色或编号"
+                                        AutomationProperties.AutomationId="Translation.SearchBox" MinWidth="160"
                                         Icon="{ui:SymbolIcon Search24}" AutomationProperties.Name="搜索翻译条目"
-                                        Text="{Binding SearchText,UpdateSourceTrigger=PropertyChanged}" />
-                            <ComboBox Grid.Column="1" Margin="0,0,10,0" SelectedIndex="{Binding TypeFilterIndex}"
-                                      AutomationProperties.Name="条目类型">
-                                <ComboBoxItem Content="全部类型" />
-                                <ComboBoxItem Content="对话" />
-                                <ComboBoxItem Content="地点" />
-                            </ComboBox>
-                            <ComboBox Grid.Column="2" SelectedIndex="{Binding FilterIndex}"
-                                      AutomationProperties.AutomationId="Translation.StatusFilter"
-                                      AutomationProperties.Name="条目筛选">
-                                <ComboBoxItem Content="全部条目" />
-                                <ComboBoxItem Content="仅看未译" />
-                                <ComboBoxItem Content="仅看有提示" />
-                                <ComboBoxItem Content="仅看闪回" />
-                            </ComboBox>
-                            <StackPanel Grid.Column="3" Orientation="Horizontal">
-                                <ui:Button Content="下一未译" Icon="{ui:SymbolIcon ArrowRight28}"
-                                           Click="NextUntranslated_OnClick" Margin="10,0,0,0"
-                                           ToolTip="下一未译 (Ctrl+Enter)" />
-                                <ui:Button Content="下一提示" Icon="{ui:SymbolIcon Warning28}" Click="NextWarning_OnClick"
-                                           Margin="10,0,0,0" />
-                            </StackPanel>
+                                        Text="{Binding SearchText,UpdateSourceTrigger=PropertyChanged}">
+                                <ui:TextBox.Style><Style TargetType="ui:TextBox" BasedOn="{StaticResource {x:Type ui:TextBox}}">
+                                    <Style.Triggers><Trigger Property="control:AdaptiveLayout.IsNarrow" Value="True">
+                                        <Setter Property="Grid.ColumnSpan" Value="2"/>
+                                    </Trigger></Style.Triggers>
+                                </Style></ui:TextBox.Style>
+                            </ui:TextBox>
+                            <control:WorkbenchPageToolbar AutomationProperties.Name="翻译筛选与定位">
+                                <control:WorkbenchPageToolbar.Style><Style TargetType="control:WorkbenchPageToolbar">
+                                    <Setter Property="Grid.Column" Value="1"/>
+                                    <Style.Triggers><Trigger Property="control:AdaptiveLayout.IsNarrow" Value="True">
+                                        <Setter Property="Grid.Column" Value="0"/><Setter Property="Grid.Row" Value="1"/>
+                                        <Setter Property="Grid.ColumnSpan" Value="2"/>
+                                    </Trigger></Style.Triggers>
+                                </Style></control:WorkbenchPageToolbar.Style>
+                                <ComboBox Width="110" Margin="0,0,8,8" SelectedIndex="{Binding TypeFilterIndex}"
+                                          AutomationProperties.AutomationId="Translation.TypeFilter" AutomationProperties.Name="条目类型">
+                                    <ComboBoxItem Content="全部类型"/><ComboBoxItem Content="对话"/><ComboBoxItem Content="地点"/>
+                                </ComboBox>
+                                <ComboBox Width="130" Margin="0,0,8,8" SelectedIndex="{Binding FilterIndex}"
+                                          AutomationProperties.AutomationId="Translation.StatusFilter" AutomationProperties.Name="条目筛选">
+                                    <ComboBoxItem Content="全部条目"/><ComboBoxItem Content="仅看未译"/>
+                                    <ComboBoxItem Content="仅看有提示"/><ComboBoxItem Content="仅看闪回"/>
+                                </ComboBox>
+                                <ui:Button Content="下一未译" Icon="{ui:SymbolIcon ArrowRight28}" Style="{StaticResource ST.Button}"
+                                           Click="NextUntranslated_OnClick" Margin="0,0,8,8" ToolTip="下一未译 (Ctrl+Enter)"
+                                           AutomationProperties.AutomationId="Translation.NextUntranslated"/>
+                                <ui:Button Content="下一提示" Icon="{ui:SymbolIcon Warning28}" Style="{StaticResource ST.Button}"
+                                           Click="NextWarning_OnClick" Margin="0,0,0,8" AutomationProperties.AutomationId="Translation.NextWarning"/>
+                            </control:WorkbenchPageToolbar>
                         </Grid>
                         <Border Margin="0,10,0,0" Padding="0,10,0,0" BorderThickness="0,1,0,0"
                                 BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <WrapPanel Grid.Column="0" VerticalAlignment="Center">
+                            <DockPanel LastChildFill="True">
+                                <control:Popover x:Name="EditorOptionsPopover" DockPanel.Dock="Right" Margin="8,0,0,0">
+                                    <control:Popover.Target>
+                                        <ui:Button Content="编辑选项" Icon="{ui:SymbolIcon Settings24}" Style="{StaticResource ST.Button}"
+                                            Click="EditorOptions_OnClick" AutomationProperties.AutomationId="Translation.OpenEditorOptions"/>
+                                    </control:Popover.Target>
+                                    <control:Popover.Content>
+                                        <StackPanel Width="320" AutomationProperties.AutomationId="Translation.EditorOptions">
+                                            <CheckBox AutomationProperties.AutomationId="Translation.Option.ShowReference" Content="显示参考译文" IsChecked="{Binding ShowReference}"
+                                                VerticalAlignment="Center" MinHeight="32" Margin="0,4" />
+                                            <CheckBox AutomationProperties.AutomationId="Translation.Option.HighlightReference" Content="高亮参考文本差异"
+                                                IsChecked="{Binding HighlightReferenceDifferences}"
+                                                VerticalAlignment="Center" MinHeight="32" Margin="0,4" />
+                                            <CheckBox AutomationProperties.AutomationId="Translation.Option.HighlightModified" Content="高亮修改差异" IsChecked="{Binding HighlightModifiedDifferences}"
+                                                VerticalAlignment="Center" MinHeight="32" Margin="0,4" />
+                                            <CheckBox AutomationProperties.AutomationId="Translation.Option.SyncContent" Content="同步相同场景文字" IsChecked="{Binding SyncMatchingContent}"
+                                                Margin="0,4" VerticalAlignment="Center" MinHeight="32"
+                                                ToolTip="项目级开关：后续编辑会同步整个剧本中原文相同的场景文字；开启时不会立即覆盖现有译文。" />
+                                            <CheckBox AutomationProperties.AutomationId="Translation.Option.SyncSpeakers" Content="同步相同说话人译名" IsChecked="{Binding SyncMatchingSpeakers}"
+                                                Margin="0,4" VerticalAlignment="Center" MinHeight="32"
+                                                ToolTip="项目级开关：后续修改说话人译名时，同步整个剧本中原名相同的说话人，不修改对话正文。" />
+                                            <CheckBox AutomationProperties.AutomationId="Translation.Option.AutoFormat" Content="自动规范标点和用词" IsChecked="{Binding AutoFormat}"
+                                                VerticalAlignment="Center" MinHeight="32" Margin="0,4"
+                                                ToolTip="离开编辑框后规范标点和用词（如半角标点转全角、欸转诶）。关闭可保留输入写法。" />
+                                        </StackPanel>
+                                    </control:Popover.Content>
+                                </control:Popover>
+                                <WrapPanel VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal" Margin="0,3,20,3">
                                         <TextBlock Text="显示" FontSize="12" VerticalAlignment="Center"
                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -220,39 +245,10 @@
                                                    VerticalAlignment="Center" />
                                     </StackPanel>
                                 </WrapPanel>
-                                <StackPanel Grid.Column="1" x:Name="EditorOptionsPanel" HorizontalAlignment="Right"
-                                            VerticalAlignment="Center">
-                                    <StackPanel.Resources>
-                                        <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
-                                            <Setter Property="Width" Value="175" />
-                                        </Style>
-                                    </StackPanel.Resources>
-                                    <WrapPanel HorizontalAlignment="Right">
-                                        <CheckBox Content="显示参考译文" IsChecked="{Binding ShowReference}"
-                                                  VerticalAlignment="Center" MinHeight="32" Margin="16,0,0,0" />
-                                        <CheckBox Content="高亮参考文本差异"
-                                                  IsChecked="{Binding HighlightReferenceDifferences}"
-                                                  VerticalAlignment="Center" MinHeight="32" Margin="16,0,0,0" />
-                                        <CheckBox Content="高亮修改差异" IsChecked="{Binding HighlightModifiedDifferences}"
-                                                  VerticalAlignment="Center" MinHeight="32" Margin="16,0,0,0" />
-                                    </WrapPanel>
-                                    <WrapPanel HorizontalAlignment="Right">
-                                        <CheckBox Content="同步相同场景文字" IsChecked="{Binding SyncMatchingContent}"
-                                                  Margin="16,0,0,0" VerticalAlignment="Center" MinHeight="32"
-                                                  ToolTip="项目级开关：后续编辑会同步整个剧本中原文相同的场景文字；开启时不会立即覆盖现有译文。" />
-                                        <CheckBox Content="同步相同说话人译名" IsChecked="{Binding SyncMatchingSpeakers}"
-                                                  Margin="16,0,0,0" VerticalAlignment="Center" MinHeight="32"
-                                                  ToolTip="项目级开关：后续修改说话人译名时，同步整个剧本中原名相同的说话人，不修改对话正文。" />
-                                        <CheckBox Content="自动规范标点和用词" IsChecked="{Binding AutoFormat}"
-                                                  VerticalAlignment="Center" MinHeight="32" Margin="16,0,0,0"
-                                                  ToolTip="离开编辑框后规范标点和用词（如半角标点转全角、欸转诶）。关闭可保留输入写法。" />
-                                    </WrapPanel>
-                                </StackPanel>
-
-                            </Grid>
+                            </DockPanel>
                         </Border>
                     </StackPanel>
-                </ui:Card>
+                </Border>
                 <Border x:Name="ImportErrorPanel" Visibility="Collapsed" Padding="8" Margin="0,0,0,8"
                         BorderThickness="1" BorderBrush="{DynamicResource SystemFillColorCriticalBrush}">
                     <StackPanel>

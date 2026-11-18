@@ -74,6 +74,7 @@
                     <ui:TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" Grid.Row="2" Padding="10,2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                 TextAlignment="Center"
                                 AutomationProperties.Name="{Binding Label}"
+                                AutomationProperties.AutomationId="{Binding SequenceNumber, StringFormat=Translation.Effect.{0}.TargetText}"
                                 ToolTip="蓝色框：载入后修改；黄色框：参考差异。"
                                 behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.LoadedText}"
                                 behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{Binding HighlightModifiedDifferences}"
