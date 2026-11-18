@@ -74,6 +74,7 @@
                                 PlaceholderText="{Binding Path= Character.Original}"
                                 TextAlignment="Center"
                                 AutomationProperties.Name="角色名译名"
+                                AutomationProperties.AutomationId="{Binding SequenceNumber, StringFormat=Translation.Dialog.{0}.Speaker}"
                                 behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Character.LoadedText}"
                                 behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{Binding HighlightModifiedDifferences}"
                                 ToolTip="{Binding SyncHint}"
@@ -163,7 +164,8 @@
                                  behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Translated}"
                                  behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference and HighlightReferenceDifferences'}"
                                  ToolTip="{Binding Content.Reference}"
-                                 AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
+                                 AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}"
+                                 AutomationProperties.AutomationId="{Binding SequenceNumber, StringFormat=Translation.Dialog.{0}.Reference}" />
                         <TextBlock Text="参考译文" FontSize="10" Opacity="0.5" Margin="4,0,6,0"
                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
@@ -174,7 +176,8 @@
                                  behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.Translated}"
                                  behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{c:Binding 'Content.HasLoadedChanges and HighlightModifiedDifferences'}"
                                  ToolTip="{Binding Content.LoadedText}"
-                                 AutomationProperties.Name="载入时译文" Text="{Binding Content.LoadedText}" />
+                                 AutomationProperties.Name="载入时译文" Text="{Binding Content.LoadedText}"
+                                 AutomationProperties.AutomationId="{Binding SequenceNumber, StringFormat=Translation.Dialog.{0}.Loaded}" />
                         <TextBlock Text="载入时译文" FontSize="10" Opacity="0.5" Margin="4,0,6,0"
                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />

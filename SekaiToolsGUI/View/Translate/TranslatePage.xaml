@@ -49,6 +49,7 @@
                                        Click="LoadTranslationButton_OnClick" Margin="0,0,8,8"
                                        Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}" />
                             <ui:Button x:Name="ReferenceTranslationButton" Content="载入参考"
+                                       AutomationProperties.AutomationId="Translation.LoadReferenceButton"
                                        Click="LoadReviewButton_OnClick" Margin="0,0,8,8"
                                        Visibility="{c:Binding HasScript,FalseToVisibility=Collapsed}" />
                             <ui:Button Icon="{ui:SymbolIcon ArrowDownload24}" Click="OpenDownloadPageButton_OnClick"

@@ -1,5 +1,7 @@
 # Windows UI 自动化测试
 
+`UI-TRANSLATION-005` 验证当前/参考TXT载入、三行真实按键及Tab、两类差异独立开关、三主题状态保持、覆盖保存后载入基准不变。Translation.LoadReferenceButton为参考入口；Translation.Dialog.{SequenceNumber}.Speaker/Reference/Loaded分别为角色输入、只读参考和载入快照，TargetText保留原正文契约。指定编辑框的黄色/蓝色像素采样只作差异语义回归，不代表全页像素基准或系统高对比验收。
+
 `UI-TRANSLATION-004` 验证实际地点文字同步开关、非立即覆盖、同步整体撤销/重做，以及三主题×两尺寸的筛选与选项浮层。Translation.OpenEditorOptions为入口，Translation.Option.ShowReference/HighlightReference/HighlightModified/SyncContent/SyncSpeakers/AutoFormat为六个真实CheckBox，支持Toggle；Popup通过同PID桌面子树定位，Esc关闭。Translation.TypeFilter支持Selection，Translation.NextUntranslated/NextWarning支持Invoke；地点输入框的稳定ID为Translation.Effect.{SequenceNumber}.TargetText。
 
 `UI-TRANSLATION-003` 使用300条固定对话验证真实长篇滚动、离屏编辑保持、撤销重做、Ctrl+F筛选及完整顺序导出；Translation.EventList为原生ListView的Scroll定位入口。输出translation-performance.json和固定截图，改造前观察值及解释见 [M2进展](fluent-workbench-m2-progress.md)。
