@@ -1,5 +1,7 @@
 # Windows UI 自动化测试
 
+`UI-DESIGN-004` 在三种应用主题下切换实际 DownloadTask 的等待、下载中、完成、失败、停止、跳过六种状态，核对状态文字、失败原因清除和禁用重试，保存18张截图与 task-state-matrix.json。Showcase.TaskState 是预览选择器，StoryDownload.Task.Status/Error 是实际任务组件的状态/错误文字。截图采样检查状态标签最强字形像素相对邻近底板的对比度至少4.5:1；这是指定组件的回归检查，不代表完整无障碍审计。
+
 `UI-DESIGN-003` 经实际预览入口组合三种应用主题与四个窗口尺寸（800×600、1280×720、1280×960、1920×1080），检查长标题换行、首行图标像素、滚动后错误提示、编辑选择保持和键盘焦点。每个场景记录三张截图与 layout-matrix.json，采用当前96 DPI的物理像素尺寸。Showcase.LongTitle 为长标题开关，Showcase.Scroll 为实际滚动容器。未切换系统DPI或系统高对比。
 
 `UI-DESIGN-002` 验证公共外壳页头随真实导航更新，并在960×600窗口通过 MainWindow.ToggleNavigation 展开/收起导航、通过 MainWindow.OpenLogs 打开现有日志窗口。MainWindow.PageHeader 下的 Workbench.Header.Title 是当前标题契约；运行日志根为 RuntimeLog.Root。UI-DESIGN-001 另在800×600预览检查主操作可见及公共工具栏实际折行。相关状态和未执行矩阵见设计系统说明。

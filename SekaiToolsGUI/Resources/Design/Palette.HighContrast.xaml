@@ -8,6 +8,7 @@
  <SolidColorBrush x:Key="ST.Brush.Text" Color="{DynamicResource {x:Static SystemColors.WindowTextColorKey}}"/>
  <SolidColorBrush x:Key="ST.Brush.SecondaryText" Color="{DynamicResource {x:Static SystemColors.WindowTextColorKey}}"/>
  <SolidColorBrush x:Key="ST.Brush.Accent" Color="{DynamicResource {x:Static SystemColors.HighlightColorKey}}"/>
+ <SolidColorBrush x:Key="ST.Brush.AccentText" Color="{DynamicResource {x:Static SystemColors.WindowTextColorKey}}"/>
  <SolidColorBrush x:Key="ST.Brush.AccentHover" Color="{DynamicResource {x:Static SystemColors.HighlightColorKey}}"/>
  <SolidColorBrush x:Key="ST.Brush.Success" Color="{DynamicResource {x:Static SystemColors.WindowTextColorKey}}"/>
  <SolidColorBrush x:Key="ST.Brush.Warning" Color="{DynamicResource {x:Static SystemColors.WindowTextColorKey}}"/>

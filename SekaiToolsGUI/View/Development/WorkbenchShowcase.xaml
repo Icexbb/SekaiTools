@@ -63,8 +63,14 @@
    <Border Style="{StaticResource ST.Surface}" Margin="0,0,0,16">
     <StackPanel>
      <TextBlock Text="任务项 · 使用现有下载组件" FontWeight="SemiBold" Margin="0,0,0,12"/>
+     <ComboBox x:Name="TaskStateChoice" Width="200" HorizontalAlignment="Left" Margin="0,0,0,12"
+       AutomationProperties.AutomationId="Showcase.TaskState" AutomationProperties.Name="任务状态预览"
+       SelectedIndex="2" SelectionChanged="TaskState_OnChanged">
+      <ComboBoxItem Content="等待下载"/><ComboBoxItem Content="下载中"/><ComboBoxItem Content="下载完成"/>
+      <ComboBoxItem Content="下载失败"/><ComboBoxItem Content="已停止"/><ComboBoxItem Content="文件已存在，已跳过"/>
+     </ComboBox>
      <ContentControl x:Name="TaskSample"/>
-     <TextBlock Text="等待、完成、失败和停止的完整业务行为由各页面基线验证。"
+     <TextBlock Text="组件状态仅用于预览，不会执行下载或重试；真实业务行为由页面基线验证。"
        Style="{StaticResource ST.Text.Caption}" Margin="0,8,0,0"/>
     </StackPanel>
    </Border>

@@ -96,11 +96,12 @@ public partial class DownloadTask : UserControl
         {
             DownloadStatus.Succeeded => "ST.Brush.Success",
             DownloadStatus.Failed => "ST.Brush.Error",
-            DownloadStatus.Downloading => "ST.Brush.Accent",
+            DownloadStatus.Downloading => "ST.Brush.AccentText",
             _ => "ST.Brush.SecondaryText"
         };
         StatusIcon.SetResourceReference(ForegroundProperty, brush);
         StatusText.SetResourceReference(ForegroundProperty, brush);
+        ErrorText.SetResourceReference(ForegroundProperty, UseWorkbenchTheme ? "ST.Brush.Error" : "SystemFillColorCriticalBrush");
         ErrorText.Text = error ?? "";
         ErrorText.Visibility = string.IsNullOrEmpty(error) ? Visibility.Collapsed : Visibility.Visible;
         RetryButton.Visibility = status is DownloadStatus.Failed or DownloadStatus.Stopped

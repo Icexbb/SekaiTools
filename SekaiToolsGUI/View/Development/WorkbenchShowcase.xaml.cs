@@ -15,6 +15,7 @@ namespace SekaiToolsGUI.View.Development;
 public partial class WorkbenchShowcase : FluentWindow
 {
     private readonly int _originalTheme;
+    private readonly DownloadTask _previewTask;
 
     public WorkbenchShowcase()
     {
@@ -24,10 +25,10 @@ public partial class WorkbenchShowcase : FluentWindow
         var dialogue = new DialogStoryEvent(1, "一緒に、新しい曲を作ろう。", 1, "初音ミク", false, false);
         dialogue.SetTranslation("初音未来", "一起创作新的歌曲吧。");
         TranslationSample.Content = new TranslateLineDialog { LineDialogModel = new LineDialogModel(dialogue) { SequenceNumber = 1 } };
-        var task = new DownloadTask("示例剧情 | 第1话", "http://127.0.0.1/showcase.asset", "组件样例", ApplicationPaths.Current.DataRoot) { UseWorkbenchTheme = true };
-        task.ChangeStatus(SekaiDataFetch.DownloadStatus.Succeeded);
-        task.SetCanRemove(false);
-        TaskSample.Content = task;
+        _previewTask = new DownloadTask("示例剧情 | 第1话", "http://127.0.0.1/showcase.asset", "组件样例", ApplicationPaths.Current.DataRoot) { UseWorkbenchTheme = true };
+        _previewTask.SetCanRemove(false);
+        TaskSample.Content = _previewTask;
+        UpdateTaskState();
         Closed += (_, _) => SettingPageModel.Instance.CurrentApplicationTheme = _originalTheme;
         WindowWorkArea.Attach(this);
     }
@@ -42,6 +43,19 @@ public partial class WorkbenchShowcase : FluentWindow
     }
 
     private void Confirm_OnClick(object sender, RoutedEventArgs e) => ResultMessage.Text = "示例已确认，译文和选择仍保留。";
+
+    private void TaskState_OnChanged(object sender, SelectionChangedEventArgs e) => UpdateTaskState();
+
+    private void UpdateTaskState()
+    {
+        if (_previewTask is null) return;
+        var states = new[] { SekaiDataFetch.DownloadStatus.Waiting, SekaiDataFetch.DownloadStatus.Downloading,
+            SekaiDataFetch.DownloadStatus.Succeeded, SekaiDataFetch.DownloadStatus.Failed,
+            SekaiDataFetch.DownloadStatus.Stopped, SekaiDataFetch.DownloadStatus.Skipped };
+        if (TaskStateChoice.SelectedIndex < 0 || TaskStateChoice.SelectedIndex >= states.Length) return;
+        var state = states[TaskStateChoice.SelectedIndex];
+        _previewTask.ChangeStatus(state, state == SekaiDataFetch.DownloadStatus.Failed ? "示例错误：连接失败，请稍后重试。" : null);
+    }
 
     private void LongTitle_OnChanged(object sender, RoutedEventArgs e)
     {

@@ -8,6 +8,7 @@
  <SolidColorBrush x:Key="ST.Brush.Text" Color="#1B2533"/>
  <SolidColorBrush x:Key="ST.Brush.SecondaryText" Color="#526074"/>
  <SolidColorBrush x:Key="ST.Brush.Accent" Color="#0067A6"/>
+ <SolidColorBrush x:Key="ST.Brush.AccentText" Color="#0067A6"/>
  <SolidColorBrush x:Key="ST.Brush.AccentHover" Color="#005384"/>
  <SolidColorBrush x:Key="ST.Brush.Success" Color="#176A42"/>
  <SolidColorBrush x:Key="ST.Brush.Warning" Color="#865200"/>
