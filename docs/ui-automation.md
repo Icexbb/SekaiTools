@@ -1,5 +1,7 @@
 # Windows UI 自动化测试
 
+M1 新增 `UI-DESIGN-001` 组件预览用例：在隔离实例按 Ctrl+Alt+F12 打开 Showcase，检查三种应用主题的编辑、实际翻译行、选择、禁用、校验、焦点、背景像素及关闭恢复原主题，并保存截图。入口、资源与验证边界见 [设计系统说明](fluent-workbench-design-system.md)。应用高对比选项不等同于已经验证 Windows 系统高对比。
+
 ## 当前范围
 
 `SekaiTools.UITests` 是独立于业务测试的进程外 FlaUI/UIA3 工程，使用 xUnit 2、FlaUI.Core/UIA3 5.0.0、与 GUI 对齐的 Windows .NET 10 目标框架和 x64。实施顺序见 [Fluent Workbench 方案](fluent-workbench-implementation-plan.md)。

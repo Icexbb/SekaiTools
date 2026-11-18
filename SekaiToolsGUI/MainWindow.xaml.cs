@@ -51,8 +51,17 @@ public partial class MainWindow : FluentWindow
         Closing += MainWindow_OnClosing;
         ContentRendered += OnUpdateContentRendered;
         TaskbarItemInfo = new TaskbarItemInfo();
+        CommandBindings.Add(new System.Windows.Input.CommandBinding(ShowcaseCommand, (_, _) =>
+        {
+            new View.Development.WorkbenchShowcase { Owner = this }.ShowDialog();
+        }, (_, args) => args.CanExecute = SekaiToolsConfiguration.ApplicationPaths.Current.IsIsolated || SettingPageModel.Instance.DeveloperMode));
+        InputBindings.Add(new System.Windows.Input.KeyBinding(ShowcaseCommand,
+            new System.Windows.Input.KeyGesture(System.Windows.Input.Key.F12,
+                System.Windows.Input.ModifierKeys.Control | System.Windows.Input.ModifierKeys.Alt)));
         SetWindowTitle("");
     }
+
+    private static readonly System.Windows.Input.RoutedCommand ShowcaseCommand = new();
 
     public ISnackbarService WindowSnackbarService => _windowSnackbarService;
     public ISnackbarService WindowInAppSnackbarService => _windowSnackbarService.InAppService;

@@ -1,0 +1,72 @@
+<ui:FluentWindow x:Class="SekaiToolsGUI.View.Development.WorkbenchShowcase"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+ xmlns:workbench="clr-namespace:SekaiToolsGUI.Control"
+ Title="Fluent Workbench · 组件预览" Width="1100" Height="900" MinWidth="800" MinHeight="600"
+ WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="Showcase.Root"
+ Background="{DynamicResource ST.Brush.App}" Foreground="{DynamicResource ST.Brush.Text}"
+ FontFamily="{StaticResource ST.Font.UI}">
+ <Grid Background="{DynamicResource ST.Brush.App}">
+ <Grid.RowDefinitions><RowDefinition Height="36"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+ <ui:TitleBar Title="组件预览"/>
+ <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+  <StackPanel Margin="{StaticResource ST.Padding.Page}">
+   <workbench:WorkbenchPageHeader Title="Fluent Workbench" Icon="Beaker24"
+      Description="公共组件与业务样例 · 主题预览仅在本窗口打开期间生效"/>
+   <WrapPanel Margin="0,16,0,16">
+    <TextBlock Text="主题" VerticalAlignment="Center" Margin="0,0,12,0"/>
+    <ComboBox x:Name="ThemeChoice" Width="160" AutomationProperties.AutomationId="Showcase.Theme" AutomationProperties.Name="预览主题"
+      SelectedIndex="{Binding CurrentApplicationTheme, Mode=TwoWay}">
+     <ComboBoxItem Content="亮色"/><ComboBoxItem Content="暗色"/><ComboBoxItem Content="高对比"/>
+    </ComboBox>
+    <ui:Button Content="暂不可用" IsEnabled="False" Style="{StaticResource ST.Button}" Margin="12,0,0,0"
+      Icon="{ui:SymbolIcon Play24}" AutomationProperties.AutomationId="Showcase.Disabled"/>
+   </WrapPanel>
+   <Border Style="{StaticResource ST.Surface}" Margin="0,0,0,16">
+    <StackPanel>
+     <TextBlock Text="编辑与校验" FontWeight="SemiBold" Margin="0,0,0,12"/>
+     <TextBlock Text="多行译文" Style="{StaticResource ST.Text.Caption}" Margin="0,0,0,8"/>
+     <ui:TextBox x:Name="SampleEditor" AutomationProperties.AutomationId="Showcase.Editor" AutomationProperties.Name="多行译文样例"
+       Style="{StaticResource ST.Editor}" Text="在这里编辑示例译文。" MinHeight="64"/>
+     <WrapPanel Margin="0,12,0,8">
+      <TextBlock Text="阈值样例（0～1，不含0）" VerticalAlignment="Center" Margin="0,0,12,0"/>
+      <ui:TextBox x:Name="ThresholdInput" Text="0.8" Width="120" TextChanged="Threshold_OnChanged"
+         AutomationProperties.AutomationId="Showcase.Threshold" AutomationProperties.Name="识别阈值样例"/>
+      <ui:Button x:Name="ConfirmExample" Content="确认示例" Appearance="Primary" Click="Confirm_OnClick"
+         Style="{StaticResource ST.Button}" Icon="{ui:SymbolIcon Checkmark24}" Margin="12,0,0,0"
+         AutomationProperties.AutomationId="Showcase.Confirm"/>
+     </WrapPanel>
+     <workbench:WorkbenchNotice x:Name="ValidationMessage" Style="{StaticResource {x:Type ui:InfoBar}}" Title="检查输入" Message="请输入大于0且不超过1的数字。"
+       Severity="Error" IsOpen="False" IsClosable="False" AutomationProperties.AutomationId="Showcase.Validation"/>
+     <CheckBox x:Name="SampleSelection" Content="保留当前选择" IsChecked="True" Margin="0,8,0,0"
+       AutomationProperties.AutomationId="Showcase.Selection"/>
+     <TextBlock x:Name="ResultMessage" Text="示例操作不会写入业务文件。" Margin="0,8,0,0"
+       Style="{StaticResource ST.Text.Caption}" AutomationProperties.AutomationId="Showcase.Result"/>
+    </StackPanel>
+   </Border>
+   <Border Style="{StaticResource ST.Surface}" Margin="0,0,0,16">
+    <StackPanel>
+     <TextBlock Text="翻译行 · 使用现有业务组件" FontWeight="SemiBold" Margin="0,0,0,12"/>
+     <ContentControl x:Name="TranslationSample" AutomationProperties.AutomationId="Showcase.Translation"/>
+    </StackPanel>
+   </Border>
+   <Border Style="{StaticResource ST.Surface}" Margin="0,0,0,16">
+    <StackPanel>
+     <TextBlock Text="任务项 · 使用现有下载组件" FontWeight="SemiBold" Margin="0,0,0,12"/>
+     <ContentControl x:Name="TaskSample"/>
+     <TextBlock Text="等待、完成、失败和停止的完整业务行为由各页面基线验证。"
+       Style="{StaticResource ST.Text.Caption}" Margin="0,8,0,0"/>
+    </StackPanel>
+   </Border>
+   <Border Style="{StaticResource ST.Surface}">
+    <StackPanel HorizontalAlignment="Center" Margin="0,8">
+     <ui:SymbolIcon Symbol="Document24" FontSize="28" HorizontalAlignment="Center"/>
+     <TextBlock Text="还没有载入剧本" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,8,0,4"/>
+     <TextBlock Text="载入 JSON 或 asset 剧本后，即可开始编辑译文。" Style="{StaticResource ST.Text.Caption}"/>
+    </StackPanel>
+   </Border>
+  </StackPanel>
+ </ScrollViewer>
+ </Grid>
+</ui:FluentWindow>

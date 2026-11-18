@@ -1,0 +1,15 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+ <SolidColorBrush x:Key="ST.Brush.App" Color="{DynamicResource {x:Static SystemColors.WindowColorKey}}"/>
+ <SolidColorBrush x:Key="ST.Brush.Workspace" Color="{DynamicResource {x:Static SystemColors.WindowColorKey}}"/>
+ <SolidColorBrush x:Key="ST.Brush.Surface" Color="{DynamicResource {x:Static SystemColors.WindowColorKey}}"/>
+ <SolidColorBrush x:Key="ST.Brush.SecondarySurface" Color="{DynamicResource {x:Static SystemColors.WindowColorKey}}"/>
+ <SolidColorBrush x:Key="ST.Brush.Hover" Color="{DynamicResource {x:Static SystemColors.HighlightColorKey}}"/>
+ <SolidColorBrush x:Key="ST.Brush.Border" Color="{DynamicResource {x:Static SystemColors.WindowTextColorKey}}"/>
+ <SolidColorBrush x:Key="ST.Brush.Text" Color="{DynamicResource {x:Static SystemColors.WindowTextColorKey}}"/>
+ <SolidColorBrush x:Key="ST.Brush.SecondaryText" Color="{DynamicResource {x:Static SystemColors.WindowTextColorKey}}"/>
+ <SolidColorBrush x:Key="ST.Brush.Accent" Color="{DynamicResource {x:Static SystemColors.HighlightColorKey}}"/>
+ <SolidColorBrush x:Key="ST.Brush.AccentHover" Color="{DynamicResource {x:Static SystemColors.HighlightColorKey}}"/>
+ <SolidColorBrush x:Key="ST.Brush.Success" Color="{DynamicResource {x:Static SystemColors.WindowTextColorKey}}"/>
+ <SolidColorBrush x:Key="ST.Brush.Warning" Color="{DynamicResource {x:Static SystemColors.WindowTextColorKey}}"/>
+ <SolidColorBrush x:Key="ST.Brush.Error" Color="{DynamicResource {x:Static SystemColors.WindowTextColorKey}}"/>
+</ResourceDictionary>

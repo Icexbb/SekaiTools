@@ -8,6 +8,9 @@
             <ResourceDictionary.MergedDictionaries>
                 <ui:ThemesDictionary />
                 <ui:ControlsDictionary />
+                <ResourceDictionary Source="/Resources/Design/Tokens.xaml" />
+                <ResourceDictionary Source="/Resources/Design/Palette.Light.xaml" />
+                <ResourceDictionary Source="/Resources/Design/Controls.xaml" />
                 <!-- Other merged dictionaries here -->
                 <ResourceDictionary
                     Source="/Converter/Converters.xaml" />

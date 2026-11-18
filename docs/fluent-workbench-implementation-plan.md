@@ -2,7 +2,7 @@
 
 编制日期：2026-11-17。依据当前 `main` 的 WPF 源码、[阶段零审计](fluent-workbench-phase0-audit.md)及项目功能文档制定。本文替代原审计中的实施阶段安排；原审计保留技术证据和风险分析。
 
-本文定义分阶段实施范围。M0-A 的 FlaUI 工程、隔离宿主及最小运行闭环，以及 M0-B 的最低行为基线已完成，证据与限制见 [M0 验收记录](fluent-workbench-m0-acceptance.md)，运行方式见 [Windows UI 自动化测试](ui-automation.md)。M1 及后续里程碑尚未开始；本轮按用户指定范围止于 M0。
+本文定义分阶段实施范围。M0-A 的 FlaUI 工程、隔离宿主及最小运行闭环，以及 M0-B 的最低行为基线已完成，证据与限制见 [M0 验收记录](fluent-workbench-m0-acceptance.md)，运行方式见 [Windows UI 自动化测试](ui-automation.md)。用户继续执行后，M1 已开始，首批资源和预览见 [设计系统说明](fluent-workbench-design-system.md)；M1 尚未完整验收，后续里程碑尚未开始。
 
 ## 1. 第一优先级：先引入 FlaUI，取得现有界面的可重复测试基线
 

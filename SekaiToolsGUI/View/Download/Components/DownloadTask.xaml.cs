@@ -30,6 +30,7 @@ public partial class DownloadTask : UserControl
     public string SavePath { get; private set; } = "";
     public DownloadStatus Status { get; private set; }
     public bool Downloaded => Status is DownloadStatus.Succeeded or DownloadStatus.Skipped;
+    public bool UseWorkbenchTheme { get; set; }
     public DownloadJob Job => new(Id, ScriptTag, Url, SavePath, SourceName);
     public event EventHandler? RemoveRequested;
     public event EventHandler? RetryRequested;
@@ -90,6 +91,13 @@ public partial class DownloadTask : UserControl
             DownloadStatus.Failed => "SystemFillColorCriticalBrush",
             DownloadStatus.Downloading => "AccentTextFillColorPrimaryBrush",
             _ => "TextFillColorSecondaryBrush"
+        };
+        if (UseWorkbenchTheme) brush = status switch
+        {
+            DownloadStatus.Succeeded => "ST.Brush.Success",
+            DownloadStatus.Failed => "ST.Brush.Error",
+            DownloadStatus.Downloading => "ST.Brush.Accent",
+            _ => "ST.Brush.SecondaryText"
         };
         StatusIcon.SetResourceReference(ForegroundProperty, brush);
         StatusText.SetResourceReference(ForegroundProperty, brush);

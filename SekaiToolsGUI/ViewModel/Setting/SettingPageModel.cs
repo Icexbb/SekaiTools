@@ -134,6 +134,7 @@ public partial class SettingPageModel : ViewModelBase
                 }
             }
 
+            SekaiToolsGUI.Service.WorkbenchTheme.Apply(value);
             SetProperty(value);
         }
     }
