@@ -31,7 +31,11 @@ internal sealed class TranslationWorkspaceDriver(ApplicationFixture app)
     {
         Button(id).Invoke();
         var dialog = app.OwnedFileDialog();
-        WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByAutomationId("1148").And(cf.ByControlType(ControlType.Edit))), "文件名输入框").AsTextBox().Text = path;
+        dialog.SetForeground();
+        var fileName = WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByAutomationId("1148").And(cf.ByControlType(ControlType.Edit))), "文件名输入框").AsTextBox();
+        fileName.Focus();
+        fileName.Text = path;
+        WaitHelper.Until(() => fileName.Text == path, "文件选择器路径一致");
         Keyboard.Type(VirtualKeyShort.RETURN);
     }
     public void Confirm(string text, string title)
