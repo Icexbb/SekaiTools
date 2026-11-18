@@ -280,6 +280,7 @@
             </StackPanel>
 
             <ListView Grid.Column="1" Grid.Row="3" ItemsSource="{Binding VisibleEvents}"
+                      AutomationProperties.AutomationId="Translation.EventList"
                       BorderBrush="Transparent"
                       Background="Transparent"
                       ScrollViewer.CanContentScroll="True"

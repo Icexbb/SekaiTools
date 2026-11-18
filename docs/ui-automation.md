@@ -1,5 +1,7 @@
 # Windows UI 自动化测试
 
+`UI-TRANSLATION-003` 使用300条固定对话验证真实长篇滚动、离屏编辑保持、撤销重做、Ctrl+F筛选及完整顺序导出；Translation.EventList为原生ListView的Scroll定位入口。输出translation-performance.json和固定截图，改造前观察值及解释见 [M2进展](fluent-workbench-m2-progress.md)。
+
 外壳按用户复核移除独立模块标题/说明横栏。UI-DESIGN-002/005保留真实导航、日志开关、三主题/三尺寸，并改为检查工作区紧接窗口标题栏、完整利用窗口高度；MainWindow.ToggleNavigation/OpenLogs现位于导航PaneHeader/PaneFooter。MainWindow.PageHeader契约已移除。以下旧页头截图记录仅描述调整前的批次。
 
 `UI-DESIGN-006` 经真实预览入口在三主题下操作 WorkbenchSplitView：键盘方向键与鼠标拖动改变主编辑宽度，800×600收起辅助区、焦点移回主编辑区并保持完整可见，恢复1280×960后核对内容与调整后的宽度。Workbench.Splitter 是原生 GridSplitter，支持键盘焦点与左右键；Showcase.Split.Editor/Reference 是预览输入框，支持 Value/Text。保存聚焦、紧凑、恢复截图与 split-matrix.json。
