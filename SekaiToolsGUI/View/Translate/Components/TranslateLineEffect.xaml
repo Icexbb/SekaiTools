@@ -39,7 +39,7 @@
                            TextAlignment="Center"
                            TextWrapping="Wrap" Text="{Binding Path= Content.Original}" />
                 <ui:SymbolIcon Grid.Column="1" Symbol="ArrowRight28" Margin="5" />
-                <Grid Grid.Column="2" VerticalAlignment="Stretch">
+                <Grid Grid.Column="2" VerticalAlignment="Center">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
