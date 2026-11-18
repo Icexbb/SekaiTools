@@ -1,5 +1,7 @@
 # Windows UI 自动化测试
 
+UI-TRANSLATION-007/008覆盖导入失败/V2替换取消、全局清理分支、角色译名同步、格式化焦点与100%～200%真实字体缩放。Translation.ClearButton为清理入口，Translation.ZoomIn/ZoomOut为缩放按钮，Translation.ImportErrorDetails/DismissImportError为失败详情与关闭入口。TranslationWorkspaceDriver封装真实文件选择、同PID弹出菜单及编辑设置，不直接调用生产处理器；详见 [M2进展](fluent-workbench-m2-progress.md)。
+
 `UI-TRANSLATION-006` 经Translation.Row.{SequenceNumber}.Actions打开真实菜单，验证采用参考仅影响当前正文、上下文恢复、有意留空/未译/使用原文及撤销恢复状态。MenuItem使用同进程UIA菜单定位，输出V2后独立解析全篇并检查参考输入文件未改动。该入口复用原有操作处理，不以新业务实现替代既有语义。
 
 Translation.Dialog.{SequenceNumber}.State及Translation.Effect.{SequenceNumber}.State是实际行内状态TextBlock，UIA Name随既有StateText更新；前者由UI-TRANSLATION-006检查空白/未译/原文文案，后者由UI-TRANSLATION-004检查场景同步后的状态。

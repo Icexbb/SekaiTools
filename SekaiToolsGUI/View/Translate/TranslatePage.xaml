@@ -61,10 +61,12 @@
                         <DockPanel LastChildFill="True">
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0">
                                 <ui:Button x:Name="DecreaseTextSizeButton" Icon="{ui:SymbolIcon Subtract24}"
+                                           AutomationProperties.AutomationId="Translation.ZoomOut"
                                            Margin="0,0,8,8" Click="DecreaseTextSize_OnClick"
                                            IsEnabled="{c:Binding 'ListTextScale>1'}"
                                            ToolTip="缩小列表文本 (Ctrl+滚轮)" AutomationProperties.Name="缩小列表文本" />
                                 <ui:Button x:Name="IncreaseTextSizeButton" Icon="{ui:SymbolIcon Add24}"
+                                           AutomationProperties.AutomationId="Translation.ZoomIn"
                                            Margin="0,0,8,8" Click="IncreaseTextSize_OnClick"
                                            IsEnabled="{c:Binding 'ListTextScale&lt;2'}"
                                            ToolTip="放大列表文本 (Ctrl+滚轮)" AutomationProperties.Name="放大列表文本" />
@@ -89,6 +91,7 @@
                                     <ui:SymbolIcon Symbol="ArrowRedo24" />
                                 </ui:Button>
                                 <ui:Button x:Name="ResetButton" Icon="{ui:SymbolIcon Delete24}" ToolTip="清除…"
+                                           AutomationProperties.AutomationId="Translation.ClearButton"
                                            AutomationProperties.Name="清除" Click="OpenClearMenu_OnClick"
                                            IsEnabled="{Binding HasScript}" Margin="0,0,8,8">
                                     <ui:Button.ContextMenu>
@@ -254,11 +257,11 @@
                         BorderThickness="1" BorderBrush="{DynamicResource SystemFillColorCriticalBrush}">
                     <StackPanel>
                         <TextBlock Text="文件未载入，当前编辑内容已保留" FontWeight="SemiBold" />
-                        <TextBlock x:Name="ImportErrorText" TextWrapping="Wrap" Margin="0,4" />
+                        <TextBlock x:Name="ImportErrorText" TextWrapping="Wrap" Margin="0,4" AutomationProperties.AutomationId="Translation.ImportErrorDetails"/>
                         <WrapPanel>
                             <ui:Button Content="复制错误详情" Icon="{ui:SymbolIcon Copy24}" Click="CopyImportError_OnClick"
                                        Margin="0,0,8,0" />
-                            <ui:Button Content="关闭提示" Click="DismissImportError_OnClick" />
+                            <ui:Button Content="关闭提示" Click="DismissImportError_OnClick" AutomationProperties.AutomationId="Translation.DismissImportError"/>
                         </WrapPanel>
                     </StackPanel>
                 </Border>
