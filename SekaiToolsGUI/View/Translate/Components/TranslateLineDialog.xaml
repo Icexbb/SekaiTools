@@ -11,7 +11,8 @@
              xmlns:behaviors="clr-namespace:SekaiToolsGUI.Behaviors"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance translate:LineDialogModel, IsDesignTimeCreatable=False}"
              d:DesignWidth="800"
-             HorizontalAlignment="Stretch">
+             HorizontalAlignment="Stretch" FontFamily="{StaticResource ST.Font.UI}" Foreground="{DynamicResource ST.Brush.Text}">
+    <Border Style="{StaticResource ST.Surface}" Padding="0" Margin="0,0,0,6">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
@@ -19,7 +20,7 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <components:TranslateLineActions Grid.Column="0" />
-        <ui:Card Grid.Column="1" Margin="0" Padding="10,2" VerticalAlignment="Stretch">
+        <Border Grid.Column="1" Padding="8,3" BorderBrush="{DynamicResource ST.Brush.Border}" BorderThickness="0,0,1,0">
             <Grid VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="30" />
@@ -39,7 +40,7 @@
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    Visibility="{c:Binding Shake,FalseToVisibility=Collapsed}" />
                 </StackPanel>
-                <Grid Grid.Column="2" Margin="0" VerticalAlignment="Stretch">
+                <Grid Grid.Column="2" Margin="0" VerticalAlignment="Center">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
@@ -82,13 +83,13 @@
                                 TextChanged="NameEditBoxChanged" />
                 </Grid>
             </Grid>
-        </ui:Card>
-        <ui:Card Grid.Column="2" Margin="0" Padding="10,2" VerticalAlignment="Stretch">
+        </Border>
+        <Border Grid.Column="2" Padding="8,3">
             <Grid VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="1.35*" />
                 </Grid.ColumnDefinitions>
 
                 <Grid Grid.Column="0">
@@ -156,8 +157,8 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <Grid Grid.Row="0"
-                        Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
+                    <StackPanel Grid.Row="0" Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
+                        <TextBlock Text="参考译文" FontSize="11" Margin="4,2,4,0" Foreground="{DynamicResource ST.Brush.SecondaryText}"/>
                         <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="10,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent"
                                  BorderBrush="Transparent"
@@ -166,11 +167,9 @@
                                  ToolTip="{Binding Content.Reference}"
                                  AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}"
                                  AutomationProperties.AutomationId="{Binding SequenceNumber, StringFormat=Translation.Dialog.{0}.Reference}" />
-                        <TextBlock Text="参考译文" FontSize="10" Opacity="0.5" Margin="4,0,6,0"
-                                   HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    </Grid>
-                    <Grid Grid.Row="1" Visibility="{c:Binding Content.HasLoadedChanges,FalseToVisibility=Collapsed}">
+                    </StackPanel>
+                    <StackPanel Grid.Row="1" Visibility="{c:Binding Content.HasLoadedChanges,FalseToVisibility=Collapsed}">
+                        <TextBlock Text="载入时译文" FontSize="11" Margin="4,2,4,0" Foreground="{DynamicResource ST.Brush.SecondaryText}"/>
                         <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" IsReadOnly="True" IsTabStop="False" TextWrapping="Wrap" Padding="10,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
                                  behaviors:TextDifferenceHighlight.LoadedComparison="{Binding Content.Translated}"
@@ -178,12 +177,9 @@
                                  ToolTip="{Binding Content.LoadedText}"
                                  AutomationProperties.Name="载入时译文" Text="{Binding Content.LoadedText}"
                                  AutomationProperties.AutomationId="{Binding SequenceNumber, StringFormat=Translation.Dialog.{0}.Loaded}" />
-                        <TextBlock Text="载入时译文" FontSize="10" Opacity="0.5" Margin="4,0,6,0"
-                                   HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    </Grid>
+                    </StackPanel>
                     <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" Grid.Row="2" VerticalAlignment="Stretch" behaviors:NewlineMarker.Style="{Binding TranslationNewlineMarker, Source={x:Static settings:SettingPageModel.Instance}}"
-                             MinLines="2" Padding="10,2" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
+                             MinLines="2" Padding="8,2" Background="{DynamicResource ST.Brush.SecondarySurface}" Foreground="{DynamicResource ST.Brush.Text}" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
                              PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput"
                              DataObject.Pasting="TextBox_OnPasting" GotKeyboardFocus="TextBox_OnGotKeyboardFocus"
                              LostKeyboardFocus="TextBox_OnLostKeyboardFocus"
@@ -195,11 +191,15 @@
                              behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Reference}"
                              behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference and HighlightReferenceDifferences'}"
                              Text="{Binding Content.Translated,UpdateSourceTrigger=PropertyChanged}" />
-                    <TextBlock Grid.Row="3" Margin="4,2" TextWrapping="Wrap" FontSize="12"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}">
-                        <Run Text="最长行加权长度：" /><Run Text="{Binding MaxLineLength,Mode=OneWay,StringFormat={}{0:0.##}}" />
-                        <Run Text="；全文字符数：" /><Run Text="{Binding Content.Translated.Length,Mode=OneWay}" />
-                    </TextBlock>
+                    <WrapPanel Grid.Row="3" Margin="4,2">
+                        <TextBlock FontSize="12" Foreground="{DynamicResource ST.Brush.SecondaryText}">
+                            <Run Text="加权行长 " /><Run Text="{Binding MaxLineLength,Mode=OneWay,StringFormat={}{0:0.##}}" />
+                            <Run Text=" · 字数 " /><Run Text="{Binding Content.Translated.Length,Mode=OneWay}" />
+                        </TextBlock>
+                        <TextBlock Text="{Binding StateText}" FontSize="12" Margin="12,0,0,0"
+                            Foreground="{DynamicResource ST.Brush.SecondaryText}"
+                            AutomationProperties.AutomationId="{Binding SequenceNumber, StringFormat=Translation.Dialog.{0}.State}"/>
+                    </WrapPanel>
                     <TextBlock Grid.Row="4" Text="{Binding InputHint}" TextWrapping="Wrap" Margin="4,2"
                                Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                                Visibility="{c:Binding 'InputHint.Length>0',FalseToVisibility=Collapsed}" />
@@ -216,6 +216,7 @@
                     </Border>
                 </Grid>
             </Grid>
-        </ui:Card>
+        </Border>
     </Grid>
+    </Border>
 </UserControl>

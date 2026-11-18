@@ -180,11 +180,11 @@ public partial class TranslatePage : UserControl
 
     private void EditorOptions_OnClick(object sender, RoutedEventArgs e)
     {
-        if (EditorOptionsPopover.Content is FrameworkElement content)
+        if (EditorOptionsPopover.Content is FrameworkElement content && EditorOptionsPopover.Target is FrameworkElement target)
         {
             content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             // Align the flyout with the button's right edge instead of extending beyond the workspace.
-            EditorOptionsPopover.HorizontalOffset = EditorOptionsPopover.Target.RenderSize.Width - content.DesiredSize.Width
+            EditorOptionsPopover.HorizontalOffset = target.RenderSize.Width - content.DesiredSize.Width
                 - EditorOptionsPopover.Padding.Left - EditorOptionsPopover.Padding.Right
                 - EditorOptionsPopover.BorderThickness.Left - EditorOptionsPopover.BorderThickness.Right;
         }

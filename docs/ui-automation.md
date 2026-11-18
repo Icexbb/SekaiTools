@@ -1,5 +1,9 @@
 # Windows UI 自动化测试
 
+`UI-TRANSLATION-006` 经Translation.Row.{SequenceNumber}.Actions打开真实菜单，验证采用参考仅影响当前正文、上下文恢复、有意留空/未译/使用原文及撤销恢复状态。MenuItem使用同进程UIA菜单定位，输出V2后独立解析全篇并检查参考输入文件未改动。该入口复用原有操作处理，不以新业务实现替代既有语义。
+
+Translation.Dialog.{SequenceNumber}.State及Translation.Effect.{SequenceNumber}.State是实际行内状态TextBlock，UIA Name随既有StateText更新；前者由UI-TRANSLATION-006检查空白/未译/原文文案，后者由UI-TRANSLATION-004检查场景同步后的状态。
+
 `UI-TRANSLATION-005` 验证当前/参考TXT载入、三行真实按键及Tab、两类差异独立开关、三主题状态保持、覆盖保存后载入基准不变。Translation.LoadReferenceButton为参考入口；Translation.Dialog.{SequenceNumber}.Speaker/Reference/Loaded分别为角色输入、只读参考和载入快照，TargetText保留原正文契约。指定编辑框的黄色/蓝色像素采样只作差异语义回归，不代表全页像素基准或系统高对比验收。
 
 `UI-TRANSLATION-004` 验证实际地点文字同步开关、非立即覆盖、同步整体撤销/重做，以及三主题×两尺寸的筛选与选项浮层。Translation.OpenEditorOptions为入口，Translation.Option.ShowReference/HighlightReference/HighlightModified/SyncContent/SyncSpeakers/AutoFormat为六个真实CheckBox，支持Toggle；Popup通过同PID桌面子树定位，Esc关闭。Translation.TypeFilter支持Selection，Translation.NextUntranslated/NextWarning支持Invoke；地点输入框的稳定ID为Translation.Effect.{SequenceNumber}.TargetText。

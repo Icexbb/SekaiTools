@@ -6,9 +6,13 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d"
              d:DesignWidth="800"
-             Height="32"
+             Height="24"
              HorizontalAlignment="Stretch">
-    <ui:Card Margin="0" Padding="5,5" HorizontalAlignment="Stretch">
-        <TextBlock TextAlignment="Center" Text="----- ----- -----" />
-    </ui:Card>
+    <Grid Margin="4,0,4,6" ToolTip="对白窗口结束">
+        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/><ColumnDefinition/></Grid.ColumnDefinitions>
+        <Border BorderBrush="{DynamicResource ST.Brush.Border}" BorderThickness="0,1,0,0" VerticalAlignment="Center"/>
+        <TextBlock Grid.Column="1" Text="对白窗口结束" FontSize="11" Margin="8,0" VerticalAlignment="Center"
+                   Foreground="{DynamicResource ST.Brush.SecondaryText}"/>
+        <Border Grid.Column="2" BorderBrush="{DynamicResource ST.Brush.Border}" BorderThickness="0,1,0,0" VerticalAlignment="Center"/>
+    </Grid>
 </UserControl>

@@ -5,9 +5,9 @@
              xmlns:components="clr-namespace:SekaiToolsGUI.View.Translate.Components"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              Foreground="{DynamicResource TextFillColorPrimaryBrush}">
-    <ui:Card VerticalAlignment="Stretch" Padding="3,5">
-        <StackPanel Margin="2" Width="76" VerticalAlignment="Center" HorizontalAlignment="Center">
-            <TextBlock Text="{Binding SequenceNumber, StringFormat='#{0}'}" FontSize="24"
+    <Border VerticalAlignment="Stretch" Padding="3,5" BorderBrush="{DynamicResource ST.Brush.Border}" BorderThickness="0,0,1,0">
+        <StackPanel Margin="2" Width="52" VerticalAlignment="Center" HorizontalAlignment="Center">
+            <TextBlock Text="{Binding SequenceNumber, StringFormat='#{0}'}" FontSize="16" FontWeight="SemiBold"
                        HorizontalAlignment="Center" ToolTip="{Binding Label}" />
             <Grid Margin="0,3,0,0" HorizontalAlignment="Center"
                   Visibility="{c:Binding HasVoice,FalseToVisibility=Collapsed}">
@@ -36,9 +36,10 @@
             </Grid>
             <TextBlock Text="加载中…" FontSize="10" HorizontalAlignment="Center"
                        Visibility="{c:Binding VoiceLoading,FalseToVisibility=Collapsed}" />
-            <ui:Button Content="条目操作" Padding="4,2" FontSize="12" HorizontalAlignment="Center" Click="OpenActions"
-                       Visibility="Collapsed"
-                       AutomationProperties.Name="{Binding Label}">
+            <ui:Button Icon="{ui:SymbolIcon MoreHorizontal24}" Padding="4,2" Width="32" Height="28" Margin="0,4,0,0"
+                       Appearance="Transparent" HorizontalAlignment="Center" Click="OpenActions" ToolTip="条目操作"
+                       AutomationProperties.AutomationId="{Binding SequenceNumber, StringFormat=Translation.Row.{0}.Actions}"
+                       AutomationProperties.Name="{Binding Label, StringFormat={}{0} 条目操作}">
                 <ui:Button.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="查看上下文（显示全部条目）" Tag="context" Click="ApplyAction" />
@@ -51,5 +52,5 @@
                 </ui:Button.ContextMenu>
             </ui:Button>
         </StackPanel>
-    </ui:Card>
+    </Border>
 </UserControl>

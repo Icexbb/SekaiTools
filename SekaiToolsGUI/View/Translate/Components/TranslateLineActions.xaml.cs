@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using SekaiToolsGUI.ViewModel.Translate;
 
 namespace SekaiToolsGUI.View.Translate.Components;
@@ -26,6 +27,7 @@ public partial class TranslateLineActions : UserControl
         {
             menu.DataContext = DataContext;
             menu.PlacementTarget = button;
+            menu.Placement = PlacementMode.Bottom;
             menu.IsOpen = true;
         }
     }

@@ -10,25 +10,26 @@
              xmlns:behaviors="clr-namespace:SekaiToolsGUI.Behaviors"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance translate:LineEffectModel, IsDesignTimeCreatable=False}"
              d:DesignWidth="800"
-             HorizontalAlignment="Stretch">
-    <Grid MinHeight="75" HorizontalAlignment="Stretch">
+             HorizontalAlignment="Stretch" FontFamily="{StaticResource ST.Font.UI}" Foreground="{DynamicResource ST.Brush.Text}">
+    <Border Style="{StaticResource ST.Surface}" Padding="0" Margin="0,0,0,6" MinHeight="75">
+    <Grid HorizontalAlignment="Stretch">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="{Binding DataContext.ListRoleWidth, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=150}" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <components:TranslateLineActions Grid.Column="0" />
-        <ui:Card Grid.Column="1" Margin="0" Padding="0" VerticalAlignment="Stretch">
+        <Border Grid.Column="1" Padding="8,6" BorderBrush="{DynamicResource ST.Brush.Border}" BorderThickness="0,0,1,0">
             <ui:SymbolIcon Symbol="Location28" Margin="5"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center" />
-        </ui:Card>
-        <ui:Card Grid.Column="2" Margin="0" Padding="2,0" VerticalAlignment="Stretch">
+        </Border>
+        <Border Grid.Column="2" Padding="8,6">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="1.35*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" Grid.Column="0"
                            Padding="10,2"
@@ -43,9 +44,10 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <Grid Grid.Row="0"
-                          Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
+                    <StackPanel Grid.Row="0" Visibility="{c:Binding 'Content.ReferenceAvailable and ShowReference',FalseToVisibility=Collapsed}">
+                        <TextBlock Text="参考译文" FontSize="11" Margin="4,2,4,0" Foreground="{DynamicResource ST.Brush.SecondaryText}"/>
                         <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" IsReadOnly="True" IsTabStop="False" TextWrapping="NoWrap" MinLines="1" MaxLines="1"
                                  TextAlignment="Center" VerticalScrollBarVisibility="Hidden"
                                  Padding="10,2"
@@ -55,11 +57,9 @@
                                  behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference and HighlightReferenceDifferences'}"
                                  ToolTip="{Binding Content.Reference}"
                                  AutomationProperties.Name="参考译文" Text="{Binding Content.Reference}" />
-                        <TextBlock Text="参考译文" FontSize="10" Opacity="0.5" Margin="4,0,6,0"
-                                   HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    </Grid>
-                    <Grid Grid.Row="1" Visibility="{c:Binding Content.HasLoadedChanges,FalseToVisibility=Collapsed}">
+                    </StackPanel>
+                    <StackPanel Grid.Row="1" Visibility="{c:Binding Content.HasLoadedChanges,FalseToVisibility=Collapsed}">
+                        <TextBlock Text="载入时译文" FontSize="11" Margin="4,2,4,0" Foreground="{DynamicResource ST.Brush.SecondaryText}"/>
                         <TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" IsReadOnly="True" IsTabStop="False" TextWrapping="NoWrap" MinLines="1" MaxLines="1"
                                  TextAlignment="Center" VerticalScrollBarVisibility="Hidden" Padding="10,2"
                                  HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderBrush="Transparent"
@@ -67,10 +67,7 @@
                                  behaviors:TextDifferenceHighlight.IsLoadedComparisonEnabled="{c:Binding 'Content.HasLoadedChanges and HighlightModifiedDifferences'}"
                                  ToolTip="{Binding Content.LoadedText}"
                                  AutomationProperties.Name="载入时译文" Text="{Binding Content.LoadedText}" />
-                        <TextBlock Text="载入时译文" FontSize="10" Opacity="0.5" Margin="4,0,6,0"
-                                   HorizontalAlignment="Right" VerticalAlignment="Bottom" IsHitTestVisible="False"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    </Grid>
+                    </StackPanel>
                     <ui:TextBox FontSize="{Binding DataContext.ListTextFontSize, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=14}" Grid.Row="2" Padding="10,2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                 TextAlignment="Center"
                                 AutomationProperties.Name="{Binding Label}"
@@ -81,8 +78,12 @@
                                 behaviors:TextDifferenceHighlight.Comparison="{Binding Content.Reference}"
                                 behaviors:TextDifferenceHighlight.IsEnabled="{c:Binding 'Content.ReferenceAvailable and ShowReference and HighlightReferenceDifferences'}"
                                 Text="{Binding Content.Translated,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Grid.Row="3" Text="{Binding StateText}" FontSize="12" Margin="4,2"
+                        Foreground="{DynamicResource ST.Brush.SecondaryText}"
+                        AutomationProperties.AutomationId="{Binding SequenceNumber, StringFormat=Translation.Effect.{0}.State}"/>
                 </Grid>
             </Grid>
-        </ui:Card>
+        </Border>
     </Grid>
+    </Border>
 </UserControl>

@@ -58,6 +58,7 @@ public sealed class TranslationWorkspaceTests
             Edit(1).Text = "同步译文。";
             app.Finder.ById(app.Window!, Catalog.LoadScript).Focus();
             WaitHelper.Until(() => Edit(2).Text == "同步译文。", "实际模型同步第二条");
+            WaitHelper.Until(() => app.Finder.ById(app.Window!, "Translation.Effect.2.State").Name == "已有译文", "场景文字行内状态更新");
             using (Keyboard.Pressing(VirtualKeyShort.CONTROL)) Keyboard.Type(VirtualKeyShort.KEY_Z);
             WaitHelper.Until(() => Edit(1).Text == "独立译文。" && Edit(2).Text == "", "一次撤销恢复整个同步修改");
             using (Keyboard.Pressing(VirtualKeyShort.CONTROL)) Keyboard.Type(VirtualKeyShort.KEY_Y);
