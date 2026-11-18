@@ -1,5 +1,7 @@
 # Windows UI 自动化测试
 
+`UI-DESIGN-003` 经实际预览入口组合三种应用主题与四个窗口尺寸（800×600、1280×720、1280×960、1920×1080），检查长标题换行、首行图标像素、滚动后错误提示、编辑选择保持和键盘焦点。每个场景记录三张截图与 layout-matrix.json，采用当前96 DPI的物理像素尺寸。Showcase.LongTitle 为长标题开关，Showcase.Scroll 为实际滚动容器。未切换系统DPI或系统高对比。
+
 `UI-DESIGN-002` 验证公共外壳页头随真实导航更新，并在960×600窗口通过 MainWindow.ToggleNavigation 展开/收起导航、通过 MainWindow.OpenLogs 打开现有日志窗口。MainWindow.PageHeader 下的 Workbench.Header.Title 是当前标题契约；运行日志根为 RuntimeLog.Root。UI-DESIGN-001 另在800×600预览检查主操作可见及公共工具栏实际折行。相关状态和未执行矩阵见设计系统说明。
 
 M1 新增 `UI-DESIGN-001` 组件预览用例：在隔离实例按 Ctrl+Alt+F12 打开 Showcase，检查三种应用主题的编辑、实际翻译行、选择、禁用、校验、焦点、背景像素及关闭恢复原主题，并保存截图。入口、资源与验证边界见 [设计系统说明](fluent-workbench-design-system.md)。应用高对比选项不等同于已经验证 Windows 系统高对比。

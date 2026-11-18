@@ -7,6 +7,9 @@ public static class Catalog
     public const string PageHeader = "MainWindow.PageHeader";
     public const string ToggleNavigation = "MainWindow.ToggleNavigation";
     public const string OpenLogs = "MainWindow.OpenLogs";
+    public const string Showcase = "Showcase.Root";
+    public const string ShowcaseScroll = "Showcase.Scroll";
+    public const string ShowcaseLongTitle = "Showcase.LongTitle";
     public const string Translation = "Translation.Root";
     public const string LoadScript = "Translation.LoadScriptButton";
     public const string Settings = "Settings.Root";

@@ -5,7 +5,7 @@
  <StackPanel>
   <Grid>
    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-   <ui:SymbolIcon Symbol="{Binding Icon, ElementName=HeaderRoot}" FontSize="24" Margin="0,0,12,0"
+   <ui:SymbolIcon Symbol="{Binding Icon, ElementName=HeaderRoot}" FontSize="24" Margin="0,3,12,0" VerticalAlignment="Top"
                   Foreground="{DynamicResource ST.Brush.Text}"/>
    <TextBlock Grid.Column="1" Text="{Binding Title, ElementName=HeaderRoot}" Style="{StaticResource ST.Text.Title}"
       AutomationProperties.AutomationId="Workbench.Header.Title"/>

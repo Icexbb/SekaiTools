@@ -42,4 +42,11 @@ public partial class WorkbenchShowcase : FluentWindow
     }
 
     private void Confirm_OnClick(object sender, RoutedEventArgs e) => ResultMessage.Text = "示例已确认，译文和选择仍保留。";
+
+    private void LongTitle_OnChanged(object sender, RoutedEventArgs e)
+    {
+        if (PreviewHeader is null) return;
+        const string sentence = "长标题压力验证：脚本翻译、字幕识别与压制队列的公共工作区，中文、日本語与 English 混排时应完整换行并保持操作可达。";
+        PreviewHeader.Title = LongTitleSample.IsChecked == true ? $"Fluent Workbench · {sentence}{sentence}" : "Fluent Workbench";
+    }
 }

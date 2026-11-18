@@ -10,7 +10,7 @@
  <Grid Background="{DynamicResource ST.Brush.App}" workbench:AdaptiveLayout.MonitorSize="True">
  <Grid.RowDefinitions><RowDefinition Height="36"/><RowDefinition Height="*"/></Grid.RowDefinitions>
  <ui:TitleBar Title="组件预览"/>
- <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+ <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" AutomationProperties.AutomationId="Showcase.Scroll">
   <StackPanel Margin="{StaticResource ST.Padding.Page}">
    <workbench:WorkbenchPageHeader x:Name="PreviewHeader" Title="Fluent Workbench" Icon="Beaker24"
       Description="公共组件与业务样例 · 主题预览仅在本窗口打开期间生效"/>
@@ -22,6 +22,8 @@
     </ComboBox>
     <ui:Button Content="暂不可用" IsEnabled="False" Style="{StaticResource ST.Button}" Margin="12,0,0,0"
       Icon="{ui:SymbolIcon Play24}" AutomationProperties.AutomationId="Showcase.Disabled"/>
+    <CheckBox x:Name="LongTitleSample" Content="长标题样例" Margin="12,0,0,0" VerticalAlignment="Center"
+      Checked="LongTitle_OnChanged" Unchecked="LongTitle_OnChanged" AutomationProperties.AutomationId="Showcase.LongTitle"/>
    </workbench:WorkbenchPageToolbar>
    <workbench:WorkbenchPageToolbar Width="220" HorizontalAlignment="Left" Margin="0,0,0,16"
       AutomationProperties.Name="工具栏折行示例">

@@ -171,7 +171,8 @@ public sealed class ApplicationFixture : IDisposable
     }
 
     public Window OwnedWindow(string automationId) => WaitHelper.Until(() =>
-        Window!.FindFirstDescendant(cf => cf.ByAutomationId(automationId).And(cf.ByProcessId(_process!.Id)))?.AsWindow()
+        Window!.ModalWindows.FirstOrDefault(window => window.Properties.AutomationId.ValueOrDefault == automationId)
+        ?? Window.FindFirstDescendant(cf => cf.ByAutomationId(automationId).And(cf.ByProcessId(_process!.Id)))?.AsWindow()
         ?? _application!.GetAllTopLevelWindows(_automation!).FirstOrDefault(window => window.Properties.AutomationId.ValueOrDefault == automationId),
         $"自有进程窗口：{automationId}");
 
