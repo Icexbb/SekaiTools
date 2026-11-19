@@ -5,6 +5,9 @@ using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using FlaUI.Core.Input;
 using FlaUI.Core.WindowsAPI;
+using SekaiToolsBase.GameScript;
+using SekaiToolsCore;
+using SekaiToolsCore.Process;
 using SekaiTools.UITests.Fixtures;
 using SekaiTools.UITests.Helpers;
 using Xunit;
@@ -14,6 +17,94 @@ namespace SekaiTools.UITests.Tests;
 [Collection("Desktop")]
 public sealed class SubtitleWorkflowTests
 {
+    [DesktopFact]
+    [Trait("Category", "Functional")]
+    public void UI_SUBTITLE_006_横幅和角标历史复核后导出()
+    {
+        using var server = new LoopbackHttpFixture();
+        using var app = new ApplicationFixture("UI-SUBTITLE-006", "Functional");
+        app.Step("准备历史", "构造包含地点横幅和角标的已完成历史", () =>
+        {
+            ResourcePackFixture.Serve(app, server, "videoProcess", "video-resources.lock.json");
+            var video = RecognitionVideoFixture.Create(app.Data.Root);
+            var script = Path.ChangeExtension(video, ".json");
+            File.WriteAllText(script, System.Text.Json.JsonSerializer.Serialize(new GameScript
+            {
+                ScenarioId = "ui-review-locations",
+                Snippets = [new() { Action = 6 }, new() { Action = 6 }],
+                SpecialEffectData =
+                [
+                    new() { EffectType = 8, StringVal = "复核横幅" },
+                    new() { EffectType = 18, StringVal = "复核角标" }
+                ]
+            }));
+            var translation = Path.ChangeExtension(video, ".txt");
+            File.WriteAllText(translation, "");
+            var state = new ProcessingState
+            {
+                Version = "1.0",
+                StopReason = ProcessStopReason.Completed,
+                FrameIndex = 60,
+                ContentFinished = true,
+                VideoFilePath = video,
+                ScriptFilePath = script,
+                TranslateFilePath = translation,
+                Banner = new() { FrameSets = [new() { Finished = true, Start = 12, End = 23 }] },
+                Marker = new()
+                {
+                    FrameSets = [new() { Finished = true, Frames = Enumerable.Range(36, 12).Select(frame => new FrameResultDto(frame, 960, 500)).ToList() }]
+                }
+            };
+            var history = Directory.CreateDirectory(Path.Combine(app.Data.Paths.DataRoot, "History"));
+            File.WriteAllText(Path.Combine(history.FullName, "fixture.json"),
+                System.Text.Json.JsonSerializer.Serialize(new { Timestamp = "2026-01-01 00:00:00", State = state }));
+        });
+        app.Step("复核并导出", "横幅和角标分别定位，编辑与撤销正确写入 ASS", () =>
+        {
+            app.Start();
+            app.Navigate("MainWindow.Navigation.Subtitle", "Subtitle.Root");
+            var window = app.Window!;
+            var history = app.Finder.ById(window, "Subtitle.HistoryButton");
+            WaitHelper.Until(() => history.IsEnabled, "历史入口可用");
+            history.AsButton().Invoke();
+            var dialog = app.Finder.ById(window, "Subtitle.HistoryDialog");
+            WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("加载 recognition.mp4").And(cf.ByControlType(ControlType.Button))), "加载横幅和角标历史").AsButton().Invoke();
+
+            var results = app.Finder.ById(window, "Subtitle.ResultList");
+            app.Finder.ById(results, "Subtitle.Banner.EditTiming").AsButton().Invoke();
+            var startTime = app.Finder.ById(window, "Subtitle.Timeline.StartTime").AsTextBox();
+            var startMinus = app.Finder.ById(window, "Subtitle.Timeline.StartMinus").AsButton();
+            WaitHelper.Until(() => startMinus.IsEnabled, "横幅区间可编辑");
+            var bannerStart = startTime.Text;
+            startMinus.Invoke();
+            WaitHelper.Until(() => startTime.Text != bannerStart, "横幅起始时间提前");
+
+            app.Finder.ById(results, "Subtitle.Marker.EditTiming").AsButton().Invoke();
+            WaitHelper.Until(() => TimeSpan.TryParse(startTime.Text, CultureInfo.InvariantCulture, out var start) &&
+                start.TotalSeconds >= 1.45, "已定位到角标区间");
+            var markerStart = startTime.Text;
+            startMinus.Invoke();
+            WaitHelper.Until(() => startTime.Text != markerStart, "角标起始时间提前");
+            WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("撤销时间轴调整")
+                .And(cf.ByControlType(ControlType.Button))), "撤销角标调整").AsButton().Invoke();
+            WaitHelper.Until(() => startTime.Text == markerStart, "撤销恢复角标起始时间");
+
+            app.Finder.ById(window, "Subtitle.ExportButton").AsButton().Invoke();
+            var options = app.Finder.ById(window, "Subtitle.ExportOptions");
+            WaitHelper.Until(() => options.FindFirstDescendant(cf => cf.ByName("保存").And(cf.ByControlType(ControlType.Button))), "保存复核ASS").AsButton().Invoke();
+            var output = Path.Combine(app.Data.Root, "[STGenerated] recognition.ass");
+            WaitHelper.Until(() => File.Exists(output) && new FileInfo(output).Length > 0, "复核ASS写入完成");
+            var lines = File.ReadAllLines(output);
+            var banner = Assert.Single(lines, line => line.StartsWith("Dialogue:", StringComparison.Ordinal) && line.Contains(",BannerText,", StringComparison.Ordinal));
+            var marker = Assert.Single(lines, line => line.StartsWith("Dialogue:", StringComparison.Ordinal) && line.Contains(",MarkerText,", StringComparison.Ordinal));
+            Assert.Contains("复核横幅", banner);
+            Assert.Contains("复核角标", marker);
+            Assert.InRange(TimeSpan.Parse(banner.Split(',')[1], CultureInfo.InvariantCulture).TotalSeconds, 0.43, 0.5);
+            Assert.InRange(TimeSpan.Parse(marker.Split(',')[1], CultureInfo.InvariantCulture).TotalSeconds, 1.45, 1.55);
+        });
+        app.Step("退出", "历史复核正常退出", app.Close);
+    }
+
     [DesktopFact]
     [Trait("Category", "Functional")]
     public void UI_SUBTITLE_005_等待任务拖动换序后按新顺序推进()

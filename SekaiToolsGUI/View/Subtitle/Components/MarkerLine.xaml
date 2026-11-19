@@ -52,6 +52,7 @@
                             </TextBlock.Text>
                         </TextBlock>
                         <ui:Button Name="LineEditBtn" FontSize="12" Margin="5,0,0,0" Padding="6,4"
+                                   AutomationProperties.AutomationId="Subtitle.Marker.EditTiming"
                                    Click="LineEditBtn_OnClick"
                                    IsEnabled="{Binding DataContext.CanEditLine, RelativeSource={RelativeSource AncestorType={x:Type components:SubtitleTask}}, FallbackValue=False}">
                             <StackPanel Orientation="Horizontal">

@@ -124,7 +124,9 @@ UI-SUBTITLE-005 使用固定素材验证两个等待任务可从把手拖动换�
 
 UI-SUBTITLE-005 另验证队列处理中关闭应用会保存当前任务的检查点，保留此前取消的检查点，等待任务未启动。报告位于 `.codex-build/fluent-workbench/artifacts/20261119-161341-bf8be199/ui-tests.trx`。
 
-取消任务后，至少有一个识别结果才启用输出。UI-SUBTITLE-003 验证已有对白时可输出，UI-SUBTITLE-005 验证空结果时禁用输出。字幕页 UI-SUBTITLE-001 至 UI-SUBTITLE-005 同轮通过，报告位于 `.codex-build/fluent-workbench/artifacts/20261119-164400-68d641a7/ui-tests.trx`。横幅和角标的复核仍待单独验证。
+取消任务后，至少有一个识别结果才启用输出。UI-SUBTITLE-003 验证已有对白时可输出，UI-SUBTITLE-005 验证空结果时禁用输出。字幕页 UI-SUBTITLE-001 至 UI-SUBTITLE-005 同轮通过，报告位于 `.codex-build/fluent-workbench/artifacts/20261119-164400-68d641a7/ui-tests.trx`。
+
+UI-SUBTITLE-006 从合成旧版历史加载地点横幅和角标，分别进入时间轴并微调起始时间，撤销角标调整后校验两类 ASS 事件的内容及时序。报告位于 `.codex-build/fluent-workbench/artifacts/20261119-170007-54ea72ce/ui-tests.trx`。
 
 回归必须围绕现有规则：
 
