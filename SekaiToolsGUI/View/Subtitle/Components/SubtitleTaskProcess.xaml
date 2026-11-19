@@ -13,11 +13,15 @@
              SizeChanged="SubtitleTaskProcess_OnSizeChanged"
              PreviewKeyDown="SubtitleTaskProcess_OnPreviewKeyDown"
              d:DataContext="{d:DesignInstance subtitle:SubtitlePageModel, IsDesignTimeCreatable=True}">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="TimelineVisibility" />
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition x:Name="TimelineRow" Height="Auto" />
         </Grid.RowDefinitions>
         <!--任务控制-->
         <Grid x:Name="TaskHeaderGrid" Grid.Row="0" Margin="0,0,0,5">
@@ -359,29 +363,44 @@
             </ui:Card>
         </Grid>
         <!--时间轴-->
-        <StackPanel Grid.Row="2" Margin="0,6,0,0">
-            <CheckBox x:Name="ShowTimeline" IsChecked="True" Margin="0,0,0,4"
+        <GridSplitter Grid.Row="2" Style="{StaticResource ST.Splitter}" Height="28" Cursor="SizeNS"
+                      ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"
+                      FocusVisualStyle="{x:Null}"
+                      Visibility="{Binding IsChecked, ElementName=ShowTimeline, Converter={StaticResource TimelineVisibility}}"
+                      AutomationProperties.AutomationId="Subtitle.TimelineSplitter"
+                      AutomationProperties.Name="调整时间轴高度">
+            <GridSplitter.Template>
+                <ControlTemplate TargetType="GridSplitter">
+                    <Grid Background="Transparent">
+                        <Border x:Name="Grip" Width="32" Height="3" CornerRadius="1.5"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Background="{DynamicResource ST.Brush.Border}" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Grip" Property="Background" Value="{DynamicResource ST.Brush.SecondaryText}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Grip" Property="Background" Value="{DynamicResource ST.Brush.AccentText}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </GridSplitter.Template>
+        </GridSplitter>
+        <CheckBox x:Name="ShowTimeline" Grid.Row="2" IsChecked="True" HorizontalAlignment="Left"
+                      Checked="ShowTimeline_OnChanged" Unchecked="ShowTimeline_OnChanged"
                       AutomationProperties.AutomationId="Subtitle.ShowTimeline" AutomationProperties.Name="显示时间轴">
                 <StackPanel Orientation="Horizontal">
                     <ui:SymbolIcon Symbol="Timeline24" Margin="0,0,6,0" />
                     <TextBlock Text="显示时间轴" />
                 </StackPanel>
             </CheckBox>
-            <ScrollViewer x:Name="TimelineViewport"
+            <ScrollViewer x:Name="TimelineViewport" Grid.Row="3"
                           AutomationProperties.AutomationId="Subtitle.TimelineViewport"
+                          Visibility="{Binding IsChecked, ElementName=ShowTimeline, Converter={StaticResource TimelineVisibility}}"
                           VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <ScrollViewer.Style>
-                    <Style TargetType="ScrollViewer">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsChecked, ElementName=ShowTimeline}" Value="False">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ScrollViewer.Style>
                 <components:TimelineEditor x:Name="EventTimelineEditor"
                                            IsReadOnly="{calcBinding:Binding 'IsRunning || HasNotStarted'}" />
             </ScrollViewer>
-        </StackPanel>
     </Grid>
 </UserControl>
