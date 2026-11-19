@@ -11,7 +11,8 @@ public sealed class TestDataManager
     {
         var artifacts = Environment.GetEnvironmentVariable("SEKAI_TOOLS_UI_ARTIFACTS")
             ?? throw new InvalidOperationException("必须指定 SEKAI_TOOLS_UI_ARTIFACTS。");
-        Directory = Path.Combine(Path.GetFullPath(artifacts), testId + "-" + Guid.NewGuid().ToString("N"));
+        // Leave room for cache filenames opened by Windows components with legacy path limits.
+        Directory = Path.Combine(Path.GetFullPath(artifacts), testId + "-" + Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(8)));
         Root = Path.Combine(Directory, "sandbox");
         System.IO.Directory.CreateDirectory(Root);
         File.WriteAllText(Path.Combine(Root, ApplicationPaths.TestRootMarker), ApplicationPaths.TestRootMarkerContent);

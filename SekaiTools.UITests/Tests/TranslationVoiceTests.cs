@@ -11,37 +11,26 @@ namespace SekaiTools.UITests.Tests;
 [Collection("Desktop")]
 public sealed class TranslationVoiceTests
 {
+    private const string VoiceRequest = "GET /assets/sound/scenario/voice/ui_voice/voice_01.mp3 HTTP/1.1";
+
     [DesktopFact]
     [Trait("Category", "Functional")]
     public void UI_TRANSLATION_012_原始语音缺失可重试()
     {
-        const string request = "GET /assets/sound/scenario/voice/ui_voice/voice_01.mp3 HTTP/1.1";
-        using var server = new LoopbackHttpFixture { NotFound = line => line == request };
+        using var server = new LoopbackHttpFixture { NotFound = line => line == VoiceRequest };
         using var app = new ApplicationFixture("UI-TRANSLATION-012", "Functional");
-        var ui = new TranslationWorkspaceDriver(app);
-        var config = Path.Combine(app.Data.Root, "network-endpoints.json");
-        File.WriteAllText(config, File.ReadAllText(config).Replace(":9/assets/", $":{server.Port}/assets/"));
-        var path = Path.Combine(app.Data.Root, "ui_voice.json");
-        File.WriteAllText(path, JsonSerializer.Serialize(new GameScript
-        {
-            ScenarioId = "ui_voice",
-            TalkData = [new("角色", "有语音。", 0, Voices: [new(0, "voice_01")]), new("角色", "无语音。", 1)],
-            Snippets = [new() { Action = 1 }, new() { Action = 1, ReferenceIndex = 1 }]
-        }));
         app.Step("载入原始语音样本", "只有带语音的对话显示预览按钮", () =>
         {
-            app.Start();
-            ui.Load(Catalog.LoadScript, path);
-            ui.Body(2);
-            Assert.Single(app.Window!.FindAllDescendants(cf => cf.ByName("原始角色语音预览")));
+            LoadVoiceScript(app, server);
+            VoiceButton(app);
         });
         app.Step("404与重试", "显示语音不存在提示，两次点击均发出请求且不留下缓存", () =>
         {
-            var button = Assert.Single(app.Window!.FindAllDescendants(cf => cf.ByName("原始角色语音预览"))).AsButton();
+            var button = VoiceButton(app);
             for (var attempt = 1; attempt <= 2; attempt++)
             {
                 button.Invoke();
-                WaitHelper.Until(() => server.Requests.Count(line => line == request) == attempt &&
+                WaitHelper.Until(() => server.Requests.Count(line => line == VoiceRequest) == attempt &&
                     button.Properties.HelpText.ValueOrDefault == "语音文件不存在（404），可点击重试", "语音404反馈");
                 Assert.True(button.IsEnabled);
             }
@@ -51,5 +40,63 @@ public sealed class TranslationVoiceTests
             app.Data.WriteJson("voice-requests", server.Requests.ToArray());
             app.Close();
         });
+    }
+
+    [DesktopFact]
+    [Trait("Category", "Functional")]
+    public void UI_TRANSLATION_013_播放合成语音并复用缓存()
+    {
+        using var server = new LoopbackHttpFixture();
+        using var app = new ApplicationFixture("UI-TRANSLATION-013", "Functional");
+        var audioPath = Path.Combine(app.Data.Root, "preview.mp3");
+        FfmpegFixture.Run(Path.Combine(ResourcePackFixture.DirectoryFor("vapourSynth"), "ffmpeg.exe"),
+            Path.Combine(app.Data.Directory, "generate-voice.log"), "-f", "lavfi", "-i", "sine=frequency=440:duration=3",
+            "-af", "volume=0.05", "-ar", "44100", "-ac", "2", "-c:a", "libmp3lame", "-b:a", "128k",
+            "-write_xing", "0", audioPath);
+        var audio = File.ReadAllBytes(audioPath);
+        server.BinaryResponse = line => line == VoiceRequest ? audio : null;
+        app.Step("载入剧本与播放", "实际播放器开始并结束，隔离缓存字节与服务端一致", () =>
+        {
+            LoadVoiceScript(app, server);
+            PlayToEnd(app);
+            Assert.Single(server.Requests, line => line == VoiceRequest);
+            var cache = Assert.Single(Directory.EnumerateFiles(app.Data.Paths.VoiceCache, "*.mp3", SearchOption.AllDirectories));
+            Assert.Equal(audio, File.ReadAllBytes(cache));
+        });
+        app.Step("再次播放", "再次完整播放且服务端请求总数不增加", () =>
+        {
+            PlayToEnd(app);
+            Assert.Single(server.Requests, line => line == VoiceRequest);
+            app.Data.WriteJson("voice-requests", server.Requests.ToArray());
+            app.Close();
+        });
+    }
+
+    private static Button VoiceButton(ApplicationFixture app) =>
+        Assert.Single(app.Window!.FindAllDescendants(cf => cf.ByName("原始角色语音预览"))).AsButton();
+
+    private static void PlayToEnd(ApplicationFixture app)
+    {
+        var button = VoiceButton(app);
+        button.Invoke();
+        WaitHelper.Until(() => !button.IsEnabled && button.Properties.HelpText.ValueOrDefault == "正在播放原始语音", "真实播放器开始");
+        WaitHelper.Until(() => button.IsEnabled && button.Properties.HelpText.ValueOrDefault == "播放原始语音", "真实播放器结束");
+    }
+
+    private static void LoadVoiceScript(ApplicationFixture app, LoopbackHttpFixture server)
+    {
+        var config = Path.Combine(app.Data.Root, "network-endpoints.json");
+        File.WriteAllText(config, File.ReadAllText(config).Replace(":9/assets/", $":{server.Port}/assets/"));
+        var path = Path.Combine(app.Data.Root, "ui_voice.json");
+        File.WriteAllText(path, JsonSerializer.Serialize(new GameScript
+        {
+            ScenarioId = "ui_voice",
+            TalkData = [new("角色", "有语音。", 0, Voices: [new(0, "voice_01")]), new("角色", "无语音。", 1)],
+            Snippets = [new() { Action = 1 }, new() { Action = 1, ReferenceIndex = 1 }]
+        }));
+        var ui = new TranslationWorkspaceDriver(app);
+        app.Start();
+        ui.Load(Catalog.LoadScript, path);
+        ui.Body(2);
     }
 }
