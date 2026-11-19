@@ -66,6 +66,16 @@ public sealed class SubtitleResourceTests
             var beforeDrag = add.BoundingRectangle.Width;
             Mouse.DragHorizontally(new System.Drawing.Point(bounds.Left + bounds.Width / 2, bounds.Top + bounds.Height / 2), 32, MouseButton.Left);
             WaitHelper.Until(() => add.BoundingRectangle.Width > beforeDrag, "拖动扩大任务栏");
+            var window = app.Window!;
+            var original = window.BoundingRectangle;
+            bounds = splitter.BoundingRectangle;
+            var start = new System.Drawing.Point(bounds.Left + bounds.Width / 2, bounds.Top + bounds.Height / 2);
+            Mouse.Drag(start, new System.Drawing.Point(original.Right - 4, start.Y), MouseButton.Left);
+            window.Patterns.Transform.Pattern.Resize(960, 600);
+            WaitHelper.Until(() => window.BoundingRectangle.Width <= 962, "缩到最小窗口宽度");
+            Assert.True(window.BoundingRectangle.Right - splitter.BoundingRectangle.Right >= 420,
+                "拖到最右并缩窗后，仍保留右侧工作区宽度。");
+            window.Patterns.Transform.Pattern.Resize(original.Width, original.Height);
             ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Subtitle.TaskPaneResized");
         });
         app.Step("打开添加任务表单", "调整宽度后仍可打开和取消添加", () =>
