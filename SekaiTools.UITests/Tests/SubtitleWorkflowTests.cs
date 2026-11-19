@@ -76,6 +76,29 @@ public sealed class SubtitleWorkflowTests
             Assert.InRange(TimeSpan.Parse(fields[2], CultureInfo.InvariantCulture).TotalSeconds, 120.45, 120.6);
             ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Subtitle.Resumed");
         });
+        app.Step("关闭正在恢复的任务", "关闭会停止恢复中的任务，重启不再提示恢复", () =>
+        {
+            var historyDirectory = Path.Combine(app.Data.Paths.DataRoot, "History");
+            var history = Assert.Single(Directory.GetFiles(historyDirectory, "*.json"));
+            var originalHistory = File.ReadAllBytes(history);
+            File.WriteAllBytes(checkpointPath, checkpointBytes);
+            app.Restart("Subtitle.Root");
+            var window = app.Window!;
+            WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("恢复未完成任务")), "独立检查点副本触发恢复提示");
+            WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("加入队列").And(cf.ByControlType(ControlType.Button))), "恢复加入队列").AsButton().Invoke();
+            var stop = app.Finder.ById(window, "Subtitle.StopButton");
+            WaitHelper.Until(() => stop.IsEnabled, "恢复任务已开始处理");
+            app.Close();
+
+            Assert.Empty(Directory.GetFiles(Path.GetDirectoryName(checkpointPath)!, "*.json"));
+            Assert.Equal(history, Assert.Single(Directory.GetFiles(historyDirectory, "*.json")));
+            Assert.Equal(originalHistory, File.ReadAllBytes(history));
+            app.Restart("Subtitle.Root");
+            window = app.Window!;
+            var add = app.Finder.ById(window, "Subtitle.AddTaskButton");
+            WaitHelper.Until(() => add.IsEnabled, "恢复中关闭后的字幕页可添加任务");
+            Assert.Null(window.FindFirstDescendant(cf => cf.ByName("恢复未完成任务")));
+        });
         app.Step("放弃恢复", "放弃独立副本后重启不再提示，已完成历史保持原样", () =>
         {
             var historyDirectory = Path.Combine(app.Data.Paths.DataRoot, "History");
