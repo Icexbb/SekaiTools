@@ -98,7 +98,29 @@ public sealed class SubtitleWorkflowTests
                 TaskButton(Path.GetFileName(path));
             }
         });
-        app.Step("退出", "队列运行中正常退出", app.Close);
+        app.Step("退出", "保存当前任务进度并保留已取消任务的检查点，等待任务不启动", () =>
+        {
+            var progressDirectory = Path.Combine(app.Data.Paths.DataRoot, "SubtitleQueueProgress");
+            var previousCheckpoint = Assert.Single(Directory.GetFiles(progressDirectory, "*.json"));
+            var previousBytes = File.ReadAllBytes(previousCheckpoint);
+            Assert.Equal("active.mp4", ReadCheckpointVideo(previousCheckpoint));
+
+            app.Close();
+
+            var currentCheckpoint = Assert.Single(Directory.GetFiles(progressDirectory, "*.json"),
+                path => !string.Equals(path, previousCheckpoint, StringComparison.OrdinalIgnoreCase));
+            Assert.Equal("second.mp4", ReadCheckpointVideo(currentCheckpoint));
+            Assert.Equal(previousBytes, File.ReadAllBytes(previousCheckpoint));
+            var historyDirectory = Path.Combine(app.Data.Paths.DataRoot, "History");
+            if (Directory.Exists(historyDirectory))
+                Assert.Empty(Directory.GetFiles(historyDirectory, "*.json"));
+
+            static string ReadCheckpointVideo(string path)
+            {
+                using var state = System.Text.Json.JsonDocument.Parse(File.ReadAllBytes(path));
+                return Path.GetFileName(state.RootElement.GetProperty("VideoFilePath").GetString())!;
+            }
+        });
     }
 
     [DesktopFact]

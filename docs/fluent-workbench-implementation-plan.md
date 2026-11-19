@@ -122,6 +122,8 @@ UI-SUBTITLE-002 对照原始与微调后的 ASS，校验起始时间提前一帧
 
 UI-SUBTITLE-005 使用固定素材验证两个等待任务可从把手拖动换序，终止当前任务后先处理换到队首的任务，另一项保持等待。报告位于 `.codex-build/fluent-workbench/artifacts/20261119-160031-fe49099a/ui-tests.trx`。
 
+UI-SUBTITLE-005 另验证队列处理中关闭应用会保存当前任务的检查点，保留此前取消的检查点，等待任务未启动。报告位于 `.codex-build/fluent-workbench/artifacts/20261119-161341-bf8be199/ui-tests.trx`。
+
 回归必须围绕现有规则：
 
 - 常规视频+剧本+翻译的素材预检，添加任务模态窗、等待任务拖动排序、顺序推进、任务选择及独立状态。
