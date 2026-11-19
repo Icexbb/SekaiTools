@@ -124,6 +124,8 @@ UI-SUBTITLE-005 使用固定素材验证两个等待任务可从把手拖动换�
 
 UI-SUBTITLE-005 另验证队列处理中关闭应用会保存当前任务的检查点，保留此前取消的检查点，等待任务未启动。报告位于 `.codex-build/fluent-workbench/artifacts/20261119-161341-bf8be199/ui-tests.trx`。
 
+字幕页合并回归中，UI-SUBTITLE-001 至 UI-SUBTITLE-005 同轮通过，全部正常退出且受保护数据未变化。报告位于 `.codex-build/fluent-workbench/artifacts/20261119-161611-b0f3376b/ui-tests.trx`。横幅和角标的复核、部分结果的导出门槛仍待单独验证。
+
 回归必须围绕现有规则：
 
 - 常规视频+剧本+翻译的素材预检，添加任务模态窗、等待任务拖动排序、顺序推进、任务选择及独立状态。
