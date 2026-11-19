@@ -19,9 +19,10 @@
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="260" MinWidth="220" />
+            <ColumnDefinition Width="10" />
             <ColumnDefinition Width="*" MinWidth="420" />
         </Grid.ColumnDefinitions>
-        <ui:Card Grid.Column="0" Padding="10" Margin="0,0,10,0"
+        <ui:Card Grid.Column="0" Padding="10"
                  VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
             <Grid>
                 <Grid.RowDefinitions>
@@ -80,7 +81,12 @@
                 </Grid>
             </Grid>
         </ui:Card>
-        <Grid Grid.Column="1">
+        <GridSplitter Grid.Column="1" Style="{StaticResource ST.Splitter}"
+                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                      ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"
+                      AutomationProperties.AutomationId="Subtitle.TaskPaneSplitter"
+                      AutomationProperties.Name="调整字幕任务栏宽度" />
+        <Grid Grid.Column="2">
             <TextBlock Text="添加任务，或从左侧选择任务查看处理结果"
                        VerticalAlignment="Center" HorizontalAlignment="Center" TextWrapping="Wrap"
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"

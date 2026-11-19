@@ -2,6 +2,8 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
+using FlaUI.Core.Input;
+using FlaUI.Core.WindowsAPI;
 using SekaiTools.UITests.Fixtures;
 using SekaiTools.UITests.Helpers;
 using Xunit;
@@ -51,7 +53,24 @@ public sealed class SubtitleResourceTests
                 Assert.Equal(SHA256.HashData(file.Value), SHA256.HashData(File.ReadAllBytes(downloaded)));
                 Assert.Contains(server.Requests, request => request.Contains("/resources/videoProcess/" + file.Key + " "));
             }
-            add.AsButton().Invoke();
+        });
+        app.Step("调整字幕任务栏宽度", "键盘和拖动均可调整，添加入口保持可用", () =>
+        {
+            var add = app.Finder.ById(app.Window!, "Subtitle.AddTaskButton");
+            var splitter = app.Finder.ById(app.Window!, "Subtitle.TaskPaneSplitter");
+            var initial = add.BoundingRectangle.Width;
+            splitter.Focus();
+            Keyboard.Type(VirtualKeyShort.RIGHT);
+            WaitHelper.Until(() => add.BoundingRectangle.Width > initial, "键盘扩大任务栏");
+            var bounds = splitter.BoundingRectangle;
+            var beforeDrag = add.BoundingRectangle.Width;
+            Mouse.DragHorizontally(new System.Drawing.Point(bounds.Left + bounds.Width / 2, bounds.Top + bounds.Height / 2), 32, MouseButton.Left);
+            WaitHelper.Until(() => add.BoundingRectangle.Width > beforeDrag, "拖动扩大任务栏");
+            ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Subtitle.TaskPaneResized");
+        });
+        app.Step("打开添加任务表单", "调整宽度后仍可打开和取消添加", () =>
+        {
+            app.Finder.ById(app.Window!, "Subtitle.AddTaskButton").AsButton().Invoke();
             var dialog = app.Finder.ById(app.Window!, "Subtitle.AddTaskDialog");
             Assert.DoesNotContain(dialog.FindAllDescendants(cf => cf.ByName("加入队列").And(cf.ByControlType(ControlType.Button))), button => button.IsEnabled);
             ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Subtitle.AddTask");

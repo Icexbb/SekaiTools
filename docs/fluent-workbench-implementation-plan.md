@@ -2,7 +2,7 @@
 
 编制日期：2026-11-17。依据当前 `main` 的 WPF 源码、[阶段零审计](fluent-workbench-phase0-audit.md)及项目功能文档制定。本文替代原审计中的实施阶段安排；原审计保留技术证据和风险分析。
 
-本文定义分阶段实施范围。M0-A 的 FlaUI 工程、隔离宿主及最小运行闭环，以及 M0-B 的最低行为基线已完成，证据与限制见 [M0 验收记录](fluent-workbench-m0-acceptance.md)，运行方式见 [Windows UI 自动化测试](ui-automation.md)。M1公共资源、外壳与组件预览已完成，见 [设计系统说明](fluent-workbench-design-system.md) 和 [M1验收记录](fluent-workbench-m1-acceptance.md)；M2已开始，见 [翻译页进展](fluent-workbench-m2-progress.md)，M3及以后尚未开始。
+本文定义分阶段实施范围。M0-A 的 FlaUI 工程、隔离宿主及最小运行闭环，以及 M0-B 的最低行为基线已完成，证据与限制见 [M0 验收记录](fluent-workbench-m0-acceptance.md)，运行方式见 [Windows UI 自动化测试](ui-automation.md)。M1公共资源、外壳与组件预览已完成，见 [设计系统说明](fluent-workbench-design-system.md) 和 [M1验收记录](fluent-workbench-m1-acceptance.md)。M2退出条件已完成，证据及限制见 [翻译页进展](fluent-workbench-m2-progress.md)。M3已开始，M4及以后尚未开始。
 
 ## 1. 第一优先级：先引入 FlaUI，取得现有界面的可重复测试基线
 
@@ -99,6 +99,8 @@ M1已逐项核对并完成：最终20项桌面测试全部通过，覆盖三主�
 ## 5. M3：自动轴机与字幕复核工作区
 
 左侧保留等待、处理、结束和历史分组；右侧依次容纳素材概要、处理预览、对话/横幅/角标结果和时间轴。任务栏可调宽，时间轴可折叠/调高，预览保持画面比例，短窗口优先保证结果编辑空间。
+
+首批已加入任务栏分隔条，支持键盘和鼠标拖动，保留两侧最小宽度。UI-SUBTITLE-001使用固定资源通过调整宽度及打开、取消添加任务验证，报告 `.codex-build/fluent-workbench/artifacts/20261119-133835-e38c7624/ui-tests.trx`。
 
 回归必须围绕现有规则：
 
