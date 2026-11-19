@@ -14,6 +14,7 @@
                 <ui:Button Padding="5" Width="34" Height="34" IsEnabled="{Binding VoicePlaybackAvailable}"
                            Click="PlayVoice" Visibility="{c:Binding HasVoice,FalseToVisibility=Collapsed}"
                            ToolTip="{Binding VoiceState}"
+                           AutomationProperties.HelpText="{Binding VoiceState}"
                            ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="原始角色语音预览">
                     <ui:SymbolIcon>
                         <ui:SymbolIcon.Style>

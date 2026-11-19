@@ -15,6 +15,7 @@ public sealed class LoopbackHttpFixture : IDisposable
     public int Port { get; }
     public Func<string, string?>? Response { get; set; }
     public Func<string, byte[]?>? BinaryResponse { get; set; }
+    public Func<string, bool>? NotFound { get; set; }
     public Func<string, CancellationToken, Task>? BeforeResponseAsync { get; set; }
 
     public LoopbackHttpFixture()
@@ -48,7 +49,9 @@ public sealed class LoopbackHttpFixture : IDisposable
                 var body = Response?.Invoke(line ?? "");
                 var binary = BinaryResponse?.Invoke(line ?? "");
                 var content = binary ?? Encoding.UTF8.GetBytes(body ?? "");
-                var header = Encoding.ASCII.GetBytes($"HTTP/1.1 {(body is null && binary is null ? "503 Service Unavailable" : "200 OK")}\r\nContent-Type: application/octet-stream\r\nContent-Length: {content.Length}\r\nConnection: close\r\n\r\n");
+                var status = NotFound?.Invoke(line ?? "") == true ? "404 Not Found"
+                    : body is null && binary is null ? "503 Service Unavailable" : "200 OK";
+                var header = Encoding.ASCII.GetBytes($"HTTP/1.1 {status}\r\nContent-Type: application/octet-stream\r\nContent-Length: {content.Length}\r\nConnection: close\r\n\r\n");
                 var bytes = header.Concat(content).ToArray();
                 try { await stream.WriteAsync(bytes, timeout.Token); }
                 catch (IOException) { /* A canceled client may close before the controlled response is released. */ }
