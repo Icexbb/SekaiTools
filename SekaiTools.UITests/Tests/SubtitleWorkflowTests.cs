@@ -277,6 +277,21 @@ public sealed class SubtitleWorkflowTests
             var end = TimeSpan.Parse(fields[2], CultureInfo.InvariantCulture).TotalSeconds;
             Assert.InRange(start, 0.45, 0.6);
             Assert.InRange(end, 2.45, 2.6);
+            File.Move(output, Path.Combine(app.Data.Root, "first-export.ass"));
+            startMinus.Invoke();
+            WaitHelper.Until(() => startTime.Text == adjustedStart, "重新应用一帧微调");
+            export.AsButton().Invoke();
+            options = app.Finder.ById(window, "Subtitle.ExportOptions");
+            WaitHelper.Until(() => options.FindFirstDescendant(cf => cf.ByName("保存").And(cf.ByControlType(ControlType.Button))), "导出微调后的ASS").AsButton().Invoke();
+            WaitHelper.Until(() => File.Exists(output) && new FileInfo(output).Length > 0, "微调后的ASS已写入");
+            var adjustedDialogue = Assert.Single(File.ReadAllLines(output), line => line.StartsWith("Dialogue:", StringComparison.Ordinal));
+            var adjustedFields = adjustedDialogue.Split(',', 10);
+            var exportedStart = TimeSpan.Parse(adjustedFields[1], CultureInfo.InvariantCulture);
+            Assert.InRange((TimeSpan.FromSeconds(start) - exportedStart).TotalMilliseconds, 30, 50);
+            Assert.InRange(Math.Abs((earlier - exportedStart).TotalMilliseconds), 0, 10);
+            Assert.Equal(fields[2], adjustedFields[2]);
+            Assert.Contains("识别译文", Regex.Replace(adjustedFields[9], @"\{[^}]*\}", ""));
+            File.Move(output, Path.Combine(app.Data.Root, "adjusted-export.ass"));
             Assert.Equal(sourceHash, Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(video))));
             app.Data.WriteJson("recognized-interval", new { start, end, sourceHash });
             ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Subtitle.Recognized");
@@ -288,8 +303,8 @@ public sealed class SubtitleWorkflowTests
             var historyFile = Assert.Single(Directory.GetFiles(Path.Combine(app.Data.Paths.DataRoot, "History"), "*.json"));
             var historyHash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(historyFile)));
             var output = Path.Combine(app.Data.Root, "[STGenerated] recognition.ass");
-            var originalDialogue = File.ReadAllLines(output).Where(line => line.StartsWith("Dialogue:", StringComparison.Ordinal)).ToArray();
-            File.Move(output, Path.Combine(app.Data.Root, "first-export.ass"));
+            var originalDialogue = File.ReadAllLines(Path.Combine(app.Data.Root, "first-export.ass"))
+                .Where(line => line.StartsWith("Dialogue:", StringComparison.Ordinal)).ToArray();
             app.Restart("Subtitle.Root");
             app.Navigate("MainWindow.Navigation.Subtitle", "Subtitle.Root");
             var historyButton = app.Finder.ById(app.Window!, "Subtitle.HistoryButton");

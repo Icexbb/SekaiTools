@@ -116,6 +116,8 @@ UI-SUBTITLE-002 验证对话区间预览完成后可拖动播放光标定位。�
 
 UI-SUBTITLE-002 也验证起始时间微调后可还原识别时长，撤销还原可回到手动值，再撤销微调恢复识别值。报告位于 `.codex-build/fluent-workbench/artifacts/20261119-152509-4aa9e599/ui-tests.trx`。
 
+UI-SUBTITLE-002 对照原始与微调后的 ASS，校验起始时间提前一帧，结束时间和译文保留。断言允许时间轴显示与 ASS 格式化相差 10 毫秒。重启后从历史导出的事件与原始识别导出一致。报告位于 `.codex-build/fluent-workbench/artifacts/20261119-153855-2ec607eb/ui-tests.trx`。
+
 回归必须围绕现有规则：
 
 - 常规视频+剧本+翻译的素材预检，添加任务模态窗、等待任务拖动排序、顺序推进、任务选择及独立状态。
