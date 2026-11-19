@@ -23,7 +23,11 @@ public sealed class TranslationMixedFilterTests
         var script = new GameScript
         {
             ScenarioId = "ui-mixed-filter",
-            TalkData = [new("甲", "对话甲。", 0), new("乙", "对话乙。", 1)],
+            TalkData =
+            [
+                new("甲", "对话甲。", 0, Voices: [new(0, "voice_ev_current_01_01_01")]),
+                new("乙", "对话乙。", 1, Voices: [new(0, "voice_ev_old_01_01_01")])
+            ],
             SpecialEffectData = [new(8, "Cafe", "", 1, 0), new(8, "教室", "", 1, 0)],
             Snippets = [new() { Action = 1 }, new() { Action = 6 }, new() { Action = 1, ReferenceIndex = 1 }, new() { Action = 6, ReferenceIndex = 1 }]
         };
@@ -62,6 +66,28 @@ public sealed class TranslationMixedFilterTests
             Editor("Dialog.3").Text = "乙译文。";
             ui.Button("Translation.NextUntranslated").Invoke(); Focused("Effect.4");
             Editor("Effect.4").Text = "教室译文";
+        });
+        app.Step("跨筛选定位提示", "长译文产生提示，隐藏时仍可定位，修正后退出提示筛选", () =>
+        {
+            Editor("Dialog.3").Text = new string('长', 60);
+            Select("TypeFilter", 2);
+            ui.Button("Translation.NextWarning").Invoke();
+            Focused("Dialog.3");
+            Assert.Equal("全部类型", Combo("TypeFilter").SelectedItem!.Text);
+            Select("StatusFilter", 2);
+            WaitHelper.Until(() => !Exists("Dialog.1") && !Exists("Effect.2") && !Exists("Effect.4"), "仅显示有提示的对话");
+            Editor("Dialog.3").Text = "乙译文。";
+            WaitHelper.Until(() => !Exists("Dialog.3"), "修正后退出提示筛选");
+            Select("StatusFilter", 0);
+        });
+        app.Step("闪回筛选", "仅显示带闪回来源的对话，地点类型与闪回筛选交集为空", () =>
+        {
+            Select("StatusFilter", 3);
+            WaitHelper.Until(() => Exists("Dialog.3") && !Exists("Dialog.1") && !Exists("Effect.2") && !Exists("Effect.4"), "仅显示闪回对话");
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("疑似闪回 · 活动剧情（ev_old_01）")), "闪回来源可读");
+            Select("TypeFilter", 2);
+            WaitHelper.Until(() => !Exists("Dialog.3"), "地点与闪回交集为空");
+            Select("StatusFilter", 0);
         });
         app.Step("地点筛选导出全篇", "只显示地点时导出仍含四条并保持交错顺序，源JSON不变", () =>
         {

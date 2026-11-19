@@ -134,11 +134,14 @@ public sealed class TranslationEditorTests
             Assert.Equal(originalHash, System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(originalOutput)));
             Assert.Equal("修订译文", app.Finder.ById(app.Window!, "Translation.Dialog.1.TargetText").AsTextBox().Text);
         });
-        app.Step("筛选后另存为", "隐藏条目仍完整导出到新文件，原文件不变", () =>
+        app.Step("筛选后键盘另存为", "Ctrl+Shift+S将隐藏条目完整导出到新文件，原文件不变", () =>
         {
             app.Finder.ById(app.Window!, "Translation.SearchBox").AsTextBox().Text = "不存在的搜索结果";
             WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByAutomationId("Translation.Dialog.1.TargetText")) is null, "列表筛选为空");
-            app.Finder.ById(app.Window!, "Translation.SaveAsButton").AsButton().Invoke();
+            app.Finder.ById(app.Window!, "Translation.SearchBox").Focus();
+            using (Keyboard.Pressing(VirtualKeyShort.CONTROL))
+            using (Keyboard.Pressing(VirtualKeyShort.SHIFT))
+                Keyboard.Type(VirtualKeyShort.KEY_S);
             var options = app.Finder.ById(app.Window!, "Translation.SaveOptions");
             WaitHelper.Until(() => options.FindFirstDescendant(cf => cf.ByName("使用校对文件名标签")), "校对标签").AsButton().Invoke();
             WaitHelper.Until(() => options.FindFirstDescendant(cf => cf.ByName("保存").And(cf.ByControlType(FlaUI.Core.Definitions.ControlType.Button))), "另存为保存按钮").AsButton().Invoke();
