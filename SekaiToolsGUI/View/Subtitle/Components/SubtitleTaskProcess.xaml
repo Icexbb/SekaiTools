@@ -352,16 +352,36 @@
                      VerticalContentAlignment="Stretch" Padding="0">
                 <ui:PassiveScrollViewer
                     Name="LineViewer" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
+                    AutomationProperties.AutomationId="Subtitle.ResultList"
                     MaxHeight="{Binding RelativeSource= {RelativeSource Mode=FindAncestor, AncestorType=ui:CardControl}, Path=ActualHeight}">
                     <StackPanel Name="LinePanel" Margin="5,5,5,15" />
                 </ui:PassiveScrollViewer>
             </ui:Card>
         </Grid>
         <!--时间轴-->
-        <ScrollViewer x:Name="TimelineViewport" Grid.Row="2" Margin="0,6,0,0"
-                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <components:TimelineEditor x:Name="EventTimelineEditor"
-                                       IsReadOnly="{calcBinding:Binding 'IsRunning || HasNotStarted'}" />
-        </ScrollViewer>
+        <StackPanel Grid.Row="2" Margin="0,6,0,0">
+            <CheckBox x:Name="ShowTimeline" IsChecked="True" Margin="0,0,0,4"
+                      AutomationProperties.AutomationId="Subtitle.ShowTimeline" AutomationProperties.Name="显示时间轴">
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon Symbol="Timeline24" Margin="0,0,6,0" />
+                    <TextBlock Text="显示时间轴" />
+                </StackPanel>
+            </CheckBox>
+            <ScrollViewer x:Name="TimelineViewport"
+                          AutomationProperties.AutomationId="Subtitle.TimelineViewport"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ScrollViewer.Style>
+                    <Style TargetType="ScrollViewer">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsChecked, ElementName=ShowTimeline}" Value="False">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ScrollViewer.Style>
+                <components:TimelineEditor x:Name="EventTimelineEditor"
+                                           IsReadOnly="{calcBinding:Binding 'IsRunning || HasNotStarted'}" />
+            </ScrollViewer>
+        </StackPanel>
     </Grid>
 </UserControl>

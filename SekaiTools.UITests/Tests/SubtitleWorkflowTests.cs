@@ -107,6 +107,14 @@ public sealed class SubtitleWorkflowTests
         app.Step("识别与导出", "常规识别完成，ASS包含已识别译文事件", () =>
         {
             WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("已完成")), "常规识别完成", TimeSpan.FromSeconds(60));
+            var timeline = app.Finder.ById(app.Window!, "Subtitle.ShowTimeline").AsCheckBox();
+            var results = app.Finder.ById(app.Window!, "Subtitle.ResultList");
+            Assert.True(timeline.IsChecked);
+            var expandedHeight = results.BoundingRectangle.Height;
+            timeline.IsChecked = false;
+            WaitHelper.Until(() => results.BoundingRectangle.Height > expandedHeight, "折叠时间轴后结果区域扩大");
+            timeline.IsChecked = true;
+            WaitHelper.Until(() => results.BoundingRectangle.Height == expandedHeight, "展开时间轴后恢复布局");
             var export = app.Finder.ById(app.Window!, "Subtitle.ExportButton");
             Assert.True(export.IsEnabled);
             export.AsButton().Invoke();
