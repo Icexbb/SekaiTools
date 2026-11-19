@@ -45,6 +45,13 @@ public sealed class SubtitleWorkflowTests
             submit.AsButton().Invoke();
             var stop = app.Finder.ById(app.Window!, "Subtitle.StopButton");
             WaitHelper.Until(() => stop.IsEnabled, "处理已开始");
+            var window = app.Window!;
+            app.Finder.ById(window, "Subtitle.ExpandTimeline").AsButton().Invoke();
+            var readOnlyBadge = WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("处理中 · 只读")),
+                "处理中可展开时间轴并看到只读提示");
+            Assert.False(readOnlyBadge.IsOffscreen);
+            Assert.False(app.Finder.ById(window, "Subtitle.Timeline.StartMinus").IsEnabled);
+            Assert.False(app.Finder.ById(window, "Subtitle.ExportButton").IsEnabled);
             stop.AsButton().Invoke();
             WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("已取消")), "取消已完成");
             var progress = Assert.Single(Directory.GetFiles(Path.Combine(app.Data.Paths.DataRoot, "SubtitleQueueProgress"), "*.json"));

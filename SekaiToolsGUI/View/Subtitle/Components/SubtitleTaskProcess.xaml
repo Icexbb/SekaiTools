@@ -373,7 +373,7 @@
                 </Style>
             </ScrollViewer.Style>
             <components:TimelineEditor x:Name="EventTimelineEditor"
-                                       IsReadOnly="{calcBinding:Binding 'IsRunning || HasNotStarted'}">
+                                       IsReadOnly="{calcBinding:Binding 'DataContext.IsRunning || DataContext.HasNotStarted', ElementName=Root}">
                 <components:TimelineEditor.Style>
                     <Style TargetType="components:TimelineEditor">
                         <Style.Triggers>
