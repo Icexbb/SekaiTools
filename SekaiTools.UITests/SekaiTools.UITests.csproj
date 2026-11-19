@@ -5,8 +5,10 @@
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
         <PlatformTarget>x64</PlatformTarget>
+        <UseWPF>true</UseWPF>
     </PropertyGroup>
     <ItemGroup>
+        <Using Include="System.IO" />
         <None Update="TestData\**\*" CopyToOutputDirectory="PreserveNewest" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
         <PackageReference Include="xunit" Version="2.9.3" />
