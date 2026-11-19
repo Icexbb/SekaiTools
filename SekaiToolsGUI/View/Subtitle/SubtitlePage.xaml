@@ -15,6 +15,29 @@
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Margin" Value="0,14,0,8" />
         </Style>
+        <Style x:Key="TaskPaneSplitter" TargetType="GridSplitter" BasedOn="{StaticResource ST.Splitter}">
+            <Setter Property="Cursor" Value="SizeWE" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GridSplitter">
+                        <Grid Background="Transparent">
+                            <Border x:Name="Grip" Width="3" Height="32" CornerRadius="1.5"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Background="{DynamicResource ST.Brush.Border}" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Grip" Property="Background" Value="{DynamicResource ST.Brush.SecondaryText}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Grip" Property="Background" Value="{DynamicResource ST.Brush.AccentText}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
@@ -81,7 +104,7 @@
                 </Grid>
             </Grid>
         </ui:Card>
-        <GridSplitter Grid.Column="1" Style="{StaticResource ST.Splitter}"
+        <GridSplitter Grid.Column="1" Style="{StaticResource TaskPaneSplitter}"
                       HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                       ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"
                       AutomationProperties.AutomationId="Subtitle.TaskPaneSplitter"
