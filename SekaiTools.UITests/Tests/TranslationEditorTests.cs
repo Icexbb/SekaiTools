@@ -110,6 +110,7 @@ public sealed class TranslationEditorTests
             app.Finder.ById(app.Window!, Catalog.LoadScript).Focus();
             using (Keyboard.Pressing(VirtualKeyShort.CONTROL)) Keyboard.Type(VirtualKeyShort.KEY_S);
             var options = app.Finder.ById(app.Window!, "Translation.SaveOptions");
+            ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Translation.SaveOptions");
             var save = WaitHelper.Until(() => options.FindFirstDescendant(cf => cf.ByName("保存").And(cf.ByControlType(FlaUI.Core.Definitions.ControlType.Button))), "保存选项主按钮");
             save.AsButton().Invoke();
             var output = Path.ChangeExtension(scriptPath, ".txt");
