@@ -13,15 +13,16 @@
              d:DataContext="{d:DesignInstance Type=vm:TimelineEditorModel, IsDesignTimeCreatable=True}"
              Unloaded="TimelineEditor_OnUnloaded"
              PreviewMouseLeftButtonDown="TimelineEditor_OnPreviewMouseLeftButtonDown">
-    <StackPanel>
+    <Grid>
         <ui:CardAction Padding="10" Click="TitleHeader_OnClick"
+                       AutomationProperties.AutomationId="Subtitle.ExpandTimeline" AutomationProperties.Name="展开时间轴"
                        Visibility="{calcBinding:Binding !ShowTimeLine,FalseToVisibility=Collapsed}">
             <StackPanel Orientation="Horizontal">
                 <ui:SymbolIcon Symbol="Timeline24" Margin="5,0" />
                 <ui:TextBlock Text="时间轴" />
             </StackPanel>
         </ui:CardAction>
-        <ui:Card Padding="10"
+        <ui:Card Padding="10" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
                  Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                  BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                  BorderThickness="1"
@@ -31,7 +32,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="30" />
-                    <RowDefinition Height="132" />
+                    <RowDefinition Height="*" MinHeight="132" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
@@ -118,7 +119,8 @@
                             ◎
                         </ui:Button>
                         <ui:Button
-                            Click="HideTimeLine_OnClick" ToolTip="隐藏时间轴">
+                            Click="HideTimeLine_OnClick" ToolTip="隐藏时间轴"
+                            AutomationProperties.AutomationId="Subtitle.CollapseTimeline">
                             隐藏时间轴
                         </ui:Button>
                     </StackPanel>
@@ -268,6 +270,6 @@
                 </Grid>
             </Grid>
         </ui:Card>
-    </StackPanel>
+    </Grid>
 
 </UserControl>

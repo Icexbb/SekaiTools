@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using SekaiToolsGUI.ViewModel.Subtitle;
 using TextBox = System.Windows.Controls.TextBox;
@@ -11,11 +12,11 @@ public partial class SubtitleTaskProcess : UserControl
     private const double MinimumPreviewHeight = 240;
     private double _requestedPreviewHeight = MinimumPreviewHeight;
     private bool _shortLayout;
-    private GridLength _expandedTimelineHeight = GridLength.Auto;
 
     public SubtitleTaskProcess()
     {
         InitializeComponent();
+        TimelineViewport.Tag = double.NaN;
         EventTimelineEditor.InlineVideoPreview = frame =>
         {
             ViewModel.ShowPreview = true;
@@ -44,34 +45,13 @@ public partial class SubtitleTaskProcess : UserControl
         _requestedPreviewHeight =
             Math.Clamp(FramePreviewCard.Height + delta, MinimumPreviewHeight, MaximumPreviewHeight);
         UpdatePreviewSize();
+        UpdateTimelineHeightLimit();
     }
 
     private void SubtitleTaskProcess_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
         UpdatePreviewSize();
-        UpdateTimelineLimit();
     }
-
-    private void UpdateTimelineLimit()
-    {
-        if (TimelineRow == null || TaskHeaderGrid == null || ActualHeight <= 0) return;
-        TimelineRow.MaxHeight = Math.Max(0, ActualHeight - TaskHeaderGrid.ActualHeight - 5 - 28 - 120);
-    }
-
-    private void ShowTimeline_OnChanged(object sender, RoutedEventArgs e)
-    {
-        if (TimelineRow == null || sender is not CheckBox toggle) return;
-        if (toggle.IsChecked == true)
-        {
-            TimelineRow.Height = _expandedTimelineHeight;
-        }
-        else
-        {
-            _expandedTimelineHeight = TimelineRow.Height;
-            TimelineRow.Height = new GridLength(0);
-        }
-    }
-
 
     private void PreviewZoomOutButton_OnClick(object sender, RoutedEventArgs e)
     {
@@ -118,13 +98,36 @@ public partial class SubtitleTaskProcess : UserControl
         var shortLayout = height < 700;
         if (shortLayout && !_shortLayout && EventTimelineEditor != null)
             EventTimelineEditor.ViewModel.ShowTimeLine = false;
-        UpdateTimelineLimit();
+        UpdateTimelineHeightLimit();
         _shortLayout = shortLayout;
+    }
+
+    private void UpdateTimelineHeightLimit()
+    {
+        if (TimelineViewport == null || TaskHeaderGrid == null || ActualHeight <= 0) return;
+        TimelineViewport.MaxHeight = Math.Max(48, ActualHeight - TaskHeaderGrid.ActualHeight - 5 - 8 - 120);
+    }
+
+    private void TimelineGrip_OnDragCompleted(object sender, DragCompletedEventArgs e)
+    {
+        if (!e.Canceled) ChangeTimelineHeight(-e.VerticalChange);
+    }
+
+    private void TimelineGrip_OnKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key is not (Key.Up or Key.Down)) return;
+        ChangeTimelineHeight(e.Key == Key.Up ? 16 : -16);
+        e.Handled = true;
+    }
+
+    private void ChangeTimelineHeight(double delta)
+    {
+        var maximum = TimelineViewport.MaxHeight;
+        TimelineViewport.Tag = Math.Clamp(TimelineViewport.ActualHeight + delta, Math.Min(180, maximum), maximum);
     }
 
     internal void OpenTimelineEvent(TimelineEventSelection selection)
     {
-        ShowTimeline.IsChecked = true;
         EventTimelineEditor.ViewModel.ShowTimeLine = true;
         UpdateLayout();
         EventTimelineEditor.SelectEvent(selection);

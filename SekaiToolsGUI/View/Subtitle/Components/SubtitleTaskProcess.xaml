@@ -13,15 +13,11 @@
              SizeChanged="SubtitleTaskProcess_OnSizeChanged"
              PreviewKeyDown="SubtitleTaskProcess_OnPreviewKeyDown"
              d:DataContext="{d:DesignInstance subtitle:SubtitlePageModel, IsDesignTimeCreatable=True}">
-    <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="TimelineVisibility" />
-    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
-            <RowDefinition x:Name="TimelineRow" Height="Auto" />
         </Grid.RowDefinitions>
         <!--任务控制-->
         <Grid x:Name="TaskHeaderGrid" Grid.Row="0" Margin="0,0,0,5">
@@ -363,18 +359,41 @@
             </ui:Card>
         </Grid>
         <!--时间轴-->
-        <GridSplitter Grid.Row="2" Style="{StaticResource ST.Splitter}" Height="28" Cursor="SizeNS"
-                      ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"
-                      FocusVisualStyle="{x:Null}"
-                      Visibility="{Binding IsChecked, ElementName=ShowTimeline, Converter={StaticResource TimelineVisibility}}"
-                      AutomationProperties.AutomationId="Subtitle.TimelineSplitter"
-                      AutomationProperties.Name="调整时间轴高度">
-            <GridSplitter.Template>
-                <ControlTemplate TargetType="GridSplitter">
+        <Grid Grid.Row="2">
+        <ScrollViewer x:Name="TimelineViewport" Margin="0,8,0,0"
+                      AutomationProperties.AutomationId="Subtitle.TimelineViewport"
+                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ScrollViewer.Style>
+                <Style TargetType="ScrollViewer" BasedOn="{StaticResource {x:Type ScrollViewer}}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ViewModel.ShowTimeLine, ElementName=EventTimelineEditor}" Value="True">
+                            <Setter Property="Height" Value="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ScrollViewer.Style>
+            <components:TimelineEditor x:Name="EventTimelineEditor"
+                                       IsReadOnly="{calcBinding:Binding 'IsRunning || HasNotStarted'}">
+                <components:TimelineEditor.Style>
+                    <Style TargetType="components:TimelineEditor">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ViewModel.ShowTimeLine, RelativeSource={RelativeSource Self}}" Value="True">
+                                <Setter Property="MinHeight" Value="{Binding ActualHeight, ElementName=TimelineViewport}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </components:TimelineEditor.Style>
+            </components:TimelineEditor>
+        </ScrollViewer>
+        <Thumb Height="8" VerticalAlignment="Top" Focusable="True" FocusVisualStyle="{x:Null}" Cursor="SizeNS"
+               Visibility="{calcBinding:Binding 'ViewModel.ShowTimeLine and ViewModel.IsEventTimelineEnabled', ElementName=EventTimelineEditor, FalseToVisibility=Collapsed}"
+               DragCompleted="TimelineGrip_OnDragCompleted" KeyDown="TimelineGrip_OnKeyDown"
+               AutomationProperties.AutomationId="Subtitle.TimelineSplitter" AutomationProperties.Name="调整时间轴高度">
+            <Thumb.Template>
+                <ControlTemplate TargetType="Thumb">
                     <Grid Background="Transparent">
-                        <Border x:Name="Grip" Width="32" Height="3" CornerRadius="1.5"
-                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                                Background="{DynamicResource ST.Brush.Border}" />
+                        <Border x:Name="Grip" Width="32" Height="3" CornerRadius="1.5" HorizontalAlignment="Center"
+                                VerticalAlignment="Center" Background="{DynamicResource ST.Brush.Border}" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -385,22 +404,8 @@
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
-            </GridSplitter.Template>
-        </GridSplitter>
-        <CheckBox x:Name="ShowTimeline" Grid.Row="2" IsChecked="True" HorizontalAlignment="Left"
-                      Checked="ShowTimeline_OnChanged" Unchecked="ShowTimeline_OnChanged"
-                      AutomationProperties.AutomationId="Subtitle.ShowTimeline" AutomationProperties.Name="显示时间轴">
-                <StackPanel Orientation="Horizontal">
-                    <ui:SymbolIcon Symbol="Timeline24" Margin="0,0,6,0" />
-                    <TextBlock Text="显示时间轴" />
-                </StackPanel>
-            </CheckBox>
-            <ScrollViewer x:Name="TimelineViewport" Grid.Row="3"
-                          AutomationProperties.AutomationId="Subtitle.TimelineViewport"
-                          Visibility="{Binding IsChecked, ElementName=ShowTimeline, Converter={StaticResource TimelineVisibility}}"
-                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <components:TimelineEditor x:Name="EventTimelineEditor"
-                                           IsReadOnly="{calcBinding:Binding 'IsRunning || HasNotStarted'}" />
-            </ScrollViewer>
+            </Thumb.Template>
+        </Thumb>
+        </Grid>
     </Grid>
 </UserControl>

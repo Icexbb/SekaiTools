@@ -576,14 +576,14 @@ public partial class TimelineEditor : UserControl
                     frame);
                 break;
             case DragMode.Range:
-            {
-                var delta = frame - _dragAnchorFrame;
-                if (_dragOriginalStart + delta < 0)
-                    delta = -_dragOriginalStart;
-                start = _dragOriginalStart + delta;
-                end = _dragOriginalEnd + delta;
-                break;
-            }
+                {
+                    var delta = frame - _dragAnchorFrame;
+                    if (_dragOriginalStart + delta < 0)
+                        delta = -_dragOriginalStart;
+                    start = _dragOriginalStart + delta;
+                    end = _dragOriginalEnd + delta;
+                    break;
+                }
             case DragMode.Separator:
                 _selection.SetSeparateFrame(Math.Clamp(frame, start + 1, end - 1));
                 UpdateTimingDisplay();
@@ -952,31 +952,31 @@ public partial class TimelineEditor : UserControl
                         _selection.EndFrame + delta));
                 break;
             case DragMode.Separator:
-            {
-                if (!_selection.HasSeparator)
                 {
-                    DeselectHandle();
-                    return;
-                }
+                    if (!_selection.HasSeparator)
+                    {
+                        DeselectHandle();
+                        return;
+                    }
 
-                var oldFrame = _selection.SeparateFrame;
-                _selection.SetSeparateFrame(oldFrame + delta);
-                var newFrame = _selection.SeparateFrame;
-                if (oldFrame == newFrame)
-                    return;
-                _undoStack.Push(new TimingEditCommand(
-                    _selection,
-                    _selection.StartFrame,
-                    _selection.EndFrame,
-                    _selection.StartFrame,
-                    _selection.EndFrame,
-                    oldFrame,
-                    newFrame));
-                UpdateUndoState();
-                UpdateTimingDisplay();
-                RenderTimeline();
-                break;
-            }
+                    var oldFrame = _selection.SeparateFrame;
+                    _selection.SetSeparateFrame(oldFrame + delta);
+                    var newFrame = _selection.SeparateFrame;
+                    if (oldFrame == newFrame)
+                        return;
+                    _undoStack.Push(new TimingEditCommand(
+                        _selection,
+                        _selection.StartFrame,
+                        _selection.EndFrame,
+                        _selection.StartFrame,
+                        _selection.EndFrame,
+                        oldFrame,
+                        newFrame));
+                    UpdateUndoState();
+                    UpdateTimingDisplay();
+                    RenderTimeline();
+                    break;
+                }
             default:
                 return;
         }
@@ -1768,7 +1768,7 @@ public partial class TimelineEditor : UserControl
         }
 
         const double waveformTop = 27;
-        const double waveformHeight = 46;
+        var waveformHeight = Math.Max(46, height - 86);
         var audioLabel = new TextBlock
         {
             Text = "音频",
@@ -1831,7 +1831,7 @@ public partial class TimelineEditor : UserControl
             TimelineCanvas.Children.Add(status);
         }
 
-        const double trackTop = 78;
+        var trackTop = waveformTop + waveformHeight + 5;
         const double laneHeight = 15;
         const double laneGap = 2;
         TimelineCanvas.Children.Add(new Line
