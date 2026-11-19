@@ -213,6 +213,22 @@ public sealed class SubtitleWorkflowTests
             Assert.InRange((original - earlier).TotalMilliseconds, 30, 50);
             undo.Invoke();
             WaitHelper.Until(() => startTime.Text == originalStart && !undo.IsEnabled, "撤销恢复识别时序");
+            var endTime = app.Finder.ById(window, "EndTimeBox").AsTextBox();
+            var originalEnd = endTime.Text;
+            var preview = WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("预览当前事件")
+                .And(cf.ByControlType(ControlType.Button))), "预览当前事件").AsButton();
+            WaitHelper.Until(() => preview.IsEnabled, "当前事件可以预览");
+            preview.Invoke();
+            WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("播放完成")), "当前事件预览完成");
+            var playhead = app.Finder.ById(window, "Subtitle.Timeline.Playhead");
+            var playheadBounds = playhead.BoundingRectangle;
+            var playheadCenter = new System.Drawing.Point(playheadBounds.Left + playheadBounds.Width / 2, playheadBounds.Top + playheadBounds.Height / 2);
+            Mouse.Drag(playheadCenter, new System.Drawing.Point(playheadCenter.X - 50, playheadCenter.Y), MouseButton.Left);
+            WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("已定位")), "拖动播放光标完成定位");
+            Assert.True(playhead.BoundingRectangle.Left < playheadBounds.Left);
+            Assert.Equal(originalStart, startTime.Text);
+            Assert.Equal(originalEnd, endTime.Text);
+            Assert.False(undo.IsEnabled);
             var export = app.Finder.ById(app.Window!, "Subtitle.ExportButton");
             Assert.True(export.IsEnabled);
             var output = Path.Combine(app.Data.Root, "[STGenerated] recognition.ass");

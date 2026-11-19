@@ -154,8 +154,15 @@
                         <Canvas x:Name="PlaybackCursorCanvas" IsHitTestVisible="False" Visibility="Collapsed">
                             <Line x:Name="PlaybackCursorLine" Stroke="{DynamicResource AccentFillColorDefaultBrush}"
                                   StrokeThickness="2" />
-                            <Polygon x:Name="PlaybackCursorHead" Points="0,0 10,0 5,7"
-                                     Fill="{DynamicResource AccentFillColorDefaultBrush}" />
+                            <Label x:Name="PlaybackCursorHead" Width="10" Height="7" Padding="0"
+                                   AutomationProperties.AutomationId="Subtitle.Timeline.Playhead"
+                                   AutomationProperties.Name="播放光标">
+                                <Label.Template>
+                                    <ControlTemplate TargetType="Label">
+                                        <Polygon Points="0,0 10,0 5,7" Fill="{DynamicResource AccentFillColorDefaultBrush}" />
+                                    </ControlTemplate>
+                                </Label.Template>
+                            </Label>
                         </Canvas>
                         <ui:TextBlock x:Name="EmptyHint" Text="点击时间轴块或列表事件以选择"
                                       Visibility="{calcBinding:Binding !HasSelection,FalseToVisibility=Collapsed}"
