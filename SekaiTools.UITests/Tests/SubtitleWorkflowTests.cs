@@ -141,6 +141,22 @@ public sealed class SubtitleWorkflowTests
             WaitHelper.Until(() => window.BoundingRectangle.Height <= 602 && results.BoundingRectangle.Height >= 120, "短窗口保留结果列表空间");
             app.Finder.ById(window, "Subtitle.ExpandTimeline");
             transform.Resize(originalBounds.Width, originalBounds.Height);
+            var edit = app.Finder.ById(results, "LineEditBtn");
+            edit.AsButton().Invoke();
+            var startTime = app.Finder.ById(window, "Subtitle.Timeline.StartTime").AsTextBox();
+            var startMinus = app.Finder.ById(window, "Subtitle.Timeline.StartMinus").AsButton();
+            WaitHelper.Until(() => startMinus.IsEnabled, "从对话结果定位可编辑的时间轴事件");
+            var originalStart = startTime.Text;
+            var undo = WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("撤销时间轴调整")
+                .And(cf.ByControlType(ControlType.Button))), "撤销时间轴调整按钮").AsButton();
+            Assert.False(undo.IsEnabled);
+            startMinus.Invoke();
+            WaitHelper.Until(() => undo.IsEnabled && startTime.Text != originalStart, "起始时间提前一帧并可撤销");
+            var earlier = TimeSpan.Parse(startTime.Text, CultureInfo.InvariantCulture);
+            var original = TimeSpan.Parse(originalStart, CultureInfo.InvariantCulture);
+            Assert.InRange((original - earlier).TotalMilliseconds, 30, 50);
+            undo.Invoke();
+            WaitHelper.Until(() => startTime.Text == originalStart && !undo.IsEnabled, "撤销恢复识别时序");
             var export = app.Finder.ById(app.Window!, "Subtitle.ExportButton");
             Assert.True(export.IsEnabled);
             export.AsButton().Invoke();
