@@ -21,6 +21,8 @@ public sealed class SubtitleWorkflowTests
         using var server = new LoopbackHttpFixture();
         using var app = new ApplicationFixture("UI-SUBTITLE-003", "Functional");
         string video = "";
+        string checkpointPath = "";
+        byte[] checkpointBytes = [];
         app.Step("准备长对话", "合成持续120秒的对话供真实取消和恢复", () =>
         {
             ResourcePackFixture.Serve(app, server, "videoProcess", "video-resources.lock.json");
@@ -46,7 +48,9 @@ public sealed class SubtitleWorkflowTests
             stop.AsButton().Invoke();
             WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("已取消")), "取消已完成");
             var progress = Assert.Single(Directory.GetFiles(Path.Combine(app.Data.Paths.DataRoot, "SubtitleQueueProgress"), "*.json"));
-            using var state = System.Text.Json.JsonDocument.Parse(File.ReadAllText(progress));
+            checkpointPath = progress;
+            checkpointBytes = File.ReadAllBytes(progress);
+            using var state = System.Text.Json.JsonDocument.Parse(checkpointBytes);
             var frame = state.RootElement.GetProperty("FrameIndex").GetInt32();
             Assert.InRange(frame, 1, 2899);
             app.Data.WriteJson("canceled-frame", new { frame });
@@ -56,6 +60,7 @@ public sealed class SubtitleWorkflowTests
         {
             app.Restart("Subtitle.Root");
             WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("恢复未完成任务")), "恢复提示");
+            Assert.False(File.Exists(checkpointPath));
             WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("加入队列").And(cf.ByControlType(ControlType.Button))), "恢复加入队列").AsButton().Invoke();
             WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("已完成")), "恢复识别完成", TimeSpan.FromSeconds(60));
             Assert.Empty(Directory.GetFiles(Path.Combine(app.Data.Paths.DataRoot, "SubtitleQueueProgress"), "*.json"));
@@ -71,7 +76,28 @@ public sealed class SubtitleWorkflowTests
             Assert.InRange(TimeSpan.Parse(fields[2], CultureInfo.InvariantCulture).TotalSeconds, 120.45, 120.6);
             ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Subtitle.Resumed");
         });
-        app.Step("退出", "恢复完成后正常退出", app.Close);
+        app.Step("放弃恢复", "放弃独立副本后重启不再提示，已完成历史保持原样", () =>
+        {
+            var historyDirectory = Path.Combine(app.Data.Paths.DataRoot, "History");
+            var history = Assert.Single(Directory.GetFiles(historyDirectory, "*.json"));
+            var originalHistory = File.ReadAllBytes(history);
+            File.WriteAllBytes(checkpointPath, checkpointBytes);
+            app.Restart("Subtitle.Root");
+            var window = app.Window!;
+            WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("恢复未完成任务")), "独立检查点副本触发恢复提示");
+            Assert.False(File.Exists(checkpointPath));
+            WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("放弃恢复").And(cf.ByControlType(ControlType.Button))), "放弃恢复入口").AsButton().Invoke();
+            WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("恢复未完成任务")) is null, "恢复提示关闭");
+            app.Restart("Subtitle.Root");
+            window = app.Window!;
+            var add = app.Finder.ById(window, "Subtitle.AddTaskButton");
+            WaitHelper.Until(() => add.IsEnabled, "放弃后的字幕页可添加任务");
+            Assert.Null(window.FindFirstDescendant(cf => cf.ByName("恢复未完成任务")));
+            Assert.False(File.Exists(checkpointPath));
+            Assert.Equal(history, Assert.Single(Directory.GetFiles(historyDirectory, "*.json")));
+            Assert.Equal(originalHistory, File.ReadAllBytes(history));
+        });
+        app.Step("退出", "恢复验证后正常退出", app.Close);
     }
 
     [DesktopFact]
