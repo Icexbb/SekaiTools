@@ -159,11 +159,35 @@ public sealed class SubtitleWorkflowTests
             WaitHelper.Until(() => startTime.Text == originalStart && !undo.IsEnabled, "撤销恢复识别时序");
             var export = app.Finder.ById(app.Window!, "Subtitle.ExportButton");
             Assert.True(export.IsEnabled);
+            var output = Path.Combine(app.Data.Root, "[STGenerated] recognition.ass");
+            File.WriteAllText(output, "Existing ASS");
+            var existingOutput = File.ReadAllBytes(output);
+            var historyDirectory = Path.Combine(app.Data.Paths.DataRoot, "History");
+            WaitHelper.Until(() => Directory.Exists(historyDirectory) && Directory.GetFiles(historyDirectory, "*.json").Length == 1,
+                "已完成历史已保存");
+            var completedHistory = Assert.Single(Directory.GetFiles(historyDirectory, "*.json"));
+            var checkpointDirectory = Directory.CreateDirectory(Path.Combine(app.Data.Paths.DataRoot, "SubtitleQueueProgress"));
+            var saveKey = Path.GetFileName(completedHistory).Split('_')[^1];
+            var checkpoint = Path.Combine(checkpointDirectory.FullName, saveKey);
+            // 正常完成会清理检查点。用已保存的状态模拟同一任务残留的检查点。
+            using var history = System.Text.Json.JsonDocument.Parse(File.ReadAllText(completedHistory));
+            File.WriteAllText(checkpoint, history.RootElement.GetProperty("State").GetRawText());
+            var checkpointBeforeCancel = File.ReadAllBytes(checkpoint);
             export.AsButton().Invoke();
             var options = app.Finder.ById(app.Window!, "Subtitle.ExportOptions");
             WaitHelper.Until(() => options.FindFirstDescendant(cf => cf.ByName("保存").And(cf.ByControlType(ControlType.Button))), "保存ASS").AsButton().Invoke();
-            var output = Path.Combine(app.Data.Root, "[STGenerated] recognition.ass");
-            WaitHelper.Until(() => File.Exists(output) && new FileInfo(output).Length > 0, "ASS写入完成");
+            var confirmation = app.Finder.ById(window, "Export.OverwriteConfirmation");
+            WaitHelper.Until(() => confirmation.FindFirstDescendant(cf => cf.ByName("取消").And(cf.ByControlType(ControlType.Button))), "取消覆盖").AsButton().Invoke();
+            WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByAutomationId("Export.OverwriteConfirmation")) is null, "覆盖确认关闭");
+            Assert.Equal(existingOutput, File.ReadAllBytes(output));
+            Assert.Equal(checkpointBeforeCancel, File.ReadAllBytes(checkpoint));
+
+            export.AsButton().Invoke();
+            options = app.Finder.ById(window, "Subtitle.ExportOptions");
+            WaitHelper.Until(() => options.FindFirstDescendant(cf => cf.ByName("保存").And(cf.ByControlType(ControlType.Button))), "重新保存ASS").AsButton().Invoke();
+            confirmation = app.Finder.ById(window, "Export.OverwriteConfirmation");
+            WaitHelper.Until(() => confirmation.FindFirstDescendant(cf => cf.ByName("覆盖").And(cf.ByControlType(ControlType.Button))), "确认覆盖").AsButton().Invoke();
+            WaitHelper.Until(() => !File.Exists(checkpoint), "保存ASS后清理检查点");
             var ass = File.ReadAllText(output);
             Assert.Contains("[Events]", ass);
             Assert.Contains("Dialogue:", ass);
