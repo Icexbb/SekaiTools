@@ -189,7 +189,8 @@ public class SubtitlePageModel : ViewModelBase
 
     public bool CanPreviewLine => CanEditLine && !IsHistory;
 
-    public bool CanOutput => IsFinished || IsCanceled || IsPartial;
+    public bool CanOutput => (IsFinished || IsCanceled || IsPartial) &&
+                             (DialogCurrent > 0 || BannerCurrent > 0 || MarkerCurrent > 0);
     public bool CanReset => IsFinished || IsCanceled || IsPartial || IsFailed;
     public bool CanStop => IsRunning && !IsCanceling;
 
@@ -294,7 +295,11 @@ public class SubtitlePageModel : ViewModelBase
     public int DialogCurrent
     {
         get => GetProperty(0);
-        set => SetProperty(value);
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(CanOutput));
+        }
     }
 
     public int BannerTotal
@@ -306,7 +311,11 @@ public class SubtitlePageModel : ViewModelBase
     public int BannerCurrent
     {
         get => GetProperty(0);
-        set => SetProperty(value);
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(CanOutput));
+        }
     }
 
     public int MarkerTotal
@@ -318,7 +327,11 @@ public class SubtitlePageModel : ViewModelBase
     public int MarkerCurrent
     {
         get => GetProperty(0);
-        set => SetProperty(value);
+        set
+        {
+            SetProperty(value);
+            OnPropertyChanged(nameof(CanOutput));
+        }
     }
 
     private static ImageSource CreateEmptyFramePreview()

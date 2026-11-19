@@ -715,8 +715,10 @@ public partial class SubtitleTask
                             if (stopReason == ProcessStopReason.Canceled)
                             {
                                 ViewModel.IsCanceled = true;
-                                Logger.Log("处理已由用户取消，可输出当前结果");
-                                SnackService.Show("提示", "处理已取消，可以输出当前结果进行人工复核",
+                                Logger.Log(ViewModel.CanOutput ? "处理已由用户取消，可输出当前结果" : "处理已由用户取消，未识别到可导出的字幕事件");
+                                SnackService.Show("提示", ViewModel.CanOutput
+                                        ? "处理已取消，可以输出当前结果进行人工复核"
+                                        : "处理已取消，未识别到可导出的字幕事件",
                                     ControlAppearance.Info,
                                     new SymbolIcon(SymbolRegular.Info24), new TimeSpan(0, 0, 4));
                             }

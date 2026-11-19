@@ -23,13 +23,13 @@ public sealed class SubtitleWorkflowTests
         app.Step("等待任务换序", "两个等待任务可拖动交换位置", () =>
         {
             ResourcePackFixture.Serve(app, server, "videoProcess", "video-resources.lock.json");
-            var sample = RecognitionVideoFixture.Create(app.Data.Root, 120);
+            var sample = RecognitionVideoFixture.Create(app.Data.Root, 240);
             var ffmpeg = Path.Combine(ResourcePackFixture.DirectoryFor("vapourSynth"), "ffmpeg.exe");
-            var segment = Path.Combine(app.Data.Root, "continuous-dialogue.mp4");
+            var segment = Path.Combine(app.Data.Root, "blank-segment.mp4");
             var activeVideo = Path.Combine(app.Data.Root, "active.mp4");
-            // 保持对白跨循环边界连续，避免识别完剧本后提前结束。
+            // 空画面持续占用队列，也用于验证取消时没有识别结果的导出状态。
             FfmpegFixture.Run(ffmpeg, Path.Combine(app.Data.Root, "encode-queue-segment.log"), "-y", "-loop", "1",
-                "-framerate", "24", "-i", Path.Combine(app.Data.Root, "dialogue.png"), "-t", "2",
+                "-framerate", "24", "-i", Path.Combine(app.Data.Root, "blank.png"), "-t", "2",
                 "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p", segment);
             FfmpegFixture.Run(ffmpeg, Path.Combine(app.Data.Root, "loop-queue-segment.log"), "-y", "-stream_loop", "1199",
                 "-i", segment, "-c", "copy", "-fs", "16M", activeVideo);
@@ -67,6 +67,8 @@ public sealed class SubtitleWorkflowTests
             stop = app.Finder.ById(window, "Subtitle.StopButton");
             WaitHelper.Until(() => stop.IsEnabled, "切回原先正在识别的任务");
             stop.AsButton().Invoke();
+            WaitHelper.Until(() => TaskButton("active.mp4").FindFirstDescendant(cf => cf.ByName("已取消")), "空结果任务已取消");
+            Assert.False(app.Finder.ById(window, "Subtitle.ExportButton").IsEnabled);
             WaitHelper.Until(() => TaskButton("second.mp4").FindFirstDescendant(cf => cf.ByName("处理中")), "换到队首的任务先开始处理");
             Assert.NotNull(TaskButton("first.mp4").FindFirstDescendant(cf => cf.ByName("未开始")));
 
@@ -101,9 +103,9 @@ public sealed class SubtitleWorkflowTests
         app.Step("退出", "保存当前任务进度并保留已取消任务的检查点，等待任务不启动", () =>
         {
             var progressDirectory = Path.Combine(app.Data.Paths.DataRoot, "SubtitleQueueProgress");
-            var previousCheckpoint = Assert.Single(Directory.GetFiles(progressDirectory, "*.json"));
+            var previousCheckpoint = Assert.Single(Directory.GetFiles(progressDirectory, "*.json"),
+                path => ReadCheckpointVideo(path) == "active.mp4");
             var previousBytes = File.ReadAllBytes(previousCheckpoint);
-            Assert.Equal("active.mp4", ReadCheckpointVideo(previousCheckpoint));
 
             app.Close();
 
@@ -231,6 +233,9 @@ public sealed class SubtitleWorkflowTests
             using var state = System.Text.Json.JsonDocument.Parse(checkpointBytes);
             var frame = state.RootElement.GetProperty("FrameIndex").GetInt32();
             Assert.InRange(frame, 1, 2899);
+            var results = app.Finder.ById(window, "Subtitle.ResultList");
+            Assert.NotNull(results.FindFirstDescendant(cf => cf.ByName("识别译文。")));
+            Assert.True(app.Finder.ById(window, "Subtitle.ExportButton").IsEnabled);
             app.Data.WriteJson("canceled-frame", new { frame });
             ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Subtitle.Canceled");
         });
