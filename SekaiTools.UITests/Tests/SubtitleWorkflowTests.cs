@@ -16,6 +16,93 @@ public sealed class SubtitleWorkflowTests
 {
     [DesktopFact]
     [Trait("Category", "Functional")]
+    public void UI_SUBTITLE_005_等待任务拖动换序后按新顺序推进()
+    {
+        using var server = new LoopbackHttpFixture();
+        using var app = new ApplicationFixture("UI-SUBTITLE-005", "Functional");
+        app.Step("等待任务换序", "两个等待任务可拖动交换位置", () =>
+        {
+            ResourcePackFixture.Serve(app, server, "videoProcess", "video-resources.lock.json");
+            var sample = RecognitionVideoFixture.Create(app.Data.Root, 120);
+            var ffmpeg = Path.Combine(ResourcePackFixture.DirectoryFor("vapourSynth"), "ffmpeg.exe");
+            var segment = Path.Combine(app.Data.Root, "continuous-dialogue.mp4");
+            var activeVideo = Path.Combine(app.Data.Root, "active.mp4");
+            // 保持对白跨循环边界连续，避免识别完剧本后提前结束。
+            FfmpegFixture.Run(ffmpeg, Path.Combine(app.Data.Root, "encode-queue-segment.log"), "-y", "-loop", "1",
+                "-framerate", "24", "-i", Path.Combine(app.Data.Root, "dialogue.png"), "-t", "2",
+                "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p", segment);
+            FfmpegFixture.Run(ffmpeg, Path.Combine(app.Data.Root, "loop-queue-segment.log"), "-y", "-stream_loop", "1199",
+                "-i", segment, "-c", "copy", "-fs", "16M", activeVideo);
+            File.Copy(Path.ChangeExtension(sample, ".json"), Path.ChangeExtension(activeVideo, ".json"));
+            File.Copy(Path.ChangeExtension(sample, ".txt"), Path.ChangeExtension(activeVideo, ".txt"));
+            var firstVideo = CopyMaterials("first");
+            var secondVideo = CopyMaterials("second");
+            app.Start();
+            app.Navigate("MainWindow.Navigation.Subtitle", "Subtitle.Root");
+            var window = app.Window!;
+
+            AddVideo(activeVideo);
+            var stop = app.Finder.ById(window, "Subtitle.StopButton");
+            WaitHelper.Until(() => stop.IsEnabled, "首个任务正在识别");
+            AddVideo(firstVideo);
+            AddVideo(secondVideo);
+            var first = TaskButton("first.mp4");
+            var second = TaskButton("second.mp4");
+            Assert.NotNull(first.FindFirstDescendant(cf => cf.ByName("未开始")));
+            Assert.NotNull(second.FindFirstDescendant(cf => cf.ByName("未开始")));
+            Assert.True(first.BoundingRectangle.Top < second.BoundingRectangle.Top);
+            var grips = window.FindAllDescendants(cf => cf.ByAutomationId("Subtitle.Queue.ReorderGrip"))
+                .OrderBy(grip => grip.BoundingRectangle.Top).ToArray();
+            Assert.Equal(2, grips.Length);
+            var source = grips[1].BoundingRectangle;
+            var target = first.BoundingRectangle;
+            Mouse.Drag(new System.Drawing.Point(source.Left + source.Width / 2, source.Top + source.Height / 2),
+                new System.Drawing.Point(target.Left + target.Width / 2, target.Top + target.Height / 4), MouseButton.Left);
+            WaitHelper.Until(() => TaskButton("second.mp4").BoundingRectangle.Top < TaskButton("first.mp4").BoundingRectangle.Top,
+                "等待任务交换位置");
+            Assert.NotNull(TaskButton("first.mp4").FindFirstDescendant(cf => cf.ByName("未开始")));
+            Assert.NotNull(TaskButton("second.mp4").FindFirstDescendant(cf => cf.ByName("未开始")));
+
+            TaskButton("active.mp4").Invoke();
+            stop = app.Finder.ById(window, "Subtitle.StopButton");
+            WaitHelper.Until(() => stop.IsEnabled, "切回原先正在识别的任务");
+            stop.AsButton().Invoke();
+            WaitHelper.Until(() => TaskButton("second.mp4").FindFirstDescendant(cf => cf.ByName("处理中")), "换到队首的任务先开始处理");
+            Assert.NotNull(TaskButton("first.mp4").FindFirstDescendant(cf => cf.ByName("未开始")));
+
+            string CopyMaterials(string name)
+            {
+                var copy = Path.Combine(app.Data.Root, name + ".mp4");
+                foreach (var extension in new[] { ".mp4", ".json", ".txt" })
+                    File.Copy(Path.ChangeExtension(sample, extension), Path.ChangeExtension(copy, extension));
+                return copy;
+            }
+
+            Button TaskButton(string name) => WaitHelper.Until(() =>
+                window.FindFirstDescendant(cf => cf.ByName(name).And(cf.ByControlType(ControlType.Button))),
+                $"任务卡片 {name}").AsButton();
+
+            void AddVideo(string path)
+            {
+                var add = app.Finder.ById(window, "Subtitle.AddTaskButton");
+                WaitHelper.Until(() => add.IsEnabled, "允许添加字幕任务");
+                add.AsButton().Invoke();
+                var dialog = app.Finder.ById(window, "Subtitle.AddTaskDialog");
+                app.Finder.ById(dialog, "Subtitle.VideoBrowseButton").AsButton().Invoke();
+                var picker = app.OwnedFileDialog();
+                WaitHelper.Until(() => picker.FindFirstDescendant(cf => cf.ByAutomationId("1148").And(cf.ByControlType(ControlType.Edit))), "文件名框").AsTextBox().Text = path;
+                Keyboard.Type(VirtualKeyShort.RETURN);
+                var submit = WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("加入队列").And(cf.ByControlType(ControlType.Button))), "加入队列按钮");
+                WaitHelper.Until(() => submit.IsEnabled, "素材校验通过");
+                submit.AsButton().Invoke();
+                TaskButton(Path.GetFileName(path));
+            }
+        });
+        app.Step("退出", "队列运行中正常退出", app.Close);
+    }
+
+    [DesktopFact]
+    [Trait("Category", "Functional")]
     public void UI_SUBTITLE_004_纯视频识别手填译文并导出()
     {
         using var server = new LoopbackHttpFixture();

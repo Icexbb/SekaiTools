@@ -120,6 +120,8 @@ UI-SUBTITLE-002 对照原始与微调后的 ASS，校验起始时间提前一帧
 
 实验性纯视频模式由独立用例 UI-SUBTITLE-004 验证。只选合成视频即可加入队列并检测对白区间，手填译文后可预览区间，导出的 ASS 包含译文和区间。常规模式 UI-SUBTITLE-002 同轮通过。报告位于 `.codex-build/fluent-workbench/artifacts/20261119-154543-c17197f1/ui-tests.trx`。
 
+UI-SUBTITLE-005 使用固定素材验证两个等待任务可从把手拖动换序，终止当前任务后先处理换到队首的任务，另一项保持等待。报告位于 `.codex-build/fluent-workbench/artifacts/20261119-160031-fe49099a/ui-tests.trx`。
+
 回归必须围绕现有规则：
 
 - 常规视频+剧本+翻译的素材预检，添加任务模态窗、等待任务拖动排序、顺序推进、任务选择及独立状态。
