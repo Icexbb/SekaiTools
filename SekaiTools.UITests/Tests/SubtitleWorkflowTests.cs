@@ -211,6 +211,13 @@ public sealed class SubtitleWorkflowTests
             var earlier = TimeSpan.Parse(startTime.Text, CultureInfo.InvariantCulture);
             var original = TimeSpan.Parse(originalStart, CultureInfo.InvariantCulture);
             Assert.InRange((original - earlier).TotalMilliseconds, 30, 50);
+            var adjustedStart = startTime.Text;
+            var restoreTiming = app.Finder.ById(window, "RestoreTimingButton").AsButton();
+            WaitHelper.Until(() => restoreTiming.IsEnabled, "微调后可以还原识别时长");
+            restoreTiming.Invoke();
+            WaitHelper.Until(() => startTime.Text == originalStart && !restoreTiming.IsEnabled, "还原识别时长恢复起始时间");
+            undo.Invoke();
+            WaitHelper.Until(() => startTime.Text == adjustedStart && restoreTiming.IsEnabled, "撤销还原后回到微调时序");
             undo.Invoke();
             WaitHelper.Until(() => startTime.Text == originalStart && !undo.IsEnabled, "撤销恢复识别时序");
             var endTime = app.Finder.ById(window, "EndTimeBox").AsTextBox();

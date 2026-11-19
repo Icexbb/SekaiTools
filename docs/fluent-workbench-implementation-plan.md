@@ -114,6 +114,8 @@ UI-SUBTITLE-003 验证恢复提示出现时检查点已消费、接受恢复后�
 
 UI-SUBTITLE-002 验证对话区间预览完成后可拖动播放光标定位。拖动依据 UI Automation 暴露的光标边界，并断言字幕起止时间及撤销状态保持原样。报告位于 `.codex-build/fluent-workbench/artifacts/20261119-151928-d12115de/ui-tests.trx`。
 
+UI-SUBTITLE-002 也验证起始时间微调后可还原识别时长，撤销还原可回到手动值，再撤销微调恢复识别值。报告位于 `.codex-build/fluent-workbench/artifacts/20261119-152509-4aa9e599/ui-tests.trx`。
+
 回归必须围绕现有规则：
 
 - 常规视频+剧本+翻译的素材预检，添加任务模态窗、等待任务拖动排序、顺序推进、任务选择及独立状态。
