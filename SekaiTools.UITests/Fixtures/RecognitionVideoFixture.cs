@@ -12,7 +12,7 @@ namespace SekaiTools.UITests.Fixtures;
 /// <summary>A deterministic workflow fixture, not an accuracy benchmark for real game recordings.</summary>
 public static class RecognitionVideoFixture
 {
-    public static string Create(string directory, int dialogueEndSeconds = 2)
+    public static string Create(string directory, int dialogueEndSeconds = 2, bool timingOnly = false)
     {
         var pack = ResourcePackFixture.DirectoryFor("videoProcess");
         using var manager = new TemplateManager(new Size(1280, 720), new Resources(pack));
@@ -28,14 +28,26 @@ public static class RecognitionVideoFixture
         using var smallBody = new Mat();
         CvInvoke.Resize(name, smallName, new Size(name.Width / 5, name.Height / 5));
         CvInvoke.Resize(body, smallBody, new Size(body.Width / 5, body.Height / 5));
-        Place(smallName, new Point(160, 525));
-        Place(smallBody, new Point(160, 570));
+        if (timingOnly)
+        {
+            CvInvoke.PutText(frame, "Speaker", new Point(160, 553), HersheyFonts.Simplex, 0.55,
+                new MCvScalar(255, 255, 255), 2);
+            CvInvoke.Line(frame, new Point(159, 561), new Point(403, 561), new MCvScalar(140, 140, 140), 1);
+            Place(smallBody, new Point(160, 580));
+        }
+        else
+        {
+            Place(smallName, new Point(160, 525));
+            Place(smallBody, new Point(160, 570));
+        }
         var dialogue = Path.Combine(directory, "dialogue.png");
         frame.Save(dialogue);
         var video = Path.Combine(directory, "recognition.mp4");
         FfmpegFixture.Run(Path.Combine(ResourcePackFixture.DirectoryFor("vapourSynth"), "ffmpeg.exe"), Path.Combine(directory, "generate-recognition.log"),
             "-y", "-loop", "1", "-framerate", "24", "-i", blank, "-loop", "1", "-framerate", "24", "-i", dialogue,
             "-filter_complex", $"[0:v][1:v]overlay=enable='between(t,0.5,{dialogueEndSeconds}.5)'", "-t", (dialogueEndSeconds + 1).ToString(System.Globalization.CultureInfo.InvariantCulture), "-c:v", "libx264", "-crf", "0", "-preset", "ultrafast", "-pix_fmt", "yuv420p", video);
+        if (timingOnly) return video;
+
         File.WriteAllText(Path.ChangeExtension(video, ".json"), JsonSerializer.Serialize(new GameScript
         {
             ScenarioId = "ui-recognition",

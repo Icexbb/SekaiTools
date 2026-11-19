@@ -16,6 +16,68 @@ public sealed class SubtitleWorkflowTests
 {
     [DesktopFact]
     [Trait("Category", "Functional")]
+    public void UI_SUBTITLE_004_纯视频识别手填译文并导出()
+    {
+        using var server = new LoopbackHttpFixture();
+        using var app = new ApplicationFixture("UI-SUBTITLE-004", "Functional");
+        var video = "";
+        app.Step("准备视频", "生成带有对白框的固定视频，不提供剧本和翻译", () =>
+        {
+            ResourcePackFixture.Serve(app, server, "videoProcess", "video-resources.lock.json");
+            video = RecognitionVideoFixture.Create(app.Data.Root, timingOnly: true);
+        });
+        app.Step("纯视频识别", "选用实验模式并识别对白区间", () =>
+        {
+            app.Start();
+            app.Navigate("MainWindow.Navigation.Subtitle", "Subtitle.Root");
+            var window = app.Window!;
+            var add = app.Finder.ById(window, "Subtitle.AddTaskButton");
+            WaitHelper.Until(() => add.IsEnabled, "资源准备完成");
+            add.AsButton().Invoke();
+            var dialog = app.Finder.ById(window, "Subtitle.AddTaskDialog");
+            var mode = WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("纯视频时间轴（实验性）")
+                .And(cf.ByControlType(ControlType.CheckBox))), "纯视频模式开关").AsCheckBox();
+            mode.IsChecked = true;
+            app.Finder.ById(dialog, "Subtitle.VideoBrowseButton").AsButton().Invoke();
+            var picker = app.OwnedFileDialog();
+            WaitHelper.Until(() => picker.FindFirstDescendant(cf => cf.ByAutomationId("1148").And(cf.ByControlType(ControlType.Edit))), "文件名框").AsTextBox().Text = video;
+            Keyboard.Type(VirtualKeyShort.RETURN);
+            var submit = WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("加入队列").And(cf.ByControlType(ControlType.Button))), "加入队列按钮");
+            WaitHelper.Until(() => submit.IsEnabled, "仅视频即可提交");
+            submit.AsButton().Invoke();
+            WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("已完成")), "纯视频识别完成");
+        });
+        app.Step("填写并导出", "手填译文写入已检测区间的 ASS", () =>
+        {
+            const string translation = "纯视频手填译文";
+            var window = app.Window!;
+            var results = app.Finder.ById(window, "Subtitle.ResultList");
+            WaitHelper.Until(() => results.FindFirstDescendant(cf => cf.ByName("修改").And(cf.ByControlType(ControlType.Button))), "修改译文").AsButton().Invoke();
+            app.Finder.ById(window, "TextBoxTranslated").AsTextBox().Text = translation;
+            WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("确认").And(cf.ByControlType(ControlType.Button))), "确认手填译文").AsButton().Invoke();
+            WaitHelper.Until(() => results.FindFirstDescendant(cf => cf.ByName(translation)), "结果显示手填译文");
+            app.Finder.ById(results, "LineEditBtn").AsButton().Invoke();
+            var preview = WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("预览当前事件")
+                .And(cf.ByControlType(ControlType.Button))), "预览纯视频对白").AsButton();
+            WaitHelper.Until(() => preview.IsEnabled, "纯视频对白可预览");
+            preview.Invoke();
+            WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("播放完成")), "纯视频对白预览完成");
+            app.Finder.ById(window, "Subtitle.ExportButton").AsButton().Invoke();
+            var options = app.Finder.ById(window, "Subtitle.ExportOptions");
+            WaitHelper.Until(() => options.FindFirstDescendant(cf => cf.ByName("保存").And(cf.ByControlType(ControlType.Button))), "保存纯视频ASS").AsButton().Invoke();
+            var output = Path.Combine(app.Data.Root, "[STGenerated] recognition.ass");
+            WaitHelper.Until(() => File.Exists(output) && new FileInfo(output).Length > 0, "纯视频ASS已写入");
+            var line = Assert.Single(File.ReadAllLines(output), line => line.StartsWith("Dialogue:", StringComparison.Ordinal));
+            var fields = line.Split(',', 10);
+            Assert.InRange(TimeSpan.Parse(fields[1], CultureInfo.InvariantCulture).TotalSeconds, 0.4, 0.65);
+            Assert.InRange(TimeSpan.Parse(fields[2], CultureInfo.InvariantCulture).TotalSeconds, 2.4, 2.7);
+            Assert.Contains(translation, Regex.Replace(fields[9], @"\{[^}]*\}", ""));
+        });
+        app.Step("退出", "纯视频任务正常退出", app.Close);
+    }
+
+    [DesktopFact]
+    [Trait("Category", "Functional")]
     public void UI_SUBTITLE_003_取消后重启恢复并完成识别()
     {
         using var server = new LoopbackHttpFixture();
