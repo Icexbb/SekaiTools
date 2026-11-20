@@ -25,10 +25,14 @@ public sealed class EncodingTests
     [Trait("Category", "Functional")]
     public void UI_ENCODING_003_真实编码运行后取消并清理临时文件() => RunEncodingCase(false, true);
 
-    private static void RunEncodingCase(bool burnSubtitle, bool cancel = false)
+    [DesktopFact]
+    [Trait("Category", "Functional")]
+    public void UI_ENCODING_005_输出路径冲突显示失败摘要并清理临时文件() => RunEncodingCase(false, failOutput: true);
+
+    private static void RunEncodingCase(bool burnSubtitle, bool cancel = false, bool failOutput = false)
     {
         using var server = new LoopbackHttpFixture();
-        using var app = new ApplicationFixture(cancel ? "UI-ENCODING-003" : burnSubtitle ? "UI-ENCODING-002" : "UI-ENCODING-001", "Functional");
+        using var app = new ApplicationFixture(failOutput ? "UI-ENCODING-005" : cancel ? "UI-ENCODING-003" : burnSubtitle ? "UI-ENCODING-002" : "UI-ENCODING-001", "Functional");
         var executable = Environment.GetEnvironmentVariable("SEKAI_TOOLS_UI_EXE")!;
         var pack = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(executable)!, "..", "fixtures", "vapourSynth"));
         var files = new Dictionary<string, byte[]>();
@@ -85,8 +89,29 @@ public sealed class EncodingTests
             Keyboard.Type(VirtualKeyShort.RETURN);
             var submit = WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("添加任务").And(cf.ByControlType(ControlType.Button))), "添加任务按钮");
             WaitHelper.Until(() => submit.IsEnabled, "小视频分析与提交校验通过", TimeSpan.FromSeconds(30));
+            if (failOutput)
+                Directory.CreateDirectory(Path.Combine(app.Data.Root, "[STVS]input.mp4"));
             submit.AsButton().Invoke();
         });
+        if (failOutput)
+        {
+            app.Step("失败摘要", "无法发布输出时显示异常摘要并保留冲突目录", () =>
+            {
+                var window = app.Window!;
+                var summary = app.Finder.ById(window, "Encoding.FailureSummary");
+                WaitHelper.Until(() => !summary.IsOffscreen && summary.Name.Contains("压制失败", StringComparison.Ordinal),
+                    "失败原因已显示", TimeSpan.FromSeconds(30));
+                Assert.Contains("[STVS]input.mp4", summary.Name);
+                Assert.Contains("压制失败", app.Finder.ById(window, "Encoding.TaskLog").AsTextBox().Text);
+                Assert.True(Directory.Exists(Path.Combine(app.Data.Root, "[STVS]input.mp4")));
+                Assert.Equal(inputHash, SHA256.HashData(File.ReadAllBytes(video)));
+                WaitHelper.Until(() => !Directory.EnumerateFiles(app.Data.Temp, "*.partial.mp4", SearchOption.AllDirectories).Any(),
+                    "失败后清理临时输出");
+                ScreenshotHelper.CaptureStable(window, Path.Combine(app.Data.Directory, "Screenshots"), "Encoding.OutputFailure");
+            });
+            app.Step("退出", "压制失败后正常退出", app.Close);
+            return;
+        }
         if (cancel)
         {
             app.Step("取消真实编码", "临时视频已开始写入后取消，日志正确且临时文件清理", () =>

@@ -38,6 +38,9 @@ internal sealed class VideoOutputTransaction : IDisposable
         if (!File.Exists(TemporaryPath))
             throw new FileNotFoundException("压制临时文件不存在", TemporaryPath);
 
+        if (Directory.Exists(TargetPath))
+            throw new IOException($"输出路径已被目录占用：{TargetPath}");
+
         File.Move(TemporaryPath, TargetPath, _overwriteExisting);
         _committed = true;
     }

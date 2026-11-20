@@ -59,6 +59,8 @@
                                    IsEnabled="{Binding CanEdit}" Margin="0,0,0,4" />
                     </WrapPanel>
                     <TextBlock Text="{Binding FailureSummary}" TextWrapping="Wrap"
+                               Visibility="{c:Binding IsFailed, FalseToVisibility=Collapsed}"
+                               AutomationProperties.AutomationId="Encoding.FailureSummary"
                                Foreground="{DynamicResource SystemFillColorCriticalBrush}" Margin="0,4,0,8" />
                     <TextBlock Text="视频文件" FontWeight="SemiBold" />
                     <TextBlock Text="{Binding SourceVideo}" TextWrapping="Wrap" Margin="0,4,0,8" />
