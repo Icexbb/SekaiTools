@@ -2,7 +2,7 @@
 
 编制日期：2026-11-17。依据当前 `main` 的 WPF 源码、[阶段零审计](fluent-workbench-phase0-audit.md)及项目功能文档制定。本文替代原审计中的实施阶段安排；原审计保留技术证据和风险分析。
 
-本文定义分阶段实施范围。M0-A 的 FlaUI 工程、隔离宿主及最小运行闭环，以及 M0-B 的最低行为基线已完成，证据与限制见 [M0 验收记录](fluent-workbench-m0-acceptance.md)，运行方式见 [Windows UI 自动化测试](ui-automation.md)。M1公共资源、外壳与组件预览已完成，见 [设计系统说明](fluent-workbench-design-system.md) 和 [M1验收记录](fluent-workbench-m1-acceptance.md)。M2退出条件已完成，证据及限制见 [翻译页进展](fluent-workbench-m2-progress.md)。M3 已通过退出验收，M4 正在实施。
+本文定义分阶段实施范围。M0-A 的 FlaUI 工程、隔离宿主及最小运行闭环，以及 M0-B 的最低行为基线已完成，证据与限制见 [M0 验收记录](fluent-workbench-m0-acceptance.md)，运行方式见 [Windows UI 自动化测试](ui-automation.md)。M1公共资源、外壳与组件预览已完成，见 [设计系统说明](fluent-workbench-design-system.md) 和 [M1验收记录](fluent-workbench-m1-acceptance.md)。M2退出条件已完成，证据及限制见 [翻译页进展](fluent-workbench-m2-progress.md)。M3 已通过退出验收，M4 已通过退出验收。
 
 ## 1. 第一优先级：先引入 FlaUI，取得现有界面的可重复测试基线
 
@@ -144,7 +144,7 @@ M3 退出验收通过。常规识别和实验性纯视频分别通过 UI-SUBTITL
 
 ## 6. M4：视频压制任务监控
 
-M4 已开始。压制详情的 FFmpeg 参数收进默认折叠的高级详情，完整日志保留独立滚动与跟随开关。UI-ENCODING-001 至 UI-ENCODING-003 同轮通过，覆盖真实转码、ASS 烧录和取消清理。完成用例同时验证高级详情的展开与折叠、实际参数可读，以及日志文本和跟随状态不受展开操作影响。报告位于 `.codex-build/fluent-workbench/artifacts/20261120-173119-87231fa5/ui-tests.trx`。
+压制详情的 FFmpeg 参数收进默认折叠的高级详情，完整日志保留独立滚动与跟随开关。完成用例验证高级详情的展开与折叠、实际参数可读，以及日志文本和跟随状态不受展开操作影响。
 
 复用现有串行队列、任务详情、编码参数模型及 FFmpeg/VapourSynth 管线。按任务概要、进度/阶段、常用操作和可折叠高级详情组织；FFmpeg 参数进入高级区域，完整日志保留独立滚动和“跟随最新日志”。
 
@@ -171,6 +171,8 @@ UI-ENCODING-002 使用实际 Windows 文件拖放载入视频，确认同名 ASS
 普通回归使用可控状态数据检查显示；另设真实小任务验证输入→管线→输出可读取、取消后进程退出。前者不作为编码集成测试通过证据。
 
 **退出条件：** 页面功能与截图验收通过；小素材真实编码与取消通过；缺少 VapourSynth/原生资源时报告具体缺口，不用模拟结果替代。
+
+M4 通过退出验收。五项 FlaUI 压制用例在同一构建上通过，使用锁定版本的 FFmpeg 和 VapourSynth 完成转码、ASS 烧录和取消。取消用例记录了两个实际子进程的 ID，并检查它们均已退出。所有测试实例正常退出且受保护数据未变化。报告位于 `.codex-build/fluent-workbench/artifacts/20261120-180614-35d23abe/ui-tests.trx`。明暗布局和临时盘告警继续以可控状态分别验证。
 
 ## 7. M5：数据下载资源浏览器
 

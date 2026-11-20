@@ -12,6 +12,8 @@ namespace SekaiTools.UITests.Fixtures;
 public sealed class ApplicationFixture : IDisposable
 {
     private readonly ConcurrentQueue<string> _output = new();
+
+    internal string? FindOutputLine(Func<string, bool> predicate) => _output.FirstOrDefault(predicate);
     private readonly Stopwatch _watch = Stopwatch.StartNew();
     private readonly List<object> _steps = [];
     private Process? _process;

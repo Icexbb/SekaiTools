@@ -1,4 +1,6 @@
 using System.Security.Cryptography;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
 using System.Text.Json;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
@@ -158,6 +160,14 @@ public sealed class EncodingTests
                 var output = Path.Combine(app.Data.Root, "[STVS]input.mp4");
                 var partial = WaitHelper.Until(() => Directory.EnumerateFiles(app.Data.Temp, "*.partial.mp4", SearchOption.AllDirectories)
                     .FirstOrDefault(path => new FileInfo(path).Length > 0), "真实FFmpeg开始写入临时视频", TimeSpan.FromSeconds(30));
+                var processLine = WaitHelper.Until(() => app.FindOutputLine(line =>
+                    line.Contains("压制进程已启动:", StringComparison.Ordinal)), "记录了当前任务的两个编码进程");
+                var processIds = Regex.Match(processLine, @"VSPipe=(\d+), FFmpeg=(\d+)");
+                Assert.True(processIds.Success, processLine);
+                using var vapour = Process.GetProcessById(int.Parse(processIds.Groups[1].Value));
+                using var ffmpeg = Process.GetProcessById(int.Parse(processIds.Groups[2].Value));
+                Assert.False(vapour.HasExited);
+                Assert.False(ffmpeg.HasExited);
                 var window = app.Window!;
                 AddVideo(Path.Combine(app.Data.Root, "first.mp4"));
                 AddVideo(Path.Combine(app.Data.Root, "second.mp4"));
@@ -187,10 +197,19 @@ public sealed class EncodingTests
                 Assert.Contains("压制已取消", log);
                 File.WriteAllText(Path.Combine(app.Data.Directory, "canceled-task.log"), log);
                 WaitHelper.Until(() => !File.Exists(partial), "临时视频清理完成");
+                WaitHelper.Until(() => vapour.HasExited && ffmpeg.HasExited, "取消后两个真实编码进程均已退出");
                 Assert.False(File.Exists(output));
                 WaitHelper.Until(() => Task("second.mp4").FindFirstDescendant(cf => cf.ByName("正在编码")), "新队首先开始压制");
                 Assert.NotNull(Task("first.mp4").FindFirstDescendant(cf => cf.ByName("等待中")));
-                app.Data.WriteJson("canceled-output", new { Temporary = partial, Removed = true, TargetPublished = false });
+                app.Data.WriteJson("canceled-output", new
+                {
+                    Temporary = partial,
+                    Removed = true,
+                    TargetPublished = false,
+                    VapourSynthProcessId = vapour.Id,
+                    FfmpegProcessId = ffmpeg.Id,
+                    ProcessesExited = true
+                });
                 ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Encoding.Canceled");
 
                 Button Task(string name) => WaitHelper.Until(() => window.FindFirstDescendant(cf =>
