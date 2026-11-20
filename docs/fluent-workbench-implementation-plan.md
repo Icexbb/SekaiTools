@@ -2,7 +2,7 @@
 
 编制日期：2026-11-17。依据当前 `main` 的 WPF 源码、[阶段零审计](fluent-workbench-phase0-audit.md)及项目功能文档制定。本文替代原审计中的实施阶段安排；原审计保留技术证据和风险分析。
 
-本文定义分阶段实施范围。M0-A 的 FlaUI 工程、隔离宿主及最小运行闭环，以及 M0-B 的最低行为基线已完成，证据与限制见 [M0 验收记录](fluent-workbench-m0-acceptance.md)，运行方式见 [Windows UI 自动化测试](ui-automation.md)。M1公共资源、外壳与组件预览已完成，见 [设计系统说明](fluent-workbench-design-system.md) 和 [M1验收记录](fluent-workbench-m1-acceptance.md)。M2退出条件已完成，证据及限制见 [翻译页进展](fluent-workbench-m2-progress.md)。M3 已通过退出验收，M4 及以后尚未开始。
+本文定义分阶段实施范围。M0-A 的 FlaUI 工程、隔离宿主及最小运行闭环，以及 M0-B 的最低行为基线已完成，证据与限制见 [M0 验收记录](fluent-workbench-m0-acceptance.md)，运行方式见 [Windows UI 自动化测试](ui-automation.md)。M1公共资源、外壳与组件预览已完成，见 [设计系统说明](fluent-workbench-design-system.md) 和 [M1验收记录](fluent-workbench-m1-acceptance.md)。M2退出条件已完成，证据及限制见 [翻译页进展](fluent-workbench-m2-progress.md)。M3 已通过退出验收，M4 正在实施。
 
 ## 1. 第一优先级：先引入 FlaUI，取得现有界面的可重复测试基线
 
@@ -143,6 +143,8 @@ UI-SUBTITLE-006 从合成旧版历史加载地点横幅和角标，分别进入�
 M3 退出验收通过。常规识别和实验性纯视频分别通过 UI-SUBTITLE-002 与 UI-SUBTITLE-004，横幅与角标复核通过 UI-SUBTITLE-006，运行中保存和退出通过 UI-SUBTITLE-005。六个字幕用例同轮通过，所有测试实例正常退出，受保护数据未变化。报告位于 `.codex-build/fluent-workbench/artifacts/20261119-173520-d13c1673/ui-tests.trx`。长录屏识别准确率与性能仍属于独立验收。
 
 ## 6. M4：视频压制任务监控
+
+M4 已开始。压制详情的 FFmpeg 参数收进默认折叠的高级详情，完整日志保留独立滚动与跟随开关。UI-ENCODING-001 至 UI-ENCODING-003 同轮通过，覆盖真实转码、ASS 烧录和取消清理。完成用例同时验证高级详情的展开与折叠、实际参数可读，以及日志文本和跟随状态不受展开操作影响。报告位于 `.codex-build/fluent-workbench/artifacts/20261120-173119-87231fa5/ui-tests.trx`。
 
 复用现有串行队列、任务详情、编码参数模型及 FFmpeg/VapourSynth 管线。按任务概要、进度/阶段、常用操作和可折叠高级详情组织；FFmpeg 参数进入高级区域，完整日志保留独立滚动和“跟随最新日志”。
 

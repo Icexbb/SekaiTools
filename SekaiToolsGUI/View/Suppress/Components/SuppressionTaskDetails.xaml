@@ -69,18 +69,31 @@
                  HorizontalContentAlignment="Stretch">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <TextBlock Text="FFmpeg 参数" FontWeight="SemiBold" Margin="0,0,0,6" />
-                <TextBox Grid.Row="1" x:Name="CommandTextBox" Text="{Binding FfmpegCommandDisplay, Mode=OneWay}"
-                         IsReadOnly="True" FontFamily="Consolas" MaxHeight="90" TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Auto" Margin="0,0,0,10" AutomationProperties.Name="FFmpeg 参数" />
-                <DockPanel Grid.Row="2" Margin="0,0,0,6">
-                    <CheckBox DockPanel.Dock="Right" x:Name="FollowLog" IsChecked="True" Content="跟随最新日志" />
+                <Expander Margin="0,0,0,8" AutomationProperties.AutomationId="Encoding.AdvancedDetails"
+                          AutomationProperties.Name="高级详情">
+                    <Expander.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Settings24" Margin="0,0,8,0" />
+                            <TextBlock Text="高级详情" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Expander.Header>
+                    <StackPanel Margin="0,6,0,0">
+                        <TextBlock Text="FFmpeg 参数" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <TextBox Text="{Binding FfmpegCommandDisplay, Mode=OneWay}"
+                                 IsReadOnly="True" FontFamily="Consolas" MaxHeight="90" TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto" AutomationProperties.Name="FFmpeg 参数"
+                                 AutomationProperties.AutomationId="Encoding.FfmpegCommand" />
+                    </StackPanel>
+                </Expander>
+                <DockPanel Grid.Row="1" Margin="0,0,0,6">
+                    <CheckBox DockPanel.Dock="Right" x:Name="FollowLog" IsChecked="True" Content="跟随最新日志"
+                              AutomationProperties.AutomationId="Encoding.FollowLog" />
                     <TextBlock Text="完整任务日志" FontWeight="SemiBold" VerticalAlignment="Center" />
                 </DockPanel>
-                <TextBox Grid.Row="3" x:Name="LogTextBox" AutomationProperties.AutomationId="Encoding.TaskLog" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True"
+                <TextBox Grid.Row="2" x:Name="LogTextBox" AutomationProperties.AutomationId="Encoding.TaskLog" Text="{Binding Progress.Log, Mode=OneWay}" IsReadOnly="True"
                          FontFamily="Consolas" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
                          TextWrapping="NoWrap" TextChanged="Log_OnChanged" AutomationProperties.Name="完整任务日志" />
             </Grid>

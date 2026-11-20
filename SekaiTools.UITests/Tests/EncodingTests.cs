@@ -114,6 +114,21 @@ public sealed class EncodingTests
             burnSubtitle ? "输出48帧且中心由蓝色变为ASS绿色绘图，视频与字幕源文件不变" : "队列任务完成且输出能被FFmpeg完整解码，源文件不变", () =>
         {
             WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("已完成")), "真实转码完成", TimeSpan.FromSeconds(60));
+            var window = app.Window!;
+            var advanced = app.Finder.ById(window, "Encoding.AdvancedDetails").Patterns.ExpandCollapse.Pattern;
+            Assert.Equal(ExpandCollapseState.Collapsed, advanced.ExpandCollapseState.Value);
+            var log = app.Finder.ById(window, "Encoding.TaskLog").AsTextBox();
+            Assert.False(log.IsOffscreen);
+            var logText = log.Text;
+            var follow = app.Finder.ById(window, "Encoding.FollowLog").AsCheckBox();
+            follow.IsChecked = false;
+            advanced.Expand();
+            var command = app.Finder.ById(window, "Encoding.FfmpegCommand").AsTextBox();
+            WaitHelper.Until(() => !command.IsOffscreen && !string.IsNullOrWhiteSpace(command.Text), "高级详情显示实际参数");
+            advanced.Collapse();
+            Assert.False(follow.IsChecked);
+            Assert.Equal(logText, log.Text);
+            follow.IsChecked = true;
             var output = Path.Combine(app.Data.Root, "[STVS]input.mp4");
             Assert.True(new FileInfo(output).Length > 0);
             Assert.Equal(inputHash, SHA256.HashData(File.ReadAllBytes(video)));
