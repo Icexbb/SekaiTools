@@ -102,10 +102,28 @@ public sealed class EncodingTests
             add.AsButton().Invoke();
             var dialog = app.Finder.ById(app.Window!, "Encoding.AddTaskDialog");
             Assert.DoesNotContain(dialog.FindAllDescendants(cf => cf.ByName("添加任务").And(cf.ByControlType(ControlType.Button))), button => button.IsEnabled);
-            app.Finder.ById(dialog, "Encoding.VideoBrowseButton").AsButton().Invoke();
-            var picker = app.OwnedFileDialog();
-            WaitHelper.Until(() => picker.FindFirstDescendant(cf => cf.ByAutomationId("1148").And(cf.ByControlType(ControlType.Edit))), "视频文件名框").AsTextBox().Text = path;
-            Keyboard.Type(VirtualKeyShort.RETURN);
+            var browse = app.Finder.ById(dialog, "Encoding.VideoBrowseButton");
+            if (burnSubtitle)
+            {
+                var bounds = browse.BoundingRectangle;
+                Assert.True(FileDropDriver.DragFile(path, new System.Drawing.Point(bounds.Left + bounds.Width / 2, bounds.Top + bounds.Height / 2)));
+                WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("已自动匹配同名 ASS 字幕，请确认是否使用")), "同名 ASS 匹配提示");
+                app.Finder.ById(dialog, "Encoding.QualityPreset").AsComboBox().Select(3);
+                app.Finder.ById(dialog, "Encoding.SpeedPreset").AsComboBox().Select(0);
+                app.Finder.ById(dialog, "Encoding.CustomCrf").Patterns.RangeValue.Pattern.SetValue(23);
+                var threads = FindThreadEditor(dialog);
+                threads.Focus();
+                Keyboard.TypeSimultaneously(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_A);
+                Keyboard.Type("2");
+                Keyboard.Type(VirtualKeyShort.TAB);
+            }
+            else
+            {
+                browse.AsButton().Invoke();
+                var picker = app.OwnedFileDialog();
+                WaitHelper.Until(() => picker.FindFirstDescendant(cf => cf.ByAutomationId("1148").And(cf.ByControlType(ControlType.Edit))), "视频文件名框").AsTextBox().Text = path;
+                Keyboard.Type(VirtualKeyShort.RETURN);
+            }
             var submit = WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("添加任务").And(cf.ByControlType(ControlType.Button))), "添加任务按钮");
             WaitHelper.Until(() => submit.IsEnabled, "小视频分析与提交校验通过", TimeSpan.FromSeconds(30));
             if (occupyOutput)
@@ -208,6 +226,9 @@ public sealed class EncodingTests
             Assert.Contains("frame=48", File.ReadAllLines(decodeLog));
             if (burnSubtitle)
             {
+                Assert.Contains("\"-crf\" \"23\"", command.Text);
+                Assert.Contains("\"-preset\" \"fast\"", command.Text);
+                Assert.Contains("\"-threads:v\" \"2\"", command.Text);
                 Assert.Equal(subtitleHash, SHA256.HashData(File.ReadAllBytes(Path.ChangeExtension(video, ".ass"))));
                 var inputPixel = ReadCenterPixel(video, "input");
                 var outputPixel = ReadCenterPixel(output, "output");
@@ -220,7 +241,25 @@ public sealed class EncodingTests
             ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), burnSubtitle ? "Encoding.Burned" : "Encoding.Completed");
             app.Data.WriteJson("fixture-requests", server.Requests.ToArray());
         });
-        if (!burnSubtitle)
+        if (burnSubtitle)
+        {
+            app.Step("恢复编码偏好", "重启后新任务表单恢复自定义画质、CRF 与速度", () =>
+            {
+                app.Restart("Encoding.Root");
+                var window = app.Window!;
+                var add = app.Finder.ById(window, "Encoding.AddTaskButton");
+                WaitHelper.Until(() => add.IsEnabled, "重启后可添加压制任务");
+                add.AsButton().Invoke();
+                var dialog = app.Finder.ById(window, "Encoding.AddTaskDialog");
+                Assert.Equal("自定义", app.Finder.ById(dialog, "Encoding.QualityPreset").AsComboBox().SelectedItem?.Text);
+                Assert.Equal("快速", app.Finder.ById(dialog, "Encoding.SpeedPreset").AsComboBox().SelectedItem?.Text);
+                Assert.Equal(23d, app.Finder.ById(dialog, "Encoding.CustomCrf").Patterns.RangeValue.Pattern.Value.Value);
+                Assert.Equal("2", FindThreadEditor(dialog).Text);
+                WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("取消")
+                    .And(cf.ByControlType(ControlType.Button))), "关闭新任务表单").AsButton().Invoke();
+            });
+        }
+        else
         {
             app.Step("筛选与重试", "完成筛选正确，取消覆盖保留旧文件，授权后重试生成可解码视频", () =>
             {
@@ -260,6 +299,14 @@ public sealed class EncodingTests
             });
         }
         app.Step("退出", "转码后正常退出", app.Close);
+
+        TextBox FindThreadEditor(AutomationElement dialog)
+        {
+            var threads = app.Finder.ById(dialog, "Encoding.Threads");
+            return (threads.ControlType == ControlType.Edit
+                ? threads
+                : WaitHelper.Until(() => threads.FindFirstDescendant(cf => cf.ByControlType(ControlType.Edit)), "编码线程输入框")).AsTextBox();
+        }
 
         byte[] ReadCenterPixel(string source, string name)
         {

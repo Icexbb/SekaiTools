@@ -73,7 +73,8 @@
                     <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" Text="画质越高，输出文件通常越大" />
                 </StackPanel>
             </ui:CardControl.Header>
-            <ComboBox Width="190" SelectedValue="{Binding QualityPreset, Mode=TwoWay}" SelectedValuePath="Tag">
+            <ComboBox Width="190" SelectedValue="{Binding QualityPreset, Mode=TwoWay}" SelectedValuePath="Tag"
+                      AutomationProperties.AutomationId="Encoding.QualityPreset">
                 <ComboBoxItem Content="高质量（CRF 18）" Tag="{x:Static media:VideoQualityPreset.HighQuality}" />
                 <ComboBoxItem Content="均衡（CRF 21）" Tag="{x:Static media:VideoQualityPreset.Balanced}" />
                 <ComboBoxItem Content="小体积（CRF 25）" Tag="{x:Static media:VideoQualityPreset.Compact}" />
@@ -87,7 +88,8 @@
                     <ui:TextBlock Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" Text="速度越慢，相同画质下压缩率通常越高" />
                 </StackPanel>
             </ui:CardControl.Header>
-            <ComboBox Width="190" SelectedValue="{Binding SpeedPreset, Mode=TwoWay}" SelectedValuePath="Tag">
+            <ComboBox Width="190" SelectedValue="{Binding SpeedPreset, Mode=TwoWay}" SelectedValuePath="Tag"
+                      AutomationProperties.AutomationId="Encoding.SpeedPreset">
                 <ComboBoxItem Content="快速" Tag="{x:Static media:VideoEncodingSpeedPreset.Fast}" />
                 <ComboBoxItem Content="均衡" Tag="{x:Static media:VideoEncodingSpeedPreset.Balanced}" />
                 <ComboBoxItem Content="慢速高压缩率" Tag="{x:Static media:VideoEncodingSpeedPreset.Slow}" />
@@ -113,6 +115,7 @@
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Width="24" Text="{Binding SuppressCrf}" VerticalAlignment="Center" Margin="0,0,10,0" />
                         <Slider Width="150" Minimum="0" Maximum="51" TickFrequency="1" IsSnapToTickEnabled="True"
+                                AutomationProperties.AutomationId="Encoding.CustomCrf"
                                 Value="{Binding SuppressCrf, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
                 </ui:CardControl>
@@ -125,6 +128,7 @@
                         </StackPanel>
                     </ui:CardControl.Header>
                     <ui:NumberBox Width="120" Minimum="0" Maximum="128" SmallChange="1"
+                                  AutomationProperties.AutomationId="Encoding.Threads"
                                   Value="{Binding EncodingThreads, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                   ToolTip="可调整线程数比较压制速度。更多线程会增加内存占用，速度也受字幕渲染影响。" />
                 </ui:CardControl>

@@ -166,6 +166,8 @@ UI-ENCODING-005 验证真实编码完成后，若输出目标被目录占用，�
 
 UI-ENCODING-003 使用真实压制任务验证等待列表拖动，两个任务换序后均处于等待状态。终止当前任务后，换到队首的任务先运行，另一项继续等待。五项压制用例同轮通过，报告位于 `.codex-build/fluent-workbench/artifacts/20261120-175023-f78a396e/ui-tests.trx`。
 
+UI-ENCODING-002 使用实际 Windows 文件拖放载入视频，确认同名 ASS 提示和后台分析后设置自定义 CRF、快速预设与线程数。用例核对实际 FFmpeg 参数与 ASS 烧录结果，并在重启后打开新任务表单，确认偏好恢复。五项压制用例通过，报告位于 `.codex-build/fluent-workbench/artifacts/20261120-180201-735f949b/ui-tests.trx`。共用文件拖放驱动的翻译用例与烧录用例随后同轮通过，报告位于 `.codex-build/fluent-workbench/artifacts/20261120-180407-3520875c/ui-tests.trx`。
+
 普通回归使用可控状态数据检查显示；另设真实小任务验证输入→管线→输出可读取、取消后进程退出。前者不作为编码集成测试通过证据。
 
 **退出条件：** 页面功能与截图验收通过；小素材真实编码与取消通过；缺少 VapourSynth/原生资源时报告具体缺口，不用模拟结果替代。
