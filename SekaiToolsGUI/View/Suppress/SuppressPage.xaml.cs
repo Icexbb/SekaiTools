@@ -220,7 +220,7 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 
         public void DragOver(IDropInfo dropInfo)
         {
-            if (dropInfo.Data is SuppressionJobModel job &&
+            if (dropInfo.Data is SuppressionJobModel { CanReorder: true } job &&
                 _jobs.Contains(job) &&
                 (dropInfo.TargetItem == null || dropInfo.TargetItem is SuppressionJobModel))
             {
@@ -235,7 +235,7 @@ public partial class SuppressPage : UserControl, IAppPage<SuppressPageModel>
 
         public void Drop(IDropInfo dropInfo)
         {
-            if (_jobs.Count < 2 || dropInfo.Data is not SuppressionJobModel job) return;
+            if (_jobs.Count < 2 || dropInfo.Data is not SuppressionJobModel { CanReorder: true } job) return;
 
             var sourceIndex = _jobs.IndexOf(job);
             if (sourceIndex < 0) return;

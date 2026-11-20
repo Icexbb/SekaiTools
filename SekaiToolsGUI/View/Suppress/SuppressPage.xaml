@@ -56,7 +56,21 @@
                                    Visibility="{c:Binding 'PendingJobs.Count > 0', FalseToVisibility=Collapsed}" />
                         <ItemsControl x:Name="PendingJobsList" ItemsSource="{Binding PendingJobs}"
                                       ItemTemplate="{StaticResource TaskItemTemplate}" AllowDrop="True"
-                                      dd:DragDrop.IsDropTarget="True" dd:DragDrop.ShowAlwaysDropTargetAdorner="True" />
+                                      dd:DragDrop.IsDragSource="True" dd:DragDrop.UseDefaultDragAdorner="True"
+                                      dd:DragDrop.UseVisualSourceItemSizeForDragAdorner="True"
+                                      dd:DragDrop.IsDropTarget="True" dd:DragDrop.ShowAlwaysDropTargetAdorner="True">
+                            <dd:DragDrop.DragAdornerTemplate>
+                                <DataTemplate>
+                                    <ui:Card Padding="10" MinWidth="220" Opacity="0.88">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding ListStatus}" Margin="0,5,0,0"
+                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                        </StackPanel>
+                                    </ui:Card>
+                                </DataTemplate>
+                            </dd:DragDrop.DragAdornerTemplate>
+                        </ItemsControl>
                         <TextBlock Text="正在进行任务" Style="{StaticResource SectionHeader}"
                                    Visibility="{c:Binding HasRunningJob, FalseToVisibility=Collapsed}" />
                         <ItemsControl ItemsSource="{Binding RunningJobs}"

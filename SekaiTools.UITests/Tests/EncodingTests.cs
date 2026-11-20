@@ -56,8 +56,22 @@ public sealed class EncodingTests
             File.WriteAllText(config, File.ReadAllText(config).Replace(":9/", $":{server.Port}/"));
             server.Response = request => request.Contains("/resources/vapourSynth.json ") ? JsonSerializer.Serialize(manifest) : null;
             server.BinaryResponse = request => files.FirstOrDefault(file => request.Contains("/resources/vapourSynth/" + file.Key + " ")).Value;
-            FfmpegFixture.Run(Path.Combine(pack, "ffmpeg.exe"), Path.Combine(app.Data.Directory, "generate-video.log"),
-                "-y", "-f", "lavfi", "-i", "color=c=blue:s=320x240:r=24", "-t", cancel ? "600" : "2", "-c:v", "libx264", "-pix_fmt", "yuv420p", video);
+            var ffmpeg = Path.Combine(pack, "ffmpeg.exe");
+            if (cancel)
+            {
+                var segment = Path.Combine(app.Data.Root, "segment.mp4");
+                FfmpegFixture.Run(ffmpeg, Path.Combine(app.Data.Directory, "generate-segment.log"), "-y", "-f", "lavfi",
+                    "-i", "color=c=blue:s=1280x720:r=24", "-t", "2", "-c:v", "libx264", "-pix_fmt", "yuv420p", segment);
+                FfmpegFixture.Run(ffmpeg, Path.Combine(app.Data.Directory, "generate-video.log"), "-y", "-stream_loop", "299",
+                    "-i", segment, "-c", "copy", "-fs", "16M", video);
+                var first = Path.Combine(app.Data.Root, "first.mp4");
+                FfmpegFixture.Run(ffmpeg, Path.Combine(app.Data.Directory, "generate-pending.log"), "-y", "-stream_loop", "29",
+                    "-i", segment, "-c", "copy", first);
+                File.Copy(first, Path.Combine(app.Data.Root, "second.mp4"));
+            }
+            else
+                FfmpegFixture.Run(ffmpeg, Path.Combine(app.Data.Directory, "generate-video.log"),
+                    "-y", "-f", "lavfi", "-i", "color=c=blue:s=320x240:r=24", "-t", "2", "-c:v", "libx264", "-pix_fmt", "yuv420p", video);
             if (burnSubtitle)
                 File.WriteAllText(Path.ChangeExtension(video, ".ass"), """
                     [Script Info]
@@ -78,6 +92,11 @@ public sealed class EncodingTests
         {
             app.Start();
             app.Navigate("MainWindow.Navigation.Encoding", "Encoding.Root");
+            AddVideo(video, failOutput);
+        });
+
+        void AddVideo(string path, bool occupyOutput = false)
+        {
             var add = app.Finder.ById(app.Window!, "Encoding.AddTaskButton");
             WaitHelper.Until(() => add.IsEnabled, "压制运行库准备完成", TimeSpan.FromSeconds(60));
             add.AsButton().Invoke();
@@ -85,14 +104,16 @@ public sealed class EncodingTests
             Assert.DoesNotContain(dialog.FindAllDescendants(cf => cf.ByName("添加任务").And(cf.ByControlType(ControlType.Button))), button => button.IsEnabled);
             app.Finder.ById(dialog, "Encoding.VideoBrowseButton").AsButton().Invoke();
             var picker = app.OwnedFileDialog();
-            WaitHelper.Until(() => picker.FindFirstDescendant(cf => cf.ByAutomationId("1148").And(cf.ByControlType(ControlType.Edit))), "视频文件名框").AsTextBox().Text = video;
+            WaitHelper.Until(() => picker.FindFirstDescendant(cf => cf.ByAutomationId("1148").And(cf.ByControlType(ControlType.Edit))), "视频文件名框").AsTextBox().Text = path;
             Keyboard.Type(VirtualKeyShort.RETURN);
             var submit = WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("添加任务").And(cf.ByControlType(ControlType.Button))), "添加任务按钮");
             WaitHelper.Until(() => submit.IsEnabled, "小视频分析与提交校验通过", TimeSpan.FromSeconds(30));
-            if (failOutput)
+            if (occupyOutput)
                 Directory.CreateDirectory(Path.Combine(app.Data.Root, "[STVS]input.mp4"));
             submit.AsButton().Invoke();
-        });
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByAutomationId("Encoding.AddTaskDialog")) is null,
+                "添加任务表单已关闭");
+        }
         if (failOutput)
         {
             app.Step("失败摘要", "无法发布输出时显示异常摘要并保留冲突目录", () =>
@@ -119,6 +140,26 @@ public sealed class EncodingTests
                 var output = Path.Combine(app.Data.Root, "[STVS]input.mp4");
                 var partial = WaitHelper.Until(() => Directory.EnumerateFiles(app.Data.Temp, "*.partial.mp4", SearchOption.AllDirectories)
                     .FirstOrDefault(path => new FileInfo(path).Length > 0), "真实FFmpeg开始写入临时视频", TimeSpan.FromSeconds(30));
+                var window = app.Window!;
+                AddVideo(Path.Combine(app.Data.Root, "first.mp4"));
+                AddVideo(Path.Combine(app.Data.Root, "second.mp4"));
+                var first = Task("first.mp4");
+                var second = Task("second.mp4");
+                Assert.NotNull(first.FindFirstDescendant(cf => cf.ByName("等待中")));
+                Assert.NotNull(second.FindFirstDescendant(cf => cf.ByName("等待中")));
+                Assert.True(first.BoundingRectangle.Top < second.BoundingRectangle.Top);
+                var grips = window.FindAllDescendants(cf => cf.ByAutomationId("Encoding.Queue.ReorderGrip"))
+                    .OrderBy(grip => grip.BoundingRectangle.Top).ToArray();
+                Assert.Equal(2, grips.Length);
+                var from = grips[1].BoundingRectangle;
+                var to = first.BoundingRectangle;
+                Mouse.Drag(new System.Drawing.Point(from.Left + from.Width / 2, from.Top + from.Height / 2),
+                    new System.Drawing.Point(to.Left + to.Width / 2, to.Top + to.Height / 4), MouseButton.Left);
+                WaitHelper.Until(() => Task("second.mp4").BoundingRectangle.Top < Task("first.mp4").BoundingRectangle.Top,
+                    "两个等待任务完成换序");
+                Assert.NotNull(Task("first.mp4").FindFirstDescendant(cf => cf.ByName("等待中")));
+                Assert.NotNull(Task("second.mp4").FindFirstDescendant(cf => cf.ByName("等待中")));
+                Task("input.mp4").Invoke();
                 var stop = app.Finder.ById(app.Window!, "Encoding.CancelButton");
                 WaitHelper.Until(() => stop.IsEnabled, "取消按钮可用");
                 stop.AsButton().Invoke();
@@ -129,8 +170,13 @@ public sealed class EncodingTests
                 File.WriteAllText(Path.Combine(app.Data.Directory, "canceled-task.log"), log);
                 WaitHelper.Until(() => !File.Exists(partial), "临时视频清理完成");
                 Assert.False(File.Exists(output));
+                WaitHelper.Until(() => Task("second.mp4").FindFirstDescendant(cf => cf.ByName("正在编码")), "新队首先开始压制");
+                Assert.NotNull(Task("first.mp4").FindFirstDescendant(cf => cf.ByName("等待中")));
                 app.Data.WriteJson("canceled-output", new { Temporary = partial, Removed = true, TargetPublished = false });
                 ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Encoding.Canceled");
+
+                Button Task(string name) => WaitHelper.Until(() => window.FindFirstDescendant(cf =>
+                    cf.ByName(name).And(cf.ByControlType(ControlType.Button))), $"任务卡片 {name}").AsButton();
             });
             app.Step("退出", "取消后正常退出", app.Close);
             return;
