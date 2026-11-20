@@ -20,18 +20,38 @@ internal static class Program
         { var found = FindExecuting(VisualTreeHelper.GetChild(parent, i)); if (found != null) return found; }
         return null;
     }
-    private static void CheckLogWindow(FrameworkElement page)
+    private static void CheckTaskDetails(FrameworkElement page)
     {
         var executing = FindExecuting(page) ?? throw new Exception("Missing executing panel");
         var log = (TextBox)executing.FindName("LogTextBox");
         if (!log.IsReadOnly || string.IsNullOrWhiteSpace(log.Text)) throw new Exception("Inline log binding failed");
+        var advanced = (Expander)executing.FindName("AdvancedDetails");
+        if (advanced.IsExpanded || !log.IsVisible) throw new Exception("Advanced details should start collapsed with the log visible");
+        advanced.IsExpanded = true;
         var command = (TextBox)executing.FindName("CommandTextBox");
+        WaitForCommandVisibility(true);
         if (!command.IsReadOnly || string.IsNullOrWhiteSpace(command.Text)) throw new Exception("Command binding failed");
         var model = executing.DataContext;
         var progress = model.GetType().GetProperty("Progress")!.GetValue(model)!;
         if (log.Text != (string)progress.GetType().GetProperty("Log")!.GetValue(progress)!) throw new Exception("Wrong task log");
         if (command.Text != (string)model.GetType().GetProperty("FfmpegCommandDisplay")!.GetValue(model)!) throw new Exception("Wrong task parameters");
-        Console.WriteLine("Unified detail component: inline parameters and task-specific read-only logs verified.");
+        advanced.IsExpanded = false;
+        WaitForCommandVisibility(false);
+        if (!log.IsVisible) throw new Exception("Collapsing advanced details should leave the log visible");
+        Console.WriteLine("Unified task details: collapsed FFmpeg parameters and task-specific logs verified.");
+
+        void WaitForCommandVisibility(bool visible)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(3);
+            while (command.IsVisible != visible && DateTime.UtcNow < deadline)
+            {
+                var frame = new DispatcherFrame();
+                Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () => frame.Continue = false);
+                Dispatcher.PushFrame(frame);
+                Thread.Sleep(10);
+            }
+            if (command.IsVisible != visible) throw new Exception($"Command visibility did not become {visible}");
+        }
     }
     [STAThread]
     private static void Main(string[] args)
@@ -126,7 +146,7 @@ internal static class Program
                     using (var stream = File.Create(Path.Combine(args[1], $"{theme}-{name}-{size.Width}.png"))) encoder.Save(stream);
                     if (name == "SuppressPage")
                     {
-                        CheckLogWindow(view);
+                        CheckTaskDetails(view);
                         var pageModel = view.DataContext;
                         var pendingItems = (System.Collections.IList)pageModel.GetType().GetProperty("PendingJobs")!.GetValue(pageModel)!;
                         var finishedItems = (System.Collections.IList)pageModel.GetType().GetProperty("CompletedJobs")!.GetValue(pageModel)!;
@@ -137,7 +157,7 @@ internal static class Program
                             var detailFrame = new DispatcherFrame(); Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () => detailFrame.Continue = false); Dispatcher.PushFrame(detailFrame);
                             background.UpdateLayout();
                             if (!ReferenceEquals(unifiedDetails, FindExecuting(view))) throw new Exception("Detail component replaced on task switch");
-                            CheckLogWindow(view);
+                            CheckTaskDetails(view);
                             var details = new RenderTargetBitmap((int)content.ActualWidth, (int)content.ActualHeight, 96, 96, PixelFormats.Pbgra32); details.Render(background);
                             var detailEncoder = new PngBitmapEncoder(); detailEncoder.Frames.Add(BitmapFrame.Create(details));
                             using var detailStream = File.Create(Path.Combine(args[1], $"{theme}-SuppressPage-{size.Width}-{selection.Item1}.png")); detailEncoder.Save(detailStream);

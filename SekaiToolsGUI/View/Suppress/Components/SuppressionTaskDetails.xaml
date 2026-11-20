@@ -78,7 +78,7 @@
                     <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Expander Margin="0,0,0,8" AutomationProperties.AutomationId="Encoding.AdvancedDetails"
+                <Expander x:Name="AdvancedDetails" Margin="0,0,0,8" AutomationProperties.AutomationId="Encoding.AdvancedDetails"
                           AutomationProperties.Name="高级详情">
                     <Expander.Header>
                         <StackPanel Orientation="Horizontal">
@@ -88,7 +88,7 @@
                     </Expander.Header>
                     <StackPanel Margin="0,6,0,0">
                         <TextBlock Text="FFmpeg 参数" FontWeight="SemiBold" Margin="0,0,0,6" />
-                        <TextBox Text="{Binding FfmpegCommandDisplay, Mode=OneWay}"
+                        <TextBox x:Name="CommandTextBox" Text="{Binding FfmpegCommandDisplay, Mode=OneWay}"
                                  IsReadOnly="True" FontFamily="Consolas" MaxHeight="90" TextWrapping="Wrap"
                                  VerticalScrollBarVisibility="Auto" AutomationProperties.Name="FFmpeg 参数"
                                  AutomationProperties.AutomationId="Encoding.FfmpegCommand" />
