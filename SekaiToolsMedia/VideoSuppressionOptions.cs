@@ -75,13 +75,23 @@ public sealed record VideoSuppressionProgress(
 
     public string ElapsedDisplay => $"已用 {FormatDuration(ElapsedSeconds)}";
 
+    public string FrameRateDisplay => double.IsFinite(FramesPerSecond) && FramesPerSecond > 0
+        ? $"{FramesPerSecond:F1} FPS"
+        : "帧率待统计";
+
+    public string FractionDisplay => TotalFrames > 0 ? $"{Fraction:P1}" : "进度待统计";
+
+    public bool ShowIndeterminateProgress => State == VideoSuppressionState.Preparing ||
+                                            (State == VideoSuppressionState.Running && TotalFrames <= 0);
+
     public string RemainingDisplay => State != VideoSuppressionState.Running || IsFinalizing
         ? ""
-        : ElapsedSeconds < 5 || ProcessedFrames < 30 || FramesPerSecond <= 0 || TotalFrames <= 0
+        : !double.IsFinite(ElapsedSeconds) || ElapsedSeconds < 5 || ProcessedFrames < 30 ||
+          !double.IsFinite(FramesPerSecond) || FramesPerSecond <= 0 || TotalFrames <= 0
             ? "剩余时间估算中…"
             : $"预计剩余 {FormatDuration(Math.Clamp((TotalFrames - ProcessedFrames) / FramesPerSecond, 0, 31536000))}";
 
-    public string OutputDisplay => string.IsNullOrWhiteSpace(OutputSize) ? "输出大小待统计" : $"已输出 {OutputSize} · {Speed}";
+    public string OutputDisplay => string.IsNullOrWhiteSpace(OutputSize) ? "输出大小待统计" : $"已输出 {OutputSize}";
 
     public bool Running => State is VideoSuppressionState.Preparing
         or VideoSuppressionState.Running

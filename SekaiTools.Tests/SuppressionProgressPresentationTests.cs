@@ -19,8 +19,25 @@ public class SuppressionProgressPresentationTests
         Assert.Contains("估算中", progress.RemainingDisplay);
         Assert.Contains("估算中",
             (progress with { ProcessedFrames = 100, ElapsedSeconds = 10, TotalFrames = 0 }).RemainingDisplay);
+        Assert.Contains("估算中",
+            (progress with { ProcessedFrames = 100, ElapsedSeconds = 10, FramesPerSecond = double.NaN }).RemainingDisplay);
         Assert.Contains("00:01:30", (progress with { ProcessedFrames = 100, ElapsedSeconds = 10 }).RemainingDisplay);
         Assert.Contains("00:00:00", (progress with { ProcessedFrames = 1100, ElapsedSeconds = 10 }).RemainingDisplay);
+    }
+
+    [Fact]
+    public void MissingSamplesDoNotDisplayZeroProgressOrFrameRate()
+    {
+        var progress = new VideoSuppressionProgress(0, 0, 0, VideoSuppressionState.Preparing, "");
+        Assert.True(progress.ShowIndeterminateProgress);
+        Assert.Equal("进度待统计", progress.FractionDisplay);
+        Assert.Equal("帧率待统计", progress.FrameRateDisplay);
+        Assert.Equal("输出大小待统计", progress.OutputDisplay);
+
+        var running = progress with { State = VideoSuppressionState.Running, TotalFrames = 100, OutputSize = "4 MiB" };
+        Assert.False(running.ShowIndeterminateProgress);
+        Assert.Equal(0, running.Fraction);
+        Assert.Equal("已输出 4 MiB", running.OutputDisplay);
     }
 
     [Theory]

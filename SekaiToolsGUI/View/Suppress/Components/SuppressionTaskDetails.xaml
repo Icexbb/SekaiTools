@@ -20,25 +20,29 @@
                     </Style>
                 </ScrollViewer.Style>
                 <StackPanel>
-                    <TextBlock Text="任务详情" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12" />
                     <DockPanel>
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding ListStatus}" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding ListStatus}" FontWeight="SemiBold"
+                                   Margin="12,0,0,0" VerticalAlignment="Center"
+                                   AutomationProperties.AutomationId="Encoding.TaskStage" />
+                        <TextBlock Text="{Binding FileName}" FontSize="20" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
                                    ToolTip="{Binding SourceVideo}" />
                     </DockPanel>
                     <TextBlock Text="{Binding EncodingDescription}"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4,0,8"
                                TextWrapping="Wrap" />
-                    <WrapPanel>
-                        <TextBlock Text="{Binding Progress.Fraction, StringFormat={}{0:P1}}" Margin="0,0,12,4" />
-                        <TextBlock Text="{Binding Progress.FramesPerSecond, StringFormat={}{0:F1} FPS}"
+                    <WrapPanel Visibility="{c:Binding !IsWaiting, FalseToVisibility=Collapsed}">
+                        <TextBlock Text="{Binding Progress.FractionDisplay}" Margin="0,0,12,4" />
+                        <TextBlock Text="{Binding Progress.FrameRateDisplay}"
                                    Margin="0,0,12,4" />
                         <TextBlock Text="{Binding Progress.ElapsedDisplay}" Margin="0,0,12,4" />
                         <TextBlock Text="{Binding Progress.RemainingDisplay}" Margin="0,0,12,4" />
                         <TextBlock Text="{Binding Progress.OutputDisplay}" Margin="0,0,0,4" />
+                        <TextBlock Text="{Binding Progress.Speed}" Margin="12,0,0,4"
+                                   Visibility="{c:Binding 'Progress.Speed.Length > 0', FalseToVisibility=Collapsed}" />
                     </WrapPanel>
                     <ProgressBar Height="5" Maximum="1" Value="{Binding Progress.Fraction, Mode=OneWay}"
-                                 IsIndeterminate="{Binding IsPreparing, Mode=OneWay}" Margin="0,4,0,12" />
+                                 IsIndeterminate="{Binding Progress.ShowIndeterminateProgress, Mode=OneWay}"
+                                 Visibility="{c:Binding !IsWaiting, FalseToVisibility=Collapsed}" Margin="0,4,0,12" />
                     <WrapPanel>
                         <ui:Button Content="开始压制" Icon="{ui:SymbolIcon Play24}" Click="Start_OnClick"
                                    Visibility="{c:Binding IsWaiting, FalseToVisibility=Collapsed}"

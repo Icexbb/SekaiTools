@@ -196,11 +196,13 @@ public class VideoSuppressionTests
         Assert.DoesNotContain("-progress", arguments);
     }
 
-    [Fact]
-    public void 从原始Ffmpeg日志解析进度信息()
+    [Theory]
+    [InlineData("size")]
+    [InlineData("Lsize")]
+    public void 从原始Ffmpeg日志解析进度信息(string sizeField)
     {
-        const string log =
-            "frame=  125 fps=48.25 q=24.0 size=1024KiB time=00:00:05.20 bitrate=1613.2kbits/s speed=1.20x";
+        var log =
+            $"frame=  125 fps=48.25 q=24.0 {sizeField}= 1024KiB time=00:00:05.20 bitrate=1613.2kbits/s speed=1.20x";
 
         var parsed = VideoSuppressor.TryParseFfmpegProgress(log, out var progress);
 

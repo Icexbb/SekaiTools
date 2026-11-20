@@ -506,7 +506,7 @@ public sealed partial class VideoSuppressor(IMediaResourceProvider resourceProvi
     [GeneratedRegex(@"(?:^|\s)speed=\s*(?<Value>\S+)")]
     private static partial Regex SpeedPattern();
 
-    [GeneratedRegex(@"(?:^|\s)size=\s*(?<Value>\S+)")]
+    [GeneratedRegex(@"(?:^|\s)L?size=\s*(?<Value>\S+)")]
     private static partial Regex SizePattern();
 
     [GeneratedRegex(@"(?:^|\s)time=\s*(?<Value>\S+)")]
