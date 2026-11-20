@@ -38,6 +38,7 @@ public partial class SuppressionTaskDialog : ContentDialog
             PrimaryButtonText = "继续覆盖",
             CloseButtonText = "返回修改"
         };
+        System.Windows.Automation.AutomationProperties.SetAutomationId(confirmation, "Encoding.OverwriteConfirmation");
         return await confirmation.ShowDialogAsync() == Wpf.Ui.Controls.MessageBoxResult.Primary;
     }
 

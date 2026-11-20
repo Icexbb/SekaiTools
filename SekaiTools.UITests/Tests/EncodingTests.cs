@@ -149,6 +149,45 @@ public sealed class EncodingTests
             ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), burnSubtitle ? "Encoding.Burned" : "Encoding.Completed");
             app.Data.WriteJson("fixture-requests", server.Requests.ToArray());
         });
+        if (!burnSubtitle)
+        {
+            app.Step("筛选与重试", "完成筛选正确，取消覆盖保留旧文件，授权后重试生成可解码视频", () =>
+            {
+                var window = app.Window!;
+                var filter = app.Finder.ById(window, "Encoding.CompletedFilter").AsComboBox();
+                filter.Select(2);
+                WaitHelper.Until(() => FindTask() is null, "失败筛选隐藏成功任务");
+                filter.Select(1);
+                WaitHelper.Until(FindTask, "成功筛选显示已完成任务").AsButton().Invoke();
+                var retry = WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByName("修改后重试")
+                    .And(cf.ByControlType(ControlType.Button))), "已完成任务的重试入口");
+                var output = Path.Combine(app.Data.Root, "[STVS]input.mp4");
+                byte[] previous = [1, 2, 3, 4];
+                File.WriteAllBytes(output, previous);
+                retry.AsButton().Invoke();
+                var dialog = app.Finder.ById(window, "Encoding.AddTaskDialog");
+                var submit = WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("添加任务")
+                    .And(cf.ByControlType(ControlType.Button))), "重试提交按钮").AsButton();
+                WaitHelper.Until(() => submit.IsEnabled, "重试素材分析完成");
+                submit.Invoke();
+                var confirmation = app.OwnedWindow("Encoding.OverwriteConfirmation");
+                WaitHelper.Until(() => confirmation.FindFirstDescendant(cf => cf.ByName("返回修改")
+                    .And(cf.ByControlType(ControlType.Button))), "拒绝覆盖").AsButton().Invoke();
+                WaitHelper.Until(() => submit.IsEnabled, "返回编辑压制任务");
+                Assert.Equal(previous, File.ReadAllBytes(output));
+                submit.Invoke();
+                confirmation = app.OwnedWindow("Encoding.OverwriteConfirmation");
+                WaitHelper.Until(() => confirmation.FindFirstDescendant(cf => cf.ByName("继续覆盖")
+                    .And(cf.ByControlType(ControlType.Button))), "授权覆盖").AsButton().Invoke();
+                WaitHelper.Until(() => new FileInfo(output).Length > previous.Length, "重试成功后替换旧文件", TimeSpan.FromSeconds(60));
+                FfmpegFixture.Run(Path.Combine(pack, "ffmpeg.exe"), Path.Combine(app.Data.Directory, "decode-retry.log"),
+                    "-v", "error", "-xerror", "-i", output, "-f", "null", "-");
+                Assert.Equal(inputHash, SHA256.HashData(File.ReadAllBytes(video)));
+
+                AutomationElement? FindTask() => window.FindFirstDescendant(cf => cf.ByName("input.mp4")
+                    .And(cf.ByControlType(ControlType.Button)));
+            });
+        }
         app.Step("退出", "转码后正常退出", app.Close);
 
         byte[] ReadCenterPixel(string source, string name)

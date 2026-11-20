@@ -64,6 +64,7 @@
                         <TextBlock Text="已结束任务" Style="{StaticResource SectionHeader}"
                                    Visibility="{c:Binding 'CompletedJobs.Count > 0', FalseToVisibility=Collapsed}" />
                         <ComboBox SelectedIndex="{Binding CompletedFilter, Mode=TwoWay}" Margin="0,0,6,8"
+                                  AutomationProperties.AutomationId="Encoding.CompletedFilter"
                                   AutomationProperties.Name="结束任务状态筛选"
                                   Visibility="{c:Binding 'CompletedJobs.Count > 0', FalseToVisibility=Collapsed}">
                             <ComboBoxItem Content="全部状态" /><ComboBoxItem Content="成功" /><ComboBoxItem Content="失败" />
