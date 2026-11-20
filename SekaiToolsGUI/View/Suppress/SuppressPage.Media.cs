@@ -9,6 +9,7 @@ namespace SekaiToolsGUI.View.Suppress;
 public partial class SuppressPage
 {
     private static bool _shuttingDown;
+    internal Func<string, SuppressionStorageCheck> InspectStorage { get; init; } = SuppressionStorageCheck.Inspect;
 
     private static readonly VideoSuppressionQueue Queue = new(async (options, report, token) =>
     {
@@ -45,7 +46,7 @@ public partial class SuppressPage
 
         try
         {
-            var storage = await Task.Run(() => SuppressionStorageCheck.Inspect(model.Job.Options.SourceVideo));
+            var storage = await Task.Run(() => InspectStorage(model.Job.Options.SourceVideo));
             if (storage.NeedsWarning && !_shuttingDown && model.Progress.State == VideoSuppressionState.Preparing)
             {
                 var confirmation = new Wpf.Ui.Controls.MessageBox

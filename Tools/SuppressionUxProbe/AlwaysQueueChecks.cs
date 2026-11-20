@@ -3,6 +3,10 @@ using System.IO;
 using Expression = System.Linq.Expressions.Expression;
 using System.Reflection;
 using System.Windows;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
+using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Threading;
 
 internal sealed class AlwaysQueueChecks
@@ -30,7 +34,7 @@ internal sealed class AlwaysQueueChecks
             var frame = new DispatcherFrame(); Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () => frame.Continue = false); Dispatcher.PushFrame(frame); Thread.Sleep(5);
         }
     }
-    internal static void Run(Assembly gui, string output)
+    internal static void Run(Assembly gui, string output, bool checkStorage = false)
     {
         foreach (var cancelFirst in new[] { false, true })
         {
@@ -54,6 +58,24 @@ internal sealed class AlwaysQueueChecks
             var finished = (IList)modelType.GetProperty("CompletedJobs")!.GetValue(model)!;
             try
             {
+                if (checkStorage)
+                {
+                    var property = pageType.GetProperty("InspectStorage", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                    var sourcePath = Expression.Parameter(typeof(string));
+                    var storageType = property.PropertyType.GetMethod("Invoke")!.ReturnType;
+                    var storage = New(storageType, directory, 0L, 2L * 1024 * 1024 * 1024);
+                    property.SetValue(page, Expression.Lambda(property.PropertyType, Expression.Constant(storage), sourcePath).Compile());
+                    RespondToStorageWarning("暂不压制", () => Add("first.mp4"));
+                    Wait(() => pending.Count == 1 && modelType.GetProperty("RunningJob")!.GetValue(model) == null);
+                    lock (check._started) if (check._started.Count != 0) throw new Exception("Declined task started encoding");
+                    RespondToStorageWarning("仍然压制", () =>
+                        pageType.GetMethod("StartJob", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(page, [pending[0]]));
+                    Wait(() => { lock (check._started) return check._started.SequenceEqual(new[] { "first.mp4" }); });
+                    check._release.SetResult();
+                    Wait(() => finished.Count == 1);
+                    Console.WriteLine("Storage warning passed: decline restores pending job, confirmation starts the same job.");
+                    return;
+                }
                 Add("first.mp4"); Wait(() => { lock (check._started) return check._started.Count == 1; });
                 Add("second.mp4"); Add("fail.mp4"); Add("last.mp4");
                 if (pending.Count != 3) throw new Exception("Jobs did not wait behind active task");
@@ -73,5 +95,61 @@ internal sealed class AlwaysQueueChecks
             }
             finally { check._release.TrySetResult(); queueType.GetMethod("Dispose")!.Invoke(queue, null); }
         }
+    }
+
+    private static void RespondToStorageWarning(string choice, Action start)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(8);
+        var responded = false;
+        Exception? failure = null;
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(30) };
+        timer.Tick += (_, _) =>
+        {
+            var warning = Application.Current.Windows.Cast<Window>()
+                .FirstOrDefault(window => window.IsVisible && window.Title == "压制临时目录空间风险");
+            if (warning == null || FindButton(warning, choice) is not { } button)
+            {
+                if (DateTime.UtcNow < deadline) return;
+                timer.Stop();
+                failure = new TimeoutException($"Storage warning did not expose '{choice}'");
+                warning?.Close();
+                return;
+            }
+
+            timer.Stop();
+            try
+            {
+                var content = warning.Content?.ToString() ?? "";
+                if (!content.Contains("当前可用：0.00 GiB") || !content.Contains("建议可用空间：至少 2.00 GiB"))
+                    throw new Exception("Storage warning did not show controlled free space and recommendation");
+                var peer = UIElementAutomationPeer.CreatePeerForElement(button);
+                ((IInvokeProvider)peer!.GetPattern(PatternInterface.Invoke)!).Invoke();
+                responded = true;
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+                warning.Close();
+            }
+        };
+        timer.Start();
+        try
+        {
+            start();
+            Wait(() => responded || failure != null);
+            if (failure != null) throw failure;
+        }
+        finally
+        {
+            timer.Stop();
+        }
+    }
+
+    private static Button? FindButton(DependencyObject element, string content)
+    {
+        if (element is Button button && Equals(button.Content, content)) return button;
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(element); index++)
+            if (FindButton(VisualTreeHelper.GetChild(element, index), content) is { } match) return match;
+        return null;
     }
 }

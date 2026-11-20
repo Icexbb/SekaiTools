@@ -80,6 +80,30 @@ internal static class Program
             app.Resources.MergedDictionaries.Add(themes);
             app.Resources.MergedDictionaries.Add((ResourceDictionary)Activator.CreateInstance(wpf.GetType("Wpf.Ui.Markup.ControlsDictionary", true)!)!);
             app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/SekaiToolsGUI;component/Converter/Converters.xaml", UriKind.Relative) });
+            if (args.Length > 2 && args[2] == "storage")
+            {
+                var owner = new Window
+                {
+                    Width = 640,
+                    Height = 480,
+                    Left = -15000,
+                    Top = -15000,
+                    ShowInTaskbar = false,
+                    Style = new Style(typeof(Window))
+                };
+                app.MainWindow = owner;
+                owner.Show();
+                try
+                {
+                    AlwaysQueueChecks.Run(gui, args[1], checkStorage: true);
+                }
+                finally
+                {
+                    owner.Close();
+                    app.Shutdown();
+                }
+                return;
+            }
             foreach (var name in new[] { "SuppressPage", "Components.SuppressTaskSettings" })
                 foreach (var size in new[] { (Width: 1200, Height: 850), (Width: 800, Height: 540) })
                 {
