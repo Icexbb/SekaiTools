@@ -144,13 +144,15 @@ UI-RESOURCE-001 在隔离环境启动仅绑定 loopback 随机端口的 HTTP fix
 
 ## 下载页与受控失败基线
 
-UI-DOWNLOAD-001 使用 LoopbackHttpFixture 提供有效数据源列表及单条主线剧情数据，通过真实刷新按钮加载条目、搜索无匹配内容并恢复。新增 StoryDownload.SearchBox、StoryDownload.RefreshButton 和 StoryDownload.EmptyMessage 契约。请求日志记录实际本地请求；未映射路由返回503，避免意外成功。该场景不等同于五类完整内容；其余分类的非空内容 fixture 仍需继续交付。
+UI-DOWNLOAD-001 使用 LoopbackHttpFixture 提供有效数据源列表及单条主线剧情数据，通过真实刷新按钮加载条目、搜索无匹配内容并恢复。查询入口使用 `StoryDownload.SearchBox`、`StoryDownload.RefreshButton` 和 `StoryDownload.EmptyMessage`。请求日志记录实际本地请求，未映射路由返回 HTTP 503。
 
 下载基线进一步通过 UIA 勾选/取消全选、加入队列和开始下载，获取本地合成剧本并核对隔离 Scripts 目录中的实际文件、原始响应内容和解析后的 ScenarioId/对白。清空队列后再次核对文件仍存在且内容不变。新增 StoryDownload.SelectResults、AddSelectedButton、StartDownloadButton、ClearQueueButton（均带 StoryDownload. 前缀）。全选逻辑响应 Checked/Unchecked，界面刷新回写状态时使用保护标志避免递归误选；鼠标、键盘和 UIA 共用选择规则。
 
 同一用例先为资产请求返回503，验证下载失败与目录无残留；通过 StoryDownload.Task.RetryButton 重试后，fixture 在响应头发送前等待有界信号，确认实际请求已到达，再使用主按钮停止下载，验证已停止及目录仍无残留。释放响应后再次重试，正常获取并解析剧本。重试 ID 在单个任务容器内唯一；本用例仅有一个任务。报告包含失败、停止及成功截图和请求序列。该场景覆盖等待服务器响应时取消，不代表响应正文传输中取消、多任务并发、覆盖或各种HTTP状态矩阵。
 
-下载基线已扩展至五类切换：活动、特殊、角色及地图对话通过正常 HTTP 200 返回空数组，实际刷新各类数据并确认空结果；搜索词跨分类保持，返回主线可恢复非空样本并继续下载。分类入口契约为 StoryDownload.Category.Unit/Event/Special/Card/Action，内容根为 StoryDownload.Unit/Event/Special/Card/Action.Root（各后缀分别使用）。这些空数组仅验证对应分类空数据加载，不代表其非空业务内容、地图活动关联或完整元数据矩阵已验收。
+UI-DOWNLOAD-001 以空数组验证活动、特殊、角色及地图对话的空列表，核对搜索词跨分类保持。宽窗口由 `StoryDownload.QueueResizeGrip` 拖动队列，拖到窗口边缘时保留浏览空间。`StoryDownload.ToggleQueue` 在宽窄窗口均可使用。测试还通过 `StoryDownload.ChooseDirectory` 打开原生目录选择器，验证新下载写入新目录，旧文件原地保留。`StoryDownload.OpenFolder` 打开新目录的资源管理器窗口，可找到刚下载的剧本。翻译页使用已有的剧本选择器读取下载文件并核对原文。
+
+UI-DOWNLOAD-002 为活动章节、特殊剧情、角色卡片和地图对话提供非空样本，逐类按剧本名搜索并加入下载队列。地图对话额外验证活动关联、筛选及可选活动元数据请求失败后的提示和可下载性。通过 `StoryDownload.Source` 切换两个本机来源，验证首次空列表、HTTP 503 提示、重新刷新、切回已有缓存及通过 `StoryDownload.ClearCache` 清除两套缓存。分类入口为 `StoryDownload.Category.Unit/Event/Special/Card/Action`，内容根为 `StoryDownload.Unit/Event/Special/Card/Action.Root`，各后缀分别使用。两个用例均将应用网络端点指向本机，包含分类截图与请求记录。
 
 ## 真实字幕资源包
 
