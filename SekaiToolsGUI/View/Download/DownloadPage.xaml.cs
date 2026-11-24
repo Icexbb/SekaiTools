@@ -302,6 +302,8 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         if (BrowserBar == null) return;
         _searchTimer.Stop();
         _searchTimer.Start();
+        SelectResultsBox.IsEnabled = false;
+        AddSelectedButton.IsEnabled = false;
     }
 
     private void ApplyBrowserSearch()
@@ -340,7 +342,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         foreach (var key in _selectedDownloads.Keys.Where(IsDownloadQueued).ToArray()) _selectedDownloads.Remove(key);
         BrowserResultText.Text = $"{_browserResults.Count} 项结果 · 已选 {_selectedDownloads.Count}";
         var available = _browserResults.Where(candidate => !IsDownloadQueued(candidate.Url)).ToArray();
-        SelectResultsBox.IsEnabled = available.Length > 0;
+        SelectResultsBox.IsEnabled = !_searchTimer.IsEnabled && available.Length > 0;
         _updatingResultSelection = true;
         try
         {
@@ -348,7 +350,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
                                          available.All(candidate => _selectedDownloads.ContainsKey(candidate.Url));
         }
         finally { _updatingResultSelection = false; }
-        AddSelectedButton.IsEnabled = _selectedDownloads.Count > 0;
+        AddSelectedButton.IsEnabled = !_searchTimer.IsEnabled && _selectedDownloads.Count > 0;
         AddSelectedText.Text = $"加入已选（{_selectedDownloads.Count}）";
     }
 
@@ -398,7 +400,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 
     private void SelectResults_OnCheckedChanged(object sender, RoutedEventArgs e)
     {
-        if (_updatingResultSelection) return;
+        if (_updatingResultSelection || _searchTimer.IsEnabled) return;
         var select = SelectResultsBox.IsChecked == true;
         foreach (var candidate in _browserResults)
             if (select && !IsDownloadQueued(candidate.Url)) _selectedDownloads[candidate.Url] = candidate;
@@ -409,6 +411,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 
     private void AddSelected_OnClick(object sender, RoutedEventArgs e)
     {
+        if (_searchTimer.IsEnabled) return;
         var selected = _selectedDownloads.Values.ToArray();
         AddTasks(selected);
         UpdateBrowserSelection();
