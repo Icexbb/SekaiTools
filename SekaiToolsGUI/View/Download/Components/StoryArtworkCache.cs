@@ -1,6 +1,7 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Extensions.Logging;
 using SekaiDataFetch;
@@ -15,6 +16,8 @@ internal static class StoryArtworkCache
     private static readonly ILogger Logger = SekaiToolsBase.Logger.CreateLogger(nameof(StoryArtworkCache));
     private static readonly SemaphoreSlim ThumbnailSlots = new(4);
     private static readonly Fetcher ThumbnailFetcher = new();
+    private const int ThumbnailWidth = 320;
+    private const int CardPreviewWidth = 768;
 
     internal static async Task<BitmapSource?> LoadThumbnailAsync(IReadOnlyList<Uri> urls, CancellationToken token, string cacheName)
     {
@@ -26,7 +29,7 @@ internal static class StoryArtworkCache
             {
                 ThumbnailFetcher.SetProxy(SettingPageModel.Instance.GetProxy());
                 return await DownloadSources.TryAsync(urls,
-                    (uri, cancellation) => LoadAsync(ThumbnailFetcher, uri, cancellation, cacheName, decodeWidth: 320), token);
+                    (uri, cancellation) => LoadAsync(ThumbnailFetcher, uri, cancellation, cacheName, ThumbnailWidth), token);
             }
             finally
             {
@@ -46,6 +49,7 @@ internal static class StoryArtworkCache
 
     internal static async Task<BitmapSource> LoadAsync(Fetcher fetcher, Uri uri, CancellationToken token, string cacheName, int decodeWidth = 0)
     {
+        var cacheWidth = cacheName == "EventBannerCache" ? ThumbnailWidth : CardPreviewWidth;
         var directory = Path.Combine(ApplicationPaths.Current.DataRoot, "Data", cacheName);
         var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(uri.AbsoluteUri)));
         var path = Path.Combine(directory, key + ".png");
@@ -53,7 +57,13 @@ internal static class StoryArtworkCache
         {
             try
             {
-                return Decode(await File.ReadAllBytesAsync(path, token).ConfigureAwait(false), decodeWidth);
+                var cached = Decode(await File.ReadAllBytesAsync(path, token).ConfigureAwait(false));
+                if (cached.PixelWidth > cacheWidth)
+                {
+                    cached = Resize(cached, cacheWidth);
+                    await WriteCacheAsync(cached).ConfigureAwait(false);
+                }
+                return Resize(cached, decodeWidth);
             }
             catch (Exception error) when (error is IOException or FileFormatException or NotSupportedException)
             {
@@ -66,35 +76,54 @@ internal static class StoryArtworkCache
         BitmapSource bitmap;
         try
         {
-            bitmap = Decode(bytes, decodeWidth);
+            bitmap = Resize(Decode(bytes), cacheWidth);
         }
         catch (Exception error) when (error is FileFormatException or NotSupportedException or IOException)
         {
             throw new InvalidDataException($"下载源返回的图片无效：{uri}", error);
         }
-        Directory.CreateDirectory(directory);
-        var temporary = Path.Combine(directory, key + "." + Guid.NewGuid().ToString("N") + ".tmp");
-        try
+        await WriteCacheAsync(bitmap).ConfigureAwait(false);
+        return Resize(bitmap, decodeWidth);
+
+        async Task WriteCacheAsync(BitmapSource image)
         {
-            await File.WriteAllBytesAsync(temporary, bytes, token).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
-            File.Move(temporary, path, overwrite: true);
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(image));
+            using var encoded = new MemoryStream();
+            encoder.Save(encoded);
+
+            Directory.CreateDirectory(directory);
+            var temporary = Path.Combine(directory, key + "." + Guid.NewGuid().ToString("N") + ".tmp");
+            try
+            {
+                await File.WriteAllBytesAsync(temporary, encoded.ToArray(), token).ConfigureAwait(false);
+                token.ThrowIfCancellationRequested();
+                File.Move(temporary, path, overwrite: true);
+            }
+            finally
+            {
+                File.Delete(temporary);
+            }
         }
-        finally
-        {
-            File.Delete(temporary);
-        }
-        return bitmap;
     }
 
-    private static BitmapSource Decode(byte[] bytes, int decodeWidth)
+    private static BitmapSource Resize(BitmapSource image, int maxWidth)
+    {
+        if (maxWidth <= 0 || image.PixelWidth <= maxWidth) return image;
+        var scale = (double)maxWidth / image.PixelWidth;
+        var resized = new TransformedBitmap(image, new ScaleTransform(scale, scale));
+        resized.Freeze();
+        return resized;
+    }
+
+    private static BitmapSource Decode(byte[] bytes)
     {
         using var stream = new MemoryStream(bytes, writable: false);
         var image = new BitmapImage();
         image.BeginInit();
         image.CacheOption = BitmapCacheOption.OnLoad;
         image.StreamSource = stream;
-        image.DecodePixelWidth = decodeWidth;
         image.EndInit();
         image.Freeze();
         return image;
