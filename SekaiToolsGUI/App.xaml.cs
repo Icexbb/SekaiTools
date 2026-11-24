@@ -90,7 +90,8 @@ public partial class App : Application
 
     private static bool DeferStartupForUpdate()
     {
-        if (Environment.GetEnvironmentVariable(UpdatePaths.SkipUpdate) is not null) return false;
+        if (SekaiToolsConfiguration.ApplicationPaths.Current.IsIsolated ||
+            Environment.GetEnvironmentVariable(UpdatePaths.SkipUpdate) is not null) return false;
         var install = AppContext.BaseDirectory;
         var work = UpdatePaths.WorkDirectory(install);
         if (!Directory.Exists(work)) return false;

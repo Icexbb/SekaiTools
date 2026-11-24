@@ -40,8 +40,9 @@ public partial class MainWindow
     private async Task PrepareUpdateAsync(CancellationToken cancellationToken)
     {
         var install = AppContext.BaseDirectory;
-        if (!File.Exists(Path.Combine(install, "tools", "updater", "Updater.exe"))) return;
-        var stage = Path.Combine(UpdatePaths.WorkDirectory(install), "stage-" + Guid.NewGuid().ToString("N"));
+        var testRoot = SekaiToolsConfiguration.ApplicationPaths.Current.TestRoot;
+        if (testRoot is null && !File.Exists(Path.Combine(install, "tools", "updater", "Updater.exe"))) return;
+        var stage = Path.Combine(testRoot ?? UpdatePaths.WorkDirectory(install), "stage-" + Guid.NewGuid().ToString("N"));
         try
         {
             var proxy = SettingPageModel.Instance.GetProxy();
@@ -98,7 +99,7 @@ public partial class MainWindow
 
     private void RestartForUpdate_Click(object sender, RoutedEventArgs e)
     {
-        if (_closeInProgress || _updateStage is null) return;
+        if (_closeInProgress || _updateStage is null || SekaiToolsConfiguration.ApplicationPaths.Current.IsIsolated) return;
         _restartForUpdate = true;
         Close();
     }
