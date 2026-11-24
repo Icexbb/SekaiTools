@@ -116,6 +116,11 @@ public sealed class StoryDownloadCatalogTests
         app.Step("打开下载页", "只访问本机剧情样本服务", () =>
         {
             app.Start();
+            app.Navigate(Catalog.SettingsNavigation, Catalog.Settings);
+            var mode = app.Finder.ById(app.Window!, "Settings.Field.DownloadSourceMode").AsComboBox();
+            Assert.Equal("自动选择下载源", mode.SelectedItem?.Name);
+            mode.Select(0);
+            mode.Collapse();
             app.Navigate("MainWindow.Navigation.StoryDownload", "StoryDownload.Root");
             WaitHelper.Until(() => server.Requests.Any(request => request.Contains("/sources.json ")), "收到数据源请求");
         });

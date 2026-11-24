@@ -24,7 +24,7 @@ public struct Setting
 
     public string DownloadDirectory { get; init; } = Path.Combine(
         ResourceManager.DataBaseDir, "Scripts");
-    public int DownloadSourceMode { get; init; }
+    public int DownloadSourceMode { get; init; } = 1;
 
     public int TranslationNewlineMarker { get; init; } = 0;
 
