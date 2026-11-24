@@ -24,11 +24,13 @@ public sealed class StoryDownloadCatalogTests
         using var endpoints = JsonDocument.Parse(File.ReadAllText(config));
         var sources = JsonNode.Parse(endpoints.RootElement.GetProperty("defaultDataSources").GetRawText())!.AsArray();
         sources[0]!["MemberStoryTemplate"] = "character/member/{abName}/{scenarioId}.asset";
+        sources[0]!["EventBannerUrl"] = "home/banner/{assetbundleName}/{assetbundleName}.png";
         var alternate = sources[0]!.DeepClone();
         alternate["SourceName"] = "UI Alternate Fixture";
         alternate["SourceTemplate"] = $"http://127.0.0.1:{server.Port}/alternate/{{type}}.json";
         alternate["StorageBaseUrl"] = $"http://127.0.0.1:{server.Port}/alternate-assets/";
         alternate["MemberStoryTemplate"] = "mirror/cards/{abName}/{scenarioId}.json";
+        alternate["EventBannerUrl"] = "event_story/{abName}/banner.png";
         sources.Add(alternate);
         var sourceResponse = sources.ToJsonString();
         var missingActivityMetadata = 0;
@@ -42,6 +44,14 @@ public sealed class StoryDownloadCatalogTests
         using var png = new MemoryStream();
         artwork.Save(png, System.Drawing.Imaging.ImageFormat.Png);
         var imageBytes = png.ToArray();
+        using var banner = new System.Drawing.Bitmap(488, 208);
+        using (var graphics = System.Drawing.Graphics.FromImage(banner))
+            graphics.Clear(System.Drawing.Color.CornflowerBlue);
+        using var bannerPng = new MemoryStream();
+        banner.Save(bannerPng, System.Drawing.Imaging.ImageFormat.Png);
+        var bannerBytes = bannerPng.ToArray();
+        const string primaryBanner = "/assets/home/banner/event-home/event-home.png";
+        const string alternateBanner = "/alternate-assets/event_story/event-bundle/banner.png";
         const string artworkPath = "/assets/character/member/res005_no056/";
         var catalog = new Dictionary<string, string>
         {
@@ -60,7 +70,7 @@ public sealed class StoryDownloadCatalogTests
             } }),
             ["events"] = JsonSerializer.Serialize(new[] { new GameEvent
             {
-                Id = 1, Name = "Fixture Activity", AssetBundleName = "event-bundle", EventType = "marathon"
+                Id = 1, Name = "Fixture Activity", AssetBundleName = "event-home", EventType = "marathon"
             } }),
             ["worldBlooms"] = "[]",
             ["specialStories"] = JsonSerializer.Serialize(new[] { new SpecialStory
@@ -93,6 +103,7 @@ public sealed class StoryDownloadCatalogTests
             } })
         };
         server.BinaryResponse = request =>
+            request.Contains(alternateBanner + " ", StringComparison.Ordinal) ? bannerBytes :
             (request.Contains(artworkPath) || request.Contains("/assets/character/member/res005_no001/card_normal.png "))
             && request.Contains(".png ") ? imageBytes : null;
         server.Response = request =>
@@ -149,7 +160,22 @@ public sealed class StoryDownloadCatalogTests
                 if (category == "Card") VerifyArtwork();
                 if (category == "Event")
                 {
+                    VerifyBanner();
+                    Assert.Contains(server.Requests, request => request.Contains(primaryBanner + " ", StringComparison.Ordinal));
+                    var bannerRequests = server.Requests.Count(request => request.Contains(alternateBanner + " ", StringComparison.Ordinal));
+                    Assert.Equal(1, bannerRequests);
+                    var cache = Path.Combine(app.Data.Paths.DataRoot, "Data", "EventBannerCache");
+                    using (var cachedBanner = System.Drawing.Image.FromFile(Assert.Single(Directory.GetFiles(cache, "*.png"))))
+                    {
+                        Assert.Equal(320, cachedBanner.Width);
+                        Assert.InRange(cachedBanner.Height, 135, 137);
+                    }
+                    search.Text = "no-such-activity";
+                    WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByAutomationId("StoryDownload.Event.Banner")) == null,
+                        "筛选后卸载活动横幅");
                     search.Text = "event-fixture";
+                    VerifyBanner();
+                    Assert.Equal(bannerRequests, server.Requests.Count(request => request.Contains(alternateBanner + " ", StringComparison.Ordinal)));
                     var eventRoot = app.Finder.ById(app.Window!, "StoryDownload.Event.Root");
                     WaitHelper.Until(() =>
                     {
@@ -159,6 +185,31 @@ public sealed class StoryDownloadCatalogTests
                         return titles.Length == 5 && titles.Min() > 0 && titles.Max() - titles.Min() <= 2;
                     }, "活动章节标题等宽，容纳不同位数编号");
                     ScreenshotHelper.Capture(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download.EventAligned");
+                    var window = app.Window!;
+                    var original = window.BoundingRectangle;
+                    var transform = window.Patterns.Transform.Pattern;
+                    try
+                    {
+                        transform.Resize(960, 600);
+                        WaitHelper.Until(() => window.BoundingRectangle.Width < original.Width || original.Width <= 960,
+                            "活动页切换至窄窗口");
+                        VerifyBanner();
+                        var addAll = window.FindFirstDescendant(cf => cf.ByName("添加本活动全部章节"));
+                        Assert.NotNull(addAll);
+                        Assert.False(addAll.IsOffscreen);
+                        Assert.True(window.BoundingRectangle.Contains(addAll.BoundingRectangle));
+                        ScreenshotHelper.Capture(window, Path.Combine(app.Data.Directory, "Screenshots"), "Download.EventBanner.Narrow");
+                    }
+                    finally
+                    {
+                        transform.Resize(original.Width, original.Height);
+                    }
+
+                    void VerifyBanner()
+                    {
+                        WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByAutomationId("StoryDownload.Event.Banner"))
+                            is { IsOffscreen: false, Name: "Fixture Activity" }, "活动卡片显示横幅");
+                    }
                 }
                 search.Text = scenario;
                 var choiceId = FindChoice(category, choiceLabel).AutomationId;
