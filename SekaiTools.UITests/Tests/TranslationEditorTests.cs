@@ -18,6 +18,8 @@ public sealed class TranslationEditorTests
     public void UI_TRANSLATION_002_组合筛选编辑保持身份和导出顺序()
     {
         using var app = new ApplicationFixture("UI-TRANSLATION-002", "Functional");
+        using var resources = new LoopbackHttpFixture();
+        ResourcePackFixture.ServeWorkbench(app, resources);
         var scriptPath = Path.Combine(app.Data.Root, "multiple.json");
         File.WriteAllText(scriptPath, JsonSerializer.Serialize(new GameScript
         {
@@ -49,7 +51,7 @@ public sealed class TranslationEditorTests
             app.Finder.ById(app.Window!, "Translation.SearchBox").AsTextBox().Text = "原文丙";
             app.Finder.ById(app.Window!, "Translation.Dialog.3.TargetText").AsTextBox().Text = "第三译文。";
         });
-        app.Step("离页草稿与缓存", "离开翻译页写入实际草稿，返回保留搜索和编辑", () =>
+        app.Step("跨全部模块后返回翻译", "切换四个模块期间草稿已落盘，返回保留搜索和编辑", () =>
         {
             app.Navigate(Catalog.SettingsNavigation, Catalog.Settings);
             var draft = Path.Combine(app.Data.Paths.DataRoot, "Data", "translation-draft.json");
@@ -60,6 +62,11 @@ public sealed class TranslationEditorTests
             Assert.Contains("第二译文。", values);
             Assert.Contains("第三译文。", values);
             Assert.Equal(scriptPath, json.RootElement.GetProperty("ScriptPath").GetString());
+            app.Navigate(Catalog.DownloadNavigation, "StoryDownload.Root");
+            app.Navigate(Catalog.SubtitleNavigation, "Subtitle.Root");
+            WaitHelper.Until(() => app.Finder.ById(app.Window!, "Subtitle.AddTaskButton").IsEnabled, "字幕资源就绪", TimeSpan.FromSeconds(50));
+            app.Navigate(Catalog.EncodingNavigation, "Encoding.Root");
+            WaitHelper.Until(() => app.Finder.ById(app.Window!, "Encoding.AddTaskButton").IsEnabled, "压制资源就绪", TimeSpan.FromSeconds(50));
             app.Navigate(Catalog.TranslationNavigation, Catalog.Translation);
             Assert.Equal("原文丙", app.Finder.ById(app.Window!, "Translation.SearchBox").AsTextBox().Text);
             Assert.Equal("第三译文。", app.Finder.ById(app.Window!, "Translation.Dialog.3.TargetText").AsTextBox().Text);
