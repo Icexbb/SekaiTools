@@ -133,7 +133,7 @@ public sealed class ApplicationFixture : IDisposable
     public void Navigate(string navigationId, string pageId)
     {
         Window!.SetForeground();
-        ScreenshotHelper.CaptureStable(Window, Path.Combine(Data.Directory, "Screenshots"), "BeforeNavigation");
+        ScreenshotHelper.Capture(Window, Path.Combine(Data.Directory, "Screenshots"), "BeforeNavigation");
         var item = Finder.ById(Window!, navigationId);
         // WPF-UI 4.3 exposes these as data-item peers without Invoke/SelectionItem.
         // Use the located item's keyboard activation; no fixed screen coordinates.
