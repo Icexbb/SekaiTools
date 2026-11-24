@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Extensions.Logging;
 using SekaiDataFetch;
+using SekaiDataFetch.Source;
 using SekaiToolsConfiguration;
 using SekaiToolsGUI.Control;
 using SekaiToolsGUI.ViewModel.Setting;
@@ -30,7 +31,7 @@ internal sealed class CardArtworkDialog : ContentDialog
     };
     private CancellationTokenSource? _request;
 
-    public CardArtworkDialog(string title, Uri normal, Uri? trained)
+    public CardArtworkDialog(string title, IReadOnlyList<Uri> normal, IReadOnlyList<Uri> trained)
     {
         SetResourceReference(StyleProperty, typeof(ContentDialog));
         AdaptiveLayout.SetDialogPurpose(this, DialogPurpose.Workspace);
@@ -45,7 +46,7 @@ internal sealed class CardArtworkDialog : ContentDialog
         panel.RowDefinitions.Add(new RowDefinition());
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
         AddButton("特训前", "Normal", normal);
-        if (trained != null) AddButton("特训后", "Trained", trained);
+        if (trained.Count > 0) AddButton("特训后", "Trained", trained);
         panel.Children.Add(buttons);
         var viewer = new Grid();
         Grid.SetRow(viewer, 1);
@@ -55,11 +56,11 @@ internal sealed class CardArtworkDialog : ContentDialog
         Content = panel;
         Loaded += (_, _) => _ = ShowArtworkAsync(normal, "特训前");
 
-        void AddButton(string label, string id, Uri uri)
+        void AddButton(string label, string id, IReadOnlyList<Uri> urls)
         {
             var button = new Wpf.Ui.Controls.Button { Content = label, Margin = new Thickness(0, 0, 8, 0) };
             AutomationProperties.SetAutomationId(button, $"StoryDownload.CardArtwork.{id}");
-            button.Click += async (_, _) => await ShowArtworkAsync(uri, label);
+            button.Click += async (_, _) => await ShowArtworkAsync(urls, label);
             buttons.Children.Add(button);
         }
     }
@@ -77,7 +78,7 @@ internal sealed class CardArtworkDialog : ContentDialog
         }
     }
 
-    private async Task ShowArtworkAsync(Uri uri, string label)
+    private async Task ShowArtworkAsync(IReadOnlyList<Uri> urls, string label)
     {
         _request?.Cancel();
         using var request = new CancellationTokenSource();
@@ -88,7 +89,8 @@ internal sealed class CardArtworkDialog : ContentDialog
         {
             using var fetcher = new Fetcher();
             fetcher.SetProxy(SettingPageModel.Instance.GetProxy());
-            var bitmap = await LoadAsync(fetcher, uri, request.Token);
+            var bitmap = await DownloadSources.TryAsync(urls, (uri, token) => LoadAsync(fetcher, uri, token),
+                request.Token);
             if (_request != request) return;
             _image.Source = bitmap;
             AutomationProperties.SetName(_image, $"{label}卡图");
@@ -99,7 +101,7 @@ internal sealed class CardArtworkDialog : ContentDialog
         }
         catch (Exception error)
         {
-            Logger.LogWarning(error, "Card artwork preview failed: {Url}", uri);
+            Logger.LogWarning(error, "Card artwork preview failed: {Urls}", string.Join(", ", urls));
             if (_request == request) _status.Text = $"无法加载{label}卡图。点击上方按钮重试。";
         }
         finally
@@ -127,7 +129,15 @@ internal sealed class CardArtworkDialog : ContentDialog
 
         Logger.LogInformation("Downloading card artwork: {Url}", uri);
         var bytes = await fetcher.FetchBytesAsync(uri.AbsoluteUri, token).ConfigureAwait(false);
-        var bitmap = Decode(bytes);
+        BitmapSource bitmap;
+        try
+        {
+            bitmap = Decode(bytes);
+        }
+        catch (Exception error) when (error is FileFormatException or NotSupportedException or IOException)
+        {
+            throw new InvalidDataException($"下载源返回的卡图无效：{uri}", error);
+        }
         Directory.CreateDirectory(directory);
         var temporary = Path.Combine(directory, key + "." + Guid.NewGuid().ToString("N") + ".tmp");
         try

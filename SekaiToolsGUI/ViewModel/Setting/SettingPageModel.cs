@@ -173,6 +173,12 @@ public partial class SettingPageModel : ViewModelBase
         set => SetProperty(value ?? "");
     }
 
+    public int DownloadSourceMode
+    {
+        get => GetProperty(Model.Setting.Default.DownloadSourceMode);
+        set => SetProperty(value == 1 ? 1 : 0);
+    }
+
     public int TypewriterFadeTime
     {
         get => GetProperty(50);
@@ -395,6 +401,7 @@ partial class SettingPageModel
             ProxyHost = Model.Setting.Default.ProxyHost;
             ProxyPort = Model.Setting.Default.ProxyPort;
             DownloadDirectory = Model.Setting.Default.DownloadDirectory;
+            DownloadSourceMode = Model.Setting.Default.DownloadSourceMode;
             TranslationNewlineMarker = Model.Setting.Default.TranslationNewlineMarker;
             PreviewPlaybackBackend = Model.Setting.Default.PreviewPlaybackBackend;
             RecognitionPerformanceMode = Model.Setting.Default.RecognitionPerformanceMode;
@@ -451,6 +458,7 @@ partial class SettingPageModel
             ProxyType = setting.ProxyType;
             ProxyHost = setting.ProxyHost;
             ProxyPort = setting.ProxyPort;
+            DownloadSourceMode = setting.DownloadSourceMode;
             DownloadDirectory = string.IsNullOrWhiteSpace(setting.DownloadDirectory)
                 ? Model.Setting.Default.DownloadDirectory
                 : setting.DownloadDirectory;

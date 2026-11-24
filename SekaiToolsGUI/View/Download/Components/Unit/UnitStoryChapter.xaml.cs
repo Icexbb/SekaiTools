@@ -21,7 +21,7 @@ public partial class UnitStoryChapter : UserControl
         foreach (var episode in chapter.Episodes)
         {
             var item = DownloadItem.GetItem(
-                () => new SourceList(DownloadPageModel.Instance.CurrentSource).UnitStory(episode.ScenarioId,
+                source => new SourceList(source).UnitStory(episode.ScenarioId,
                     chapter.AssetBundleName),
                 episode.Title, episode.EpisodeNoLabel,
                 $"UnitStory|{chapter.Name}|{episode.EpisodeNoLabel}-{episode.Title}"

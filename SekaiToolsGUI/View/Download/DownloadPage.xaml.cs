@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -31,7 +30,6 @@ namespace SekaiToolsGUI.View.Download;
 
 public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 {
-    private static Task? _sourceListInitializationTask;
     private static readonly HashSet<DownloadPage> ActiveDownloads = [];
     private static readonly object StoryDataLock = new();
     private readonly DownloadBatch _batch = new(Fetcher.Instance);
@@ -54,6 +52,9 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     private Task? _runningBatch;
     private int _selectionVersion;
     private int _sourceVersion;
+    private SourceData? _refreshSourceOverride;
+    private Task? _sourceUpdateTask;
+    private bool _sourceDiscoveryErrorShown;
 
     public DownloadPage() : this(true)
     {
@@ -86,23 +87,52 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     public async void OnNavigatedTo()
     {
         DirectoryText.Text = _downloadDirectory ?? SettingPageModel.Instance.DownloadDirectory;
-        await Dispatcher.Yield(DispatcherPriority.Background);
-        _sourceListInitializationTask ??= InitDownloadSourceAsync();
-        await _sourceListInitializationTask;
+        var automatic = SettingPageModel.Instance.DownloadSourceMode == 1;
+        SourcePicker.Visibility = automatic ? Visibility.Collapsed : Visibility.Visible;
+        _sourceUpdateTask = UpdateSourceModeAsync();
+        await _sourceUpdateTask;
+    }
+
+    private async Task UpdateSourceModeAsync()
+    {
+        var previousRank = ViewModel.RankedSources;
+        var settings = SettingPageModel.Instance;
+        var automatic = settings.DownloadSourceMode == 1;
+        BrowserPane.IsEnabled = false;
+        try
+        {
+            await Dispatcher.Yield(DispatcherPriority.Background);
+            await ViewModel.UpdateSourcesAsync(automatic, settings.GetProxy());
+            if (ViewModel.DiscoveryError is { } error && !_sourceDiscoveryErrorShown)
+            {
+                _sourceDiscoveryErrorShown = true;
+                SnackService.Show("数据源获取失败", "已使用内置数据源。" + error.Message,
+                    ControlAppearance.Caution, new SymbolIcon(SymbolRegular.CloudDismiss24), TimeSpan.FromSeconds(5));
+                Log.Logger.LogWarning(error, "Download source discovery failed");
+            }
+            if (previousRank != ViewModel.RankedSources)
+                await ReloadSourceTabsAsync();
+        }
+        finally
+        {
+            BrowserPane.IsEnabled = true;
+        }
     }
 
     public event EventHandler? DownloadChoicesChanged;
 
 
-    public bool AddTask(string tag, string url)
+    public bool AddTask(string tag, string url) => Enqueue(new DownloadCandidate(tag, url, ""));
+
+    internal bool Enqueue(DownloadCandidate candidate)
     {
         return Dispatcher.Invoke(() =>
         {
-            if (DownloadItemBox.Items.OfType<DownloadTask>().Any(item => item.Url == url))
+            if (DownloadItemBox.Items.OfType<DownloadTask>().Any(item => item.Url == candidate.Url))
                 return false;
 
             if (!TryGetDownloadDirectory(out var directory)) return false;
-            var task = new DownloadTask(tag, url, ViewModel.CurrentSource.SourceName, directory);
+            var task = CreateDownloadTask(candidate, directory);
             task.RemoveRequested += DownloadTask_OnRemoveRequested;
             task.RetryRequested += DownloadTask_OnRetryRequested;
             DownloadItemBox.Items.Add(task);
@@ -120,17 +150,17 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         UpdateTaskListState();
     }
 
-    public void AddTasks(IEnumerable<(string Tag, string Url)> candidates)
+    internal void AddTasks(IEnumerable<DownloadCandidate> candidates)
     {
         Dispatcher.Invoke(() =>
         {
             if (!TryGetDownloadDirectory(out var directory)) return;
             var urls = DownloadItemBox.Items.OfType<DownloadTask>().Select(task => task.Url).ToHashSet();
-            foreach (var (tag, url) in candidates)
+            foreach (var candidate in candidates)
             {
-                if (!urls.Add(url)) continue;
+                if (!urls.Add(candidate.Url)) continue;
 
-                var task = new DownloadTask(tag, url, ViewModel.CurrentSource.SourceName, directory);
+                var task = CreateDownloadTask(candidate, directory);
                 task.RemoveRequested += DownloadTask_OnRemoveRequested;
                 task.RetryRequested += DownloadTask_OnRetryRequested;
                 DownloadItemBox.Items.Add(task);
@@ -138,6 +168,15 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 
             UpdateTaskListState();
         });
+    }
+
+    private DownloadTask CreateDownloadTask(DownloadCandidate candidate, string directory)
+    {
+        var alternatives = candidate.ResolveUrl is { } resolve
+            ? ViewModel.OrderedSources.Select(resolve).Where(url => url != candidate.Url)
+                .Distinct(StringComparer.Ordinal).ToArray()
+            : null;
+        return new DownloadTask(candidate.Tag, candidate.Url, ViewModel.CurrentSource.SourceName, directory, alternatives);
     }
 
     private bool TryGetDownloadDirectory(out string directory)
@@ -371,7 +410,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     private void AddSelected_OnClick(object sender, RoutedEventArgs e)
     {
         var selected = _selectedDownloads.Values.ToArray();
-        AddTasks(selected.Select(candidate => (candidate.Tag, candidate.Url)));
+        AddTasks(selected);
         UpdateBrowserSelection();
         DownloadChoicesChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -418,15 +457,23 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
             if (version != _selectionVersion) return;
             if (!_storyInitializationTasks.TryGetValue(index, out var initialization))
             {
-                var selectedSource = BoxSource.SelectedItem as SourceData ?? ViewModel.CurrentSource;
+                var sources = ViewModel.RankedSources ?? [ViewModel.CurrentSource];
                 var sourceVersion = _sourceVersion;
                 initialization = Task.Run(() =>
                 {
                     lock (StoryDataLock)
                     {
                         if (sourceVersion != _sourceVersion) return;
-                        Fetcher.Instance.SetSource(selectedSource);
-                        InitializeStoryData(index).ReloadFromCache();
+                        Fetcher.Instance.SetSource(sources[0]);
+                        var catalog = InitializeStoryData(index);
+                        foreach (var source in sources.Where(catalog.HasRequiredCache))
+                        {
+                            Fetcher.Instance.SetSource(source);
+                            catalog.ReloadFromCache();
+                            if (catalog.HasRequiredCache(source)) return;
+                        }
+                        Fetcher.Instance.SetSource(sources[0]);
+                        catalog.ReloadFromCache();
                     }
                 });
                 _storyInitializationTasks.Add(index, initialization);
@@ -493,6 +540,11 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     {
         if (BoxSource.SelectedItem is not SourceData || ContentCard == null) return;
         ViewModel.CurrentSourceIndex = BoxSource.SelectedIndex;
+        await ReloadSourceTabsAsync();
+    }
+
+    private async Task ReloadSourceTabsAsync()
+    {
         ++_selectionVersion;
         ++_sourceVersion;
         _storyTabs.Clear();
@@ -540,6 +592,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         UpdateTaskListState();
         try
         {
+            Fetcher.Instance.SetProxy(SettingPageModel.Instance.GetProxy());
             var byId = tasks.ToDictionary(task => task.Id);
             var run = _batch.RunAsync(tasks.Select(task => task.Job).ToArray(), policy,
                 update => Dispatcher.Invoke(() =>
@@ -625,7 +678,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     private async void ButtonClearCache_OnClick(object sender, RoutedEventArgs e)
     {
         if (!BoxSource.IsEnabled || !ClearCacheButton.IsEnabled) return;
-        if (_sourceListInitializationTask != null) await _sourceListInitializationTask;
+        if (_sourceUpdateTask != null) await _sourceUpdateTask;
         if (!BoxSource.IsEnabled || !ClearCacheButton.IsEnabled) return;
 
         var contentEnabled = ContentCard.IsEnabled;
@@ -674,30 +727,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
 
     public SourceData GetSourceType()
     {
-        return ViewModel.CurrentSource;
-    }
-
-    private async Task InitDownloadSourceAsync()
-    {
-        var sourceListUrl = NetworkEndpoints.Current.Resources.SourceListUrl;
-        try
-        {
-            // structure : {data:SourceData[],keyword:string}
-            var sourceListJson = await Fetcher.Instance.Fetch(sourceListUrl);
-            var sourceList = await Task.Run(() =>
-            {
-                var sources = JsonSerializer.Deserialize<SourceData[]>(sourceListJson);
-                return sources is { Length: > 0 } ? sources : throw new InvalidDataException("数据源列表为空。");
-            });
-            ViewModel.SourceData = sourceList;
-        }
-        catch (Exception e)
-        {
-            SnackService.Show("错误", "数据源获取失败，已使用内置数据源。" + e.Message,
-                ControlAppearance.Danger, new SymbolIcon(SymbolRegular.CloudDismiss24), TimeSpan.FromSeconds(5));
-            Log.Logger.LogError(e, "{TypeName} InitDownloadSource Error", nameof(DownloadPage));
-            ViewModel.SourceData = SourceData.Default;
-        }
+        return _refreshSourceOverride ?? ViewModel.CurrentSource;
     }
 
     private async void ButtonRefresh_OnClick(object sender, RoutedEventArgs e)
@@ -721,7 +751,14 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         try
         {
             var progress = new Progress<ListRefreshProgress>(dialog.UpdateProgress);
-            await refreshable.Refresh(progress);
+            if (_sourceUpdateTask != null) await _sourceUpdateTask;
+            if (ContentCard.Content is IRefreshable current) refreshable = current;
+            await DownloadSources.TryAsync(ViewModel.OrderedSources, async (downloadSource, _) =>
+            {
+                _refreshSourceOverride = downloadSource;
+                await refreshable.Refresh(progress);
+                return true;
+            }, source.Token);
         }
         catch (Exception exception)
         {
@@ -732,6 +769,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         }
         finally
         {
+            _refreshSourceOverride = null;
             await source.CancelAsync();
             try
             {

@@ -90,6 +90,17 @@ public abstract class BaseListStory
         Load();
     }
 
+    public bool HasRequiredCache(SourceData source)
+    {
+        var properties = GetType().GetProperties(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+        var optional = properties.Select(property => property.GetCustomAttribute<SourcePathAttribute>())
+            .Where(attribute => attribute is { Optional: true }).Select(attribute => attribute!.Key).ToHashSet();
+        var directory = GetCacheDirectory(source);
+        return properties.Where(property => property.GetCustomAttribute<CachePathAttribute>() is { } key
+                                             && !optional.Contains(key.Key))
+            .All(property => File.Exists(Path.Combine(directory, Path.GetFileName((string)property.GetValue(null)!))));
+    }
+
     protected abstract void Load();
 
     public async Task Refresh(IProgress<ListRefreshProgress>? progress = null)
@@ -197,6 +208,8 @@ public abstract class BaseListStory
 
         Report(ListRefreshStage.Loading);
         Load();
+        if (keys.Any(key => !optionalKeys.Contains(key) && !File.Exists(cacheFields[key])))
+            throw new InvalidDataException("下载源返回的列表内容无效。");
         Report(ListRefreshStage.Completed);
     }
 }

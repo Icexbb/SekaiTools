@@ -4,6 +4,7 @@ using FlaUI.Core.AutomationElements;
 using SekaiToolsBase.DataList;
 using SekaiTools.UITests.Fixtures;
 using SekaiTools.UITests.Helpers;
+using SekaiTools.UITests.Automation;
 using Xunit;
 
 namespace SekaiTools.UITests.Tests;
@@ -21,13 +22,19 @@ public sealed class StoryDownloadCatalogTests
         File.WriteAllText(config, File.ReadAllText(config).Replace(":9/", $":{server.Port}/"));
         using var endpoints = JsonDocument.Parse(File.ReadAllText(config));
         var sources = JsonNode.Parse(endpoints.RootElement.GetProperty("defaultDataSources").GetRawText())!.AsArray();
+        sources[0]!["MemberStoryTemplate"] = "character/member/{abName}/{scenarioId}.asset";
         var alternate = sources[0]!.DeepClone();
         alternate["SourceName"] = "UI Alternate Fixture";
         alternate["SourceTemplate"] = $"http://127.0.0.1:{server.Port}/alternate/{{type}}.json";
+        alternate["StorageBaseUrl"] = $"http://127.0.0.1:{server.Port}/alternate-assets/";
+        alternate["MemberStoryTemplate"] = "mirror/cards/{abName}/{scenarioId}.json";
         sources.Add(alternate);
         var sourceResponse = sources.ToJsonString();
         var missingActivityMetadata = 0;
         var failAlternate = 1;
+        var failPrimary = 0;
+        var allowScript = 0;
+        var failAlternateAction = 0;
         using var artwork = new System.Drawing.Bitmap(16, 9);
         using (var graphics = System.Drawing.Graphics.FromImage(artwork))
             graphics.Clear(System.Drawing.Color.SteelBlue);
@@ -66,8 +73,8 @@ public sealed class StoryDownloadCatalogTests
             } }),
             ["cardEpisodes"] = JsonSerializer.Serialize(new[]
             {
-                new CardEpisode { Id = 30, CardId = 3, Title = "Fixture First Part", ScenarioId = "card-fixture-1", CardEpisodePartType = "first_part" },
-                new CardEpisode { Id = 31, CardId = 3, Title = "Fixture Second Part", ScenarioId = "card-fixture-2", CardEpisodePartType = "second_part" }
+                new CardEpisode { Id = 30, CardId = 3, Title = "Fixture First Part", ScenarioId = "card-fixture-1", AssetBundleName = "res005_no056", CardEpisodePartType = "first_part" },
+                new CardEpisode { Id = 31, CardId = 3, Title = "Fixture Second Part", ScenarioId = "card-fixture-2", AssetBundleName = "res005_no056", CardEpisodePartType = "second_part" }
             }),
             ["actionSets"] = JsonSerializer.Serialize(new[] { new ActionSet
             {
@@ -86,15 +93,23 @@ public sealed class StoryDownloadCatalogTests
         {
             if (request.Contains("/sources.json ")) return sourceResponse;
             var path = request.Split(' ')[1];
+            if (request.StartsWith("HEAD ", StringComparison.Ordinal))
+                return path.StartsWith("/alternate", StringComparison.Ordinal) ? "" : null;
+            if (path == "/alternate-assets/mirror/cards/res005_no056/card-fixture-2.json")
+                return """{"error":"not a script"}""";
+            if (path == artworkPath + "card-fixture-2.asset" && Volatile.Read(ref allowScript) != 0)
+                return """{"ScenarioId":"card-fixture-2","TalkData":[],"Snippets":[]}""";
             var resource = Path.GetFileNameWithoutExtension(path);
             if (path.StartsWith("/alternate/", StringComparison.Ordinal))
             {
-                if (Volatile.Read(ref failAlternate) != 0) return null;
+                if (Volatile.Read(ref failAlternate) != 0 ||
+                    resource == "actionSets" && Volatile.Read(ref failAlternateAction) != 0) return null;
                 return resource == "actionSets"
                     ? catalog[resource].Replace("action-fixture", "alternate-fixture", StringComparison.Ordinal)
                     : catalog.GetValueOrDefault(resource);
             }
             if (!path.StartsWith("/master/", StringComparison.Ordinal)) return null;
+            if (Volatile.Read(ref failPrimary) != 0) return null;
             if (resource == "releaseConditions" && Volatile.Read(ref missingActivityMetadata) != 0) return null;
             return catalog.GetValueOrDefault(resource);
         };
@@ -132,7 +147,7 @@ public sealed class StoryDownloadCatalogTests
                             .Select(element => element.BoundingRectangle.Width).ToArray();
                         return titles.Length == 5 && titles.Min() > 0 && titles.Max() - titles.Min() <= 2;
                     }, "活动章节标题等宽，容纳不同位数编号");
-                    ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download.EventAligned");
+                    ScreenshotHelper.Capture(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download.EventAligned");
                 }
                 search.Text = scenario;
                 var choiceId = FindChoice(category, choiceLabel).AutomationId;
@@ -159,7 +174,7 @@ public sealed class StoryDownloadCatalogTests
                     activities.Collapse();
                     WaitForText("action-fixture");
                 }
-                ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download." + category);
+                ScreenshotHelper.Capture(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download." + category);
                 app.Finder.ById(app.Window!, "StoryDownload.ClearQueueButton").AsButton().Invoke();
             });
         }
@@ -183,9 +198,11 @@ public sealed class StoryDownloadCatalogTests
             source.Collapse();
             WaitHelper.Until(() => !app.Finder.ById(app.Window!, "StoryDownload.EmptyMessage").IsOffscreen, "备用源无缓存");
             Assert.Null(app.Window!.FindFirstDescendant(cf => cf.ByName("action-fixture")));
+            Volatile.Write(ref failPrimary, 1);
             Refresh();
             WaitForText("刷新失败");
             Assert.Contains(server.Requests, request => request.Contains("/alternate/actionSets.json "));
+            Volatile.Write(ref failPrimary, 0);
             Volatile.Write(ref failAlternate, 0);
             Refresh();
             WaitForText("alternate-fixture");
@@ -211,6 +228,71 @@ public sealed class StoryDownloadCatalogTests
             source.Select(0);
             source.Collapse();
             WaitHelper.Until(() => !app.Finder.ById(app.Window!, "StoryDownload.EmptyMessage").IsOffscreen, "第一来源缓存也已清除");
+        });
+        app.Step("自动选源和下载回退", "测量来源并隐藏选择器，卡图和剧本按各自模板回退", () =>
+        {
+            app.Navigate(Catalog.SettingsNavigation, Catalog.Settings);
+            var mode = app.Finder.ById(app.Window!, "Settings.Field.DownloadSourceMode").AsComboBox();
+            mode.Select(1);
+            mode.Collapse();
+            using var savedSettings = JsonDocument.Parse(File.ReadAllText(Path.Combine(app.Data.Paths.DataRoot, "Data", "setting.json")));
+            Assert.Equal(1, savedSettings.RootElement.GetProperty("DownloadSourceMode").GetInt32());
+            app.Navigate(Catalog.DownloadNavigation, "StoryDownload.Root");
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByAutomationId("StoryDownload.Source"))
+                is not { IsOffscreen: false }, "自动模式隐藏来源选择器");
+            WaitHelper.Until(() => server.Requests.Any(request => request.StartsWith("HEAD /alternate/cards.json", StringComparison.Ordinal)),
+                "探测备用源响应");
+            var actionCategory = app.Finder.ById(app.Window!, "StoryDownload.Category.Action").AsListBoxItem();
+            WaitHelper.Until(() => actionCategory.IsEnabled, "自动测速完成");
+            actionCategory.Select();
+            app.Finder.ById(app.Window!, "StoryDownload.Action.Root");
+            Volatile.Write(ref failAlternateAction, 1);
+            var beforeRefresh = server.Requests.Count;
+            Refresh();
+            WaitForText("action-fixture");
+            var catalogRequests = server.Requests.Skip(beforeRefresh).Where(request =>
+                request.StartsWith("GET ", StringComparison.Ordinal) && request.Contains("/actionSets.json ")).ToArray();
+            Assert.StartsWith("GET /alternate/", catalogRequests.First());
+            Assert.StartsWith("GET /master/", catalogRequests.Last());
+            app.Finder.ById(app.Window!, "StoryDownload.Category.Card").AsListBoxItem().Select();
+            app.Finder.ById(app.Window!, "StoryDownload.Card.Root");
+            Refresh();
+            Assert.Contains(server.Requests, request => request.StartsWith("GET /alternate/cardEpisodes.json", StringComparison.Ordinal));
+            WaitForText("# 3");
+
+            app.Finder.ById(app.Window!, "StoryDownload.Card.3.PreviewArtwork").AsButton().Invoke();
+            var dialog = app.Finder.ById(app.Window!, "StoryDownload.CardArtwork.Dialog");
+            WaitForText("特训前卡图");
+            Assert.Contains(server.Requests, request => request.Contains("/alternate-assets/mirror/cards/res005_no056/card_normal.png "));
+            WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("关闭")), "关闭卡图预览").AsButton().Invoke();
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByAutomationId("StoryDownload.CardArtwork.Dialog"))
+                is not { IsOffscreen: false }, "卡图预览已关闭");
+
+            app.Finder.ById(app.Window!, "StoryDownload.SearchBox").AsTextBox().Text = "card-fixture-2";
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("1 项结果 · 已选 0")), "只剩后篇剧本");
+            app.Finder.ById(app.Window!, "StoryDownload.SelectResults").AsCheckBox().IsChecked = true;
+            app.Finder.ById(app.Window!, "StoryDownload.AddSelectedButton").AsButton().Invoke();
+            app.Finder.ById(app.Window!, "StoryDownload.StartDownloadButton").AsButton().Invoke();
+            WaitForText("下载失败");
+            const string preferred = "GET /alternate-assets/mirror/cards/res005_no056/card-fixture-2.json ";
+            var backup = "GET " + artworkPath + "card-fixture-2.asset ";
+            var requests = server.Requests.ToArray();
+            var preferredIndex = Array.FindIndex(requests, request => request.StartsWith(preferred, StringComparison.Ordinal));
+            var backupIndex = Array.FindIndex(requests, request => request.StartsWith(backup, StringComparison.Ordinal));
+            Assert.True(preferredIndex >= 0 && backupIndex > preferredIndex);
+            Volatile.Write(ref allowScript, 1);
+            app.Finder.ById(app.Window!, "StoryDownload.Task.RetryButton").AsButton().Invoke();
+            WaitForText("下载完成");
+            var saved = Path.Combine(app.Data.Paths.DataRoot, "Scripts", "card-fixture-2.json");
+            Assert.Equal("card-fixture-2", new SekaiToolsBase.GameScript.GameScript(saved).ScenarioId);
+
+            app.Navigate(Catalog.SettingsNavigation, Catalog.Settings);
+            mode = app.Finder.ById(app.Window!, "Settings.Field.DownloadSourceMode").AsComboBox();
+            mode.Select(0);
+            mode.Collapse();
+            app.Navigate(Catalog.DownloadNavigation, "StoryDownload.Root");
+            var manualPicker = app.Finder.ById(app.Window!, "StoryDownload.Source");
+            Assert.False(manualPicker.IsOffscreen);
         });
         app.Step("退出", "正常退出", () =>
         {
@@ -242,7 +324,7 @@ public sealed class StoryDownloadCatalogTests
                 WaitForText("特训前卡图");
                 app.Finder.ById(dialog, "StoryDownload.CardArtwork.Trained").AsButton().Invoke();
                 WaitForText("特训后卡图");
-                ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download.CardArtwork");
+                ScreenshotHelper.Capture(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download.CardArtwork");
                 WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("关闭")), "关闭卡图预览").AsButton().Invoke();
                 WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByAutomationId("StoryDownload.CardArtwork.Dialog"))
                     is not { IsOffscreen: false }, "卡图预览已关闭");

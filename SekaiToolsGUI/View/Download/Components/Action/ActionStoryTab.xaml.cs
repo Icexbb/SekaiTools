@@ -243,7 +243,6 @@ partial class ActionStoryTab
         while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
         if (parent is not DownloadPage page) return;
         var source = page.GetSourceType();
-        page.AddTasks(ViewModel.EventStories.Select(story => StoryDownloadCandidates.Action(story, source))
-            .Select(candidate => (candidate.Tag, candidate.Url)));
+        page.AddTasks(ViewModel.EventStories.Select(story => StoryDownloadCandidates.Action(story, source)));
     }
 }

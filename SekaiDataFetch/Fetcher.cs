@@ -86,7 +86,7 @@ public class Fetcher : IDisposable
             if (_client == null || _client.Key != key)
             {
                 var next = new ClientEntry(key, new HttpClient(_handlerFactory(UserProxy))
-                    { Timeout = TimeSpan.FromSeconds(10) });
+                { Timeout = TimeSpan.FromSeconds(10) });
                 Retire(_client);
                 _client = next;
             }
@@ -110,6 +110,21 @@ public class Fetcher : IDisposable
         if (entry == null) return;
         entry.Retired = true;
         if (entry.Users == 0) entry.Client.Dispose();
+    }
+
+    internal async Task<HttpStatusCode> ProbeAsync(string url, CancellationToken token)
+    {
+        var entry = AcquireClient();
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Head, url);
+            using var response = await entry.Client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
+            return response.StatusCode;
+        }
+        finally
+        {
+            Release(entry);
+        }
     }
 
     public async Task<byte[]> FetchBytesAsync(string url, CancellationToken cancellationToken = default)
@@ -146,7 +161,7 @@ public class Fetcher : IDisposable
     public async Task<string> Fetch(string url, CancellationToken cancellationToken = default)
     {
         const int attempts = 3;
-        for (var attempt = 1;; attempt++)
+        for (var attempt = 1; ; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             try

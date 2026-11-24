@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using SekaiDataFetch;
 using SekaiToolsGUI.View.Download.Components.Event;
+using SekaiToolsGUI.ViewModel.Download;
 
 namespace SekaiToolsGUI.View.Download.Components;
 
@@ -53,7 +54,7 @@ public partial class DownloadChoice : UserControl
     {
         var candidate = CandidateFactory();
         if (_page == null || candidate == null) return;
-        var identity = (_page.GetSourceType().SourceTemplate, candidate.Url);
+        var identity = (DownloadPageModel.Instance.CurrentSource.SourceTemplate, candidate.Url);
         if (_categoryRootId != null && _automationIdentity != identity)
         {
             var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{identity.SourceTemplate}\n{identity.Url}")));

@@ -80,6 +80,19 @@
     "category": "下载"
   },
   {
+    "title": "下载源选择",
+    "description": "自动模式优先使用响应较快的来源；手动模式优先使用所选来源。请求失败后会尝试其他来源。",
+    "icon": "ArrowSync24",
+    "fields": [
+      {
+        "kind": "choice",
+        "property": "DownloadSourceMode",
+        "options": ["手动选择下载源", "自动选择下载源"]
+      }
+    ],
+    "category": "下载"
+  },
+  {
     "title": "打字机设置",
     "icon": "TextContinuous24",
     "description": "设置打字机的渐变时间参数",

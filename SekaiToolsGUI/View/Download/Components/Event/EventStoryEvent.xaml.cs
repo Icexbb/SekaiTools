@@ -75,8 +75,7 @@ public partial class EventStoryEvent
         if (parent is not DownloadPage page) return;
         var source = page.GetSourceType();
         var query = StoryBrowserState.GetQuery(this);
-        page.AddTasks(StoryDownloadCandidates.Event(story, source).Where(candidate => candidate.Matches(query))
-            .Select(candidate => (candidate.Tag, candidate.Url)));
+        page.AddTasks(StoryDownloadCandidates.Event(story, source).Where(candidate => candidate.Matches(query)));
     }
 
     private void RefreshBannerIcons()
@@ -119,8 +118,8 @@ public partial class EventStoryEvent
             var episode = EventStorySet.EventStory.EventStoryEpisodes[i];
             var key = $"{storyIndex}-{episode.EpisodeNo}";
 
-            var downloadItem = DownloadItem.GetItem(() =>
-                    new SourceList(DownloadPageModel.Instance.CurrentSource).EventStory(episode.ScenarioId,
+            var downloadItem = DownloadItem.GetItem(source =>
+                    new SourceList(source).EventStory(episode.ScenarioId,
                         EventStorySet.EventStory.AssetBundleName), episode.Title, key,
                 $"EventStory|{storyIndex}-{EventStorySet.GameEvent.Name}|{episode.EpisodeNo}-{episode.Title}",
                 EventStorySet.EventStory.EventId.ToString());

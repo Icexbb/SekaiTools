@@ -69,7 +69,7 @@ public partial class SpecialStoryTab : UserControl, IRefreshable
         foreach (var episode in set.Episodes)
         {
             var item = DownloadItem.GetItem(
-                () => new SourceList(DownloadPageModel.Instance.CurrentSource).SpecialStory(episode),
+                source => new SourceList(source).SpecialStory(episode),
                 episode.Title,
                 episode.ScenarioId,
                 $"SpecialStory|{set.SpecialStory.AssetBundleName}-{set.SpecialStory.Title}|{episode.ScenarioId}-{episode.Title}"

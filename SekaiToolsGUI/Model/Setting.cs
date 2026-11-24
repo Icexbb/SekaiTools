@@ -24,6 +24,7 @@ public struct Setting
 
     public string DownloadDirectory { get; init; } = Path.Combine(
         ResourceManager.DataBaseDir, "Scripts");
+    public int DownloadSourceMode { get; init; }
 
     public int TranslationNewlineMarker { get; init; } = 0;
 
@@ -90,6 +91,7 @@ public struct Setting
             ProxyHost = model.ProxyHost,
             ProxyPort = model.ProxyPort,
             DownloadDirectory = model.DownloadDirectory,
+            DownloadSourceMode = model.DownloadSourceMode,
             TranslationNewlineMarker = model.TranslationNewlineMarker,
             PreviewPlaybackBackend = model.PreviewPlaybackBackend,
             RecognitionPerformanceMode = model.RecognitionPerformanceMode,

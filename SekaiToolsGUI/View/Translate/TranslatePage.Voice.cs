@@ -105,13 +105,21 @@ public partial class TranslatePage
             DownloadPageModel.Instance.CurrentSource.SourceName);
         try
         {
-            Fetcher.Instance.SetProxy(SettingPageModel.Instance.GetProxy());
-            var uri = ScenarioVoice.Locate(DownloadPageModel.Instance.CurrentSource.StorageBaseUrl,
-                line.VoiceScenarioId, originalVoice.VoiceId);
-            VoiceLogger.LogInformation("语音资源地址：第 {Sequence} 条，剧本 {ScenarioId}，语音 {VoiceId}，URL {AudioUrl}",
-                line.SequenceNumber, line.VoiceScenarioId, originalVoice.VoiceId, uri.AbsoluteUri);
-            var path = await ScenarioVoice.LoadAsync(Fetcher.Instance, uri,
-                SekaiToolsConfiguration.ApplicationPaths.Current.VoiceCache, request.Token);
+            var download = DownloadPageModel.Instance;
+            var settings = SettingPageModel.Instance;
+            var proxy = settings.GetProxy();
+            await download.UpdateSourcesAsync(settings.DownloadSourceMode == 1, proxy).WaitAsync(request.Token);
+            using var fetcher = new Fetcher();
+            fetcher.SetProxy(proxy);
+            var urls = download.OrderedSources.Select(source => ScenarioVoice.Locate(source.StorageBaseUrl,
+                line.VoiceScenarioId, originalVoice.VoiceId)).Distinct();
+            var path = await SekaiDataFetch.Source.DownloadSources.TryAsync(urls, (uri, token) =>
+            {
+                VoiceLogger.LogInformation("语音资源地址：第 {Sequence} 条，剧本 {ScenarioId}，语音 {VoiceId}，URL {AudioUrl}",
+                    line.SequenceNumber, line.VoiceScenarioId, originalVoice.VoiceId, uri.AbsoluteUri);
+                return ScenarioVoice.LoadAsync(fetcher, uri,
+                    SekaiToolsConfiguration.ApplicationPaths.Current.VoiceCache, token);
+            }, request.Token);
             if (request.IsCancellationRequested || !ReferenceEquals(_voiceRequest, request)) return;
             VoiceLogger.LogInformation("语音资源已就绪：第 {Sequence} 条，语音 {VoiceId}，本地文件 {Path}",
                 line.SequenceNumber, line.OriginalVoice?.VoiceId, path);

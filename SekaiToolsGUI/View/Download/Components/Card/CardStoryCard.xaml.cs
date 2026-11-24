@@ -65,7 +65,7 @@ public partial class CardStoryCard
             $"pack://application:,,,/SekaiToolsGUI;component/Resource/Characters/chr_{cardStorySet.Card.CharacterId}.png";
         IconImage.Source = new BitmapImage(new Uri(url));
         ArtworkPreviewButton.Visibility = CardArtwork.Locate(
-            DownloadPageModel.Instance.CurrentSource.StorageBaseUrl, cardStorySet.Card, trained: false) != null
+            DownloadPageModel.Instance.CurrentSource, cardStorySet.Card, trained: false) != null
             ? Visibility.Visible
             : Visibility.Collapsed;
         AutomationProperties.SetAutomationId(ArtworkPreviewButton, $"StoryDownload.Card.{cardStorySet.Card.Id}.PreviewArtwork");
@@ -76,11 +76,15 @@ public partial class CardStoryCard
     private async void ArtworkPreview_OnClick(object sender, RoutedEventArgs e)
     {
         if (CardStorySet?.Card is not { } card || Window.GetWindow(this) is not MainWindow window) return;
-        var storageBaseUrl = DownloadPageModel.Instance.CurrentSource.StorageBaseUrl;
-        if (CardArtwork.Locate(storageBaseUrl, card, trained: false) is not { } normal) return;
-        var trained = CardArtwork.Locate(storageBaseUrl, card, trained: true);
+        var sources = DownloadPageModel.Instance.OrderedSources;
+        var normal = ArtworkUrls(false);
+        if (normal.Length == 0) return;
+        var trained = ArtworkUrls(true);
         var dialog = new CardArtworkDialog($"#{card.Id} {card.Prefix}", normal, trained);
         await dialog.ShowPreviewAsync(window.WindowContentDialogService);
+
+        Uri[] ArtworkUrls(bool afterTraining) => sources
+            .Select(source => CardArtwork.Locate(source, card, afterTraining)).OfType<Uri>().Distinct().ToArray();
     }
 
     private void InitDownloadItems()
@@ -92,12 +96,12 @@ public partial class CardStoryCard
             panelItemsChild.Recycle();
 
         var itemFirst = DownloadItem.GetItem(
-            () => new SourceList(DownloadPageModel.Instance.CurrentSource).MemberStory(CardStorySet.FirstPart),
+            source => new SourceList(source).MemberStory(CardStorySet.FirstPart),
             "前篇", "",
             $"CardStory|{CardStorySet.Card.Id}-{CardStorySet.Card.Prefix}|前篇"
         );
         var itemSecond = DownloadItem.GetItem(
-            () => new SourceList(DownloadPageModel.Instance.CurrentSource).MemberStory(CardStorySet.SecondPart),
+            source => new SourceList(source).MemberStory(CardStorySet.SecondPart),
             "后篇", "",
             $"CardStory|{CardStorySet.Card.Id}-{CardStorySet.Card.Prefix}|后篇"
         );

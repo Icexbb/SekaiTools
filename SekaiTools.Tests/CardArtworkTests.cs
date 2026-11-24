@@ -1,4 +1,5 @@
 using SekaiDataFetch;
+using SekaiDataFetch.Source;
 using SekaiToolsBase.DataList;
 
 namespace SekaiTools.Tests;
@@ -14,8 +15,18 @@ public class CardArtworkTests
     public void UsesCardBundleAndOnlyOffersTrainingForEligibleRarities(string rarity, bool trained)
     {
         var card = new Card { Id = 1499, AssetbundleName = "res005_no056", CardRarityType = rarity };
-        const string source = "https://example.test/assets";
-        const string folder = source + "/character/member/res005_no056/";
+        var source = new SourceData
+        {
+            SourceName = "Fixture",
+            SourceTemplate = "",
+            StorageBaseUrl = "https://example.test/assets",
+            MemberStoryTemplate = "different/card/{abName}/{scenarioId}.json",
+            ActionSetTemplate = "",
+            EventStoryTemplate = "",
+            SpecialStoryTemplate = "",
+            UnitStoryTemplate = ""
+        };
+        const string folder = "https://example.test/assets/different/card/res005_no056/";
 
         Assert.Equal(folder + "card_normal.png", CardArtwork.Locate(source, card, false)?.AbsoluteUri);
         Assert.Equal(trained ? folder + "card_after_training.png" : null,

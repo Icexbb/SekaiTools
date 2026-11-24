@@ -3,13 +3,14 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using SekaiDataFetch;
+using SekaiDataFetch.Source;
 using SekaiToolsGUI.ViewModel.Download;
 
 namespace SekaiToolsGUI.View.Download.Components;
 
 public partial class DownloadItem : UserControl
 {
-    private Func<string> Url { get; set; } = () => "";
+    private Func<SourceData, string> Url { get; set; } = _ => "";
 
     private string TitleString { get; set; } = "";
     private string IndexString { get; set; } = "";
@@ -18,7 +19,7 @@ public partial class DownloadItem : UserControl
     private string SearchMetadata { get; set; } = "";
 
     internal DownloadCandidate Candidate => new(DownloadPageModel.Instance.CurrentSource.SourceName + "|" + TaskName,
-        Url(), SearchMetadata + " " + TitleString + " " + IndexString);
+        Url(DownloadPageModel.Instance.CurrentSource), SearchMetadata + " " + TitleString + " " + IndexString, Url);
 
     internal void ApplyVisibility()
     {
@@ -36,7 +37,7 @@ public partial class DownloadItem : UserControl
             while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
 
 
-            (parent as DownloadPage)?.AddTask(Candidate.Tag, Candidate.Url);
+            (parent as DownloadPage)?.Enqueue(Candidate);
         });
     }
 }
@@ -46,7 +47,7 @@ public partial class DownloadItem
     private static readonly DependencyProperty MaximumColumnsProperty = DependencyProperty.RegisterAttached(
         "MaximumColumns", typeof(int), typeof(DownloadItem), new PropertyMetadata(0));
 
-    private DownloadItem(Func<string> url, string title, string index, string taskName, string searchMetadata)
+    private DownloadItem(Func<SourceData, string> url, string title, string index, string taskName, string searchMetadata)
     {
         InitializeComponent();
         DataContext = this;
@@ -64,7 +65,7 @@ public partial class DownloadItem
 
     private static List<DownloadItem> RecycleContainer { get; } = [];
 
-    private void Initialize(Func<string> url, string title, string index)
+    private void Initialize(Func<SourceData, string> url, string title, string index)
     {
         Visibility = Visibility.Visible;
         Url = url;
@@ -128,7 +129,7 @@ public partial class DownloadItem
         if (Parent is Panel parent) parent.Children.Remove(this);
     }
 
-    public static DownloadItem GetItem(Func<string> url, string title, string index, string taskName,
+    public static DownloadItem GetItem(Func<SourceData, string> url, string title, string index, string taskName,
         string searchMetadata = "")
     {
         if (RecycleContainer.Count <= 0) return new DownloadItem(url, title, index, taskName, searchMetadata);

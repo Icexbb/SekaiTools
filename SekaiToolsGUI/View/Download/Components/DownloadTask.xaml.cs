@@ -13,15 +13,22 @@ public partial class DownloadTask : UserControl
     private bool? _horizontalLayout;
 
     public DownloadTask(string scriptTag, string url, string sourceName = "", string? directory = null)
+        : this(scriptTag, url, sourceName, directory, null)
+    {
+    }
+
+    internal DownloadTask(string scriptTag, string url, string sourceName, string? directory,
+        IReadOnlyList<string>? alternateUrls)
     {
         InitializeComponent();
         AutomationProperties.SetAutomationId(this, $"StoryDownload.Task.{Id:N}");
         Url = url;
         ScriptTag = scriptTag;
         SourceName = sourceName;
+        AlternateUrls = alternateUrls;
         SetDirectory(directory ?? Model.Setting.Default.DownloadDirectory);
         TaskNameTextBlock.Text = string.Join(" · ", ScriptTag.Split("|"));
-        SourceText.Text = sourceName;
+        SourceText.Text = alternateUrls is { Count: > 0 } ? $"首选 · {sourceName}" : sourceName;
         SizeChanged += (_, _) => UpdateLayoutMode();
     }
 
@@ -33,7 +40,8 @@ public partial class DownloadTask : UserControl
     public DownloadStatus Status { get; private set; }
     public bool Downloaded => Status is DownloadStatus.Succeeded or DownloadStatus.Skipped;
     public bool UseWorkbenchTheme { get; set; }
-    public DownloadJob Job => new(Id, ScriptTag, Url, SavePath, SourceName);
+    private IReadOnlyList<string>? AlternateUrls { get; }
+    public DownloadJob Job => new(Id, ScriptTag, Url, SavePath, SourceName, AlternateUrls);
     public event EventHandler? RemoveRequested;
     public event EventHandler? RetryRequested;
 

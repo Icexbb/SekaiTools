@@ -32,7 +32,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel x:Name="SourcePicker" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Margin="0,0,10,0" Text="数据源" VerticalAlignment="Center" />
                     <ComboBox Name="BoxSource" ItemsSource="{Binding SourceData, NotifyOnTargetUpdated=True}"
                               TargetUpdated="SourceSelector_OnTargetUpdated"
@@ -71,7 +71,7 @@
                 </StackPanel>
             </Grid>
         </ui:Card>
-        <Grid Grid.Row="1">
+        <Grid x:Name="BrowserPane" Grid.Row="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />

@@ -1,6 +1,8 @@
 using System.Net;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using SekaiToolsBase;
+using SekaiDataFetch.Source;
 
 namespace SekaiDataFetch;
 
@@ -20,7 +22,8 @@ public enum ExistingFilePolicy
     Replace
 }
 
-public sealed record DownloadJob(Guid Id, string Title, string Url, string SavePath, string SourceName);
+public sealed record DownloadJob(Guid Id, string Title, string Url, string SavePath, string SourceName,
+    IReadOnlyList<string>? AlternateUrls = null);
 
 public sealed record DownloadUpdate(DownloadJob Job, DownloadStatus Status, string? Error = null);
 
@@ -31,8 +34,28 @@ public sealed class DownloadBatch
 {
     private readonly Func<DownloadJob, ExistingFilePolicy, CancellationToken, Task> _download;
 
-    public DownloadBatch(Fetcher fetcher) : this((job, policy, token) =>
-        fetcher.FetchToFile(job.Url, job.SavePath, token, policy == ExistingFilePolicy.Replace))
+    public DownloadBatch(Fetcher fetcher) : this(async (job, policy, token) =>
+    {
+        var urls = new[] { job.Url }.Concat(job.AlternateUrls ?? []).ToArray();
+        var content = await DownloadSources.TryAsync(urls,
+            async (url, cancellation) =>
+            {
+                Logger.Log($"下载剧本：{url}", LogLevel.Information);
+                var json = await (urls.Length == 1
+                    ? fetcher.Fetch(url, cancellation)
+                    : fetcher.FetchOnceAsync(url, cancellation)).ConfigureAwait(false);
+                using var document = JsonDocument.Parse(json);
+                if (document.RootElement.ValueKind != JsonValueKind.Object ||
+                    !document.RootElement.EnumerateObject().Any(property =>
+                        property.Value.ValueKind == JsonValueKind.Array &&
+                        (property.Name.Equals("Snippets", StringComparison.OrdinalIgnoreCase) ||
+                         property.Name.Equals("TalkData", StringComparison.OrdinalIgnoreCase))))
+                    throw new InvalidDataException("下载源返回的剧情脚本无效。");
+                return json;
+            }, token).ConfigureAwait(false);
+        await FetcherFileExtensions.SaveDownloadAsync(content, job.SavePath, token, policy == ExistingFilePolicy.Replace)
+            .ConfigureAwait(false);
+    })
     {
     }
 

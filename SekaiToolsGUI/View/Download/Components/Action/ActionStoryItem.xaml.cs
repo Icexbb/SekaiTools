@@ -35,10 +35,8 @@ public partial class ActionStoryItem : UserControl
             DependencyObject? parent = this;
             while (parent != null && parent is not DownloadPage) parent = VisualTreeHelper.GetParent(parent);
 
-            var url = new SourceList(DownloadPageModel.Instance.CurrentSource).ActionSet(AreaStorySet);
-            (parent as DownloadPage)?.AddTask(
-                DownloadPageModel.Instance.CurrentSource.SourceName + "|" +
-                $"ActionSet|{AreaStorySet.ActionSet.Id}-{AreaStorySet.ActionSet.ScriptId}", url);
+            (parent as DownloadPage)?.Enqueue(StoryDownloadCandidates.Action(AreaStorySet,
+                DownloadPageModel.Instance.CurrentSource));
         });
     }
 

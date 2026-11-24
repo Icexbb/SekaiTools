@@ -75,7 +75,7 @@ public static class ScenarioVoice
         }
 
         var bytes = await fetcher.FetchBytesAsync(uri.AbsoluteUri, token).ConfigureAwait(false);
-        if (bytes.Length == 0) throw new IOException("语音文件为空");
+        if (bytes.Length == 0) throw new InvalidDataException("语音文件为空");
         var temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
