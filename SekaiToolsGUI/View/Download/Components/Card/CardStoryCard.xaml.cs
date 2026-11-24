@@ -1,11 +1,14 @@
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using Microsoft.Extensions.Logging;
 using SekaiDataFetch;
 using SekaiDataFetch.Item;
 using SekaiDataFetch.Source;
 using SekaiToolsGUI.ViewModel.Download;
+using SekaiToolsGUI.ViewModel.Setting;
 
 namespace SekaiToolsGUI.View.Download.Components.Card;
 
@@ -21,14 +24,13 @@ public partial class CardStoryCard : UserControl
     public CardStoryCard()
     {
         InitializeComponent();
+        Loaded += (_, _) => _ = UpdateThumbnailAsync();
+        Unloaded += (_, _) => ResetThumbnail();
     }
 
-    public CardStoryCard(CardStorySet cardStorySet)
+    public CardStoryCard(CardStorySet cardStorySet) : this()
     {
-        InitializeComponent();
-
         CardStorySet = cardStorySet;
-        Initialize(cardStorySet);
     }
 
     public CardStorySet? CardStorySet
@@ -39,13 +41,25 @@ public partial class CardStoryCard : UserControl
 
     private static void OnCardStoryImplChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is CardStoryCard control && e.NewValue is CardStorySet cardStoryImpl)
+        if (d is not CardStoryCard control) return;
+        control.ResetThumbnail();
+        if (e.NewValue is CardStorySet cardStoryImpl)
+        {
             control.Initialize(cardStoryImpl);
+            if (control.IsLoaded) _ = control.UpdateThumbnailAsync();
+        }
     }
 }
 
 public partial class CardStoryCard
 {
+    private static readonly ILogger ArtworkLogger = SekaiToolsBase.Logger.CreateLogger(nameof(CardStoryCard));
+    private static readonly SemaphoreSlim ThumbnailSlots = new(4);
+    private static readonly Fetcher ThumbnailFetcher = new();
+    private CancellationTokenSource? _thumbnailLifetime;
+    private Task<BitmapSource?>? _normalThumbnail;
+    private Task<BitmapSource?>? _trainedThumbnail;
+
     private void Initialize(CardStorySet cardStorySet)
     {
         CardStorySet = cardStorySet;
@@ -73,18 +87,85 @@ public partial class CardStoryCard
         InitDownloadItems();
     }
 
+    private void ResetThumbnail()
+    {
+        _thumbnailLifetime?.Cancel();
+        _thumbnailLifetime?.Dispose();
+        _thumbnailLifetime = null;
+        _normalThumbnail = null;
+        _trainedThumbnail = null;
+        ArtworkThumbnail.Source = null;
+        AutomationProperties.SetName(ArtworkThumbnail, "");
+    }
+
+    private void ArtworkPreview_OnMouseEnter(object sender, MouseEventArgs e) => _ = UpdateThumbnailAsync();
+
+    private void ArtworkPreview_OnMouseLeave(object sender, MouseEventArgs e) => _ = UpdateThumbnailAsync();
+
+    private async Task UpdateThumbnailAsync()
+    {
+        if (!IsLoaded || CardStorySet?.Card is not { } card || ArtworkPreviewButton.Visibility != Visibility.Visible) return;
+        var lifetime = _thumbnailLifetime ??= new CancellationTokenSource();
+        var normal = await (_normalThumbnail ??= LoadThumbnailAsync(ArtworkUrls(card, false), lifetime.Token));
+        if (_thumbnailLifetime != lifetime) return;
+        var trained = ArtworkPreviewButton.IsMouseOver && CardArtwork.HasTrainedArtwork(card);
+        if (!trained || ArtworkThumbnail.Source == null)
+        {
+            ArtworkThumbnail.Source = normal;
+            if (normal != null) AutomationProperties.SetName(ArtworkThumbnail, "特训前卡图缩略图");
+        }
+
+        if (!trained || !ArtworkPreviewButton.IsMouseOver) return;
+        var upgraded = await (_trainedThumbnail ??= LoadThumbnailAsync(ArtworkUrls(card, true), lifetime.Token));
+        if (_thumbnailLifetime == lifetime && ArtworkPreviewButton.IsMouseOver && upgraded != null)
+        {
+            ArtworkThumbnail.Source = upgraded;
+            AutomationProperties.SetName(ArtworkThumbnail, "特训后卡图缩略图");
+        }
+    }
+
+    private static async Task<BitmapSource?> LoadThumbnailAsync(IReadOnlyList<Uri> urls, CancellationToken token)
+    {
+        if (urls.Count == 0) return null;
+        try
+        {
+            await ThumbnailSlots.WaitAsync(token);
+            try
+            {
+                ThumbnailFetcher.SetProxy(SettingPageModel.Instance.GetProxy());
+                return await DownloadSources.TryAsync(urls,
+                    (uri, cancellation) => CardArtworkDialog.LoadAsync(ThumbnailFetcher, uri, cancellation, decodeWidth: 320), token);
+            }
+            finally
+            {
+                ThumbnailSlots.Release();
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            return null;
+        }
+        catch (Exception error)
+        {
+            ArtworkLogger.LogDebug(error, "Card artwork thumbnail unavailable: {Url}", urls[0]);
+            return null;
+        }
+    }
+
+    private static Uri[] ArtworkUrls(SekaiToolsBase.DataList.Card card, bool trained) =>
+        DownloadPageModel.Instance.OrderedSources.Select(source => CardArtwork.Locate(source, card, trained))
+            .OfType<Uri>().Distinct().ToArray();
+
     private async void ArtworkPreview_OnClick(object sender, RoutedEventArgs e)
     {
         if (CardStorySet?.Card is not { } card || Window.GetWindow(this) is not MainWindow window) return;
-        var sources = DownloadPageModel.Instance.OrderedSources;
-        var normal = ArtworkUrls(false);
+        var normal = ArtworkUrls(card, false);
         if (normal.Length == 0) return;
-        var trained = ArtworkUrls(true);
-        var dialog = new CardArtworkDialog($"#{card.Id} {card.Prefix}", normal, trained);
+        var trained = ArtworkUrls(card, true);
+        var showTrained = _trainedThumbnail is { IsCompletedSuccessfully: true }
+            && _trainedThumbnail.Result is { } upgraded && ArtworkThumbnail.Source == upgraded;
+        var dialog = new CardArtworkDialog($"#{card.Id} {card.Prefix}", normal, trained, showTrained);
         await dialog.ShowPreviewAsync(window.WindowContentDialogService);
-
-        Uri[] ArtworkUrls(bool afterTraining) => sources
-            .Select(source => CardArtwork.Locate(source, card, afterTraining)).OfType<Uri>().Distinct().ToArray();
     }
 
     private void InitDownloadItems()
@@ -109,11 +190,10 @@ public partial class CardStoryCard
         itemFirst.HorizontalAlignment = HorizontalAlignment.Stretch;
         itemSecond.HorizontalAlignment = HorizontalAlignment.Stretch;
 
-        itemFirst.Margin = new Thickness(5);
-        itemSecond.Margin = new Thickness(5);
-
-        Grid.SetColumn(itemFirst, 0);
-        Grid.SetColumn(itemSecond, 1);
+        itemFirst.UseCompactLayout();
+        itemSecond.UseCompactLayout();
+        itemFirst.Margin = new Thickness(0, 0, 6, 0);
+        itemSecond.Margin = new Thickness(0);
 
         PanelItems.Children.Add(itemFirst);
         PanelItems.Children.Add(itemSecond);

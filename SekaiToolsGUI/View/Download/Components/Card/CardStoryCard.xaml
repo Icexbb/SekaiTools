@@ -8,15 +8,24 @@
     <ui:Card VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Padding="10,5">
         <Grid>
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <Grid>
+            <ui:Button x:Name="ArtworkPreviewButton" Width="148" Height="84" Padding="0"
+                       VerticalAlignment="Center" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                       Click="ArtworkPreview_OnClick" MouseEnter="ArtworkPreview_OnMouseEnter" MouseLeave="ArtworkPreview_OnMouseLeave"
+                       AutomationProperties.Name="预览卡图" ToolTip="查看大图">
+                <Grid ClipToBounds="True">
+                    <ui:SymbolIcon Symbol="Image24" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Image x:Name="ArtworkThumbnail" Stretch="UniformToFill" />
+                </Grid>
+            </ui:Button>
+
+            <Grid Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Image Width="24" Height="24" Name="IconImage" Margin="0,0,10,0" />
 
@@ -27,20 +36,10 @@
                                Text="★2 XXX" TextWrapping="Wrap" />
                 </StackPanel>
 
-                <ui:Button Grid.Column="2" x:Name="ArtworkPreviewButton" Margin="6,0,0,0" Padding="7"
-                           VerticalAlignment="Center" Click="ArtworkPreview_OnClick"
-                           AutomationProperties.Name="预览卡图" ToolTip="预览卡图">
-                    <ui:SymbolIcon Symbol="Image24" />
-                </ui:Button>
-
             </Grid>
 
-            <Grid Grid.Column="2" Name="PanelItems" HorizontalAlignment="Stretch">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-            </Grid>
+            <StackPanel Grid.Column="2" x:Name="PanelItems" Orientation="Horizontal"
+                        HorizontalAlignment="Right" VerticalAlignment="Center" />
         </Grid>
     </ui:Card>
 </UserControl>

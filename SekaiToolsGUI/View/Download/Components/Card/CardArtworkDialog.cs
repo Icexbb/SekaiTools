@@ -31,7 +31,7 @@ internal sealed class CardArtworkDialog : ContentDialog
     };
     private CancellationTokenSource? _request;
 
-    public CardArtworkDialog(string title, IReadOnlyList<Uri> normal, IReadOnlyList<Uri> trained)
+    public CardArtworkDialog(string title, IReadOnlyList<Uri> normal, IReadOnlyList<Uri> trained, bool showTrained)
     {
         SetResourceReference(StyleProperty, typeof(ContentDialog));
         AdaptiveLayout.SetDialogPurpose(this, DialogPurpose.Workspace);
@@ -54,7 +54,9 @@ internal sealed class CardArtworkDialog : ContentDialog
         viewer.Children.Add(_status);
         panel.Children.Add(viewer);
         Content = panel;
-        Loaded += (_, _) => _ = ShowArtworkAsync(normal, "特训前");
+        Loaded += (_, _) => _ = showTrained
+            ? ShowArtworkAsync(trained, "特训后")
+            : ShowArtworkAsync(normal, "特训前");
 
         void AddButton(string label, string id, IReadOnlyList<Uri> urls)
         {
@@ -110,7 +112,7 @@ internal sealed class CardArtworkDialog : ContentDialog
         }
     }
 
-    internal static async Task<BitmapSource> LoadAsync(Fetcher fetcher, Uri uri, CancellationToken token)
+    internal static async Task<BitmapSource> LoadAsync(Fetcher fetcher, Uri uri, CancellationToken token, int decodeWidth = 0)
     {
         var directory = Path.Combine(ApplicationPaths.Current.DataRoot, "Data", "CardArtworkCache");
         var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(uri.AbsoluteUri)));
@@ -119,7 +121,7 @@ internal sealed class CardArtworkDialog : ContentDialog
         {
             try
             {
-                return Decode(await File.ReadAllBytesAsync(path, token).ConfigureAwait(false));
+                return Decode(await File.ReadAllBytesAsync(path, token).ConfigureAwait(false), decodeWidth);
             }
             catch (Exception error) when (error is IOException or FileFormatException or NotSupportedException)
             {
@@ -132,7 +134,7 @@ internal sealed class CardArtworkDialog : ContentDialog
         BitmapSource bitmap;
         try
         {
-            bitmap = Decode(bytes);
+            bitmap = Decode(bytes, decodeWidth);
         }
         catch (Exception error) when (error is FileFormatException or NotSupportedException or IOException)
         {
@@ -153,11 +155,15 @@ internal sealed class CardArtworkDialog : ContentDialog
         return bitmap;
     }
 
-    private static BitmapSource Decode(byte[] bytes)
+    private static BitmapSource Decode(byte[] bytes, int decodeWidth)
     {
         using var stream = new MemoryStream(bytes, writable: false);
-        var decoder = new PngBitmapDecoder(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
-        var image = decoder.Frames[0];
+        var image = new BitmapImage();
+        image.BeginInit();
+        image.CacheOption = BitmapCacheOption.OnLoad;
+        image.StreamSource = stream;
+        image.DecodePixelWidth = decodeWidth;
+        image.EndInit();
         image.Freeze();
         return image;
     }

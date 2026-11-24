@@ -9,7 +9,7 @@
              d:DataContext="{d:DesignInstance local:DownloadItem}"
              HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
              VerticalContentAlignment="Stretch" Height="64">
-    <ui:CardAction HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+    <ui:CardAction x:Name="ItemAction" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
                    VerticalAlignment="Stretch" VerticalContentAlignment="Center"
                    Click="ButtonBase_OnClick" Padding="10">
         <Grid>

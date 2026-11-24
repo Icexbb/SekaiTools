@@ -125,8 +125,18 @@ public partial class DownloadItem
     public void Recycle()
     {
         Visibility = Visibility.Collapsed;
+        Height = 64;
+        ItemAction.Padding = new Thickness(10);
+        TitleTextBlock.ClearValue(MinWidthProperty);
         RecycleContainer.Add(this);
         if (Parent is Panel parent) parent.Children.Remove(this);
+    }
+
+    internal void UseCompactLayout()
+    {
+        Height = 38;
+        ItemAction.Padding = new Thickness(8, 2, 8, 2);
+        TitleTextBlock.MinWidth = 32;
     }
 
     public static DownloadItem GetItem(Func<SourceData, string> url, string title, string index, string taskName,

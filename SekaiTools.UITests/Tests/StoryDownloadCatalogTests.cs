@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Input;
 using SekaiToolsBase.DataList;
 using SekaiTools.UITests.Fixtures;
 using SekaiTools.UITests.Helpers;
@@ -67,14 +68,17 @@ public sealed class StoryDownloadCatalogTests
                 Id = 2, Seq = 1, Title = "Fixture Special", AssetBundleName = "special-bundle",
                 Episodes = [new() { Id = 20, SpecialStoryId = 2, EpisodeNo = 1, Title = "Fixture Special Chapter", ScenarioId = "special-fixture" }]
             } }),
-            ["cards"] = JsonSerializer.Serialize(new[] { new Card
+            ["cards"] = JsonSerializer.Serialize(new[]
             {
-                Id = 3, CharacterId = 1, Prefix = "Fixture Card", AssetbundleName = "res005_no056", CardRarityType = "rarity_3"
-            } }),
+                new Card { Id = 3, CharacterId = 1, Prefix = "Fixture Card", AssetbundleName = "res005_no056", CardRarityType = "rarity_3" },
+                new Card { Id = 4, CharacterId = 1, Prefix = "Fixture Low Rarity", AssetbundleName = "res005_no001", CardRarityType = "rarity_2" }
+            }),
             ["cardEpisodes"] = JsonSerializer.Serialize(new[]
             {
                 new CardEpisode { Id = 30, CardId = 3, Title = "Fixture First Part", ScenarioId = "card-fixture-1", AssetBundleName = "res005_no056", CardEpisodePartType = "first_part" },
-                new CardEpisode { Id = 31, CardId = 3, Title = "Fixture Second Part", ScenarioId = "card-fixture-2", AssetBundleName = "res005_no056", CardEpisodePartType = "second_part" }
+                new CardEpisode { Id = 31, CardId = 3, Title = "Fixture Second Part", ScenarioId = "card-fixture-2", AssetBundleName = "res005_no056", CardEpisodePartType = "second_part" },
+                new CardEpisode { Id = 40, CardId = 4, ScenarioId = "card-low-1", AssetBundleName = "res005_no001", CardEpisodePartType = "first_part" },
+                new CardEpisode { Id = 41, CardId = 4, ScenarioId = "card-low-2", AssetBundleName = "res005_no001", CardEpisodePartType = "second_part" }
             }),
             ["actionSets"] = JsonSerializer.Serialize(new[] { new ActionSet
             {
@@ -88,7 +92,9 @@ public sealed class StoryDownloadCatalogTests
                 Id = 40, ReleaseConditionType = "event_story", ReleaseConditionTypeId = 10
             } })
         };
-        server.BinaryResponse = request => request.Contains(artworkPath) && request.Contains(".png ") ? imageBytes : null;
+        server.BinaryResponse = request =>
+            (request.Contains(artworkPath) || request.Contains("/assets/character/member/res005_no001/card_normal.png "))
+            && request.Contains(".png ") ? imageBytes : null;
         server.Response = request =>
         {
             if (request.Contains("/sources.json ")) return sourceResponse;
@@ -321,7 +327,18 @@ public sealed class StoryDownloadCatalogTests
         void VerifyArtwork()
         {
             var preview = app.Finder.ById(app.Window!, "StoryDownload.Card.3.PreviewArtwork").AsButton();
-            Assert.DoesNotContain(server.Requests, request => request.Contains(artworkPath));
+            WaitHelper.Until(() => preview.FindFirstDescendant(cf => cf.ByName("特训前卡图缩略图")), "卡片内显示特训前缩略图");
+            Mouse.MoveTo(preview.GetClickablePoint());
+            WaitHelper.Until(() => preview.FindFirstDescendant(cf => cf.ByName("特训后卡图缩略图")), "悬停显示特训后缩略图");
+            var lowRarity = app.Finder.ById(app.Window!, "StoryDownload.Card.4.PreviewArtwork").AsButton();
+            Mouse.MoveTo(lowRarity.GetClickablePoint());
+            WaitHelper.Until(() => preview.FindFirstDescendant(cf => cf.ByName("特训前卡图缩略图")), "移开还原特训前缩略图");
+            WaitHelper.Until(() => lowRarity.FindFirstDescendant(cf => cf.ByName("特训前卡图缩略图")), "低星卡显示普通缩略图");
+            lowRarity.Invoke();
+            var lowDialog = app.Finder.ById(app.Window!, "StoryDownload.CardArtwork.Dialog");
+            WaitForText("特训前卡图");
+            Assert.Null(lowDialog.FindFirstDescendant(cf => cf.ByAutomationId("StoryDownload.CardArtwork.Trained")));
+            CloseArtwork(lowDialog);
             for (var visit = 0; visit < 2; visit++)
             {
                 preview.Invoke();
@@ -330,14 +347,20 @@ public sealed class StoryDownloadCatalogTests
                 app.Finder.ById(dialog, "StoryDownload.CardArtwork.Trained").AsButton().Invoke();
                 WaitForText("特训后卡图");
                 ScreenshotHelper.Capture(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download.CardArtwork");
-                WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("关闭")), "关闭卡图预览").AsButton().Invoke();
-                WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByAutomationId("StoryDownload.CardArtwork.Dialog"))
-                    is not { IsOffscreen: false }, "卡图预览已关闭");
+                CloseArtwork(dialog);
             }
             Assert.Single(server.Requests, request => request.Contains(artworkPath + "card_normal.png "));
             Assert.Single(server.Requests, request => request.Contains(artworkPath + "card_after_training.png "));
             var cache = Path.Combine(app.Data.Paths.DataRoot, "Data", "CardArtworkCache");
-            Assert.Equal(2, Directory.GetFiles(cache, "*.png").Length);
+            Assert.DoesNotContain(server.Requests, request => request.Contains("res005_no001/card_after_training.png"));
+            Assert.Equal(3, Directory.GetFiles(cache, "*.png").Length);
+        }
+
+        void CloseArtwork(AutomationElement dialog)
+        {
+            WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("关闭")), "关闭卡图预览").AsButton().Invoke();
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByAutomationId("StoryDownload.CardArtwork.Dialog"))
+                is not { IsOffscreen: false }, "卡图预览已关闭");
         }
 
         AutomationElement FindChoice(string category, string label)
