@@ -28,6 +28,13 @@ public sealed class StoryDownloadCatalogTests
         var sourceResponse = sources.ToJsonString();
         var missingActivityMetadata = 0;
         var failAlternate = 1;
+        using var artwork = new System.Drawing.Bitmap(16, 9);
+        using (var graphics = System.Drawing.Graphics.FromImage(artwork))
+            graphics.Clear(System.Drawing.Color.SteelBlue);
+        using var png = new MemoryStream();
+        artwork.Save(png, System.Drawing.Imaging.ImageFormat.Png);
+        var imageBytes = png.ToArray();
+        const string artworkPath = "/assets/character/member/res005_no056/";
         var catalog = new Dictionary<string, string>
         {
             ["eventStories"] = JsonSerializer.Serialize(new[] { new EventStory
@@ -53,7 +60,10 @@ public sealed class StoryDownloadCatalogTests
                 Id = 2, Seq = 1, Title = "Fixture Special", AssetBundleName = "special-bundle",
                 Episodes = [new() { Id = 20, SpecialStoryId = 2, EpisodeNo = 1, Title = "Fixture Special Chapter", ScenarioId = "special-fixture" }]
             } }),
-            ["cards"] = JsonSerializer.Serialize(new[] { new Card { Id = 3, CharacterId = 1, Prefix = "Fixture Card", AssetbundleName = "card-bundle" } }),
+            ["cards"] = JsonSerializer.Serialize(new[] { new Card
+            {
+                Id = 3, CharacterId = 1, Prefix = "Fixture Card", AssetbundleName = "res005_no056", CardRarityType = "rarity_3"
+            } }),
             ["cardEpisodes"] = JsonSerializer.Serialize(new[]
             {
                 new CardEpisode { Id = 30, CardId = 3, Title = "Fixture First Part", ScenarioId = "card-fixture-1", CardEpisodePartType = "first_part" },
@@ -71,6 +81,7 @@ public sealed class StoryDownloadCatalogTests
                 Id = 40, ReleaseConditionType = "event_story", ReleaseConditionTypeId = 10
             } })
         };
+        server.BinaryResponse = request => request.Contains(artworkPath) && request.Contains(".png ") ? imageBytes : null;
         server.Response = request =>
         {
             if (request.Contains("/sources.json ")) return sourceResponse;
@@ -109,6 +120,7 @@ public sealed class StoryDownloadCatalogTests
                 app.Finder.ById(app.Window!, "StoryDownload." + category + ".Root");
                 Refresh();
                 WaitForText(displayedName);
+                if (category == "Card") VerifyArtwork();
                 if (category == "Event")
                 {
                     search.Text = "event-fixture";
@@ -218,6 +230,28 @@ public sealed class StoryDownloadCatalogTests
 
         void WaitForText(string text) =>
             WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName(text)), text);
+
+        void VerifyArtwork()
+        {
+            var preview = app.Finder.ById(app.Window!, "StoryDownload.Card.3.PreviewArtwork").AsButton();
+            Assert.DoesNotContain(server.Requests, request => request.Contains(artworkPath));
+            for (var visit = 0; visit < 2; visit++)
+            {
+                preview.Invoke();
+                var dialog = app.Finder.ById(app.Window!, "StoryDownload.CardArtwork.Dialog");
+                WaitForText("特训前卡图");
+                app.Finder.ById(dialog, "StoryDownload.CardArtwork.Trained").AsButton().Invoke();
+                WaitForText("特训后卡图");
+                ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download.CardArtwork");
+                WaitHelper.Until(() => dialog.FindFirstDescendant(cf => cf.ByName("关闭")), "关闭卡图预览").AsButton().Invoke();
+                WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByAutomationId("StoryDownload.CardArtwork.Dialog"))
+                    is not { IsOffscreen: false }, "卡图预览已关闭");
+            }
+            Assert.Single(server.Requests, request => request.Contains(artworkPath + "card_normal.png "));
+            Assert.Single(server.Requests, request => request.Contains(artworkPath + "card_after_training.png "));
+            var cache = Path.Combine(app.Data.Paths.DataRoot, "Data", "CardArtworkCache");
+            Assert.Equal(2, Directory.GetFiles(cache, "*.png").Length);
+        }
 
         AutomationElement FindChoice(string category, string label)
         {

@@ -1,6 +1,8 @@
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
+using SekaiDataFetch;
 using SekaiDataFetch.Item;
 using SekaiDataFetch.Source;
 using SekaiToolsGUI.ViewModel.Download;
@@ -62,8 +64,23 @@ public partial class CardStoryCard
         var url =
             $"pack://application:,,,/SekaiToolsGUI;component/Resource/Characters/chr_{cardStorySet.Card.CharacterId}.png";
         IconImage.Source = new BitmapImage(new Uri(url));
+        ArtworkPreviewButton.Visibility = CardArtwork.Locate(
+            DownloadPageModel.Instance.CurrentSource.StorageBaseUrl, cardStorySet.Card, trained: false) != null
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        AutomationProperties.SetAutomationId(ArtworkPreviewButton, $"StoryDownload.Card.{cardStorySet.Card.Id}.PreviewArtwork");
 
         InitDownloadItems();
+    }
+
+    private async void ArtworkPreview_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (CardStorySet?.Card is not { } card || Window.GetWindow(this) is not MainWindow window) return;
+        var storageBaseUrl = DownloadPageModel.Instance.CurrentSource.StorageBaseUrl;
+        if (CardArtwork.Locate(storageBaseUrl, card, trained: false) is not { } normal) return;
+        var trained = CardArtwork.Locate(storageBaseUrl, card, trained: true);
+        var dialog = new CardArtworkDialog($"#{card.Id} {card.Prefix}", normal, trained);
+        await dialog.ShowPreviewAsync(window.WindowContentDialogService);
     }
 
     private void InitDownloadItems()

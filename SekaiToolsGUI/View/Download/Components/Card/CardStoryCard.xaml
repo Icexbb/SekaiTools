@@ -16,6 +16,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Image Width="24" Height="24" Name="IconImage" Margin="0,0,10,0" />
 
@@ -25,6 +26,12 @@
                     <TextBlock Name="TextBlockName" FontWeight="DemiBold"
                                Text="★2 XXX" TextWrapping="Wrap" />
                 </StackPanel>
+
+                <ui:Button Grid.Column="2" x:Name="ArtworkPreviewButton" Margin="6,0,0,0" Padding="7"
+                           VerticalAlignment="Center" Click="ArtworkPreview_OnClick"
+                           AutomationProperties.Name="预览卡图" ToolTip="预览卡图">
+                    <ui:SymbolIcon Symbol="Image24" />
+                </ui:Button>
 
             </Grid>
 
