@@ -15,13 +15,14 @@ public partial class SettingPageModel
         {
             base.SetProperty(value);
             OnPropertyChanged(nameof(DeveloperApiAddress));
-            OnPropertyChanged(nameof(DeveloperApiToken));
+            OnPropertyChanged(nameof(DeveloperApiTokenDisplay));
             OnPropertyChanged(nameof(IsDeveloperApiConnected));
             OnPropertyChanged(nameof(DeveloperApiConnectionStatus));
         }
     }
     public bool IsDeveloperApiConnected => DeveloperApiStatus.StartsWith("http://127.0.0.1:", StringComparison.Ordinal);
     public string DeveloperApiAddress => IsDeveloperApiConnected ? DeveloperApiStatus.Split('\n')[0] : "";
-    public string DeveloperApiToken => IsDeveloperApiConnected ? DeveloperApiStatus.Split("Bearer ").Last() : "";
+    internal string DeveloperApiToken => IsDeveloperApiConnected ? DeveloperApiStatus.Split("Bearer ").Last() : "";
+    public string DeveloperApiTokenDisplay => IsDeveloperApiConnected ? "••••••••" : "";
     public string DeveloperApiConnectionStatus => IsDeveloperApiConnected ? "正在监听本机请求 · 令牌在本次启用期间有效" : DeveloperApiStatus;
 }

@@ -48,7 +48,11 @@ public sealed class DeveloperModeService : IDisposable
         {
             if (File.Exists(_path))
                 Thresholds = DeveloperThresholds.Patch(new MatchingThreshold(), JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(_path)));
-            var server = new DeveloperApiServer(18339, (method, path, body) =>
+            var port = SekaiToolsConfiguration.ApplicationPaths.Current.IsIsolated &&
+                       int.TryParse(Environment.GetEnvironmentVariable("SEKAI_TOOLS_TEST_DEVELOPER_PORT"), out var isolatedPort)
+                ? isolatedPort
+                : 18339;
+            var server = new DeveloperApiServer(port, (method, path, body) =>
                 Application.Current.Dispatcher.InvokeAsync(() => Dispatch(method, path, body)).Task);
             _server = server;
             server.Start();

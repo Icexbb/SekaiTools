@@ -23,14 +23,15 @@ public sealed class DeveloperConnectionControl : CardExpander
         ContentPadding = new Thickness(16);
         var body = new StackPanel();
         var status = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) };
+        AutomationProperties.SetAutomationId(status, "Settings.Developer.ConnectionStatus");
         status.SetBinding(TextBlock.TextProperty, new Binding(nameof(SettingPageModel.DeveloperApiConnectionStatus)));
         body.Children.Add(status);
-        AddRow(body, "监听地址", nameof(SettingPageModel.DeveloperApiAddress));
-        AddRow(body, "访问令牌", nameof(SettingPageModel.DeveloperApiToken));
+        AddRow(body, "监听地址", "Address", nameof(SettingPageModel.DeveloperApiAddress), model => model.DeveloperApiAddress);
+        AddRow(body, "访问令牌", "Token", nameof(SettingPageModel.DeveloperApiTokenDisplay), model => model.DeveloperApiToken);
         Content = body;
     }
 
-    private static void AddRow(StackPanel body, string label, string property)
+    private static void AddRow(StackPanel body, string label, string id, string property, Func<SettingPageModel, string> getCopyText)
     {
         body.Children.Add(new TextBlock { Text = label, Margin = new Thickness(0, 0, 0, 6) });
         var row = new Grid { Margin = new Thickness(0, 0, 0, 12) };
@@ -47,6 +48,7 @@ public sealed class DeveloperConnectionControl : CardExpander
         };
         value.SetBinding(TextBox.TextProperty, new Binding(property) { Mode = BindingMode.OneWay });
         AutomationProperties.SetName(value, label);
+        AutomationProperties.SetAutomationId(value, $"Settings.Developer.{id}");
         var copy = new Button
         {
             Content = "复制",
@@ -57,16 +59,18 @@ public sealed class DeveloperConnectionControl : CardExpander
         };
         copy.SetBinding(IsEnabledProperty, new Binding(nameof(SettingPageModel.IsDeveloperApiConnected)));
         AutomationProperties.SetName(copy, $"复制{label}");
+        AutomationProperties.SetAutomationId(copy, $"Settings.Developer.Copy{id}");
         copy.Click += (_, _) =>
         {
             try
             {
-                Clipboard.SetText(value.Text);
+                if (copy.DataContext is SettingPageModel model)
+                    Clipboard.SetText(getCopyText(model));
                 copy.ToolTip = $"已复制{label}";
             }
             catch (System.Runtime.InteropServices.ExternalException)
             {
-                copy.ToolTip = "剪贴板暂时不可用，请选择文本后手动复制";
+                copy.ToolTip = "剪贴板暂时不可用，请重试";
             }
         };
         Grid.SetColumn(copy, 1);
