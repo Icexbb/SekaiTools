@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using Microsoft.Extensions.Logging;
 using SekaiDataFetch;
@@ -59,6 +60,7 @@ public partial class CardStoryCard
     private CancellationTokenSource? _thumbnailLifetime;
     private Task<BitmapSource?>? _normalThumbnail;
     private Task<BitmapSource?>? _trainedThumbnail;
+    private bool _showTrained;
 
     private void Initialize(CardStorySet cardStorySet)
     {
@@ -94,7 +96,11 @@ public partial class CardStoryCard
         _thumbnailLifetime = null;
         _normalThumbnail = null;
         _trainedThumbnail = null;
+        _showTrained = false;
         ArtworkThumbnail.Source = null;
+        TrainedArtworkOverlay.BeginAnimation(OpacityProperty, null);
+        TrainedArtworkOverlay.Opacity = 0;
+        TrainedArtworkOverlay.Source = null;
         AutomationProperties.SetName(ArtworkThumbnail, "");
     }
 
@@ -109,19 +115,44 @@ public partial class CardStoryCard
         var normal = await (_normalThumbnail ??= LoadThumbnailAsync(ArtworkUrls(card, false), lifetime.Token));
         if (_thumbnailLifetime != lifetime) return;
         var trained = ArtworkPreviewButton.IsMouseOver && CardArtwork.HasTrainedArtwork(card);
-        if (!trained || ArtworkThumbnail.Source == null)
+        ArtworkThumbnail.Source = normal;
+        if (!trained)
         {
-            ArtworkThumbnail.Source = normal;
-            if (normal != null) AutomationProperties.SetName(ArtworkThumbnail, "特训前卡图缩略图");
+            TransitionArtwork(false);
+            return;
         }
-
-        if (!trained || !ArtworkPreviewButton.IsMouseOver) return;
+        if (TrainedArtworkOverlay.Source == null && normal != null)
+            AutomationProperties.SetName(ArtworkThumbnail, "特训前卡图缩略图");
         var upgraded = await (_trainedThumbnail ??= LoadThumbnailAsync(ArtworkUrls(card, true), lifetime.Token));
         if (_thumbnailLifetime == lifetime && ArtworkPreviewButton.IsMouseOver && upgraded != null)
         {
-            ArtworkThumbnail.Source = upgraded;
-            AutomationProperties.SetName(ArtworkThumbnail, "特训后卡图缩略图");
+            TrainedArtworkOverlay.Source = upgraded;
+            TransitionArtwork(true);
         }
+    }
+
+    private void TransitionArtwork(bool trained)
+    {
+        var target = trained ? 1d : 0d;
+        AutomationProperties.SetName(ArtworkThumbnail, trained ? "特训后卡图缩略图"
+            : ArtworkThumbnail.Source != null ? "特训前卡图缩略图" : "");
+        if (_showTrained == trained) return;
+        _showTrained = trained;
+
+        var current = TrainedArtworkOverlay.Opacity;
+        if (!SystemParameters.ClientAreaAnimation)
+        {
+            TrainedArtworkOverlay.BeginAnimation(OpacityProperty, null);
+            TrainedArtworkOverlay.Opacity = target;
+            return;
+        }
+
+        TrainedArtworkOverlay.Opacity = current;
+        TrainedArtworkOverlay.BeginAnimation(OpacityProperty,
+            new DoubleAnimation(current, target, TimeSpan.FromMilliseconds(180))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            });
     }
 
     private static async Task<BitmapSource?> LoadThumbnailAsync(IReadOnlyList<Uri> urls, CancellationToken token)
@@ -162,9 +193,7 @@ public partial class CardStoryCard
         var normal = ArtworkUrls(card, false);
         if (normal.Length == 0) return;
         var trained = ArtworkUrls(card, true);
-        var showTrained = _trainedThumbnail is { IsCompletedSuccessfully: true }
-            && _trainedThumbnail.Result is { } upgraded && ArtworkThumbnail.Source == upgraded;
-        var dialog = new CardArtworkDialog($"#{card.Id} {card.Prefix}", normal, trained, showTrained);
+        var dialog = new CardArtworkDialog($"#{card.Id} {card.Prefix}", normal, trained, _showTrained);
         await dialog.ShowPreviewAsync(window.WindowContentDialogService);
     }
 
