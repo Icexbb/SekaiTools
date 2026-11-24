@@ -80,7 +80,12 @@ public sealed class TranslationWorkspaceTests
                     if (desktop.Width < width + 24 || desktop.Height < height + 24) throw new InvalidOperationException("翻译布局验证桌面尺寸不足。");
                     app.Window!.Patterns.Transform.Pattern.Resize(width, height);
                     app.Window.Patterns.Transform.Pattern.Move(desktop.Left + (desktop.Width - width) / 2, desktop.Top + (desktop.Height - height) / 2);
-                    WaitHelper.Until(() => Math.Abs(app.Window.BoundingRectangle.Width - width) <= 1, "实际窗口尺寸");
+                    WaitHelper.Until(() => Math.Abs(app.Window.BoundingRectangle.Width - width) <= 1 &&
+                                           Math.Abs(app.Window.BoundingRectangle.Height - height) <= 1 &&
+                                           Math.Abs(app.Window.BoundingRectangle.Left - (desktop.Left + (desktop.Width - width) / 2)) <= 1 &&
+                                           Math.Abs(app.Window.BoundingRectangle.Top - (desktop.Top + (desktop.Height - height) / 2)) <= 1,
+                        "窗口缩放与居中完成");
+                    ScreenshotHelper.CaptureStable(app.Window, Path.Combine(app.Data.Directory, "Screenshots"), $"{name}.{width}.BeforeOptions");
                     var list = app.Finder.ById(app.Window, "Translation.EventList").BoundingRectangle;
                     Assert.True(list.Height >= 200, "最小窗口仍应保留至少200像素列表高度。");
                     var search = app.Finder.ById(app.Window, "Translation.SearchBox").BoundingRectangle;
@@ -104,7 +109,7 @@ public sealed class TranslationWorkspaceTests
                     Option("AutoFormat").Focus();
                     Keyboard.Type(VirtualKeyShort.ESCAPE);
                     WaitHelper.Until(() => FindOption("AutoFormat") is null, "浮层关闭");
-                    Assert.Equal(list, app.Finder.ById(app.Window, "Translation.EventList").BoundingRectangle);
+                    WaitHelper.Until(() => list == app.Finder.ById(app.Window, "Translation.EventList").BoundingRectangle, "关闭浮层后列表边界恢复");
                     Assert.Equal("同步译文。", Edit(1).Text);
                     ScreenshotHelper.CaptureStable(app.Window, Path.Combine(app.Data.Directory, "Screenshots"), $"{name}.{width}.Workspace");
                 }
