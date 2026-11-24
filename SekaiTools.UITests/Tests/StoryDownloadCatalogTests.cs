@@ -85,12 +85,12 @@ public sealed class StoryDownloadCatalogTests
             app.Navigate("MainWindow.Navigation.StoryDownload", "StoryDownload.Root");
             WaitHelper.Until(() => server.Requests.Any(request => request.Contains("/sources.json ")), "收到数据源请求");
         });
-        foreach (var (category, scenario, displayedName) in new[]
+        foreach (var (category, scenario, displayedName, choiceLabel) in new[]
                  {
-                     ("Event", "event-fixture", "Fixture Activity"),
-                     ("Special", "special-fixture", "Fixture Special Chapter"),
-                     ("Card", "card-fixture-2", "# 3"),
-                     ("Action", "action-fixture", "action-fixture")
+                     ("Event", "event-fixture", "Fixture Activity", "Fixture Event Chapter"),
+                     ("Special", "special-fixture", "Fixture Special Chapter", "Fixture Special Chapter"),
+                     ("Card", "card-fixture-2", "# 3", "Fixture Card|后篇"),
+                     ("Action", "action-fixture", "action-fixture", "action-fixture")
                  })
         {
             app.Step(category + " 剧情", "按剧本名搜索并可选择加入下载列表", () =>
@@ -102,6 +102,7 @@ public sealed class StoryDownloadCatalogTests
                 Refresh();
                 WaitForText(displayedName);
                 search.Text = scenario;
+                var choiceId = FindChoice(category, choiceLabel).AutomationId;
                 var select = app.Finder.ById(app.Window!, "StoryDownload.SelectResults").AsCheckBox();
                 WaitHelper.Until(() => select.IsEnabled, category + " 样本可选");
                 select.IsChecked = true;
@@ -109,6 +110,7 @@ public sealed class StoryDownloadCatalogTests
                 WaitHelper.Until(() => add.IsEnabled, category + " 所选剧本可下载");
                 add.AsButton().Invoke();
                 WaitHelper.Until(() => app.Finder.ById(app.Window!, "StoryDownload.StartDownloadButton").IsEnabled, category + " 已入队");
+                Assert.Equal(choiceId, FindChoice(category, choiceLabel).AutomationId);
                 if (category == "Action")
                 {
                     WaitHelper.Until(() => app.Window!.FindAllDescendants().Any(element =>
@@ -142,6 +144,7 @@ public sealed class StoryDownloadCatalogTests
         {
             var source = app.Finder.ById(app.Window!, "StoryDownload.Source").AsComboBox();
             app.Finder.ById(app.Window!, "StoryDownload.SearchBox").AsTextBox().Text = "";
+            var firstChoiceId = FindChoice("Action", "action-fixture").AutomationId;
             source.Select(1);
             source.Collapse();
             WaitHelper.Until(() => !app.Finder.ById(app.Window!, "StoryDownload.EmptyMessage").IsOffscreen, "备用源无缓存");
@@ -152,14 +155,18 @@ public sealed class StoryDownloadCatalogTests
             Volatile.Write(ref failAlternate, 0);
             Refresh();
             WaitForText("alternate-fixture");
+            var alternateChoiceId = FindChoice("Action", "alternate-fixture").AutomationId;
+            Assert.NotEqual(firstChoiceId, alternateChoiceId);
             Assert.Null(app.Window!.FindFirstDescendant(cf => cf.ByName("action-fixture")));
             source.Select(0);
             source.Collapse();
             WaitForText("action-fixture");
+            Assert.Equal(firstChoiceId, FindChoice("Action", "action-fixture").AutomationId);
             Assert.Null(app.Window!.FindFirstDescendant(cf => cf.ByName("alternate-fixture")));
             source.Select(1);
             source.Collapse();
             WaitForText("alternate-fixture");
+            Assert.Equal(alternateChoiceId, FindChoice("Action", "alternate-fixture").AutomationId);
             var cache = Path.Combine(app.Data.Paths.DataRoot, "Data", "cache");
             Assert.True(File.Exists(Path.Combine(cache, "UI Test Fixture", "actionSets.json")));
             Assert.True(File.Exists(Path.Combine(cache, "UI Alternate Fixture", "actionSets.json")));
@@ -189,6 +196,14 @@ public sealed class StoryDownloadCatalogTests
 
         void WaitForText(string text) =>
             WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName(text)), text);
+
+        AutomationElement FindChoice(string category, string label)
+        {
+            var categoryRoot = app.Finder.ById(app.Window!, "StoryDownload." + category + ".Root");
+            return WaitHelper.Until(() => categoryRoot.FindAllDescendants().FirstOrDefault(element =>
+                element.AutomationId?.StartsWith($"StoryDownload.Choice.{category}.", StringComparison.Ordinal) == true
+                && element.Name?.Contains(label, StringComparison.Ordinal) == true), $"{category} 剧本选择框");
+        }
 
         void OpenActionFilters()
         {

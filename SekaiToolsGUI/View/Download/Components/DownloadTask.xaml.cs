@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using SekaiDataFetch;
 using Wpf.Ui.Controls;
@@ -14,6 +15,7 @@ public partial class DownloadTask : UserControl
     public DownloadTask(string scriptTag, string url, string sourceName = "", string? directory = null)
     {
         InitializeComponent();
+        AutomationProperties.SetAutomationId(this, $"StoryDownload.Task.{Id:N}");
         Url = url;
         ScriptTag = scriptTag;
         SourceName = sourceName;

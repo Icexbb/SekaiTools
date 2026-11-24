@@ -154,6 +154,8 @@ UI-DOWNLOAD-001 以空数组验证活动、特殊、角色及地图对话的空�
 
 UI-DOWNLOAD-002 为活动章节、特殊剧情、角色卡片和地图对话提供非空样本，逐类按剧本名搜索并加入下载队列。地图对话额外验证活动关联、筛选及可选活动元数据请求失败后的提示和可下载性。通过 `StoryDownload.Source` 切换两个本机来源，验证首次空列表、HTTP 503 提示、重新刷新、切回已有缓存及通过 `StoryDownload.ClearCache` 清除两套缓存。分类入口为 `StoryDownload.Category.Unit/Event/Special/Card/Action`，内容根为 `StoryDownload.Unit/Event/Special/Card/Action.Root`，各后缀分别使用。两个用例均将应用网络端点指向本机，包含分类截图与请求记录。
 
+下载项复选框使用 `StoryDownload.Choice.{类别}.{摘要}`，摘要取自数据源地址模板与剧本资源地址，筛选、入队和切回同一来源后可以重新定位。下载任务由 `StoryDownload.Task.{任务 ID}` 定位，内部的状态、错误和重试控件在此任务范围内查找。
+
 ## 真实字幕资源包
 
 UI-SUBTITLE-001 校验四个锁定版本文件，经本地 HTTP 触发真实 ResourceManager 下载与 MD5/大小校验，再独立比较落盘 SHA-256，验证添加任务表单可打开、取消和退出。该场景不执行视频识别或 ASS 导出，不能当作算法或真实视频流程验收。
