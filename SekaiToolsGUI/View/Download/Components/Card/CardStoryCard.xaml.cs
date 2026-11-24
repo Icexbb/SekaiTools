@@ -58,6 +58,9 @@ public partial class CardStoryCard
     private static readonly ILogger ArtworkLogger = SekaiToolsBase.Logger.CreateLogger(nameof(CardStoryCard));
     private static readonly SemaphoreSlim ThumbnailSlots = new(4);
     private static readonly Fetcher ThumbnailFetcher = new();
+    private static readonly DependencyProperty ArtworkSplitProperty = DependencyProperty.Register(
+        "ArtworkSplit", typeof(double), typeof(CardStoryCard),
+        new PropertyMetadata(1d, (owner, _) => ((CardStoryCard)owner).UpdateArtworkCrop()));
     private CancellationTokenSource? _thumbnailLifetime;
     private double _split = 1;
 
@@ -144,22 +147,33 @@ public partial class CardStoryCard
         if (animate && _split == split) return;
         _split = split;
 
-        var width = ArtworkViewport.ActualWidth;
-        var target = new Rect(width * split, 0, width * (1 - split), ArtworkViewport.ActualHeight);
-        if (animate && SystemParameters.ClientAreaAnimation && !TrainedArtworkClip.Rect.IsEmpty)
+        if (animate && SystemParameters.ClientAreaAnimation)
         {
-            var current = TrainedArtworkClip.Rect;
-            TrainedArtworkClip.Rect = current;
-            TrainedArtworkClip.BeginAnimation(RectangleGeometry.RectProperty,
-                new RectAnimation(current, target, TimeSpan.FromMilliseconds(180))
+            var current = (double)GetValue(ArtworkSplitProperty);
+            SetValue(ArtworkSplitProperty, current);
+            BeginAnimation(ArtworkSplitProperty,
+                new DoubleAnimation(current, split, TimeSpan.FromMilliseconds(180))
                 {
                     EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
                 });
             return;
         }
 
-        TrainedArtworkClip.BeginAnimation(RectangleGeometry.RectProperty, null);
-        TrainedArtworkClip.Rect = target;
+        BeginAnimation(ArtworkSplitProperty, null);
+        SetValue(ArtworkSplitProperty, split);
+        UpdateArtworkCrop();
+    }
+
+    private void UpdateArtworkCrop()
+    {
+        var width = ArtworkViewport.ActualWidth;
+        var height = ArtworkViewport.ActualHeight;
+        var leftWidth = width * (double)GetValue(ArtworkSplitProperty);
+        var rightWidth = width - leftWidth;
+        NormalArtworkOffset.X = -rightWidth / 2;
+        TrainedArtworkOffset.X = leftWidth / 2;
+        NormalArtworkClip.Rect = new Rect(rightWidth / 2, 0, leftWidth, height);
+        TrainedArtworkClip.Rect = new Rect(leftWidth / 2, 0, rightWidth, height);
     }
 
     private static async Task<BitmapSource?> LoadThumbnailAsync(IReadOnlyList<Uri> urls, CancellationToken token)

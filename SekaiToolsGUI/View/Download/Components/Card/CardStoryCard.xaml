@@ -19,11 +19,21 @@
                        AutomationProperties.Name="预览卡图" ToolTip="查看大图">
                 <Grid x:Name="ArtworkViewport" ClipToBounds="True" SizeChanged="ArtworkViewport_OnSizeChanged">
                     <ui:SymbolIcon Symbol="Image24" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                    <Image x:Name="ArtworkThumbnail" Stretch="UniformToFill" />
+                    <Image x:Name="ArtworkThumbnail" Stretch="UniformToFill">
+                        <Image.Clip>
+                            <RectangleGeometry x:Name="NormalArtworkClip" />
+                        </Image.Clip>
+                        <Image.RenderTransform>
+                            <TranslateTransform x:Name="NormalArtworkOffset" />
+                        </Image.RenderTransform>
+                    </Image>
                     <Image x:Name="TrainedArtworkOverlay" Stretch="UniformToFill" IsHitTestVisible="False">
                         <Image.Clip>
                             <RectangleGeometry x:Name="TrainedArtworkClip" Rect="0,0,0,0" />
                         </Image.Clip>
+                        <Image.RenderTransform>
+                            <TranslateTransform x:Name="TrainedArtworkOffset" />
+                        </Image.RenderTransform>
                     </Image>
                 </Grid>
             </ui:Button>
