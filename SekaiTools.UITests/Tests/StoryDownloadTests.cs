@@ -1,6 +1,8 @@
 using System.Text.Json;
 using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Definitions;
 using FlaUI.Core.Input;
+using SekaiTools.UITests.Automation;
 using SekaiToolsBase.DataList;
 using SekaiTools.UITests.Fixtures;
 using SekaiTools.UITests.Helpers;
@@ -169,6 +171,59 @@ public sealed class StoryDownloadTests
             WaitHelper.Until(() => !start.IsEnabled, "清空队列后无任务可下载");
             Assert.Equal(script, File.ReadAllText(path));
             app.Data.WriteJson("fixture-requests", server.Requests.ToArray());
+        });
+        app.Step("更改下载目录", "新下载写入新目录，已有文件保留在原处", () =>
+        {
+            var alternateDirectory = Path.Combine(app.Data.Root, "Second download location");
+            Directory.CreateDirectory(alternateDirectory);
+            app.Finder.ById(app.Window!, "StoryDownload.ChooseDirectory").AsButton().Invoke();
+            var dialog = WaitHelper.Until(() => app.Window!.ModalWindows.FirstOrDefault(window =>
+                window.FindFirstDescendant(cf => cf.ByAutomationId("1152").And(cf.ByControlType(ControlType.Edit))) is not null),
+                "自有进程的文件夹选择器");
+            var pathField = WaitHelper.Until(() => dialog.FindFirstDescendant(cf =>
+                cf.ByAutomationId("1152").And(cf.ByControlType(ControlType.Edit))), "文件夹选择框").AsTextBox();
+            pathField.Focus();
+            pathField.Text = alternateDirectory;
+            WaitHelper.Until(() => pathField.Text == alternateDirectory, "文件夹选择器显示新目录");
+            app.Finder.ById(dialog, "1").AsButton().Invoke();
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName(alternateDirectory)), "队列显示新下载目录");
+
+            app.Finder.ById(app.Window!, "StoryDownload.SelectResults").AsCheckBox().IsChecked = true;
+            var add = app.Finder.ById(app.Window!, "StoryDownload.AddSelectedButton");
+            WaitHelper.Until(() => add.IsEnabled, "清空已完成队列后可重新添加");
+            add.AsButton().Invoke();
+            var start = app.Finder.ById(app.Window!, "StoryDownload.StartDownloadButton");
+            WaitHelper.Until(() => start.IsEnabled, "新目录中可开始下载");
+            start.AsButton().Invoke();
+            WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("下载完成")), "第二次下载完成");
+            Assert.Equal(script, File.ReadAllText(Path.Combine(alternateDirectory, "fixture-scenario.asset")));
+            Assert.Equal(script, File.ReadAllText(Path.Combine(app.Data.Paths.DataRoot, "Scripts", "fixture-scenario.asset")));
+
+            var desktop = app.Window!.Automation.GetDesktop();
+            var existingExplorerHandles = desktop.FindAllChildren(cf => cf.ByClassName("CabinetWClass"))
+                .Select(window => window.Properties.NativeWindowHandle.Value).ToHashSet();
+            app.Finder.ById(app.Window!, "StoryDownload.OpenFolder").AsButton().Invoke();
+            var folderName = Path.GetFileName(alternateDirectory);
+            var explorer = WaitHelper.Until(() => desktop.FindAllChildren(cf => cf.ByClassName("CabinetWClass"))
+                .FirstOrDefault(window => !existingExplorerHandles.Contains(window.Properties.NativeWindowHandle.Value)
+                    && window.Name.Contains(folderName, StringComparison.Ordinal)), "资源管理器打开新下载目录");
+            try
+            {
+                WaitHelper.Until(() => explorer.FindFirstDescendant(cf => cf.ByName("fixture-scenario").Or(cf.ByName("fixture-scenario.asset"))),
+                    "资源管理器显示刚下载的剧本");
+            }
+            finally
+            {
+                explorer.AsWindow().Close();
+            }
+        });
+        app.Step("在翻译中打开下载文件", "现有剧本选择器可以读取下载的内容", () =>
+        {
+            var originalScript = Path.Combine(app.Data.Paths.DataRoot, "Scripts", "fixture-scenario.asset");
+            app.Navigate("MainWindow.Navigation.Translation", "Translation.Root");
+            new TranslationWorkspaceDriver(app).Load(Catalog.LoadScript, originalScript);
+            var originalText = app.Finder.ById(app.Window!, "OriginalContentTextBox").AsTextBox();
+            Assert.Equal("下载正文", originalText.Text);
         });
         app.Step("退出", "正常退出", app.Close);
     }
