@@ -236,3 +236,5 @@ dotnet test .\SekaiTools.UITests\SekaiTools.UITests.csproj --filter "Category=Vi
 交付设计资源与组件说明、FlaUI 项目和运行手册、AutomationId Catalog、固定样本、报告/截图索引、已知问题及未执行矩阵。每个里程碑作为独立可审查改动；通过对应验证后按项目中文 Conventional Commits 提交，不因 UI 改造自行发布版本。
 
 最终完成条件同时包括真实运行、关键 UIA 交互、业务结果核对、截图人工复核和必要设备验收。FlaUI 成功、组件探针成功、构建成功分别记录，不能相互替代。
+
+当前构建、全量回归、发布目录、截图和待补设备矩阵见 [M7 验收与交付记录](fluent-workbench-m7-acceptance.md)。

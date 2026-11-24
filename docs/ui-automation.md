@@ -49,6 +49,21 @@ UI-SETTINGS-002 通过 Settings.VersionLabel 聚焦后按七次 Enter 开启现�
 
 M6 扩展了普通设置、开发者服务、关于、运行日志、受控更新和最小窗口的 FlaUI 覆盖。用例、动态 AutomationId、实际 Pattern 和截图复核记录见 [M6 设置与关于验收](fluent-workbench-m6-acceptance.md)。使用 `Tools/RunUITests.ps1 -Filter "FullyQualifiedName~SettingsTests"` 可运行整组用例。
 
+### M7 全量与发布目录
+
+```powershell
+pwsh -NoProfile -File Tools/RunUITests.ps1 -Mode All
+pwsh -NoProfile -File Tools/RunUITests.ps1 -Mode All -Publish
+pwsh -NoProfile -File Tools/RunUITests.ps1 -Mode Visual -SkipBuild
+pwsh -NoProfile -File Tools/RunUITests.ps1 -Mode CaptureOnly -SkipBuild
+```
+
+`-Publish` 将 Release 发布到独立的 `.codex-build/fluent-workbench/published-app`，校验主要托管依赖、Updater、7zr 和配置文件的布局，再从该目录启动。使用 `-Publish -SkipBuild` 可复用已发布产物。原生资源包继续通过下文的锁定脚本准备，同一份资源可供普通构建和发布产物测试使用。
+
+`CaptureOnly` 仅运行 `UI-DISPLAY-001`。它读取实际窗口 DPI 和系统高对比度状态，按 DIP 计算 960×600、1280×720、1280×960、1920×1080 对应的像素尺寸。工作区不足以容纳的尺寸记录为未执行。每个真实 Windows 缩放环境独立运行并保留 `display.json`、`display-captures.json` 和原图。使用 Windows 的显示缩放和辅助功能对比度主题设置切换环境，待系统完成应用后再运行。应用内高对比度主题由其他主题矩阵用例覆盖。每轮报告目录的 `index.json` 列出对应的报告、日志、截图和诊断文件。
+
+主要定位契约见 [Fluent Workbench 自动化契约](fluent-workbench-automation-catalog.md)。
+
 默认 M0-A 配置仅指向本地未提供业务响应的端口；业务用例按需使用下面的 HTTP fixture。当前不执行字幕识别或编码。其他业务页、完整主题/尺寸/DPI 矩阵、视觉差异比较属于后续里程碑。现有 WPF 探针仍作补充，不代替 FlaUI。
 
 ## 运行
