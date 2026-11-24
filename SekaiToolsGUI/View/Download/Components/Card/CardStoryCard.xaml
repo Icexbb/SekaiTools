@@ -14,12 +14,17 @@
             </Grid.ColumnDefinitions>
             <ui:Button x:Name="ArtworkPreviewButton" Width="148" Height="84" Padding="0"
                        VerticalAlignment="Center" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
-                       Click="ArtworkPreview_OnClick" MouseEnter="ArtworkPreview_OnMouseEnter" MouseLeave="ArtworkPreview_OnMouseLeave"
+                       Click="ArtworkPreview_OnClick" MouseEnter="ArtworkPreview_OnPointerChanged"
+                       MouseMove="ArtworkPreview_OnPointerChanged" MouseLeave="ArtworkPreview_OnPointerChanged"
                        AutomationProperties.Name="预览卡图" ToolTip="查看大图">
-                <Grid ClipToBounds="True">
+                <Grid x:Name="ArtworkViewport" ClipToBounds="True" SizeChanged="ArtworkViewport_OnSizeChanged">
                     <ui:SymbolIcon Symbol="Image24" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     <Image x:Name="ArtworkThumbnail" Stretch="UniformToFill" />
-                    <Image x:Name="TrainedArtworkOverlay" Stretch="UniformToFill" Opacity="0" IsHitTestVisible="False" />
+                    <Image x:Name="TrainedArtworkOverlay" Stretch="UniformToFill" IsHitTestVisible="False">
+                        <Image.Clip>
+                            <RectangleGeometry x:Name="TrainedArtworkClip" Rect="0,0,0,0" />
+                        </Image.Clip>
+                    </Image>
                 </Grid>
             </ui:Button>
 

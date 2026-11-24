@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using Microsoft.Extensions.Logging;
@@ -58,9 +59,7 @@ public partial class CardStoryCard
     private static readonly SemaphoreSlim ThumbnailSlots = new(4);
     private static readonly Fetcher ThumbnailFetcher = new();
     private CancellationTokenSource? _thumbnailLifetime;
-    private Task<BitmapSource?>? _normalThumbnail;
-    private Task<BitmapSource?>? _trainedThumbnail;
-    private bool _showTrained;
+    private double _split = 1;
 
     private void Initialize(CardStorySet cardStorySet)
     {
@@ -94,65 +93,73 @@ public partial class CardStoryCard
         _thumbnailLifetime?.Cancel();
         _thumbnailLifetime?.Dispose();
         _thumbnailLifetime = null;
-        _normalThumbnail = null;
-        _trainedThumbnail = null;
-        _showTrained = false;
         ArtworkThumbnail.Source = null;
-        TrainedArtworkOverlay.BeginAnimation(OpacityProperty, null);
-        TrainedArtworkOverlay.Opacity = 0;
         TrainedArtworkOverlay.Source = null;
-        AutomationProperties.SetName(ArtworkThumbnail, "");
+        UpdateComparison(animate: false);
     }
 
-    private void ArtworkPreview_OnMouseEnter(object sender, MouseEventArgs e) => _ = UpdateThumbnailAsync();
+    private void ArtworkPreview_OnPointerChanged(object sender, MouseEventArgs e) => UpdateComparison();
 
-    private void ArtworkPreview_OnMouseLeave(object sender, MouseEventArgs e) => _ = UpdateThumbnailAsync();
+    private void ArtworkViewport_OnSizeChanged(object sender, SizeChangedEventArgs e) => UpdateComparison(animate: false);
 
     private async Task UpdateThumbnailAsync()
     {
         if (!IsLoaded || CardStorySet?.Card is not { } card || ArtworkPreviewButton.Visibility != Visibility.Visible) return;
-        var lifetime = _thumbnailLifetime ??= new CancellationTokenSource();
-        var normal = await (_normalThumbnail ??= LoadThumbnailAsync(ArtworkUrls(card, false), lifetime.Token));
+        if (_thumbnailLifetime != null) return;
+        var lifetime = _thumbnailLifetime = new CancellationTokenSource();
+        var token = lifetime.Token;
+        var trained = LoadThumbnailAsync(ArtworkUrls(card, true), token);
+        var normal = await LoadThumbnailAsync(ArtworkUrls(card, false), token);
         if (_thumbnailLifetime != lifetime) return;
-        var trained = ArtworkPreviewButton.IsMouseOver && CardArtwork.HasTrainedArtwork(card);
         ArtworkThumbnail.Source = normal;
-        if (!trained)
-        {
-            TransitionArtwork(false);
-            return;
-        }
-        if (TrainedArtworkOverlay.Source == null && normal != null)
-            AutomationProperties.SetName(ArtworkThumbnail, "特训前卡图缩略图");
-        var upgraded = await (_trainedThumbnail ??= LoadThumbnailAsync(ArtworkUrls(card, true), lifetime.Token));
-        if (_thumbnailLifetime == lifetime && ArtworkPreviewButton.IsMouseOver && upgraded != null)
-        {
-            TrainedArtworkOverlay.Source = upgraded;
-            TransitionArtwork(true);
-        }
+        UpdateComparison(animate: false);
+        var upgraded = await trained;
+        if (_thumbnailLifetime != lifetime || upgraded == null) return;
+        TrainedArtworkOverlay.Source = upgraded;
+        UpdateComparison();
     }
 
-    private void TransitionArtwork(bool trained)
+    private double GetComparisonSplit()
     {
-        var target = trained ? 1d : 0d;
-        AutomationProperties.SetName(ArtworkThumbnail, trained ? "特训后卡图缩略图"
-            : ArtworkThumbnail.Source != null ? "特训前卡图缩略图" : "");
-        if (_showTrained == trained) return;
-        _showTrained = trained;
+        if (TrainedArtworkOverlay.Source == null) return 1;
+        if (ArtworkThumbnail.Source == null) return 0;
+        if (!ArtworkPreviewButton.IsMouseOver) return 0.5;
+        return Mouse.GetPosition(ArtworkViewport).X < ArtworkViewport.ActualWidth / 2 ? 1 : 0;
+    }
 
-        var current = TrainedArtworkOverlay.Opacity;
-        if (!SystemParameters.ClientAreaAnimation)
+    private void UpdateComparison(bool animate = true)
+    {
+        var split = GetComparisonSplit();
+        AutomationProperties.SetName(ArtworkThumbnail, split switch
         {
-            TrainedArtworkOverlay.BeginAnimation(OpacityProperty, null);
-            TrainedArtworkOverlay.Opacity = target;
+            0 => "特训后卡图缩略图",
+            0.5 => "并列卡图缩略图",
+            _ => ArtworkThumbnail.Source != null ? "特训前卡图缩略图" : ""
+        });
+        ApplyComparisonSplit(split, animate);
+    }
+
+    private void ApplyComparisonSplit(double split, bool animate)
+    {
+        if (animate && _split == split) return;
+        _split = split;
+
+        var width = ArtworkViewport.ActualWidth;
+        var target = new Rect(width * split, 0, width * (1 - split), ArtworkViewport.ActualHeight);
+        if (animate && SystemParameters.ClientAreaAnimation && !TrainedArtworkClip.Rect.IsEmpty)
+        {
+            var current = TrainedArtworkClip.Rect;
+            TrainedArtworkClip.Rect = current;
+            TrainedArtworkClip.BeginAnimation(RectangleGeometry.RectProperty,
+                new RectAnimation(current, target, TimeSpan.FromMilliseconds(180))
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                });
             return;
         }
 
-        TrainedArtworkOverlay.Opacity = current;
-        TrainedArtworkOverlay.BeginAnimation(OpacityProperty,
-            new DoubleAnimation(current, target, TimeSpan.FromMilliseconds(180))
-            {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            });
+        TrainedArtworkClip.BeginAnimation(RectangleGeometry.RectProperty, null);
+        TrainedArtworkClip.Rect = target;
     }
 
     private static async Task<BitmapSource?> LoadThumbnailAsync(IReadOnlyList<Uri> urls, CancellationToken token)
@@ -193,7 +200,7 @@ public partial class CardStoryCard
         var normal = ArtworkUrls(card, false);
         if (normal.Length == 0) return;
         var trained = ArtworkUrls(card, true);
-        var dialog = new CardArtworkDialog($"#{card.Id} {card.Prefix}", normal, trained, _showTrained);
+        var dialog = new CardArtworkDialog($"#{card.Id} {card.Prefix}", normal, trained, GetComparisonSplit() == 0);
         await dialog.ShowPreviewAsync(window.WindowContentDialogService);
     }
 

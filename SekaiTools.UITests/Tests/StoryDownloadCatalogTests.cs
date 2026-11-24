@@ -327,12 +327,21 @@ public sealed class StoryDownloadCatalogTests
         void VerifyArtwork()
         {
             var preview = app.Finder.ById(app.Window!, "StoryDownload.Card.3.PreviewArtwork").AsButton();
-            WaitHelper.Until(() => preview.FindFirstDescendant(cf => cf.ByName("特训前卡图缩略图")), "卡片内显示特训前缩略图");
-            Mouse.MoveTo(preview.GetClickablePoint());
-            WaitHelper.Until(() => preview.FindFirstDescendant(cf => cf.ByName("特训后卡图缩略图")), "悬停显示特训后缩略图");
             var lowRarity = app.Finder.ById(app.Window!, "StoryDownload.Card.4.PreviewArtwork").AsButton();
             Mouse.MoveTo(lowRarity.GetClickablePoint());
-            WaitHelper.Until(() => preview.FindFirstDescendant(cf => cf.ByName("特训前卡图缩略图")), "移开还原特训前缩略图");
+            WaitHelper.Until(() => preview.FindFirstDescendant(cf => cf.ByName("并列卡图缩略图")), "默认并列显示两张卡图");
+            var bounds = preview.BoundingRectangle;
+            var center = preview.GetClickablePoint();
+            Mouse.MoveTo(bounds.Left + bounds.Width / 4, center.Y);
+            WaitHelper.Until(() => preview.FindFirstDescendant(cf => cf.ByName("特训前卡图缩略图")), "悬停左半区显示特训前");
+            Mouse.MoveTo(bounds.Right - bounds.Width / 4, center.Y);
+            WaitHelper.Until(() => preview.FindFirstDescendant(cf => cf.ByName("特训后卡图缩略图")), "悬停右半区显示特训后");
+            preview.Invoke();
+            var trainedDialog = app.Finder.ById(app.Window!, "StoryDownload.CardArtwork.Dialog");
+            WaitForText("特训后卡图");
+            CloseArtwork(trainedDialog);
+            Mouse.MoveTo(lowRarity.GetClickablePoint());
+            WaitHelper.Until(() => preview.FindFirstDescendant(cf => cf.ByName("并列卡图缩略图")), "移开还原并列缩略图");
             WaitHelper.Until(() => lowRarity.FindFirstDescendant(cf => cf.ByName("特训前卡图缩略图")), "低星卡显示普通缩略图");
             lowRarity.Invoke();
             var lowDialog = app.Finder.ById(app.Window!, "StoryDownload.CardArtwork.Dialog");
