@@ -24,8 +24,9 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <StackPanel Grid.Column="0" Grid.Row="0">
-            <Grid Margin="0,0,0,5">
+        <ui:Card Grid.ColumnSpan="2" Margin="0,0,0,8" Padding="8"
+                 HorizontalContentAlignment="Stretch">
+            <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -35,7 +36,7 @@
                     <TextBlock Margin="0,0,10,0" Text="数据源" VerticalAlignment="Center" />
                     <ComboBox Name="BoxSource" ItemsSource="{Binding SourceData, NotifyOnTargetUpdated=True}"
                               TargetUpdated="SourceSelector_OnTargetUpdated"
-                              AutomationProperties.Name="数据源" MinWidth="120"
+                              AutomationProperties.Name="数据源" AutomationProperties.AutomationId="StoryDownload.Source" MinWidth="120"
                               SelectedIndex="{Binding CurrentSourceIndex, Mode=OneWay}"
                               SelectionChanged="SourceSelector_OnSelected">
                         <ComboBox.ItemTemplate>
@@ -48,13 +49,13 @@
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom">
                     <Button Margin="0,0,8,0" ToolTip="打开下载的剧本文件夹"
-                            AutomationProperties.Name="打开下载文件夹" Click="OpenDownloadFolder_OnClick">
+                            AutomationProperties.Name="打开下载文件夹" AutomationProperties.AutomationId="StoryDownload.OpenFolder" Click="OpenDownloadFolder_OnClick">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="FolderOpen24" Margin="0,0,6,0" />
                             <TextBlock Text="打开下载文件夹" />
                         </StackPanel>
                     </Button>
-                    <Button x:Name="ClearCacheButton" Margin="0,0,8,0"
+                    <Button x:Name="ClearCacheButton" Margin="0,0,8,0" AutomationProperties.AutomationId="StoryDownload.ClearCache"
                             ToolTip="清除所有数据源的列表缓存" Click="ButtonClearCache_OnClick">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="Delete24" Margin="0,0,6,0" />
@@ -69,70 +70,91 @@
                     </Button>
                 </StackPanel>
             </Grid>
-            <ui:Card Margin="0,0,0,5" Padding="5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-                <control:SelectorBar x:Name="BoxStoryType" HorizontalAlignment="Stretch"
-                                     HorizontalContentAlignment="Stretch"
-                                     AutomationProperties.Name="剧情类型"
-                                     SelectionChanged="StoryTypeSelector_OnSelected">
-                    <control:SelectorBar.Items>
-                        <control:SelectorBarItem Content="主线剧情" AutomationProperties.AutomationId="StoryDownload.Category.Unit" />
-                        <control:SelectorBarItem Content="活动剧情" AutomationProperties.AutomationId="StoryDownload.Category.Event" />
-                        <control:SelectorBarItem Content="特殊剧情" AutomationProperties.AutomationId="StoryDownload.Category.Special" />
-                        <control:SelectorBarItem Content="角色剧情" AutomationProperties.AutomationId="StoryDownload.Category.Card" />
-                        <control:SelectorBarItem Content="地图对话" AutomationProperties.AutomationId="StoryDownload.Category.Action" />
-                    </control:SelectorBar.Items>
-                </control:SelectorBar>
-            </ui:Card>
-            <StackPanel x:Name="BrowserBar" IsEnabled="False" Margin="0,3,0,8">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBox x:Name="SearchBox" AutomationProperties.AutomationId="StoryDownload.SearchBox" PlaceholderText="搜索当前列表：标题、ID、剧本名"
-                                TextChanged="Search_OnTextChanged"
-                                AutomationProperties.Name="搜索当前剧情列表" />
-                    <Button x:Name="ResetSearchButton" Grid.Column="1" Margin="8,0,0,0" Padding="10,6"
-                            ToolTip="清空关键词并重置当前分类筛选"
-                            Click="ResetSearch_OnClick" AutomationProperties.Name="重置搜索和筛选">
-                        <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" Margin="0,0,6,0" />
-                            <TextBlock Text="重置" />
-                        </StackPanel>
-                    </Button>
-                </Grid>
-                <WrapPanel Margin="0,8,0,0" VerticalAlignment="Center">
-                    <TextBlock x:Name="BrowserResultText" Text="正在准备列表…" FontSize="12" VerticalAlignment="Center"
-                               Margin="0,0,16,0"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    <CheckBox x:Name="SelectResultsBox" AutomationProperties.AutomationId="StoryDownload.SelectResults" Content="选择当前结果" Checked="SelectResults_OnCheckedChanged" Unchecked="SelectResults_OnCheckedChanged"
-                              VerticalAlignment="Center" Margin="0,0,12,0" />
-                    <Button x:Name="AddSelectedButton" AutomationProperties.AutomationId="StoryDownload.AddSelectedButton" IsEnabled="False" Click="AddSelected_OnClick" Padding="8,4">
-                        <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="AddCircle24" FontSize="16" Margin="0,0,6,0" />
-                            <TextBlock x:Name="AddSelectedText" Text="加入已选" />
-                        </StackPanel>
-                    </Button>
-                </WrapPanel>
+        </ui:Card>
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <StackPanel>
+                    <ui:Card Margin="0,0,0,5" Padding="5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                        <control:SelectorBar x:Name="BoxStoryType" HorizontalAlignment="Stretch"
+                                             HorizontalContentAlignment="Stretch"
+                                             AutomationProperties.Name="剧情类型"
+                                             SelectionChanged="StoryTypeSelector_OnSelected">
+                            <control:SelectorBar.Items>
+                                <control:SelectorBarItem Content="主线剧情" AutomationProperties.AutomationId="StoryDownload.Category.Unit" />
+                                <control:SelectorBarItem Content="活动剧情" AutomationProperties.AutomationId="StoryDownload.Category.Event" />
+                                <control:SelectorBarItem Content="特殊剧情" AutomationProperties.AutomationId="StoryDownload.Category.Special" />
+                                <control:SelectorBarItem Content="角色剧情" AutomationProperties.AutomationId="StoryDownload.Category.Card" />
+                                <control:SelectorBarItem Content="地图对话" AutomationProperties.AutomationId="StoryDownload.Category.Action" />
+                            </control:SelectorBar.Items>
+                        </control:SelectorBar>
+                    </ui:Card>
+                    <StackPanel x:Name="BrowserBar" IsEnabled="False" Margin="0,3,0,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:TextBox x:Name="SearchBox" AutomationProperties.AutomationId="StoryDownload.SearchBox" PlaceholderText="搜索当前列表：标题、ID、剧本名"
+                                        TextChanged="Search_OnTextChanged"
+                                        AutomationProperties.Name="搜索当前剧情列表" />
+                            <Button x:Name="ResetSearchButton" Grid.Column="1" Margin="8,0,0,0" Padding="10,6"
+                                    ToolTip="清空关键词并重置当前分类筛选"
+                                    Click="ResetSearch_OnClick" AutomationProperties.Name="重置搜索和筛选">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" Margin="0,0,6,0" />
+                                    <TextBlock Text="重置" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <WrapPanel Margin="0,8,0,0" VerticalAlignment="Center">
+                            <TextBlock x:Name="BrowserResultText" Text="正在准备列表…" FontSize="12" VerticalAlignment="Center"
+                                       Margin="0,0,16,0"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <CheckBox x:Name="SelectResultsBox" AutomationProperties.AutomationId="StoryDownload.SelectResults" Content="选择当前结果" Checked="SelectResults_OnCheckedChanged" Unchecked="SelectResults_OnCheckedChanged"
+                                      VerticalAlignment="Center" Margin="0,0,12,0" />
+                            <Button x:Name="AddSelectedButton" AutomationProperties.AutomationId="StoryDownload.AddSelectedButton" IsEnabled="False" Click="AddSelected_OnClick" Padding="8,4">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="AddCircle24" FontSize="16" Margin="0,0,6,0" />
+                                    <TextBlock x:Name="AddSelectedText" Text="加入已选" />
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+                    </StackPanel>
+        </StackPanel>
+            <ContentControl Grid.Column="0" Grid.Row="1"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                            Name="ContentCard" />
+            <StackPanel x:Name="BrowserEmptyPanel" Grid.Column="0" Grid.Row="1" Visibility="Collapsed"
+                        VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False" Margin="16">
+                <ui:SymbolIcon Symbol="Search24" FontSize="28" HorizontalAlignment="Center" Opacity="0.65" />
+                <TextBlock x:Name="BrowserEmptyText" Text="当前没有可下载结果" Margin="0,8,0,0" TextWrapping="Wrap" AutomationProperties.AutomationId="StoryDownload.EmptyMessage"
+                           TextAlignment="Center" />
+                <TextBlock Text="可调整筛选、重置搜索，或刷新当前列表" Margin="0,4,0,0" FontSize="12" TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
             </StackPanel>
-        </StackPanel>
-        <ContentControl Grid.Column="0" Grid.Row="1"
-                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                        HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
-                        Name="ContentCard" />
-        <StackPanel x:Name="BrowserEmptyPanel" Grid.Column="0" Grid.Row="1" Visibility="Collapsed"
-                    VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False" Margin="16">
-            <ui:SymbolIcon Symbol="Search24" FontSize="28" HorizontalAlignment="Center" Opacity="0.65" />
-            <TextBlock x:Name="BrowserEmptyText" Text="当前没有可下载结果" Margin="0,8,0,0" TextWrapping="Wrap" AutomationProperties.AutomationId="StoryDownload.EmptyMessage"
-                       TextAlignment="Center" />
-            <TextBlock Text="可调整筛选、重置搜索，或刷新当前列表" Margin="0,4,0,0" FontSize="12" TextWrapping="Wrap"
-                       TextAlignment="Center"
-                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-        </StackPanel>
-        <Grid x:Name="LoadingPanel" Grid.Column="0" Grid.Row="1" Visibility="Collapsed">
-            <TextBlock x:Name="LoadingMessage" Text="正在加载剧情列表…"
-                       HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" />
+            <Grid x:Name="LoadingPanel" Grid.Column="0" Grid.Row="1" Visibility="Collapsed">
+                <TextBlock x:Name="LoadingMessage" Text="正在加载剧情列表…"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" />
+            </Grid>
         </Grid>
-        <ui:Card x:Name="QueueCard" Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"
+        <Thumb x:Name="QueueResizeGrip" Grid.Row="1" Grid.Column="1" Panel.ZIndex="1"
+               Width="12" HorizontalAlignment="Left" Cursor="SizeWE" DragDelta="QueueResizeGrip_OnDragDelta"
+               ToolTip="调整下载列表宽度" AutomationProperties.Name="调整下载列表宽度"
+               AutomationProperties.AutomationId="StoryDownload.QueueResizeGrip">
+            <Thumb.Template>
+                <ControlTemplate TargetType="Thumb">
+                    <Border Background="Transparent">
+                        <Border Width="3" Height="32" CornerRadius="1.5"
+                                Background="{DynamicResource ControlStrokeColorDefaultBrush}" />
+                    </Border>
+                </ControlTemplate>
+            </Thumb.Template>
+        </Thumb>
+        <ui:Card x:Name="QueueCard" Grid.Column="1" Grid.Row="1"
                  VerticalContentAlignment="Stretch" Padding="0" Margin="10,0,0,0"
                  VerticalAlignment="Stretch" Width="320">
             <ui:Card.Content>
@@ -150,7 +172,8 @@
                         <ui:TextBlock Name="TaskCountText"
                                       Text="下载列表 (0)"
                                       TextAlignment="Left" VerticalAlignment="Center" TextWrapping="Wrap" />
-                        <Button x:Name="QueueDetailsButton" Grid.Column="2" Visibility="Collapsed" Padding="8"
+                        <Button x:Name="QueueDetailsButton" Grid.Column="2" Padding="8"
+                                AutomationProperties.AutomationId="StoryDownload.ToggleQueue"
                                 Margin="8,0,0,0"
                                 Click="QueueDetails_OnClick" ToolTip="展开下载列表" AutomationProperties.Name="展开或收起下载列表">
                             <ui:SymbolIcon x:Name="QueueDetailsIcon" Symbol="ChevronDown24" FontSize="16" />
@@ -200,6 +223,7 @@
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                             <Button Name="ChooseDirectoryButton" Grid.Column="1" Padding="6" Margin="8,0,0,0"
                                     ToolTip="更改下载目录（应用于未完成任务）" AutomationProperties.Name="更改下载目录"
+                                    AutomationProperties.AutomationId="StoryDownload.ChooseDirectory"
                                     Click="ChooseDirectory_OnClick">
                                 <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" />
                             </Button>
@@ -211,6 +235,7 @@
                             <ComboBoxItem Content="已有同名文件：替换" />
                         </ComboBox>
                         <Button Grid.Row="4" Grid.ColumnSpan="2" Name="RetryFailedButton" Visibility="Collapsed"
+                                AutomationProperties.AutomationId="StoryDownload.RetryFailed"
                                 Click="RetryFailed_OnClick" Margin="0,0,0,8" Padding="8">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" Margin="0,0,6,0" />

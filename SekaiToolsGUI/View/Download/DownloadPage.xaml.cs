@@ -43,7 +43,13 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     private IReadOnlyList<DownloadCandidate> _browserResults = [];
     private CancellationTokenSource? _downloadCancellation;
     private string? _downloadDirectory;
-    private bool _queueExpanded;
+    private const double CompactQueueThreshold = 920;
+    private const double MinimumQueueWidth = 260;
+    private const double MinimumBrowserWidth = 620;
+    private bool? _queueExpanded;
+    private double _queueWidth = 320;
+
+    private bool IsQueueExpanded => _queueExpanded ?? ActualWidth >= CompactQueueThreshold;
     private Dictionary<string, DownloadTask> _queuedDownloads = new(StringComparer.Ordinal);
     private Task? _runningBatch;
     private int _selectionVersion;
@@ -209,7 +215,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
             BatchProgress.Value = done;
             BatchStatusText.Text =
                 $"已处理 {done}/{batch.Length} · 失败 {batch.Count(task => task.Status == DownloadStatus.Failed)}";
-            if (ActualWidth < 920 && !_queueExpanded) TaskCountText.Text += $" · {done}/{batch.Length}";
+            if (!IsQueueExpanded) TaskCountText.Text += $" · {done}/{batch.Length}";
             var next = tasks.Count(task => !_batchIds.Contains(task.Id) && !task.Downloaded);
             if (next > 0) BatchStatusText.Text += $" · 下一批 {next}";
         }
@@ -218,19 +224,18 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
     private void UpdateQueueLayout()
     {
         if (QueueCard == null) return;
-        var compact = ActualWidth < 920;
-        Grid.SetRow(QueueCard, compact ? 2 : 0);
-        Grid.SetColumn(QueueCard, compact ? 0 : 1);
-        Grid.SetColumnSpan(QueueCard, compact ? 2 : 1);
-        Grid.SetRowSpan(QueueCard, compact ? 1 : 2);
-        QueueCard.Width = compact ? double.NaN : 320;
-        var collapsed = compact && !_queueExpanded;
-        QueueDetailsButton.Visibility = compact ? Visibility.Visible : Visibility.Collapsed;
-        QueueDetailsIcon.Symbol = _queueExpanded ? SymbolRegular.ChevronUp24 : SymbolRegular.ChevronDown24;
-        QueueDetailsButton.ToolTip = _queueExpanded ? "收起下载列表" : "展开下载列表";
+        var collapsed = !IsQueueExpanded;
+        var bottom = ActualWidth < CompactQueueThreshold || collapsed;
+        Grid.SetRow(QueueCard, bottom ? 2 : 1);
+        Grid.SetColumn(QueueCard, bottom ? 0 : 1);
+        Grid.SetColumnSpan(QueueCard, bottom ? 2 : 1);
+        QueueCard.Width = bottom ? double.NaN : ClampQueueWidth(_queueWidth);
+        QueueResizeGrip.Visibility = bottom ? Visibility.Collapsed : Visibility.Visible;
+        QueueDetailsIcon.Symbol = collapsed ? SymbolRegular.ChevronUp24 : bottom ? SymbolRegular.ChevronDown24 : SymbolRegular.ChevronRight24;
+        QueueDetailsButton.ToolTip = collapsed ? "展开下载列表" : "收起下载列表";
         QueueBody.Visibility = QueueFooter.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
-        QueueCard.Height = compact && !collapsed ? Math.Min(320, ActualHeight * 0.5) : double.NaN;
-        QueueCard.Margin = compact ? new Thickness(0, 8, 0, 0) : new Thickness(12, 0, 0, 0);
+        QueueCard.Height = bottom && !collapsed ? Math.Min(320, ActualHeight * 0.5) : double.NaN;
+        QueueCard.Margin = bottom ? new Thickness(0, 8, 0, 0) : new Thickness(12, 0, 0, 0);
         var target = collapsed ? QueueHeader : QueueFooter;
         if (!ReferenceEquals(MainActions.Parent, target))
         {
@@ -239,23 +244,33 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         }
 
         MainActions.Width = collapsed ? Math.Min(260, ActualWidth * 0.42) : double.NaN;
-        Grid.SetColumnSpan(DirectoryGrid, compact ? 1 : 2);
-        Grid.SetRow(FilePolicyBox, compact ? 2 : 3);
-        Grid.SetColumn(FilePolicyBox, compact ? 1 : 0);
-        Grid.SetColumnSpan(FilePolicyBox, compact ? 1 : 2);
-        FilePolicyBox.Margin = compact ? new Thickness(8, 0, 0, 8) : new Thickness(0, 0, 0, 8);
-        Grid.SetRow(RetryFailedButton, compact ? 3 : 4);
-        Grid.SetColumnSpan(RetryFailedButton, compact ? 1 : 2);
-        RetryFailedButton.Margin = compact ? new Thickness(0, 0, 8, 0) : new Thickness(0, 0, 0, 8);
-        Grid.SetRow(MainActions, collapsed ? 0 : compact ? 3 : 5);
-        Grid.SetColumn(MainActions, compact ? 1 : 0);
-        Grid.SetColumnSpan(MainActions, compact ? 1 : 2);
+        Grid.SetColumnSpan(DirectoryGrid, bottom ? 1 : 2);
+        Grid.SetRow(FilePolicyBox, bottom ? 2 : 3);
+        Grid.SetColumn(FilePolicyBox, bottom ? 1 : 0);
+        Grid.SetColumnSpan(FilePolicyBox, bottom ? 1 : 2);
+        FilePolicyBox.Margin = bottom ? new Thickness(8, 0, 0, 8) : new Thickness(0, 0, 0, 8);
+        Grid.SetRow(RetryFailedButton, bottom ? 3 : 4);
+        Grid.SetColumnSpan(RetryFailedButton, bottom ? 1 : 2);
+        RetryFailedButton.Margin = bottom ? new Thickness(0, 0, 8, 0) : new Thickness(0, 0, 0, 8);
+        Grid.SetRow(MainActions, collapsed ? 0 : bottom ? 3 : 5);
+        Grid.SetColumn(MainActions, bottom ? 1 : 0);
+        Grid.SetColumnSpan(MainActions, bottom ? 1 : 2);
     }
 
     private void QueueDetails_OnClick(object sender, RoutedEventArgs e)
     {
-        _queueExpanded = !_queueExpanded;
+        _queueExpanded = !IsQueueExpanded;
         UpdateQueueLayout();
+        UpdateTaskListState();
+    }
+
+    private double ClampQueueWidth(double width) => Math.Clamp(width, MinimumQueueWidth,
+        Math.Max(MinimumQueueWidth, ActualWidth - MinimumBrowserWidth - 32));
+
+    private void QueueResizeGrip_OnDragDelta(object sender, DragDeltaEventArgs e)
+    {
+        _queueWidth = ClampQueueWidth(QueueCard.ActualWidth - e.HorizontalChange);
+        QueueCard.Width = _queueWidth;
     }
 
     private void Search_OnTextChanged(object sender, TextChangedEventArgs e)

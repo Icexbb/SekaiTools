@@ -1,5 +1,6 @@
 using System.Text.Json;
 using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Input;
 using SekaiToolsBase.DataList;
 using SekaiTools.UITests.Fixtures;
 using SekaiTools.UITests.Helpers;
@@ -62,6 +63,32 @@ public sealed class StoryDownloadTests
             refresh.AsButton().Invoke();
             WaitHelper.Until(() => app.Window!.FindFirstDescendant(cf => cf.ByName("Fixture Episode")), "样本章节条目出现");
             Assert.Contains(server.Requests, request => request.Contains("/master/unitStories.json "));
+        });
+        app.Step("下载队列布局", "宽窗口可拖动和收起，窄窗口展开后位于结果下方", () =>
+        {
+            var window = app.Window!;
+            var transform = window.Patterns.Transform.Pattern;
+            var original = window.BoundingRectangle;
+            transform.Resize(1280, 720);
+            var grip = app.Finder.ById(window, "StoryDownload.QueueResizeGrip");
+            var point = grip.GetClickablePoint();
+            Mouse.Drag(point, new System.Drawing.Point(point.X - 70, point.Y), MouseButton.Left);
+            WaitHelper.Until(() => grip.BoundingRectangle.Left < point.X - 30, "拖动加宽队列");
+            point = grip.GetClickablePoint();
+            Mouse.Drag(point, new System.Drawing.Point(window.BoundingRectangle.Left + 10, point.Y), MouseButton.Left);
+            var search = app.Finder.ById(window, "StoryDownload.SearchBox");
+            Assert.True(search.BoundingRectangle.Width >= 430, "拖到窗口边缘时保留搜索和结果空间");
+            var toggle = app.Finder.ById(window, "StoryDownload.ToggleQueue").AsButton();
+            toggle.Invoke();
+            WaitHelper.Until(() => window.FindFirstDescendant(cf => cf.ByAutomationId("FilePolicyBox")) is not { IsOffscreen: false }, "收起后隐藏队列设置");
+            Assert.True(app.Finder.ById(window, "StoryDownload.StartDownloadButton").BoundingRectangle.Width > 0);
+            transform.Resize(960, 600);
+            toggle.Invoke();
+            var policy = app.Finder.ById(window, "FilePolicyBox");
+            WaitHelper.Until(() => !policy.IsOffscreen, "窄窗口可展开队列");
+            Assert.True(toggle.BoundingRectangle.Top > search.BoundingRectangle.Bottom);
+            Assert.True(policy.BoundingRectangle.Bottom <= window.BoundingRectangle.Bottom);
+            transform.Resize(original.Width, original.Height);
         });
         app.Step("搜索与恢复", "无匹配时显示空结果，清空搜索恢复样本", () =>
         {
