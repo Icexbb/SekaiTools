@@ -17,10 +17,11 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <ScrollViewer Grid.Row="0">
-            <StackPanel x:Name="SettingsItems" Margin="10">
+        <ScrollViewer Grid.Row="0" AutomationProperties.AutomationId="Settings.Scroll"
+                      HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="SettingsItems" Margin="16,12" MaxWidth="960">
 
-                <ui:CardExpander x:Name="AboutSection" ContentPadding="0"
+                <ui:CardExpander x:Name="AboutSection" ContentPadding="0" AutomationProperties.AutomationId="Settings.About"
                                  Icon="{ui:ImageIcon 'pack://application:,,,/Resource/icon.png', Width=28, Height=28}">
                     <ui:CardExpander.Header>
                         <Grid>
@@ -41,6 +42,7 @@
                                 Grid.Row="1"
                                 Grid.Column="0"
                                 Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                TextWrapping="Wrap"
                                 Text="© 2024 PJS字幕组 | Icexbb 以 AGPL-3.0 协议开源" />
 
                             <ui:TextBlock x:Name="VersionLabel"
@@ -57,6 +59,7 @@
                     </ui:CardExpander.Header>
                     <StackPanel>
                         <ui:Anchor
+                            AutomationProperties.AutomationId="Settings.Repository"
                             Margin="0"
                             Padding="16"
                             HorizontalAlignment="Stretch"
@@ -78,18 +81,18 @@
                 </ui:CardExpander>
             </StackPanel>
         </ScrollViewer>
-        <ui:Card Grid.Row="1" Padding="5">
+        <ui:Card Grid.Row="1" Padding="12,8" Margin="16,0,16,12" MaxWidth="960">
             <Grid>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="10">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                     <ui:Button Width="100" Content="重置为默认" AutomationProperties.AutomationId="Settings.ResetAll" Click="ResetToDefault_Click" />
                     <ui:Button Margin="8,0,0,0" Content="运行日志" Icon="{ui:SymbolIcon ClipboardTask24}"
+                               AutomationProperties.AutomationId="Settings.RuntimeLog"
                                AutomationProperties.Name="打开运行日志窗口" Click="OpenLogs_Click" />
                 </StackPanel>
-                <ui:TextBlock
-                    Margin="10"
+                <TextBlock
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
-                    Appearance="Secondary"
+                    Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
                     Text="更改会自动保存" />
             </Grid>
         </ui:Card>

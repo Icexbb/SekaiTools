@@ -31,7 +31,7 @@ public sealed class SettingViewBuilder(
         {
             var children = new StackPanel();
             foreach (var child in section.Children) children.Children.Add(Build(child, true));
-            return new CardExpander
+            var group = new CardExpander
             {
                 Header = header,
                 Icon = icon,
@@ -40,9 +40,12 @@ public sealed class SettingViewBuilder(
                 IsExpanded = section.IsExpanded,
                 Margin = new Thickness(0, 0, 0, nested ? 0 : 8)
             };
+            if (section.Properties.FirstOrDefault() is { } key)
+                AutomationProperties.SetAutomationId(group, $"Settings.Section.{key}");
+            return group;
         }
 
-        var editors = new Grid { HorizontalAlignment = HorizontalAlignment.Right };
+        var editors = new Grid { HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(40, 8, 0, 0) };
         var columns = section.Columns > 0 ? section.Columns : section.Fields.Length;
         for (var i = 0; i < columns; i++)
             editors.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -50,26 +53,42 @@ public sealed class SettingViewBuilder(
         {
             if (i % columns == 0) editors.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var editor = Editor(section.Fields[i], section.Title);
-            editor.Margin = new Thickness(i % columns == 0 ? 0 : 5, i < columns ? 0 : 5, 0, 0);
+            editor.Margin = new Thickness(i % columns == 0 ? 0 : 8, i < columns ? 0 : 8, 0, 0);
             Grid.SetColumn(editor, i % columns);
             Grid.SetRow(editor, i / columns);
             editors.Children.Add(editor);
         }
 
-        return new CardControl
-        { Header = header, Icon = icon, Content = editors, Margin = new Thickness(0, 0, 0, nested ? 0 : 8) };
+        var heading = new Grid();
+        heading.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(40) });
+        heading.ColumnDefinitions.Add(new ColumnDefinition());
+        icon.HorizontalAlignment = HorizontalAlignment.Left;
+        icon.VerticalAlignment = VerticalAlignment.Top;
+        Grid.SetColumn(header, 1);
+        heading.Children.Add(icon);
+        heading.Children.Add(header);
+        return new Card
+        {
+            Padding = new Thickness(16, 12, 16, 12),
+            Content = new StackPanel { Children = { heading, editors } },
+            Margin = new Thickness(0, 0, 0, nested ? 0 : 8)
+        };
     }
 
     private StackPanel Header(SettingSection section)
     {
-        var heading = new StackPanel { Orientation = Orientation.Horizontal };
-        heading.Children.Add(new TextBlock { Text = section.Title, VerticalAlignment = VerticalAlignment.Center });
+        var heading = new DockPanel();
+        var title = new TextBlock { Text = section.Title, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
         if (ShowResetButtons)
         {
             var reset = new SettingResetButton { Properties = string.Join(',', section.Properties) };
             AutomationProperties.SetName(reset, $"还原{section.Title}默认设置");
+            if (section.Properties.FirstOrDefault() is { } key)
+                AutomationProperties.SetAutomationId(reset, $"Settings.Reset.{key}");
+            DockPanel.SetDock(reset, Dock.Right);
             heading.Children.Add(reset);
         }
+        heading.Children.Add(title);
 
         var panel = new StackPanel();
         panel.Children.Add(heading);
@@ -102,14 +121,14 @@ public sealed class SettingViewBuilder(
     private FrameworkElement Editor(SettingField field, string title)
     {
         FrameworkElement editor;
+        FrameworkElement input;
         switch (field.Kind)
         {
             case "choice":
                 var combo = new ComboBox();
                 foreach (var option in field.Options) combo.Items.Add(new ComboBoxItem { Content = option });
                 combo.SetBinding(Selector.SelectedIndexProperty, Value(field.Property));
-                AutomationProperties.SetAutomationId(combo, $"Settings.Field.{field.Property}");
-                editor = combo;
+                input = editor = combo;
                 break;
             case "number":
                 var number = new NumberBox
@@ -122,7 +141,7 @@ public sealed class SettingViewBuilder(
                 };
                 number.SetBinding(NumberBox.ValueProperty, Value(field.Property));
                 number.ValueChanged += (_, _) => number.GetBindingExpression(NumberBox.ValueProperty)?.UpdateSource();
-                editor = number;
+                input = editor = number;
                 break;
             case "text":
             case "font":
@@ -136,10 +155,12 @@ public sealed class SettingViewBuilder(
                     Width = field.Width
                 };
                 text.SetBinding(System.Windows.Controls.TextBox.TextProperty, Value(field.Property));
-                editor = text;
+                input = editor = text;
                 if (field.Kind is "font" or "directory")
                 {
                     var choose = new Button { Content = "选择", Margin = new Thickness(5, 0, 0, 0) };
+                    AutomationProperties.SetAutomationId(choose, $"Settings.Choose.{field.Property}");
+                    AutomationProperties.SetName(choose, $"选择{title}");
                     choose.Click += async (_, args) =>
                     {
                         args.Handled = true;
@@ -176,21 +197,29 @@ public sealed class SettingViewBuilder(
                     Margin = new Thickness(0, 0, 5, 0)
                 });
                 labeled.Children.Add(toggle);
+                input = toggle;
                 editor = labeled;
                 break;
             case "check":
                 var check = new CheckBox { Content = field.Label, VerticalAlignment = VerticalAlignment.Center };
                 check.SetBinding(ToggleButton.IsCheckedProperty, Value(field.Property));
-                editor = check;
+                input = editor = check;
                 break;
             default: throw new InvalidOperationException($"未知设置控件：{field.Kind}");
         }
 
         if (field.Kind is not ("font" or "directory")) editor.Width = field.Width;
+        if (field.Kind is not ("toggle" or "check") && !string.IsNullOrEmpty(field.Label))
+        {
+            var label = Description(field.Label);
+            label.Margin = new Thickness(0, 0, 0, 4);
+            editor = new StackPanel { Children = { label, editor } };
+        }
         if (field.VisibilityProperty is { } visibility)
             editor.SetBinding(UIElement.VisibilityProperty, new Binding(visibility));
         if (field.EnabledProperty is { } enabled) editor.SetBinding(UIElement.IsEnabledProperty, new Binding(enabled));
-        AutomationProperties.SetName(editor, string.IsNullOrEmpty(field.Label) ? title : $"{title}：{field.Label}");
+        AutomationProperties.SetAutomationId(input, $"Settings.Field.{field.Property}");
+        AutomationProperties.SetName(input, string.IsNullOrEmpty(field.Label) ? title : $"{title}：{field.Label}");
         return editor;
     }
 

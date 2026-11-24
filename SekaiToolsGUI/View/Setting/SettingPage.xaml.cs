@@ -58,14 +58,14 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
                     }
                     : builder.Build(section));
             if (content.Children.Count == 0) continue;
-            var icon = category switch
+            var (id, icon) = category switch
             {
-                "轴机" => SymbolRegular.Subtitles24,
-                "下载" => SymbolRegular.ArrowDownload24,
-                "翻译" => SymbolRegular.Translate24,
-                "压制" => SymbolRegular.AnimalTurtle24,
-                "开发者设置" => SymbolRegular.Beaker24,
-                _ => SymbolRegular.Settings24
+                "轴机" => ("Recognition", SymbolRegular.Subtitles24),
+                "下载" => ("Download", SymbolRegular.ArrowDownload24),
+                "翻译" => ("Translation", SymbolRegular.Translate24),
+                "压制" => ("Encoding", SymbolRegular.AnimalTurtle24),
+                "开发者设置" => ("Developer", SymbolRegular.Beaker24),
+                _ => ("General", SymbolRegular.Settings24)
             };
             var group = new CardExpander
             {
@@ -77,9 +77,9 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
                 ContentPadding = new Thickness(8)
             };
             System.Windows.Automation.AutomationProperties.SetName(group, $"{category}设置");
+            System.Windows.Automation.AutomationProperties.SetAutomationId(group, $"Settings.{id}Group");
             if (category == "开发者设置")
             {
-                System.Windows.Automation.AutomationProperties.SetAutomationId(group, "Settings.DeveloperGroup");
                 group.SetBinding(VisibilityProperty, new Binding(nameof(SettingPageModel.DeveloperMode))
                 { Converter = new BooleanToVisibilityConverter() });
             }
@@ -96,6 +96,7 @@ public partial class SettingPage : UserControl, IAppPage<SettingPageModel>
                 HorizontalAlignment = HorizontalAlignment.Left,
                 Margin = new Thickness(0, 12, 0, 0)
             };
+            System.Windows.Automation.AutomationProperties.SetAutomationId(disable, "Settings.Developer.Disable");
             disable.Click += (_, _) =>
             {
                 ViewModel.DeveloperMode = false;

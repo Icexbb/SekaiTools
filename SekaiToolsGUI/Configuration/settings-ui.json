@@ -43,6 +43,7 @@
       {
         "kind": "choice",
         "property": "ProxyType",
+        "label": "类型",
         "options": [
           "不使用",
           "http://",
@@ -52,12 +53,14 @@
       {
         "kind": "text",
         "property": "ProxyHost",
+        "label": "主机",
         "width": 150.0,
         "visibilityProperty": "ProxyChangeable"
       },
       {
         "kind": "number",
         "property": "ProxyPort",
+        "label": "端口",
         "width": 150.0,
         "minimum": 0.0,
         "maximum": 65536.0,
@@ -100,6 +103,7 @@
       {
         "kind": "number",
         "property": "TypewriterCharTime",
+        "label": "字符间隔",
         "width": 120.0,
         "minimum": 0.0,
         "smallChange": 1.0,
@@ -108,6 +112,7 @@
       {
         "kind": "number",
         "property": "TypewriterFadeTime",
+        "label": "淡入时间",
         "width": 120.0,
         "minimum": 0.0,
         "smallChange": 1.0,
