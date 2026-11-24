@@ -16,6 +16,7 @@
       "ActionSetTemplate": "scenario/actionset/{abName}/{scenarioId}.asset",
       "MemberStoryTemplate": "character/member/{abName}/{scenarioId}.asset",
       "EventStoryTemplate": "event_story/{abName}/scenario/{scenarioId}.asset",
+      "EventBannerUrl": "home/banner/{assetbundleName}/{assetbundleName}.png",
       "SpecialStoryTemplate": "scenario/special/{abName}/{scenarioId}.asset",
       "UnitStoryTemplate": "scenario/unitstory/{abName}/{scenarioId}.asset"
     }

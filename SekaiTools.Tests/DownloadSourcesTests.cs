@@ -40,7 +40,19 @@ public class DownloadSourcesTests
         Assert.Equal([1], attempts);
     }
 
-    private static SourceData Source(string name, int usageWeight = 1) => new()
+    [Theory]
+    [InlineData("home/banner/{assetbundleName}/{assetbundleName}.png", "home/banner/event_bundle/event_bundle.png")]
+    [InlineData("/ondemand/event_story/{abName}/screen_image/banner_event_story.png", "ondemand/event_story/story_bundle/screen_image/banner_event_story.png")]
+    [InlineData(null, null)]
+    public void ResolvesEventBannerUsingTheBundleRequiredByTheSource(string? template, string? expectedPath)
+    {
+        var source = new SourceList(Source("banner", eventBannerUrl: template));
+        var banner = source.EventBanner("event_bundle", "story_bundle");
+        Assert.Equal(expectedPath == null ? null : "https://banner.example.test/storage/" + expectedPath,
+            banner?.AbsoluteUri);
+    }
+
+    private static SourceData Source(string name, int usageWeight = 1, string? eventBannerUrl = null) => new()
     {
         SourceName = name,
         UsageWeight = usageWeight,
@@ -49,6 +61,7 @@ public class DownloadSourcesTests
         ActionSetTemplate = "",
         MemberStoryTemplate = "",
         EventStoryTemplate = "",
+        EventBannerUrl = eventBannerUrl,
         SpecialStoryTemplate = "",
         UnitStoryTemplate = ""
     };

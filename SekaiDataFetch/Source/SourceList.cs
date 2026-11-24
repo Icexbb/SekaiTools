@@ -10,6 +10,19 @@ public partial class SourceList(SourceData data)
 
     public string ActionSets => SourceData.SourceTemplate.Replace("{type}", "actionSets");
     public string Events => SourceData.SourceTemplate.Replace("{type}", "events");
+
+    public Uri? EventBanner(string eventBundle, string storyBundle)
+    {
+        if (SourceData.EventBannerUrl is not { } template || string.IsNullOrWhiteSpace(template)
+            || (template.Contains("{assetbundleName}", StringComparison.Ordinal) && string.IsNullOrWhiteSpace(eventBundle))
+            || (template.Contains("{abName}", StringComparison.Ordinal) && string.IsNullOrWhiteSpace(storyBundle)))
+            return null;
+
+        var path = template.Replace("{assetbundleName}", Uri.EscapeDataString(eventBundle), StringComparison.Ordinal)
+            .Replace("{abName}", Uri.EscapeDataString(storyBundle), StringComparison.Ordinal);
+        var address = SourceData.StorageBaseUrl.TrimEnd('/') + "/" + path.TrimStart('/');
+        return Uri.TryCreate(address, UriKind.Absolute, out var uri) && uri.Scheme is "https" or "http" ? uri : null;
+    }
     public string EventStories => SourceData.SourceTemplate.Replace("{type}", "eventStories");
     public string WorldBlooms => SourceData.SourceTemplate.Replace("{type}", "worldBlooms");
     public string Character2ds => SourceData.SourceTemplate.Replace("{type}", "character2ds");

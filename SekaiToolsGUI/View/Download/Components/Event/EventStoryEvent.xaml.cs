@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -26,19 +27,62 @@ public partial class EventStoryEvent : UserControl
 
     private static void OnEventStoryImplChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not EventStoryEvent control || e.NewValue is not EventStorySet eventStorySet) return;
-        control.EventStorySet = eventStorySet;
+        var control = (EventStoryEvent)d;
+        control.ResetBanner();
+        if (control.EventStorySet == null) return;
         control.RefreshControl();
+        _ = control.LoadBannerAsync();
     }
 }
 
 public partial class EventStoryEvent
 {
+    private CancellationTokenSource? _bannerRequest;
+
     public EventStoryEvent()
     {
         InitializeComponent();
         Margin = new Thickness(0, 0, 0, 5);
-        Loaded += (_, _) => ApplySearchPresentation();
+        Loaded += (_, _) =>
+        {
+            ApplySearchPresentation();
+            _ = LoadBannerAsync();
+        };
+        Unloaded += (_, _) => ResetBanner();
+    }
+
+    private void ResetBanner()
+    {
+        _bannerRequest?.Cancel();
+        _bannerRequest = null;
+        EventBannerImage.Source = null;
+        EventBannerImage.Visibility = Visibility.Collapsed;
+    }
+
+    private async Task LoadBannerAsync()
+    {
+        if (!IsLoaded || EventStorySet is not { } story || _bannerRequest != null || EventBannerImage.Source != null)
+            return;
+
+        var urls = DownloadPageModel.Instance.OrderedSources
+            .Select(source => new SourceList(source).EventBanner(story.GameEvent.AssetBundleName, story.EventStory.AssetBundleName))
+            .OfType<Uri>().Distinct().ToArray();
+        if (urls.Length == 0) return;
+
+        using var request = new CancellationTokenSource();
+        _bannerRequest = request;
+        try
+        {
+            var banner = await StoryArtworkCache.LoadThumbnailAsync(urls, request.Token, "EventBannerCache");
+            if (_bannerRequest != request || banner == null) return;
+            EventBannerImage.Source = banner;
+            AutomationProperties.SetName(EventBannerImage, story.GameEvent.Name);
+            EventBannerImage.Visibility = Visibility.Visible;
+        }
+        finally
+        {
+            if (_bannerRequest == request) _bannerRequest = null;
+        }
     }
 
     private void RefreshControl()

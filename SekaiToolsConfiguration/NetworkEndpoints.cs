@@ -114,6 +114,7 @@ public sealed class DataSourceEndpointOptions
     public required string ActionSetTemplate { get; init; }
     public required string MemberStoryTemplate { get; init; }
     public required string EventStoryTemplate { get; init; }
+    public string? EventBannerUrl { get; init; }
     public required string SpecialStoryTemplate { get; init; }
     public required string UnitStoryTemplate { get; init; }
 

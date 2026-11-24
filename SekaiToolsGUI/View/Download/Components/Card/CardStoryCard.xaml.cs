@@ -5,12 +5,10 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
-using Microsoft.Extensions.Logging;
 using SekaiDataFetch;
-using SekaiDataFetch.Item;
 using SekaiDataFetch.Source;
+using SekaiDataFetch.Item;
 using SekaiToolsGUI.ViewModel.Download;
-using SekaiToolsGUI.ViewModel.Setting;
 
 namespace SekaiToolsGUI.View.Download.Components.Card;
 
@@ -55,9 +53,6 @@ public partial class CardStoryCard : UserControl
 
 public partial class CardStoryCard
 {
-    private static readonly ILogger ArtworkLogger = SekaiToolsBase.Logger.CreateLogger(nameof(CardStoryCard));
-    private static readonly SemaphoreSlim ThumbnailSlots = new(4);
-    private static readonly Fetcher ThumbnailFetcher = new();
     private static readonly DependencyProperty ArtworkSplitProperty = DependencyProperty.Register(
         "ArtworkSplit", typeof(double), typeof(CardStoryCard),
         new PropertyMetadata(1d, (owner, _) => ((CardStoryCard)owner).UpdateArtworkCrop()));
@@ -111,8 +106,8 @@ public partial class CardStoryCard
         if (_thumbnailLifetime != null) return;
         var lifetime = _thumbnailLifetime = new CancellationTokenSource();
         var token = lifetime.Token;
-        var trained = LoadThumbnailAsync(ArtworkUrls(card, true), token);
-        var normal = await LoadThumbnailAsync(ArtworkUrls(card, false), token);
+        var trained = StoryArtworkCache.LoadThumbnailAsync(ArtworkUrls(card, true), token, "CardArtworkCache");
+        var normal = await StoryArtworkCache.LoadThumbnailAsync(ArtworkUrls(card, false), token, "CardArtworkCache");
         if (_thumbnailLifetime != lifetime) return;
         ArtworkThumbnail.Source = normal;
         UpdateComparison(animate: false);
@@ -174,34 +169,6 @@ public partial class CardStoryCard
         TrainedArtworkOffset.X = leftWidth / 2;
         NormalArtworkClip.Rect = new Rect(rightWidth / 2, 0, leftWidth, height);
         TrainedArtworkClip.Rect = new Rect(leftWidth / 2, 0, rightWidth, height);
-    }
-
-    private static async Task<BitmapSource?> LoadThumbnailAsync(IReadOnlyList<Uri> urls, CancellationToken token)
-    {
-        if (urls.Count == 0) return null;
-        try
-        {
-            await ThumbnailSlots.WaitAsync(token);
-            try
-            {
-                ThumbnailFetcher.SetProxy(SettingPageModel.Instance.GetProxy());
-                return await DownloadSources.TryAsync(urls,
-                    (uri, cancellation) => CardArtworkDialog.LoadAsync(ThumbnailFetcher, uri, cancellation, decodeWidth: 320), token);
-            }
-            finally
-            {
-                ThumbnailSlots.Release();
-            }
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-            return null;
-        }
-        catch (Exception error)
-        {
-            ArtworkLogger.LogDebug(error, "Card artwork thumbnail unavailable: {Url}", urls[0]);
-            return null;
-        }
     }
 
     private static Uri[] ArtworkUrls(SekaiToolsBase.DataList.Card card, bool trained) =>

@@ -15,6 +15,7 @@ public class SourceData
     public required string ActionSetTemplate { get; init; }
     public required string MemberStoryTemplate { get; init; }
     public required string EventStoryTemplate { get; init; }
+    public string? EventBannerUrl { get; init; }
     public required string SpecialStoryTemplate { get; init; }
     public required string UnitStoryTemplate { get; init; }
 
@@ -29,6 +30,7 @@ public class SourceData
             ActionSetTemplate = source.ActionSetTemplate,
             MemberStoryTemplate = source.MemberStoryTemplate,
             EventStoryTemplate = source.EventStoryTemplate,
+            EventBannerUrl = source.EventBannerUrl,
             SpecialStoryTemplate = source.SpecialStoryTemplate,
             UnitStoryTemplate = source.UnitStoryTemplate
         })
