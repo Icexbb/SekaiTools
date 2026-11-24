@@ -37,6 +37,8 @@ public sealed class ApplicationFixture : IDisposable
     public TestDataManager Data { get; }
     public ElementFinder Finder { get; } = new();
     public Window? Window { get; private set; }
+    public int? DeveloperPort { get; init; }
+    public bool CheckUpdates { get; init; }
 
     public void Step(string name, string expected, Action action)
     {
@@ -89,7 +91,10 @@ public sealed class ApplicationFixture : IDisposable
         info.Environment[ApplicationPaths.TestRootVariable] = Data.Root;
         info.Environment["TEMP"] = Data.Temp;
         info.Environment["TMP"] = Data.Temp;
-        info.Environment["SEKAI_TOOLS_SKIP_UPDATE"] = "1";
+        if (CheckUpdates) info.Environment.Remove("SEKAI_TOOLS_SKIP_UPDATE");
+        else info.Environment["SEKAI_TOOLS_SKIP_UPDATE"] = "1";
+        if (DeveloperPort is { } port)
+            info.Environment["SEKAI_TOOLS_TEST_DEVELOPER_PORT"] = port.ToString(System.Globalization.CultureInfo.InvariantCulture);
         _process = Process.Start(info) ?? throw new InvalidOperationException("无法创建测试进程。");
         _process.OutputDataReceived += (_, e) => { if (e.Data is { } line) _output.Enqueue(line); };
         _process.ErrorDataReceived += (_, e) => { if (e.Data is { } line) _output.Enqueue(line); };

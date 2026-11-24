@@ -84,7 +84,9 @@ public sealed class SettingViewBuilder(
             var reset = new SettingResetButton { Properties = string.Join(',', section.Properties) };
             AutomationProperties.SetName(reset, $"还原{section.Title}默认设置");
             if (section.Properties.FirstOrDefault() is { } key)
-                AutomationProperties.SetAutomationId(reset, $"Settings.Reset.{key}");
+                AutomationProperties.SetAutomationId(reset, section.Children.Length == 0
+                    ? $"Settings.Reset.{key}"
+                    : $"Settings.ResetSection.{key}");
             DockPanel.SetDock(reset, Dock.Right);
             heading.Children.Add(reset);
         }

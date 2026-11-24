@@ -47,6 +47,8 @@ M0-B 首批功能用例 `UI-SETTINGS-001` 通过真实 ComboBox 切换暗色、�
 
 UI-SETTINGS-002 通过 Settings.VersionLabel 聚焦后按七次 Enter 开启现有开发者模式，展开 Settings.DeveloperGroup。Settings.Threshold.{属性名} 标识六个阈值输入；Save、Reset、Status 分别对应独立保存、恢复来源和反馈。验证零值拒绝、有效值编辑不自动保存、点击保存后落盘、非法覆盖不改文件哈希、重启后恢复已保存值以及恢复默认来源删除覆盖文件。测试不预装识别资源，同时覆盖缺少 thresholds.json 时使用内置默认值；损坏的已有文件仍报告错误。设置页不是启动恢复模块，重启后重新导航进入设置。该场景不代表所有数值边界、全部普通设置或 HTTP API 的完整验收。
 
+M6 扩展了普通设置、开发者服务、关于、运行日志、受控更新和最小窗口的 FlaUI 覆盖。用例、动态 AutomationId、实际 Pattern 和截图复核记录见 [M6 设置与关于验收](fluent-workbench-m6-acceptance.md)。使用 `Tools/RunUITests.ps1 -Filter "FullyQualifiedName~SettingsTests"` 可运行整组用例。
+
 默认 M0-A 配置仅指向本地未提供业务响应的端口；业务用例按需使用下面的 HTTP fixture。当前不执行字幕识别或编码。其他业务页、完整主题/尺寸/DPI 矩阵、视觉差异比较属于后续里程碑。现有 WPF 探针仍作补充，不代替 FlaUI。
 
 ## 运行
