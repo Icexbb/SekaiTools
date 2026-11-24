@@ -18,7 +18,8 @@ public static class DownloadSources
             var storage = MeasureAsync(source.StorageBaseUrl, requireSuccess: false);
             return (Source: source, Score: await catalog.ConfigureAwait(false) + await storage.ConfigureAwait(false));
         })).ConfigureAwait(false);
-        return measurements.OrderBy(item => item.Score).Select(item => item.Source).ToArray();
+        return measurements.OrderByDescending(item => item.Source.UsageWeight)
+            .ThenBy(item => item.Score).Select(item => item.Source).ToArray();
 
         async Task<double> MeasureAsync(string url, bool requireSuccess)
         {

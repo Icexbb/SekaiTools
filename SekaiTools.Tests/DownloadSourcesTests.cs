@@ -17,6 +17,15 @@ public class DownloadSourcesTests
     }
 
     [Fact]
+    public async Task RanksHigherWeightAheadOfFasterSources()
+    {
+        var slow = Source("slow", usageWeight: 2);
+        var fast = Source("fast");
+        using var fetcher = new Fetcher(_ => new ProbeHandler());
+        Assert.Equal(new[] { slow, fast }, await DownloadSources.RankAsync(fetcher, [fast, slow]));
+    }
+
+    [Fact]
     public async Task CancellingTheFirstAttemptDoesNotContactAnotherSource()
     {
         using var cancellation = new CancellationTokenSource();
@@ -31,9 +40,10 @@ public class DownloadSourcesTests
         Assert.Equal([1], attempts);
     }
 
-    private static SourceData Source(string name) => new()
+    private static SourceData Source(string name, int usageWeight = 1) => new()
     {
         SourceName = name,
+        UsageWeight = usageWeight,
         SourceTemplate = $"https://{name}.example.test/{{type}}.json",
         StorageBaseUrl = $"https://{name}.example.test/storage/",
         ActionSetTemplate = "",

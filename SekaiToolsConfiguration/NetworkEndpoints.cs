@@ -108,6 +108,7 @@ public sealed class ResourceEndpointOptions
 public sealed class DataSourceEndpointOptions
 {
     public required string SourceName { get; init; }
+    public int UsageWeight { get; init; } = 1;
     public required string SourceTemplate { get; init; }
     public required string StorageBaseUrl { get; init; }
     public required string ActionSetTemplate { get; init; }

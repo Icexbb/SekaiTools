@@ -8,6 +8,7 @@ namespace SekaiDataFetch.Source;
 public class SourceData
 {
     public required string SourceName { get; init; }
+    public int UsageWeight { get; init; } = 1;
     public required string SourceTemplate { get; init; }
 
     public required string StorageBaseUrl { get; init; }
@@ -22,6 +23,7 @@ public class SourceData
         .Select(source => new SourceData
         {
             SourceName = source.SourceName,
+            UsageWeight = source.UsageWeight,
             SourceTemplate = source.SourceTemplate,
             StorageBaseUrl = source.StorageBaseUrl,
             ActionSetTemplate = source.ActionSetTemplate,
