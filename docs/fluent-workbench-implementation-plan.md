@@ -237,4 +237,4 @@ dotnet test .\SekaiTools.UITests\SekaiTools.UITests.csproj --filter "Category=Vi
 
 最终完成条件同时包括真实运行、关键 UIA 交互、业务结果核对、截图人工复核和必要设备验收。FlaUI 成功、组件探针成功、构建成功分别记录，不能相互替代。
 
-当前构建、全量回归、发布目录、截图和待补设备矩阵见 [M7 验收与交付记录](fluent-workbench-m7-acceptance.md)。
+M7 已按确认后的范围收尾。本轮保留 100% 缩放下的既有截图复核，不追加缩放或对比度测试。构建、全量回归、发布目录和验收边界见 [M7 验收与交付记录](fluent-workbench-m7-acceptance.md)。
