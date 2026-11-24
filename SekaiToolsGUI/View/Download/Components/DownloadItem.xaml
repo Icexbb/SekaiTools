@@ -14,12 +14,12 @@
                    Click="ButtonBase_OnClick" Padding="10">
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="DownloadItemIndex" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="DownloadItemChoice" />
             </Grid.ColumnDefinitions>
             <ui:InfoBadge Name="IndexInfoBadge" Severity="Attention" Margin="0,0,5,0" Value="1"
-                          VerticalAlignment="Center" />
+                          HorizontalAlignment="Left" VerticalAlignment="Center" />
             <ui:TextBlock Grid.Column="1" Name="TitleTextBlock" VerticalAlignment="Center" TextWrapping="Wrap"
                           MaxHeight="40" LineHeight="20" LineStackingStrategy="BlockLineHeight"
                           TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"

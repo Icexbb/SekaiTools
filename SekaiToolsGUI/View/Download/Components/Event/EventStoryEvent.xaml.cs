@@ -129,7 +129,7 @@ public partial class EventStoryEvent
                 PanelItems.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             Grid.SetRow(downloadItem, i / itemPreRow);
             Grid.SetColumn(downloadItem, i % itemPreRow);
-            downloadItem.Margin = new Thickness(0, 5, i % itemPreRow == itemPreRow - 1 ? 0 : 5, 0);
+            downloadItem.Margin = new Thickness(0, 5, 5, 0);
             PanelItems.Children.Add(downloadItem);
         }
     }

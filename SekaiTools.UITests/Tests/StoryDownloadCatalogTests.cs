@@ -33,7 +33,15 @@ public sealed class StoryDownloadCatalogTests
             ["eventStories"] = JsonSerializer.Serialize(new[] { new EventStory
             {
                 Id = 1, EventId = 1, AssetBundleName = "event-bundle",
-                EventStoryEpisodes = [new() { Id = 10, EventStoryId = 1, EpisodeNo = 1, Title = "Fixture Event Chapter", ScenarioId = "event-fixture" }]
+                EventStoryEpisodes =
+                [
+                    new() { Id = 10, EventStoryId = 1, EpisodeNo = 1, Title = "Fixture Event Chapter", ScenarioId = "event-fixture-main" },
+                    .. Enumerable.Range(10, 4).Select(episode => new EventEpisode
+                    {
+                        Id = 100 + episode, EventStoryId = 1, EpisodeNo = episode, ScenarioId = $"event-fixture-{episode}",
+                        Title = $"Fixture Event Chapter {episode} ワンダーランズ×ショウタイム"
+                    })
+                ]
             } }),
             ["events"] = JsonSerializer.Serialize(new[] { new GameEvent
             {
@@ -87,7 +95,7 @@ public sealed class StoryDownloadCatalogTests
         });
         foreach (var (category, scenario, displayedName, choiceLabel) in new[]
                  {
-                     ("Event", "event-fixture", "Fixture Activity", "Fixture Event Chapter"),
+                     ("Event", "event-fixture-main", "Fixture Activity", "Fixture Event Chapter"),
                      ("Special", "special-fixture", "Fixture Special Chapter", "Fixture Special Chapter"),
                      ("Card", "card-fixture-2", "# 3", "Fixture Card|后篇"),
                      ("Action", "action-fixture", "action-fixture", "action-fixture")
@@ -101,6 +109,19 @@ public sealed class StoryDownloadCatalogTests
                 app.Finder.ById(app.Window!, "StoryDownload." + category + ".Root");
                 Refresh();
                 WaitForText(displayedName);
+                if (category == "Event")
+                {
+                    search.Text = "event-fixture";
+                    var eventRoot = app.Finder.ById(app.Window!, "StoryDownload.Event.Root");
+                    WaitHelper.Until(() =>
+                    {
+                        var titles = eventRoot.FindAllDescendants(cf => cf.ByAutomationId("TitleTextBlock"))
+                            .Where(element => element.Name.StartsWith("Fixture Event Chapter", StringComparison.Ordinal))
+                            .Select(element => element.BoundingRectangle.Width).ToArray();
+                        return titles.Length == 5 && titles.Min() > 0 && titles.Max() - titles.Min() <= 2;
+                    }, "活动章节标题等宽，容纳不同位数编号");
+                    ScreenshotHelper.CaptureStable(app.Window!, Path.Combine(app.Data.Directory, "Screenshots"), "Download.EventAligned");
+                }
                 search.Text = scenario;
                 var choiceId = FindChoice(category, choiceLabel).AutomationId;
                 var select = app.Finder.ById(app.Window!, "StoryDownload.SelectResults").AsCheckBox();
@@ -110,6 +131,7 @@ public sealed class StoryDownloadCatalogTests
                 WaitHelper.Until(() => add.IsEnabled, category + " 所选剧本可下载");
                 add.AsButton().Invoke();
                 WaitHelper.Until(() => app.Finder.ById(app.Window!, "StoryDownload.StartDownloadButton").IsEnabled, category + " 已入队");
+                Assert.Null(app.Window!.FindFirstDescendant(cf => cf.ByName("批量加入完成")));
                 Assert.Equal(choiceId, FindChoice(category, choiceLabel).AutomationId);
                 if (category == "Action")
                 {

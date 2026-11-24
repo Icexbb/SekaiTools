@@ -43,7 +43,7 @@
             </Grid>
         </ui:CardExpander.Header>
         <ui:CardExpander.Content>
-            <Grid Name="PanelItems" />
+            <Grid Name="PanelItems" Grid.IsSharedSizeScope="True" />
         </ui:CardExpander.Content>
     </ui:CardExpander>
 </UserControl>

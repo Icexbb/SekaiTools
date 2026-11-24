@@ -99,12 +99,7 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         return Dispatcher.Invoke(() =>
         {
             if (DownloadItemBox.Items.OfType<DownloadTask>().Any(item => item.Url == url))
-            {
-                if (Application.Current.MainWindow is MainWindow)
-                    QueueSnackService.Show("已在下载列表中", tag, ControlAppearance.Info,
-                        new SymbolIcon(SymbolRegular.Info24), TimeSpan.FromSeconds(2));
                 return false;
-            }
 
             if (!TryGetDownloadDirectory(out var directory)) return false;
             var task = new DownloadTask(tag, url, ViewModel.CurrentSource.SourceName, directory);
@@ -131,27 +126,17 @@ public partial class DownloadPage : UserControl, IAppPage<DownloadPageModel>
         {
             if (!TryGetDownloadDirectory(out var directory)) return;
             var urls = DownloadItemBox.Items.OfType<DownloadTask>().Select(task => task.Url).ToHashSet();
-            var added = 0;
-            var skipped = 0;
             foreach (var (tag, url) in candidates)
             {
-                if (!urls.Add(url))
-                {
-                    skipped++;
-                    continue;
-                }
+                if (!urls.Add(url)) continue;
 
                 var task = new DownloadTask(tag, url, ViewModel.CurrentSource.SourceName, directory);
                 task.RemoveRequested += DownloadTask_OnRemoveRequested;
                 task.RetryRequested += DownloadTask_OnRetryRequested;
                 DownloadItemBox.Items.Add(task);
-                added++;
             }
 
             UpdateTaskListState();
-            if (Application.Current.MainWindow is MainWindow)
-                QueueSnackService.Show("批量加入完成", $"已加入 {added} 条，跳过重复 {skipped} 条。", ControlAppearance.Info,
-                    new SymbolIcon(SymbolRegular.Info24), TimeSpan.FromSeconds(4));
         });
     }
 
